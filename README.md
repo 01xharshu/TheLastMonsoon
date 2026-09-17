@@ -1,0 +1,999 @@
+<div align="center">
+
+# THE LAST MONSOON
+
+### A Historical Open-World Survival Game
+
+**India · 1857 · Survival · Resistance · Exploration**
+
+Built with **Godot Engine + GDScript**
+
+![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+![Engine](https://img.shields.io/badge/engine-Godot-478CBF?logo=godot-engine&logoColor=white)
+![Language](https://img.shields.io/badge/language-GDScript-478CBF)
+![Genre](https://img.shields.io/badge/genre-open--world%20survival-darkgreen)
+![Development](https://img.shields.io/badge/development-active-success)
+
+</div>
+
+---
+
+## Overview
+
+**The Last Monsoon** is a third-person historical open-world survival game set in a fictional region of North/Central India during the period surrounding the uprising of **1857**.
+
+The player follows **Arjun**, a young villager whose search for his missing brother gradually draws him into a wider conflict involving survival, displacement, resistance, military occupation, local communities, and the changing political landscape of the region.
+
+The project is being designed around one core principle:
+
+> **Build a smaller world with meaningful systems before building a larger world with shallow content.**
+
+The game is currently in **pre-alpha**, with development focused on reusable gameplay architecture and a playable vertical slice.
+
+---
+
+## Project Status
+
+> **Pre-Alpha — Core Systems Development**
+
+The current build is an engineering prototype.
+
+Final environments, characters, animations, audio, UI, historical assets, and world content have not yet entered full production.
+
+### Implemented
+
+| System | Status |
+|---|---|
+| Third-person movement | ✅ Implemented |
+| Walking | ✅ Implemented |
+| Sprinting | ✅ Implemented |
+| Jumping | ✅ Implemented |
+| Gravity | ✅ Implemented |
+| Player collision | ✅ Implemented |
+| Third-person camera | ✅ Implemented |
+| Spring-arm camera collision | ✅ Implemented |
+| Mouse camera control | ✅ Implemented |
+| Interaction ray | ✅ Implemented |
+| Interaction prompts | ✅ Implemented |
+| Reusable interactable architecture | ✅ Implemented |
+| Health | ✅ Prototype |
+| Stamina | ✅ Prototype |
+| Hunger | ✅ Prototype |
+| Thirst | ✅ Prototype |
+| Stamina exhaustion | ✅ Prototype |
+| Starvation damage | ✅ Prototype |
+| Dehydration damage | ✅ Prototype |
+| Survival debug HUD | ✅ Prototype |
+
+---
+
+## Game Vision
+
+The Last Monsoon combines:
+
+- historical fiction
+- open-world exploration
+- survival mechanics
+- systemic gameplay
+- horse-based travel
+- NPC relationships
+- resistance operations
+- settlement development
+- faction reputation
+- environmental storytelling
+- dynamic world events
+
+The game is not intended to make the player an unstoppable action hero.
+
+Combat, travel, food, water, weather, injuries, information, relationships, and preparation are intended to have meaningful consequences.
+
+---
+
+## Setting
+
+### Period
+
+The game is set primarily around:
+
+**1856–1859**
+
+This allows the story to exist around the upheaval of 1857 while following fictional characters and fictional local events.
+
+### Region
+
+The primary setting is the fictional region of:
+
+## Suryagarh
+
+The region is inspired by environments found across North and Central India.
+
+Planned environments include:
+
+```text
+Suryagarh
+│
+├── Bhairavpur Village
+│
+├── Agricultural Lands
+│
+├── Forest Region
+│
+├── River Settlements
+│
+├── Trading Town
+│
+├── Suryagarh City
+│
+├── Military Cantonment
+│
+├── Old Fort
+│
+├── Rural Settlements
+│
+└── Regional Roads & Trails
+```
+
+Using a fictional region allows the project to preserve historical atmosphere without presenting fictional local events as documented history.
+
+---
+
+## Protagonist
+
+### Arjun
+
+Arjun does not begin the story as a resistance fighter.
+
+He begins as an ordinary young man living with his family in Bhairavpur.
+
+His older brother, **Dev**, serves as a sepoy and later disappears.
+
+Arjun's first major objective is simple:
+
+> **Find Dev.**
+
+His journey gradually exposes him to the expanding conflict and forces him to decide how deeply he is willing to become involved.
+
+---
+
+## Core Design Pillars
+
+### 1. Survival
+
+The environment should create problems rather than simply decorate the world.
+
+Planned systems include:
+
+- hunger
+- thirst
+- health
+- stamina
+- exhaustion
+- injuries
+- bleeding
+- disease
+- body temperature
+- wetness
+- sleep
+- food quality
+- water safety
+
+---
+
+### 2. Exploration
+
+Exploration should provide meaningful discoveries rather than checklist activities.
+
+Potential locations include:
+
+- villages
+- farms
+- forests
+- forts
+- rivers
+- temples
+- mosques
+- markets
+- ghats
+- cantonments
+- military camps
+- abandoned structures
+- workshops
+- caves
+- hidden trails
+- resistance camps
+
+---
+
+### 3. Systemic World
+
+Game systems should influence one another.
+
+Example:
+
+```text
+Heavy Rain
+    ↓
+River Level Increases
+    ↓
+Crossing Becomes Dangerous
+    ↓
+Trade Route Is Disrupted
+    ↓
+Village Supplies Decrease
+```
+
+Another example:
+
+```text
+Player Attacks Supply Route
+    ↓
+Regional Supplies Decrease
+    ↓
+Military Response Increases
+    ↓
+Additional Patrols Appear
+    ↓
+Travel Becomes More Dangerous
+```
+
+---
+
+### 4. Survival Before Combat
+
+Fighting should not always be the best solution.
+
+The player may instead:
+
+- hide
+- retreat
+- negotiate
+- disguise themselves
+- avoid patrols
+- use alternate routes
+- wait for night
+- gather intelligence
+- create distractions
+
+---
+
+### 5. Consequence
+
+Actions should influence:
+
+- NPC relationships
+- settlements
+- factions
+- patrol activity
+- regional security
+- trade
+- available resources
+- player identity
+- story outcomes
+
+---
+
+## Technical Stack
+
+| Area | Technology |
+|---|---|
+| Engine | Godot Engine |
+| Gameplay Language | GDScript |
+| 3D Modelling | Blender |
+| Animation | Blender / Godot |
+| Version Control | Git |
+| Repository Hosting | GitHub |
+
+---
+
+## Architecture
+
+The project uses modular gameplay systems rather than placing all behavior inside a single Player script.
+
+Current architecture:
+
+```text
+Player
+│
+├── PlayerController
+│   ├── Input
+│   ├── Movement
+│   ├── Camera
+│   └── Interaction Detection
+│
+├── SurvivalComponent
+│   ├── Health
+│   ├── Stamina
+│   ├── Hunger
+│   └── Thirst
+│
+├── Interaction
+│   ├── Ray Detection
+│   ├── Prompt
+│   └── Interactable Interface
+│
+└── UI
+    ├── Interaction Prompt
+    └── Survival Debug Display
+```
+
+The long-term objective is to keep major gameplay domains independent:
+
+```text
+Player
+World
+Interaction
+Survival
+Inventory
+Items
+Characters
+AI
+Horses
+Combat
+Factions
+Quests
+Settlements
+Weather
+Time
+Save System
+World Streaming
+Developer Tools
+```
+
+---
+
+## Repository Structure
+
+Current structure:
+
+```text
+res://
+│
+├── player/
+│   ├── player.tscn
+│   └── player_controller.gd
+│
+├── interaction/
+│   ├── interactable.gd
+│   └── test_interactable.gd
+│
+├── survival/
+│   └── survival_component.gd
+│
+└── world/
+    └── test_world.tscn
+```
+
+Target structure as development expands:
+
+```text
+res://
+│
+├── core/
+│   ├── managers/
+│   ├── events/
+│   ├── save/
+│   └── configuration/
+│
+├── player/
+│   ├── components/
+│   ├── scenes/
+│   ├── animation/
+│   └── controller/
+│
+├── characters/
+│   ├── npc/
+│   ├── enemies/
+│   └── animals/
+│
+├── interaction/
+│
+├── survival/
+│
+├── inventory/
+│
+├── items/
+│
+├── equipment/
+│
+├── combat/
+│
+├── horses/
+│
+├── factions/
+│
+├── quests/
+│
+├── settlements/
+│
+├── world/
+│   ├── regions/
+│   ├── environments/
+│   ├── weather/
+│   ├── time/
+│   └── streaming/
+│
+├── ui/
+│
+├── audio/
+│
+├── data/
+│
+├── assets/
+│
+└── dev/
+```
+
+The structure may evolve as production requirements become clearer.
+
+---
+
+## Controls
+
+Current development controls:
+
+| Action | Input |
+|---|---|
+| Forward | `W` |
+| Backward | `S` |
+| Left | `A` |
+| Right | `D` |
+| Sprint | `Left Shift` |
+| Jump | `Space` |
+| Interact | `E` |
+| Camera | `Mouse` |
+| Release / Capture Cursor | `Esc` |
+
+Input remapping is planned for a later stage.
+
+---
+
+## Getting Started
+
+### Requirements
+
+Install:
+
+- Godot Engine
+- Git
+
+Blender is only required for 3D asset development.
+
+---
+
+### Clone the Repository
+
+```bash
+git clone <repository-url>
+cd the-last-monsoon
+```
+
+---
+
+### Open the Project
+
+Launch Godot.
+
+Select:
+
+```text
+Import Existing Project
+```
+
+Choose the project directory.
+
+Godot should detect:
+
+```text
+project.godot
+```
+
+Open the project.
+
+---
+
+### Run the Current Prototype
+
+Open:
+
+```text
+res://world/test_world.tscn
+```
+
+Run the current scene.
+
+Default shortcut:
+
+```text
+F6
+```
+
+---
+
+## Development Roadmap
+
+### Milestone 0 — Project Foundation
+
+- [x] Project initialization
+- [x] Repository structure
+- [x] Input configuration
+- [x] Player scene
+- [x] Test environment
+
+---
+
+### Milestone 1 — Player Controller
+
+- [x] Third-person movement
+- [x] Walking
+- [x] Sprinting
+- [x] Jumping
+- [x] Gravity
+- [x] Collision
+- [x] Third-person camera
+- [x] Camera collision
+
+---
+
+### Milestone 2 — Interaction Framework
+
+- [x] Ray-based interaction
+- [x] Dynamic prompts
+- [x] Reusable interactable class
+- [x] Test interactable
+- [ ] Door interaction
+- [ ] Water source interaction
+- [ ] Item interaction
+- [ ] NPC interaction
+- [ ] Horse interaction
+
+---
+
+### Milestone 3 — Survival Foundation
+
+- [x] Health
+- [x] Stamina
+- [x] Hunger
+- [x] Thirst
+- [x] Exhaustion
+- [x] Starvation damage
+- [x] Dehydration damage
+- [ ] Drinking
+- [ ] Eating
+- [ ] Injuries
+- [ ] Bleeding
+- [ ] Sleep
+- [ ] Temperature
+- [ ] Wetness
+- [ ] Disease
+
+---
+
+### Milestone 4 — Inventory & Items
+
+- [ ] Item data architecture
+- [ ] World pickups
+- [ ] Player inventory
+- [ ] Weight
+- [ ] Item stacking
+- [ ] Containers
+- [ ] Equipment
+- [ ] Consumables
+- [ ] Horse storage
+
+---
+
+### Milestone 5 — Environmental Survival
+
+- [ ] Day/night cycle
+- [ ] Weather system
+- [ ] Rain
+- [ ] Temperature
+- [ ] Campfires
+- [ ] Cooking
+- [ ] Water collection
+- [ ] Safe sleeping
+
+---
+
+### Milestone 6 — Bhairavpur Vertical Slice
+
+- [ ] Village blockout
+- [ ] Farms
+- [ ] Well
+- [ ] River
+- [ ] Forest
+- [ ] Roads
+- [ ] Market
+- [ ] Stable
+- [ ] Military checkpoint
+- [ ] Initial NPC population
+
+---
+
+### Milestone 7 — Character Systems
+
+- [ ] Final Arjun model
+- [ ] Skeleton
+- [ ] Animation controller
+- [ ] Idle
+- [ ] Walk
+- [ ] Run
+- [ ] Jump
+- [ ] Interaction animations
+- [ ] NPC framework
+- [ ] NPC schedules
+- [ ] NPC relationships
+
+---
+
+### Milestone 8 — Horse System
+
+- [ ] Horse AI
+- [ ] Mounting
+- [ ] Dismounting
+- [ ] Riding controller
+- [ ] Horse stamina
+- [ ] Horse health
+- [ ] Horse hunger
+- [ ] Horse thirst
+- [ ] Horse trust
+- [ ] Horse inventory
+
+---
+
+### Milestone 9 — Combat
+
+- [ ] Combat state
+- [ ] Melee
+- [ ] Blocking
+- [ ] Dodging
+- [ ] Weapon equipment
+- [ ] Damage system
+- [ ] Period firearms
+- [ ] Reloading
+- [ ] Ammunition
+- [ ] Enemy combat AI
+
+---
+
+### Milestone 10 — Living World
+
+- [ ] Wildlife
+- [ ] Factions
+- [ ] Reputation
+- [ ] Dynamic encounters
+- [ ] Witnesses
+- [ ] Identity tracking
+- [ ] Wanted system
+- [ ] Trade simulation
+- [ ] Regional consequences
+
+---
+
+### Milestone 11 — Story Systems
+
+- [ ] Quest framework
+- [ ] Dialogue framework
+- [ ] Opening mission
+- [ ] Dev storyline
+- [ ] Resistance storyline
+- [ ] Settlement progression
+- [ ] World-state consequences
+- [ ] End-state system
+
+---
+
+## First Vertical Slice
+
+The first production-quality playable area will focus on:
+
+```text
+Bhairavpur
+    │
+    ├── Village
+    │
+    ├── Farms
+    │
+    ├── Well
+    │
+    ├── Stable
+    │
+    ├── River
+    │
+    ├── Forest
+    │
+    ├── Dirt Road
+    │
+    └── Military Checkpoint
+```
+
+Target content:
+
+- 8–12 buildings
+- approximately 10–15 NPCs
+- one functional horse
+- food and water gameplay
+- basic inventory
+- basic day/night cycle
+- environmental survival
+- NPC interaction
+- one checkpoint
+- opening story mission
+
+The purpose of the vertical slice is to prove that the core gameplay loop is enjoyable before expanding the world.
+
+---
+
+## Opening Gameplay Loop
+
+The initial playable sequence is planned around an ordinary morning in Bhairavpur.
+
+```text
+Wake Up
+   ↓
+Speak With Family
+   ↓
+Prepare Supplies
+   ↓
+Visit Stable
+   ↓
+Travel Toward Market
+   ↓
+Interact With Villagers
+   ↓
+Return Home
+   ↓
+World Begins To Change
+```
+
+The sequence doubles as the game's introduction to:
+
+- movement
+- interaction
+- inventory
+- navigation
+- horse riding
+- trading
+- survival
+
+without relying heavily on explicit tutorial prompts.
+
+---
+
+## Development Principles
+
+### Systems Before Scale
+
+A functioning village is more valuable than an unfinished province.
+
+### Gameplay Before Final Art
+
+Prototype geometry is acceptable until core mechanics prove themselves.
+
+### Modular Systems
+
+Gameplay features should remain isolated enough to be changed without destabilizing unrelated systems.
+
+### Data-Driven Content
+
+Items, quests, NPC definitions, weapons, resources, and world configuration should progressively move toward reusable data definitions rather than hardcoded logic.
+
+### Performance by Design
+
+Large-world development will eventually require:
+
+- region streaming
+- level of detail
+- AI simulation levels
+- object pooling
+- visibility management
+- simplified distant simulation
+
+These systems should be introduced before uncontrolled world expansion.
+
+### Historical Research
+
+Historical inspiration should be researched before finalizing:
+
+- architecture
+- clothing
+- weapons
+- transportation
+- settlement layouts
+- military environments
+- terminology
+- materials
+- social environments
+
+---
+
+## Git Workflow
+
+Recommended branch structure:
+
+```text
+main
+│
+├── develop
+│
+├── feature/player-controller
+├── feature/survival
+├── feature/inventory
+├── feature/horse-system
+├── feature/npc-ai
+└── fix/<issue-name>
+```
+
+### `main`
+
+Stable project state.
+
+### `develop`
+
+Current integration branch.
+
+### `feature/*`
+
+Individual feature development.
+
+### `fix/*`
+
+Bug fixes.
+
+For a solo project, this workflow can remain lightweight until the project becomes larger.
+
+---
+
+## Commit Convention
+
+Recommended commit format:
+
+```text
+type(scope): description
+```
+
+Examples:
+
+```text
+feat(player): add stamina-based sprinting
+
+feat(interaction): add reusable interactable system
+
+fix(camera): prevent vertical rotation overflow
+
+refactor(survival): separate survival logic from player controller
+
+docs(readme): add project architecture and roadmap
+```
+
+Suggested types:
+
+```text
+feat
+fix
+refactor
+docs
+test
+build
+chore
+perf
+```
+
+---
+
+## Historical Fiction Disclaimer
+
+**The Last Monsoon is a work of historical fiction.**
+
+The project draws inspiration from real historical periods and environments but uses fictional protagonists, fictional settlements, fictional local events, and fictionalized regional geography.
+
+The game is not intended to serve as a substitute for historical scholarship.
+
+Historical accuracy will be researched and improved throughout development.
+
+---
+
+## Screenshots
+
+Screenshots will be added once the first visual vertical slice enters production.
+
+Recommended future structure:
+
+```text
+docs/
+└── media/
+    ├── gameplay/
+    ├── environments/
+    ├── characters/
+    ├── concepts/
+    └── ui/
+```
+
+---
+
+## Performance Targets
+
+Initial development targets:
+
+| Target | Goal |
+|---|---|
+| Primary platform | Desktop |
+| Rendering | 3D |
+| Minimum gameplay target | 30 FPS |
+| Preferred gameplay target | 60 FPS |
+| World architecture | Streamed regions |
+| NPC architecture | Distance-based simulation |
+
+Exact minimum hardware specifications will be established later in development.
+
+---
+
+## Contributing
+
+The project is currently under active private/independent development.
+
+External contributions are not currently being accepted unless explicitly coordinated with the project owner.
+
+Contribution guidelines may be introduced if development expands into a multi-contributor project.
+
+---
+
+## Issues
+
+Bug reports should ideally include:
+
+1. Godot version
+2. operating system
+3. reproduction steps
+4. expected behavior
+5. actual behavior
+6. screenshots or video where useful
+7. Godot debugger/output logs
+
+Suggested issue format:
+
+```text
+Title:
+[System] Short description
+
+Environment:
+Godot:
+OS:
+Branch:
+
+Steps to reproduce:
+1.
+2.
+3.
+
+Expected:
+...
+
+Actual:
+...
+
+Logs:
+...
+```
+
+---
+
+## License
+
+No open-source license has currently been assigned to this project.
+
+Unless a license is added later, project source code, original assets, designs, characters, story material, and other original project content remain reserved by the project owner.
+
+Third-party assets and dependencies retain their respective licenses.
+
+---
+
+<div align="center">
+
+## THE LAST MONSOON
+
+**Survive the land. Protect your people. Choose what you stand for.**
+
+`PRE-ALPHA · ACTIVE DEVELOPMENT`
+
+</div>

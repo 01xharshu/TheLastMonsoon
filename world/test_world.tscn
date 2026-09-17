@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://glb5bj72hp4i"]
+
+[ext_resource type="PackedScene" uid="uid://b5pmgc0ssea2m" path="res://player/player.tscn" id="1_dgccc"]
+[ext_resource type="Script" uid="uid://br3afuhnkuos0" path="res://interaction/interactable.gd" id="2_tbnp1"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_6y53q"]
+size = Vector2(40, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6xif0"]
+size = Vector3(40, 0.2, 40)
+
+[sub_resource type="Environment" id="Environment_6xif0"]
+background_mode = 2
+
+[sub_resource type="BoxMesh" id="BoxMesh_6xif0"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_oj0j4"]
+
+[node name="TestWorld" type="Node3D" unique_id=1378731973]
+
+[node name="Ground" type="Node3D" parent="." unique_id=866925244]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground" unique_id=1341352520]
+mesh = SubResource("PlaneMesh_6y53q")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Ground" unique_id=1854430917]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground/StaticBody3D" unique_id=1748954437]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("BoxShape3D_6xif0")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=60537793]
+transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=117657358]
+environment = SubResource("Environment_6xif0")
+
+[node name="Player" parent="." unique_id=1391336852 instance=ExtResource("1_dgccc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="TestInteractable" type="StaticBody3D" parent="." unique_id=365035121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -3)
+script = ExtResource("2_tbnp1")
+interaction_text = "Inspect"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TestInteractable" unique_id=1633534477]
+mesh = SubResource("BoxMesh_6xif0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestInteractable" unique_id=1158428219]
+shape = SubResource("BoxShape3D_oj0j4")
