@@ -1,12 +1,95 @@
 [gd_scene format=3 uid="uid://b5pmgc0ssea2m"]
 
 [ext_resource type="Script" uid="uid://dirrf6kqerjgo" path="res://player/player_controller.gd" id="1_oul6g"]
+[ext_resource type="Script" uid="uid://dm3gg1ij7708d" path="res://player/equipment_visuals.gd" id="2_8t03j"]
+[ext_resource type="Script" uid="uid://e6l0xsppxj0x" path="res://player/hydration_debug_label.gd" id="2_g1dw6"]
+[ext_resource type="Script" uid="uid://bhx2fgvli8glh" path="res://player/survival_component.gd" id="2_rkbax"]
+[ext_resource type="Script" uid="uid://c71iwnq710nn8" path="res://player/prototype_character_visual.gd" id="3_wodsf"]
+[ext_resource type="Script" uid="uid://cc7gxngjcrqet" path="res://player/stamina_debug_label.gd" id="3_yw30f"]
+[ext_resource type="Script" uid="uid://dio2kbyb0501j" path="res://player/game_time_debug_label.gd" id="4_qjkh3"]
+[ext_resource type="Script" uid="uid://c1l4uundfqmr1" path="res://player/satiety_debug_label.gd" id="5_g6k8r"]
+[ext_resource type="Script" uid="uid://c262kh4yhno6d" path="res://player/energy_debug_label.gd" id="6_boad6"]
+[ext_resource type="Script" uid="uid://b3637rpfuswkv" path="res://player/pickup_message_label.gd" id="7_hg6s5"]
+[ext_resource type="Script" uid="uid://c6vb0optilhqb" path="res://player/inventory_component.gd" id="8_rgyib"]
+[ext_resource type="Script" uid="uid://bevkr6h7f0hpt" path="res://player/inventory_ui.gd" id="9_ebec5"]
+[ext_resource type="Script" uid="uid://cotw71fsvoutf" path="res://player/survival_hud.gd" id="10_kb6p2"]
+[ext_resource type="Script" uid="uid://cesfq1spyy0de" path="res://player/circular_stat.gd" id="10_yllr7"]
+[ext_resource type="Script" uid="uid://ch3csh387rtnp" path="res://player/consumable_component.gd" id="11_2ieo8"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_6xif0"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vhpbc"]
+albedo_color = Color(0.45490196, 0.32156864, 0.22745098, 1)
+roughness = 0.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_hg6s5"]
+material = SubResource("StandardMaterial3D_vhpbc")
+radius = 0.22
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oj0j4"]
+albedo_color = Color(0.45490196, 0.32156864, 0.22745098, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_8t03j"]
+material = SubResource("StandardMaterial3D_oj0j4")
+top_radius = 0.06
+bottom_radius = 0.075
+height = 0.13
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_oj0j4"]
+radius = 0.28
+height = 0.72
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
+albedo_color = Color(0.7254902, 0.60784316, 0.4392157, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6xif0"]
+top_radius = 0.27
+bottom_radius = 0.34
+height = 0.34
+radial_segments = 12
+
+[sub_resource type="SphereMesh" id="SphereMesh_6xif0"]
+radius = 0.2
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r73gp"]
+albedo_color = Color(0.54509807, 0.3764706, 0.26666668, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_vhpbc"]
+radius = 0.085
+height = 0.58
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_r73gp"]
+radius = 0.105
+height = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vf5p3"]
+albedo_color = Color(0.8156863, 0.78039217, 0.6862745, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_6xif0"]
+size = Vector3(0.18, 0.1, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qctvd"]
+albedo_color = Color(0.23529412, 0.16470589, 0.1254902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oj0j4"]
+bg_color = Color(0.11764706, 0.09803922, 0.08235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="Player" type="CharacterBody3D" unique_id=1391336852]
 script = ExtResource("1_oul6g")
@@ -17,7 +100,79 @@ shape = SubResource("CapsuleShape3D_6xif0")
 [node name="VisualRoot" type="Node3D" parent="." unique_id=714961514]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="VisualRoot" unique_id=134784489]
+visible = false
 mesh = SubResource("CapsuleMesh_6xif0")
+
+[node name="EquipmentVisuals" type="Node3D" parent="VisualRoot" unique_id=280477830]
+script = ExtResource("2_8t03j")
+
+[node name="WaterBagVisual" type="Node3D" parent="VisualRoot/EquipmentVisuals" unique_id=1724261517]
+transform = Transform3D(0.3939231, 0.069459274, 0, -0.069459274, 0.3939231, 0, 0, 0, 0.4, 0.14076918, -0.13430867, 0.18145865)
+
+[node name="BagBody" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=496508896]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, 0.25, 0)
+mesh = SubResource("SphereMesh_hg6s5")
+
+[node name="BagNeck" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=1724466129]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0005128607, 0.40164506, 0.004646886)
+mesh = SubResource("CylinderMesh_8t03j")
+
+[node name="CharacterVisual" type="Node3D" parent="VisualRoot" unique_id=509518366]
+script = ExtResource("3_wodsf")
+
+[node name="Torso" type="MeshInstance3D" parent="VisualRoot/CharacterVisual" unique_id=336513531]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.65, 0, 0.2, 0)
+mesh = SubResource("CapsuleMesh_oj0j4")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="KurtaHem" type="MeshInstance3D" parent="VisualRoot/CharacterVisual" unique_id=501444897]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.65, 0, -0.18, 0)
+mesh = SubResource("CylinderMesh_6xif0")
+
+[node name="Head" type="MeshInstance3D" parent="VisualRoot/CharacterVisual" unique_id=87172162]
+transform = Transform3D(0.9, 0, 0, 0, 1, 0, 0, 0, 0.88, 0, 0.72, 0)
+mesh = SubResource("SphereMesh_6xif0")
+surface_material_override/0 = SubResource("StandardMaterial3D_r73gp")
+
+[node name="LeftArmPivot" type="Node3D" parent="VisualRoot/CharacterVisual" unique_id=1106828524]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0.43, 0)
+
+[node name="LeftArm" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/LeftArmPivot" unique_id=757311517]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.85, 0, -0.26, 0)
+mesh = SubResource("CapsuleMesh_vhpbc")
+
+[node name="RightArmPivot" type="Node3D" parent="VisualRoot/CharacterVisual" unique_id=1287390907]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.43, 0)
+
+[node name="RightArm" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/RightArmPivot" unique_id=1358156211]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.85, 0, -0.26, 0)
+mesh = SubResource("CapsuleMesh_vhpbc")
+
+[node name="LeftLegPivot" type="Node3D" parent="VisualRoot/CharacterVisual" unique_id=1824428761]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, -0.32, 0)
+
+[node name="LeftLeg" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/LeftLegPivot" unique_id=1685974023]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, 0)
+mesh = SubResource("CapsuleMesh_r73gp")
+surface_material_override/0 = SubResource("StandardMaterial3D_vf5p3")
+
+[node name="LeftFoot" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/LeftLegPivot" unique_id=756373334]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.68, 0.08)
+mesh = SubResource("BoxMesh_6xif0")
+surface_material_override/0 = SubResource("StandardMaterial3D_qctvd")
+
+[node name="RightLegPivot" type="Node3D" parent="VisualRoot/CharacterVisual" unique_id=8312277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, -0.32, 0)
+
+[node name="RightLeg" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/RightLegPivot" unique_id=659813931]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, 0)
+mesh = SubResource("CapsuleMesh_r73gp")
+surface_material_override/0 = SubResource("StandardMaterial3D_vf5p3")
+
+[node name="RightFoot" type="MeshInstance3D" parent="VisualRoot/CharacterVisual/RightLegPivot" unique_id=1356265271]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.68, 0.08)
+mesh = SubResource("BoxMesh_6xif0")
+surface_material_override/0 = SubResource("StandardMaterial3D_qctvd")
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=2068273779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
@@ -29,17 +184,218 @@ spring_length = 4.0
 current = true
 
 [node name="InteractionRay" type="RayCast3D" parent="CameraPivot/SpringArm3D/Camera3D" unique_id=1578013426]
-target_position = Vector3(0, 0, -3)
+target_position = Vector3(0, 0, -8)
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=852831075]
 
-[node name="InteractionLabel" type="Label" parent="UI" unique_id=603483299]
-visible = false
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -23.0
+[node name="HUDRoot" type="Control" parent="UI" unique_id=949422639]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+
+[node name="GameTimeDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=1624348968]
+layout_mode = 0
+offset_left = 900.0
+offset_top = 20.0
+offset_right = 1120.0
+offset_bottom = 80.0
+text = "DAY 1
+06:00 AM"
+horizontal_alignment = 2
+vertical_alignment = 1
+script = ExtResource("4_qjkh3")
+
+[node name="PrimaryInteractionLabel" type="Label" parent="UI/HUDRoot" unique_id=603483299]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -54.0
+offset_right = 180.0
+offset_bottom = -18.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 text = "[E] Interact"
+horizontal_alignment = 1
+vertical_alignment = 1
+uppercase = true
+
+[node name="SecondaryInteractionLabel" type="Label" parent="UI/HUDRoot" unique_id=1762028143]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -16.0
+offset_right = 180.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "[E] Interact"
+horizontal_alignment = 1
+vertical_alignment = 1
+uppercase = true
+
+[node name="HydrationDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=1628382277]
+visible = false
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 270.0
+offset_bottom = 60.0
+text = "HYDRATION: 60 / 100"
+script = ExtResource("2_g1dw6")
+
+[node name="StaminaDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=1768027417]
+visible = false
+layout_mode = 0
+offset_left = 20.0
+offset_top = 60.0
+offset_right = 270.0
+offset_bottom = 100.0
+text = "STAMINA: 100 / 100"
+script = ExtResource("3_yw30f")
+
+[node name="SatietyDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=618511985]
+visible = false
+layout_mode = 0
+offset_left = 20.0
+offset_top = 100.0
+offset_right = 270.0
+offset_bottom = 140.0
+text = "SATIETY: 65 / 100"
+script = ExtResource("5_g6k8r")
+
+[node name="EnergyDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=601180809]
+visible = false
+layout_mode = 0
+offset_left = 20.0
+offset_top = 140.0
+offset_right = 270.0
+offset_bottom = 180.0
+text = "ENERGY: 60 / 100"
+script = ExtResource("6_boad6")
+
+[node name="PickupMessageLabel" type="Label" parent="UI/HUDRoot" unique_id=275242197]
+layout_mode = 0
+offset_left = 514.0
+offset_top = 264.0
+offset_right = 864.0
+offset_bottom = 304.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("7_hg6s5")
+
+[node name="InventoryPanel" type="PanelContainer" parent="UI/HUDRoot" unique_id=1094658132]
+layout_mode = 0
+offset_left = 233.0
+offset_top = 130.0
+offset_right = 966.0
+offset_bottom = 520.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_oj0j4")
+script = ExtResource("9_ebec5")
+
+[node name="ContentMargin" type="MarginContainer" parent="UI/HUDRoot/InventoryPanel" unique_id=377699258]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="Content" type="VBoxContainer" parent="UI/HUDRoot/InventoryPanel/ContentMargin" unique_id=1359055617]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=1334208493]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "INVENTORY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TitleSeparator" type="HSeparator" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=233323942]
+layout_mode = 2
+
+[node name="RotiRow" type="HBoxContainer" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=1635085254]
+layout_mode = 2
+
+[node name="RotiLabel" type="Label" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content/RotiRow" unique_id=297533367]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Roti × 0"
+
+[node name="EatRotiButton" type="Button" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content/RotiRow" unique_id=805347427]
+layout_mode = 2
+text = "Eat"
+
+[node name="WaterRow" type="HBoxContainer" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=1811775742]
+layout_mode = 2
+
+[node name="WaterLabel" type="Label" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content/WaterRow" unique_id=548791535]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Water Bag — Not Carried"
+
+[node name="DrinkWaterButton" type="Button" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content/WaterRow" unique_id=981218060]
+layout_mode = 2
+text = "Drink"
+
+[node name="WaterProgressBar" type="ProgressBar" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=796182541]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+show_percentage = false
+
+[node name="HintLabel" type="Label" parent="UI/HUDRoot/InventoryPanel/ContentMargin/Content" unique_id=1712257397]
+layout_mode = 2
+text = "[TAB] Close                [0] Quick Drink"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SurvivalHUD" type="HBoxContainer" parent="UI/HUDRoot" unique_id=52984324]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 60.0
+offset_bottom = 60.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+script = ExtResource("10_kb6p2")
+
+[node name="HydrationRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1187801004]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("10_yllr7")
+
+[node name="SatietyRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=2079065247]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("10_yllr7")
+
+[node name="StaminaRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1532508663]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("10_yllr7")
+
+[node name="EnergyRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1270015521]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("10_yllr7")
+
+[node name="SurvivalComponent" type="Node" parent="." unique_id=1838521856]
+script = ExtResource("2_rkbax")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=592445040]
+script = ExtResource("8_rgyib")
+
+[node name="ConsumableComponent" type="Node" parent="." unique_id=1024785070]
+script = ExtResource("11_2ieo8")

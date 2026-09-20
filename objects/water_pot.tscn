@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dtgijpuvdirim"]
+
+[ext_resource type="Script" uid="uid://b3fl0bqdhfeil" path="res://objects/water_pot.gd" id="1_omui8"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6xif0"]
+top_radius = 0.45
+bottom_radius = 0.3
+height = 0.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_6xif0"]
+height = 0.8
+radius = 0.45
+
+[node name="WaterPot" type="StaticBody3D" unique_id=770139238]
+script = ExtResource("1_omui8")
+interaction_text = "Drink Water"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=96572679]
+mesh = SubResource("CylinderMesh_6xif0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=537158689]
+shape = SubResource("CylinderShape3D_6xif0")

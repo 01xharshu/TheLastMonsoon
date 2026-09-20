@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://vrejpjlch46y"]
+
+[ext_resource type="Script" uid="uid://dplq12s0ak2me" path="res://objects/water_bag.gd" id="1_kbf0m"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vhpbc"]
+albedo_color = Color(0.45490196, 0.32156864, 0.22745098, 1)
+roughness = 0.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_6xif0"]
+material = SubResource("StandardMaterial3D_vhpbc")
+radius = 0.22
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oj0j4"]
+albedo_color = Color(0.45490196, 0.32156864, 0.22745098, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6xif0"]
+material = SubResource("StandardMaterial3D_oj0j4")
+top_radius = 0.06
+bottom_radius = 0.075
+height = 0.13
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
+radius = 0.2
+height = 0.45
+
+[node name="WaterBag" type="StaticBody3D" unique_id=160195811]
+script = ExtResource("1_kbf0m")
+
+[node name="BagBody" type="MeshInstance3D" parent="." unique_id=1701972865]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, 0.25, 0)
+mesh = SubResource("SphereMesh_6xif0")
+
+[node name="BagNeck" type="MeshInstance3D" parent="." unique_id=850895354]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0005128607, 0.40164506, 0.004646886)
+mesh = SubResource("CylinderMesh_6xif0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1702176822]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("CapsuleShape3D_6xif0")

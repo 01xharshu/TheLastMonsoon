@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://c6v86o7ue2rmd"]
+
+[ext_resource type="Script" uid="uid://u8rq1b4o6eu7" path="res://objects/charpai.gd" id="1_c1iru"]
+[ext_resource type="PackedScene" uid="uid://cstdt00mc5i2x" path="res://environment/furniture/charpai/charpai_01.glb" id="2_ygdlr"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_6xif0"]
+size = Vector3(2, 0.25, 0.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6xif0"]
+size = Vector3(2.05, 0.55, 0.95)
+
+[node name="Charpai" type="StaticBody3D" unique_id=291085808]
+script = ExtResource("1_c1iru")
+
+[node name="BedMesh" type="MeshInstance3D" parent="." unique_id=1833209521]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+visible = false
+mesh = SubResource("BoxMesh_6xif0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1427501750]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.27, 0)
+shape = SubResource("BoxShape3D_6xif0")
+
+[node name="CharpaiVisual" parent="." unique_id=1324532158 instance=ExtResource("2_ygdlr")]

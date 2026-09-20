@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://dlbc130mvno3k"]
+
+[ext_resource type="Script" uid="uid://bydh56yjnhedk" path="res://objects/roti.gd" id="1_i8d7j"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6xif0"]
+top_radius = 0.2
+bottom_radius = 0.2
+height = 0.025
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hg6s5"]
+albedo_color = Color(0.78431374, 0.56078434, 0.2901961, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_6xif0"]
+height = 0.05
+radius = 0.22
+
+[node name="Roti" type="StaticBody3D" unique_id=414753040]
+script = ExtResource("1_i8d7j")
+
+[node name="RotiMesh" type="MeshInstance3D" parent="." unique_id=585815341]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+mesh = SubResource("CylinderMesh_6xif0")
+surface_material_override/0 = SubResource("StandardMaterial3D_hg6s5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=595081381]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+shape = SubResource("CylinderShape3D_6xif0")
