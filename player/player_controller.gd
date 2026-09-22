@@ -17,6 +17,14 @@ extends CharacterBody3D
 
 @export var jump_velocity: float = 5.0
 
+@export var swim_speed: float = 2.6
+var is_swimming := false
+var water_surface := 0.0
+
+func set_water_state(active: bool, surface: float) -> void:
+	is_swimming = active
+	water_surface = surface
+
 
 # =========================================================
 # CAMERA SETTINGS
@@ -137,7 +145,7 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if inventory_ui.is_open():
+	if inventory_ui.is_open() or get_meta("map_open", false):
 		return
 
 
@@ -208,7 +216,7 @@ func _physics_process(
 	# INVENTORY OPEN
 	# -----------------------------------------------------
 
-	if inventory_ui.is_open():
+	if inventory_ui.is_open() or get_meta("map_open", false):
 
 		_apply_gravity(
 			delta
@@ -357,6 +365,7 @@ func _handle_movement(
 	var is_sprinting := (
 		wants_to_sprint
 		and survival.can_sprint()
+		and not is_swimming
 	)
 
 
@@ -369,9 +378,7 @@ func _handle_movement(
 	# SPEED
 	# -----------------------------------------------------
 
-	var current_speed := (
-		walk_speed
-	)
+	var current_speed := swim_speed if is_swimming else walk_speed
 
 
 	if is_sprinting:
@@ -476,7 +483,11 @@ func _apply_gravity(
 	delta: float
 ) -> void:
 
-	if not is_on_floor():
+	if is_swimming:
+		# Damped buoyancy keeps the head above the surface, even with inventory open.
+		var target_y := water_surface - 0.25
+		velocity.y = move_toward(velocity.y, clampf((target_y - global_position.y) * 4.0, -2.0, 3.0), delta * 10.0)
+	elif not is_on_floor():
 
 		velocity.y -= (
 			gravity
@@ -495,6 +506,7 @@ func _handle_jump() -> void:
 			"jump"
 		)
 		and is_on_floor()
+		and not is_swimming
 	):
 
 		velocity.y = (

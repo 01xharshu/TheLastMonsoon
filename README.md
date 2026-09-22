@@ -57,6 +57,13 @@ dry ground until swimming is implemented.
 mesh LOD, spatially batched vegetation and limited shadows. Performance has to be
 validated on actual minimum hardware; an M4 with 16 GB does not certify all 8 GB devices.
 
+Arjun’s existing clothed base is now the playable actor, with a runtime rig and
+procedural walk/run motion. The Blender source remains unchanged. A timber pile
+bridge with braced rails and walkable bank ramps crosses the river at the river
+approach (z = 165 m). Press **M** for the north-up field map: it shows Arjun,
+the crossing, roads, terrain and named reserves; **M** or **Esc** closes it.
+Reserve labels mark future locations, not finished settlements.
+
 Press **F5** to run the new default world. In development builds, **F3** toggles an
 aerial survey and **F4** moves between landscape review locations.
 

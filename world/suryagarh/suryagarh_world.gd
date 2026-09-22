@@ -25,7 +25,7 @@ func _ready() -> void:
 	$LandscapeUI/ReviewHelp.visible = false
 	move_to_review_point(0)
 	last_safe_position = player.position
-	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | swimming/climbing deferred")
+	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 
 func move_to_review_point(index: int) -> void:
 	review_index = posmod(index, REVIEW_POINTS.size())
@@ -38,6 +38,7 @@ func move_to_review_point(index: int) -> void:
 	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · 2.986 km²"
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if player.get_meta("map_open", false): return
 	if not OS.is_debug_build() or not event.is_pressed() or event.is_echo(): return
 	if event is InputEventKey and event.keycode == KEY_F3:
 		overview = not overview
@@ -59,10 +60,7 @@ func _physics_process(_delta: float) -> void:
 		player.position.z = clampf(p.z, -Layout.HALF+4, Layout.HALF-4)
 		player.velocity.x = 0
 		player.velocity.z = 0
-	# Swimming is intentionally deferred. Return to dry ground instead of walking underwater.
-	if p.y < Layout.WATER_LEVEL + 0.35 and layout.height(p.x,p.z) < -0.7:
-		player.position = last_safe_position + Vector3.UP * 0.4
-		player.velocity = Vector3.ZERO
-		player.inventory.message_requested.emit("Deep water — swimming is not available yet")
-	elif player.is_on_floor() and p.y > 1.1:
-		last_safe_position = p
+	# Use depth and body height so walking across the bridge never triggers swimming.
+	var deep_enough := layout.height(p.x, p.z) < Layout.WATER_LEVEL - 1.0
+	var entry_height := 0.65 if player.is_swimming else 0.3
+	player.set_water_state(deep_enough and p.y < Layout.WATER_LEVEL + entry_height, Layout.WATER_LEVEL)

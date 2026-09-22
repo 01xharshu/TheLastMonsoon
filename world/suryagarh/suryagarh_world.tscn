@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://boj3qkl0epo3l" path="res://world/suryagarh/systems/sun_controller.gd" id="5_sun"]
 [ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="6_charpai"]
 
+[ext_resource type="Script" path="res://world/suryagarh/timber_bridge.gd" id="7_bridge"]
+
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
 sky_horizon_color = Color(0.66, 0.7, 0.67, 1)
@@ -99,3 +101,6 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 text = "WASD move · Shift run · Space jump · F3 survey · F4 next landscape viewpoint"
+
+[node name="TimberBridge" type="Node3D" parent="."]
+script = ExtResource("7_bridge")

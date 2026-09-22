@@ -35,3 +35,11 @@
 
 - Arjun milestone: MPFB 2.0.17 enabled in Blender 5.2. Read-only inventory confirms no rig in v2; editable Human contains original face/body targets. Baseline render `/tmp/arjun_baseline.png` inspected: closed-neck shirt, skirt-like lower garment, mismatched hair/skin, bare feet. Existing source remains untouched.
 - Next: author reproducible separate candidate using MPFB rig/asset fitting, replace deficient garments, add opaque fitted foundation, render multi-view and portrait checks.
+
+## Playable Arjun, timber crossing and field map — 2026-09-23
+- Integrated the existing clothed `WorkingAssets/Arjun/arjun_character_v2.blend` as `characters/arjun/arjun.glb`; source unchanged. Reproducible exporter adds the MPFB game rig, transfers garment weights and embeds local textures. Runtime uses lightweight procedural locomotion, not final authored animation.
+- Replaced the placeholder visual in the shared player scene. Existing movement, equipment, survival and interactions remain connected.
+- Added a fictional period-style timber pile bridge at river z=165, with continuous deck collision, bank ramps, handrails and diagonal braces. Runtime clears vegetation/colliders only in the crossing corridor without rewriting baked landscape assets.
+- Added M/Esc field map with terrain, roads, labelled future reserves, crossing, scale and live Arjun position. Map blocks gameplay/inventory conflicts and restores previous mouse mode.
+- Validation: `tools/world/validate_actor_crossing.gd` headless physics run passes both crossing directions and continuous above-water surface samples; rig/map assertions pass. Rendered captures in `docs/world/captures/07_arjun_bridge.png`, `08_map.png`, `09_bridge.png`; `-- --capture-only` skips traversal for visual review.
+- Other concurrent world/player edits may exist; preserve them. No source character assets overwritten.
