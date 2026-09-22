@@ -1,0 +1,26 @@
+[
+  {
+    "asset": "island_tree_02",
+    "source": "WorkingAssets/Suryagarh/source/island_tree_02/island_tree_02_1k.gltf",
+    "output": "assets/nature/models/island_tree_02.glb",
+    "triangles": 18000,
+    "sha256": "613fb18697beb8d8bdd36a9ec125480036c31b7e5e243f89afbd8a0d82403cc7",
+    "modifications": "Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained."
+  },
+  {
+    "asset": "boulder_01",
+    "source": "WorkingAssets/Suryagarh/source/boulder_01/boulder_01_1k.gltf",
+    "output": "assets/nature/models/boulder_01.glb",
+    "triangles": 1800,
+    "sha256": "547518dca6ef87adb0d9e49c6869d5fbcaf959efc8beb60da2fc92f7343883f8",
+    "modifications": "Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained."
+  },
+  {
+    "asset": "grass_bermuda_01",
+    "source": "WorkingAssets/Suryagarh/source/grass_bermuda_01/grass_bermuda_01_1k.gltf",
+    "output": "assets/nature/models/grass_bermuda_01.glb",
+    "triangles": 8,
+    "sha256": "2bbcd6ff6ef9e9138153aac6575685a2ec60c141e29286c08fbf48d03db99021",
+    "modifications": "Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained."
+  }
+]

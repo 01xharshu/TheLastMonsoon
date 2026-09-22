@@ -1,0 +1,59 @@
+{
+	"adapter": "Apple M4 (Apple9)",
+	"driver": "metal",
+	"frames_per_view": 240,
+	"limitation": "Measured on host hardware, not an actual 8 GB device. Excludes future buildings, NPCs, weather and gameplay systems.",
+	"renderer": "forward_plus",
+	"resolution": [
+		1280,
+		720
+	],
+	"views": [
+		{
+			"average_fps": 59.9846889081562,
+			"draw_calls": 146.0,
+			"p95_frame_ms": 17.314,
+			"primitives": 82728.0,
+			"render_memory_mib": 248.359375,
+			"static_memory_mib": 180.302889823914,
+			"view": "01_overview"
+		},
+		{
+			"average_fps": 59.9896068006218,
+			"draw_calls": 63.0,
+			"p95_frame_ms": 17.273,
+			"primitives": 87408.0,
+			"render_memory_mib": 248.359375,
+			"static_memory_mib": 180.304705619812,
+			"view": "02_river"
+		},
+		{
+			"average_fps": 59.9874476265842,
+			"draw_calls": 21.0,
+			"p95_frame_ms": 17.226,
+			"primitives": 70752.0,
+			"render_memory_mib": 248.359375,
+			"static_memory_mib": 180.30551815033,
+			"view": "03_hills"
+		},
+		{
+			"average_fps": 59.9998050006338,
+			"draw_calls": 69.0,
+			"p95_frame_ms": 17.171,
+			"primitives": 81168.0,
+			"render_memory_mib": 248.359375,
+			"static_memory_mib": 180.306353569031,
+			"view": "04_plains"
+		},
+		{
+			"average_fps": 60.0116572644236,
+			"draw_calls": 132.0,
+			"p95_frame_ms": 19.547,
+			"primitives": 151897.0,
+			"render_memory_mib": 248.359375,
+			"static_memory_mib": 180.308310508728,
+			"view": "05_player"
+		}
+	],
+	"vsync": false
+}

@@ -1,0 +1,25 @@
+{
+	"boundary_containment": true,
+	"deep_water_return": true,
+	"failures": [],
+	"max_collision_error_m": 0.000094506882277301,
+	"status": "PASS",
+	"terrain_collision_samples": 432,
+	"walks": [
+		{
+			"distance_m": 7.87661600112915,
+			"grounded": true,
+			"site": 0
+		},
+		{
+			"distance_m": 6.2999472618103,
+			"grounded": true,
+			"site": 2
+		},
+		{
+			"distance_m": 7.88106822967529,
+			"grounded": true,
+			"site": 3
+		}
+	]
+}
