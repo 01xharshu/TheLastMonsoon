@@ -47,7 +47,8 @@ func bake() -> void:
 		for s in mesh_instance.mesh.get_surface_count():
 			var mat: StandardMaterial3D = mesh_instance.mesh.surface_get_material(s) as StandardMaterial3D
 			if mat:
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR if "leaves" in mat.resource_name else BaseMaterial3D.TRANSPARENCY_DISABLED
+				mat.alpha_scissor_threshold = 0.35
 				mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 				mat.roughness = 0.88
 		model.free()
@@ -170,6 +171,7 @@ func multimesh_batch(mesh: Mesh, transforms: Array[Transform3D], parent: Node3D,
 	var instance := MultiMeshInstance3D.new()
 	instance.name = batch_name
 	instance.multimesh = mm
+	instance.lod_bias = 8.0 if batch_name == "BroadleafTrees" else 1.0
 	instance.visibility_range_end = distance
 	instance.visibility_range_end_margin = 25.0
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if batch_name.begins_with("Grass") else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
@@ -217,7 +219,7 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 		var collision := CollisionShape3D.new()
 		collision.shape = (nature_meshes["boulder_01"] as Mesh).create_convex_shape(true, true)
 		attach(collision, body)
-	multimesh_batch(nature_meshes["island_tree_02"], trees, tile, "BroadleafTrees", 820)
+	multimesh_batch(nature_meshes["island_tree_02"], trees, tile, "BroadleafTrees", 1400)
 	multimesh_batch(nature_meshes["boulder_01"], rocks, tile, "Boulders", 650)
 	tree_count += trees.size()
 	rock_count += rocks.size()
@@ -238,8 +240,8 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 func bake_water() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for k in 216:
-		var z: float = -Layout.HALF + k * 8.0
+	for k in 360:
+		var z: float = -1440.0 + k * 8.0
 		var points: Array[Vector3] = []
 		for dz in [0.0, 8.0]:
 			var zz: float = z + dz
@@ -264,10 +266,10 @@ func bake_horizon() -> void:
 	# Coarse non-playable continuation keeps the map edge out of the ground-level skyline.
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for z in range(-1440, 1440, 48):
-		for x in range(-1440, 1440, 48):
+	for z in range(-4320, 4320, 96):
+		for x in range(-4320, 4320, 96):
 			if x >= -864 and x < 864 and z >= -864 and z < 864: continue
-			for offset in [Vector2(0,0),Vector2(48,0),Vector2(0,48),Vector2(48,0),Vector2(48,48),Vector2(0,48)]:
+			for offset in [Vector2(0,0),Vector2(96,0),Vector2(0,96),Vector2(96,0),Vector2(96,96),Vector2(0,96)]:
 				var p: Vector2 = Vector2(x,z) + offset
 				st.set_normal(layout.normal(p.x,p.y))
 				st.set_uv(p/8)

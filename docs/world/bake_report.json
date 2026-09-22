@@ -1,7 +1,7 @@
 {
 	"architecture": "Resident terrain with automatic mesh LOD; spatial MultiMesh batches and visibility ranges. No runtime world streaming yet.",
 	"area_km2": 2.985984,
-	"bake_seconds": 25.264,
+	"bake_seconds": 24.699,
 	"dimensions_m": [
 		1728.0,
 		1728.0

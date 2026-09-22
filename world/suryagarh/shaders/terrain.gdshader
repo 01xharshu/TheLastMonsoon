@@ -36,10 +36,10 @@ void fragment() {
 	vec2 border = abs(fract((p+vec2(19,33))/vec2(66,91))-0.5);
 	float bund = smoothstep(0.47,0.49,max(border.x,border.y));
 	vec3 soil = texture(soil_tex, p/4.0).rgb;
-	vec3 grass = texture(grass_tex, p/12.0).rgb;
-	vec3 stone = texture(rock_tex, p/7.0).rgb;
+	vec3 grass = mix(texture(grass_tex, p/12.0).rgb, texture(grass_tex, mat2(vec2(0.8,0.6),vec2(-0.6,0.8))*p/19.0 + vec2(0.31)).rgb, 0.45);
+	vec3 stone = texture(rock_tex, p/7.0).rgb * vec3(0.62,0.60,0.55);
 	float greenery = clamp(0.6 + noise(p*0.018)*0.45 - wet*0.7, 0.0, 1.0);
-	vec3 base = mix(soil, grass * vec3(0.85,0.96,0.70), greenery);
+	vec3 base = mix(soil, grass * vec3(0.66,0.89,0.48), greenery);
 	vec3 cultivated = mix(soil*vec3(0.67,0.66,0.49),grass*vec3(0.73,0.9,0.45),step(0.35,crop));
 	float furrow = 0.92 + 0.08*sin(p.x*5.5 + field_cell.y);
 	base = mix(base, cultivated*furrow, fields*(1.0-bund)*0.78);

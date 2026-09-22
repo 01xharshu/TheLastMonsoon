@@ -43,11 +43,16 @@ for slug, target, select in [('island_tree_02',18000,None),('boulder_01',1800,No
                 bsdf.inputs['Alpha'].default_value=1.0
                 mat.diffuse_color[3]=1
                 bsdf.inputs['Roughness'].default_value=.85
+                if 'leaves' in mat.name and slug == 'island_tree_02':
+                    alpha=mat.node_tree.nodes.new('ShaderNodeTexImage')
+                    alpha.image=bpy.data.images.load(str(source.parent/'textures/island_tree_02_leaves_alpha_1k.png'))
+                    alpha.image.colorspace_settings.name='Non-Color'
+                    mat.node_tree.links.new(alpha.outputs['Color'],bsdf.inputs['Alpha'])
         o.select_set(False)
     out=ROOT/'assets/nature/models'/(slug+'.glb')
     bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',export_image_format='AUTO',export_materials='EXPORT')
     tris=sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in objects)
     reports=[r for r in reports if r['asset'] != slug]
-    reports.append(dict(asset=slug,source=str(source.relative_to(ROOT)),output=str(out.relative_to(ROOT)),triangles=tris,sha256=hashlib.sha256(out.read_bytes()).hexdigest(),modifications='Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained.'))
+    reports.append(dict(asset=slug,source=str(source.relative_to(ROOT)),output=str(out.relative_to(ROOT)),triangles=tris,sha256=hashlib.sha256(out.read_bytes()).hexdigest(),modifications='Decimated geometry, grounded origin; tree foliage uses source alpha mask; 1K materials retained.'))
     print('PREPARED',slug,tris,flush=True)
 (ROOT/'docs/world/derived_assets.json').write_text(json.dumps(reports,indent=2)+'\n')

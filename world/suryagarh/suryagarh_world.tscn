@@ -1,17 +1,18 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene format=3 uid="uid://oou5mhk6l5f0"]
 
-[ext_resource type="Script" path="res://world/suryagarh/suryagarh_world.gd" id="1_world"]
+[ext_resource type="Script" uid="uid://oputp3qer5yn" path="res://world/suryagarh/suryagarh_world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://world/suryagarh/generated/landscape.scn" id="2_land"]
-[ext_resource type="PackedScene" path="res://player/player.tscn" id="3_player"]
-[ext_resource type="Script" path="res://world/systems/game_time_system.gd" id="4_time"]
-[ext_resource type="Script" path="res://world/systems/sun_controller.gd" id="5_sun"]
+[ext_resource type="PackedScene" uid="uid://b5pmgc0ssea2m" path="res://player/player.tscn" id="3_player"]
+[ext_resource type="Script" uid="uid://cq151mrcei5sb" path="res://world/suryagarh/systems/game_time_system.gd" id="4_time"]
+[ext_resource type="Script" uid="uid://boj3qkl0epo3l" path="res://world/suryagarh/systems/sun_controller.gd" id="5_sun"]
+[ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="6_charpai"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
-sky_horizon_color = Color(0.66, 0.70, 0.67, 1)
-ground_bottom_color = Color(0.19, 0.22, 0.16, 1)
-ground_horizon_color = Color(0.66, 0.70, 0.67, 1)
+sky_horizon_color = Color(0.66, 0.7, 0.67, 1)
 sky_curve = 0.19
+ground_bottom_color = Color(0.19, 0.22, 0.16, 1)
+ground_horizon_color = Color(0.66, 0.7, 0.67, 1)
 sun_angle_max = 2.0
 
 [sub_resource type="Sky" id="Sky"]
@@ -27,70 +28,66 @@ ambient_light_energy = 0.55
 reflected_light_source = 2
 tonemap_mode = 2
 fog_enabled = true
-fog_light_color = Color(0.64, 0.70, 0.69, 1)
+fog_light_color = Color(0.64, 0.7, 0.69, 1)
 fog_light_energy = 0.65
 fog_density = 0.00032
 fog_sky_affect = 0.25
-ssao_enabled = false
-ssil_enabled = false
-sdfgi_enabled = false
-volumetric_fog_enabled = false
 
 [sub_resource type="LabelSettings" id="LocationStyle"]
 font_size = 17
 font_color = Color(0.95, 0.95, 0.87, 1)
 outline_size = 5
-outline_color = Color(0.09, 0.12, 0.10, 0.85)
+outline_color = Color(0.09, 0.12, 0.1, 0.85)
 
-[node name="Suryagarh" type="Node3D"]
+[node name="Suryagarh" type="Node3D" unique_id=1892594825]
 script = ExtResource("1_world")
 
-[node name="Landscape" parent="." instance=ExtResource("2_land")]
+[node name="Landscape" parent="." unique_id=1227736654 instance=ExtResource("2_land")]
 
-[node name="GameTimeSystem" type="Node" parent="."]
+[node name="GameTimeSystem" type="Node" parent="." unique_id=2072554750]
 script = ExtResource("4_time")
 starting_hour = 9
 game_minutes_per_real_second = 0.25
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=728116909]
 environment = SubResource("Environment")
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-45, -55, 0)
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=658270943]
+transform = Transform3D(0.57357645, 0.579228, -0.579228, 0, 0.70710677, 0.70710677, 0.81915206, -0.4055798, 0.4055798, 0, 0, 0)
 light_color = Color(1, 0.92, 0.79, 1)
 light_energy = 1.15
 shadow_enabled = true
-directional_shadow_max_distance = 130.0
-directional_shadow_mode = 1
 shadow_normal_bias = 1.2
+directional_shadow_mode = 1
+directional_shadow_max_distance = 130.0
 script = ExtResource("5_sun")
 daytime_sun_energy = 1.5
 sun_azimuth_degrees = -55.0
 
-[node name="Moon" type="DirectionalLight3D" parent="."]
+[node name="Moon" type="DirectionalLight3D" parent="." unique_id=1517804672]
 light_color = Color(0.65, 0.75, 0.88, 1)
 light_energy = 0.0
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector3(-230, 10, 180)
+[node name="Player" parent="." unique_id=796602924 instance=ExtResource("3_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -230, 10, 180)
 
-[node name="SurveyCamera" type="Camera3D" parent="."]
-position = Vector3(-820, 760, 1080)
-rotation_degrees = Vector3(-29, -36, 0)
-far = 4000.0
+[node name="Charpai" parent="." unique_id=1448268107 instance=ExtResource("6_charpai")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -264, 7.2, 210)
+
+[node name="SurveyCamera" type="Camera3D" parent="." unique_id=1633184885]
+transform = Transform3D(0.809017, 0.28496394, -0.5140886, 0, 0.8746197, 0.4848096, 0.58778524, -0.39221922, 0.70758224, -820, 760, 1080)
 fov = 65.0
 
-[node name="LandscapeUI" type="CanvasLayer" parent="."]
+[node name="LandscapeUI" type="CanvasLayer" parent="." unique_id=876523464]
 
-[node name="Location" type="Label" parent="LandscapeUI"]
+[node name="Location" type="Label" parent="LandscapeUI" unique_id=1678746135]
 offset_left = 24.0
 offset_top = 20.0
 offset_right = 680.0
 offset_bottom = 75.0
-mouse_filter = 2
 label_settings = SubResource("LocationStyle")
 
-[node name="ReviewHelp" type="Label" parent="LandscapeUI"]
+[node name="ReviewHelp" type="Label" parent="LandscapeUI" unique_id=1147330433]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -98,7 +95,6 @@ offset_left = 24.0
 offset_top = -34.0
 offset_right = 650.0
 offset_bottom = -12.0
-mouse_filter = 2
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1

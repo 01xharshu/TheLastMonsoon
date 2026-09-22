@@ -17,8 +17,12 @@ func _ready() -> void:
 	get_viewport().msaa_3d = Viewport.MSAA_DISABLED
 	get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
 	get_viewport().use_taa = false
+	if not OS.is_debug_build():
+		$LandscapeUI/ReviewHelp.text = "WASD move · Shift run · Space jump"
 	$Moon.shadow_enabled = false
 	player_camera.far = 2200.0
+	$LandscapeUI/Location.visible = false
+	$LandscapeUI/ReviewHelp.visible = false
 	move_to_review_point(0)
 	last_safe_position = player.position
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | swimming/climbing deferred")
@@ -59,6 +63,6 @@ func _physics_process(_delta: float) -> void:
 	if p.y < Layout.WATER_LEVEL + 0.35 and layout.height(p.x,p.z) < -0.7:
 		player.position = last_safe_position + Vector3.UP * 0.4
 		player.velocity = Vector3.ZERO
-		location_label.text = "SURYAGARH  /  Riverbank\nDeep water · swimming arrives in a later phase"
+		player.inventory.message_requested.emit("Deep water — swimming is not available yet")
 	elif player.is_on_floor() and p.y > 1.1:
 		last_safe_position = p

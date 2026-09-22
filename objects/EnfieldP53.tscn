@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://c3qfty2r3ccxh"]
+
+[ext_resource type="PackedScene" uid="uid://1d3rajx38wds" path="res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb" id="1_4xq75"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6xif0"]
+size = Vector3(1.4562546, 0.2187207, 0.12)
+
+[node name="EnfieldP53" type="StaticBody3D" unique_id=406832530]
+
+[node name="weapon_enfield_p53_012" parent="." unique_id=823596345 instance=ExtResource("1_4xq75")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.09907043, 0.0193851, 0.033542037)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=388857601]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24218214, -0.0101379305, 0.008446455)
+shape = SubResource("BoxShape3D_6xif0")

@@ -16,6 +16,8 @@
 [ext_resource type="Script" uid="uid://cesfq1spyy0de" path="res://player/circular_stat.gd" id="10_yllr7"]
 [ext_resource type="Script" uid="uid://ch3csh387rtnp" path="res://player/consumable_component.gd" id="11_2ieo8"]
 
+[ext_resource type="Script" path="res://player/historical_hud.gd" id="16_hud"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -189,6 +191,7 @@ target_position = Vector3(0, 0, -8)
 [node name="UI" type="CanvasLayer" parent="." unique_id=852831075]
 
 [node name="HUDRoot" type="Control" parent="UI" unique_id=949422639]
+script = ExtResource("16_hud")
 layout_mode = 3
 anchors_preset = 0
 offset_right = 1152.0

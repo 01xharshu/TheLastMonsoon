@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://glb5bj72hp4i"]
 
-[ext_resource type="Script" uid="uid://boj3qkl0epo3l" path="res://world/systems/sun_controller.gd" id="1_b1hph"]
+[ext_resource type="Script" uid="uid://boj3qkl0epo3l" path="res://world/suryagarh/systems/sun_controller.gd" id="1_b1hph"]
 [ext_resource type="PackedScene" uid="uid://b5pmgc0ssea2m" path="res://player/player.tscn" id="1_dgccc"]
 [ext_resource type="Script" uid="uid://br3afuhnkuos0" path="res://interaction/interactable.gd" id="2_tbnp1"]
 [ext_resource type="PackedScene" uid="uid://dtgijpuvdirim" path="res://objects/water_pot.tscn" id="3_53guk"]
@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://dlbc130mvno3k" path="res://objects/roti.tscn" id="4_olf76"]
 [ext_resource type="PackedScene" uid="uid://b3h5mkrjan56" path="res://objects/oil_lamp.tscn" id="5_3xmcv"]
 [ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="5_7bidm"]
-[ext_resource type="Script" uid="uid://cq151mrcei5sb" path="res://world/systems/game_time_system.gd" id="5_dt2ce"]
+[ext_resource type="Script" uid="uid://cq151mrcei5sb" path="res://world/suryagarh/systems/game_time_system.gd" id="5_dt2ce"]
 [ext_resource type="PackedScene" uid="uid://vrejpjlch46y" path="res://objects/water_bag.tscn" id="9_e5drx"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_avha0"]

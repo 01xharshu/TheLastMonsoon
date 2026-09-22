@@ -40,6 +40,29 @@ The current build is an engineering prototype.
 
 Final environments, characters, animations, audio, UI, historical assets, and world content have not yet entered full production.
 
+### Landscape foundation — Suryagarh
+
+The default playable scene is now `res://world/suryagarh/suryagarh_world.tscn`.
+It contains a **1,728 × 1,728 metre landscape (2.986 km²)** with agricultural plains,
+a meandering river corridor, rocky eastern hills, initial broadleaf vegetation,
+dirt routes, and terrain reservations for future settlements. The original
+`world/test_world.tscn` remains available as the small systems test scene.
+
+This is the first landscape foundation, not a completed village or city. Swimming,
+climbing, historically researched buildings, interiors, flags, vehicles and final
+characters remain later work. Deep-water entry currently returns the player to
+dry ground until swimming is implemented.
+
+**Minimum-memory design target: 8 GB RAM.** Defaults use 720p, 1K natural textures,
+mesh LOD, spatially batched vegetation and limited shadows. Performance has to be
+validated on actual minimum hardware; an M4 with 16 GB does not certify all 8 GB devices.
+
+Press **F5** to run the new default world. In development builds, **F3** toggles an
+aerial survey and **F4** moves between landscape review locations.
+
+See [world scope, rebuild instructions and validation](docs/world/README.md) and
+[third-party landscape licenses](docs/world/ASSET_LICENSES.md).
+
 ### Implemented
 
 | System | Status |
@@ -491,7 +514,11 @@ Open the project.
 
 ---
 
-### Run the Current Prototype
+### Run the Landscape
+
+Press **F5** to run the Suryagarh landscape.
+
+### Run the Original Systems Prototype
 
 Open:
 
@@ -921,7 +948,9 @@ Initial development targets:
 | Rendering | 3D |
 | Minimum gameplay target | 30 FPS |
 | Preferred gameplay target | 60 FPS |
-| World architecture | Streamed regions |
+| Minimum-memory design target | 8 GB RAM; actual minimum-device validation pending |
+| Landscape default | 1280 × 720; 1K materials; limited shadows |
+| World architecture | Resident terrain tiles with LOD now; streamed regions before larger content expansion |
 | NPC architecture | Distance-based simulation |
 
 Exact minimum hardware specifications will be established later in development.

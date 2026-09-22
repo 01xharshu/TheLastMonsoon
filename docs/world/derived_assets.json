@@ -1,13 +1,5 @@
 [
   {
-    "asset": "island_tree_02",
-    "source": "WorkingAssets/Suryagarh/source/island_tree_02/island_tree_02_1k.gltf",
-    "output": "assets/nature/models/island_tree_02.glb",
-    "triangles": 18000,
-    "sha256": "613fb18697beb8d8bdd36a9ec125480036c31b7e5e243f89afbd8a0d82403cc7",
-    "modifications": "Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained."
-  },
-  {
     "asset": "boulder_01",
     "source": "WorkingAssets/Suryagarh/source/boulder_01/boulder_01_1k.gltf",
     "output": "assets/nature/models/boulder_01.glb",
@@ -22,5 +14,13 @@
     "triangles": 8,
     "sha256": "2bbcd6ff6ef9e9138153aac6575685a2ec60c141e29286c08fbf48d03db99021",
     "modifications": "Decimated geometry, grounded origin, opaque geometric foliage; 1K source materials retained."
+  },
+  {
+    "asset": "island_tree_02",
+    "source": "WorkingAssets/Suryagarh/source/island_tree_02/island_tree_02_1k.gltf",
+    "output": "assets/nature/models/island_tree_02.glb",
+    "triangles": 18000,
+    "sha256": "d7f60d6a268a18f8ba4a2c290dc6e8c21f69a374f902a1f6a317e46ac256e20a",
+    "modifications": "Decimated geometry, grounded origin; tree foliage uses source alpha mask; 1K materials retained."
   }
 ]

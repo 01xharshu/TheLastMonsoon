@@ -62,12 +62,31 @@ func run_checks() -> void:
 	var dry: Vector3 = player.position
 	player.position = Vector3(layout.river_x(155), -2, 155)
 	for i in 3: await physics_frame
-	check(player.position.distance_to(dry) < 3, "Deep-water dry-ground return failed")
+	var water_return_ok: bool = player.position.distance_to(dry) < 3
+	check(water_return_ok, "Deep-water dry-ground return failed")
 	player.position = Vector3(900,30,0)
 	for i in 3: await physics_frame
-	check(player.position.x <= Layout.HALF-4, "Playable boundary containment failed")
+	var boundary_ok: bool = player.position.x <= Layout.HALF-4
+	check(boundary_ok, "Playable boundary containment failed")
+	world.move_to_review_point(0)
+	for i in 60: await physics_frame
+	var jump_start: float = player.position.y
+	var jump_peak: float = jump_start
+	Input.action_press("jump")
+	for i in 100:
+		await physics_frame
+		jump_peak = maxf(jump_peak, player.position.y)
+		if i == 1: Input.action_release("jump")
+	check(jump_peak-jump_start > 0.7 and player.is_on_floor(), "Jump/landing failed on landscape")
+	var key := InputEventKey.new()
+	key.keycode = KEY_F3
+	key.pressed = true
+	world._unhandled_key_input(key)
+	check(world.survey_camera.current and not player.is_physics_processing(), "Survey mode did not pause player movement")
+	world._unhandled_key_input(key)
+	check(world.player_camera.current and player.is_physics_processing(), "Survey mode did not restore player movement")
 	var report := {"status":"PASS" if failures.is_empty() else "FAIL", "terrain_collision_samples":sample_count,
-		"max_collision_error_m":max_error,"walks":walks,"deep_water_return":true,"boundary_containment":true,"failures":failures}
+		"max_collision_error_m":max_error,"walks":walks,"jump_height_m":jump_peak-jump_start,"deep_water_return":water_return_ok,"boundary_containment":boundary_ok,"failures":failures}
 	var file := FileAccess.open("res://docs/world/validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("LANDSCAPE VALIDATION ",JSON.stringify(report))
