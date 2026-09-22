@@ -111,7 +111,7 @@ func _input(
 	event: InputEvent
 ) -> void:
 
-	if get_parent().get_parent().get_parent().get_meta("map_open", false):
+	if get_parent().get_parent().get_parent().get_meta("map_open", false) or get_parent().get_parent().get_parent().get_meta("weapon_wheel_open", false):
 		return
 
 	if event.is_action_pressed(

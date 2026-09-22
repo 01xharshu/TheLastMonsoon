@@ -1,7 +1,11 @@
 extends Node3D
 ## Rest-relative, model-space procedural animation for the MPFB game rig.
-const TALWAR = preload("res://environment/weapons/Talwar/weapon_talwar_01.glb")
-@export var talwar_equipped := true
+const Equipment = preload("res://player/arjun_equipment.gd")
+const WeaponWheel = preload("res://player/weapon_wheel.gd")
+var equipment: Node3D
+var talwar_equipped: bool:
+	get:
+		return equipment != null and not equipment.stowed and equipment.selected == Equipment.Selection.TALWAR
 var skeleton: Skeleton3D
 var model: Node3D
 var weapon: Node3D
@@ -28,14 +32,31 @@ func _ready() -> void:
 		bones[bone] = i
 		base_rotations[bone] = skeleton.get_bone_pose_rotation(i)
 		axes[bone] = skeleton.get_bone_global_rest(i).basis.orthonormalized().inverse()
-	var socket := BoneAttachment3D.new()
-	socket.bone_name = "hand_r"
-	skeleton.add_child(socket)
-	weapon = TALWAR.instantiate()
-	socket.add_child(weapon)
-	# The exported blade points along +X; its grip centre is behind the guard.
-	weapon.basis = axes["hand_r"] * Basis(Vector3.UP, Vector3.FORWARD, Vector3.LEFT)
-	weapon.position = Vector3(0, 0.07, 0) - weapon.basis * Vector3(-0.095, -0.002, 0)
+	equipment = Equipment.new()
+	equipment.name = "Equipment"
+	add_child(equipment)
+	equipment.setup(skeleton)
+	weapon = equipment.talwar_hand
+	var wheel := WeaponWheel.new()
+	wheel.actor = actor
+	wheel.equipment = equipment
+	actor.get_node("UI").add_child.call_deferred(wheel)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if equipment == null or not actor.is_physics_processing(): return
+	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false): return
+	if not event is InputEventKey or not event.pressed or event.echo: return
+	var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+	match key:
+		KEY_H:
+			equipment.toggle_stowed()
+		KEY_1:
+			equipment.select_weapon(Equipment.Selection.TALWAR)
+		KEY_2:
+			equipment.select_weapon(Equipment.Selection.ENFIELD)
+		_:
+			return
+	get_viewport().set_input_as_handled()
 
 func pose(bone: String, angles: Vector3, weight: float) -> void:
 	if not bones.has(bone): return
@@ -47,6 +68,7 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
+	equipment.set_swimming(actor.is_swimming)
 	var blend := 1.0 - exp(-12.0 * delta)
 	var speed := Vector2(actor.velocity.x, actor.velocity.z).length()
 	motion = lerpf(motion, clampf(speed / actor.walk_speed, 0.0, 1.0), blend)
@@ -59,7 +81,6 @@ func _process(delta: float) -> void:
 	var swing := sin(phase) * lerpf(0.42, 0.8, sprint) * stride
 	var swimming := swim_blend
 	var armed := talwar_equipped and swimming < 0.5
-	weapon.visible = armed
 	# Pivot near the chest when leaning into the water, keeping the face above it.
 	model.rotation.x = lerpf(model.rotation.x, swimming * 1.05, blend)
 	model.position = Vector3(0, -0.9 + swimming * 0.65 + absf(sin(phase)) * stride * 0.045, 0)
@@ -92,3 +113,4 @@ func _process(delta: float) -> void:
 					var curl := 0.85 if armed and side == "r" else 0.12
 					var target: Quaternion = base_rotations[name] * Quaternion(Vector3.RIGHT, curl)
 					skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, blend))
+	equipment.apply_rifle_grip()

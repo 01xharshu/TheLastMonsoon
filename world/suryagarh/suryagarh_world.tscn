@@ -6,8 +6,8 @@
 [ext_resource type="Script" uid="uid://cq151mrcei5sb" path="res://world/suryagarh/systems/game_time_system.gd" id="4_time"]
 [ext_resource type="Script" uid="uid://boj3qkl0epo3l" path="res://world/suryagarh/systems/sun_controller.gd" id="5_sun"]
 [ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="6_charpai"]
-
-[ext_resource type="Script" path="res://world/suryagarh/timber_bridge.gd" id="7_bridge"]
+[ext_resource type="Script" uid="uid://ciekb80nurvsx" path="res://world/suryagarh/timber_bridge.gd" id="7_bridge"]
+[ext_resource type="AudioStream" uid="uid://i7npae7kd308" path="res://audio/music/Aaron Kenny - The New Order.mp3" id="8_odqov"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
@@ -41,6 +41,12 @@ font_color = Color(0.95, 0.95, 0.87, 1)
 outline_size = 5
 outline_color = Color(0.09, 0.12, 0.1, 0.85)
 
+[sub_resource type="Environment" id="Environment_8drwr"]
+background_mode = 2
+ambient_light_source = 2
+ambient_light_color = Color(0.12835406, 0.17184411, 0.26006752, 1)
+ambient_light_energy = 0.15
+
 [node name="Suryagarh" type="Node3D" unique_id=1892594825]
 script = ExtResource("1_world")
 
@@ -72,6 +78,8 @@ light_energy = 0.0
 
 [node name="Player" parent="." unique_id=796602924 instance=ExtResource("3_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -230, 10, 180)
+walk_speed = 5.0
+sprint_speed = 8.0
 
 [node name="Charpai" parent="." unique_id=1448268107 instance=ExtResource("6_charpai")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -264, 7.2, 210)
@@ -102,5 +110,27 @@ theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 text = "WASD move · Shift run · Space jump · F3 survey · F4 next landscape viewpoint"
 
-[node name="TimberBridge" type="Node3D" parent="."]
+[node name="TimberBridge" type="Node3D" parent="." unique_id=276007427]
 script = ExtResource("7_bridge")
+
+[node name="Sun2" type="DirectionalLight3D" parent="." unique_id=1217656352]
+transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
+script = ExtResource("5_sun")
+
+[node name="Moon2" type="DirectionalLight3D" parent="." unique_id=1823731295]
+transform = Transform3D(1, 0, 2.9802322e-08, 0, 1, 0, -2.9802322e-08, 0, 1, 0, 0, 0)
+light_color = Color(0.76737565, 0.82665706, 0.9063318, 1)
+light_energy = 0.12
+shadow_enabled = true
+
+[node name="WorldEnvironment2" type="WorldEnvironment" parent="." unique_id=417536578]
+environment = SubResource("Environment_8drwr")
+
+[node name="GameTimeSystem2" type="Node" parent="." unique_id=2067429362]
+script = ExtResource("4_time")
+game_minutes_per_real_second = 60.0
+
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=1695742296]
+stream = ExtResource("8_odqov")
+volume_db = -20.195
+autoplay = true

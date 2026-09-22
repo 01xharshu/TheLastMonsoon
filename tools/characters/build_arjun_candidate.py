@@ -64,11 +64,13 @@ rig['candidate_status'] = 'WORK_IN_PROGRESS'
 def material(name, color, rough=0.65, texture=None, weave=False, leather=False):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
+    mat.use_fake_user = True
     mat.diffuse_color = (*color, 1)
     nt = mat.node_tree
     bs = nt.nodes.get('Principled BSDF')
     bs.inputs['Base Color'].default_value = (*color, 1)
     bs.inputs['Roughness'].default_value = rough
+    bs.inputs['Specular IOR Level'].default_value = .22
     if texture:
         tex = nt.nodes.new('ShaderNodeTexImage')
         tex.image = bpy.data.images.load(str(texture), check_existing=True)
@@ -101,10 +103,10 @@ def material(name, color, rough=0.65, texture=None, weave=False, leather=False):
         nt.links.new(fine.outputs['Fac'], bump.inputs['Height'])
         nt.links.new(bump.outputs['Normal'], bs.inputs['Normal'])
         if weave:
-            bs.inputs['Sheen Weight'].default_value = .18
+            bs.inputs['Sheen Weight'].default_value = .05
     return mat
 
-skin = material('Arjun warm medium-brown skin', (.52,.36,.245), .52,
+skin = material('Arjun warm medium-brown skin', (.40,.27,.16), .58,
     ROOT/'WorkingAssets/Arjun/arjun_character_v2_young_lightskinned_male_diffuse.png')
 skin.node_tree.nodes.get('Principled BSDF').inputs['Subsurface Weight'].default_value = .06
 body.data.materials.clear()
@@ -112,16 +114,16 @@ body.data.materials.append(skin)
 for poly in body.data.polygons:
     poly.material_index = 0
     poly.use_smooth = True
-charcoal = material('Weathered charcoal cotton',(.032,.034,.038), weave=True)
+charcoal = material('Weathered charcoal cotton',(.009,.011,.015), .84, weave=True)
 cream = material('Unbleached draped cotton',(.64,.57,.44), weave=True)
-red = material('Faded madder-red sash',(.22,.031,.026), weave=True)
-red_thread = material('Muted ochre sash thread',(.29,.14,.065), weave=True)
-leather = material('Worn dark-brown leather',(.062,.029,.014), .48, leather=True)
-leather_edge = material('Leather seams and welt',(.17,.085,.034), .7, leather=True)
+red = material('Faded madder-red sash',(.12,.013,.010), .84, weave=True)
+red_thread = material('Muted ochre sash thread',(.13,.066,.025), weave=True)
+leather = material('Worn dark-brown leather',(.038,.020,.011), .74, leather=True)
+leather_edge = material('Leather seams and welt',(.072,.038,.017), .7, leather=True)
 sole_mat = material('Dark boot soles',(.018,.012,.008), .82)
 brass = material('Aged brass hardware',(.26,.16,.067), .36)
 brass.node_tree.nodes.get('Principled BSDF').inputs['Metallic'].default_value = .7
-hair_mat = material('Soft black hair',(.009,.007,.005), .43)
+hair_mat = material('Soft black hair',(.006,.0045,.0035), .70)
 foundation_mat = material('Opaque fitted foundation',(.12,.105,.082), weave=True)
 
 # MPFB fits body parts to this body's target stack and transfers its rig weights.
@@ -241,7 +243,7 @@ def elliptical_surface(name, rows, n, mat, folds=0, split=False, phase=0):
 shirt_rows=[]
 for j in range(25):
     t=j/24; z=.705+t*.38
-    rx=.211-.045*t;ry=.149-.03*t
+    rx=.248-.075*t**2;ry=.158-.035*t
     shirt_rows.append((z,0,-.022,rx,ry))
 skirt=elliptical_surface('Arjun_Kurta_SplitHem',shirt_rows,96,charcoal,.004,True)
 skirt['construction']='Side-split long shirt panels with eased waist and hem'
@@ -257,14 +259,19 @@ for z in [1.10,1.17,1.24,1.31,1.37]:
     bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=1,location=(.006,-.169,z))
     o=bpy.context.object;o.name='Kurta button';o.scale=(.0045,.0025,.0045);bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.data.materials.append(brass);fit_weights(o)
 
-# Sleeve cuffs follow the original sleeve direction in the MPFB A pose.
+# Rolled cuffs follow the actual open boundary of each fitted sleeve.
+bm=bmesh.new();bm.from_mesh(upper.data)
 for side in (-1,1):
-    center=Vector((side*.382,-.023,1.19));axis=Vector((side*.66,-.12,-.74)).normalized()
+    boundary={v for e in bm.edges if e.is_boundary for v in e.verts if v.co.x*side>.30}
+    points=[v.co.copy() for v in boundary]
+    center=sum(points,Vector())/len(points)
+    axis=Vector((side*.65,-.25,-.72)).normalized()
     u=axis.cross(Vector((0,1,0))).normalized();v=axis.cross(u)
+    points.sort(key=lambda p:math.atan2((p-center).dot(v),(p-center).dot(u)))
     for ring in range(3):
-        c=center+axis*(ring*.010)
-        pts=[c+(.069+.002*math.sin(i*.9))*(math.cos(i*2*math.pi/64)*u+math.sin(i*2*math.pi/64)*v) for i in range(64)]
-        curve('Rolled cotton cuff '+str(side),pts,.008,charcoal,cyclic=True)
+        pts=[center+(p-center)*1.02-axis*(.005+ring*.010) for p in points]
+        curve('Rolled cotton cuff '+str(side),pts,.007,charcoal,cyclic=True)
+bm.free()
 
 # Two separate dhoti-style trouser legs; pleats taper into each boot.
 for side in (-1,1):
@@ -272,7 +279,7 @@ for side in (-1,1):
     for j in range(39):
         t=j/38;z=.205+t*.765
         cx=side*(.196-.07*t);cy=-.005-.018*math.sin(t*math.pi)
-        radius=.052+.071*math.sin(math.pi*t*.92)**.8
+        radius=.052+.048*math.sin(math.pi*t)**1.2
         rows.append((z,cx,cy,radius,radius*1.02))
     pants=elliptical_surface('Arjun_DrapedTrousers_'+str(side),rows,96,cream,.009,phase=side*.7)
     pants['construction']='Gathered individual trouser leg; diagonal pleats and ankle taper'
@@ -280,7 +287,7 @@ for side in (-1,1):
     verts=[];faces=[]
     for j in range(33):
         t=j/32;z=.27+t*.60;cx=side*(.196-.070*t)
-        radius=.065+.065*math.sin(t*math.pi*.9)
+        radius=.052+.042*math.sin(t*math.pi)
         for i in range(17):
             u=i/16;a=-math.pi*.83+u*math.pi*.60+side*.3*t
             r=radius+.008+ .010*math.sin(u*math.pi*7+t*15)
@@ -385,11 +392,25 @@ covered=body.vertex_groups.new(name='CoveredByCoreOutfit')
 mask_ids=[]
 for i in body_ids:
     p=source.vertices[i].co
-    if p.z<1.11 or (1.11<p.z<1.33 and abs(p.x)<.19):mask_ids.append(i)
+    if (p.z<1.11 and abs(p.x)<.24) or (1.11<p.z<1.33 and abs(p.x)<.17):mask_ids.append(i)
 covered.add(mask_ids,1,'REPLACE')
 mask=body.modifiers.new('Conservative clothing occlusion','MASK');mask.vertex_group=covered.name;mask.invert_vertex_group=True
 foundation.hide_render=True
 foundation.hide_set(True)
+
+# Merge strand/stitch/hardware pieces by material while retaining skin weights.
+groups = {}
+for obj in list(bpy.context.scene.objects):
+    if obj.type == 'MESH' and obj.parent == rig and len(obj.modifiers)==1 and obj.modifiers[0].type=='ARMATURE' and not obj.data.shape_keys:
+        key = obj.data.materials[0].name if obj.data.materials else 'none'
+        groups.setdefault(key,[]).append(obj)
+for key, objects in groups.items():
+    if len(objects) < 2: continue
+    bpy.ops.object.select_all(action='DESELECT')
+    for obj in objects: obj.select_set(True)
+    bpy.context.view_layer.objects.active=objects[0]
+    bpy.ops.object.join()
+    objects[0].name='Arjun_Detail_'+key
 
 # Relax the A pose using the MPFB armature, preserving the editable rest pose.
 for side,sign in [('l',1),('r',-1)]:

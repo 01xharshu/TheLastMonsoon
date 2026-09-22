@@ -4,7 +4,6 @@
 [ext_resource type="PackedScene" uid="uid://b5pmgc0ssea2m" path="res://player/player.tscn" id="1_dgccc"]
 [ext_resource type="Script" uid="uid://br3afuhnkuos0" path="res://interaction/interactable.gd" id="2_tbnp1"]
 [ext_resource type="PackedScene" uid="uid://dtgijpuvdirim" path="res://objects/water_pot.tscn" id="3_53guk"]
-[ext_resource type="AudioStream" uid="uid://i7npae7kd308" path="res://audio/music/Aaron Kenny - The New Order.mp3" id="4_534ga"]
 [ext_resource type="PackedScene" uid="uid://dlbc130mvno3k" path="res://objects/roti.tscn" id="4_olf76"]
 [ext_resource type="PackedScene" uid="uid://b3h5mkrjan56" path="res://objects/oil_lamp.tscn" id="5_3xmcv"]
 [ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="5_7bidm"]
@@ -374,8 +373,3 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.612817, -0.002581358, -10
 
 [node name="WaterBag" parent="." unique_id=160195811 instance=ExtResource("9_e5drx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -2)
-
-[node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=1559201575]
-stream = ExtResource("4_534ga")
-volume_db = -20.195
-autoplay = true

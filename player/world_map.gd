@@ -27,6 +27,7 @@ func _ready() -> void:
 	terrain = ImageTexture.create_from_image(image)
 
 func _input(event: InputEvent) -> void:
+	if player.get_meta("weapon_wheel_open", false): return
 	if not event is InputEventKey or not event.pressed or event.echo: return
 	if event.keycode == KEY_M or (visible and event.keycode == KEY_ESCAPE):
 		if not visible and player.inventory_ui.is_open(): return

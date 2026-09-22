@@ -76,7 +76,7 @@ func _ready() -> void:
 	weapon_label = label("UNARMED",24,true)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	weapon_label.name = "WeaponLabel"
-	controls_label = label("M  Map    TAB  Satchel    SPACE  Jump",12)
+	controls_label = label("Hold ~  Weapons    H  Stow / draw    M  Map    TAB  Satchel",12)
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	controls_label.name = "ControlsLabel"
 	for node in [$PrimaryInteractionLabel,$SecondaryInteractionLabel,$PickupMessageLabel]:
@@ -121,7 +121,7 @@ func _process(_delta: float) -> void:
 		controls_label.text = "1  Talwar    2  Enfield    3  Unarmed    R  Reload    M  Map    TAB  Satchel"
 	else:
 		var character := player.get_node_or_null("VisualRoot/CharacterVisual")
-		weapon_label.text = "TALWAR" if character and character.talwar_equipped and not player.is_swimming else "UNARMED"
+		weapon_label.text = character.equipment.held_name() if character and character.equipment else "STOWED"
 	var world: Node = player.get_parent()
 	var location: Label = world.get_node_or_null("LandscapeUI/Location") as Label
 	if location:

@@ -1,0 +1,19 @@
+{
+	"checks": [
+		"H toggle",
+		"visible stowed gun and sword",
+		"wheel hold/release",
+		"arrow selection",
+		"pointer selection",
+		"Escape rollback",
+		"map/inventory exclusion",
+		"swim auto-stow",
+		"no underwater draw",
+		"no automatic redraw after swim"
+	],
+	"result": "PASS",
+	"rifle_grip": {
+		"left_wrist_m": 0.0000000421468477895814,
+		"right_wrist_m": 0.0000000909459245690414
+	}
+}

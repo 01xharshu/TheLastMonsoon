@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://3xiq5b2x0syf"
-path="res://.godot/imported/arjun_arjun_character_v2_short01_diffuse.png-c0cffa86d5fcaa720ef8e8884ba2c532.ctex"
+path.s3tc="res://.godot/imported/arjun_arjun_character_v2_short01_diffuse.png-c0cffa86d5fcaa720ef8e8884ba2c532.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "6d41c36857fc300b6692779db805843c"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://characters/arjun/arjun_arjun_character_v2_short01_diffuse.png"
-dest_files=["res://.godot/imported/arjun_arjun_character_v2_short01_diffuse.png-c0cffa86d5fcaa720ef8e8884ba2c532.ctex"]
+dest_files=["res://.godot/imported/arjun_arjun_character_v2_short01_diffuse.png-c0cffa86d5fcaa720ef8e8884ba2c532.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

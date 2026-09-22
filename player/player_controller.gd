@@ -145,7 +145,7 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if inventory_ui.is_open() or get_meta("map_open", false):
+	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false):
 		return
 
 
@@ -216,7 +216,7 @@ func _physics_process(
 	# INVENTORY OPEN
 	# -----------------------------------------------------
 
-	if inventory_ui.is_open() or get_meta("map_open", false):
+	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false):
 
 		_apply_gravity(
 			delta
