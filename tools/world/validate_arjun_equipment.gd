@@ -14,6 +14,8 @@ func key_event(code: int, pressed: bool = true) -> InputEventKey:
 	event.pressed = pressed
 	return event
 func validate() -> void:
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_move_to_foreground()
 	var world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
@@ -66,17 +68,20 @@ func validate() -> void:
 	visual._unhandled_key_input(key_event(KEY_H))
 	for i in 30: visual._process(1.0/60.0)
 	var errors: Dictionary = equipment.grip_errors()
+	print("EQUIPMENT INPUT CHECKS FINISHED ", errors)
 	report["rifle_grip"] = errors
-	check(errors.right_wrist_m<0.025 and errors.left_wrist_m<0.025, "Both rifle grip targets must be reachable")
+	check(errors.right_palm_m<0.025 and errors.left_palm_m<0.025, "Both rifle grip targets must be reachable")
 	player.set_physics_process(false)
 	if DisplayServer.get_name() != "headless":
 		var camera := Camera3D.new()
 		world.add_child(camera)
-		camera.position=player.global_position+Vector3(2.5,0.9,3.0)
-		camera.look_at(player.global_position+Vector3(0,0.1,0))
+		camera.fov=40
+		camera.global_position=visual.model.to_global(Vector3(1.8,1.15,2.2))
+		camera.look_at(visual.model.to_global(Vector3(0,0.95,0)))
 		camera.make_current()
 		player.get_node("UI").hide()
 		for mode in ["enfield","stowed","talwar"]:
+			print("CAPTURING ",mode)
 			equipment.selected=1 if mode=="enfield" else 0
 			equipment.stowed=mode=="stowed"
 			equipment._refresh()

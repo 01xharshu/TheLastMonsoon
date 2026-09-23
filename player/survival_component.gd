@@ -86,9 +86,9 @@ extends Node
 
 @export var starting_stamina: float = 100.0
 
-@export var sprint_stamina_loss_per_second: float = 18.0
+@export var sprint_stamina_loss_per_second: float = 5.0
 
-@export var stamina_recovery_per_second: float = 14.0
+@export var stamina_recovery_per_second: float = 10.0
 
 @export var exhaustion_recovery_threshold: float = 25.0
 

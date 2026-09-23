@@ -9,6 +9,16 @@
 [ext_resource type="Script" uid="uid://ciekb80nurvsx" path="res://world/suryagarh/timber_bridge.gd" id="7_bridge"]
 [ext_resource type="AudioStream" uid="uid://i7npae7kd308" path="res://audio/music/Aaron Kenny - The New Order.mp3" id="8_odqov"]
 
+[ext_resource type="Script" path="res://world/suryagarh/roadside_flags.gd" id="20_flags"]
+
+[ext_resource type="Script" path="res://vehicles/river_boat.gd" id="boat"]
+[ext_resource type="Script" path="res://world/suryagarh/river_fish.gd" id="fish"]
+[ext_resource type="Script" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
+[ext_resource type="Script" path="res://horses/village_stable.gd" id="stable"]
+
+[ext_resource type="Script" path="res://world/suryagarh/forage_grove.gd" id="forage"]
+[ext_resource type="Script" path="res://ui/game_menu.gd" id="game_menu"]
+
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
 sky_horizon_color = Color(0.66, 0.7, 0.67, 1)
@@ -41,12 +51,6 @@ font_color = Color(0.95, 0.95, 0.87, 1)
 outline_size = 5
 outline_color = Color(0.09, 0.12, 0.1, 0.85)
 
-[sub_resource type="Environment" id="Environment_8drwr"]
-background_mode = 2
-ambient_light_source = 2
-ambient_light_color = Color(0.12835406, 0.17184411, 0.26006752, 1)
-ambient_light_energy = 0.15
-
 [node name="Suryagarh" type="Node3D" unique_id=1892594825]
 script = ExtResource("1_world")
 
@@ -55,7 +59,7 @@ script = ExtResource("1_world")
 [node name="GameTimeSystem" type="Node" parent="." unique_id=2072554750]
 script = ExtResource("4_time")
 starting_hour = 9
-game_minutes_per_real_second = 0.25
+game_minutes_per_real_second = 2.4
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=728116909]
 environment = SubResource("Environment")
@@ -113,24 +117,28 @@ text = "WASD move · Shift run · Space jump · F3 survey · F4 next landscape v
 [node name="TimberBridge" type="Node3D" parent="." unique_id=276007427]
 script = ExtResource("7_bridge")
 
-[node name="Sun2" type="DirectionalLight3D" parent="." unique_id=1217656352]
-transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
-script = ExtResource("5_sun")
-
-[node name="Moon2" type="DirectionalLight3D" parent="." unique_id=1823731295]
-transform = Transform3D(1, 0, 2.9802322e-08, 0, 1, 0, -2.9802322e-08, 0, 1, 0, 0, 0)
-light_color = Color(0.76737565, 0.82665706, 0.9063318, 1)
-light_energy = 0.12
-shadow_enabled = true
-
-[node name="WorldEnvironment2" type="WorldEnvironment" parent="." unique_id=417536578]
-environment = SubResource("Environment_8drwr")
-
-[node name="GameTimeSystem2" type="Node" parent="." unique_id=2067429362]
-script = ExtResource("4_time")
-game_minutes_per_real_second = 60.0
-
 [node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=1695742296]
 stream = ExtResource("8_odqov")
 volume_db = -20.195
 autoplay = true
+
+[node name="RoadsideFlags" type="Node3D" parent="."]
+script = ExtResource("20_flags")
+
+[node name="RiverBoat" type="CharacterBody3D" parent="."]
+script = ExtResource("boat")
+
+[node name="Settlement" type="Node3D" parent="."]
+script = ExtResource("settlement")
+
+[node name="RiverFish" type="Node3D" parent="."]
+script = ExtResource("fish")
+
+[node name="VillageStable" type="Node3D" parent="."]
+script = ExtResource("stable")
+
+[node name="ForageGrove" type="Node3D" parent="."]
+script = ExtResource("forage")
+
+[node name="GameMenu" type="CanvasLayer" parent="."]
+script = ExtResource("game_menu")

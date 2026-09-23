@@ -6,6 +6,7 @@ uniform sampler2D rock_tex : source_color, filter_linear_mipmap_anisotropic, rep
 uniform sampler2D soil_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D grass_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D rock_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D road_mask_tex : filter_linear_mipmap;
 varying vec3 world_pos;
 varying vec3 world_normal;
 void vertex() {
@@ -22,13 +23,8 @@ void fragment() {
 	float slope = 1.0 - world_normal.y;
 	float rock = smoothstep(0.10, 0.29, slope) * 0.85 + smoothstep(65.0, 125.0, world_pos.y) * 0.4;
 	rock = clamp(rock, 0.0, 1.0);
-	float rx = 60.0 + 76.0*sin(p.y*0.0045) + 22.0*sin(p.y*0.011);
 	float wet = 1.0 - smoothstep(0.1, 3.8, world_pos.y);
-	float road_x = -210.0 + 42.0*sin(p.y*0.005);
-	float lane = abs(p.y - (160.0 + 12.0*sin(p.x*0.017)));
-	float rw = 25.0 + 5.0*sin(p.y*0.008+1.0);
-	if (p.x < -280.0 || p.x > rx-rw-18.0) { lane = 10000.0; }
-	float road = 1.0-smoothstep(2.0, 4.8, min(abs(p.x-road_x),lane) + noise(p*0.7)*0.6);
+	float road = texture(road_mask_tex, (p + vec2(864.0)) / 1728.0).r;
 	float fields = (1.0-smoothstep(-125.0,-80.0,p.x))*smoothstep(-730.0,-660.0,p.x)*(1.0-smoothstep(470.0,570.0,abs(p.y)));
 	fields *= smoothstep(75.0,130.0,length(p-vec2(-310,230)));
 	vec2 field_cell = floor((p + vec2(19,33))/vec2(66,91));

@@ -71,3 +71,6 @@ func has_secondary_interaction() -> bool:
 		.strip_edges()
 		.is_empty()
 	)
+
+func _enter_tree() -> void:
+	add_to_group("interactables")

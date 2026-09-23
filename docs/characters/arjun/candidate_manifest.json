@@ -4,8 +4,8 @@
   "mpfb_version": "2.0.17",
   "workflow": "MPFB editable targets, game_engine rig, MPFB fitted eyes/eyebrows; custom core garments",
   "body_vertex_count": 19158,
-  "bone_count": 53,
-  "mesh_count": 27,
+  "bone_count": 56,
+  "mesh_count": 25,
   "approval": {
     "likeness": false,
     "motion": false,
@@ -16,5 +16,5 @@
     "arjun_core_multiview.png": "2ea627fc0d0d65ae59dd7ef3cae57c49a684e988b2a1ec22197d70d14b4aae67",
     "arjun_equipped_multiview.png": "757bf809d029c38744dfc579b3288d1b3ffef5ec960e7b13b315beb4b54dbe86"
   },
-  "blend_sha256": "3b70fcf162dfd49696b86a3f8b5f38a115e1db9af42d7a2285e4ec105223efb7"
+  "blend_sha256": "85302e915a67ee9a426743e83b66d2a65c4e18cfe6506722087cf724e1c7f075"
 }

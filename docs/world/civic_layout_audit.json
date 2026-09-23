@@ -1,0 +1,86 @@
+{
+	"entrances": {
+		"DistrictPolice": {
+			"maximum_ramp_slope": 0.0659222745313848,
+			"minimum_ramp_clearance_m": 0.0600000000000005
+		},
+		"TownHall": {
+			"maximum_ramp_slope": 0.237250046800876,
+			"minimum_ramp_clearance_m": 0.0599999999999996
+		}
+	},
+	"failures": [],
+	"layout_size_m": 1728.0,
+	"plots": {
+		"Bhairavpur": {
+			"center": "(-310.0, 230.0)",
+			"grade_m": 7.2,
+			"grade_spread_m": 0.0,
+			"half_extent": "(45.0, 32.0)"
+		},
+		"CompanyCompound": {
+			"center": "(345.0, 300.0)",
+			"grade_m": 12.0,
+			"grade_spread_m": 0.0,
+			"half_extent": "(67.0, 63.0)"
+		},
+		"DistrictPolice": {
+			"center": "(320.0, 120.0)",
+			"grade_m": 10.0,
+			"grade_spread_m": 0.0,
+			"half_extent": "(20.0, 22.0)"
+		},
+		"TownHall": {
+			"center": "(-320.0, -470.0)",
+			"grade_m": 8.0,
+			"grade_spread_m": 0.0,
+			"half_extent": "(27.0, 16.0)"
+		}
+	},
+	"routes": {
+		"compound_court": {
+			"length_m": 49.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				12.0,
+				12.0
+			]
+		},
+		"compound_stores": {
+			"length_m": 38.6005172729492,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				12.0,
+				12.0
+			]
+		},
+		"east_bridge": {
+			"length_m": 52.0,
+			"maximum_terrain_slope": 0.150788690417793,
+			"waypoint_elevations_m": [
+				9.58987110331894,
+				10.1648856505193,
+				10.4929118434394
+			]
+		},
+		"police_to_compound": {
+			"length_m": 105.641311645508,
+			"maximum_terrain_slope": 0.183062376409593,
+			"waypoint_elevations_m": [
+				10.4929118434394,
+				11.8448714147093,
+				12.0
+			]
+		},
+		"town_hall": {
+			"length_m": 96.6623649597168,
+			"maximum_terrain_slope": 0.0301525685902371,
+			"waypoint_elevations_m": [
+				5.36291203274442,
+				3.80516040107361,
+				3.66499906398249
+			]
+		}
+	},
+	"status": "PASS"
+}

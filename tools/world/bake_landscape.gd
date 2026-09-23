@@ -33,6 +33,7 @@ func bake() -> void:
 	world.name = "Landscape"
 	terrain_material = ShaderMaterial.new()
 	terrain_material.shader = load("res://world/suryagarh/shaders/terrain.gdshader")
+	terrain_material.set_shader_parameter("road_mask_tex", bake_road_mask())
 	for pair in [["soil", "brown_mud_dry"], ["grass", "aerial_grass_rock"], ["rock", "rock_boulder_dry"]]:
 		terrain_material.set_shader_parameter(pair[0] + "_tex", load("res://assets/nature/materials/" + pair[1] + "_diff_1k.jpg"))
 		terrain_material.set_shader_parameter(pair[0] + "_normal", load("res://assets/nature/materials/" + pair[1] + "_nor_gl_1k.jpg"))
@@ -88,6 +89,20 @@ func bake() -> void:
 	print("LANDSCAPE BAKE PASS ", JSON.stringify(report))
 	world.free()
 	quit()
+
+func bake_road_mask() -> ImageTexture:
+	# Layout is the sole route authority; the terrain shader samples this raster
+	# instead of maintaining a second hand-written copy of every road equation.
+	const PIXELS := 1024
+	var image := Image.create(PIXELS, PIXELS, false, Image.FORMAT_L8)
+	for z in PIXELS:
+		for x in PIXELS:
+			var p := (Vector2(x+0.5,z+0.5)/PIXELS-Vector2.ONE*0.5)*Layout.SIZE
+			var d: float = layout.road_distance(p.x,p.y)
+			image.set_pixel(x,z,Color(1.0-smoothstep(2.0,4.8,d),0,0))
+	var texture := ImageTexture.create_from_image(image)
+	save_resource(texture,"road_mask.res")
+	return texture
 
 func bake_tile(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 	var vertices := PackedVector3Array()
@@ -187,6 +202,7 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 	for i in 34:
 		var p := origin + Vector2(rng.randf_range(4, 140), rng.randf_range(4, 140))
 		var h: float = layout.height(p.x, p.y)
+		if layout.built_area(p.x,p.y): continue
 		var village_dist: float = p.distance_to(Vector2(-310, 230))
 		if h < 2.6 or layout.road_distance(p.x, p.y) < 9 or village_dist < 85: continue
 		var field: float = layout.field_mask(p.x, p.y)
@@ -208,7 +224,7 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 	for i in 12:
 		var p := origin + Vector2(rng.randf_range(2, 142), rng.randf_range(2, 142))
 		var h: float = layout.height(p.x, p.y)
-		if layout.road_distance(p.x, p.y) < 7 or layout.field_mask(p.x, p.y) > 0.3 or p.distance_to(Vector2(-310,230)) < 100: continue
+		if layout.built_area(p.x,p.y) or layout.road_distance(p.x, p.y) < 7 or layout.field_mask(p.x, p.y) > 0.3 or p.distance_to(Vector2(-310,230)) < 100: continue
 		if h < -1.0 or (h < 15 and rng.randf() > 0.35): continue
 		var size: float = rng.randf_range(0.45, 1.8)
 		var transform := Transform3D(Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3(size, size * 0.8, size)), Vector3(p.x - origin.x, h - size * 0.4, p.y - origin.y))
@@ -230,7 +246,8 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 			for i in 240:
 				var p := origin + Vector2(gx * 36 + rng.randf_range(0, 36), gz * 36 + rng.randf_range(0, 36))
 				var h: float = layout.height(p.x, p.y)
-				if h < 1.8 or h > 95 or layout.road_distance(p.x, p.y) < 3.5: continue
+				if layout.built_area(p.x,p.y): continue
+				if h < 1.8 or h > 95 or layout.road_distance(p.x, p.y) < 5.5: continue
 				if p.distance_to(Vector2(-310,230)) < 70: continue
 				var size: float = rng.randf_range(0.6, 1.5)
 				grass.append(Transform3D(Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3.ONE * size), Vector3(p.x-origin.x, h-0.025, p.y-origin.y)))
@@ -259,7 +276,7 @@ func bake_water() -> void:
 	water.name = "RiverSurface"
 	water.mesh = st.commit()
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	water.set_meta("swimming_status", "Not implemented; surface is visual, bed has terrain collision")
+	water.set_meta("swimming_status", "Surface swimming enabled; transparent water and riverbed collision")
 	attach(water, world)
 
 func bake_horizon() -> void:

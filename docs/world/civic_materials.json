@@ -1,0 +1,56 @@
+[
+  {
+    "asset": "clay_plaster",
+    "map": "Diffuse",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/clay_plaster/clay_plaster_diff_1k.jpg",
+    "file": "assets/architecture/materials/clay_plaster_Diffuse.jpg",
+    "sha256": "82e43c68bddebb55a18577ae3cb0d01c02c23f086d342a854ff8a174d9f4fd73",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/clay_plaster"
+  },
+  {
+    "asset": "clay_plaster",
+    "map": "nor_gl",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/clay_plaster/clay_plaster_nor_gl_1k.jpg",
+    "file": "assets/architecture/materials/clay_plaster_nor_gl.jpg",
+    "sha256": "359f814292005ab16be86807678a4a51e8256a87c282ebf5f5333ce18c428fba",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/clay_plaster"
+  },
+  {
+    "asset": "clay_plaster",
+    "map": "Rough",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/clay_plaster/clay_plaster_rough_1k.jpg",
+    "file": "assets/architecture/materials/clay_plaster_Rough.jpg",
+    "sha256": "e91a6238456b54a82dbf2c025e0b046851c90e7e772fe2affd26a46b243ce7b7",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/clay_plaster"
+  },
+  {
+    "asset": "dark_wood",
+    "map": "Diffuse",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_wood/dark_wood_diff_1k.jpg",
+    "file": "assets/architecture/materials/dark_wood_Diffuse.jpg",
+    "sha256": "d68da31655bf47024af893156a6a01a6c95bb60f55d97e2dc9bdd47be320e5b5",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/dark_wood"
+  },
+  {
+    "asset": "dark_wood",
+    "map": "nor_gl",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_wood/dark_wood_nor_gl_1k.jpg",
+    "file": "assets/architecture/materials/dark_wood_nor_gl.jpg",
+    "sha256": "c42541f1bda0a14b39f120c24407eeba699af8ac85b371c7cef98ffd7d7b13bf",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/dark_wood"
+  },
+  {
+    "asset": "dark_wood",
+    "map": "Rough",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dark_wood/dark_wood_rough_1k.jpg",
+    "file": "assets/architecture/materials/dark_wood_Rough.jpg",
+    "sha256": "47ea12dbf649109b02eaa164dde9732a74e839957f29ad0ec7f5266b575d1835",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/dark_wood"
+  }
+]

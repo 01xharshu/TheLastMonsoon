@@ -60,6 +60,15 @@ rig = HumanService.add_builtin_rig(body, 'game_engine', import_weights=True)
 rig.name = 'Arjun_Rig'
 rig.show_in_front = True
 rig['candidate_status'] = 'WORK_IN_PROGRESS'
+bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.view_layer.objects.active=rig
+bpy.ops.object.mode_set(mode='EDIT')
+parent=rig.data.edit_bones['pelvis']
+for i in range(3):
+    bone=rig.data.edit_bones.new('sash_'+str(i+1))
+    bone.head=(-.17,-.17,1.075-i*.16);bone.tail=(-.17,-.17,.915-i*.16)
+    bone.parent=parent;bone.use_connect=i>0;parent=bone
+bpy.ops.object.mode_set(mode='OBJECT')
+
 
 def material(name, color, rough=0.65, texture=None, weave=False, leather=False):
     mat = bpy.data.materials.new(name)
@@ -137,6 +146,16 @@ for mat in brows.data.materials:
     for n in mat.node_tree.nodes:
         if n.type == 'BSDF_PRINCIPLED': n.inputs['Roughness'].default_value = .8
 
+# Use the fitted MPFB textured wavy hairstyle instead of an exposed cap and tube locks.
+hair=HumanService.add_mhclo_asset(str(DATA/'hair/short02/short02.mhclo'),body,asset_type='Hair',subdiv_levels=1)
+hair.name='Arjun_WavyHair_Mpfb'
+hair_shader=material('Black wavy hair texture',(.32,.28,.23),.72,DATA/'hair/short02/short02_diffuse.png')
+hair.data.materials.clear();hair.data.materials.append(hair_shader)
+bs=hair_shader.node_tree.nodes.get('Principled BSDF')
+tex=next(n for n in hair_shader.node_tree.nodes if n.type=='TEX_IMAGE')
+hair_shader.node_tree.links.new(tex.outputs['Alpha'],bs.inputs['Alpha'])
+hair_shader.surface_render_method='DITHERED'
+
 # Evaluate the full MPFB mesh before helper masking to retain fitting groups.
 for mod in body.modifiers: mod.show_viewport = False
 bpy.context.view_layer.update()
@@ -167,6 +186,28 @@ def fit_weights(obj, bone=None):
                 for name, value in body_weights[idx].items(): weights[name] = weights.get(name,0) + value*factor
             total = sum(weights.values())
             weights = {k:v/total for k,v in weights.items()} if total else {'pelvis':1.}
+        # Semantic garment weights avoid nearest-body bleed into hands or toes.
+        p=obj.matrix_world @ v.co
+        label=obj.name.lower()
+        if 'sash' in label:
+            if 'tail' in label or 'fringe' in label:
+                k=max(0,min(2,int((1.075-p.z)/.16)))
+                weights={'sash_'+str(k+1):1.}
+            else:weights={'pelvis':1.}
+        elif 'rolled cotton cuff' in label:
+            weights={'lowerarm_'+('l' if p.x>0 else 'r'):1.}
+        elif 'drapedtrousers' in label:
+            side='l' if p.x>0 else 'r'
+            t=max(0,min(1,(p.z-.43)/.16))
+            weights={'thigh_'+side:t,'calf_'+side:1-t}
+        elif 'kurta_splithem' in label:
+            t=max(0,min(1.,(1.04-p.z)/.08))
+            left=max(0,min(1,.5+p.x/.10))
+            weights={'pelvis':1-t,'thigh_l':t*left,'thigh_r':t*(1-left)}
+        elif 'boot' in label:
+            side='l' if p.x>0 else 'r'
+            t=max(0,min(1,(p.z-.145)/.13))
+            weights={'foot_'+side:1-t,'calf_'+side:t}
         for name, value in weights.items():
             if value > .001:
                 group = obj.vertex_groups.get(name) or obj.vertex_groups.new(name=name)
@@ -232,6 +273,7 @@ def elliptical_surface(name, rows, n, mat, folds=0, split=False, phase=0):
         for i in range(n):
             a=2*math.pi*i/n
             fold=folds*(math.sin(13*a+z*22+phase)+.45*math.sin(21*a-z*32))
+            if 'Trousers' in name:fold*=math.sin(math.pi*j/(len(rows)-1))**.6
             verts.append((cx+(rx+fold)*math.cos(a),cy+(ry+fold)*math.sin(a),z+.002*math.sin(a*9+phase)))
     for j in range(len(rows)-1):
         for i in range(n):
@@ -243,7 +285,8 @@ def elliptical_surface(name, rows, n, mat, folds=0, split=False, phase=0):
 shirt_rows=[]
 for j in range(25):
     t=j/24; z=.705+t*.38
-    rx=.248-.075*t**2;ry=.158-.035*t
+    ease=max(0.,min(1.,(z-.88)/.18));ease=ease*ease*(3-2*ease)
+    rx=.248-.080*ease;ry=.158-.035*t
     shirt_rows.append((z,0,-.022,rx,ry))
 skirt=elliptical_surface('Arjun_Kurta_SplitHem',shirt_rows,96,charcoal,.004,True)
 skirt['construction']='Side-split long shirt panels with eased waist and hem'
@@ -268,6 +311,8 @@ for side in (-1,1):
     axis=Vector((side*.65,-.25,-.72)).normalized()
     u=axis.cross(Vector((0,1,0))).normalized();v=axis.cross(u)
     points.sort(key=lambda p:math.atan2((p-center).dot(v),(p-center).dot(u)))
+    for repeat in range(2):
+        points=[(points[(i-1)%len(points)]+p*2+points[(i+1)%len(points)])/4 for i,p in enumerate(points)]
     for ring in range(3):
         pts=[center+(p-center)*1.02-axis*(.005+ring*.010) for p in points]
         curve('Rolled cotton cuff '+str(side),pts,.007,charcoal,cyclic=True)
@@ -281,21 +326,8 @@ for side in (-1,1):
         cx=side*(.196-.07*t);cy=-.005-.018*math.sin(t*math.pi)
         radius=.052+.048*math.sin(math.pi*t)**1.2
         rows.append((z,cx,cy,radius,radius*1.02))
-    pants=elliptical_surface('Arjun_DrapedTrousers_'+str(side),rows,96,cream,.009,phase=side*.7)
+    pants=elliptical_surface('Arjun_DrapedTrousers_'+str(side),rows,96,cream,.006,phase=side*.7)
     pants['construction']='Gathered individual trouser leg; diagonal pleats and ankle taper'
-    # Broad diagonal folded panel produces overlapping drape rather than uniform tubes.
-    verts=[];faces=[]
-    for j in range(33):
-        t=j/32;z=.27+t*.60;cx=side*(.196-.070*t)
-        radius=.052+.042*math.sin(t*math.pi)
-        for i in range(17):
-            u=i/16;a=-math.pi*.83+u*math.pi*.60+side*.3*t
-            r=radius+.008+ .010*math.sin(u*math.pi*7+t*15)
-            verts.append((cx+r*math.cos(a),-.014+r*math.sin(a)-.008,z+.03*math.sin(u*math.pi)*math.sin(t*math.pi)))
-    for j in range(32):
-        for i in range(16):
-            k=j*17+i;faces.append((k,k+1,k+18,k+17))
-    fit_weights(mesh_obj('Dhoti overlapping pleat '+str(side),verts,faces,cream,subdiv=1,thickness=.0015))
 
 sash_rows=[(1.032+j*.0042,0,-.020,.181+ .003*math.sin(j*1.7),.139+.003*math.sin(j*1.5)) for j in range(19)]
 sash=elliptical_surface('Arjun_RedWaistSash',sash_rows,128,red,.002)
@@ -351,30 +383,10 @@ def boot(side):
     curve('Boot toe seam',[(cx+.068*math.cos(a),-.07+.143*math.sin(a),.065) for a in [math.pi+i*math.pi/48 for i in range(49)]],.0012,leather_edge)
 for side in (-1,1):boot(side)
 
-# A connected scalp foundation with swept, layered wave locks.
-cap=subset('Arjun_Hair_Cap','scalp',lambda v:True,.007,hair_mat)
-for vg in list(cap.vertex_groups):cap.vertex_groups.remove(vg)
-g=cap.vertex_groups.new(name='head');g.add(list(range(len(cap.data.vertices))),1,'REPLACE')
 def head_surface(x,z):
     hit=bvh.ray_cast(Vector((x,-.6,z)),Vector((0,1,0)))
     return hit[0] if hit[0] is not None else Vector((x,-.12,z))
 
-# Tousled waves over the crown. Curves are tapered and overlap the scalp foundation.
-for k in range(155):
-    a=random.uniform(-math.pi,math.pi)
-    theta=random.uniform(.10,1.47)
-    pts=[]
-    for i in range(15):
-        t=i/14;aa=a+.40*t+.09*math.sin(t*math.tau+k)
-        th=max(.04,theta-.36*t)
-        x=.083*math.sin(th)*math.cos(aa)
-        y=-.040+.097*math.sin(th)*math.sin(aa)
-        z=1.613+.126*math.cos(th)+.012*math.sin(math.pi*t)+.008*math.sin(k)
-        pts.append((x,y,z))
-    lock=curve('Swept black wave',pts,random.uniform(.0025,.0048),hair_mat,'head')
-    for strand in range(2):
-        off=(strand-.5)*.003
-        curve('Fine wave strand',[(x+off,y-.001,z+.002) for x,y,z in pts],.00055,hair_mat,'head')
 # Upper lip moustache has a narrow central part and tapered outer ends.
 for side in (-1,1):
     for k in range(85):

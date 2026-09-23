@@ -82,18 +82,21 @@ def limb(upper,lower,end_name,target,pole, foot=False,foot_angle=0):
 
 def pose(kind,t=0,progress=1):
     reset()
-    angle=0.;root_shift=Vector((0,0,0));sitting=0.;prone=0.
+    angle=0.;root_shift=Vector((0,0,0));sitting=0.;prone=0.;swimming=kind.startswith('swim')
     phase=math.tau*t
     if kind=='walk':
         root_shift.z=-.050+.012*math.cos(phase*2)
     elif kind=='sit':
         sitting=smooth(progress)
-        root_shift=Vector((0,.025,-.375))*sitting
+        root_shift=Vector((0,.025,-.35))*sitting
         angle=.065*math.sin(sitting*math.pi)
     elif kind=='prone':
         prone=smooth(progress)
         root_shift=Vector((0,0,.195-hip.z))*prone
         angle=math.pi*.5*prone
+    if swimming:
+        angle=1.30 if kind=='swim_forward' else .12
+        root_shift.z=-.10 if kind=='swim_forward' else -.06
     master=Matrix.Translation(hip+root_shift) @ Matrix.Rotation(angle,4,'X') @ Matrix.Translation(-hip)
     rig.pose.bones['Root'].matrix=master @ rest['Root']
     update()
@@ -101,7 +104,7 @@ def pose(kind,t=0,progress=1):
     if prone:
         b=rig.pose.bones['neck_01']
         axis=rest['neck_01'].to_3x3().inverted() @ Vector((1,0,0))
-        b.rotation_quaternion=Quaternion(axis,-.32*prone)
+        b.rotation_quaternion=Quaternion(axis,-.65*prone)
         update()
     for side,sign in [('l',1),('r',-1)]:
         ankle=heads['foot_'+side].copy()
@@ -126,6 +129,13 @@ def pose(kind,t=0,progress=1):
             ankle=ankle.lerp(Vector((sign*.17,.79,.115)),prone)
             pole=Vector((0,-math.cos(angle),-math.sin(angle)))
             foot_angle=angle*.9
+        if swimming:
+            cycle=phase+(0 if side=='l' else math.pi)
+            ankle=master @ heads['foot_'+side]
+            ankle.z+=.065*math.sin(cycle)
+            ankle.y+=.025*math.cos(cycle)
+            foot_angle=angle*.8
+            pole=Vector((0,-math.cos(angle),-math.sin(angle)))
         actual=limb('thigh_'+side,'calf_'+side,'foot_'+side,ankle,pole,True,foot_angle)
         if kind=='walk':
             contact_samples.append({'phase':round(t,5),'side':side,'stance':stance,
@@ -141,6 +151,14 @@ def pose(kind,t=0,progress=1):
         elif prone:
             hand=hand.lerp(Vector((sign*.21,-.78,.09)),prone)
             arm_pole=Vector((sign*.5,.1,-1))
+        if swimming:
+            cycle=phase+(0 if side=='l' else math.pi)
+            shoulder=rig.pose.bones['upperarm_'+side].head
+            if kind=='swim_forward':
+                hand=shoulder+Vector((sign*(.12+.08*math.sin(cycle)), -.40*math.cos(cycle), .12*math.sin(cycle)))
+            else:
+                hand=shoulder+Vector((sign*.28,-.12+.07*math.cos(cycle),-.25+.035*math.sin(cycle)))
+            arm_pole=Vector((sign,.1,-.4))
         wrist=limb('upperarm_'+side,'lowerarm_'+side,'hand_'+side,hand,arm_pole)
         if sitting>.5 or prone>.5:
             aim('hand_'+side,wrist,wrist+Vector((0,-.035,-.003)))
@@ -177,6 +195,8 @@ make_action('stand_up',46,lambda t:pose('sit',progress=1-t))
 make_action('prone_down',61,lambda t:pose('prone',progress=t))
 make_action('prone_idle',61,lambda t:pose('prone',t),True)
 make_action('prone_up',61,lambda t:pose('prone',progress=1-t))
+make_action('swim_forward',61,lambda t:pose('swim_forward',t),True)
+make_action('swim_idle',61,lambda t:pose('swim_idle',t),True)
 for m,visible in saved_modifiers:m.show_viewport=visible
 rig.animation_data.action=bpy.data.actions['idle']
 scene.frame_start=1;scene.frame_end=61;scene.frame_set(1)
@@ -206,7 +226,8 @@ views=[('idle','front',(0,-4,.9),(0,0,.9),1.98),
        ('idle','three_quarter',(3,-4,1.1),(0,0,.9),1.98),
        ('walk','walk_contact',(3,-4,1.0),(0,0,.85),1.98),
        ('sit_idle','sitting',(3,-4,1.3),(0,-.15,.60),1.55),
-       ('prone_idle','prone',(3,-3,1.9),(0,0,.18),2.25)]
+       ('prone_idle','prone',(3,-3,1.9),(0,0,.18),2.25),
+       ('swim_forward','swimming',(3,-3,2.3),(0,0,.85),2.25)]
 for action,name,position,target,scale in views:
     rig.animation_data.action=bpy.data.actions[action]
     scene.frame_set(1 if action!='walk' else 7)

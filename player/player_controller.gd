@@ -17,12 +17,16 @@ extends CharacterBody3D
 
 @export var jump_velocity: float = 5.0
 
+@export_range(0.05, 0.6, 0.01) var max_walk_step_height: float = 0.38
+@export_range(0.0, 0.5, 0.01) var ground_snap_distance: float = 0.3
+var step_lift: float = 0.0
+
 @export var swim_speed: float = 2.6
 var is_swimming := false
 var water_surface := 0.0
 
 func set_water_state(active: bool, surface: float) -> void:
-	is_swimming = active
+	is_swimming = active and (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null) == null and not get_meta("climbing",false)
 	water_surface = surface
 
 
@@ -37,6 +41,26 @@ func set_water_state(active: bool, surface: float) -> void:
 @export var min_camera_angle: float = -70.0
 
 @export var max_camera_angle: float = 60.0
+
+var first_person := false
+var first_person_view: Node3D
+var third_person_height: float
+var third_person_distance: float
+
+func set_first_person(enabled: bool) -> void:
+	first_person = enabled
+	if enabled and first_person_view == null:
+		first_person_view = preload("res://player/first_person_view.gd").new()
+		$CameraPivot/SpringArm3D/Camera3D.add_child(first_person_view)
+		first_person_view.setup($VisualRoot/CharacterVisual)
+	if first_person_view:
+		first_person_view.visible = enabled
+	visual_root.visible = not enabled
+	camera_pivot.position.y = 0.68 if enabled else third_person_height
+	$CameraPivot/SpringArm3D.spring_length = 0.0 if enabled else third_person_distance
+	$CameraPivot/SpringArm3D/Camera3D.near = 0.03 if enabled else 0.05
+	# Reset immediately rather than waiting for the spring arm's next physics update.
+	$CameraPivot/SpringArm3D/Camera3D.position.z = 0.0 if enabled else third_person_distance
 
 
 # =========================================================
@@ -90,6 +114,8 @@ func set_water_state(active: bool, surface: float) -> void:
 	$ConsumableComponent
 )
 
+@onready var river_water = $RiverWaterComponent
+
 
 @onready var inventory_ui = (
 	$UI/HUDRoot/InventoryPanel
@@ -116,6 +142,13 @@ var current_interactable: Interactable = null
 # =========================================================
 
 func _ready() -> void:
+	if not inventory.has_water_bag():
+		inventory.add_item("water_bag", 1)
+	floor_snap_length = ground_snap_distance
+
+	third_person_height = camera_pivot.position.y
+	third_person_distance = $CameraPivot/SpringArm3D.spring_length
+	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
 
 	Input.mouse_mode = (
 		Input.MOUSE_MODE_CAPTURED
@@ -145,13 +178,17 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false):
+	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "":
 		return
 
 
 	# -----------------------------------------------------
 	# CAMERA
 	# -----------------------------------------------------
+
+	if event.is_action_pressed("toggle_view"):
+		set_first_person(not first_person)
+		get_viewport().set_input_as_handled()
 
 	if event is InputEventMouseMotion:
 
@@ -168,7 +205,11 @@ func _unhandled_input(
 		"pause"
 	):
 
-		_toggle_mouse_capture()
+		if get_parent().has_node("GameMenu"):
+			get_parent().get_node("GameMenu").toggle()
+		else:
+			_toggle_mouse_capture()
+		get_viewport().set_input_as_handled()
 
 
 	# -----------------------------------------------------
@@ -179,7 +220,11 @@ func _unhandled_input(
 		"interact"
 	):
 
-		_try_primary_interaction()
+		if (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null)==null and not get_meta("climbing",false):
+			if Input.is_key_pressed(KEY_SHIFT):
+				_try_secondary_interaction()
+			else:
+				_try_primary_interaction()
 
 
 	# -----------------------------------------------------
@@ -190,7 +235,7 @@ func _unhandled_input(
 		"secondary_interact"
 	):
 
-		_try_secondary_interaction()
+		$RideComponent.try_toggle()
 
 
 	# -----------------------------------------------------
@@ -211,12 +256,24 @@ func _unhandled_input(
 func _physics_process(
 	delta: float
 ) -> void:
+	if get_meta("river_action", "") != "":
+		velocity = Vector3.ZERO
+		survival.set_sprinting(false)
+		move_and_slide()
+		_hide_interaction_labels()
+		return
+
+	if (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null) != null or get_meta("climbing",false):
+		velocity = Vector3.ZERO
+		survival.set_sprinting(false)
+		_hide_interaction_labels()
+		return
 
 	# -----------------------------------------------------
 	# INVENTORY OPEN
 	# -----------------------------------------------------
 
-	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false):
+	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false):
 
 		_apply_gravity(
 			delta
@@ -270,10 +327,44 @@ func _physics_process(
 	)
 
 
+	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
 	move_and_slide()
+	_try_walk_step(delta, intended_horizontal)
 
 
 	_update_interaction()
+
+
+func _try_walk_step(delta: float, horizontal: Vector3) -> void:
+	step_lift = move_toward(step_lift, 0.0, delta * 4.0)
+	if is_swimming or not is_on_floor() or velocity.y > 0.0:
+		return
+	if horizontal.length_squared() < 0.0001:
+		return
+	# Only step when the normal slide was blocked in the intended direction.
+	var traveled := get_position_delta()
+	if Vector2(traveled.x, traveled.z).dot(Vector2(horizontal.x, horizontal.z)) > horizontal.length_squared() * 0.8:
+		return
+	var space := get_world_3d().direct_space_state
+	var raised := global_transform.translated(Vector3.UP * max_walk_step_height)
+	if test_move(global_transform, Vector3.UP * max_walk_step_height):
+		return
+	if test_move(raised, horizontal):
+		return
+	var capsule: CapsuleShape3D = $CollisionShape3D.shape
+	var probe_forward: Vector3 = horizontal.normalized() * (capsule.radius + 0.08)
+	var probe_at: Vector3 = raised.origin + horizontal + probe_forward
+	var query := PhysicsRayQueryParameters3D.create(probe_at + Vector3.UP * 0.05, probe_at - Vector3.UP * 1.05)
+	query.exclude = [get_rid()]
+	var floor_hit := space.intersect_ray(query)
+	if floor_hit.is_empty() or floor_hit.normal.dot(Vector3.UP) < cos(floor_max_angle):
+		return
+	var rise: float = floor_hit.position.y + capsule.height * 0.5 - global_position.y
+	if rise < 0.025 or rise > max_walk_step_height + 0.02:
+		return
+	global_position = Vector3(global_position.x + horizontal.x, global_position.y + rise, global_position.z + horizontal.z)
+	step_lift = maxf(step_lift, rise)
+	velocity.y = 0.0
 
 
 # =========================================================
@@ -292,7 +383,8 @@ func _handle_mouse_look(
 		return
 
 
-	rotate_y(
+	# Orbit the camera without rotating the actor or its visual children.
+	camera_pivot.rotate_y(
 		-event.relative.x
 		* mouse_sensitivity
 	)
@@ -343,8 +435,9 @@ func _handle_movement(
 	)
 
 
+	# Movement follows camera yaw only; looking up/down cannot change speed.
 	input_direction = (
-		global_transform.basis
+		Basis(Vector3.UP, camera_pivot.global_rotation.y)
 		* input_direction
 	).normalized()
 
@@ -468,10 +561,10 @@ func _rotate_character_visual(
 	)
 
 
-	visual_root.rotation.y = lerp_angle(
-		visual_root.rotation.y,
+	visual_root.global_rotation.y = lerp_angle(
+		visual_root.global_rotation.y,
 		target_angle,
-		10.0 * delta
+		1.0 - exp(-10.0 * delta)
 	)
 
 
@@ -500,6 +593,8 @@ func _apply_gravity(
 # =========================================================
 
 func _handle_jump() -> void:
+	if Input.is_action_just_pressed("jump") and $ClimbComponent.try_start():
+		return
 
 	if (
 		Input.is_action_just_pressed(
@@ -518,66 +613,48 @@ func _handle_jump() -> void:
 # INTERACTION DETECTION
 # =========================================================
 
+func _find_interactable() -> Interactable:
+	var forward: Vector3 = -camera_pivot.global_basis.z if first_person else visual_root.global_basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	var best: Interactable
+	var best_score := -INF
+	var origin := global_position + Vector3.UP * 0.2
+	for node in get_tree().get_nodes_in_group("interactables"):
+		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
+		var candidate := node as Interactable
+		if candidate == null: continue
+		var offset := candidate.global_position - global_position
+		var distance := offset.length()
+		if distance > 2.6: continue
+		var flat := Vector3(offset.x, 0, offset.z)
+		var alignment := forward.dot(flat.normalized()) if flat.length() > 0.1 else 1.0
+		if alignment < 0.65: continue
+		var query := PhysicsRayQueryParameters3D.create(origin, candidate.global_position)
+		query.exclude = [get_rid()]
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty() and hit.collider != candidate: continue
+		var score := alignment * 2.0 - distance * 0.25
+		if score > best_score:
+			best = candidate
+			best_score = score
+	return best
+
 func _update_interaction() -> void:
-
-	current_interactable = null
-
-
-	if not interaction_ray.is_colliding():
-
-		_hide_interaction_labels()
-
-		return
-
-
-	var collider := (
-		interaction_ray.get_collider()
-	)
-
-
-	if collider is Interactable:
-
-		current_interactable = (
-			collider as Interactable
-		)
-
-
-		# PRIMARY
-
-		primary_interaction_label.text = (
-			"[E] "
-			+ current_interactable.interaction_text
-		)
-
-
-		primary_interaction_label.visible = true
-
-
-		# SECONDARY
-
-		if (
-			current_interactable
-			.has_secondary_interaction()
-		):
-
-			secondary_interaction_label.text = (
-				"[F] "
-				+ current_interactable
-				.secondary_interaction_text
-			)
-
-
-			secondary_interaction_label.visible = true
-
-
+	current_interactable = _find_interactable()
+	if current_interactable == null:
+		if river_water.can_use_river():
+			primary_interaction_label.text = "[E] Drink river water"
+			primary_interaction_label.visible = true
+			secondary_interaction_label.text = "[Shift+E] Fill water pouch"
+			secondary_interaction_label.visible = inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0
 		else:
-
-			secondary_interaction_label.visible = false
-
-
-	else:
-
-		_hide_interaction_labels()
+			_hide_interaction_labels()
+		return
+	primary_interaction_label.text = "[E] " + current_interactable.interaction_text
+	primary_interaction_label.visible = true
+	secondary_interaction_label.visible = current_interactable.has_secondary_interaction()
+	secondary_interaction_label.text = "[Shift+E] " + current_interactable.secondary_interaction_text
 
 
 # =========================================================
@@ -597,7 +674,10 @@ func _hide_interaction_labels() -> void:
 
 func _try_primary_interaction() -> void:
 
+	current_interactable = _find_interactable()
+
 	if current_interactable == null:
+		river_water.start_drink()
 		return
 
 
@@ -612,7 +692,10 @@ func _try_primary_interaction() -> void:
 
 func _try_secondary_interaction() -> void:
 
+	current_interactable = _find_interactable()
+
 	if current_interactable == null:
+		river_water.start_fill()
 		return
 
 

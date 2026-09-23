@@ -2,9 +2,9 @@ extends Node3D
 ## Fictional 1850s rural timber crossing: plank deck, driven piles and braced rails.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const CROSSING_Z := 165.0
-const HALF_SPAN := 64.0
-const RAMP := 24.0
-const WIDTH := 4.2
+const HALF_SPAN := 104.0
+const RAMP := 36.0
+const WIDTH := 4.8
 var deck_height: float
 var layout := Layout.new()
 var timber: StandardMaterial3D
@@ -18,21 +18,21 @@ func _ready() -> void:
 	timber.roughness = 0.95
 	dark = timber.duplicate()
 	dark.albedo_color = Color(0.19, 0.13, 0.08)
-	deck_height = maxf(layout.height(position.x-HALF_SPAN,CROSSING_Z), layout.height(position.x+HALF_SPAN,CROSSING_Z)) + 0.6
+	deck_height = maxf(6.0, maxf(layout.height(position.x-HALF_SPAN,CROSSING_Z), layout.height(position.x+HALF_SPAN,CROSSING_Z)) + 1.0)
 	# One continuous collision slab prevents catches between visual planks.
 	piece("Deck", Vector3(0,deck_height-0.15,0), Vector3(HALF_SPAN*2,0.3,WIDTH), dark, true)
-	for i in 256:
+	for i in int(HALF_SPAN*4):
 		piece("Plank",Vector3(-HALF_SPAN+0.25+i*0.5,deck_height+0.025,0),Vector3(0.48,0.05,WIDTH+0.16),timber)
 	for side in [-1.0,1.0]:
-		for i in 33:
+		for i in int(HALF_SPAN*0.5)+1:
 			var x: float = -HALF_SPAN+i*4.0
-			var bottom: float = layout.height(position.x+x,CROSSING_Z+side*1.9)-0.5
-			piece("Pile",Vector3(x,(bottom+deck_height+1.2)*0.5,side*1.9),Vector3(0.24,deck_height+1.2-bottom,0.24),dark)
-			if i < 32:
-				beam(Vector3(x,deck_height+0.2,side*1.9),Vector3(x+4,deck_height+1.08,side*1.9),0.12)
-		piece("Handrail",Vector3(0,deck_height+1.15,side*1.9),Vector3(128,0.16,0.2),timber)
-		piece("RailCollision",Vector3(0,deck_height+0.6,side*2.04),Vector3(128,1.3,0.15),dark,true,false)
-		piece("Stringer",Vector3(0,deck_height-0.42,side*1.5),Vector3(128,0.5,0.28),dark)
+			var bottom: float = layout.height(position.x+x,CROSSING_Z+side*(WIDTH/2-0.15))-0.5
+			piece("Pile",Vector3(x,(bottom+deck_height+1.2)*0.5,side*(WIDTH/2-0.15)),Vector3(0.24,deck_height+1.2-bottom,0.24),dark,true)
+			if i < int(HALF_SPAN*0.5):
+				beam(Vector3(x,deck_height+0.2,side*(WIDTH/2-0.15)),Vector3(x+4,deck_height+1.08,side*(WIDTH/2-0.15)),0.12)
+		piece("Handrail",Vector3(0,deck_height+1.15,side*(WIDTH/2-0.15)),Vector3(HALF_SPAN*2,0.16,0.2),timber)
+		piece("RailCollision",Vector3(0,deck_height+0.6,side*(WIDTH/2-0.06)),Vector3(HALF_SPAN*2,1.3,0.15),dark,true,false)
+		piece("Stringer",Vector3(0,deck_height-0.42,side*1.5),Vector3(HALF_SPAN*2,0.5,0.28),dark)
 	# Ramps follow a smooth bank-to-deck profile and overlap the ground at their ends.
 	for side in [-1.0,1.0]:
 		for i in 48:

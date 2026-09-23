@@ -48,9 +48,21 @@
       "fps": 30,
       "duration_s": 2.0,
       "loop": false
+    },
+    "swim_forward": {
+      "frames": 61,
+      "fps": 30,
+      "duration_s": 2.0,
+      "loop": true
+    },
+    "swim_idle": {
+      "frames": 61,
+      "fps": 30,
+      "duration_s": 2.0,
+      "loop": true
     }
   },
-  "rig_bones": 53,
+  "rig_bones": 56,
   "walk_nominal_speed_m_s": 0.6944444444444444,
   "seat_height_m": 0.46,
   "max_ankle_target_error_m": 1.2013700229374393e-07,
@@ -1240,7 +1252,7 @@
       "target_error_m": 7.450580596923828e-09
     }
   ],
-  "blend_sha256": "10b686ab9287ca268fb7a856bf450a12be5d3d6f2689fa21ee4d59473edc5fa6",
+  "blend_sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
   "approval": {
     "walking_visual": false,
     "sitting_contact": false,

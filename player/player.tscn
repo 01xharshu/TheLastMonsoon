@@ -15,10 +15,19 @@
 [ext_resource type="Script" uid="uid://cotw71fsvoutf" path="res://player/survival_hud.gd" id="10_kb6p2"]
 [ext_resource type="Script" uid="uid://cesfq1spyy0de" path="res://player/circular_stat.gd" id="10_yllr7"]
 [ext_resource type="Script" uid="uid://ch3csh387rtnp" path="res://player/consumable_component.gd" id="11_2ieo8"]
+[ext_resource type="Script" path="res://player/river_water_component.gd" id="river_water"]
 
 [ext_resource type="Script" path="res://player/historical_hud.gd" id="16_hud"]
 
 [ext_resource type="Script" path="res://player/world_map.gd" id="17_map"]
+
+[ext_resource type="Script" path="res://player/ride_component.gd" id="ride"]
+[ext_resource type="Script" path="res://player/climb_component.gd" id="climb"]
+
+[ext_resource type="Script" path="res://player/rifle_combat.gd" id="18_rifle"]
+[ext_resource type="Script" path="res://player/fame_component.gd" id="19_fame"]
+[ext_resource type="Script" path="res://player/identity_scroll.gd" id="20_scroll"]
+[ext_resource type="Script" path="res://player/talwar_slash.gd" id="21_slash"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
@@ -351,6 +360,9 @@ script = ExtResource("8_rgyib")
 [node name="ConsumableComponent" type="Node" parent="." unique_id=1024785070]
 script = ExtResource("11_2ieo8")
 
+[node name="RiverWaterComponent" type="Node" parent="."]
+script = ExtResource("river_water")
+
 [node name="WorldMap" type="Control" parent="UI"]
 layout_mode = 3
 anchors_preset = 15
@@ -359,3 +371,27 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("17_map")
+
+[node name="RideComponent" type="Node" parent="."]
+script = ExtResource("ride")
+
+[node name="ClimbComponent" type="Node" parent="."]
+script = ExtResource("climb")
+
+[node name="RifleCombat" type="Node" parent="."]
+script = ExtResource("18_rifle")
+
+[node name="FameComponent" type="Node" parent="."]
+script = ExtResource("19_fame")
+
+[node name="IdentityScroll" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("20_scroll")
+
+[node name="TalwarSlash" type="Node" parent="."]
+script = ExtResource("21_slash")

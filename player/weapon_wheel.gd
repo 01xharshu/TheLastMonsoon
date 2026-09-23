@@ -11,6 +11,7 @@ var equipment: Node3D
 var selected := 0
 var previous_mouse_mode: Input.MouseMode
 var previous_mouse_position := Vector2.ZERO
+var previous_hud_visible := true
 
 func _ready() -> void:
 	name = "WeaponWheel"
@@ -22,12 +23,14 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 func open() -> void:
-	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false): return
+	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.has_meta("mounted_vehicle") or actor.get_meta("climbing",false): return
 	if not actor.is_physics_processing(): return
 	selected = int(equipment.selected)
 	previous_mouse_mode = Input.mouse_mode
 	previous_mouse_position = get_viewport().get_mouse_position()
 	actor.set_meta("weapon_wheel_open", true)
+	previous_hud_visible = actor.get_node("UI/HUDRoot").visible
+	actor.get_node("UI/HUDRoot").hide()
 	show()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	Input.warp_mouse(size * 0.5)
@@ -39,13 +42,14 @@ func close(commit: bool) -> void:
 		if selected == 2:
 			equipment.stowed = true
 			equipment._refresh()
-		else:
+		elif equipment.owns(selected):
 			equipment.select_weapon(selected)
 			# Swimming always wins over a wheel selection; selection is remembered.
 			equipment.stowed = equipment.swimming or actor.is_swimming
 			equipment._refresh()
 	hide()
 	actor.set_meta("weapon_wheel_open", false)
+	actor.get_node("UI/HUDRoot").visible = previous_hud_visible
 	Input.mouse_mode = previous_mouse_mode
 	if previous_mouse_mode == Input.MOUSE_MODE_VISIBLE:
 		Input.warp_mouse(previous_mouse_position)
@@ -124,11 +128,13 @@ func _draw() -> void:
 		draw_polyline(polygon,IVORY if slot==selected else BRASS,2 if slot==selected else 1,true)
 		var point := centre + Vector2.from_angle(angle)*(inner+outer)*.5
 		_icon(slot,point-Vector2(0,9),IVORY if slot==selected else Color(0.64,0.65,0.57))
-		_text(LABELS[slot],point+Vector2(0,40),18,IVORY,true)
+		var available: bool = slot == 2 or equipment.owns(slot)
+		_text(LABELS[slot],point+Vector2(0,40),18,IVORY if available else BRASS,true)
+		if not available: _text("FIND IN STORES",point+Vector2(0,59),11,BRASS)
 	draw_circle(centre,inner-4,Color(0.027,0.038,0.030,0.98))
 	_text(LABELS[selected],centre+Vector2(0,-6),19,IVORY,true)
 	_text("RELEASE TO SELECT",centre+Vector2(0,17),10,BRASS)
-	_text(DESCRIPTIONS[selected],centre+Vector2(0,outer+32),17)
+	_text(DESCRIPTIONS[selected] if selected == 2 or equipment.owns(selected) else "Find this weapon in a guarded store",centre+Vector2(0,outer+32),17)
 	_text("Hold ~   ·   Move pointer or use arrow keys   ·   Esc cancels",centre+Vector2(0,outer+62),14)
 	if actor.is_swimming:
 		_text("Swimming — weapons stay stowed",centre+Vector2(0,outer+86),14,BRASS)

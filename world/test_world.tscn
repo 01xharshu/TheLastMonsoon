@@ -342,7 +342,7 @@ environment = SubResource("Environment_6xif0")
 
 [node name="GameTimeSystem" type="Node" parent="." unique_id=402572795]
 script = ExtResource("5_dt2ce")
-game_minutes_per_real_second = 60.0
+game_minutes_per_real_second = 2.4
 
 [node name="Player" parent="." unique_id=1391336852 instance=ExtResource("1_dgccc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

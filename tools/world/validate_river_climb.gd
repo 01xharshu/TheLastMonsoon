@@ -1,0 +1,62 @@
+extends SceneTree
+## Gameplay contact and renderer captures; requires native Forward+/Metal for pixel evidence.
+var failures := 0
+func _initialize() -> void: call_deferred("validate")
+func check(ok: bool, label: String) -> void:
+	print(("PASS " if ok else "FAIL ")+label)
+	if not ok: failures+=1
+func capture(name: String) -> void:
+	for i in 15: await process_frame
+	await RenderingServer.frame_post_draw
+	var path := "res://docs/world/captures/"+name+".png"
+	check(root.get_texture().get_image().save_png(path)==OK,"capture "+name)
+func validate() -> void:
+	var world=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
+	root.add_child(world)
+	current_scene=world
+	for i in 5: await physics_frame
+	var actor: CharacterBody3D=world.get_node("Player")
+	var boat: CharacterBody3D=world.get_node("RiverBoat")
+	var fish: Node=world.get_node("RiverFish")
+	check(fish.fish.size()==36,"36 fish below water")
+	actor.set_physics_process(false)
+	actor.get_node("UI").hide()
+	world.get_node("LandscapeUI").hide()
+	var camera := Camera3D.new()
+	camera.fov=55.0
+	world.add_child(camera)
+	camera.make_current()
+	camera.global_position=boat.global_position+Vector3(-7,5,6)
+	camera.look_at(boat.global_position+Vector3(2,-.5,0))
+	if DisplayServer.get_name()!="headless": await capture("14_river_boat_water")
+	actor.global_position=boat.global_position+Vector3(-2,1.2,0)
+	for i in 2: await physics_frame
+	check(boat.can_board(actor),"boat within reach from landing")
+	check(boat.board(actor),"F boarding contract")
+	for i in 10: await physics_frame
+	check(actor.has_meta("mounted_vehicle"),"mounted state remains active")
+	check(actor.global_position.distance_to(boat.seat_world())<1.5,"pelvis remains on bench")
+	if DisplayServer.get_name()!="headless": await capture("15_arjun_boat_seated")
+	check(boat.dismount(),"F dismount contract")
+	check(not actor.has_meta("mounted_vehicle"),"mounted state clears")
+	actor.global_position=Vector3(291.3,12.95,300)
+	actor.visual_root.global_rotation.y=PI/2
+	for i in 3: await physics_frame
+	camera.global_position=Vector3(284,16,307)
+	camera.look_at(Vector3(293,15.0,300))
+	var climb: Node=actor.get_node("ClimbComponent")
+	check(climb.try_start(),"wall climb begins on authored masonry")
+	if climb.active:
+		for i in 54: await physics_frame
+		var visual: Node=actor.get_node("VisualRoot/CharacterVisual")
+		for side in ["l","r"]:
+			var index: int=visual.skeleton.find_bone("hand_"+side)
+			var wrist: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(index).origin)
+			var target: Vector3=visual.climb_targets[side].global_position
+			print("CLIMB HAND ",side," error_m=",snappedf(wrist.distance_to(target),.001)," wrist=",wrist," target=",target," shoulder=",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin)," actor=",actor.global_position," ik=",visual.climb_ik[side].is_running()," influence=",visual.climb_ik[side].influence," iktarget=",visual.climb_ik[side].get_target_transform().origin)
+		if DisplayServer.get_name()!="headless": await capture("16_arjun_climbing")
+		for i in 120: await physics_frame
+		check(not climb.active,"wall climb completes")
+		check(actor.global_position.y>16,"Arjun lands on wall walk")
+	print("RIVER BOAT CLIMB ","PASS" if failures==0 else "FAIL "+str(failures))
+	quit(1 if failures else 0)

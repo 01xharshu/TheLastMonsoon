@@ -25,6 +25,7 @@ func _ready() -> void:
 	$LandscapeUI/ReviewHelp.visible = false
 	move_to_review_point(0)
 	last_safe_position = player.position
+	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 
 func move_to_review_point(index: int) -> void:
@@ -38,7 +39,7 @@ func move_to_review_point(index: int) -> void:
 	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · 2.986 km²"
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if player.get_meta("map_open", false): return
+	if player.get_meta("map_open", false) or player.has_meta("mounted_vehicle") or player.get_meta("climbing",false): return
 	if not OS.is_debug_build() or not event.is_pressed() or event.is_echo(): return
 	if event is InputEventKey and event.keycode == KEY_F3:
 		overview = not overview

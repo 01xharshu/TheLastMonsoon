@@ -40,8 +40,8 @@ var starting_hour: int = 6
 var starting_minute: int = 0
 
 
-# 1 real second = 1 game minute.
-@export var game_minutes_per_real_second: float = 1.0
+# 600 real seconds = 1440 game minutes (one full day).
+@export var game_minutes_per_real_second: float = 2.4
 
 
 @export var clock_paused: bool = false

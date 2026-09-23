@@ -30,6 +30,8 @@ The project is being designed around one core principle:
 
 The game is currently in **pre-alpha**, with development focused on reusable gameplay architecture and a playable vertical slice.
 
+For current work, failures and the next command, use the short [handoff](CODEX_HANDOFF.md). The [documentation index](docs/README.md) links to focused systems and evidence. This README describes the game and long-term direction; it is not the live task log.
+
 ---
 
 ## Project Status
@@ -48,26 +50,25 @@ a meandering river corridor, rocky eastern hills, initial broadleaf vegetation,
 dirt routes, and terrain reservations for future settlements. The original
 `world/test_world.tscn` remains available as the small systems test scene.
 
-This is the first landscape foundation, not a completed village or city. Swimming,
-climbing, historically researched buildings, interiors, flags, vehicles and final
-characters remain later work. Deep-water entry currently returns the player to
-dry ground until swimming is implemented.
+This is a prototype world with swimming, an initial climb system, settlements,
+flags and a river boat under development. Their presence does not imply finished
+art, traversal, performance or story content. The current acceptance state is
+recorded in the handoff and focused validation reports.
 
 **Minimum-memory design target: 8 GB RAM.** Defaults use 720p, 1K natural textures,
 mesh LOD, spatially batched vegetation and limited shadows. Performance has to be
 validated on actual minimum hardware; an M4 with 16 GB does not certify all 8 GB devices.
 
-Arjun’s existing clothed base is now the playable actor, with a runtime rig and
-procedural walk/run motion. The Blender source remains unchanged. A timber pile
+Arjun’s clothed runtime model uses a Blender/MakeHuman-based candidate and rig;
+motion, likeness and equipment contact are still being refined. A timber pile
 bridge with braced rails and walkable bank ramps crosses the river at the river
-approach (z = 165 m). Press **M** for the north-up field map: it shows Arjun,
-the crossing, roads, terrain and named reserves; **M** or **Esc** closes it.
-Reserve labels mark future locations, not finished settlements.
+approach (z = 165 m). Press **M** for the north-up field map; zoom, pan and place
+a map marker with the pointer. **M** or **Esc** closes it.
 
 Press **F5** to run the new default world. In development builds, **F3** toggles an
 aerial survey and **F4** moves between landscape review locations.
 
-See [world scope, rebuild instructions and validation](docs/world/README.md) and
+See the [documentation index](docs/README.md) and
 [third-party landscape licenses](docs/world/ASSET_LICENSES.md).
 
 ### Implemented

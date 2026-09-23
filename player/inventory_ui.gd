@@ -53,7 +53,22 @@ extends PanelContainer
 # STARTUP
 # =========================================================
 
+var mango_label: Label
+var eat_mango_button: Button
+
 func _ready() -> void:
+	var row := HBoxContainer.new()
+	mango_label = Label.new()
+	mango_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(mango_label)
+	eat_mango_button = Button.new()
+	eat_mango_button.text = "Eat mango"
+	row.add_child(eat_mango_button)
+	$ContentMargin/Content.add_child(row)
+	$ContentMargin/Content.move_child(row, $ContentMargin/Content/RotiRow.get_index() + 1)
+	eat_mango_button.pressed.connect(func():
+		consumables.eat_mango()
+		_refresh_inventory())
 
 	visible = false
 
@@ -186,6 +201,10 @@ func _refresh_inventory() -> void:
 # =========================================================
 
 func _refresh_roti() -> void:
+	if mango_label:
+		var count := inventory.get_item_count("mango")
+		mango_label.text = "Mango    × " + str(count)
+		eat_mango_button.disabled = count <= 0 or (survival.satiety >= survival.max_satiety and survival.hydration >= survival.max_hydration)
 
 	var roti_count := (
 		inventory.get_item_count(

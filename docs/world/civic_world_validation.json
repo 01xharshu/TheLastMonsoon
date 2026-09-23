@@ -1,0 +1,28 @@
+{
+	"failures": [],
+	"foundations": {
+		"CompanyArmoury": {
+			"foundation_above_grade_m": 0.0,
+			"position": "(376.0, 12.0, 308.0)"
+		},
+		"DistrictJail": {
+			"foundation_above_grade_m": 0.0,
+			"position": "(347.0, 12.0, 313.0)"
+		},
+		"DistrictPolice": {
+			"foundation_above_grade_m": 0.449999809265137,
+			"position": "(320.0, 10.45, 120.0)"
+		},
+		"TownHall": {
+			"foundation_above_grade_m": 0.449999809265137,
+			"position": "(-320.0, 8.45, -470.0)"
+		}
+	},
+	"intrusion_samples": [],
+	"nature_intrusions": 0,
+	"rocks_checked": 748,
+	"route_contact_samples": 97,
+	"status": "PASS",
+	"trees_checked": 2116,
+	"worst_route_contact_error_m": 0.0351860333388441
+}

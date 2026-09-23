@@ -1,0 +1,24 @@
+{
+  "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
+  "source_sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
+  "output": "characters/arjun/arjun.glb",
+  "output_sha256": "6c101dc3f254008357ab2a611b36f3b0d3e9a9dc86a64804a0eb6e7e750fa768",
+  "meshes": 23,
+  "bones": 56,
+  "actions": [
+    "idle",
+    "prone_down",
+    "prone_idle",
+    "prone_up",
+    "sit_down",
+    "sit_idle",
+    "stand_up",
+    "swim_forward",
+    "swim_idle",
+    "walk"
+  ],
+  "color_method": "Source material color and alpha baked into 2048 atlas; original metallic/roughness retained",
+  "owner_direction": "Use improved candidate as playable base; continue refinement",
+  "final_likeness_approved": false,
+  "motion_approved": false
+}

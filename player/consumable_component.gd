@@ -239,3 +239,22 @@ func drink_from_water_bag() -> bool:
 
 
 	return true
+
+func eat_fresh_mango() -> bool:
+	if survival.satiety >= survival.max_satiety and survival.hydration >= survival.max_hydration:
+		inventory.request_message("You are not hungry or thirsty")
+		return false
+	survival.restore_satiety(12.0)
+	survival.restore_hydration(6.0)
+	inventory.request_message("Ate mango")
+	return true
+
+func eat_mango() -> bool:
+	if not inventory.has_item("mango"):
+		inventory.request_message("No mangoes in Satchel")
+		return false
+	if survival.satiety >= survival.max_satiety and survival.hydration >= survival.max_hydration:
+		inventory.request_message("You are not hungry or thirsty")
+		return false
+	if not inventory.remove_item("mango", 1): return false
+	return eat_fresh_mango()
