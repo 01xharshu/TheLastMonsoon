@@ -1,0 +1,31 @@
+{
+  "reference": "docs/characters/arjun/weapon_set_reference_2026-09-23.png",
+  "reference_sha256": "d639e90b716d44281badac1f9958417c03c52d6d599ef0974a87ed26cf504439",
+  "status": "STANDALONE_STUDY_NOT_APPROVED",
+  "assets": [
+    {
+      "source": "environment/weapons/period_bow/period_bow.blend",
+      "source_sha256": "346d86eccd2309d3db13b952a40a2b7835ef31aad5a6c036a6bcd6ae184d026b",
+      "output": "environment/weapons/period_bow/period_bow.glb",
+      "output_sha256": "4d6c69d589c4decea6ffc72350c067b2fbd27d900f14966e756e3ec5ede936ad"
+    },
+    {
+      "source": "environment/weapons/period_arrow/period_arrow.blend",
+      "source_sha256": "239374cffec6cf56d660b2806be8fff830ea7be9e1b96828f267536509c96c37",
+      "output": "environment/weapons/period_arrow/period_arrow.glb",
+      "output_sha256": "112dfb7683dc6f9a73e7f88b7099ad4658a163142683e67abf8504501c0391c4"
+    },
+    {
+      "source": "environment/weapons/period_quiver/period_quiver.blend",
+      "source_sha256": "47d0241928d38a20815d6b6ecdc432b4023eaa5e193cfddca38add43ee320c6b",
+      "output": "environment/weapons/period_quiver/period_quiver.glb",
+      "output_sha256": "4fb6d71aa52dd692c6b84bad5ebd467ceaaeded2010b8a25e587ac6634514490"
+    },
+    {
+      "source": "environment/weapons/period_spear/period_spear.blend",
+      "source_sha256": "34aeb39e4904550bf96beec7cb34fc46efc196cc2ee66a223b0da471c70a7a66",
+      "output": "environment/weapons/period_spear/period_spear.glb",
+      "output_sha256": "f76fa8859a8e042403618013b09b30a26520c3e9f0fd8187a525aa4a052ac81c"
+    }
+  ]
+}

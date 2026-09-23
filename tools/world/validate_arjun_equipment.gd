@@ -14,6 +14,11 @@ func key_event(code: int, pressed: bool = true) -> InputEventKey:
 	event.pressed = pressed
 	return event
 func validate() -> void:
+	var export_record: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://docs/characters/arjun/runtime_export.json"))
+	if export_record is Dictionary and export_record.get("appearance_status", "") == "UNIVERSALLY_REJECTED":
+		push_error("Arjun appearance is owner-rejected. Equipment fit capture requires a new owner-reviewed runtime character; see docs/characters/arjun/rejection_2026-09-23.md")
+		quit(2)
+		return
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_move_to_foreground()
 	var world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()

@@ -470,9 +470,11 @@ Current development controls:
 | Right | `D` |
 | Sprint | `Left Shift` |
 | Jump | `Space` |
-| Interact | `E` |
+| Interact / drink at a riverbank | `E` |
+| Fill the carried water pouch at a riverbank | `Shift+E` |
 | Camera | `Mouse` |
-| Release / Capture Cursor | `Esc` |
+| Pause menu (save, load, settings, main menu) | `Esc` |
+| Field map | `M` |
 
 Input remapping is planned for a later stage.
 
@@ -524,7 +526,7 @@ Open the project.
 
 ### Run the Landscape
 
-Press **F5** to run the Suryagarh landscape.
+Press **F5** to open the title menu. **Play Game** starts Suryagarh; **Continue** restores the newest of three local save slots, while **Load Game** lets you choose a slot. In the world, press **Esc** to save, load, or change sound, mouse, display, and VSync settings. Save files live in Godot's local `user://saves` directory.
 
 ### Run the Original Systems Prototype
 

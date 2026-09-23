@@ -18,7 +18,9 @@
     "walk"
   ],
   "color_method": "Source material color and alpha baked into 2048 atlas; original metallic/roughness retained",
-  "owner_direction": "Use improved candidate as playable base; continue refinement",
+  "owner_direction": "REJECTED on 2026-09-23: do not use this Arjun appearance as an approved character or as the basis for equipment proportion approval.",
   "final_likeness_approved": false,
-  "motion_approved": false
+  "motion_approved": false,
+  "appearance_status": "UNIVERSALLY_REJECTED",
+  "rejection_record": "docs/characters/arjun/rejection_2026-09-23.md"
 }

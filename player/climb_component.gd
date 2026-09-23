@@ -46,8 +46,8 @@ func try_start() -> bool:
 	shape.exclude = [actor.get_rid()]
 	if not space.intersect_shape(shape,1).is_empty(): return false
 	start = actor.global_position
-	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.48
-	crest = Vector3(hit.position.x,top+1.1,hit.position.z)+wall_normal*.46
+	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.28
+	crest = Vector3(hit.position.x,top+1.1,hit.position.z)+wall_normal*.27
 	progress = 0
 	active = true
 	saved_mask = actor.collision_mask

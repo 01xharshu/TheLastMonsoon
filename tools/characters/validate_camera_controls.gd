@@ -70,6 +70,8 @@ func validate() -> void:
 	check(player.first_person_view.arm_mesh_count > 0, "First-person arms are missing")
 	check(is_zero_approx(player.get_node("CameraPivot/SpringArm3D").spring_length), "First-person camera is not at eye position")
 	var equipment = player.get_node("VisualRoot/CharacterVisual").equipment
+	player.inventory.add_item("talwar")
+	player.inventory.add_item("enfield")
 	equipment.stowed = false
 	for selection in [0, 1]:
 		equipment.select_weapon(selection)

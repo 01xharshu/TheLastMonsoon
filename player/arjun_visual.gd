@@ -64,7 +64,7 @@ func _ready() -> void:
 	equipment = Equipment.new()
 	equipment.name = "Equipment"
 	add_child(equipment)
-	equipment.inventory = actor.inventory
+	equipment.inventory = actor.get_node("InventoryComponent")
 	equipment.setup(skeleton)
 	weapon = equipment.talwar_hand
 	var wheel := WeaponWheel.new()
@@ -84,6 +84,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			equipment.select_weapon(Equipment.Selection.TALWAR)
 		KEY_2:
 			equipment.select_weapon(Equipment.Selection.ENFIELD)
+		KEY_3:
+			equipment.select_weapon(Equipment.Selection.BOW)
+		KEY_4:
+			equipment.select_weapon(Equipment.Selection.PISTOL)
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -186,9 +190,9 @@ func _pose_river_action(delta: float) -> void:
 		pose("thigh_"+side,Vector3(0.86,0,0),weight)
 		pose("calf_"+side,Vector3(-1.32,0,0),weight)
 		pose("foot_"+side,Vector3(0.34,0,0),weight)
-		var hand_raise := 0.75 if drink and side == "r" and progress > 0.42 else 0.0
-		pose("upperarm_"+side,Vector3(-0.82+hand_raise*reach,0,(0.18 if side == "l" else -0.18)),weight)
-		pose("lowerarm_"+side,Vector3(-0.72-hand_raise*reach,0,0),weight)
+		var hand_raise := 0.55 if drink and side == "r" and progress > 0.42 else 0.0
+		pose("upperarm_"+side,Vector3(-1.0+hand_raise*reach,0,(-0.75 if side == "l" else 0.75)),weight)
+		pose("lowerarm_"+side,Vector3(-0.92-hand_raise*reach,0,0),weight)
 
 func _pose_seated(delta: float) -> void:
 	for solver in climb_ik.values(): solver.influence=0.0
@@ -209,18 +213,21 @@ func _pose_seated(delta: float) -> void:
 
 func _pose_horse_riding(delta: float) -> void:
 	var weight := 1.0-exp(-9.0*delta)
+	var mount: Node = actor.get_meta("mounted_vehicle")
+	var lean: float = clampf(absf(mount.pace)/8.2,0.0,1.0)*.12
+	if not mount.is_on_floor(): lean += .08
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	breath += delta*1.8
 	for side in ["l","r"]:
 		var s := 1.0 if side=="l" else -1.0
-		pose("thigh_"+side,Vector3(.62,s*.22,s*.55),weight)
-		pose("calf_"+side,Vector3(-.75,0,0),weight)
+		pose("thigh_"+side,Vector3(-.35,s*.22,s*.55),weight)
+		pose("calf_"+side,Vector3(.9,0,0),weight)
 		pose("foot_"+side,Vector3(.12,0,0),weight)
 		pose("upperarm_"+side,Vector3(-.30,0,-s*.40),weight)
-		pose("lowerarm_"+side,Vector3(-1.05,0,0),weight)
+		pose("lowerarm_"+side,Vector3(-.50,0,0),weight)
 	pose("pelvis",Vector3(0,0,0),weight)
-	pose("spine_01",Vector3(-.04,0,0),weight)
+	pose("spine_01",Vector3(-.04-lean,0,0),weight)
 	pose("spine_02",Vector3(sin(breath)*.012,0,0),weight)
 	pose("head",Vector3(.03,0,0),weight)
 
@@ -237,11 +244,11 @@ func _pose_horse_transition(delta: float) -> void:
 	pose("spine_02", Vector3(-0.18 * swing, 0, 0), weight)
 	for side in ["l", "r"]:
 		var crossing: float = swing if side == "r" else 0.25 * swing
-		pose("thigh_" + side, Vector3(0.62 * seated + 1.15 * crossing, 0, (0.55 if side == "l" else -0.55) * seated + crossing * 0.38), weight)
-		pose("calf_" + side, Vector3(-0.75 * seated - 0.95 * crossing, 0, 0), weight)
+		pose("thigh_" + side, Vector3(-0.35 * seated + 1.15 * crossing, 0, (0.55 if side == "l" else -0.55) * seated + crossing * 0.38), weight)
+		pose("calf_" + side, Vector3(0.90 * seated - 0.95 * crossing, 0, 0), weight)
 		pose("foot_" + side, Vector3(0.12 * seated + 0.2 * crossing, 0, 0), weight)
 		pose("upperarm_" + side, Vector3(-0.3 - 0.7 * swing, 0, (-0.4 if side == "l" else 0.4)), weight)
-		pose("lowerarm_" + side, Vector3(-1.05 * seated - 0.55 * swing, 0, 0), weight)
+		pose("lowerarm_" + side, Vector3(-0.50 * seated - 0.55 * swing, 0, 0), weight)
 
 func _pose_climb(delta: float) -> void:
 	var component: Node = actor.get_node("ClimbComponent")
@@ -258,10 +265,10 @@ func _pose_climb(delta: float) -> void:
 	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.96,t))
 	for side in ["l","r"]:
 		var side_offset: float = -.42 if side=="l" else .42
-		var hand_y: float = base_y+.42+floorf((actor.global_position.y+.62-base_y-.42)/.55)*.55
-		hand_y += .24 if side=="r" else 0.0
+		var hand_y: float = base_y+.42+roundf((actor.global_position.y+.80-base_y-.42)/.55)*.55
+		hand_y -= .10 if side=="r" else 0.0
 		hand_y = minf(ledge_y+.08,hand_y)
-		var face: Vector3 = component.wall_point+component.wall_normal*.08
+		var face: Vector3 = component.wall_point+component.wall_normal*.18
 		face.y = hand_y
 		face.z += side_offset
 		var top_target: Vector3=component.wall_point-component.wall_normal*.24

@@ -139,21 +139,27 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 		# Keep its front clear of the room's desk and the player capsule.
 		var rack_z: float = -d*.5+1.15
 		piece(b,"WeaponRackShelf",Vector3(0,1.02,rack_z),Vector3(3.6,.16,.78),wood)
+		piece(b,"WeaponRackUpperShelf",Vector3(0,1.70,rack_z),Vector3(3.6,.13,.78),wood)
 		piece(b,"WeaponRackBack",Vector3(0,1.23,rack_z-.34),Vector3(3.6,.65,.12),wood)
 		for side in [-1.0,1.0]:
 			piece(b,"WeaponRackPost",Vector3(side*1.72,.58,rack_z),Vector3(.12,1.16,.78),wood)
-		for i in 2:
+		var rack_weapons := [
+			["enfield","res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb"],
+			["talwar","res://environment/weapons/Talwar/weapon_talwar_01.glb"],
+			["bow","res://environment/weapons/period_bow/period_bow.glb"],
+			["pistol","res://environment/weapons/adams_1851/adams_1851.glb"],
+		]
+		for i in rack_weapons.size():
 			var pickup := Pickup.new()
-			pickup.weapon_id = "enfield" if i==0 else "talwar"
-			pickup.position = Vector3(-.85+i*1.7,1.2,rack_z+.12)
+			pickup.weapon_id = rack_weapons[i][0]
+			pickup.position = Vector3(-.85+(i%2)*1.7,1.2+floori(i/2.0)*.68,rack_z+.12)
 			b.add_child(pickup)
-			var source: String = "res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb" if i==0 else "res://environment/weapons/Talwar/weapon_talwar_01.glb"
+			var source: String = rack_weapons[i][1]
 			var model: Node3D = load(source).instantiate()
-			model.rotation.z = PI/2
 			pickup.add_child(model)
 			var collision := CollisionShape3D.new()
 			var shape := BoxShape3D.new()
-			shape.size = Vector3(1.4,.25,.35)
+			shape.size = Vector3(1.4,.25,.35) if i < 3 else Vector3(.6,.25,.35)
 			collision.shape = shape
 			pickup.add_child(collision)
 	var sign := Label3D.new()

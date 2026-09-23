@@ -1,6 +1,15 @@
 extends CharacterBody3D
 ## One rideable village horse. Forward is local -Z; the stable owns its starting place.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
+const BodyModel = preload("res://assets/animals/horse/village_horse_body.glb")
+const HoofA = preload("res://audio/horses/hoof_dirt_01.wav")
+const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
+const HoofRoad = preload("res://audio/horses/hoof_packed_road.wav")
+const HoofTimber = preload("res://audio/horses/hoof_timber.wav")
+const Landing = preload("res://audio/horses/hoof_landing.wav")
+const Tack = preload("res://audio/horses/leather_tack.wav")
+const Snort = preload("res://audio/horses/horse_snort.wav")
+const Neigh = preload("res://audio/horses/horse_neigh.ogg")
 var layout := Layout.new()
 var rider: CharacterBody3D
 var stolen := false
@@ -15,9 +24,19 @@ var transition_from := Vector3.ZERO
 var transition_to := Vector3.ZERO
 var legs: Array[Node3D] = []
 var lower_legs: Array[Node3D] = []
+var hoof_clearances: Array[float] = []
 var body_root: Node3D
 var neck_root: Node3D
 var tail_root: Node3D
+var hoof_players: Array[AudioStreamPlayer3D] = []
+var landing_player: AudioStreamPlayer3D
+var tack_player: AudioStreamPlayer3D
+var voice_player: AudioStreamPlayer3D
+var hoof_step_index := 0
+var hoof_events := 0
+var last_hoof_surface := "earth"
+var landing_events := 0
+var idle_voice_timer := 13.0
 
 func _ready() -> void:
 	add_to_group("mountable_vehicles")
@@ -32,6 +51,52 @@ func _ready() -> void:
 	collider.position.y = 0.83
 	add_child(collider)
 	_build_horse()
+	_build_audio()
+
+func _audio_player(label: String, volume: float) -> AudioStreamPlayer3D:
+	var player := AudioStreamPlayer3D.new()
+	player.name = label
+	player.volume_db = volume
+	player.unit_size = 5.0
+	player.max_distance = 55.0
+	add_child(player)
+	return player
+
+func _build_audio() -> void:
+	for i in 2:
+		hoof_players.append(_audio_player("HoofSound%d" % i,-8.0))
+	landing_player = _audio_player("LandingSound",-5.0)
+	landing_player.stream = Landing
+	tack_player = _audio_player("TackSound",-11.0)
+	tack_player.stream = Tack
+	voice_player = _audio_player("HorseVoice",-12.0)
+	voice_player.stream = Snort
+
+func _hoof_sound() -> void:
+	var index: int = hoof_events % hoof_players.size()
+	var player: AudioStreamPlayer3D = hoof_players[index]
+	last_hoof_surface = ground_sound_surface()
+	match last_hoof_surface:
+		"timber": player.stream = HoofTimber
+		"road": player.stream = HoofRoad
+		_: player.stream = HoofA if index == 0 else HoofB
+	player.volume_db = -10.0 if last_hoof_surface == "timber" else -8.0
+	player.pitch_scale = 1.0 + (float(hoof_events % 5)-2.0)*.025
+	player.play()
+	hoof_events += 1
+
+func ground_sound_surface() -> String:
+	# Physical timber deck takes precedence over the dirt road beneath it.
+	var query := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*.45,global_position-Vector3.UP*.65)
+	query.exclude = [get_rid()]
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	var node: Node = hit.get("collider") as Node
+	while node != null:
+		if node.name == "TimberBridge": return "timber"
+		node = node.get_parent()
+	if layout.road_distance(global_position.x,global_position.z) < 3.0:
+		return "road"
+	return "earth"
 
 func _material(color: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -75,6 +140,19 @@ func _cord(parent: Node3D, label: String, a: Vector3, b: Vector3, radius: float,
 	mesh.material_override = mat
 	parent.add_child(mesh)
 
+func _taper(parent: Node3D, label: String, at: Vector3, height: float, top: float, bottom: float, mat: Material) -> void:
+	var mesh := MeshInstance3D.new()
+	mesh.name = label
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = top
+	cylinder.bottom_radius = bottom
+	cylinder.height = height
+	cylinder.radial_segments = 12
+	mesh.mesh = cylinder
+	mesh.position = at
+	mesh.material_override = mat
+	parent.add_child(mesh)
+
 func _build_horse() -> void:
 	var bay := _material(Color(0.31,0.14,0.075))
 	var dark := _material(Color(0.055,0.036,0.027))
@@ -85,55 +163,60 @@ func _build_horse() -> void:
 	body_root = Node3D.new()
 	body_root.name = "HorseBody"
 	add_child(body_root)
-	_ellipsoid(body_root,"Barrel",Vector3(0,1.43,0),Vector3(0.43,0.52,0.88),bay)
-	_ellipsoid(body_root,"Chest",Vector3(0,1.38,-0.56),Vector3(.40,.50,.36),bay)
-	_ellipsoid(body_root,"Haunch",Vector3(0,1.42,.61),Vector3(.40,.48,.38),bay)
+	var body_model: Node3D = BodyModel.instantiate()
+	body_model.name = "SculptedBody"
+	body_root.add_child(body_model)
 	neck_root = Node3D.new()
 	neck_root.name = "Neck"
 	neck_root.position = Vector3(0,1.65,-.62)
 	neck_root.rotation.x = -.48
 	body_root.add_child(neck_root)
-	_ellipsoid(neck_root,"NeckMass",Vector3(0,.28,-.12),Vector3(.28,.52,.30),bay)
-	_ellipsoid(neck_root,"Head",Vector3(0,.73,-.34),Vector3(.18,.26,.34),bay)
 	_ellipsoid(neck_root,"Muzzle",Vector3(0,.55,-.58),Vector3(.16,.12,.18),muzzle)
 	tail_root = Node3D.new()
 	tail_root.name = "Tail"
 	tail_root.position = Vector3(0,1.48,.91)
 	body_root.add_child(tail_root)
-	_ellipsoid(tail_root,"TailMass",Vector3(0,-.35,.28),Vector3(.13,.49,.14),dark)
+	for strand in [-2.0,-1.0,0.0,1.0,2.0]:
+		var root_at := Vector3(strand*.018,-.03,.03)
+		var bend_at := Vector3(strand*.028,-.30,.22)
+		var tip_at := Vector3(strand*.042,-.72,.41)
+		_cord(tail_root,"TailRoot",root_at,bend_at,.029,dark)
+		_cord(tail_root,"TailHair",bend_at,tip_at,.019,dark)
 	for side in [-1.0,1.0]:
 		_ellipsoid(neck_root,"Eye",Vector3(side*.18,.81,-.43),Vector3(.035,.04,.04),eye)
 		_ellipsoid(neck_root,"Ear",Vector3(side*.12,1.02,-.20),Vector3(.055,.12,.065),bay)
 		_ellipsoid(neck_root,"Nostril",Vector3(side*.13,.56,-.72),Vector3(.025,.018,.022),dark)
 		_box(neck_root,"BridleCheek",Vector3(side*.205,.68,-.40),Vector3(.025,.34,.045),leather)
 		_cord(body_root,"ReinFront",Vector3(side*.18,1.88,-1.43),Vector3(side*.30,2.14,-.77),.016,leather)
-		_cord(body_root,"ReinBack",Vector3(side*.30,2.14,-.77),Vector3(side*.41,2.25,-.26),.016,leather)
-		_cord(body_root,"StirrupLeather",Vector3(side*.40,1.94,.15),Vector3(side*.61,1.37,.18),.023,leather)
-		_box(body_root,"StirrupTread",Vector3(side*.61,1.33,.20),Vector3(.24,.045,.22),dark)
-		_box(body_root,"StirrupFront",Vector3(side*.61,1.42,.09),Vector3(.035,.19,.035),dark)
-		_box(body_root,"StirrupBack",Vector3(side*.61,1.42,.31),Vector3(.035,.19,.035),dark)
+		_cord(body_root,"ReinBack",Vector3(side*.30,2.14,-.77),Vector3(side*.38,2.21,-.29),.016,leather)
+		_cord(body_root,"StirrupLeather",Vector3(side*.36,1.94,.15),Vector3(side*.48,1.38,.20),.023,leather)
+		_box(body_root,"StirrupTread",Vector3(side*.48,1.32,.21),Vector3(.20,.035,.19),dark)
+		_box(body_root,"StirrupFront",Vector3(side*.48,1.41,.11),Vector3(.027,.18,.027),dark)
+		_box(body_root,"StirrupBack",Vector3(side*.48,1.41,.30),Vector3(.027,.18,.027),dark)
+		_cord(body_root,"GirthSide",Vector3(side*.36,1.91,.07),Vector3(side*.43,1.12,.07),.032,leather)
 	for i in 4:
 		var leg := Node3D.new()
 		leg.name = "Leg%d" % i
 		leg.position = Vector3(-.27 if i%2==0 else .27,1.18,-.56 if i<2 else .59)
 		body_root.add_child(leg)
-		_ellipsoid(leg,"Upper",Vector3(0,-.25,0),Vector3(.125,.34,.14),bay)
+		_taper(leg,"ThighOrForearm",Vector3(0,-.27,0),.59,.14,.09,bay)
 		var hock := Node3D.new()
 		hock.name = "KneeOrHock"
 		hock.position = Vector3(0,-.54,.02)
 		leg.add_child(hock)
-		_ellipsoid(hock,"Joint",Vector3.ZERO,Vector3(.11,.12,.12),bay)
-		_ellipsoid(hock,"Cannon",Vector3(0,-.25,0),Vector3(.075,.31,.085),bay)
-		_ellipsoid(hock,"Fetlock",Vector3(0,-.47,-.03),Vector3(.10,.10,.11),bay)
-		_box(hock,"Hoof",Vector3(0,-.55,-.08),Vector3(.22,.16,.31),dark)
+		_ellipsoid(hock,"Joint",Vector3.ZERO,Vector3(.085,.085,.09),bay)
+		_taper(hock,"Cannon",Vector3(0,-.25,0),.50,.083,.06,bay)
+		_ellipsoid(hock,"Fetlock",Vector3(0,-.48,-.03),Vector3(.09,.08,.095),bay)
+		_taper(hock,"Hoof",Vector3(0,-.56,-.08),.16,.09,.15,dark)
 		legs.append(leg)
 		lower_legs.append(hock)
+		hoof_clearances.append(0.0)
 	_ellipsoid(body_root,"Mane",Vector3(0,2.02,-.72),Vector3(.12,.38,.18),dark)
-	_box(body_root,"SaddleCloth",Vector3(0,1.90,.01),Vector3(.84,.055,.74),cloth)
-	_box(body_root,"LeatherSaddle",Vector3(0,1.95,.02),Vector3(.52,.09,.60),leather)
-	_box(body_root,"Pommel",Vector3(0,2.04,-.26),Vector3(.49,.12,.09),leather)
-	_box(body_root,"Cantle",Vector3(0,2.04,.31),Vector3(.49,.14,.10),leather)
-	_box(body_root,"Girth",Vector3(0,1.28,.08),Vector3(.87,.055,.07),leather)
+	_box(body_root,"SaddleCloth",Vector3(0,1.90,.01),Vector3(.80,.045,.70),cloth)
+	_ellipsoid(body_root,"LeatherSaddle",Vector3(0,1.95,.02),Vector3(.31,.085,.36),leather)
+	_ellipsoid(body_root,"Pommel",Vector3(0,2.03,-.25),Vector3(.24,.07,.065),leather)
+	_ellipsoid(body_root,"Cantle",Vector3(0,2.04,.29),Vector3(.24,.08,.07),leather)
+	_cord(body_root,"GirthUnder",Vector3(-.43,1.12,.07),Vector3(.43,1.12,.07),.032,leather)
 	_box(neck_root,"Noseband",Vector3(0,.57,-.62),Vector3(.42,.035,.06),leather)
 
 func seat_world() -> Vector3:
@@ -145,7 +228,11 @@ func can_board(actor: CharacterBody3D) -> bool:
 func board(actor: CharacterBody3D) -> bool:
 	if not can_board(actor): return false
 	rider = actor
+	var first_take := not stolen
 	stolen = true
+	tack_player.play()
+	voice_player.stream = Neigh if first_take else Snort
+	voice_player.play()
 	saved_layer = actor.collision_layer
 	saved_mask = actor.collision_mask
 	actor.collision_layer = 0
@@ -192,6 +279,7 @@ func dismount() -> bool:
 		transition_to = p
 		actor.set_meta("horse_transition", "dismount")
 		actor.set_meta("horse_transition_progress", 0.0)
+		tack_player.play()
 		return true
 	actor.inventory.message_requested.emit("No clear ground beside the horse")
 	return false
@@ -204,7 +292,9 @@ func _physics_process(delta: float) -> void:
 		throttle = Input.get_axis("move_backward","move_forward")
 		steer = Input.get_axis("move_right","move_left")
 		gallop = Input.is_key_pressed(KEY_SHIFT) and stamina > .08
-		if Input.is_action_just_pressed("jump") and is_on_floor(): velocity.y = 5.7
+		if Input.is_action_just_pressed("jump") and is_on_floor():
+			velocity.y = 5.7
+			tack_player.play()
 	stamina = clampf(stamina + delta * (-.12 if gallop and absf(throttle)>.1 else .065),0.0,1.0)
 	var target := throttle * (8.2 if gallop else 4.2)
 	pace = move_toward(pace,target,delta * (4.5 if throttle != 0.0 else 7.0))
@@ -212,8 +302,13 @@ func _physics_process(delta: float) -> void:
 	var forward := -global_basis.z
 	velocity.x = forward.x * pace
 	velocity.z = forward.z * pace
+	var was_grounded := is_on_floor()
+	var fall_speed: float = velocity.y
 	velocity.y -= ProjectSettings.get_setting("physics/3d/default_gravity") * delta
 	move_and_slide()
+	if not was_grounded and is_on_floor() and fall_speed < -1.0:
+		landing_player.play()
+		landing_events += 1
 	if rider != null:
 		if transition == "":
 			_sync_rider()
@@ -239,6 +334,16 @@ func _physics_process(delta: float) -> void:
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
 	gait += delta * (1.25 + absf(pace) * 1.05) * clampf(absf(pace),0.0,1.0)
+	var new_hoof_step: int = floori(gait * 4.0 / TAU)
+	if is_on_floor() and absf(pace) > .8 and new_hoof_step > hoof_step_index:
+		_hoof_sound()
+	hoof_step_index = new_hoof_step
+	if rider == null:
+		idle_voice_timer -= delta
+		if idle_voice_timer <= 0.0:
+			voice_player.stream = Snort
+			voice_player.play()
+			idle_voice_timer = 17.0 + float(randi() % 9)
 	var stride := clampf(absf(pace)/8.2,0.0,1.0)
 	for i in legs.size():
 		# Four-beat walk blends towards diagonal pairs at speed; bend the lower
@@ -247,8 +352,23 @@ func _physics_process(delta: float) -> void:
 		var trot_offset: float = 0.0 if i==0 or i==3 else PI
 		var phase: float = gait + lerpf(walk_offset,trot_offset,smoothstep(.24,.67,stride))
 		var swing: float = sin(phase)
-		legs[i].rotation.x = (swing * .48 * stride) if is_on_floor() else (-.32 if i<2 else .23)
-		lower_legs[i].rotation.x = maxf(0.0,swing) * .44 * stride if is_on_floor() else .56
+		legs[i].position.y = 1.18
+		legs[i].rotation.x = (swing * .48 * stride) if is_on_floor() else (-.58 if i<2 else .32)
+		lower_legs[i].rotation.x = maxf(0.0,swing) * .44 * stride if is_on_floor() else (1.05 if i<2 else -.55)
 	body_root.position.y = (absf(sin(gait*2.0)) * .035 * stride) if is_on_floor() else .03
+	body_root.rotation.x = 0.0 if is_on_floor() else (-.09 if velocity.y > 0.0 else .05)
+	# Keep the planted hoof at ground height while the body bobs; lift the
+	# advancing hoof clear of the surface. These are small corrections to the
+	# procedural joints, not a full anatomical leg solver.
+	if is_on_floor():
+		for i in legs.size():
+			var walk_offset: float = [0.0,PI,PI*.5,PI*1.5][i]
+			var trot_offset: float = 0.0 if i==0 or i==3 else PI
+			var phase: float = gait + lerpf(walk_offset,trot_offset,smoothstep(.24,.67,stride))
+			var lift: float = maxf(0.0,sin(phase)) * .085 * stride
+			var hoof_y: float = lower_legs[i].to_global(Vector3(0,-.64,-.08)).y
+			var correction: float = clampf(global_position.y + .015 + lift - hoof_y,-.18,.18)
+			legs[i].position.y += correction
+			hoof_clearances[i] = lower_legs[i].to_global(Vector3(0,-.64,-.08)).y - global_position.y
 	neck_root.rotation.x = -.48 + sin(gait*2.0)*.035*stride
 	tail_root.rotation.x = sin(gait*.45)*.10

@@ -11,7 +11,7 @@ var elapsed := 0.0
 
 func can_use_river() -> bool:
 	if actor.is_swimming or not actor.is_on_floor() or actor.get_meta("climbing",false): return false
-	if actor.get_meta("mounted_vehicle", null) != null or actor.get_meta("river_action","")!="": return false
+	if (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null) != null or actor.get_meta("river_action","")!="": return false
 	var z: float = actor.global_position.z
 	var river: float = layout.river_x(z)
 	var x: float = actor.global_position.x

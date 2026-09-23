@@ -125,7 +125,17 @@ func _process(_delta: float) -> void:
 	var rifle := player.get_node_or_null("RifleCombat")
 	if rifle:
 		weapon_label.text = rifle.get_hud_text()
+		var pistol_combat := player.get_node_or_null("PistolCombat")
+		if pistol_combat and pistol_combat.available(): weapon_label.text = pistol_combat.get_hud_text()
 		controls_label.text = "RMB Aim · LMB Fire · R Reload · H Stow · M Map · ~ Weapons"
+	var equipment: Node = player.get_node("VisualRoot/CharacterVisual").equipment
+	if equipment and not equipment.stowed and equipment.selected == 2:
+		weapon_label.text = "BOW · %d ARROWS" % player.inventory.get_item_count("arrow")
+		controls_label.text = "Hold RMB Draw · LMB Loose · H Stow · ~ Weapons"
+	elif equipment and not equipment.stowed and equipment.selected == 3:
+		var pistol: Node = player.get_node("PistolCombat")
+		weapon_label.text = pistol.get_hud_text()
+		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Stow · ~ Weapons"
 	var world: Node = player.get_parent()
 	var location: Label = world.get_node_or_null("LandscapeUI/Location") as Label
 	if location:
@@ -138,7 +148,9 @@ func diamond(center: Vector2, radius: float, color: Color) -> void:
 
 func _draw() -> void:
 	var rifle := player.get_node_or_null("RifleCombat")
-	if rifle and rifle.aiming:
+	var bow: Node = player.get_node_or_null("BowCombat")
+	var pistol: Node = player.get_node_or_null("PistolCombat")
+	if (rifle and rifle.aiming) or (bow and bow.aiming) or (pistol and pistol.aiming):
 		var center := size*.5
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)

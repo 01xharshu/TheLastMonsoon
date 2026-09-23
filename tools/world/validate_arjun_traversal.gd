@@ -20,6 +20,11 @@ func box(parent: Node3D, at: Vector3, size: Vector3, angle := 0.0) -> void:
 	shape.size = size
 	collision.shape = shape
 	body.add_child(collision)
+	var visual := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	visual.mesh = mesh
+	body.add_child(visual)
 
 func walk(frames: int) -> void:
 	Input.action_press("move_forward")
@@ -59,5 +64,36 @@ func run() -> void:
 	for i in 8: await physics_frame
 	await walk(70)
 	check(actor.global_position.x > -0.5,"walks up shallow raised road")
+	for index in 3:
+		var height := 0.24 * (index + 1)
+		box(course, Vector3(3, height * 0.5, 0.8 - index * 1.2), Vector3(1.8, height, 1.2))
+	actor.global_position = Vector3(3, 0.9, 2.0)
+	actor.camera_pivot.rotation.y = 0.0
+	for i in 8: await physics_frame
+	await walk(95)
+	check(actor.global_position.z < -1.0 and actor.global_position.y > 1.5,"keeps walking up three consecutive stairs")
+	if DisplayServer.get_name() != "headless":
+		var light := DirectionalLight3D.new()
+		course.add_child(light)
+		light.rotation_degrees = Vector3(-55, -30, 0)
+		light.light_energy = 2.0
+		var environment := WorldEnvironment.new()
+		var settings := Environment.new()
+		settings.background_mode = Environment.BG_COLOR
+		settings.background_color = Color(0.55, 0.7, 0.8)
+		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		settings.ambient_light_color = Color(0.8, 0.8, 0.8)
+		settings.ambient_light_energy = 1.5
+		environment.environment = settings
+		course.add_child(environment)
+		var camera := Camera3D.new()
+		course.add_child(camera)
+		camera.make_current()
+		camera.global_position = Vector3(7, 3.4, 2.7)
+		camera.look_at(Vector3(3, 1.1, -0.5))
+		actor.get_node("UI").hide()
+		for i in 3: await process_frame
+		await RenderingServer.frame_post_draw
+		check(root.get_texture().get_image().save_png("res://docs/world/captures/23_arjun_stair_traversal.png") == OK,"stair traversal capture")
 	print("ARJUN TRAVERSAL ","PASS" if failures==0 else "FAIL "+str(failures))
 	quit(1 if failures else 0)

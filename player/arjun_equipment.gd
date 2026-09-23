@@ -2,7 +2,10 @@ extends Node3D
 ## Existing weapons, one visible copy each. H controls the selected weapon.
 const TALWAR = preload("res://environment/weapons/Talwar/weapon_talwar_01.glb")
 const ENFIELD = preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb")
-enum Selection { TALWAR, ENFIELD }
+const BOW = preload("res://environment/weapons/period_bow/bow_mechanism.tscn")
+const QUIVER = preload("res://environment/weapons/period_quiver/period_quiver.glb")
+const PISTOL = preload("res://environment/weapons/adams_1851/adams_1851.glb")
+enum Selection { TALWAR, ENFIELD, BOW, PISTOL }
 var selected: Selection = Selection.TALWAR
 var stowed := true
 var inventory: InventoryComponent
@@ -12,6 +15,11 @@ var talwar_hand: Node3D
 var talwar_waist: Node3D
 var enfield_hand: Node3D
 var enfield_back: Node3D
+var bow_hand: Node3D
+var bow_back: Node3D
+var quiver_back: Node3D
+var pistol_hand: Node3D
+var pistol_hip: Node3D
 var rifle_grip := Vector3(-0.14, -0.012, 0)
 var rifle_support := Vector3(0.20, 0.012, 0)
 var palm_offsets: Dictionary = {}
@@ -77,6 +85,13 @@ func setup(rig: Skeleton3D) -> void:
 	var grip_position := Vector3(-0.16, 1.12, 0.16)
 	enfield_hand = attach_at_rest("spine_03", ENFIELD, Transform3D(gun_basis, grip_position - gun_basis * rifle_grip), "EnfieldHeld")
 	rifle_rest_transform = enfield_hand.transform
+	var left_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_l")) * palm_offsets["l"]
+	bow_hand = attach_at_rest("hand_l", BOW, Transform3D(Basis.IDENTITY,left_palm), "BowHeld")
+	bow_back = attach_at_rest("spine_03", BOW, Transform3D(Basis(Vector3.UP, -0.22),Vector3(-0.30,1.08,-0.24)), "BowStowed")
+	quiver_back = attach_at_rest("spine_03", QUIVER, Transform3D(Basis.IDENTITY,Vector3(0.27,0.99,-0.25)), "QuiverBack")
+	var right_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_r")) * palm_offsets["r"]
+	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(Basis.IDENTITY,right_palm), "PistolHeld")
+	pistol_hip = attach_at_rest("pelvis", PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "PistolHolstered")
 	_refresh()
 
 func select_weapon(value: Selection) -> void:
@@ -86,7 +101,7 @@ func select_weapon(value: Selection) -> void:
 
 func owns(value: Selection) -> bool:
 	if inventory == null: return false
-	return inventory.has_item("talwar" if value == Selection.TALWAR else "enfield")
+	return inventory.has_item(["talwar","enfield","bow","pistol"][int(value)])
 
 func toggle_stowed() -> void:
 	if swimming: return
@@ -105,10 +120,15 @@ func _refresh() -> void:
 	talwar_waist.visible = owns(Selection.TALWAR) and not talwar_hand.visible
 	enfield_hand.visible = owns(Selection.ENFIELD) and not stowed and selected == Selection.ENFIELD
 	enfield_back.visible = owns(Selection.ENFIELD) and not enfield_hand.visible
+	bow_hand.visible = owns(Selection.BOW) and not stowed and selected == Selection.BOW
+	bow_back.visible = owns(Selection.BOW) and not bow_hand.visible
+	quiver_back.visible = owns(Selection.BOW)
+	pistol_hand.visible = owns(Selection.PISTOL) and not stowed and selected == Selection.PISTOL
+	pistol_hip.visible = owns(Selection.PISTOL) and not pistol_hand.visible
 
 func held_name() -> String:
-	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) else "STOWED"
-	return "TALWAR" if selected == Selection.TALWAR else "ENFIELD"
+	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) else "STOWED"
+	return ["TALWAR","ENFIELD","BOW","PISTOL"][int(selected)]
 
 func _aim_bone(name: String, endpoint: Vector3, child: String) -> void:
 	var index := skeleton.find_bone(name)
@@ -146,6 +166,13 @@ func apply_rifle_grip() -> void:
 	if stowed: return
 	if selected == Selection.TALWAR:
 		apply_sword_rest()
+		_grasp("r")
+		return
+	if selected == Selection.BOW:
+		_grasp("l")
+		return
+	if selected == Selection.PISTOL:
+		apply_pistol_grip()
 		_grasp("r")
 		return
 	if aiming:
@@ -215,3 +242,15 @@ func apply_sword_rest() -> void:
 		var local_basis := skeleton.get_bone_global_pose(parent).basis.inverse()*hand_basis
 		skeleton.set_bone_pose_rotation(hand_index,local_basis.orthonormalized().get_rotation_quaternion())
 		skeleton.force_update_all_bone_transforms()
+
+func apply_pistol_grip() -> void:
+	# The short barrel follows the camera while the right palm meets the wood grip.
+	skeleton.force_update_all_bone_transforms()
+	var barrel := (skeleton.global_basis.inverse()*aim_direction).normalized() if aiming else Vector3(0.38,-0.25,0.89).normalized()
+	var side_axis := barrel.cross(Vector3.UP).normalized()
+	var basis := Basis(barrel,side_axis.cross(barrel),side_axis)
+	var hand_target := Vector3(-0.30,1.23,0.24) if aiming else Vector3(-0.36,1.04,0.20)
+	pistol_hand.global_transform = skeleton.global_transform*Transform3D(basis,hand_target-basis*Vector3(-.126,0,-.015))
+	for i in 8:
+		var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))
+		_solve_arm("r",hand_target-hand.basis*palm_offsets["r"])

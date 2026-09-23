@@ -28,6 +28,8 @@
 [ext_resource type="Script" path="res://player/fame_component.gd" id="19_fame"]
 [ext_resource type="Script" path="res://player/identity_scroll.gd" id="20_scroll"]
 [ext_resource type="Script" path="res://player/talwar_slash.gd" id="21_slash"]
+[ext_resource type="Script" path="res://player/bow_combat.gd" id="22_bow"]
+[ext_resource type="Script" path="res://player/pistol_combat.gd" id="23_pistol"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
@@ -395,3 +397,13 @@ script = ExtResource("20_scroll")
 
 [node name="TalwarSlash" type="Node" parent="."]
 script = ExtResource("21_slash")
+
+[node name="BowCombat" type="Node" parent="."]
+script = ExtResource("22_bow")
+
+[node name="PistolCombat" type="Node" parent="."]
+script = ExtResource("23_pistol")
+
+[node name="PistolCombat" type="Node" parent="."]
+script = ExtResource("18_rifle")
+weapon_selection = 3

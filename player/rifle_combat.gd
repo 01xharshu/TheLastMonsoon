@@ -3,7 +3,11 @@ extends Node
 const SHOT = preload("res://audio/weapons/enfield_shot.wav")
 const RELOAD = preload("res://audio/weapons/enfield_reload.wav")
 const EMPTY = preload("res://audio/weapons/enfield_empty.wav")
+const PISTOL_SHOT = preload("res://audio/weapons/adams_shot.wav")
 const RELOAD_SECONDS := 5.0
+@export var weapon_selection := 1
+var rounds := 1
+var pending_rounds := 0
 const MUZZLE := Vector3(1.04,0.057,0)
 var loaded := true
 var reload_remaining := 0.0
@@ -13,11 +17,15 @@ var shots_fired := 0
 var impacts: Array[Node3D] = []
 var mark_material: StandardMaterial3D
 var sound: AudioStreamPlayer3D
+func pistol() -> bool: return weapon_selection == 3
+func capacity() -> int: return 5 if pistol() else 1
+func ammo_id() -> String: return "pistol_ball" if pistol() else "paper_cartridges"
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 
 func _ready() -> void:
+	if pistol(): rounds = 5
 	sound = AudioStreamPlayer3D.new()
 	sound.max_distance = 180
 	sound.volume_db = -8
@@ -36,7 +44,7 @@ func _ready() -> void:
 
 func available() -> bool:
 	var equipment = visual.equipment
-	return actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not equipment.stowed and equipment.selected == 1
+	return actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == weapon_selection
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not available(): return
@@ -49,24 +57,33 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if not available():
-		reload_remaining = 0.0
 		aiming = false
 	else:
 		aiming = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and reload_remaining<=0
 		if reload_remaining>0:
 			reload_remaining = maxf(0,reload_remaining-delta)
-			if reload_remaining==0: loaded = true
+			if reload_remaining==0:
+				rounds = mini(capacity(),rounds+pending_rounds)
+				loaded = rounds>0
+				pending_rounds = 0
 	recoil = move_toward(recoil,0,delta*.32)
-	visual.equipment.aiming = aiming
-	visual.equipment.recoil = recoil
-	visual.equipment.aim_direction = -camera.global_basis.z
+	if visual.equipment.selected == weapon_selection:
+		visual.equipment.aiming = aiming
+		visual.equipment.recoil = recoil
+		visual.equipment.aim_direction = -camera.global_basis.z
 	if aiming:
 		var local_direction: Vector3 = actor.global_basis.inverse()*(-camera.global_basis.z)
 		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
 
 func start_reload() -> void:
-	if not available() or loaded or reload_remaining>0: return
-	reload_remaining = RELOAD_SECONDS
+	if not available() or rounds>=capacity() or reload_remaining>0: return
+	pending_rounds = mini(capacity()-rounds,actor.inventory.get_item_count(ammo_id()))
+	if pending_rounds==0 or not actor.inventory.remove_item(ammo_id(),pending_rounds):
+		actor.inventory.message_requested.emit("No ammunition · search a Company store")
+		sound.stream = EMPTY
+		sound.play()
+		return
+	reload_remaining = 3.5 if pistol() else RELOAD_SECONDS
 	sound.stream = RELOAD
 	sound.play()
 
@@ -76,10 +93,11 @@ func fire() -> void:
 		sound.stream = EMPTY
 		sound.play()
 		return
-	loaded = false
+	rounds -= 1
+	loaded = rounds>0
 	shots_fired += 1
 	visual.equipment.apply_rifle_grip()
-	var origin: Vector3 = visual.equipment.enfield_hand.to_global(MUZZLE)
+	var origin: Vector3 = visual.equipment.pistol_hand.to_global(Vector3(.17,0,.064)) if pistol() else visual.equipment.enfield_hand.to_global(MUZZLE)
 	var direction: Vector3 = -camera.global_basis.z
 	var target := camera.global_position+direction*350.0
 	var space := actor.get_world_3d().direct_space_state
@@ -92,10 +110,11 @@ func fire() -> void:
 	var hit := space.intersect_ray(query)
 	if not hit.is_empty():
 		add_impact(hit)
-		if hit.collider.has_method("take_damage"): hit.collider.take_damage(60.0)
+		if hit.collider.has_method("take_damage"): hit.collider.take_damage(35.0 if pistol() else 60.0)
 	recoil = 0.065
 	sound.global_position = origin
-	sound.stream = SHOT
+	sound.stream = PISTOL_SHOT if pistol() else SHOT
+	sound.volume_db = -15 if pistol() else -8
 	sound.play()
 	muzzle_effect(origin)
 
@@ -149,6 +168,7 @@ func muzzle_effect(origin: Vector3) -> void:
 	get_tree().create_timer(1.0).timeout.connect(smoke.queue_free)
 
 func get_hud_text() -> String:
-	if visual.equipment.stowed or visual.equipment.selected != 1: return visual.equipment.held_name()
-	if reload_remaining>0: return "ENFIELD · RELOADING %.1fs" % reload_remaining
-	return "ENFIELD · " + ("LOADED" if loaded else "EMPTY · R TO RELOAD")
+	if visual.equipment.stowed or visual.equipment.selected != weapon_selection: return visual.equipment.held_name()
+	var title := "ADAMS 1851" if pistol() else "ENFIELD"
+	if reload_remaining>0: return "%s · RELOADING %.1fs" % [title,reload_remaining]
+	return "%s · %d/%d · %d SPARE" % [title,rounds,capacity(),actor.inventory.get_item_count(ammo_id())]

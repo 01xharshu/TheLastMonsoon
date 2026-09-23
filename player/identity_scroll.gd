@@ -85,6 +85,7 @@ func _draw() -> void:
 	var character: Node = player.get_node("VisualRoot/CharacterVisual")
 	var equipment: Node = character.equipment if character else null
 	var held: String = equipment.held_name() if equipment else "STOWED"
-	_line("WEAPONS    Talwar  /  Enfield    •    %s" % held,x,y+301,23)
-	_line("WOUNDS    Not yet tracked",x,y+341,23)
+	_line("WEAPONS    Talwar / Enfield / Bow / Adams",x,y+301,21)
+	_line("IN HAND    %s" % held,x,y+324,19)
+	_line("WOUNDS    Not yet tracked",x,y+353,23)
 	_line("[ O ]   ROLL CLOSED",x,rect.end.y-39,18)

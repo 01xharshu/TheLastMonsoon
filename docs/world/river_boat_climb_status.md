@@ -1,0 +1,18 @@
+# River, boat, and compound climb — 2026-09-23
+
+The 1728 × 1728 m Suryagarh world now uses a roughly 110–126 m wide channel (local width varies), a 208 m level timber deck and 36 m ramps on each bank. The deck rises at least 6 m above water so the boat can pass beneath it. The rebaked terrain and field map use the same river layout. The water shader fades from shallow translucency to deeper green, with two low amplitude wave layers and a softer close ripple. Thirty-six inexpensive, original low poly fish move beneath the surface; twelve stay near Bhairavpur's landing. The boat and a supported jetty meet at the west bank.
+
+F now uses the shared mount contract for the river boat and the village horse. On the boat, W/S row, A/D steer, and F dismounts into a checked clear space. The rider follows the centre bench; collisions prevent rowing onto shallow banks. E remains the primary interaction: the walled Company compound's gate opens from its courtyard, and its stores contain Enfield and talwar pickups. Taking one adds it to the inventory and draws it. Duplicate weapon pickups remain available in other stores but do not duplicate an already owned weapon.
+
+The west compound wall has a visible handhold route. Space while facing that route starts a timed reach, ascent and mantle, with hand targets at the stones and a checked landing on the wall walk. This is a playable motion pass. The rejected temporary Arjun export remains in the world; these captures do not approve his appearance, likeness, outfit, or final climbing animation. Close inspection still calls for better foot placement, more convincing weight transfer across the coping, and an owner-approved replacement character. See `docs/characters/arjun/rejection_2026-09-23.md` before using character imagery for review.
+
+## Verification
+
+- `tools/world/validate_river_bridge.gd` PASS: entire 280 m deck/ramp contact sampled every 2 m and full crossing in both directions; 60.86 m river half width and 8.61 m deck height at the 165 m crossing.
+- `tools/world/validate_river_climb.gd` PASS on Godot 4.7.2 Forward+/Metal: 36 fish present, F boarding and dismount, boat translation with W, rider bench follow, wall climb and landing. Captures: `docs/world/captures/14_river_boat_water.png`, `14b_fish_underwater.png`, `15_arjun_boat_seated.png`, `16a_climb_reach.png`, `16_arjun_climbing.png`, `16b_climb_pull.png`, and `16c_climb_mantle.png`.
+- The hand check at one climb pose measured about 0.09 m left and 0.15 m right between wrist bones and targets. It is a local contact sample, not a full animation approval.
+- `tools/world/validate_compound_interactions.gd` PASS: outside gate stays barred, courtyard opens it, E takes and equips both weapon types, theft count records two distinct items.
+- `tools/world/audit_civic_layout.gd` and native Forward+/Metal `tools/world/validate_civic_world.gd` PASS after the rebake: four civic foundations, 97 route samples with maximum 0.035 m surface mismatch, 2116 trees and 748 rocks with no plot or road intrusion.
+- The renderer run recorded about 550 MB maximum resident process memory on an M4 Mac with 16 GB RAM. This is useful budget evidence, not an 8 GB device certification. No 8 GB device test has been run.
+
+All new built forms and fish are original project geometry. The terrain's external CC0 assets and hashes remain listed in `docs/world/ASSET_LICENSES.md` and `docs/world/asset_manifest.json`. The source MakeHuman/MPFB skin image used by the provisional runtime shader comes from the existing Arjun working asset; its source is preserved. The runtime copy and working source share SHA-256 `862a26e335e958b70534cb5f0d7c47ef30ab148a56c42b3e9da969cf76f12963`.

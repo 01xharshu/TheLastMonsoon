@@ -79,3 +79,8 @@ func _process(_delta: float) -> void:
 	# Only held weapons belong in the camera view; carried weapons stay on the body.
 	equipment.talwar_waist.hide()
 	equipment.enfield_back.hide()
+	equipment.bow_back.hide()
+	equipment.quiver_back.hide()
+	equipment.pistol_hip.hide()
+	if equipment.bow_hand and source.equipment.bow_hand:
+		equipment.bow_hand.set_draw_fraction(source.equipment.bow_hand.draw_fraction)

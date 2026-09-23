@@ -155,8 +155,8 @@ func surface(asset: String,tint: Color,scale_value: float) -> Material:
 func sidearm_display() -> void:
 	var supplies = load("res://world/suryagarh/settlements/supply_pickup.gd")
 	var entries := [
-		["adams_1851","Adams 1851 revolver","res://environment/weapons/adams_1851/adams_1851.glb"],
-		["period_utility_knife","Utility knife","res://environment/weapons/period_utility_knife/period_utility_knife.glb"],
+		["pistol","Adams 1851 revolver","res://environment/weapons/adams_1851/adams_1851.glb"],
+		["utility_knife","Utility knife","res://environment/weapons/period_utility_knife/period_utility_knife.glb"],
 		["paper_cartridges","Paper cartridges · lead bullets",""]]
 	for i in entries.size():
 		var pickup := StaticBody3D.new()

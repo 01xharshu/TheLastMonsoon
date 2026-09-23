@@ -42,12 +42,14 @@ func run() -> void:
 	visual.equipment.aim_direction = -camera.global_basis.z
 	for i in 30: visual._process(1.0/60)
 	rifle.aiming = true
+	
 	rifle.fire()
 	check(rifle.shots_fired==1 and not rifle.loaded,"First shot must consume the chamber")
 	check(rifle.impacts.size()==1,"Shot must leave one surface mark")
 	check(rifle.sound.stream==rifle.SHOT,"Gunshot audio must be triggered")
 	rifle.fire()
 	check(rifle.shots_fired==1,"Empty rifle fired twice")
+	actor.inventory.add_item("paper_cartridges",2)
 	rifle.start_reload()
 	check(rifle.reload_remaining>0,"Reload did not start")
 	rifle._process(5.1)

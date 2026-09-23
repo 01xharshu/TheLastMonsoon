@@ -10,15 +10,25 @@ var elapsed := 0.0
 func _ready() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var body := [Vector3(0,0,-.36),Vector3(-.1,.065,0),Vector3(.1,.065,0),Vector3(-.1,-.065,0),Vector3(.1,-.065,0),Vector3(0,0,.25)]
-	for tri in [[0,1,2],[0,4,3],[0,3,1],[0,2,4],[5,2,1],[5,3,4],[5,1,3],[5,4,2]]:
-		for idx in tri: st.add_vertex(body[idx])
-	for tri in [[Vector3(0,0,.25),Vector3(-.15,.13,.46),Vector3(-.15,-.13,.46)],[Vector3(0,0,.25),Vector3(.15,-.13,.46),Vector3(.15,.13,.46)]]:
+	var rings: Array[Vector2]=[Vector2(-.34,.012),Vector2(-.27,.065),Vector2(-.13,.10),Vector2(.04,.105),Vector2(.17,.064),Vector2(.28,.022)]
+	for ring in range(rings.size()-1):
+		for side in 8:
+			var a: float=TAU*side/8.0
+			var b: float=TAU*(side+1)/8.0
+			var ra: Vector2=rings[ring]
+			var rb: Vector2=rings[ring+1]
+			var a0:=Vector3(cos(a)*ra.y,sin(a)*ra.y*.65,ra.x)
+			var a1:=Vector3(cos(b)*ra.y,sin(b)*ra.y*.65,ra.x)
+			var b0:=Vector3(cos(a)*rb.y,sin(a)*rb.y*.65,rb.x)
+			var b1:=Vector3(cos(b)*rb.y,sin(b)*rb.y*.65,rb.x)
+			for v in [a0,a1,b1,a0,b1,b0]: st.add_vertex(v)
+	for tri in [[Vector3(0,0,.27),Vector3(-.12,.10,.45),Vector3(0,0,.39)],[Vector3(0,0,.27),Vector3(0,0,.39),Vector3(-.12,-.10,.45)],[Vector3(0,0,.27),Vector3(0,0,.39),Vector3(.12,.10,.45)],[Vector3(0,0,.27),Vector3(.12,-.10,.45),Vector3(0,0,.39)],
+		[Vector3(0,.06,-.11),Vector3(0,.13,.02),Vector3(0,.06,.07)]]:
 		for v in tri: st.add_vertex(v)
 	st.generate_normals()
 	var mesh := st.commit()
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color=Color(.19,.25,.18)
+	mat.albedo_color=Color(.42,.47,.34)
 	mat.roughness=.75
 	mat.cull_mode=BaseMaterial3D.CULL_DISABLED
 	mesh.surface_set_material(0,mat)
@@ -30,7 +40,7 @@ func _ready() -> void:
 	school.name="FishSchools"
 	school.multimesh=mm
 	school.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	school.visibility_range_end=75
+	school.visibility_range_end=0
 	add_child(school)
 	var rng := RandomNumberGenerator.new()
 	rng.seed=1857
@@ -39,7 +49,7 @@ func _ready() -> void:
 		var center: float=layout.river_x(z)
 		var x: float=(layout.river_x(235)-layout.river_width(235)+rng.randf_range(-3,6)) if i<12 else center+rng.randf_range(-layout.river_width(z)*.58,layout.river_width(z)*.58)
 		var bed: float=layout.height(x,z)
-		fish.append({"x":x,"z":z,"y":maxf(bed+.5,-.52 if i<12 else -2.1),"speed":rng.randf_range(.35,.85),"phase":rng.randf_range(0,TAU),"scale":rng.randf_range(1.4,2.1) if i<12 else rng.randf_range(.6,1.15)})
+		fish.append({"x":x,"z":z,"y":maxf(bed+.5,-.52 if i<12 else -2.1),"speed":rng.randf_range(.35,.85),"phase":rng.randf_range(0,TAU),"scale":rng.randf_range(.78,1.12) if i<12 else rng.randf_range(.62,1.02)})
 	_update_fish()
 
 func _process(delta: float) -> void:

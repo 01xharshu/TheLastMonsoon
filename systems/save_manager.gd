@@ -69,7 +69,8 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"hydration":survival.hydration,"satiety":survival.satiety,
 			"energy":survival.energy,"warmth":survival.warmth,"stamina":survival.stamina,
 		},
-		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed},
+		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed,
+			"pistol_rounds":actor.get_node("PistolCombat").rounds},
 		"remaining_weapon_pickups": _remaining_weapon_pickup_ids(world),
 	}
 	var map: Control = actor.get_node("UI/WorldMap")
@@ -117,6 +118,7 @@ func apply_pending(world: Node3D) -> void:
 	time._update_readable_time(true)
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	inventory.items = data.get("items",{}).duplicate(true)
+	if not inventory.has_water_bag(): inventory.items["water_bag"] = 1
 	inventory.stored_water_liters = clampf(float(data.get("water_liters",0.0)),0.0,inventory.get_total_water_capacity_liters())
 	inventory.inventory_changed.emit()
 	inventory._emit_water_changed()
@@ -131,9 +133,10 @@ func apply_pending(world: Node3D) -> void:
 	survival.stamina_changed.emit(survival.stamina,survival.max_stamina)
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var weapon: Dictionary = data.get("weapon",{})
-	equipment.selected = clampi(int(weapon.get("selected",0)),0,1)
+	equipment.selected = clampi(int(weapon.get("selected",0)),0,3)
 	equipment.stowed = bool(weapon.get("stowed",true))
 	equipment._refresh()
+	actor.get_node("PistolCombat").rounds = clampi(int(weapon.get("pistol_rounds",5)),0,5)
 	if data.has("remaining_weapon_pickups"):
 		var remaining: Array = data.remaining_weapon_pickups
 		for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):

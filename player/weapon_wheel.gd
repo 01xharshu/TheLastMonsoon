@@ -2,8 +2,9 @@ extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-const LABELS := ["TALWAR", "ENFIELD", "STOW WEAPONS"]
-const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Hands free · weapons carried"]
+const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "STOW WEAPONS"]
+const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Hands free · weapons carried"]
+const STOW_INDEX := 4
 const IVORY := Color(0.93, 0.89, 0.78)
 const BRASS := Color(0.67, 0.51, 0.29)
 var actor: CharacterBody3D
@@ -39,7 +40,7 @@ func open() -> void:
 func close(commit: bool) -> void:
 	if not visible: return
 	if commit:
-		if selected == 2:
+		if selected == STOW_INDEX:
 			equipment.stowed = true
 			equipment._refresh()
 		elif equipment.owns(selected):
@@ -60,8 +61,8 @@ func _cancel() -> void:
 func select_from_pointer(point: Vector2) -> void:
 	var offset := point - size * 0.5
 	if offset.length() < 82.0: return
-	# Slots are centred at top, lower right, lower left.
-	selected = int(floor(fposmod(offset.angle() + PI / 2.0 + PI / 3.0, TAU) / (TAU / 3.0)))
+	# Five evenly spaced sectors start at the top.
+	selected = int(floor(fposmod(offset.angle() + PI / 2.0 + PI / 5.0, TAU) / (TAU / 5.0)))
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
@@ -80,9 +81,9 @@ func _input(event: InputEvent) -> void:
 				KEY_ESCAPE:
 					close(false)
 				KEY_RIGHT, KEY_DOWN:
-					selected = posmod(selected + 1, 3)
+					selected = posmod(selected + 1, LABELS.size())
 				KEY_LEFT, KEY_UP:
-					selected = posmod(selected - 1, 3)
+					selected = posmod(selected - 1, LABELS.size())
 			queue_redraw()
 	if visible:
 		if event is InputEventMouseMotion: select_from_pointer(event.position)
@@ -103,6 +104,13 @@ func _icon(slot: int, centre: Vector2, color: Color) -> void:
 		draw_line(centre+Vector2(-46,16),centre+Vector2(48,-17),color,4,true)
 		draw_polyline(PackedVector2Array([centre+Vector2(-48,21),centre+Vector2(-31,23),centre+Vector2(-20,7),centre+Vector2(20,-7)]),BRASS,8,true)
 		draw_arc(centre+Vector2(-13,12),7,0,PI,16,color,2,true)
+	elif slot == 2:
+		draw_arc(centre+Vector2(8,0),30,-PI/2,PI/2,20,color,3,true)
+		draw_line(centre+Vector2(8,-30),centre+Vector2(8,30),BRASS,2,true)
+		draw_line(centre+Vector2(-22,0),centre+Vector2(37,0),color,2,true)
+	elif slot == 3:
+		draw_line(centre+Vector2(-32,-7),centre+Vector2(28,-7),color,7,true)
+		draw_arc(centre+Vector2(-9,8),13,0,PI,14,BRASS,3,true)
 	else:
 		draw_arc(centre,25,0,TAU,48,color,2,true)
 		draw_line(centre+Vector2(-17,17),centre+Vector2(17,-17),BRASS,3,true)
@@ -114,27 +122,27 @@ func _draw() -> void:
 	var inner := 97.0
 	draw_rect(Rect2(Vector2.ZERO,size),Color(0.015,0.019,0.015,0.66))
 	_text("ARJUN’S ARMAMENT",centre+Vector2(0,-outer-46),30,IVORY,true)
-	for slot in 3:
-		var angle := -PI/2 + slot*TAU/3
+	for slot in LABELS.size():
+		var angle := -PI/2 + slot*TAU/LABELS.size()
 		var polygon := PackedVector2Array()
 		for i in 41:
-			var a := angle - PI/3+.018 + (TAU/3-.036)*i/40
+			var a := angle - PI/LABELS.size()+.018 + (TAU/LABELS.size()-.036)*i/40
 			polygon.append(centre+Vector2.from_angle(a)*outer)
 		for i in range(40,-1,-1):
-			var a := angle - PI/3+.018 + (TAU/3-.036)*i/40
+			var a := angle - PI/LABELS.size()+.018 + (TAU/LABELS.size()-.036)*i/40
 			polygon.append(centre+Vector2.from_angle(a)*inner)
 		draw_colored_polygon(polygon,Color(0.23,0.19,0.115,0.98) if slot==selected else Color(0.047,0.059,0.047,0.97))
 		polygon.append(polygon[0])
 		draw_polyline(polygon,IVORY if slot==selected else BRASS,2 if slot==selected else 1,true)
 		var point := centre + Vector2.from_angle(angle)*(inner+outer)*.5
 		_icon(slot,point-Vector2(0,9),IVORY if slot==selected else Color(0.64,0.65,0.57))
-		var available: bool = slot == 2 or equipment.owns(slot)
+		var available: bool = slot == STOW_INDEX or equipment.owns(slot)
 		_text(LABELS[slot],point+Vector2(0,40),18,IVORY if available else BRASS,true)
 		if not available: _text("FIND IN STORES",point+Vector2(0,59),11,BRASS)
 	draw_circle(centre,inner-4,Color(0.027,0.038,0.030,0.98))
 	_text(LABELS[selected],centre+Vector2(0,-6),19,IVORY,true)
 	_text("RELEASE TO SELECT",centre+Vector2(0,17),10,BRASS)
-	_text(DESCRIPTIONS[selected] if selected == 2 or equipment.owns(selected) else "Find this weapon in a guarded store",centre+Vector2(0,outer+32),17)
+	_text(DESCRIPTIONS[selected] if selected == STOW_INDEX or equipment.owns(selected) else "Find this weapon in a guarded store",centre+Vector2(0,outer+32),17)
 	_text("Hold ~   ·   Move pointer or use arrow keys   ·   Esc cancels",centre+Vector2(0,outer+62),14)
 	if actor.is_swimming:
 		_text("Swimming — weapons stay stowed",centre+Vector2(0,outer+86),14,BRASS)
