@@ -411,6 +411,16 @@ func _handle_mouse_look(
 		camera_pitch
 	)
 
+func _process(delta: float) -> void:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or inventory_ui.is_open() or get_meta("map_open",false) or get_meta("weapon_wheel_open",false):
+		return
+	var stick := Input.get_vector("look_left","look_right","look_up","look_down")
+	if stick.length_squared() < .0001:
+		return
+	camera_pivot.rotate_y(-stick.x * 2.4 * delta)
+	camera_pitch = clampf(camera_pitch - stick.y * 1.9 * delta,deg_to_rad(min_camera_angle),deg_to_rad(max_camera_angle))
+	camera_pivot.rotation.x = camera_pitch
+
 
 # =========================================================
 # MOVEMENT

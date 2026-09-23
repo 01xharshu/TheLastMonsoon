@@ -42,11 +42,25 @@ func run() -> void:
 	visual.equipment.aim_direction = -camera.global_basis.z
 	for i in 30: visual._process(1.0/60)
 	rifle.aiming = true
-	
 	rifle.fire()
 	check(rifle.shots_fired==1 and not rifle.loaded,"First shot must consume the chamber")
 	check(rifle.impacts.size()==1,"Shot must leave one surface mark")
 	check(rifle.sound.stream==rifle.SHOT,"Gunshot audio must be triggered")
+	if DisplayServer.get_name() != "headless" and rifle.impacts.size()>0:
+		var impact: Node3D = rifle.impacts[0]
+		var review_camera := Camera3D.new()
+		world.add_child(review_camera)
+		review_camera.position = impact.global_position+Vector3(0,1,2.4)
+		review_camera.look_at(impact.global_position)
+		review_camera.make_current()
+		actor.get_node("UI").hide()
+		for i in 3: await process_frame
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://docs/world/captures/realism_rifle_impact.png")
+		review_camera.queue_free()
+		camera.make_current()
+		actor.get_node("UI").show()
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	rifle.fire()
 	check(rifle.shots_fired==1,"Empty rifle fired twice")
 	actor.inventory.add_item("paper_cartridges",2)
@@ -74,5 +88,27 @@ func run() -> void:
 	rifle.fire()
 	check(rifle.impacts.size()==2,"Cover shot missing mark")
 	if rifle.impacts.size()==2: check(rifle.impacts[1].get_parent()==cover,"Shot passed through muzzle cover")
-	print("RIFLE TEST ","FAIL" if failed else "PASS")
+	var pistol = actor.get_node("PistolCombat")
+	pistol.set_process(false)
+	actor.inventory.add_item("pistol",1)
+	visual.equipment.selected = 3
+	visual.equipment.stowed = false
+	visual.equipment._refresh()
+	visual.equipment.aiming = true
+	visual.equipment.aim_direction = -camera.global_basis.z
+	for i in 15: visual._process(1.0/60)
+	pistol.aiming = true
+	var before_marks: int = rifle.impacts.size()
+	check(pistol.fire(),"Pistol did not fire")
+	check(pistol.rounds==4 and pistol.shots_fired==1,"Pistol chamber did not advance")
+	check(pistol.shot_sound.stream==pistol.SHOT and pistol.shot_sound.playing,"Pistol sound did not start")
+	check(rifle.impacts.size()==before_marks+1,"Pistol left no impact mark")
+	for i in 4: pistol.fire()
+	check(pistol.rounds==0 and not pistol.fire(),"Pistol fired beyond five chambers")
+	check(not pistol.start_reload(),"Pistol reloaded without ammunition")
+	actor.inventory.add_item("pistol_ball",5)
+	check(pistol.start_reload(),"Pistol reload did not start")
+	pistol._process(4.0)
+	check(pistol.rounds==5 and actor.inventory.get_item_count("pistol_ball")==0,"Pistol ammunition was not consumed")
+	print("FIREARMS TEST ","FAIL" if failed else "PASS")
 	quit(1 if failed else 0)

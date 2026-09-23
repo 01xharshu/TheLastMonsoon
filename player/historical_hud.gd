@@ -125,8 +125,6 @@ func _process(_delta: float) -> void:
 	var rifle := player.get_node_or_null("RifleCombat")
 	if rifle:
 		weapon_label.text = rifle.get_hud_text()
-		var pistol_combat := player.get_node_or_null("PistolCombat")
-		if pistol_combat and pistol_combat.available(): weapon_label.text = pistol_combat.get_hud_text()
 		controls_label.text = "RMB Aim · LMB Fire · R Reload · H Stow · M Map · ~ Weapons"
 	var equipment: Node = player.get_node("VisualRoot/CharacterVisual").equipment
 	if equipment and not equipment.stowed and equipment.selected == 2:
@@ -161,6 +159,13 @@ func _draw() -> void:
 	diamond(Vector2(175,y+8),3,IVORY)
 	draw_rect(Rect2(34,size.y-103,280,3),Color(0.24,0.23,0.18))
 	draw_rect(Rect2(34,size.y-103,280*clampf(health/100.0,0,1),3),Color(0.64,0.25,0.17))
+	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
+	if is_instance_valid(mount) and mount.is_in_group("horses"):
+		var horse_y: float = size.y-211
+		draw_style_box(box(INK,Color(BRASS,0.45)),Rect2(20,horse_y,310,32))
+		draw_string(SERIF,Vector2(34,horse_y+19),"HORSE STAMINA",HORIZONTAL_ALIGNMENT_LEFT,-1,17,IVORY)
+		draw_rect(Rect2(185,horse_y+13,128,6),Color(0.24,0.23,0.18))
+		draw_rect(Rect2(185,horse_y+13,128*clampf(mount.stamina/mount.MAX_STAMINA,0,1),6),Color(0.69,0.56,0.31))
 	var cx: float = size.x/2
 	draw_line(Vector2(cx-165,63),Vector2(cx+165,63),Color(BRASS,0.8),1,true)
 	diamond(Vector2(cx,63),4,IVORY)

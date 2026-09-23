@@ -63,9 +63,15 @@ func _ready() -> void:
 		for i in 10:
 			piece(self,"StairBaluster",Vector3(stair_x+side*1.7,i*.54+.5,9-i*1.8),Vector3(.08,1,.08),wood,false)
 	piece(self,"GalleryGuard",Vector3(cut_right,floor_y+.55,0),Vector3(.14,1.1,17.5),wood)
-	piece(self,"Roof",Vector3(0,10.9,0),Vector3(width+2,.3,depth+2),tile)
+	# Low clay-tile pitch sheds monsoon rain behind a plain masonry parapet.
 	for side in [-1,1]:
-		piece(self,"Parapet",Vector3(side*width*.5,11.3,0),Vector3(.5,.6,depth),plaster)
+		var slope := piece(self,"RoofPitch",Vector3(side*width*.25,11.2,0),Vector3(width*.5+1,.24,depth+2),tile)
+		slope.rotation.z = -side*.04
+		piece(self,"Parapet",Vector3(side*width*.5,11.3,0),Vector3(.5,.7,depth+2),plaster)
+		piece(self,"EaveTimber",Vector3(side*(width*.5+.25),10.82,0),Vector3(.35,.18,depth+2),wood,false)
+	piece(self,"RidgeCap",Vector3(0,11.62,0),Vector3(.32,.18,depth+2),tile,false)
+	for end in [-1,1]:
+		piece(self,"RoofEndCoping",Vector3(0,11.3,end*depth*.5),Vector3(width,.7,.5),plaster,false)
 	# Wide front entrance: outside ground connects directly to the hall floor.
 	var start := Vector3(0,-.04,depth*.5+4)
 	var approach_length := 24.0 if not police else 18.0

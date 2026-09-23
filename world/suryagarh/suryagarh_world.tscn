@@ -8,16 +8,14 @@
 [ext_resource type="PackedScene" uid="uid://c6v86o7ue2rmd" path="res://objects/charpai.tscn" id="6_charpai"]
 [ext_resource type="Script" uid="uid://ciekb80nurvsx" path="res://world/suryagarh/timber_bridge.gd" id="7_bridge"]
 [ext_resource type="AudioStream" uid="uid://i7npae7kd308" path="res://audio/music/Aaron Kenny - The New Order.mp3" id="8_odqov"]
-
-[ext_resource type="Script" path="res://world/suryagarh/roadside_flags.gd" id="20_flags"]
-
-[ext_resource type="Script" path="res://vehicles/river_boat.gd" id="boat"]
-[ext_resource type="Script" path="res://world/suryagarh/river_fish.gd" id="fish"]
-[ext_resource type="Script" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
-[ext_resource type="Script" path="res://horses/village_stable.gd" id="stable"]
-
-[ext_resource type="Script" path="res://world/suryagarh/forage_grove.gd" id="forage"]
-[ext_resource type="Script" path="res://ui/game_menu.gd" id="game_menu"]
+[ext_resource type="Script" uid="uid://bspbf7u6slne0" path="res://world/suryagarh/roadside_flags.gd" id="20_flags"]
+[ext_resource type="Script" uid="uid://cns4paxl6wfjf" path="res://vehicles/river_boat.gd" id="boat"]
+[ext_resource type="Script" uid="uid://b3pwyis4jeyqa" path="res://world/suryagarh/river_fish.gd" id="fish"]
+[ext_resource type="Script" uid="uid://d3o5ff3pek7ek" path="res://world/suryagarh/forage_grove.gd" id="forage"]
+[ext_resource type="Script" uid="uid://cfvv7dfdd52mv" path="res://ui/game_menu.gd" id="game_menu"]
+[ext_resource type="Script" uid="uid://dka16rcbjrkcd" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
+[ext_resource type="Script" uid="uid://dltrral1cec8c" path="res://horses/village_stable.gd" id="stable"]
+[ext_resource type="PackedScene" path="res://characters/npcs/indian_peasant_pair.tscn" id="indian_pair"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
@@ -59,7 +57,6 @@ script = ExtResource("1_world")
 [node name="GameTimeSystem" type="Node" parent="." unique_id=2072554750]
 script = ExtResource("4_time")
 starting_hour = 9
-game_minutes_per_real_second = 2.4
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=728116909]
 environment = SubResource("Environment")
@@ -122,23 +119,26 @@ stream = ExtResource("8_odqov")
 volume_db = -20.195
 autoplay = true
 
-[node name="RoadsideFlags" type="Node3D" parent="."]
+[node name="RoadsideFlags" type="Node3D" parent="." unique_id=2043706952]
 script = ExtResource("20_flags")
 
-[node name="RiverBoat" type="CharacterBody3D" parent="."]
+[node name="RiverBoat" type="CharacterBody3D" parent="." unique_id=1022739507]
 script = ExtResource("boat")
 
-[node name="Settlement" type="Node3D" parent="."]
+[node name="Settlement" type="Node3D" parent="." unique_id=819864874]
 script = ExtResource("settlement")
 
-[node name="RiverFish" type="Node3D" parent="."]
+[node name="IndianPeasantPairCandidate" parent="." instance=ExtResource("indian_pair")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 7.2, 230)
+
+[node name="RiverFish" type="Node3D" parent="." unique_id=1408976958]
 script = ExtResource("fish")
 
-[node name="VillageStable" type="Node3D" parent="."]
+[node name="VillageStable" type="Node3D" parent="." unique_id=446797209]
 script = ExtResource("stable")
 
-[node name="ForageGrove" type="Node3D" parent="."]
+[node name="ForageGrove" type="Node3D" parent="." unique_id=678523212]
 script = ExtResource("forage")
 
-[node name="GameMenu" type="CanvasLayer" parent="."]
+[node name="GameMenu" type="CanvasLayer" parent="." unique_id=21963651]
 script = ExtResource("game_menu")

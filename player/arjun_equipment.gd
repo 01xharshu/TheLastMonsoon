@@ -5,7 +5,8 @@ const ENFIELD = preload("res://environment/weapons/enfield_p53/weapon_enfield_p5
 const BOW = preload("res://environment/weapons/period_bow/bow_mechanism.tscn")
 const QUIVER = preload("res://environment/weapons/period_quiver/period_quiver.glb")
 const PISTOL = preload("res://environment/weapons/adams_1851/adams_1851.glb")
-enum Selection { TALWAR, ENFIELD, BOW, PISTOL }
+const KNIFE = preload("res://environment/weapons/period_utility_knife/period_utility_knife.glb")
+enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE }
 var selected: Selection = Selection.TALWAR
 var stowed := true
 var inventory: InventoryComponent
@@ -20,6 +21,8 @@ var bow_back: Node3D
 var quiver_back: Node3D
 var pistol_hand: Node3D
 var pistol_hip: Node3D
+var knife_hand: Node3D
+var knife_hip: Node3D
 var rifle_grip := Vector3(-0.14, -0.012, 0)
 var rifle_support := Vector3(0.20, 0.012, 0)
 var palm_offsets: Dictionary = {}
@@ -92,6 +95,8 @@ func setup(rig: Skeleton3D) -> void:
 	var right_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_r")) * palm_offsets["r"]
 	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(Basis.IDENTITY,right_palm), "PistolHeld")
 	pistol_hip = attach_at_rest("pelvis", PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "PistolHolstered")
+	knife_hand = attach_at_rest("hand_r", KNIFE, Transform3D(blade_basis,right_palm-blade_basis*Vector3(-.045,0,0)), "KnifeHeld")
+	knife_hip = attach_at_rest("pelvis", KNIFE, Transform3D(waist_basis,Vector3(-.26,.86,-.03)), "KnifeSheathed")
 	_refresh()
 
 func select_weapon(value: Selection) -> void:
@@ -101,7 +106,7 @@ func select_weapon(value: Selection) -> void:
 
 func owns(value: Selection) -> bool:
 	if inventory == null: return false
-	return inventory.has_item(["talwar","enfield","bow","pistol"][int(value)])
+	return inventory.has_item(["talwar","enfield","bow","pistol","utility_knife"][int(value)])
 
 func toggle_stowed() -> void:
 	if swimming: return
@@ -125,10 +130,12 @@ func _refresh() -> void:
 	quiver_back.visible = owns(Selection.BOW)
 	pistol_hand.visible = owns(Selection.PISTOL) and not stowed and selected == Selection.PISTOL
 	pistol_hip.visible = owns(Selection.PISTOL) and not pistol_hand.visible
+	knife_hand.visible = owns(Selection.KNIFE) and not stowed and selected == Selection.KNIFE
+	knife_hip.visible = owns(Selection.KNIFE) and not knife_hand.visible
 
 func held_name() -> String:
-	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) else "STOWED"
-	return ["TALWAR","ENFIELD","BOW","PISTOL"][int(selected)]
+	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) and not owns(Selection.KNIFE) else "STOWED"
+	return ["TALWAR","ENFIELD","BOW","PISTOL","KNIFE"][int(selected)]
 
 func _aim_bone(name: String, endpoint: Vector3, child: String) -> void:
 	var index := skeleton.find_bone(name)
@@ -164,7 +171,7 @@ func _solve_arm(side: String, target: Vector3) -> void:
 
 func apply_rifle_grip() -> void:
 	if stowed: return
-	if selected == Selection.TALWAR:
+	if selected == Selection.TALWAR or selected == Selection.KNIFE:
 		apply_sword_rest()
 		_grasp("r")
 		return
@@ -250,7 +257,7 @@ func apply_pistol_grip() -> void:
 	var side_axis := barrel.cross(Vector3.UP).normalized()
 	var basis := Basis(barrel,side_axis.cross(barrel),side_axis)
 	var hand_target := Vector3(-0.30,1.23,0.24) if aiming else Vector3(-0.36,1.04,0.20)
-	pistol_hand.global_transform = skeleton.global_transform*Transform3D(basis,hand_target-basis*Vector3(-.126,0,-.015))
+	pistol_hand.global_transform = skeleton.global_transform*Transform3D(basis,hand_target-basis*Vector3(-.126,-.015,0))
 	for i in 8:
 		var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))
 		_solve_arm("r",hand_target-hand.basis*palm_offsets["r"])

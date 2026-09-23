@@ -88,6 +88,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			equipment.select_weapon(Equipment.Selection.BOW)
 		KEY_4:
 			equipment.select_weapon(Equipment.Selection.PISTOL)
+		KEY_5:
+			equipment.select_weapon(Equipment.Selection.KNIFE)
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -109,7 +111,7 @@ func _process(delta: float) -> void:
 		_pose_climb(delta)
 		return
 	if actor.has_meta("mounted_vehicle"):
-		var mount: Node = actor.get_meta("mounted_vehicle")
+		var mount: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 		if is_instance_valid(mount) and mount.is_in_group("horses"):
 			if actor.get_meta("horse_transition", "") != "":
 				_pose_horse_transition(delta)
@@ -213,8 +215,8 @@ func _pose_seated(delta: float) -> void:
 
 func _pose_horse_riding(delta: float) -> void:
 	var weight := 1.0-exp(-9.0*delta)
-	var mount: Node = actor.get_meta("mounted_vehicle")
-	var lean: float = clampf(absf(mount.pace)/8.2,0.0,1.0)*.12
+	var mount: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
+	var lean: float = clampf(absf(mount.pace)/mount.GALLOP_SPEED,0.0,1.0)*.12
 	if not mount.is_on_floor(): lean += .08
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)

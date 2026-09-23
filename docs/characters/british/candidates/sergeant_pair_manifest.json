@@ -1,0 +1,16 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "pair": "sergeant",
+  "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
+  "source_sha256": "7e5afc3c2ac3f37bd948a1f209e0c28a65442b975fbbc7e96db68a4d793b0f48",
+  "reference": "docs/characters/british/references/sergeant_and_companion_multiview.png",
+  "male_body_vertices": 19158,
+  "female_body_vertices": 19158,
+  "male_bones": 53,
+  "female_bones": 53,
+  "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
+  "runtime_export": false,
+  "visual_approved": false,
+  "motion_approved": false,
+  "costume_status": "study geometry; historically unverified"
+}

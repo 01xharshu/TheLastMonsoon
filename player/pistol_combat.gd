@@ -1,6 +1,8 @@
 extends Node
 ## Adams sidearm: RMB aligns the muzzle, LMB fires, R loads carried balls.
 const CAPACITY := 5
+const SHOT = preload("res://audio/weapons/adams_shot.wav")
+var shot_sound: AudioStreamPlayer3D
 const RELOAD_SECONDS := 3.8
 const MUZZLE := Vector3(.175,.064,0)
 var rounds := CAPACITY
@@ -11,9 +13,16 @@ var shots_fired := 0
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 
+func _ready() -> void:
+	shot_sound = AudioStreamPlayer3D.new()
+	shot_sound.stream = SHOT
+	shot_sound.max_distance = 120
+	shot_sound.volume_db = -12
+	actor.add_child.call_deferred(shot_sound)
+
 func available() -> bool:
 	var equipment: Node3D = visual.equipment
-	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not equipment.stowed and equipment.selected == 3
+	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == 3
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not available(): return
@@ -30,6 +39,9 @@ func _process(delta: float) -> void:
 		if reload_remaining == 0.0: _finish_reload()
 	aiming = available() and reload_remaining == 0.0 and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	if not available(): return
+	visual.equipment.aiming = aiming
+	visual.equipment.aim_direction = -camera.global_basis.z
+	visual.equipment.apply_rifle_grip()
 	var hand: Node3D = visual.equipment.pistol_hand
 	if aiming:
 		var barrel := (-camera.global_basis.z).normalized()
@@ -55,8 +67,12 @@ func fire() -> bool:
 	var shot_query := PhysicsRayQueryParameters3D.create(origin,target+(target-origin).normalized()*.05)
 	shot_query.exclude = [actor.get_rid()]
 	var hit := actor.get_world_3d().direct_space_state.intersect_ray(shot_query)
-	if not hit.is_empty() and hit.collider.has_method("take_damage"):
-		hit.collider.take_damage(38.0)
+	if not hit.is_empty():
+		actor.get_node("RifleCombat").add_impact(hit)
+		if hit.collider.has_method("take_damage"): hit.collider.take_damage(38.0)
+	actor.get_node("RifleCombat").muzzle_effect(origin)
+	shot_sound.global_position = origin
+	shot_sound.play()
 	return true
 
 func start_reload() -> bool:

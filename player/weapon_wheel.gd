@@ -2,9 +2,9 @@ extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "STOW WEAPONS"]
-const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Hands free · weapons carried"]
-const STOW_INDEX := 4
+const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "STOW WEAPONS"]
+const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Hands free · weapons carried"]
+const STOW_INDEX := 5
 const IVORY := Color(0.93, 0.89, 0.78)
 const BRASS := Color(0.67, 0.51, 0.29)
 var actor: CharacterBody3D
@@ -62,7 +62,7 @@ func select_from_pointer(point: Vector2) -> void:
 	var offset := point - size * 0.5
 	if offset.length() < 82.0: return
 	# Five evenly spaced sectors start at the top.
-	selected = int(floor(fposmod(offset.angle() + PI / 2.0 + PI / 5.0, TAU) / (TAU / 5.0)))
+	selected = int(floor(fposmod(offset.angle() + PI / 2.0 + PI / LABELS.size(), TAU) / (TAU / LABELS.size())))
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
@@ -111,6 +111,9 @@ func _icon(slot: int, centre: Vector2, color: Color) -> void:
 	elif slot == 3:
 		draw_line(centre+Vector2(-32,-7),centre+Vector2(28,-7),color,7,true)
 		draw_arc(centre+Vector2(-9,8),13,0,PI,14,BRASS,3,true)
+	elif slot == 4:
+		draw_line(centre+Vector2(-25,16),centre+Vector2(28,-16),color,5,true)
+		draw_line(centre+Vector2(-30,19),centre+Vector2(-20,13),BRASS,8,true)
 	else:
 		draw_arc(centre,25,0,TAU,48,color,2,true)
 		draw_line(centre+Vector2(-17,17),centre+Vector2(17,-17),BRASS,3,true)

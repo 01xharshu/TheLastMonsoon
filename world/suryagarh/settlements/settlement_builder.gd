@@ -39,6 +39,8 @@ func _ready() -> void:
 	make_building("CompanyArmoury",compound_center+Vector2(31,8),Vector2(17,13),true,true)
 	compound()
 	landing()
+	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
+	add_child(residence)
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()

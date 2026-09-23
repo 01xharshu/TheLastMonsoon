@@ -29,6 +29,10 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: mount transition did not reach saddle")
 		quit(1)
 		return
+	if horse.MAX_STAMINA <= actor.survival.max_stamina or horse.GALLOP_SPEED <= actor.sprint_speed:
+		push_error("HORSE STABLE BLOCKED: horse endurance or gallop speed does not exceed Arjun's")
+		quit(1)
+		return
 	for i in 30: await process_frame
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	for side in ["l","r"]:
@@ -51,6 +55,17 @@ func _run() -> void:
 		return
 	if horse.hoof_events < 3:
 		push_error("HORSE STABLE BLOCKED: gait did not trigger hoof sounds")
+		quit(1)
+		return
+	var arjun_stamina: float = actor.survival.stamina
+	var horse_stamina: float = horse.stamina
+	Input.action_press("sprint")
+	Input.action_press("move_forward")
+	for i in 90: await physics_frame
+	Input.action_release("move_forward")
+	Input.action_release("sprint")
+	if horse.pace <= actor.sprint_speed or horse.stamina >= horse_stamina or actor.survival.stamina < arjun_stamina - .1:
+		push_error("HORSE STABLE BLOCKED: gallop speed or independent stamina drain")
 		quit(1)
 		return
 	for clearance in horse.hoof_clearances:
@@ -93,5 +108,5 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: bridge deck did not select timber hoof sound")
 		quit(1)
 		return
-	print("HORSE STABLE: PASS | mount, tack alignment, stable exit, gait/hoof clearance, jump landing, dismount, road and timber sounds")
+	print("HORSE STABLE: PASS | mount, tack, faster gallop, independent horse stamina, gait/hoof clearance, jump landing, dismount, surface sounds")
 	quit()

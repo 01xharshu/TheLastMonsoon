@@ -1,0 +1,16 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "pair": "lieutenant",
+  "source": "WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend",
+  "source_sha256": "f9e410fc6fded4ef5e2174848dc6ec973a168b1d24cdd88f93b8834590e0e8b8",
+  "reference": "docs/characters/british/references/lieutenant_and_companion_multiview.png",
+  "male_body_vertices": 19158,
+  "female_body_vertices": 19158,
+  "male_bones": 53,
+  "female_bones": 53,
+  "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
+  "runtime_export": false,
+  "visual_approved": false,
+  "motion_approved": false,
+  "costume_status": "study geometry; historically unverified"
+}

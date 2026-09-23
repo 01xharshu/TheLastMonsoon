@@ -29,9 +29,16 @@ func _capture() -> void:
     camera.make_current()
     for i in 90: await physics_frame
     await _shot(camera,horse,"19_horse_rider_side")
+    actor.get_node("UI").show()
+    await _shot(camera,horse,"23_horse_stamina")
+    actor.get_node("UI").hide()
     Input.action_press("move_forward")
     for i in 40: await physics_frame
     await _shot(camera,horse,"21_horse_walk")
+    Input.action_press("sprint")
+    for i in 85: await physics_frame
+    await _shot(camera,horse,"24_horse_gallop")
+    Input.action_release("sprint")
     Input.action_press("jump")
     for i in 8: await physics_frame
     Input.action_release("jump")

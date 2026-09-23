@@ -15,6 +15,7 @@ const PLOTS: Dictionary = {
 	"TownHall": {"center": Vector2(-320, -470), "half": Vector2(27, 16), "grade": 8.0},
 	"DistrictPolice": {"center": Vector2(320, 120), "half": Vector2(20, 22), "grade": 10.0},
 	"CompanyCompound": {"center": Vector2(345, 300), "half": Vector2(67, 63), "grade": 12.0},
+	"GovernmentHouse": {"center": Vector2(-390, -110), "half": Vector2(96, 92), "grade": 8.5},
 }
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
@@ -24,6 +25,8 @@ const ROUTES: Dictionary = {
 	"police_to_compound": [Vector2(320, 150), Vector2(345, 234), Vector2(345, 252)],
 	"compound_court": [Vector2(345, 252), Vector2(345, 301)],
 	"compound_stores": [Vector2(345, 275), Vector2(376, 298)],
+	"government_house_road": [Vector2(-214, -18), Vector2(-300, -18), Vector2(-390, -18)],
+	"government_house_avenue": [Vector2(-390, -18), Vector2(-390, -123)],
 }
 const SITES: Dictionary = {
 	"Bhairavpur village": Vector2(-310, 230),
@@ -32,6 +35,7 @@ const SITES: Dictionary = {
 	"Trading settlement reserve": Vector2(-320, -470),
 	"Company compound": Vector2(340, 290),
 	"Old fort reserve": Vector2(510, -390),
+	"Government House": Vector2(-390, -110),
 	"Wooded ridge": Vector2(620, -260),
 }
 var noise := FastNoiseLite.new()
@@ -101,6 +105,11 @@ func base_height(x: float, z: float) -> float:
 		if plot.center == Vector2(-310, 230): continue
 		var edge: float = maxf(absf(x-plot.center.x)-plot.half.x, absf(z-plot.center.y)-plot.half.y)
 		h = lerpf(h, plot.grade, 1.0-smoothstep(0.0, 22.0, edge))
+	# The residence's east-west carriage road eases into its surveyed terrace.
+	if x > -294.0 and x <= -214.0 and absf(z+18.0) < 11.0:
+		var t := (x+294.0)/80.0
+		var target := lerpf(PLOTS["GovernmentHouse"].grade,6.4,t)
+		h = lerpf(h,target,1.0-smoothstep(3.0,11.0,absf(z+18.0)))
 	return h
 
 func normal(x: float, z: float) -> Vector3:

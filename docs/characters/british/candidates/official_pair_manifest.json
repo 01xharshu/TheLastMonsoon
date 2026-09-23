@@ -1,0 +1,16 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "pair": "official",
+  "source": "WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend",
+  "source_sha256": "b39451248bd97ebdffaaef52dca66a9d3d38c47e8b4814b87506f6cbc8c00232",
+  "reference": "docs/characters/british/references/official_and_companion_multiview.png",
+  "male_body_vertices": 19158,
+  "female_body_vertices": 19158,
+  "male_bones": 53,
+  "female_bones": 53,
+  "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
+  "runtime_export": false,
+  "visual_approved": false,
+  "motion_approved": false,
+  "costume_status": "study geometry; historically unverified"
+}

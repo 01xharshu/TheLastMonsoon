@@ -1,0 +1,16 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "pair": "captain",
+  "source": "WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend",
+  "source_sha256": "4f0e71007c998d042356d802d9da8cede86b160747c0b832046c1f842728baa6",
+  "reference": "docs/characters/british/references/captain_and_companion_multiview.png",
+  "male_body_vertices": 19158,
+  "female_body_vertices": 19158,
+  "male_bones": 53,
+  "female_bones": 53,
+  "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
+  "runtime_export": false,
+  "visual_approved": false,
+  "motion_approved": false,
+  "costume_status": "study geometry; historically unverified"
+}

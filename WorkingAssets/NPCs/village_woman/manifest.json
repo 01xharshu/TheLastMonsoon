@@ -1,0 +1,11 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend",
+  "source_sha256": "59960fb20b058926724e10ca4dd01cfd6d90cec7410dfc937b492ddb0f670960",
+  "runtime": "characters/npcs/village_woman.glb",
+  "runtime_sha256": "06763d1ac381a59dc5ce30901e959cfa910e0cd6387038d41ff5ff89126b94b5",
+  "mpfb_core_assets_license": "CC0-1.0",
+  "bone_count": 53,
+  "mesh_count": 7,
+  "body_vertices": 19158
+}

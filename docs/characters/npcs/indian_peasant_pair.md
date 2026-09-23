@@ -1,0 +1,17 @@
+# Bhairavpur Indian resident pair — first visual candidate
+
+Status: **IN_WORLD_PREVIEW / VISUAL_REVIEW_FAILED / MOTION_BLOCKED** (2026-09-24). The two figures are visible in the Bhairavpur lane at `(-310, 7.2, 230)`. They are deliberately a small pair, not a crowd or an approved population set.
+
+The male and female adult basemeshes and editable 53-bone game-engine rigs were created with the installed MakeHuman/MPFB extension. Their source `.blend` files and SHA-256 manifests are in `WorkingAssets/NPCs/village_farmer/` and `WorkingAssets/NPCs/village_woman/`; the common reproducible builder is `tools/characters/build_village_farmer.py` (`-- --female` for the woman). The Godot `.glb` exports are baked static previews, 1.30 and 1.50 MB. Neither contains a skin or animation. The separate source rigs are preserved for fitted costume and motion work. No rejected Arjun body, face, clothing, or texture was used.
+
+## Period dress basis
+
+Suryagarh's 1857 setting is fictional and closest visually to the northern Indian village/Patna corridor. For the man, the garment types are a cotton tunic/top, wrapped dhoti and cloth head wrap. A [Patna-region mid-18th to mid-19th-century weaver painting](https://www.britishmuseum.org/collection/object/A_1989-1225-0-18) depicts a standing figure in a white dhoti and top, and a [19th-century Varanasi painting](https://www.britishmuseum.org/collection/object/A_1957-1012-0-1-11) depicts a dhoti and turban. For the woman, a [Patna fruit seller painting dated 1800–1850](https://www.britishmuseum.org/collection/object/A_1989-1225-0-6) shows a sari covering the head over a blouse. The model uses a cotton sari and blouse. These are **garment references**, not proof that all Indian peasants wore a single uniform, or that this particular drape is final. The museum paintings describe traders/figures, not these characters' exact occupation or identity.
+
+Only bundled MPFB core assets were used for body, rig, eyes, and hair; garment geometry and materials are original. [MakeHuman Community](https://static.makehumancommunity.org/about/license.html) and the [MPFB license](https://github.com/makehumancommunity/mpfb2/blob/master/LICENSE.md) identify core assets as CC0, with MPFB program code under GPL. The builder calls the installed extension; no extension source code is bundled in the game.
+
+## Evidence and remaining work
+
+`indian_peasant_pair_world.png` is a fresh 2026-09-24 **Godot 4.7.2 Forward+/Metal** render, after scene import. Blender front/profile renders live next to each `.blend`. Structural import and world loading passed. The world render did **not** pass visual approval: the male head wrap reads as a rigid cap, both sleeves are cylindrical, the male dhoti lacks proper wrapping/pleats, and the woman's sari pallu and blouse overlap as flat panels. The pair is static and has no walk, idle, collision, speech, schedule, or interaction yet. Do not multiply these across the map until fitted garments and motion are reviewed in-world. The combined static exports total 2,798,468 bytes; a local 16GB M4 Metal capture peaked at 817,266,688 bytes resident memory. Actual 8GB-device performance has not been measured.
+
+Next: replace the blockout cloth with fitted, draped meshes following the relevant reference, correct facial/skin texture export, rig and animate idle/walk, then re-export and recheck close and normal-distance views in Metal. Only then add additional residents or NPC behavior.

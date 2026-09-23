@@ -1,0 +1,14 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
+  "source_sha256": "ac4a137ac599ef0cba268ccc63d03f2c26fcc1ac51de1501551fa10948c9fb33",
+  "reference": "docs/characters/british/references/private_and_companion_multiview.png",
+  "male_body_vertices": 19158,
+  "female_body_vertices": 19158,
+  "male_bones": 53,
+  "female_bones": 53,
+  "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
+  "runtime_export": false,
+  "visual_approved": false,
+  "motion_approved": false
+}

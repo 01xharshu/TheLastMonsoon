@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://characters/npcs/village_farmer.glb" id="male"]
+[ext_resource type="PackedScene" path="res://characters/npcs/village_woman.glb" id="female"]
+
+[node name="IndianPeasantPairCandidate" type="Node3D"]
+
+[node name="VillageFarmer" parent="." instance=ExtResource("male")]
+transform = Transform3D(0.9396926, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.9396926, -1.25, 0, 0)
+
+[node name="VillageWoman" parent="." instance=ExtResource("female")]
+transform = Transform3D(0.9848077, 0, 0.17364818, 0, 1, 0, -0.17364818, 0, 0.9848077, 1.25, 0, 0)

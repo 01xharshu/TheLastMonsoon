@@ -15,7 +15,11 @@ var rider: CharacterBody3D
 var stolen := false
 var pace := 0.0
 var gait := 0.0
-var stamina := 1.0
+const WALK_SPEED := 6.0
+const GALLOP_SPEED := 13.5
+const MAX_STAMINA := 240.0
+var stamina := MAX_STAMINA
+var gallop_exhausted := false
 var saved_layer := 0
 var saved_mask := 0
 var transition := ""
@@ -195,19 +199,22 @@ func _build_horse() -> void:
 		_box(body_root,"StirrupBack",Vector3(side*.48,1.41,.30),Vector3(.027,.18,.027),dark)
 		_cord(body_root,"GirthSide",Vector3(side*.36,1.91,.07),Vector3(side*.43,1.12,.07),.032,leather)
 	for i in 4:
+		var foreleg: bool = i < 2
 		var leg := Node3D.new()
 		leg.name = "Leg%d" % i
-		leg.position = Vector3(-.27 if i%2==0 else .27,1.18,-.56 if i<2 else .59)
+		leg.position = Vector3(-.28 if i%2==0 else .28,1.18,-.60 if foreleg else .64)
 		body_root.add_child(leg)
-		_taper(leg,"ThighOrForearm",Vector3(0,-.27,0),.59,.14,.09,bay)
+		_ellipsoid(leg,"UpperMuscle",Vector3(0,-.22,.02 if foreleg else -.025),Vector3(.10 if foreleg else .12,.28,.105 if foreleg else .125),bay)
+		_taper(leg,"ForearmOrGaskin",Vector3(0,-.38,0),.35,.105,.075,bay)
 		var hock := Node3D.new()
-		hock.name = "KneeOrHock"
-		hock.position = Vector3(0,-.54,.02)
+		hock.name = "Knee" if foreleg else "Hock"
+		hock.position = Vector3(0,-.55,-.015 if foreleg else .10)
 		leg.add_child(hock)
-		_ellipsoid(hock,"Joint",Vector3.ZERO,Vector3(.085,.085,.09),bay)
-		_taper(hock,"Cannon",Vector3(0,-.25,0),.50,.083,.06,bay)
-		_ellipsoid(hock,"Fetlock",Vector3(0,-.48,-.03),Vector3(.09,.08,.095),bay)
-		_taper(hock,"Hoof",Vector3(0,-.56,-.08),.16,.09,.15,dark)
+		_ellipsoid(hock,"Joint",Vector3.ZERO,Vector3(.095,.10,.11 if foreleg else .14),bay)
+		_taper(hock,"Cannon",Vector3(0,-.235,-.015),.45,.069,.055,bay)
+		_ellipsoid(hock,"Fetlock",Vector3(0,-.45,-.04),Vector3(.086,.075,.095),bay)
+		_taper(hock,"Pastern",Vector3(0,-.50,-.075),.13,.072,.083,bay)
+		_taper(hock,"Hoof",Vector3(0,-.57,-.10),.12,.085,.15,dark)
 		legs.append(leg)
 		lower_legs.append(hock)
 		hoof_clearances.append(0.0)
@@ -288,16 +295,20 @@ func _physics_process(delta: float) -> void:
 	var throttle := 0.0
 	var steer := 0.0
 	var gallop := false
+	if stamina <= 0.0:
+		gallop_exhausted = true
+	elif stamina >= MAX_STAMINA * .25:
+		gallop_exhausted = false
 	if rider != null and transition == "" and not rider.inventory_ui.is_open() and not rider.get_meta("map_open",false) and not rider.get_meta("weapon_wheel_open",false):
 		throttle = Input.get_axis("move_backward","move_forward")
 		steer = Input.get_axis("move_right","move_left")
-		gallop = Input.is_key_pressed(KEY_SHIFT) and stamina > .08
+		gallop = Input.is_action_pressed("sprint") and not gallop_exhausted and stamina > 0.0
 		if Input.is_action_just_pressed("jump") and is_on_floor():
 			velocity.y = 5.7
 			tack_player.play()
-	stamina = clampf(stamina + delta * (-.12 if gallop and absf(throttle)>.1 else .065),0.0,1.0)
-	var target := throttle * (8.2 if gallop else 4.2)
-	pace = move_toward(pace,target,delta * (4.5 if throttle != 0.0 else 7.0))
+	stamina = clampf(stamina + delta * (-1.6 if gallop and absf(throttle)>.1 else 2.5),0.0,MAX_STAMINA)
+	var target := throttle * (GALLOP_SPEED if gallop else WALK_SPEED)
+	pace = move_toward(pace,target,delta * (6.5 if throttle != 0.0 else 9.0))
 	rotation.y += steer * delta * 1.35 * clampf(absf(pace)/2.0,0.0,1.0)
 	var forward := -global_basis.z
 	velocity.x = forward.x * pace
@@ -333,7 +344,7 @@ func _physics_process(delta: float) -> void:
 					transition_actor.velocity = Vector3.ZERO
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
-	gait += delta * (1.25 + absf(pace) * 1.05) * clampf(absf(pace),0.0,1.0)
+	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
 	var new_hoof_step: int = floori(gait * 4.0 / TAU)
 	if is_on_floor() and absf(pace) > .8 and new_hoof_step > hoof_step_index:
 		_hoof_sound()
@@ -344,7 +355,7 @@ func _physics_process(delta: float) -> void:
 			voice_player.stream = Snort
 			voice_player.play()
 			idle_voice_timer = 17.0 + float(randi() % 9)
-	var stride := clampf(absf(pace)/8.2,0.0,1.0)
+	var stride := clampf(absf(pace)/GALLOP_SPEED,0.0,1.0)
 	for i in legs.size():
 		# Four-beat walk blends towards diagonal pairs at speed; bend the lower
 		# segment on the lifted half of each step rather than swinging a rigid leg.

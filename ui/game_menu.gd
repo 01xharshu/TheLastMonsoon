@@ -54,7 +54,7 @@ func close() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not overlay.visible: return
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode==KEY_ESCAPE:
+	if event.is_action_pressed("pause") and not event.is_echo():
 		close()
 		get_viewport().set_input_as_handled()
 
@@ -66,11 +66,17 @@ func clear_content() -> void:
 func show_main() -> void:
 	clear_content()
 	column.add_child(Style.label("PAUSED",46))
-	column.add_child(Style.button("Resume",func(): close()))
+	var resume: Button = Style.button("Resume",func(): close())
+	column.add_child(resume)
+	_focus_resume.call_deferred(resume)
 	column.add_child(Style.button("Save Game",func(): show_slots(true)))
 	column.add_child(Style.button("Load Game",func(): show_slots(false)))
 	column.add_child(Style.button("Settings",func(): show_settings()))
 	column.add_child(Style.button("Main Menu",func(): show_return_confirmation()))
+
+func _focus_resume(button: Button) -> void:
+	if overlay.visible and is_instance_valid(button) and button.is_inside_tree():
+		button.grab_focus()
 
 func show_slots(save_mode: bool, notice: String = "") -> void:
 	clear_content()

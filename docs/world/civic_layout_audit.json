@@ -30,6 +30,12 @@
 			"grade_spread_m": 0.0,
 			"half_extent": "(20.0, 22.0)"
 		},
+		"GovernmentHouse": {
+			"center": "(-390.0, -110.0)",
+			"grade_m": 8.5,
+			"grade_spread_m": 0.0,
+			"half_extent": "(96.0, 92.0)"
+		},
 		"TownHall": {
 			"center": "(-320.0, -470.0)",
 			"grade_m": 8.0,
@@ -61,6 +67,23 @@
 				9.58987110331894,
 				10.1648856505193,
 				10.4929118434394
+			]
+		},
+		"government_house_avenue": {
+			"length_m": 105.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				8.5,
+				8.5
+			]
+		},
+		"government_house_road": {
+			"length_m": 176.0,
+			"maximum_terrain_slope": 0.0262500000000001,
+			"waypoint_elevations_m": [
+				6.4,
+				8.5,
+				8.5
 			]
 		},
 		"police_to_compound": {

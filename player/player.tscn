@@ -31,6 +31,8 @@
 [ext_resource type="Script" path="res://player/bow_combat.gd" id="22_bow"]
 [ext_resource type="Script" path="res://player/pistol_combat.gd" id="23_pistol"]
 
+[ext_resource type="Script" path="res://player/knife_strike.gd" id="24_knife"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -404,6 +406,5 @@ script = ExtResource("22_bow")
 [node name="PistolCombat" type="Node" parent="."]
 script = ExtResource("23_pistol")
 
-[node name="PistolCombat" type="Node" parent="."]
-script = ExtResource("18_rifle")
-weapon_selection = 3
+[node name="KnifeStrike" type="Node" parent="."]
+script = ExtResource("24_knife")

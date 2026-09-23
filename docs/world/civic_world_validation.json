@@ -20,9 +20,9 @@
 	},
 	"intrusion_samples": [],
 	"nature_intrusions": 0,
-	"rocks_checked": 748,
-	"route_contact_samples": 97,
+	"rocks_checked": 736,
+	"route_contact_samples": 172,
 	"status": "PASS",
-	"trees_checked": 2116,
-	"worst_route_contact_error_m": 0.0351860333388441
+	"trees_checked": 2163,
+	"worst_route_contact_error_m": 0.0906463623046871
 }
