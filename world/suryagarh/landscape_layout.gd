@@ -30,7 +30,7 @@ const ROUTES: Dictionary = {
 }
 const SITES: Dictionary = {
 	"Bhairavpur village": Vector2(-310, 230),
-	"Agricultural plains": Vector2(-390, -90),
+	"Agricultural plains": Vector2(-540, -90),
 	"River approach": Vector2(0, 165),
 	"Trading settlement reserve": Vector2(-320, -470),
 	"Company compound": Vector2(340, 290),

@@ -1,9 +1,9 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend",
-  "source_sha256": "43a6813ddda6786e56b355ce66f319aeeec2d66b55f8c09f8d7345808f80cecd",
+  "source_sha256": "7b0ae0f00d3de3191b97dd1fbd09ec6b02fadc74e76d48297fd4d476fce1adb0",
   "runtime": "characters/npcs/village_farmer.glb",
-  "runtime_sha256": "6985b00701b98f90b23fa5239bbe88726981caeaa32a3480d0aa087412be3e89",
+  "runtime_sha256": "40a453c7c3b0a42e6f8c8f5968668fe369b70f051176cb862c54dd38e2a5ca09",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 9,

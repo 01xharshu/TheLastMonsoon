@@ -1,0 +1,10 @@
+{
+  "actors": 16,
+  "missing_bones": [],
+  "moved_after_one_second": 9,
+  "passed": true,
+  "scope": "isolated roster; full-world rendering and foot contact are separate",
+  "skeletons": 16,
+  "thigh_pose_changed": 6,
+  "walking_after_one_second": 6
+}

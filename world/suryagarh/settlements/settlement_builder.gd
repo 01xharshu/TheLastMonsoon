@@ -3,6 +3,7 @@ extends Node3D
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Gate = preload("res://world/suryagarh/settlements/compound_gate.gd")
 const Pickup = preload("res://world/suryagarh/settlements/weapon_pickup.gd")
+const SupplyChest = preload("res://interaction/treasure_chest.gd")
 var layout := Layout.new()
 var plaster: Material
 var ochre: Material
@@ -38,9 +39,40 @@ func _ready() -> void:
 	make_building("DistrictJail",compound_center+Vector2(2,13),Vector2(21,18),true,true,true)
 	make_building("CompanyArmoury",compound_center+Vector2(31,8),Vector2(17,13),true,true)
 	compound()
+	place_new_props()
 	landing()
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
+
+func place_new_props() -> void:
+	# One artillery display in the open west court, clear of the jail and stores.
+	var court: Vector2 = Layout.PLOTS["CompanyCompound"].center
+	var cannon := StaticBody3D.new()
+	cannon.name = "CompanyCourtyardCannon"
+	cannon.position = Vector3(court.x-29.0,Layout.PLOTS["CompanyCompound"].grade+.04,court.y+13.0)
+	add_child(cannon)
+	cannon.add_child(preload("res://environment/props/new_assets/wooden_gun_carriage_v1.glb").instantiate())
+	var cannon_shape := BoxShape3D.new()
+	cannon_shape.size = Vector3(4.5,1.45,4.7)
+	var cannon_collision := CollisionShape3D.new()
+	cannon_collision.shape = cannon_shape
+	cannon_collision.position.y = .73
+	cannon.add_child(cannon_collision)
+	# Set the road marker beside the main northbound track, off its walking strip.
+	var sign_z := 180.0
+	var sign_x := layout.road_x(sign_z)-7.0
+	var sign := StaticBody3D.new()
+	sign.name = "SuryagarhRoadSign"
+	sign.position = Vector3(sign_x,layout.height(sign_x,sign_z),sign_z)
+	sign.rotation.y = PI
+	add_child(sign)
+	sign.add_child(preload("res://environment/props/new_assets/wooden_signboard.glb").instantiate())
+	var sign_shape := BoxShape3D.new()
+	sign_shape.size = Vector3(2.15,2.42,.3)
+	var sign_collision := CollisionShape3D.new()
+	sign_collision.shape = sign_shape
+	sign_collision.position.y = 1.21
+	sign.add_child(sign_collision)
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
@@ -148,20 +180,21 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 		var rack_weapons := [
 			["enfield","res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb"],
 			["talwar","res://environment/weapons/Talwar/weapon_talwar_01.glb"],
+			["double_gun","res://environment/weapons/double_percussion_gun/double_percussion_gun.glb"],
 			["bow","res://environment/weapons/period_bow/period_bow.glb"],
 			["pistol","res://environment/weapons/adams_1851/adams_1851.glb"],
 		]
 		for i in rack_weapons.size():
 			var pickup := Pickup.new()
 			pickup.weapon_id = rack_weapons[i][0]
-			pickup.position = Vector3(-.85+(i%2)*1.7,1.2+floori(i/2.0)*.68,rack_z+.12)
+			pickup.position = Vector3(-1.10+(i%3)*1.10,1.2+floori(i/3.0)*.68,rack_z+.12)
 			b.add_child(pickup)
 			var source: String = rack_weapons[i][1]
 			var model: Node3D = load(source).instantiate()
 			pickup.add_child(model)
 			var collision := CollisionShape3D.new()
 			var shape := BoxShape3D.new()
-			shape.size = Vector3(1.4,.25,.35) if i < 3 else Vector3(.6,.25,.35)
+			shape.size = Vector3(1.0,.25,.35) if i < 4 else Vector3(.6,.25,.35)
 			collision.shape = shape
 			pickup.add_child(collision)
 	var sign := Label3D.new()
@@ -222,6 +255,11 @@ func compound() -> void:
 	var flag: Node3D = preload("res://assets/props/flags/eic/prop_eic_checkpoint_flag_01.glb").instantiate()
 	flag.position = Vector3(8,.1,-41)
 	c.add_child(flag)
+	# Behind the west climb route, clear of the stair and court roadway.
+	var chest := SupplyChest.new()
+	chest.name = "SecludedSupplyChest"
+	chest.position = Vector3(-42.5,.10,9.0)
+	c.add_child(chest)
 	merge_visuals(c)
 
 func landing() -> void:

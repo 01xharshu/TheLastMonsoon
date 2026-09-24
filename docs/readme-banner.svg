@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">The Last Monsoon</title>
+  <desc id="desc">A dark, illustrated landscape with a river, distant hills, and the title The Last Monsoon.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#102628"/>
+      <stop offset="0.68" stop-color="#294346"/>
+      <stop offset="1" stop-color="#68674e"/>
+    </linearGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b6ae83"/>
+      <stop offset="1" stop-color="#667e78"/>
+    </linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#0c1d20" stop-opacity=".9"/>
+      <stop offset=".62" stop-color="#0c1d20" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#0c1d20" stop-opacity=".05"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" fill="url(#sky)"/>
+  <circle cx="962" cy="89" r="48" fill="#e7bb79" opacity=".65"/>
+  <path d="M0 255 122 214 225 241 352 192 471 232 623 172 791 228 939 182 1072 220 1200 169V420H0Z" fill="#354947"/>
+  <path d="M0 289 146 266 278 287 429 235 586 281 725 236 897 288 1037 241 1200 279V420H0Z" fill="#253b39"/>
+  <path d="M0 332c181-28 283-45 419-27 132 17 201 34 344 12 178-27 314-14 437 6v97H0Z" fill="#172f2d"/>
+  <path d="M1200 311c-150 12-248 48-395 53-137 5-215-14-341-2-126 13-232 43-464 36v22h1200Z" fill="url(#river)" opacity=".8"/>
+  <path d="M0 397c214 9 328-28 476-37 128-8 216 15 328 7 166-11 249-47 396-53" fill="none" stroke="#e5d2a4" stroke-width="3" opacity=".4"/>
+  <g fill="#122b2a" opacity=".8">
+    <path d="M915 315v-45m-26 17 26-44 28 45zM1075 304v-55m-34 25 34-54 35 55zM777 318v-37m-24 18 24-38 25 38z" stroke="#122b2a" stroke-width="5"/>
+  </g>
+  <rect width="1200" height="420" fill="url(#shade)"/>
+  <path d="M64 71h90" stroke="#d5a975" stroke-width="3"/>
+  <text x="64" y="62" fill="#e3c193" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="5">INDIA · 1857</text>
+  <text x="60" y="176" fill="#faf2df" font-family="Georgia, 'Times New Roman', serif" font-size="71" font-weight="700" letter-spacing="1">THE LAST</text>
+  <text x="60" y="250" fill="#faf2df" font-family="Georgia, 'Times New Roman', serif" font-size="71" font-weight="700" letter-spacing="1">MONSOON</text>
+  <text x="65" y="300" fill="#e9d9bb" font-family="Arial, Helvetica, sans-serif" font-size="17" letter-spacing="3">A HISTORICAL OPEN-WORLD SURVIVAL GAME</text>
+  <text x="65" y="368" fill="#c6d3ca" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="3">SURVIVE THE LAND  ·  PROTECT YOUR PEOPLE</text>
+</svg>

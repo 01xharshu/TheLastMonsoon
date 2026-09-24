@@ -203,6 +203,7 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 		var p := origin + Vector2(rng.randf_range(4, 140), rng.randf_range(4, 140))
 		var h: float = layout.height(p.x, p.y)
 		if layout.built_area(p.x,p.y): continue
+		if absf(p.x - 620.0) < 11.0 and p.y > -160.0 and p.y < -120.0: continue
 		var village_dist: float = p.distance_to(Vector2(-310, 230))
 		if h < 2.6 or layout.road_distance(p.x, p.y) < 9 or village_dist < 85: continue
 		var field: float = layout.field_mask(p.x, p.y)

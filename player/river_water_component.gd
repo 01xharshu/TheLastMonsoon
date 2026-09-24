@@ -67,6 +67,7 @@ func _process(delta: float) -> void:
 	else:
 		var filled: float = inventory.add_water(inventory.get_available_water_capacity_liters())
 		inventory.request_message("Filled water pouch  ·  %.2f L" % filled)
+	ControllerFeedback.pulse("water")
 	cancel()
 
 func cancel() -> void:

@@ -8,13 +8,13 @@ var impact_done := false
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton or event.button_index != MOUSE_BUTTON_LEFT or not event.pressed: return
-	if not available(): return
+func strike() -> bool:
+	if not available(): return false
 	target = _find_target()
+	ControllerFeedback.pulse("melee")
 	elapsed = 0.0
 	impact_done = false
-	get_viewport().set_input_as_handled()
+	return true
 
 func available() -> bool:
 	return elapsed >= DURATION and visual.equipment != null and not visual.equipment.stowed and visual.equipment.selected == 0 and not actor.is_swimming and not actor.get_meta("scroll_open",false) and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.inventory_ui.is_open() and not actor.get_meta("climbing",false) and not actor.has_meta("mounted_vehicle")

@@ -10,12 +10,14 @@
 [ext_resource type="AudioStream" uid="uid://i7npae7kd308" path="res://audio/music/Aaron Kenny - The New Order.mp3" id="8_odqov"]
 [ext_resource type="Script" uid="uid://bspbf7u6slne0" path="res://world/suryagarh/roadside_flags.gd" id="20_flags"]
 [ext_resource type="Script" uid="uid://cns4paxl6wfjf" path="res://vehicles/river_boat.gd" id="boat"]
+[ext_resource type="Script" uid="uid://bji8xd2awk1t4" path="res://world/suryagarh/british_npc_roster.gd" id="british_roster"]
 [ext_resource type="Script" uid="uid://b3pwyis4jeyqa" path="res://world/suryagarh/river_fish.gd" id="fish"]
 [ext_resource type="Script" uid="uid://d3o5ff3pek7ek" path="res://world/suryagarh/forage_grove.gd" id="forage"]
+[ext_resource type="Script" uid="uid://c24s20i2rb4x6" path="res://world/suryagarh/forest_shrine.gd" id="forest_shrine"]
 [ext_resource type="Script" uid="uid://cfvv7dfdd52mv" path="res://ui/game_menu.gd" id="game_menu"]
+[ext_resource type="PackedScene" path="res://characters/npcs/indian_peasant_pair.tscn" id="indian_pair"]
 [ext_resource type="Script" uid="uid://dka16rcbjrkcd" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
 [ext_resource type="Script" uid="uid://dltrral1cec8c" path="res://horses/village_stable.gd" id="stable"]
-[ext_resource type="PackedScene" path="res://characters/npcs/indian_peasant_pair.tscn" id="indian_pair"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
@@ -53,6 +55,9 @@ outline_color = Color(0.09, 0.12, 0.1, 0.85)
 script = ExtResource("1_world")
 
 [node name="Landscape" parent="." unique_id=1227736654 instance=ExtResource("2_land")]
+
+[node name="ForestShrine" type="Node3D" parent="." unique_id=236108893]
+script = ExtResource("forest_shrine")
 
 [node name="GameTimeSystem" type="Node" parent="." unique_id=2072554750]
 script = ExtResource("4_time")
@@ -109,7 +114,6 @@ offset_bottom = -12.0
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-text = "WASD move · Shift run · Space jump · F3 survey · F4 next landscape viewpoint"
 
 [node name="TimberBridge" type="Node3D" parent="." unique_id=276007427]
 script = ExtResource("7_bridge")
@@ -128,8 +132,11 @@ script = ExtResource("boat")
 [node name="Settlement" type="Node3D" parent="." unique_id=819864874]
 script = ExtResource("settlement")
 
-[node name="IndianPeasantPairCandidate" parent="." instance=ExtResource("indian_pair")]
+[node name="IndianPeasantPairCandidate" parent="." unique_id=876290411 instance=ExtResource("indian_pair")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 7.2, 230)
+
+[node name="BritishNpcRosterCandidate" type="Node3D" parent="." unique_id=1788064969]
+script = ExtResource("british_roster")
 
 [node name="RiverFish" type="Node3D" parent="." unique_id=1408976958]
 script = ExtResource("fish")

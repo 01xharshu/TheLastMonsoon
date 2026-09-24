@@ -40,7 +40,28 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if player.get_meta("weapon_wheel_open", false): return
+	if event.is_action_pressed("open_map") and not event.is_echo():
+		if not visible and player.inventory_ui.is_open(): return
+		set_open(not visible)
+		get_viewport().set_input_as_handled()
+		return
+	if visible and SaveManager.active_input_device == "controller" and event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_A:
+				waypoint = map_center
+				queue_redraw()
+			JOY_BUTTON_B:
+				set_open(false)
+			JOY_BUTTON_Y:
+				zoom = 1.0
+				map_center = Vector2.ZERO
+				queue_redraw()
+			_:
+				return
+		get_viewport().set_input_as_handled()
+		return
 	if not event is InputEventKey or not event.pressed or event.echo: return
+	if SaveManager.active_input_device == "controller": return
 	if event.keycode == KEY_M or (visible and event.keycode == KEY_ESCAPE):
 		if not visible and player.inventory_ui.is_open(): return
 		set_open(not visible)
@@ -55,6 +76,7 @@ func _input(event: InputEvent) -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	if not visible: return
+	if SaveManager.active_input_device == "controller": return
 	if event is InputEventMouseButton:
 		if event.pressed and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			if map_rect.has_point(event.position):
@@ -104,7 +126,15 @@ func set_open(open: bool) -> void:
 	queue_redraw()
 
 func _process(_delta: float) -> void:
-	if visible: queue_redraw()
+	if not visible: return
+	if SaveManager.active_input_device == "controller":
+		var pan := Input.get_vector("move_left","move_right","move_forward","move_backward")
+		if pan.length_squared() > 0.01:
+			map_center += pan * view_extent() * _delta * 0.6
+			clamp_center()
+		var scale := Input.get_axis("look_down","look_up")
+		if absf(scale) > 0.1: zoom = clampf(zoom + scale * _delta * 2.0,1.0,8.0)
+	queue_redraw()
 
 func view_extent() -> float:
 	return Layout.SIZE/zoom

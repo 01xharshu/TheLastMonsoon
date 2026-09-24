@@ -39,6 +39,7 @@ func validate() -> void:
 	check(estate.has_node("EastWing") and estate.has_node("WestWing"),"Residential wings are missing")
 	check(named_count(estate,"ParterrePlanting")==8,"Formal garden beds are missing")
 	check(layout.road_distance(-214,-18)<.1 and layout.road_distance(-390,-18)<.1,"Gate road is disconnected")
+	check(Layout.SITES.has("Government House") and Layout.SITES["Government House"]==plot.center,"Government House is absent from the field map")
 	var space := world.get_world_3d().direct_space_state
 	var samples := {"gate":Vector3(-390,12,-21),"avenue":Vector3(-390,12,-70),"portico":Vector3(-390,12,-121),"hall":Vector3(-390,12,-145),"upper_one":Vector3(-390,17,-145),"upper_two":Vector3(-390,22,-145)}
 	var support: Dictionary = {}
@@ -72,9 +73,9 @@ func validate() -> void:
 	for flight in 2:
 		var x := -370.0 if flight==0 else -362.0
 		for step in range(1,24):
-			var t := float(step)/24.0
-			var z := -133.0-24.0*t if flight==0 else -157.0+24.0*t
-			var deck_y := plot.grade+flight*4.6+4.6*t+.15
+			var t: float = float(step)/24.0
+			var z: float = -133.0-24.0*t if flight==0 else -157.0+24.0*t
+			var deck_y: float = float(plot.grade)+flight*4.6+4.6*t+.15
 			var query := PhysicsShapeQueryParameters3D.new()
 			query.shape=capsule
 			query.transform=Transform3D(Basis(),Vector3(x,deck_y+1.08,z))
@@ -84,6 +85,15 @@ func validate() -> void:
 				break
 			stair_clear+=1
 	check(stair_clear>=44,"Stair flights have too few clear capsule samples")
+	var door_clear := 0
+	for point in [Vector2(-407.5,-134.5),Vector2(-372.5,-134.5),Vector2(-407.5,-155.5),Vector2(-372.5,-155.5),Vector2(-424,-145),Vector2(-428,-145),Vector2(-356,-145),Vector2(-352,-145)]:
+		var query := PhysicsShapeQueryParameters3D.new()
+		query.shape=capsule
+		query.transform=Transform3D(Basis(),Vector3(point.x,float(plot.grade)+1.4,point.y))
+		query.exclude=[world.get_node("Player").get_rid()]
+		check(space.intersect_shape(query,4).is_empty(),"Room or wing doorway blocked at "+str(point))
+		if space.intersect_shape(query,4).is_empty(): door_clear+=1
+	check(door_clear==8,"Some rooms cannot be entered")
 	if DisplayServer.get_name() != "headless":
 		world.get_node("Player/UI").hide()
 		world.get_node("LandscapeUI").hide()
@@ -101,7 +111,15 @@ func validate() -> void:
 		camera.global_position=estate.global_position+Vector3(0,STOREY_VIEW(),-22)
 		camera.look_at(estate.global_position+Vector3(0,STOREY_VIEW(),-52))
 		await capture(camera,"res://docs/world/captures/26_government_house_upper.png")
-	var report := {"status":"PASS" if failures.is_empty() else "FAIL","plot":plot.center,"window_count":named_count(main,"GlazedWindow"),"room_tables":named_count(main,"RoomTable"),"stair_flights":named_count(main,"WalkableStairSlope"),"clear_gate_to_hall_samples":clear_samples,"clear_stair_samples":stair_clear,"support_heights":support,"failures":failures}
+		var map: Control = world.get_node("Player/UI/WorldMap")
+		world.get_node("Player/UI").show()
+		map.set_open(true)
+		map.zoom=2.0
+		map.map_center=plot.center
+		map.queue_redraw()
+		await capture(camera,"res://docs/world/captures/28_government_house_map.png")
+		map.set_open(false)
+	var report := {"status":"PASS" if failures.is_empty() else "FAIL","plot":plot.center,"window_count":named_count(main,"GlazedWindow"),"room_tables":named_count(main,"RoomTable"),"stair_flights":named_count(main,"WalkableStairSlope"),"static_bodies":estate.find_children("*","StaticBody3D",true,false).size(),"clear_gate_to_hall_samples":clear_samples,"clear_stair_samples":stair_clear,"clear_door_samples":door_clear,"support_heights":support,"failures":failures}
 	var file := FileAccess.open("res://docs/world/government_house_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("GOVERNMENT HOUSE VALIDATION ",JSON.stringify(report))

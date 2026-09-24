@@ -26,10 +26,7 @@ func available() -> bool:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not available(): return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		if aiming: fire()
-		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
+	if event.is_action_pressed("reload"):
 		start_reload()
 		get_viewport().set_input_as_handled()
 
@@ -37,17 +34,12 @@ func _process(delta: float) -> void:
 	if reload_remaining > 0.0:
 		reload_remaining = maxf(0.0,reload_remaining-delta)
 		if reload_remaining == 0.0: _finish_reload()
-	aiming = available() and reload_remaining == 0.0 and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+	aiming = available() and reload_remaining == 0.0 and Input.is_action_pressed("aim")
 	if not available(): return
 	visual.equipment.aiming = aiming
 	visual.equipment.aim_direction = -camera.global_basis.z
-	visual.equipment.apply_rifle_grip()
-	var hand: Node3D = visual.equipment.pistol_hand
 	if aiming:
 		var barrel := (-camera.global_basis.z).normalized()
-		var side := barrel.cross(Vector3.UP).normalized()
-		if side.length_squared() < 0.1: side = Vector3.LEFT
-		hand.global_basis = Basis(barrel,side.cross(barrel),side)
 		var local_direction: Vector3 = actor.global_basis.inverse()*barrel
 		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
 
@@ -58,6 +50,7 @@ func fire() -> bool:
 		return false
 	rounds -= 1
 	shots_fired += 1
+	ControllerFeedback.pulse("shot")
 	var origin: Vector3 = visual.equipment.pistol_hand.to_global(MUZZLE)
 	var target := camera.global_position-camera.global_basis.z*90.0
 	var camera_query := PhysicsRayQueryParameters3D.create(camera.global_position,target)

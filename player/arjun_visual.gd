@@ -14,6 +14,9 @@ var breath := 0.0
 var motion := 0.0
 var swim_blend := 0.0
 var slash_phase := -1.0
+var slash_target_world := Vector3.ZERO
+var punch_phase := -1.0
+var kick_phase := -1.0
 var bones: Dictionary = {}
 var base_rotations: Dictionary = {}
 var axes: Dictionary = {}
@@ -72,10 +75,23 @@ func _ready() -> void:
 	wheel.equipment = equipment
 	actor.get_node("UI").add_child.call_deferred(wheel)
 
-func _unhandled_key_input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if equipment == null or not actor.is_physics_processing(): return
-	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or actor.has_meta("mounted_vehicle") or actor.get_meta("climbing",false): return
+	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
+	if event.is_action_pressed("stow_weapon"):
+		equipment.toggle_stowed()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("next_weapon"):
+		for offset in range(1,7):
+			var choice := (int(equipment.selected) + offset) % 6
+			if equipment.owns(choice):
+				equipment.select_weapon(choice)
+				break
+		get_viewport().set_input_as_handled()
+		return
 	if not event is InputEventKey or not event.pressed or event.echo: return
+	if SaveManager.active_input_device == "controller": return
 	var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 	match key:
 		KEY_H:
@@ -90,6 +106,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			equipment.select_weapon(Equipment.Selection.PISTOL)
 		KEY_5:
 			equipment.select_weapon(Equipment.Selection.KNIFE)
+		KEY_6:
+			equipment.select_weapon(Equipment.Selection.DOUBLE_GUN)
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -113,13 +131,17 @@ func _process(delta: float) -> void:
 	if actor.has_meta("mounted_vehicle"):
 		var mount: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 		if is_instance_valid(mount) and mount.is_in_group("horses"):
+			for solver in climb_ik.values(): solver.influence = 0.0
 			if actor.get_meta("horse_transition", "") != "":
 				_pose_horse_transition(delta)
 			else:
 				_pose_horse_riding(delta)
+		elif actor.get_meta("cart_role", "") == "driver":
+			_pose_cart_driver(delta)
 		else:
 			_pose_seated(delta)
 		return
+	for solver in climb_ik.values(): solver.influence = 0.0
 	equipment.set_swimming(actor.is_swimming)
 	var blend := 1.0 - exp(-12.0 * delta)
 	var speed := Vector2(actor.velocity.x, actor.velocity.z).length()
@@ -174,7 +196,19 @@ func _process(delta: float) -> void:
 		pose("spine_02",Vector3(-0.10,lerpf(-0.25,0.38,sweep),0.0),release)
 		pose("upperarm_r",Vector3(lerpf(-1.15,0.35,sweep),lerpf(-0.65,0.65,sweep),lerpf(-0.60,0.10,sweep)),release)
 		pose("lowerarm_r",Vector3(lerpf(-1.15,-0.40,sweep),0,0),release)
-	equipment.apply_rifle_grip()
+		equipment.apply_sword_strike(slash_phase,slash_target_world)
+	if punch_phase >= 0.0:
+		var punch := sin(PI*punch_phase)
+		pose("spine_02",Vector3(-.12*punch,.18*punch,0),blend)
+		pose("upperarm_r",Vector3(-.75*punch,0,-.35*punch),blend)
+		pose("lowerarm_r",Vector3(-.95+.65*punch,0,0),blend)
+	if kick_phase >= 0.0:
+		var kick := sin(PI*kick_phase)
+		pose("pelvis",Vector3(-.12*kick,0,-.08*kick),blend)
+		pose("thigh_r",Vector3(-1.25*kick,0,0),blend)
+		pose("calf_r",Vector3(-.55+.9*kick,0,0),blend)
+		pose("upperarm_l",Vector3(-.55,0,.48),blend)
+	equipment.apply_rifle_grip(armed and slash_phase >= 0.0)
 
 func _pose_river_action(delta: float) -> void:
 	for solver in climb_ik.values(): solver.influence = 0.0
@@ -197,22 +231,68 @@ func _pose_river_action(delta: float) -> void:
 		pose("lowerarm_"+side,Vector3(-0.92-hand_raise*reach,0,0),weight)
 
 func _pose_seated(delta: float) -> void:
-	for solver in climb_ik.values(): solver.influence=0.0
+	var boat: Node = actor.get_meta("mounted_vehicle")
+	for solver in climb_ik.values(): solver.influence = 0.0
 	var weight := 1.0-exp(-9.0*delta)
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	breath += delta*1.8
 	for side in ["l","r"]:
-		pose("thigh_"+side,Vector3(1.35,0,0),weight)
-		pose("calf_"+side,Vector3(-1.35,0,0),weight)
-		pose("foot_"+side,Vector3(.15,0,0),weight)
-		pose("upperarm_"+side,Vector3(-.55,0,(1.0 if side=="l" else -1.0)*.32),weight)
-		pose("lowerarm_"+side,Vector3(-.75,0,0),weight)
+		var spread := 1.0 if side=="l" else -1.0
+		pose("thigh_"+side,Vector3(-1.22,spread*.12,spread*.08),weight)
+		pose("calf_"+side,Vector3(1.48,0,0),weight)
+		pose("foot_"+side,Vector3(-.27,0,0),weight)
+		pose("upperarm_"+side,Vector3(.28,0,spread*.22),weight)
+		pose("lowerarm_"+side,Vector3(-.72,0,0),weight)
 	pose("pelvis",Vector3(0,0,0),weight)
 	pose("spine_01",Vector3(-.10,0,0),weight)
 	pose("spine_02",Vector3(sin(breath)*.015,0,0),weight)
 	pose("head",Vector3(.04,0,0),weight)
 
+	if is_instance_valid(boat) and boat.has_method("paddle_grip_world") and boat.paddle_blend > .01:
+		skeleton.force_update_all_bone_transforms()
+		var rod_axis: Vector3 = (skeleton.global_basis.inverse()*boat.paddle_rod_world_axis()).normalized()
+		var palm_normal := Vector3.DOWN
+		var finger_axis := palm_normal.cross(rod_axis).normalized()
+		var palm_basis := Basis(rod_axis,finger_axis,palm_normal)
+		for pass_index in 4:
+			for side in ["l","r"]:
+				var grip: Vector3 = skeleton.to_local(boat.paddle_grip_world(side))
+				var hand_basis: Basis = palm_basis*(equipment.palm_axes[side] as Basis).inverse()
+				var target: Vector3 = grip-hand_basis*equipment.palm_offsets[side]
+				equipment._solve_arm(side,target)
+				var hand_index: int = skeleton.find_bone("hand_"+side)
+				var parent_index: int = skeleton.get_bone_parent(hand_index)
+				var local_basis := skeleton.get_bone_global_pose(parent_index).basis.inverse()*hand_basis
+				skeleton.set_bone_pose_rotation(hand_index,local_basis.orthonormalized().get_rotation_quaternion())
+				skeleton.force_update_all_bone_transforms()
+		for side in ["l","r"]: equipment._grasp(side)
+
+func _pose_cart_driver(delta: float) -> void:
+	_pose_seated(delta)
+	var weight := 1.0-exp(-10.0*delta)
+	var steer := Input.get_axis("move_right", "move_left")
+	pose("spine_01", Vector3(-.06, steer*.08, 0), weight)
+	for side in ["l", "r"]:
+		var spread := 1.0 if side == "l" else -1.0
+		pose("upperarm_"+side, Vector3(-.50, spread*.10, spread*.25), weight)
+		pose("lowerarm_"+side, Vector3(-.84, 0, 0), weight)
+		for finger in ["index", "middle", "ring", "pinky", "thumb"]:
+			for joint in ["01", "02", "03"]:
+				var name: String = finger+"_"+joint+"_"+side
+				if bones.has(name):
+					var target: Quaternion = base_rotations[name] * Quaternion(Vector3.RIGHT, .65)
+					skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, weight))
+	var cart: Node = actor.get_meta("mounted_vehicle")
+	if is_instance_valid(cart) and cart.has_method("rein_grip_world"):
+		skeleton.force_update_all_bone_transforms()
+		for pass_index in 4:
+			for side in ["l", "r"]:
+				var grip: Vector3 = skeleton.to_local(cart.rein_grip_world(side))
+				var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
+				equipment._solve_arm(side, grip-hand.basis*equipment.palm_offsets[side])
+		for side in ["l", "r"]:
+			equipment._grasp(side)
 func _pose_horse_riding(delta: float) -> void:
 	var weight := 1.0-exp(-9.0*delta)
 	var mount: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)

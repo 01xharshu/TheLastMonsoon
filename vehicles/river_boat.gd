@@ -7,6 +7,10 @@ var rider: CharacterBody3D
 var speed: float = 0.0
 var row_phase: float = 0.0
 var hull: Node3D
+var paddle: Node3D
+var paddle_stow: Transform3D
+var paddle_blend := 0.0
+var row_effort := 0.0
 var saved_layer: int
 var saved_mask: int
 var mooring := Vector3.ZERO
@@ -19,6 +23,9 @@ func _ready() -> void:
 	hull = BOAT.instantiate()
 	hull.rotation.y = PI/2
 	add_child(hull)
+	_add_dry_floor()
+	paddle = hull.find_child("boat_paddle",true,false)
+	if paddle != null: paddle_stow = paddle.transform
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(1.26,0.62,4.0)
 	var collision := CollisionShape3D.new()
@@ -29,8 +36,54 @@ func _ready() -> void:
 	position = Vector3(layout.river_x(z)-layout.river_width(z)+4,0.03,z)
 	mooring = position
 
+func _add_dry_floor() -> void:
+	# The source hull floor sits below the river plane; a shallow inner deck keeps the
+	# visible boat interior dry while leaving the outer hull's draft in the water.
+	var source: MeshInstance3D = hull.find_child("river_boat_floor",true,false)
+	var wood: Material = source.mesh.surface_get_material(0) if source != null else null
+	var sections := [Vector2(-2.03,.04),Vector2(-1.91,.18),Vector2(-1.53,.34),Vector2(-1.25,.40),Vector2(-.75,.51),Vector2(0,.54),Vector2(.75,.51),Vector2(1.25,.40),Vector2(1.53,.34),Vector2(1.91,.18),Vector2(2.03,.04)]
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	if wood != null: surface.set_material(wood)
+	for i in range(sections.size()-1):
+		var a: Vector2 = sections[i]
+		var b: Vector2 = sections[i+1]
+		for point in [Vector2(a.x,-a.y),Vector2(b.x,b.y),Vector2(b.x,-b.y),Vector2(a.x,-a.y),Vector2(a.x,a.y),Vector2(b.x,b.y)]:
+			surface.set_normal(Vector3.UP)
+			surface.set_uv(Vector2(point.x*.35,point.y*.7))
+			surface.add_vertex(Vector3(point.x,.10,point.y))
+	var deck := MeshInstance3D.new()
+	deck.name = "DryInnerDeck"
+	deck.mesh = surface.commit()
+	hull.add_child(deck)
+	for x in [-1.12,-.56,.56,1.12]:
+		var seam := MeshInstance3D.new()
+		seam.name = "InnerDeckJoint"
+		var strip := BoxMesh.new()
+		strip.size = Vector3(.012,.003,.72 if absf(x)>1.0 else .96)
+		seam.mesh = strip
+		var dark := StandardMaterial3D.new()
+		dark.albedo_color = Color(.25,.14,.075)
+		seam.material_override = dark
+		seam.position = Vector3(x,.102,0)
+		hull.add_child(seam)
+
 func seat_world() -> Vector3:
 	return to_global(Vector3(0,0.208,0))
+
+func paddle_grip_world(side: String) -> Vector3:
+	if paddle == null: return seat_world()
+	var socket_name := "socket_paddle_left_hand" if side == "l" else "socket_paddle_right_hand"
+	var socket: Node3D = paddle.find_child(socket_name,true,false)
+	return socket.global_position if socket != null else paddle.global_position
+
+func paddle_blade_world() -> Vector3:
+	if paddle == null: return global_position
+	var socket: Node3D = paddle.find_child("socket_paddle_blade_tip",true,false)
+	return socket.global_position if socket != null else paddle.global_position
+
+func paddle_rod_world_axis() -> Vector3:
+	return paddle.global_basis.x.normalized() if paddle != null else global_basis.x
 
 func can_board(actor: CharacterBody3D) -> bool:
 	if rider != null or actor.get_meta("climbing",false): return false
@@ -59,9 +112,9 @@ func _sync_rider() -> void:
 	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
 	# Align the pelvis to the actual bench, independent of the authored sitting clip's root height.
 	var pelvis: int = visual.skeleton.find_bone("pelvis")
-	var hip_local: Vector3 = rider.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin))
-	rider.global_position = seat_world()+Vector3.UP*0.11-Vector3(hip_local.x,hip_local.y,hip_local.z)
 	rider.visual_root.global_rotation.y = rotation.y+PI
+	var hip_world: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin)
+	rider.global_position += seat_world()+Vector3.UP*0.08-hip_world
 	rider.velocity = Vector3.ZERO
 
 func dismount() -> bool:
@@ -85,6 +138,9 @@ func dismount() -> bool:
 		actor.inventory.message_requested.emit("No clear space beside the boat")
 		return false
 	rider = null
+	paddle_blend = 0.0
+	row_effort = 0.0
+	if paddle != null: paddle.transform = paddle_stow
 	actor.set_meta("mounted_vehicle",null)
 	actor.collision_layer = saved_layer
 	actor.collision_mask = saved_mask
@@ -113,7 +169,16 @@ func _physics_process(delta: float) -> void:
 		speed = 0
 		velocity = Vector3.ZERO
 	position.y = 0.03
-	row_phase += delta*absf(speed)*1.4
+	row_effort = move_toward(row_effort,absf(throttle),delta*3.5)
+	paddle_blend = move_toward(paddle_blend,1.0 if rider != null else 0.0,delta*3.5)
+	if row_effort > .05:
+		row_phase = fmod(row_phase+delta*4.8*signf(throttle if absf(throttle)>.05 else speed),TAU)
+	if paddle != null:
+		# The existing paddle pivots across the beam; a pitch cycle dips its blade into the river.
+		var stroke := sin(row_phase)*row_effort
+		var dip := cos(row_phase)*row_effort
+		var row_transform := Transform3D(Basis.from_euler(Vector3(0,PI*.5+.22*stroke,-.14-.10*dip)),Vector3(.20,.60,-.24))
+		paddle.transform = paddle_stow.interpolate_with(row_transform,paddle_blend)
 	if rider != null: _sync_rider()
 
 func survival_pause() -> void:

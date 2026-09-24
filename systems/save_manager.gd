@@ -7,8 +7,13 @@ const SLOT_COUNT := 3
 const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
-	"fullscreen": false, "vsync": true,
+	"fullscreen": false, "vsync": true, "input_device": "auto",
+	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
+signal input_device_changed(device: String)
+var active_input_device := "keyboard_mouse"
+var active_joypad_id := -1
+var _original_input_events: Dictionary = {}
 var options: Dictionary = DEFAULTS.duplicate()
 var pending_slot := -1
 var save_root := SAVE_DIR
@@ -17,7 +22,102 @@ var settings_path := SETTINGS_FILE
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
 	load_options()
+	_add_combat_actions()
+	_cache_input_events()
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	_select_input_device()
 	apply_options()
+
+func _input(event: InputEvent) -> void:
+	if options.input_device != "auto": return
+	if event is InputEventJoypadButton and event.pressed:
+		active_joypad_id = event.device
+		_set_active_input_device("controller")
+	elif event is InputEventJoypadMotion and absf(event.axis_value) > 0.55:
+		active_joypad_id = event.device
+		_set_active_input_device("controller")
+	elif event is InputEventKey and event.pressed and not event.echo:
+		_set_active_input_device("keyboard_mouse")
+	elif event is InputEventMouseButton and event.pressed:
+		_set_active_input_device("keyboard_mouse")
+	elif event is InputEventMouseMotion and event.relative.length() > 4.0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_set_active_input_device("keyboard_mouse")
+
+func _cache_input_events() -> void:
+	for action in InputMap.get_actions():
+		_original_input_events[action] = InputMap.action_get_events(action)
+
+func _select_input_device() -> void:
+	var preference: String = str(options.get("input_device", "auto"))
+	var pads := Input.get_connected_joypads()
+	if active_joypad_id not in pads: active_joypad_id = pads[0] if not pads.is_empty() else -1
+	if preference == "controller" and not pads.is_empty():
+		_set_active_input_device("controller")
+	elif preference == "auto" and not pads.is_empty():
+		_set_active_input_device("controller")
+	else:
+		_set_active_input_device("keyboard_mouse")
+
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	_select_input_device()
+
+func _set_active_input_device(device: String) -> void:
+	if active_input_device == device and not _original_input_events.is_empty() and _input_map_applied: return
+	active_input_device = device
+	for action in _original_input_events:
+		if str(action).begins_with("ui_"): continue
+		InputMap.action_erase_events(action)
+		for event in _original_input_events[action]:
+			if (event is InputEventJoypadButton or event is InputEventJoypadMotion) == (device == "controller"):
+				InputMap.action_add_event(action, event)
+	_input_map_applied = true
+	input_device_changed.emit(device)
+
+var _input_map_applied := false
+
+func _add_combat_actions() -> void:
+	for action in ["attack", "aim", "reload", "weapon_wheel", "open_map", "stow_weapon", "context_modifier", "next_weapon", "identity_scroll"]:
+		if not InputMap.has_action(action): InputMap.add_action(action)
+	var attack_mouse := InputEventMouseButton.new()
+	attack_mouse.button_index = MOUSE_BUTTON_LEFT
+	InputMap.action_add_event("attack",attack_mouse)
+	var attack_pad := InputEventJoypadMotion.new()
+	attack_pad.axis = JOY_AXIS_TRIGGER_RIGHT
+	attack_pad.axis_value = 1.0
+	InputMap.action_add_event("attack",attack_pad)
+	var aim_mouse := InputEventMouseButton.new()
+	aim_mouse.button_index = MOUSE_BUTTON_RIGHT
+	InputMap.action_add_event("aim",aim_mouse)
+	var aim_pad := InputEventJoypadMotion.new()
+	aim_pad.axis = JOY_AXIS_TRIGGER_LEFT
+	aim_pad.axis_value = 1.0
+	InputMap.action_add_event("aim",aim_pad)
+	var reload_key := InputEventKey.new()
+	reload_key.physical_keycode = KEY_R
+	InputMap.action_add_event("reload",reload_key)
+	var reload_pad := InputEventJoypadButton.new()
+	reload_pad.button_index = JOY_BUTTON_B
+	InputMap.action_add_event("reload",reload_pad)
+	_add_key_action("weapon_wheel",KEY_QUOTELEFT)
+	_add_pad_button_action("weapon_wheel",JOY_BUTTON_DPAD_RIGHT)
+	_add_key_action("open_map",KEY_M)
+	_add_pad_button_action("open_map",JOY_BUTTON_DPAD_LEFT)
+	_add_key_action("stow_weapon",KEY_H)
+	_add_pad_button_action("stow_weapon",JOY_BUTTON_DPAD_UP)
+	_add_pad_button_action("context_modifier",JOY_BUTTON_LEFT_SHOULDER)
+	_add_pad_button_action("next_weapon",JOY_BUTTON_RIGHT_SHOULDER)
+	_add_key_action("identity_scroll",KEY_O)
+	_add_pad_button_action("identity_scroll",JOY_BUTTON_TOUCHPAD)
+
+func _add_key_action(action: String, key: Key) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = key
+	InputMap.action_add_event(action,event)
+
+func _add_pad_button_action(action: String, button: JoyButton) -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = button
+	InputMap.action_add_event(action,event)
 
 func slot_path(slot: int) -> String:
 	return "%s/slot_%d.json" % [save_root,slot]
@@ -70,8 +170,10 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"energy":survival.energy,"warmth":survival.warmth,"stamina":survival.stamina,
 		},
 		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed,
-			"pistol_rounds":actor.get_node("PistolCombat").rounds},
+			"pistol_rounds":actor.get_node("PistolCombat").rounds,
+			"double_gun_rounds":actor.get_node("DoubleGunCombat").rounds},
 		"remaining_weapon_pickups": _remaining_weapon_pickup_ids(world),
+		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 	}
 	var map: Control = actor.get_node("UI/WorldMap")
 	if is_finite(map.waypoint.x): data["waypoint"] = [map.waypoint.x,map.waypoint.y]
@@ -133,15 +235,20 @@ func apply_pending(world: Node3D) -> void:
 	survival.stamina_changed.emit(survival.stamina,survival.max_stamina)
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var weapon: Dictionary = data.get("weapon",{})
-	equipment.selected = clampi(int(weapon.get("selected",0)),0,3)
+	equipment.selected = clampi(int(weapon.get("selected",0)),0,5)
 	equipment.stowed = bool(weapon.get("stowed",true))
 	equipment._refresh()
 	actor.get_node("PistolCombat").rounds = clampi(int(weapon.get("pistol_rounds",5)),0,5)
+	actor.get_node("DoubleGunCombat").rounds = clampi(int(weapon.get("double_gun_rounds",0)),0,2)
+	actor.get_node("DoubleGunCombat").loaded = actor.get_node("DoubleGunCombat").rounds > 0
 	if data.has("remaining_weapon_pickups"):
 		var remaining: Array = data.remaining_weapon_pickups
 		for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
 			if not String(pickup.get_path()) in remaining:
 				pickup.queue_free()
+	for chest in world.get_tree().get_nodes_in_group("treasure_chests"):
+		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
+			chest.restore_opened()
 	var map: Control = actor.get_node("UI/WorldMap")
 	if data.get("waypoint") is Array and data.waypoint.size()==2:
 		map.waypoint = Vector2(float(data.waypoint[0]),float(data.waypoint[1]))
@@ -153,15 +260,28 @@ func _remaining_weapon_pickup_ids(world: Node3D) -> Array[String]:
 			remaining.append(String(pickup.get_path()))
 	return remaining
 
+func _opened_treasure_chest_ids(world: Node3D) -> Array[String]:
+	var opened: Array[String] = []
+	for chest in world.get_tree().get_nodes_in_group("treasure_chests"):
+		if is_instance_valid(chest) and chest.opened:
+			opened.append(String(chest.get_path()))
+	return opened
+
 func load_options() -> void:
 	var config := ConfigFile.new()
 	if config.load(settings_path)!=OK: return
 	for key in DEFAULTS:
 		options[key] = config.get_value("settings",key,DEFAULTS[key])
+	if not options.input_device in ["auto", "keyboard_mouse", "controller"]:
+		options.input_device = "auto"
+	options.vibration = clampf(float(options.vibration),0.0,1.0)
 
 func set_option(key: String, value: Variant) -> void:
 	if not DEFAULTS.has(key): return
 	options[key] = value
+	if key == "input_device": _select_input_device()
+	if key == "vibration" and float(value) <= 0.0 and get_node_or_null("/root/ControllerFeedback"):
+		get_node("/root/ControllerFeedback").stop()
 	var config := ConfigFile.new()
 	for item in options: config.set_value("settings",item,options[item])
 	config.save(settings_path)

@@ -1,9 +1,12 @@
 {
+	"clear_door_samples": 8,
 	"clear_gate_to_hall_samples": 65,
+	"clear_stair_samples": 46,
 	"failures": [],
 	"plot": "(-390.0, -110.0)",
 	"room_tables": 12,
 	"stair_flights": 2,
+	"static_bodies": 499,
 	"status": "PASS",
 	"support_heights": {
 		"avenue": 8.6299991607666,
@@ -13,5 +16,5 @@
 		"upper_one": 13.1000003814697,
 		"upper_two": 17.7000007629395
 	},
-	"window_count": 76
+	"window_count": 74
 }

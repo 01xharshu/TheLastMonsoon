@@ -1,0 +1,13 @@
+{
+  "status": "MOTION_CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend",
+  "source_sha256": "5bb690e859a60592151a06ee27bb90088b1e360771ab445b224afecebc7d47df",
+  "runtime": "WorkingAssets/NPCs/village_woman/village_woman_rigged_candidate.glb",
+  "runtime_sha256": "b45623fb8ef87ed2cf2cbc011d999d5a27bda4b72629b5725ae138739fe66fec",
+  "actions": [
+    "idle",
+    "walk"
+  ],
+  "motion_approved": false,
+  "in_world": false
+}

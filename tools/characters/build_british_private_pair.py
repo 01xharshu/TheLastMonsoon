@@ -102,20 +102,36 @@ def rings(name, levels, mat, rig, tree, weights, mode="nearest", sides=24, folds
     return make_mesh(name,verts,faces,mat,rig,tree,weights,mode)
 
 def gathered_skirt(name, mat, rig, tree, weights):
-    levels = []
-    for row in range(25):
-        t = row / 24
-        z = .82 - .75 * t
-        bell = math.sin(t * math.pi / 2) ** 1.35
-        r = .215 + .265 * bell
-        levels.append((z, r, r * .92, 0, 0))
-    return rings(name, levels, mat, rig, tree, weights, 'pelvis', sides=72, folds=.065)
+    verts=[]
+    sides=144
+    rows=33
+    for row in range(rows):
+        t=row/(rows-1)
+        z=.82-.75*t
+        bell=math.sin(t*math.pi/2)**1.35
+        radius=.215+.265*bell
+        for j in range(sides):
+            angle=math.tau*j/sides
+            # Narrow gathered folds emerge from the waist and become deeper at
+            # the hem, retaining a fabric silhouette rather than a cone.
+            ripple=1+(.015+.055*bell)*math.cos(24*angle+.15*t)
+            verts.append((radius*ripple*math.cos(angle),radius*.92*ripple*math.sin(angle),z))
+    faces=[(row*sides+j,row*sides+(j+1)%sides,(row+1)*sides+(j+1)%sides,(row+1)*sides+j) for row in range(rows-1) for j in range(sides)]
+    return make_mesh(name,verts,faces,mat,rig,tree,weights,'pelvis')
 
-def cloth_strip(name, path, width, mat, rig, tree, weights, front=True):
+def garment_surface_y(garment, x, z, front=True):
+    nearby = [v.co.y for v in garment.data.vertices if abs(v.co.x-x)<.035 and abs(v.co.z-z)<.045]
+    if not nearby:
+        nearby = [v.co.y for v in garment.data.vertices if abs(v.co.x-x)<.07 and abs(v.co.z-z)<.08]
+    if not nearby:
+        raise ValueError(f"No fitted garment surface at x={x:.3f}, z={z:.3f}")
+    return (min(nearby)-.007) if front else (max(nearby)+.007)
+
+def cloth_strip(name, path, width, mat, rig, tree, weights, garment, front=True):
     verts=[]
     for x,z in path:
         for xx in (x-width/2,x+width/2):
-            y=(-.17-.10*(1.43-z)) if front else .115
+            y=garment_surface_y(garment,xx,z,front)
             verts.append((xx,y,z))
     faces=[(i*2,i*2+1,i*2+3,i*2+2) for i in range(len(path)-1)]
     obj=make_mesh(name,verts,faces,mat,rig,tree,weights)
@@ -221,15 +237,15 @@ def recolor_outfit(obj, upper, lower):
 
 recolor_outfit(male_outfit,red,dark)
 recolor_outfit(female_outfit,cotton,cotton)
-rings("Private forage cap",[(1.67,.175,.17,0,0),(1.70,.18,.175,0,0),(1.76,.17,.16,0,0),(1.78,.10,.10,0,0),(1.785,.005,.005,0,0)],dark,rig,tree,weights,"head")
-rings("Private cap band",[(1.685,.182,.177,0,0),(1.70,.182,.177,0,0)],red,rig,tree,weights,"head")
-accessory_box("Private forage cap visor",(0,-.175,1.674),(.26,.14,.015),black,rig,'head',.015)
+rings("Private forage cap",[(1.68,.137,.142,0,0),(1.70,.145,.147,0,0),(1.75,.143,.145,0,0),(1.765,.11,.115,0,0),(1.77,.005,.005,0,0)],dark,rig,tree,weights,"head",sides=32)
+rings("Private cap band",[(1.685,.147,.149,0,0),(1.704,.148,.150,0,0)],red,rig,tree,weights,"head",sides=32)
+accessory_box("Private forage cap visor",(0,-.149,1.685),(.20,.078,.009),black,rig,'head',.008)
 for side in (-1,1):
     path=[(side*(.18-.36*t),1.43-.34*t) for t in (i/28 for i in range(29))]
-    cloth_strip(f"Private front crossbelt {side}",path,.053,white,rig,tree,weights)
-    cloth_strip(f"Private back crossbelt {side}",path,.053,white,rig,tree,weights,front=False)
+    cloth_strip(f"Private front crossbelt {side}",path,.047,white,rig,tree,weights,male_outfit)
+    cloth_strip(f"Private back crossbelt {side}",path,.047,white,rig,tree,weights,male_outfit,front=False)
 for z in (1.15,1.23,1.31,1.39):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=6, radius=.009, location=(0,-.196,z))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=6, radius=.006, location=(0,garment_surface_y(male_outfit,0,z)-.005,z))
     button=bpy.context.object
     button.name=f"Private brass tunic button {z:.2f}"
     button.data.materials.append(brass)
@@ -239,8 +255,9 @@ for z in (1.15,1.23,1.31,1.39):
 
 # The MPFB adult body stays intact beneath separate opaque study garments.
 gathered_skirt("Companion gathered skirt",cotton,wr,wt,ww)
-rings("Companion bonnet crown",[(1.43,.14,.13,0,.04),(1.49,.16,.15,0,.04),(1.55,.12,.12,0,.04),(1.575,.005,.005,0,.04)],trim,wr,wt,ww,"head")
-rings("Companion bonnet brim",[(1.43,.17,.15,0,-.025),(1.45,.18,.16,0,-.025)],cotton,wr,wt,ww,"head")
+rings("Companion gathered waistband",[(.795,.212,.192,0,0),(.825,.210,.190,0,0),(.842,.205,.187,0,0)],cotton,wr,wt,ww,"pelvis",sides=64,folds=.012)
+rings("Companion bonnet crown",[(1.435,.134,.13,0,.035),(1.49,.145,.142,0,.035),(1.535,.125,.121,0,.035),(1.55,.005,.005,0,.035)],trim,wr,wt,ww,"head",sides=32)
+rings("Companion bonnet brim",[(1.435,.15,.142,0,-.005),(1.45,.158,.148,0,-.005)],cotton,wr,wt,ww,"head",sides=32)
 
 source_path=OUT/"private_pair_mpfb_candidate.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(source_path))

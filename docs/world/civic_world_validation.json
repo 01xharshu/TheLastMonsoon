@@ -1,5 +1,7 @@
 {
-	"failures": [],
+	"failures": [
+		"21 baked trees/rocks intrude into a plot or road"
+	],
 	"foundations": {
 		"CompanyArmoury": {
 			"foundation_above_grade_m": 0.0,
@@ -18,11 +20,132 @@
 			"position": "(-320.0, 8.45, -470.0)"
 		}
 	},
-	"intrusion_samples": [],
-	"nature_intrusions": 0,
+	"intrusion_samples": [
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 132.502822875977,
+			"position": "(-144.0, 0.0, 144.0)",
+			"road_distance": 8.32835334296027
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		},
+		{
+			"kind": "tree",
+			"plot_clearance": 0.0,
+			"position": "(288.0, 0.0, 288.0)",
+			"road_distance": 57.0
+		}
+	],
+	"nature_intrusions": 21,
 	"rocks_checked": 736,
 	"route_contact_samples": 172,
-	"status": "PASS",
-	"trees_checked": 2163,
+	"status": "FAIL",
+	"trees_checked": 2166,
 	"worst_route_contact_error_m": 0.0906463623046871
 }

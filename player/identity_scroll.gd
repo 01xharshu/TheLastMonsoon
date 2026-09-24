@@ -16,6 +16,15 @@ func _ready() -> void:
 	visible = false
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("identity_scroll") and not event.is_echo():
+		if not opening and (player.inventory_ui.is_open() or player.get_meta("map_open", false) or player.get_meta("weapon_wheel_open", false)): return
+		set_open(not opening)
+		get_viewport().set_input_as_handled()
+		return
+	if opening and event is InputEventJoypadButton and event.button_index == JOY_BUTTON_B and event.pressed:
+		set_open(false)
+		get_viewport().set_input_as_handled()
+		return
 	if not event is InputEventKey or not event.pressed or event.echo: return
 	if event.physical_keycode == KEY_O:
 		if not opening and (player.inventory_ui.is_open() or player.get_meta("map_open", false) or player.get_meta("weapon_wheel_open", false)): return

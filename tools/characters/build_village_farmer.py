@@ -105,11 +105,22 @@ top_group = outfit.vertex_groups.new(name="Period upper only")
 top_group.add([v.index for v in outfit.data.vertices if find(v.index) == top_root], 1.0, 'REPLACE')
 top_mask = outfit.modifiers.new("Keep fitted upper", 'MASK')
 top_mask.vertex_group = top_group.name
+# The full MPFB outfit masks the body beneath both its top and trousers.
+# Its trousers are removed above, so retaining that automatic body mask would
+# amputate knees and forearms in the baked preview.
+for modifier in body.modifiers:
+    if modifier.name.startswith("Delete."):
+        modifier.show_viewport = False
+        modifier.show_render = False
 
+body_modifier_visibility = {mod.name: mod.show_viewport for mod in body.modifiers}
 for mod in body.modifiers:
-    mod.show_viewport = mod.type == 'MASK'
+    mod.show_viewport = mod.name == 'Hide helpers'
 bpy.context.view_layer.update()
 source = bpy.data.meshes.new_from_object(body.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+for mod in body.modifiers:
+    mod.show_viewport = body_modifier_visibility[mod.name]
+bpy.context.view_layer.update()
 group_id = body.vertex_groups["body"].index
 ids = [v.index for v in source.vertices if any(g.group == group_id for g in v.groups)]
 tree = KDTree(len(ids))
@@ -203,14 +214,14 @@ def draped_pallu(material):
     for row in range(along):
         t = row / (along - 1)
         z = .91 + .35 * t
-        center = -.10 + .19 * t
-        width = .24 - .045 * t
+        center = -.10 + .14 * t
+        width = .22 - .08 * t
         for col in range(across):
             u = col / (across - 1)
             x = center + (u - .5) * width
             # Smooth front drape over the fitted blouse. Ray hits change abruptly
             # across seams/arms and produced self-intersecting triangular cloth.
-            surface_y = -.26 - .055 * math.sin(math.pi * t) + .015 * (abs(x) / .25) ** 2
+            surface_y = -.21 - .035 * math.sin(math.pi * t) + .01 * (abs(x) / .25) ** 2
             fold = .003 * math.sin(u * math.tau * 2 + t * 2.2)
             verts.append((x, surface_y - fold, z))
     faces = [(r*across+j, r*across+j+1, (r+1)*across+j+1, (r+1)*across+j)
@@ -244,6 +255,23 @@ else:
            (1.675,.012,.012,0,0)], turban, "head", flutter=.025)
     rings("Head wrap fold", [(1.575,.132,.122,0,0),(1.59,.133,.123,0,0)], hem, "head")
 
+# Keep an intact editable MPFB body in the source, but mask skin physically
+# covered by the period outfit. MPFB's outfit deletion map includes its removed
+# modern trousers, so a new narrow mask is required for animated exports.
+visible_skin = body.vertex_groups.new(name="Visible period skin")
+visible_ids = []
+for vertex in body.data.vertices:
+    x, y, z = vertex.co
+    if FEMALE:
+        exposed = z > 1.25 or z < .18 or (abs(x) > .27 and z < 1.16)
+    else:
+        exposed = z > 1.37 or z < .46 or (abs(x) > .39 and z < 1.16)
+    if exposed:
+        visible_ids.append(vertex.index)
+visible_skin.add(visible_ids, 1.0, 'REPLACE')
+period_mask = body.modifiers.new("Hide skin beneath period cloth", 'MASK')
+period_mask.vertex_group = visible_skin.name
+
 # MPFB helper geometry must not leak into glTF; retain the source Blender file.
 for side, sign in [("l", 1), ("r", -1)]:
     bone = rig.pose.bones.get("upperarm_" + side)
@@ -254,7 +282,7 @@ for side, sign in [("l", 1), ("r", -1)]:
 rig.data.pose_position = 'POSE'
 bpy.context.view_layer.update()
 for mod in body.modifiers:
-    if mod.type == 'MASK': mod.show_render = True
+    if mod.name == 'Hide helpers': mod.show_render = True
 blend = OUT / (SLUG + "_mpfb.blend")
 bpy.ops.wm.save_as_mainfile(filepath=str(blend))
 bpy.ops.object.select_all(action='DESELECT')
@@ -288,8 +316,9 @@ if FEMALE:
     rest = raw[20+json_size:]
     RUNTIME.write_bytes(struct.pack('<4sII', b'glTF', 2, 20+len(packed)+len(rest))
                         + struct.pack('<I4s', len(packed), b'JSON') + packed + rest)
-for static in static_meshes:
-    static.hide_render = True
+# Render the exact baked meshes delivered to Godot, not the editable originals.
+for obj in meshes:
+    obj.hide_render = True
 manifest = dict(status="CANDIDATE_NOT_APPROVED", source=str(blend.relative_to(ROOT)),
     source_sha256=hashlib.sha256(blend.read_bytes()).hexdigest(),
     runtime=str(RUNTIME.relative_to(ROOT)),

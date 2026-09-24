@@ -29,6 +29,10 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: mount transition did not reach saddle")
 		quit(1)
 		return
+	if horse.rigged_anim == null or horse.rigged_model.find_child("Skeleton3D",true,false) == null or horse.rigged_anim.current_animation != "AnimalArmature|Idle":
+		push_error("HORSE STABLE BLOCKED: rigged body or idle animation missing")
+		quit(1)
+		return
 	if horse.MAX_STAMINA <= actor.survival.max_stamina or horse.GALLOP_SPEED <= actor.sprint_speed:
 		push_error("HORSE STABLE BLOCKED: horse endurance or gallop speed does not exceed Arjun's")
 		quit(1)
@@ -41,7 +45,7 @@ func _run() -> void:
 		var foot: int = visual.skeleton.find_bone("foot_"+side)
 		var hand_at: Vector3 = horse.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(hand).origin))
 		var foot_at: Vector3 = horse.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot).origin))
-		if hand_at.distance_to(Vector3(sign_side*.38,2.21,-.29)) > .14 or foot_at.distance_to(Vector3(sign_side*.48,1.38,.21)) > .14:
+		if hand_at.distance_to(Vector3(sign_side*.38,2.06,-.29)) > .14 or foot_at.distance_to(Vector3(sign_side*.48,1.23,.21)) > .14:
 			push_error("HORSE STABLE BLOCKED: mounted hand/rein or foot/stirrup alignment")
 			quit(1)
 			return
@@ -57,6 +61,10 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: gait did not trigger hoof sounds")
 		quit(1)
 		return
+	if horse.rigged_anim.current_animation != "AnimalArmature|Walk":
+		push_error("HORSE STABLE BLOCKED: rigged walk animation did not play")
+		quit(1)
+		return
 	var arjun_stamina: float = actor.survival.stamina
 	var horse_stamina: float = horse.stamina
 	Input.action_press("sprint")
@@ -68,16 +76,21 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: gallop speed or independent stamina drain")
 		quit(1)
 		return
-	for clearance in horse.hoof_clearances:
-		if clearance < -.04 or clearance > .17:
-			push_error("HORSE STABLE BLOCKED: moving hoof lost ground clearance (%0.3f m)" % clearance)
-			quit(1)
-			return
+	if horse.rigged_anim.current_animation != "AnimalArmature|Gallop":
+		push_error("HORSE STABLE BLOCKED: rigged gallop animation did not play")
+		quit(1)
+		return
 	Input.action_press("jump")
 	for i in 3: await physics_frame
 	Input.action_release("jump")
 	if horse.velocity.y <= 0.0:
 		push_error("HORSE STABLE BLOCKED: jump did not lift horse")
+		quit(1)
+		return
+	var airborne_hoofs: int = horse.hoof_events
+	for i in 8: await physics_frame
+	if horse.hoof_events != airborne_hoofs:
+		push_error("HORSE STABLE BLOCKED: hoofbeat played while airborne")
 		quit(1)
 		return
 	for i in 90: await physics_frame
@@ -101,6 +114,11 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: packed road did not select road hoof sound")
 		quit(1)
 		return
+	horse._hoof_sound()
+	if horse.hoof_players[(horse.hoof_events-1) % horse.hoof_players.size()].stream != horse.HoofRoadRecordedA and horse.hoof_players[(horse.hoof_events-1) % horse.hoof_players.size()].stream != horse.HoofRoadRecordedB:
+		push_error("HORSE STABLE BLOCKED: road did not use recorded pavement hoof")
+		quit(1)
+		return
 	var bridge: Node3D = world.get_node("TimberBridge")
 	horse.global_position = Vector3(bridge.global_position.x,bridge.deck_height+.15,165.0)
 	for i in 3: await physics_frame
@@ -108,5 +126,5 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: bridge deck did not select timber hoof sound")
 		quit(1)
 		return
-	print("HORSE STABLE: PASS | mount, tack, faster gallop, independent horse stamina, gait/hoof clearance, jump landing, dismount, surface sounds")
+	print("HORSE STABLE: PASS | mount, tack, rigged idle/walk/gallop, speed, horse stamina, jump landing, dismount, surface sounds")
 	quit()

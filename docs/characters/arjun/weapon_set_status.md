@@ -16,3 +16,7 @@ The new props were authored by `tools/weapons/build_reference_arms.py`; exact in
 Independent Enfield scale audit: `tools/weapons/audit_enfield_scale.gd` measured its current GLB at 1.41 m overall along its long axis. The [Smithsonian's British Pattern 1853 example](https://www.si.edu/object/british-pattern-1853-rifle%3Anmah_414637) is about 1.391 m overall. This supports the weapon's absolute length being plausible; perceived size, stock bulk and fit to an accepted Arjun still need review.
 
 Next: review the standalone silhouettes, improve the bow/quiver/spear construction, then use a newly accepted Arjun to set carry sockets and test draw, aiming, projectile and strike contact. `tools/world/validate_arjun_equipment.gd` now stops before capturing the rejected export.
+
+## 2026-09-24 grip diagnostic
+
+The pistol grip now pivots with the right palm through the hand bone rather than receiving a second independent rotation during aiming. The bow grip is attached to the left palm, and the right arm tracks the bowstring nock during draw. In the headless world check (`tools/weapons/validate_live_weapon_controls.gd`), the settled pistol grip error is 0.00002 m and the left bow grip error is 0.00002 m. The right drawing hand remains 0.176 m from the fully drawn nock, so bow draw contact is **FAILED**. The functional fire/reload check passes but does not approve appearance or motion. The current Arjun visual is owner-rejected; final body fit and animation contact require the replacement character source and a fresh Metal visual review.

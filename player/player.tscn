@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://bhx2fgvli8glh" path="res://player/survival_component.gd" id="2_rkbax"]
 [ext_resource type="Script" path="res://player/arjun_visual.gd" id="3_wodsf"]
 [ext_resource type="Script" uid="uid://cc7gxngjcrqet" path="res://player/stamina_debug_label.gd" id="3_yw30f"]
-[ext_resource type="Script" uid="uid://dio2kbyb0501j" path="res://player/game_time_debug_label.gd" id="4_qjkh3"]
 [ext_resource type="Script" uid="uid://c1l4uundfqmr1" path="res://player/satiety_debug_label.gd" id="5_g6k8r"]
 [ext_resource type="Script" uid="uid://c262kh4yhno6d" path="res://player/energy_debug_label.gd" id="6_boad6"]
 [ext_resource type="Script" uid="uid://b3637rpfuswkv" path="res://player/pickup_message_label.gd" id="7_hg6s5"]
@@ -32,6 +31,10 @@
 [ext_resource type="Script" path="res://player/pistol_combat.gd" id="23_pistol"]
 
 [ext_resource type="Script" path="res://player/knife_strike.gd" id="24_knife"]
+[ext_resource type="Script" path="res://player/combat_input.gd" id="25_combat"]
+[ext_resource type="Script" path="res://interaction/interaction_overlay.gd" id="interaction_overlay"]
+[ext_resource type="Script" path="res://player/interaction_pose_component.gd" id="interaction_pose"]
+[ext_resource type="Script" path="res://player/stealth_stance.gd" id="stealth_stance"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
@@ -159,18 +162,6 @@ offset_right = 1152.0
 offset_bottom = 648.0
 mouse_filter = 2
 
-[node name="GameTimeDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=1624348968]
-layout_mode = 0
-offset_left = 900.0
-offset_top = 20.0
-offset_right = 1120.0
-offset_bottom = 80.0
-text = "DAY 1
-06:00 AM"
-horizontal_alignment = 2
-vertical_alignment = 1
-script = ExtResource("4_qjkh3")
-
 [node name="PrimaryInteractionLabel" type="Label" parent="UI/HUDRoot" unique_id=603483299]
 layout_mode = 1
 anchors_preset = 8
@@ -206,6 +197,16 @@ text = "[E] Interact"
 horizontal_alignment = 1
 vertical_alignment = 1
 uppercase = true
+
+[node name="InteractionOverlay" type="Control" parent="UI/HUDRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("interaction_overlay")
 
 [node name="HydrationDebugLabel" type="Label" parent="UI/HUDRoot" unique_id=1628382277]
 visible = false
@@ -382,8 +383,18 @@ script = ExtResource("ride")
 [node name="ClimbComponent" type="Node" parent="."]
 script = ExtResource("climb")
 
+[node name="InteractionPoseComponent" type="Node" parent="."]
+script = ExtResource("interaction_pose")
+
+[node name="StealthStance" type="Node" parent="."]
+script = ExtResource("stealth_stance")
+
 [node name="RifleCombat" type="Node" parent="."]
 script = ExtResource("18_rifle")
+
+[node name="DoubleGunCombat" type="Node" parent="."]
+script = ExtResource("18_rifle")
+weapon_selection = 5
 
 [node name="FameComponent" type="Node" parent="."]
 script = ExtResource("19_fame")
@@ -408,3 +419,6 @@ script = ExtResource("23_pistol")
 
 [node name="KnifeStrike" type="Node" parent="."]
 script = ExtResource("24_knife")
+
+[node name="CombatInput" type="Node" parent="."]
+script = ExtResource("25_combat")

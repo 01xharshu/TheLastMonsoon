@@ -5,6 +5,9 @@ var collected := false
 func _ready() -> void:
 	interaction_text = "Pick up mango"
 	secondary_interaction_text = "Eat mango"
+	hold_duration = .65
+	interaction_pose = "low_reach"
+	marker_height = .1
 	var shape := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()
 	sphere.radius = 0.14

@@ -17,6 +17,9 @@ extends Interactable
 # =========================================================
 
 func _ready() -> void:
+	hold_duration = .65
+	interaction_pose = "low_reach"
+	marker_height = .25
 
 	interaction_text = (
 		"Pick Up Roti"

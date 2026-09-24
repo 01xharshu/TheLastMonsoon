@@ -5,6 +5,7 @@ extends Interactable
 var taken := false
 func _ready() -> void:
 	interaction_text = "Take " + display_name
+	hold_duration = .65
 	add_to_group("period_supplies")
 func interact(actor: CharacterBody3D) -> void:
 	if taken or actor.global_position.distance_to(global_position)>3.0: return

@@ -17,6 +17,16 @@ extends StaticBody3D
 # =========================================================
 
 @export var interaction_text: String = "Interact"
+@export_enum("hand", "chest", "weapon", "gate", "loot") var interaction_icon := "hand"
+@export_range(0.0, 3.0, 0.05) var hold_duration := 0.0
+@export_range(0.0, 3.0, 0.05) var marker_height := 0.65
+@export_enum("none", "low_reach", "kneel") var interaction_pose := "none"
+
+func interaction_anchor() -> Vector3:
+	return global_position + Vector3.UP * marker_height
+
+func interaction_available() -> bool:
+	return visible and not is_queued_for_deletion()
 
 
 # =========================================================

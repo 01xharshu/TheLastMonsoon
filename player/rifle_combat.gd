@@ -18,14 +18,16 @@ var impacts: Array[Node3D] = []
 var mark_material: StandardMaterial3D
 var sound: AudioStreamPlayer3D
 func pistol() -> bool: return weapon_selection == 3
-func capacity() -> int: return 5 if pistol() else 1
-func ammo_id() -> String: return "pistol_ball" if pistol() else "paper_cartridges"
+func double_gun() -> bool: return weapon_selection == 5
+func capacity() -> int: return 5 if pistol() else (2 if double_gun() else 1)
+func ammo_id() -> String: return "pistol_ball" if pistol() else ("shot_charge" if double_gun() else "paper_cartridges")
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 
 func _ready() -> void:
 	if pistol(): rounds = 5
+	if double_gun(): rounds = 0
 	sound = AudioStreamPlayer3D.new()
 	sound.max_distance = 180
 	sound.volume_db = -8
@@ -44,14 +46,11 @@ func _ready() -> void:
 
 func available() -> bool:
 	var equipment = visual.equipment
-	return actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == weapon_selection
+	return actor.is_physics_processing() and not actor.is_swimming and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == weapon_selection
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not available(): return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		if aiming: fire()
-		get_viewport().set_input_as_handled()
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
+	if event.is_action_pressed("reload"):
 		start_reload()
 		get_viewport().set_input_as_handled()
 
@@ -59,7 +58,7 @@ func _process(delta: float) -> void:
 	if not available():
 		aiming = false
 	else:
-		aiming = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and reload_remaining<=0
+		aiming = Input.is_action_pressed("aim") and reload_remaining<=0
 		if reload_remaining>0:
 			reload_remaining = maxf(0,reload_remaining-delta)
 			if reload_remaining==0:
@@ -83,21 +82,22 @@ func start_reload() -> void:
 		sound.stream = EMPTY
 		sound.play()
 		return
-	reload_remaining = 3.5 if pistol() else RELOAD_SECONDS
+	reload_remaining = 3.5 if pistol() else (4.4 if double_gun() else RELOAD_SECONDS)
 	sound.stream = RELOAD
 	sound.play()
 
 func fire() -> void:
 	if not available() or not aiming or reload_remaining>0: return
-	if not loaded:
+	if rounds <= 0:
 		sound.stream = EMPTY
 		sound.play()
 		return
 	rounds -= 1
 	loaded = rounds>0
 	shots_fired += 1
+	ControllerFeedback.pulse("shot")
 	visual.equipment.apply_rifle_grip()
-	var origin: Vector3 = visual.equipment.pistol_hand.to_global(Vector3(.17,0,.064)) if pistol() else visual.equipment.enfield_hand.to_global(MUZZLE)
+	var origin: Vector3 = visual.equipment.pistol_hand.to_global(Vector3(.17,0,.064)) if pistol() else (visual.equipment.double_hand.to_global(Vector3(1.0,0,.035)) if double_gun() else visual.equipment.enfield_hand.to_global(MUZZLE))
 	var direction: Vector3 = -camera.global_basis.z
 	var target := camera.global_position+direction*350.0
 	var space := actor.get_world_3d().direct_space_state
@@ -106,11 +106,25 @@ func fire() -> void:
 	var camera_hit := space.intersect_ray(query)
 	if not camera_hit.is_empty(): target = camera_hit.position
 	query.from = origin
-	query.to = target+(target-origin).normalized()*0.05
-	var hit := space.intersect_ray(query)
-	if not hit.is_empty():
-		add_impact(hit)
-		if hit.collider.has_method("take_damage"): hit.collider.take_damage(35.0 if pistol() else 60.0)
+	if double_gun():
+		var aim: Vector3 = (target-origin).normalized()
+		var right: Vector3 = aim.cross(Vector3.UP).normalized()
+		if right.length_squared() < .1: right = Vector3.RIGHT
+		var up: Vector3 = right.cross(aim).normalized()
+		for i in 8:
+			var angle := TAU*float(i)/8.0
+			var spread := .012 if i == 0 else .032
+			query.to = origin + (aim + right*cos(angle)*spread + up*sin(angle)*spread).normalized()*55.0
+			var pellet_hit := space.intersect_ray(query)
+			if not pellet_hit.is_empty():
+				if i < 3: add_impact(pellet_hit)
+				if pellet_hit.collider.has_method("take_damage"): pellet_hit.collider.take_damage(11.0)
+	else:
+		query.to = target+(target-origin).normalized()*0.05
+		var hit := space.intersect_ray(query)
+		if not hit.is_empty():
+			add_impact(hit)
+			if hit.collider.has_method("take_damage"): hit.collider.take_damage(35.0 if pistol() else 60.0)
 	recoil = 0.065
 	sound.global_position = origin
 	sound.stream = PISTOL_SHOT if pistol() else SHOT
@@ -169,6 +183,6 @@ func muzzle_effect(origin: Vector3) -> void:
 
 func get_hud_text() -> String:
 	if visual.equipment.stowed or visual.equipment.selected != weapon_selection: return visual.equipment.held_name()
-	var title := "ADAMS 1851" if pistol() else "ENFIELD"
+	var title := "ADAMS 1851" if pistol() else ("DOUBLE GUN" if double_gun() else "ENFIELD")
 	if reload_remaining>0: return "%s · RELOADING %.1fs" % [title,reload_remaining]
 	return "%s · %d/%d · %d SPARE" % [title,rounds,capacity(),actor.inventory.get_item_count(ammo_id())]

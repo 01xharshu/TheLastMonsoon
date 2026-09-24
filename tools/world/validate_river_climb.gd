@@ -46,12 +46,41 @@ func validate() -> void:
 	check(actor.global_position.distance_to(boat.seat_world())<1.5,"pelvis remains on bench")
 	var before_row: Vector3=boat.global_position
 	Input.action_press("move_forward")
-	for i in 90: await physics_frame
+	var blade_high: float=-INF
+	var blade_low: float=INF
+	for i in 45:
+		await physics_frame
+		blade_high=maxf(blade_high,boat.paddle_blade_world().y)
+		blade_low=minf(blade_low,boat.paddle_blade_world().y)
+	check(boat.paddle_blend>.95 and boat.row_effort>.95,"paddle enters active rowing pose")
+	for side in ["l","r"]:
+		var hand_index: int=actor.get_node("VisualRoot/CharacterVisual").skeleton.find_bone("hand_"+side)
+		var rig: Skeleton3D=actor.get_node("VisualRoot/CharacterVisual").skeleton
+		var wrist: Vector3=rig.to_global(rig.get_bone_global_pose(hand_index).origin)
+		var palm: Vector3=rig.to_global(rig.get_bone_global_pose(hand_index)*actor.get_node("VisualRoot/CharacterVisual").equipment.palm_offsets[side])
+		print("ROW HAND ",side," palm error=",palm.distance_to(boat.paddle_grip_world(side)))
+		check(palm.distance_to(boat.paddle_grip_world(side))<.04,"rowing "+side+" palm holds paddle grip")
+	if DisplayServer.get_name()!="headless":
+		camera.global_position=boat.global_position+boat.global_basis.x*3.2+Vector3.UP*1.4+boat.global_basis.z*1.3
+		camera.look_at(boat.seat_world()+Vector3.UP*.55)
+		await capture("15c_arjun_rowing")
+		camera.global_position=boat.global_position+Vector3.UP*3.7+boat.global_basis.z*1.5
+		camera.look_at(boat.seat_world())
+		await capture("15d_arjun_rowing_overhead")
+	for i in 45:
+		await physics_frame
+		blade_high=maxf(blade_high,boat.paddle_blade_world().y)
+		blade_low=minf(blade_low,boat.paddle_blade_world().y)
 	Input.action_release("move_forward")
+	check(blade_high-blade_low>.12,"paddle blade rises and dips through rowing cycle")
 	check(boat.global_position.distance_to(before_row)>1.0,"W rows boat through deep water")
 	check(actor.global_position.distance_to(boat.seat_world())<1.5,"rider follows moving bench")
 
 	if DisplayServer.get_name()!="headless": await capture("15_arjun_boat_seated")
+	if DisplayServer.get_name()!="headless":
+		camera.global_position=boat.global_position+boat.global_basis.x*3.2+Vector3.UP*1.4+boat.global_basis.z*1.3
+		camera.look_at(boat.seat_world()+Vector3.UP*.55)
+		await capture("15b_arjun_boat_seat_close")
 	check(boat.dismount(),"F dismount contract")
 	check(not actor.has_meta("mounted_vehicle"),"mounted state clears")
 	actor.global_position=Vector3(291.3,12.95,300)

@@ -2,9 +2,11 @@ extends CharacterBody3D
 ## One rideable village horse. Forward is local -Z; the stable owns its starting place.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const BodyModel = preload("res://assets/animals/horse/village_horse_body.glb")
+const RiggedBody = preload("res://assets/animals/horse/rigged_horse_candidate.glb")
 const HoofA = preload("res://audio/horses/hoof_dirt_01.wav")
 const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
-const HoofRoad = preload("res://audio/horses/hoof_packed_road.wav")
+const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav")
+const HoofRoadRecordedB = preload("res://audio/horses/hoof_road_recorded_02.wav")
 const HoofTimber = preload("res://audio/horses/hoof_timber.wav")
 const Landing = preload("res://audio/horses/hoof_landing.wav")
 const Tack = preload("res://audio/horses/leather_tack.wav")
@@ -32,11 +34,14 @@ var hoof_clearances: Array[float] = []
 var body_root: Node3D
 var neck_root: Node3D
 var tail_root: Node3D
+var rigged_model: Node3D
+var rigged_anim: AnimationPlayer
 var hoof_players: Array[AudioStreamPlayer3D] = []
 var landing_player: AudioStreamPlayer3D
 var tack_player: AudioStreamPlayer3D
 var voice_player: AudioStreamPlayer3D
-var hoof_step_index := 0
+var sound_cycle := 0.0
+var sound_clip := ""
 var hoof_events := 0
 var last_hoof_surface := "earth"
 var landing_events := 0
@@ -67,7 +72,7 @@ func _audio_player(label: String, volume: float) -> AudioStreamPlayer3D:
 	return player
 
 func _build_audio() -> void:
-	for i in 2:
+	for i in 4:
 		hoof_players.append(_audio_player("HoofSound%d" % i,-8.0))
 	landing_player = _audio_player("LandingSound",-5.0)
 	landing_player.stream = Landing
@@ -82,12 +87,30 @@ func _hoof_sound() -> void:
 	last_hoof_surface = ground_sound_surface()
 	match last_hoof_surface:
 		"timber": player.stream = HoofTimber
-		"road": player.stream = HoofRoad
-		_: player.stream = HoofA if index == 0 else HoofB
+		"road": player.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
+		_: player.stream = HoofA if hoof_events % 2 == 0 else HoofB
 	player.volume_db = -10.0 if last_hoof_surface == "timber" else -8.0
 	player.pitch_scale = 1.0 + (float(hoof_events % 5)-2.0)*.025
 	player.play()
 	hoof_events += 1
+
+func _update_hoof_contacts(delta: float) -> void:
+	if rigged_anim == null: return
+	var clip: String = rigged_anim.current_animation
+	if clip != sound_clip:
+		sound_clip = clip
+		sound_cycle = 0.0
+	if not is_on_floor() or absf(pace) <= .8 or (not clip.ends_with("Walk") and not clip.ends_with("Gallop")):
+		return
+	var length: float = rigged_anim.get_animation(clip).length
+	if length <= 0.0: return
+	var contacts := [0.10,0.35,0.60,0.85] if clip.ends_with("Walk") else [0.07,0.24,0.42,0.76]
+	var previous := sound_cycle
+	sound_cycle += delta * rigged_anim.speed_scale / length
+	for contact in contacts:
+		if floori(sound_cycle - contact) > floori(previous - contact):
+			_hoof_sound()
+	sound_cycle = fmod(sound_cycle,1.0)
 
 func ground_sound_surface() -> String:
 	# Physical timber deck takes precedence over the dirt road beneath it.
@@ -192,7 +215,7 @@ func _build_horse() -> void:
 		_ellipsoid(neck_root,"Nostril",Vector3(side*.13,.56,-.72),Vector3(.025,.018,.022),dark)
 		_box(neck_root,"BridleCheek",Vector3(side*.205,.68,-.40),Vector3(.025,.34,.045),leather)
 		_cord(body_root,"ReinFront",Vector3(side*.18,1.88,-1.43),Vector3(side*.30,2.14,-.77),.016,leather)
-		_cord(body_root,"ReinBack",Vector3(side*.30,2.14,-.77),Vector3(side*.38,2.21,-.29),.016,leather)
+		_cord(body_root,"ReinBack",Vector3(side*.30,2.14,-.77),Vector3(side*.38,2.06,-.29),.016,leather)
 		_cord(body_root,"StirrupLeather",Vector3(side*.36,1.94,.15),Vector3(side*.48,1.38,.20),.023,leather)
 		_box(body_root,"StirrupTread",Vector3(side*.48,1.32,.21),Vector3(.20,.035,.19),dark)
 		_box(body_root,"StirrupFront",Vector3(side*.48,1.41,.11),Vector3(.027,.18,.027),dark)
@@ -225,9 +248,43 @@ func _build_horse() -> void:
 	_ellipsoid(body_root,"Cantle",Vector3(0,2.04,.29),Vector3(.24,.08,.07),leather)
 	_cord(body_root,"GirthUnder",Vector3(-.43,1.12,.07),Vector3(.43,1.12,.07),.032,leather)
 	_box(neck_root,"Noseband",Vector3(0,.57,-.62),Vector3(.42,.035,.06),leather)
+	for part in body_root.get_children():
+		for tack_name in ["SaddleCloth","LeatherSaddle","Pommel","Cantle","StirrupLeather","StirrupTread","StirrupFront","StirrupBack","GirthSide","GirthUnder"]:
+			if part.name.begins_with(tack_name):
+				part.position.y -= .15
+				break
+	# The source mesh carries a continuous four-leg skin and its own gait rig.
+	# Keep the simple generated body as an editable fallback, hidden in play.
+	body_model.hide()
+	neck_root.hide()
+	tail_root.hide()
+	body_root.get_node("Mane").hide()
+	for leg in legs: leg.hide()
+	rigged_model = RiggedBody.instantiate()
+	rigged_model.name = "RiggedHorse"
+	rigged_model.scale = Vector3.ONE * .47
+	rigged_model.rotation.y = PI
+	body_root.add_child(rigged_model)
+	rigged_anim = rigged_model.find_child("AnimationPlayer",true,false) as AnimationPlayer
+	for clip in ["AnimalArmature|Idle","AnimalArmature|Walk","AnimalArmature|Gallop"]:
+		rigged_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	rigged_anim.play("AnimalArmature|Idle")
+
+func _update_rigged_animation() -> void:
+	if rigged_anim == null: return
+	var clip := "AnimalArmature|Idle"
+	if not is_on_floor():
+		clip = "AnimalArmature|Gallop_Jump"
+	elif absf(pace) > 7.0:
+		clip = "AnimalArmature|Gallop"
+	elif absf(pace) > .5:
+		clip = "AnimalArmature|Walk"
+	if rigged_anim.current_animation != clip:
+		rigged_anim.play(clip,.18)
+	rigged_anim.speed_scale = clampf(absf(pace) / (9.0 if clip.ends_with("Gallop") else 4.2),.7,1.7) if clip.ends_with("Walk") or clip.ends_with("Gallop") else 1.0
 
 func seat_world() -> Vector3:
-	return to_global(Vector3(0,1.98,.02))
+	return to_global(Vector3(0,1.83,.02))
 
 func can_board(actor: CharacterBody3D) -> bool:
 	return rider == null and not actor.get_meta("climbing",false) and actor.global_position.distance_to(global_position) < 3.0
@@ -317,6 +374,8 @@ func _physics_process(delta: float) -> void:
 	var fall_speed: float = velocity.y
 	velocity.y -= ProjectSettings.get_setting("physics/3d/default_gravity") * delta
 	move_and_slide()
+	_update_rigged_animation()
+	_update_hoof_contacts(delta)
 	if not was_grounded and is_on_floor() and fall_speed < -1.0:
 		landing_player.play()
 		landing_events += 1
@@ -345,10 +404,6 @@ func _physics_process(delta: float) -> void:
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
 	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
-	var new_hoof_step: int = floori(gait * 4.0 / TAU)
-	if is_on_floor() and absf(pace) > .8 and new_hoof_step > hoof_step_index:
-		_hoof_sound()
-	hoof_step_index = new_hoof_step
 	if rider == null:
 		idle_voice_timer -= delta
 		if idle_voice_timer <= 0.0:

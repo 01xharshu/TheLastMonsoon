@@ -17,18 +17,24 @@ func nearest_vehicle() -> Node3D:
 func try_toggle() -> bool:
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false): return false
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
-	if is_instance_valid(mounted): return mounted.dismount()
+	if is_instance_valid(mounted):
+		var left: bool = mounted.dismount()
+		if left: ControllerFeedback.pulse("mount")
+		return left
 	var vehicle := nearest_vehicle()
-	return vehicle.board(actor) if vehicle else false
+	var boarded: bool = vehicle.board(actor) if vehicle else false
+	if boarded: ControllerFeedback.pulse("mount")
+	return boarded
 
 func _process(_delta: float) -> void:
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false): return
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mounted):
-		actor.secondary_interaction_label.text = "[F] Dismount " + ("horse" if mounted.is_in_group("horses") else "boat")
+		var mount_name := "horse" if mounted.is_in_group("horses") else ("cart" if actor.get_meta("cart_role", "") != "" else "boat")
+		actor.secondary_interaction_label.text = ("[△] " if SaveManager.active_input_device == "controller" else "[F] ") + "Dismount " + mount_name
 		actor.secondary_interaction_label.visible = true
 	else:
 		var nearby := nearest_vehicle()
 		if nearby == null: return
-		actor.secondary_interaction_label.text = "[F] Take horse" if nearby.is_in_group("horses") else "[F] Board river boat"
+		actor.secondary_interaction_label.text = ("[△] " if SaveManager.active_input_device == "controller" else "[F] ") + ("Take horse" if nearby.is_in_group("horses") else "Board river boat")
 		actor.secondary_interaction_label.visible = true

@@ -5,6 +5,7 @@ var overlay: Control
 var column: VBoxContainer
 var previous_mouse_mode: Input.MouseMode
 var previous_hud_visible := true
+var page := "main"
 @onready var world: Node3D = get_parent()
 
 func _ready() -> void:
@@ -54,6 +55,11 @@ func close() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not overlay.visible: return
+	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_B and event.pressed:
+		if page == "main": close()
+		else: show_main()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("pause") and not event.is_echo():
 		close()
 		get_viewport().set_input_as_handled()
@@ -64,6 +70,7 @@ func clear_content() -> void:
 		child.queue_free()
 
 func show_main() -> void:
+	page = "main"
 	clear_content()
 	column.add_child(Style.label("PAUSED",46))
 	var resume: Button = Style.button("Resume",func(): close())
@@ -79,9 +86,11 @@ func _focus_resume(button: Button) -> void:
 		button.grab_focus()
 
 func show_slots(save_mode: bool, notice: String = "") -> void:
+	page = "slots"
 	clear_content()
 	column.add_child(Style.label("SAVE GAME" if save_mode else "LOAD GAME",38))
 	if not notice.is_empty(): column.add_child(Style.label(notice,17))
+	var first: Button
 	for slot in range(1,SaveManager.SLOT_COUNT+1):
 		var selected := slot
 		var button: Button
@@ -97,20 +106,33 @@ func show_slots(save_mode: bool, notice: String = "") -> void:
 			)
 			button.disabled = SaveManager.read_slot(selected).is_empty()
 		column.add_child(button)
-	column.add_child(Style.button("Back",func(): show_main()))
+		if first == null and not button.disabled: first = button
+	var back := Style.button("Back",func(): show_main())
+	column.add_child(back)
+	_focus_resume.call_deferred(first if first else back)
 
 func show_settings() -> void:
+	page = "settings"
 	clear_content()
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(470,minf(590.0,get_viewport().get_visible_rect().size.y - 110.0))
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var settings := SettingsPanel.new()
 	settings.back_requested.connect(show_main)
-	column.add_child(settings)
+	scroll.add_child(settings)
+	column.add_child(scroll)
+	settings.focus_first_control.call_deferred()
 
 func show_return_confirmation() -> void:
+	page = "confirm"
 	clear_content()
 	column.add_child(Style.label("RETURN TO MAIN MENU?",31))
 	column.add_child(Style.label("Unsaved progress will be lost.",17))
-	column.add_child(Style.button("Return without Saving",func():
+	var confirm := Style.button("Return without Saving",func():
 		close()
 		get_tree().change_scene_to_file("res://ui/main_menu.tscn")
-	))
+	)
+	column.add_child(confirm)
+	_focus_resume.call_deferred(confirm)
 	column.add_child(Style.button("Cancel",func(): show_main()))

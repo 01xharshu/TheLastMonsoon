@@ -1,0 +1,13 @@
+{
+  "status": "MOTION_CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+  "source_sha256": "4f14f6d749f161caf440076843af30713eeae1e3c90452f8a08ba1ad89658175",
+  "runtime": "WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb",
+  "runtime_sha256": "2c7c4719d0eab080730eb200a71afe960fa04b730d7406cb9fc292969a7780c1",
+  "actions": [
+    "idle",
+    "walk"
+  ],
+  "motion_approved": false,
+  "in_world": false
+}

@@ -9,8 +9,22 @@
   "male_bones": 53,
   "female_bones": 53,
   "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
-  "runtime_export": false,
+  "runtime_export": true,
   "visual_approved": false,
   "motion_approved": false,
-  "costume_status": "study geometry; historically unverified"
+  "costume_status": "study geometry; historically unverified",
+  "runtime_exports": {
+    "man": {
+      "path": "characters/npcs/british/lieutenant_man.glb",
+      "sha256": "93256b0138eeaae3599232deee290905ef43597b3abd633c93c4755090b9bf59",
+      "bytes": 8027696
+    },
+    "woman": {
+      "path": "characters/npcs/british/lieutenant_woman.glb",
+      "sha256": "fbed35c48c55aded1e9aa425d94bd85fe6dad8a0abd30e6acbefd9a7411c44e6",
+      "bytes": 8268452
+    }
+  },
+  "animation": "Godot procedural idle/walk study; no authored Blender clips",
+  "placed_in_world": false
 }

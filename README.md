@@ -1,22 +1,14 @@
+![The Last Monsoon — India, 1857](docs/readme-banner.svg)
+
 <div align="center">
 
-# THE LAST MONSOON
+**A third-person historical survival game built with Godot and GDScript**
 
-### A Historical Open-World Survival Game
+`PRE-ALPHA` · `ACTIVE DEVELOPMENT` · `DESKTOP PROTOTYPE`
 
-**India · 1857 · Survival · Resistance · Exploration**
-
-Built with **Godot Engine + GDScript**
-
-![Status](https://img.shields.io/badge/status-pre--alpha-orange)
-![Engine](https://img.shields.io/badge/engine-Godot-478CBF?logo=godot-engine&logoColor=white)
-![Language](https://img.shields.io/badge/language-GDScript-478CBF)
-![Genre](https://img.shields.io/badge/genre-open--world%20survival-darkgreen)
-![Development](https://img.shields.io/badge/development-active-success)
+[Explore the world](#project-status) · [Run the project](#getting-started) · [Controls](#controls) · [Development roadmap](#development-roadmap)
 
 </div>
-
----
 
 ## Overview
 
@@ -36,11 +28,8 @@ For current work, failures and the next command, use the short [handoff](CODEX_H
 
 ## Project Status
 
-> **Pre-Alpha — Core Systems Development**
-
-The current build is an engineering prototype.
-
-Final environments, characters, animations, audio, UI, historical assets, and world content have not yet entered full production.
+> [!IMPORTANT]
+> **Pre-alpha engineering prototype.** Systems and visual candidates are under active review. The [current handoff](CODEX_HANDOFF.md) tracks acceptance, failures, and next actions; the [documentation index](docs/README.md) links to detailed evidence.
 
 ### Landscape foundation — Suryagarh
 
@@ -59,8 +48,8 @@ recorded in the handoff and focused validation reports.
 mesh LOD, spatially batched vegetation and limited shadows. Performance has to be
 validated on actual minimum hardware; an M4 with 16 GB does not certify all 8 GB devices.
 
-Arjun’s clothed runtime model uses a Blender/MakeHuman-based candidate and rig;
-motion, likeness and equipment contact are still being refined. A timber pile
+Arjun’s current runtime appearance was rejected in visual review. Likeness, motion,
+and equipment contact remain open; see the [review note](docs/characters/arjun/rejection_2026-09-23.md). A timber pile
 bridge with braced rails and walkable bank ramps crosses the river at the river
 approach (z = 165 m). Press **M** for the north-up field map; zoom, pan and place
 a map marker with the pointer. **M** or **Esc** closes it.
@@ -70,6 +59,17 @@ aerial survey and **F4** moves between landscape review locations.
 
 See the [documentation index](docs/README.md) and
 [third-party landscape licenses](docs/world/ASSET_LICENSES.md).
+
+### At a glance
+
+| Area | In the prototype | Still in review |
+|:---|:---|:---|
+| **World** | 2.986 km² Suryagarh landscape, Bhairavpur, civic interiors, Government House | Traversal, visual quality, and 8 GB performance |
+| **Play** | Movement, survival, river water, riding, combat, map, save and load | Animation, contact, balance, and final content |
+| **Characters** | Arjun runtime candidate; village and British NPC blockouts | Arjun appearance [rejected](docs/characters/arjun/rejection_2026-09-23.md); NPC clothing and motion unapproved |
+| **Input** | Keyboard and mouse; DualSense mappings, settings, feedback paths | Physical controller playthrough |
+
+The detailed limits and evidence for each area are in the [documentation index](docs/README.md).
 
 ### Implemented
 
@@ -476,7 +476,7 @@ Current development controls:
 | Pause menu (save, load, settings, main menu) | `Esc` |
 | Field map | `M` |
 
-Input remapping is planned for a later stage.
+Settings offer Auto, Keyboard + Mouse, and PS5 DualSense input modes. See the [controller guide](docs/world/animal_tools_and_controller.md) for the current button map and hardware review status. Player-defined input remapping is planned for a later stage.
 
 ---
 
@@ -932,19 +932,13 @@ Historical accuracy will be researched and improved throughout development.
 
 ## Screenshots
 
-Screenshots will be added once the first visual vertical slice enters production.
+These are live captures from the current prototype, not final art.
 
-Recommended future structure:
+| Suryagarh river corridor | Government House estate |
+|:---:|:---:|
+| ![Prototype river corridor](docs/world/captures/02_river.png) | ![Prototype Government House estate](docs/world/captures/24_government_house_exterior.png) |
 
-```text
-docs/
-└── media/
-    ├── gameplay/
-    ├── environments/
-    ├── characters/
-    ├── concepts/
-    └── ui/
-```
+More captures and their review status are linked from the [documentation index](docs/README.md).
 
 ---
 

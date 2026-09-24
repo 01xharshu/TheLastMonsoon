@@ -46,6 +46,9 @@ var first_person := false
 var first_person_view: Node3D
 var third_person_height: float
 var third_person_distance: float
+var aim_blend := 0.0
+var aim_sound: AudioStreamPlayer
+const AIM_CLICK = preload("res://audio/weapons/aim_click.wav")
 
 func set_first_person(enabled: bool) -> void:
 	first_person = enabled
@@ -58,7 +61,9 @@ func set_first_person(enabled: bool) -> void:
 	visual_root.visible = not enabled
 	camera_pivot.position.y = 0.68 if enabled else third_person_height
 	$CameraPivot/SpringArm3D.spring_length = 0.0 if enabled else third_person_distance
+	if enabled: $CameraPivot/SpringArm3D.position.x = 0.0
 	$CameraPivot/SpringArm3D/Camera3D.near = 0.03 if enabled else 0.05
+	if enabled: $CameraPivot/SpringArm3D/Camera3D.fov = 75.0
 	# Reset immediately rather than waiting for the spring arm's next physics update.
 	$CameraPivot/SpringArm3D/Camera3D.position.z = 0.0 if enabled else third_person_distance
 
@@ -94,6 +99,7 @@ func set_first_person(enabled: bool) -> void:
 @onready var secondary_interaction_label: Label = (
 	$UI/HUDRoot/SecondaryInteractionLabel
 )
+@onready var interaction_overlay: Control = $UI/HUDRoot/InteractionOverlay
 
 
 # =========================================================
@@ -135,6 +141,9 @@ var camera_pitch: float = 0.0
 
 
 var current_interactable: Interactable = null
+var hold_target: Interactable = null
+var hold_action := ""
+var hold_elapsed := 0.0
 
 
 # =========================================================
@@ -148,7 +157,12 @@ func _ready() -> void:
 
 	third_person_height = camera_pivot.position.y
 	third_person_distance = $CameraPivot/SpringArm3D.spring_length
+	third_person_distance = minf(third_person_distance, 3.35)
 	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
+	aim_sound = AudioStreamPlayer.new()
+	aim_sound.stream = AIM_CLICK
+	aim_sound.volume_db = -20.0
+	add_child(aim_sound)
 
 	Input.mouse_mode = (
 		Input.MOUSE_MODE_CAPTURED
@@ -221,10 +235,16 @@ func _unhandled_input(
 	):
 
 		if (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null)==null and not get_meta("climbing",false):
-			if Input.is_key_pressed(KEY_SHIFT):
+			if Input.is_key_pressed(KEY_SHIFT) or Input.is_action_pressed("context_modifier"):
 				_try_secondary_interaction()
 			else:
-				_try_primary_interaction()
+				var selected := _find_interactable()
+				if selected != null and selected.hold_duration > 0.0:
+					_begin_interaction_hold(selected,"interact")
+				else:
+					_try_primary_interaction()
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q and not has_meta("mounted_vehicle") and not get_meta("climbing",false):
+		_try_secondary_interaction()
 
 
 	# -----------------------------------------------------
@@ -234,8 +254,11 @@ func _unhandled_input(
 	if event.is_action_pressed(
 		"secondary_interact"
 	):
-
-		$RideComponent.try_toggle()
+		var selected := _find_interactable()
+		if selected != null and selected.hold_duration > 0.0:
+			_begin_interaction_hold(selected,"secondary_interact")
+		else:
+			$RideComponent.try_toggle()
 
 
 	# -----------------------------------------------------
@@ -319,12 +342,16 @@ func _physics_process(
 	)
 
 
-	_handle_jump()
+	if (hold_target == null or hold_target.interaction_pose == "none") and not $StealthStance.is_low():
+		_handle_jump()
 
 
 	_handle_movement(
 		delta
 	)
+	if hold_target != null and is_instance_valid(hold_target) and hold_target.interaction_pose != "none":
+		velocity.x = 0.0
+		velocity.z = 0.0
 
 
 	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
@@ -333,6 +360,7 @@ func _physics_process(
 
 
 	_update_interaction()
+	_advance_interaction_hold(delta)
 
 
 func _try_walk_step(delta: float, horizontal: Vector3) -> void:
@@ -354,7 +382,7 @@ func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 	var capsule: CapsuleShape3D = $CollisionShape3D.shape
 	var probe_forward: Vector3 = horizontal.normalized() * (capsule.radius + 0.08)
 	var probe_at: Vector3 = raised.origin + horizontal + probe_forward
-	var query := PhysicsRayQueryParameters3D.create(probe_at + Vector3.UP * 0.05, probe_at - Vector3.UP * 1.05)
+	var query := PhysicsRayQueryParameters3D.create(probe_at + Vector3.UP * 0.05, probe_at - Vector3.UP * (capsule.height * 0.5 + max_walk_step_height + 0.2))
 	query.exclude = [get_rid()]
 	var floor_hit := space.intersect_ray(query)
 	if floor_hit.is_empty() or floor_hit.normal.dot(Vector3.UP) < cos(floor_max_angle):
@@ -374,6 +402,7 @@ func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 func _handle_mouse_look(
 	event: InputEventMouseMotion
 ) -> void:
+	if SaveManager.active_input_device == "controller": return
 
 	if (
 		Input.mouse_mode
@@ -412,14 +441,35 @@ func _handle_mouse_look(
 	)
 
 func _process(delta: float) -> void:
+	_update_weapon_camera(delta)
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or inventory_ui.is_open() or get_meta("map_open",false) or get_meta("weapon_wheel_open",false):
 		return
 	var stick := Input.get_vector("look_left","look_right","look_up","look_down")
-	if stick.length_squared() < .0001:
-		return
+	if SaveManager.active_input_device == "controller" and bool(SaveManager.options.get("gyro_aim",false)) and Input.is_action_pressed("aim"):
+		var device: int = SaveManager.active_joypad_id
+		if device in Input.get_connected_joypads() and Input.has_joy_motion_sensors(device) and Input.is_joy_motion_sensors_calibrated(device):
+			var gyro := Input.get_joy_gyroscope(device)
+			stick += Vector2(gyro.x,gyro.y) * 0.42
+	if stick.length_squared() < 0.0001: return
 	camera_pivot.rotate_y(-stick.x * 2.4 * delta)
 	camera_pitch = clampf(camera_pitch - stick.y * 1.9 * delta,deg_to_rad(min_camera_angle),deg_to_rad(max_camera_angle))
 	camera_pivot.rotation.x = camera_pitch
+
+func _update_weapon_camera(delta: float) -> void:
+	if first_person:
+		camera_pivot.position.y = maxf(.45,$StealthStance.camera_height()-.05)
+		return
+	var equipment: Node = $VisualRoot/CharacterVisual.equipment
+	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming))
+	var previous: float = aim_blend
+	aim_blend = move_toward(aim_blend, 1.0 if gun_aiming else 0.0, delta * 4.5)
+	if previous <= 0.0 and gun_aiming: aim_sound.play()
+	var arm: SpringArm3D = $CameraPivot/SpringArm3D
+	arm.spring_length = lerpf(third_person_distance, 1.35 if equipment != null and equipment.selected == 3 else 1.65, aim_blend)
+	arm.position.x = lerpf(0.0, 0.46, aim_blend)
+	var stance_height: float = $StealthStance.camera_height()
+	camera_pivot.position.y = lerpf(stance_height, minf(1.5,stance_height+.12), aim_blend)
+	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 62.0 if equipment != null and equipment.selected == 3 else 58.0, aim_blend)
 
 
 # =========================================================
@@ -456,16 +506,17 @@ func _handle_movement(
 	# SPRINT
 	# -----------------------------------------------------
 
-	var wants_to_sprint := (
+	var wants_to_sprint: bool = (
 		Input.is_action_pressed(
 			"sprint"
 		)
 		and input_direction
 		!= Vector3.ZERO
+		and not $StealthStance.is_low()
 	)
 
 
-	var is_sprinting := (
+	var is_sprinting: bool = (
 		wants_to_sprint
 		and survival.can_sprint()
 		and not is_swimming
@@ -482,6 +533,7 @@ func _handle_movement(
 	# -----------------------------------------------------
 
 	var current_speed := swim_speed if is_swimming else walk_speed
+	if $StealthStance.is_low(): current_speed = $StealthStance.move_speed()
 
 
 	if is_sprinting:
@@ -617,6 +669,7 @@ func _handle_jump() -> void:
 		velocity.y = (
 			jump_velocity
 		)
+		ControllerFeedback.pulse("jump")
 
 
 # =========================================================
@@ -633,7 +686,7 @@ func _find_interactable() -> Interactable:
 	for node in get_tree().get_nodes_in_group("interactables"):
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
 		var candidate := node as Interactable
-		if candidate == null: continue
+		if candidate == null or not candidate.interaction_available(): continue
 		var offset := candidate.global_position - global_position
 		var distance := offset.length()
 		if distance > 2.6: continue
@@ -653,18 +706,43 @@ func _find_interactable() -> Interactable:
 func _update_interaction() -> void:
 	current_interactable = _find_interactable()
 	if current_interactable == null:
+		interaction_overlay.set_target(null)
 		if river_water.can_use_river():
-			primary_interaction_label.text = "[E] Drink river water"
+			primary_interaction_label.text = ("[□] " if SaveManager.active_input_device == "controller" else "[E] ") + "Drink river water"
 			primary_interaction_label.visible = true
-			secondary_interaction_label.text = "[Shift+E] Fill water pouch"
+			secondary_interaction_label.text = ("[L1+□] " if SaveManager.active_input_device == "controller" else "[Shift+E] ") + "Fill water pouch"
 			secondary_interaction_label.visible = inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0
 		else:
 			_hide_interaction_labels()
 		return
-	primary_interaction_label.text = "[E] " + current_interactable.interaction_text
-	primary_interaction_label.visible = true
-	secondary_interaction_label.visible = current_interactable.has_secondary_interaction()
-	secondary_interaction_label.text = "[Shift+E] " + current_interactable.secondary_interaction_text
+	primary_interaction_label.visible = false
+	secondary_interaction_label.visible = false
+	interaction_overlay.set_target(current_interactable,hold_elapsed/maxf(current_interactable.hold_duration,.001) if hold_target == current_interactable else 0.0)
+
+func _begin_interaction_hold(selected: Interactable, action: String) -> void:
+	hold_target = selected
+	hold_action = action
+	hold_elapsed = 0.0
+	set_meta("interaction_reach",selected.interaction_pose != "none")
+	set_meta("interaction_pose_kind",selected.interaction_pose)
+	interaction_overlay.set_target(selected,0.0)
+
+func _advance_interaction_hold(delta: float) -> void:
+	if hold_target == null: return
+	if not is_instance_valid(hold_target) or hold_target != current_interactable or not Input.is_action_pressed(hold_action):
+		hold_target = null
+		hold_elapsed = 0.0
+		set_meta("interaction_reach",false)
+		return
+	hold_elapsed += delta
+	interaction_overlay.set_target(hold_target,hold_elapsed/maxf(hold_target.hold_duration,.001))
+	if hold_elapsed >= hold_target.hold_duration:
+		var completed := hold_target
+		hold_target = null
+		hold_elapsed = 0.0
+		set_meta("interaction_reach",false)
+		completed.interact(self)
+		ControllerFeedback.pulse("interaction")
 
 
 # =========================================================
@@ -676,6 +754,10 @@ func _hide_interaction_labels() -> void:
 	primary_interaction_label.visible = false
 
 	secondary_interaction_label.visible = false
+	interaction_overlay.set_target(null)
+	hold_target = null
+	hold_elapsed = 0.0
+	set_meta("interaction_reach",false)
 
 
 # =========================================================
@@ -687,13 +769,14 @@ func _try_primary_interaction() -> void:
 	current_interactable = _find_interactable()
 
 	if current_interactable == null:
-		river_water.start_drink()
+		if river_water.start_drink(): ControllerFeedback.pulse("interaction")
 		return
 
 
 	current_interactable.interact(
 		self
 	)
+	ControllerFeedback.pulse("interaction")
 
 
 # =========================================================
@@ -705,7 +788,7 @@ func _try_secondary_interaction() -> void:
 	current_interactable = _find_interactable()
 
 	if current_interactable == null:
-		river_water.start_fill()
+		if river_water.start_fill(): ControllerFeedback.pulse("interaction")
 		return
 
 
@@ -720,6 +803,7 @@ func _try_secondary_interaction() -> void:
 	current_interactable.secondary_interact(
 		self
 	)
+	ControllerFeedback.pulse("interaction")
 
 
 # =========================================================

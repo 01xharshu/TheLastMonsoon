@@ -1,14 +1,28 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
-  "source_sha256": "ac4a137ac599ef0cba268ccc63d03f2c26fcc1ac51de1501551fa10948c9fb33",
+  "source_sha256": "14953ce1414e59c786678f7345ec8d87d7b9531da4ca9403c7ddd2a92df6f7f1",
   "reference": "docs/characters/british/references/private_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
   "male_bones": 53,
   "female_bones": 53,
   "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
-  "runtime_export": false,
+  "runtime_export": true,
   "visual_approved": false,
-  "motion_approved": false
+  "motion_approved": false,
+  "runtime_exports": {
+    "man": {
+      "path": "characters/npcs/british/private_man.glb",
+      "sha256": "8877bc90e7a4a9a6da8f9d5276440f873a1f2c5934549e79d545e77f4a5019a7",
+      "bytes": 5978672
+    },
+    "woman": {
+      "path": "characters/npcs/british/private_woman.glb",
+      "sha256": "8ed702dbc9ab42ada9d0a0be9865c66a2eeccef77f741c3fb2764a50208ca2ea",
+      "bytes": 7379868
+    }
+  },
+  "animation": "Godot procedural idle/walk study; no authored Blender clips",
+  "placed_in_world": false
 }

@@ -163,7 +163,7 @@ func sidearm_display() -> void:
 	var entries := [
 		["pistol","Adams 1851 revolver","res://environment/weapons/adams_1851/adams_1851.glb"],
 		["utility_knife","Utility knife","res://environment/weapons/period_utility_knife/period_utility_knife.glb"],
-		["paper_cartridges","Paper cartridges · lead bullets",""]]
+		["paper_cartridges","Paper cartridges · lead bullets","res://environment/props/new_assets/enfield_ammo_packet.glb"]]
 	for i in entries.size():
 		var pickup := StaticBody3D.new()
 		pickup.set_script(supplies)
@@ -175,9 +175,8 @@ func sidearm_display() -> void:
 		if entries[i][2] != "":
 			var prop: Node3D = load(entries[i][2]).instantiate()
 			pickup.add_child(prop)
-			prop.rotation.x = PI*.5
-		else:
-			piece(pickup,"CartridgePacket",Vector3.ZERO,Vector3(.18,.07,.12),plaster,false)
+			if i < 2:
+				prop.rotation.x = PI*.5
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
 		shape.size = Vector3(.42,.12,.22)

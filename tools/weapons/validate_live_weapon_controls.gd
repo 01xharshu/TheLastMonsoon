@@ -13,6 +13,7 @@ func validate() -> void:
 	root.add_child(world)
 	current_scene = world
 	for i in 5: await process_frame
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	var actor: CharacterBody3D = world.get_node("Player")
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -28,6 +29,12 @@ func validate() -> void:
 	bow.aiming = true
 	bow.draw_fraction = 1.0
 	equipment.bow_hand.set_draw_fraction(1.0)
+	equipment.apply_rifle_grip()
+	var bow_contacts: Dictionary = equipment.held_contact_errors()
+	print("BOW CONTACT: ", bow_contacts)
+	var hand_pose: Transform3D = equipment.skeleton.get_bone_global_pose(equipment.skeleton.find_bone("hand_r"))
+	var palm_world: Vector3 = equipment.skeleton.global_transform * (hand_pose * equipment.palm_offsets["r"])
+	print("BOW DELTA: ", equipment.bow_hand.to_global(Vector3(-0.42,0,0))-palm_world)
 	var before: int = actor.inventory.get_item_count("arrow")
 	assert(bow.fire())
 	assert(bow.arrows_fired == 1 and actor.inventory.get_item_count("arrow") == before-1)
@@ -51,6 +58,14 @@ func validate() -> void:
 	assert(equipment.pistol_hand.visible and not equipment.pistol_hip.visible)
 	var pistol: Node = actor.get_node("PistolCombat")
 	pistol.aiming = true
+	equipment.aiming = true
+	equipment.aim_direction = -camera.global_basis.z
+	equipment.apply_rifle_grip()
+	await process_frame
+	var pistol_contacts: Dictionary = equipment.held_contact_errors()
+	print("PISTOL CONTACT: ", pistol_contacts)
+	assert(pistol_contacts.pistol_palm_m < 0.005)
+	assert(bow_contacts.bow_palm_m < 0.005)
 	var rounds_before: int = pistol.rounds
 	assert(pistol.fire())
 	assert(pistol.shots_fired == 1 and pistol.rounds == rounds_before-1)

@@ -2,9 +2,9 @@ extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "STOW WEAPONS"]
-const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Hands free · weapons carried"]
-const STOW_INDEX := 5
+const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "STOW WEAPONS"]
+const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Hands free · weapons carried"]
+const STOW_INDEX := 6
 const IVORY := Color(0.93, 0.89, 0.78)
 const BRASS := Color(0.67, 0.51, 0.29)
 var actor: CharacterBody3D
@@ -24,7 +24,7 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 func open() -> void:
-	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.has_meta("mounted_vehicle") or actor.get_meta("climbing",false): return
+	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
 	if not actor.is_physics_processing(): return
 	selected = int(equipment.selected)
 	previous_mouse_mode = Input.mouse_mode
@@ -66,7 +66,16 @@ func select_from_pointer(point: Vector2) -> void:
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("weapon_wheel") and not event.is_echo():
+		open()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_released("weapon_wheel"):
+		close(true)
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey:
+		if SaveManager.active_input_device == "controller": return
 		var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 		if key == KEY_QUOTELEFT or event.keycode == KEY_ASCIITILDE:
 			if event.pressed and not event.echo:
@@ -86,6 +95,10 @@ func _input(event: InputEvent) -> void:
 					selected = posmod(selected - 1, LABELS.size())
 			queue_redraw()
 	if visible:
+		if event is InputEventJoypadMotion and event.axis in [JOY_AXIS_LEFT_X,JOY_AXIS_LEFT_Y]:
+			var direction := Input.get_vector("move_left","move_right","move_forward","move_backward")
+			if direction.length() > 0.45:
+				select_from_pointer(size * 0.5 + direction * 160.0)
 		if event is InputEventMouseMotion: select_from_pointer(event.position)
 		get_viewport().set_input_as_handled()
 
@@ -114,6 +127,10 @@ func _icon(slot: int, centre: Vector2, color: Color) -> void:
 	elif slot == 4:
 		draw_line(centre+Vector2(-25,16),centre+Vector2(28,-16),color,5,true)
 		draw_line(centre+Vector2(-30,19),centre+Vector2(-20,13),BRASS,8,true)
+	elif slot == 5:
+		draw_line(centre+Vector2(-34,-11),centre+Vector2(34,-11),color,3,true)
+		draw_line(centre+Vector2(-34,-5),centre+Vector2(34,-5),color,3,true)
+		draw_line(centre+Vector2(-24,-3),centre+Vector2(-34,13),BRASS,6,true)
 	else:
 		draw_arc(centre,25,0,TAU,48,color,2,true)
 		draw_line(centre+Vector2(-17,17),centre+Vector2(17,-17),BRASS,3,true)

@@ -168,6 +168,11 @@ func open_inventory() -> void:
 
 
 	_refresh_inventory()
+	if SaveManager.active_input_device == "controller":
+		for button in [eat_roti_button, drink_water_button, eat_mango_button]:
+			if is_instance_valid(button) and not button.disabled:
+				button.grab_focus.call_deferred()
+				break
 
 
 func close_inventory() -> void:
