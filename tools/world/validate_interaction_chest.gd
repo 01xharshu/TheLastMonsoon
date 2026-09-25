@@ -12,8 +12,8 @@ func _run() -> void:
 	actor.global_position = chest.global_position + Vector3(0,1.0,2.1)
 	actor.get_node("VisualRoot").rotation.y = PI
 	for i in 8: await physics_frame
-	if actor._find_interactable() != chest or not actor.interaction_overlay.markers.has(chest):
-		push_error("INTERACTION BLOCKED: chest not found or world marker absent")
+	if actor._find_interactable() != chest or actor.interaction_overlay.markers.has(chest) or not actor.interaction_overlay.marker_world_positions.has(chest):
+		push_error("INTERACTION BLOCKED: near chest should show its selector without a world marker")
 		quit(1)
 		return
 	actor._begin_interaction_hold(chest,"interact")

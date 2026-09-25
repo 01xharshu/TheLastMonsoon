@@ -29,6 +29,10 @@ func _run() -> void:
 		return
 	for i in 45: await process_frame
 	await _shot("arjun_cover_crate")
+	Input.action_press("aim")
+	for i in 24: await process_frame
+	await _shot("arjun_cover_aim")
+	Input.action_release("aim")
 	stance.stand()
 	actor.global_position += Vector3(0,0,.8)
 	stance.enter_prone()

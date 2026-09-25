@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjmq2cqbtpmbm"
-path="res://.godot/imported/corporal_woman_young_lightskinned_female_diffuse.jpg-538264a8f0903b8738800c72d7dc3719.ctex"
+path.s3tc="res://.godot/imported/corporal_woman_young_lightskinned_female_diffuse.jpg-538264a8f0903b8738800c72d7dc3719.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "f3c9cf3091dd3e039f24e218cdc3f169"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://characters/npcs/british/corporal_woman_young_lightskinned_female_diffuse.jpg"
-dest_files=["res://.godot/imported/corporal_woman_young_lightskinned_female_diffuse.jpg-538264a8f0903b8738800c72d7dc3719.ctex"]
+dest_files=["res://.godot/imported/corporal_woman_young_lightskinned_female_diffuse.jpg-538264a8f0903b8738800c72d7dc3719.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

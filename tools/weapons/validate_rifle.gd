@@ -66,8 +66,20 @@ func run() -> void:
 	actor.inventory.add_item("paper_cartridges",2)
 	rifle.start_reload()
 	check(rifle.reload_remaining>0,"Reload did not start")
+	rifle.reload_remaining = 4.4
+	visual._process(1.0/60.0)
+	var early_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
+	rifle.reload_remaining = 1.8
+	visual._process(1.0/60.0)
+	var loading_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
+	check(early_left.distance_to(loading_left) > 0.06,"Enfield loading hand did not move")
+	check(visual.equipment.reload_progress > 0.5,"Enfield reload pose did not follow timer")
+	var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
+	check(rod != null and rod.position.x > (visual.equipment.ramrod_rest["enfield_ramrod"] as Vector3).x + 0.1,"Enfield ramrod did not extend")
 	rifle._process(5.1)
 	check(rifle.loaded,"Reload did not chamber a round")
+	visual._process(1.0/60.0)
+	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Vector3).x) < 0.001,"Enfield ramrod did not return")
 	actor.set_meta("map_open",true)
 	rifle.aiming = true
 	rifle.fire()
@@ -108,6 +120,13 @@ func run() -> void:
 	check(not pistol.start_reload(),"Pistol reloaded without ammunition")
 	actor.inventory.add_item("pistol_ball",5)
 	check(pistol.start_reload(),"Pistol reload did not start")
+	pistol.reload_remaining = 3.4
+	visual._process(1.0/60.0)
+	var pistol_early: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
+	pistol.reload_remaining = 1.5
+	visual._process(1.0/60.0)
+	var pistol_loading: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
+	check(pistol_early.distance_to(pistol_loading) > 0.04,"Pistol loading hand did not move")
 	pistol._process(4.0)
 	check(pistol.rounds==5 and actor.inventory.get_item_count("pistol_ball")==0,"Pistol ammunition was not consumed")
 	print("FIREARMS TEST ","FAIL" if failed else "PASS")

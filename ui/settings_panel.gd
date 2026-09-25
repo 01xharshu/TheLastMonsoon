@@ -9,6 +9,8 @@ func _ready() -> void:
 	add_slider("Master volume","master",0.0,1.0,0.01)
 	add_slider("Music volume","music",0.0,1.0,0.01)
 	add_slider("Mouse sensitivity","mouse",0.3,2.0,0.05)
+	add_slider("Camera distance","camera_distance",1.8,4.0,0.05," m")
+	add_slider("Aim camera distance","aim_camera_distance",0.5,2.0,0.05," m")
 	add_input_device_selector()
 	add_slider("Controller vibration","vibration",0.0,1.0,0.05)
 	add_toggle("Controller light","controller_light")
@@ -71,7 +73,7 @@ func add_controller_test() -> void:
 		if is_instance_valid(button): button.disabled = ControllerFeedback.usable_device() < 0
 	)
 
-func add_slider(title: String, key: String, minimum: float, maximum: float, step: float) -> void:
+func add_slider(title: String, key: String, minimum: float, maximum: float, step: float, unit: String = "%") -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation",12)
 	var caption := Style.label(title,19)
@@ -86,12 +88,12 @@ func add_slider(title: String, key: String, minimum: float, maximum: float, step
 	slider.step = step
 	slider.value = float(SaveManager.options[key])
 	row.add_child(slider)
-	var amount := Style.label("%.0f%%" % (slider.value*100.0),17)
+	var amount := Style.label("%.2f%s" % [slider.value,unit] if unit == " m" else "%.0f%%" % (slider.value*100.0),17)
 	amount.custom_minimum_size.x = 55
 	row.add_child(amount)
 	slider.value_changed.connect(func(value: float):
 		SaveManager.set_option(key,value)
-		amount.text = "%.0f%%" % (value*100.0)
+		amount.text = "%.2f%s" % [value,unit] if unit == " m" else "%.0f%%" % (value*100.0)
 	)
 	add_child(row)
 

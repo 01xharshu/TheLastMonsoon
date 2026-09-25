@@ -36,6 +36,8 @@ WOOD = material("Dark seasoned hardwood", (0.12, 0.062, 0.026))
 LEATHER = material("Aged oiled leather", (0.105, 0.052, 0.026))
 LEATHER_EDGE = material("Worn leather edge", (0.19, 0.105, 0.055))
 IRON = material("Hand forged dark iron", (0.18, 0.21, 0.22), 0.75, 0.46)
+IRON_EDGE = material("Polished worn iron edges", (0.36, 0.39, 0.38), 0.82, 0.31)
+HORN = material("Dark horn reinforcement", (0.085, 0.075, 0.058), 0.04, 0.43)
 THREAD = material("Natural bow cord", (0.59, 0.50, 0.34))
 FEATHER = material("Arrow fletching", (0.32, 0.27, 0.19))
 FEATHER_LIGHT = material("Pale arrow fletching", (0.54, 0.47, 0.34))
@@ -110,21 +112,31 @@ def stave():
         tube("Laminated bow limb grain", [(-.12*math.sin(math.pi*abs(2*i/40-1)/2)**1.3+offset, -.012, (i/40-.5)*1.27)
                                            for i in range(41)], .0014, WOOD_GRAIN)
     for z in [-.65,.65]:
-        tube("Horn reinforced tip", [(-.12,0,z-.025),(-.12,0,z),(-.115,0,z+.025)], .006, IRON)
+        tip_sign = 1 if z > 0 else -1
+        tube("Horn reinforced bow nock", [(-.12,0,z-tip_sign*.028),(-.12,0,z),(-.115,0,z+tip_sign*.018)], .006, HORN)
+        tube("Cord groove at nock", [(-.126,-.008,z-tip_sign*.006),(-.12,0,z),(-.126,.008,z+tip_sign*.006)], .0015, LEATHER_EDGE)
     for z in [-.074+i*.012 for i in range(13)]:
         tube("Crossed leather grip wrap", [(-.016,-.010,z),(-.006,-.016,z+.004),(.009,-.014,z+.009)], .0035, LEATHER_EDGE)
+    tube("Grip wrap end binding lower", [(-.02,0,-.083),(-.014,-.013,-.083),(.006,-.015,-.083),(.018,0,-.083)], .0022, STITCH)
+    tube("Grip wrap end binding upper", [(-.02,0,.084),(-.014,-.013,.084),(.006,-.015,.084),(.018,0,.084)], .0022, STITCH)
 
 
 def arrow(x=0.0, y=0.0, z=0.0, index=0, inverted=False, scale=1.0):
     height = lambda local: z + (.77-local if inverted else local)*scale
     shaft = cylinder("Arrow %02d hardwood shaft" % index, .0036, .72*scale, height(.36), WOOD, 12)
     shaft.location.x, shaft.location.y = x, y
+    tube("Arrow %02d nock binding" % index, [(x+.0043*math.cos(a),y+.0043*math.sin(a),height(.022))
+          for a in [2*math.pi*i/16 for i in range(17)]], .0011, STITCH)
+    tube("Arrow %02d split nock" % index, [(x-.003,y,height(.004)),(x,y,height(.012)),(x+.003,y,height(.004))], .0011, HORN)
     for side in range(3):
         angle = side*2*math.pi/3
         dx, dy = .014*math.cos(angle), .014*math.sin(angle)
         mesh("Arrow %02d feather %d" % (index,side),
              [(x,y,height(.03)),(x+dx,y+dy,height(.055)),(x+dx,y+dy,height(.18)),(x,y,height(.16))],
              [(0,1,2),(0,2,3)], FEATHER_LIGHT if side == 1 else FEATHER)
+        tube("Arrow %02d feather quill %d" % (index,side),
+             [(x,y,height(.026)),(x+dx*.70,y+dy*.70,height(.105)),(x,y,height(.165))],
+             .0008, FEATHER_LIGHT)
     tip = mesh("Arrow %02d forged point" % index,
                [(x-.012,y,height(.72)),(x+.012,y,height(.72)),(x,y-.003,height(.72)),(x,y+.003,height(.72)),(x,y,height(.77))],
                [(0,2,4),(2,1,4),(1,3,4),(3,0,4)], IRON)
@@ -145,6 +157,11 @@ def quiver():
     mesh("Leather quiver shell and open rim",verts,faces,LEATHER)
     for z in [.045,.27,.505]:
         tube("Reinforcing leather band",[(.059*math.cos(2*math.pi*i/32),.059*math.sin(2*math.pi*i/32),z) for i in range(33)],.004,LEATHER_EDGE)
+    for i in range(32):
+        angle = 2*math.pi*i/32
+        for z in [.045,.505]:
+            tube("Quiver band stitch",[(.06*math.cos(angle),.06*math.sin(angle),z-.006),
+                                      (.06*math.cos(angle+.025),.06*math.sin(angle+.025),z+.006)],.00075,STITCH)
     for side in range(2):
         angle = -.32 + side*.64
         tube("Quiver vertical seam",[(.056*math.cos(angle),.056*math.sin(angle),.04+i*.045) for i in range(11)],.002,LEATHER_EDGE)
@@ -161,6 +178,9 @@ def quiver():
 def spear():
     cylinder("Ash spear shaft",.017,1.55,.775,WOOD,16)
     cylinder("Iron socket",.021,.11,1.54,IRON,16)
+    for angle in [0,math.pi]:
+        tube("Spear socket rivet",[(.022*math.cos(angle),.022*math.sin(angle),1.515),
+                                    (.024*math.cos(angle),.024*math.sin(angle),1.515)],.0035,IRON_EDGE)
     for z in [.25,1.42]:
         cylinder("Binding collar",.018,.022,z,LEATHER_EDGE,16)
     # Leaf shaped, double sided head with a central ridge and narrow point.
@@ -170,6 +190,8 @@ def spear():
     faces=[(0,1,2),(0,2,3),(1,4,5,2),(2,5,6,3),(4,7,5),(5,7,6),
            (0,8,1),(0,3,8),(1,8,9,4),(3,6,9,8),(4,9,7),(6,7,9)]
     mesh("Leaf shaped forged spear head",verts,faces,IRON)
+    for face_y in [-.011,.011]:
+        tube("Spear blade central ridge highlight",[(0,face_y,1.61),(0,face_y,1.75),(0,0,1.90)],.0016,IRON_EDGE)
     cylinder("Iron butt cap",.018,.045,.018,IRON,16)
     for angle in [0,2.09,4.18]:
         tube("Shaft grain",[(.0175*math.cos(angle+.08*math.sin(z*11)),.0175*math.sin(angle+.08*math.sin(z*11)),z)

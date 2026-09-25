@@ -28,8 +28,21 @@ func run() -> void:
 	check(combat.pending_single and slash.elapsed >= slash.DURATION,"first click waits for double-click window")
 	combat._unhandled_input(click)
 	check(not combat.pending_single and combat.kick_time >= 0.0 and slash.elapsed >= slash.DURATION,"double click kicks without slashing")
+	check(not combat.kick_landed,"kick has no contact at windup")
+	combat._process(.20)
+	check(not combat.kick_landed,"kick has no contact before extension")
+	combat._process(.04)
+	check(combat.kick_landed,"kick contact occurs during extension")
 	combat.kick_time = -1.0
 	visual.kick_phase = -1.0
+	visual.equipment.stowed = true
+	combat.punch()
+	check(combat.punch_time >= 0.0 and not combat.punch_landed,"punch begins without contact")
+	combat._process(.18)
+	check(combat.punch_landed,"punch contact occurs during extension")
+	combat.punch_time = -1.0
+	visual.punch_phase = -1.0
+	visual.equipment.stowed = false
 	combat._unhandled_input(click)
 	combat._process(combat.DOUBLE_CLICK_SECONDS+.01)
 	check(slash.elapsed < slash.DURATION,"single click starts sword slash")

@@ -1,19 +1,21 @@
 # Current handoff
+## RUINED FORT — BLOCKOUT
+- Nav route PASS; player traversal/art open: `docs/world/ruined_fort_blockout.md`.
 ## ARJUN PRONE / COVER — IN_PROGRESS
-- Z/D-pad down prone crawl; C/right-stick press cover at solid crate/tree/cart. Low collision, body pose, camera and aim peek integrated. Focused world test PASS; Metal captures inspected. Contact, normal-speed motion and enemy sight response remain. Detail: `docs/characters/arjun/stealth_stance.md`.
+- Prone and crate/tree/cart cover controls, collision and poses integrated; test PASS, Metal captures inspected. Motion/contact and enemy sight remain. Detail: `docs/characters/arjun/stealth_stance.md`.
 ## WORLD INTERACTION — IN_PROGRESS
-- Reference E/Q card and object glint; gun and bullet HUD; supply/cart holds; saved chest rewards and pickup reach. Test PASS, Metal captures inspected. Kneel motion and corpse loot remain open. Detail: `docs/world/interaction_system.md`.
+- 2026-09-25: E/Q card, object glint, ammo HUD, supply/cart holds. Marker yields to selector inside 3 m; Metal chest capture inspected. Owned number-key weapon selection draws after stow; held-E pickup of five store weapons and save/load PASS. Contact, kneel motion and corpse loot remain open. Detail: `docs/world/interaction_system.md`.
 Updated: 2026-09-24 05:51 IST. Detail before this task: `docs/agent/history/2026-09-24-0023-pre-viceregal.md`. Read only relevant `docs/README.md` rows.
 
 ## NEW PROP ASSET INTEGRATION — COMPLETE
-- Ammo packet, cannon and sign in world; test PASS, Metal captures inspected. Civic check still finds 21 nature intrusions. Detail: `docs/world/new_prop_integration.md`.
+- Test PASS; 21 civic nature intrusions remain. Detail: `docs/world/new_prop_integration.md`.
 
 ## INDIAN VILLAGE NPC PAIR — VISUAL_REVIEW_FAILED / MOTION_BLOCKED
 - Two independent MPFB sources; fitted top, original drapes, 9.73 MB combined static Godot previews at Bhairavpur. Fresh Metal still: `docs/characters/npcs/indian_peasant_pair_world.png`. Hands/legs now attached; period tailoring and sari/dhoti drape still fail visual review. Detail/provenance: `docs/characters/npcs/indian_peasant_pair.md`.
 - Separate rigged idle/walk studies now use baked MPFB body/garment masks and load in Godot. Four Metal walk phases per figure at `docs/characters/npcs/indian_peasant_{male,female}_walk_{00,25,50,75}.png` show no prior body/trouser breakthrough; stiff drapes, full-cycle motion and foot contact remain unapproved. Do not promote. Next: tailor period cloth and review normal-speed motion/contact, then NPC behavior. 8GB-device performance untested.
 
 ## BRITISH NPC MAKEHUMAN CANDIDATES — IN_PROGRESS
-- 2026-09-24 05:56 IST. Eight conceptual pair references and eight editable MPFB pair `.blend` files, SHA manifests and front/side/back renders exist. Audit found all manifest hashes match. Detail and paths: `docs/characters/british/README.md`.
+- Eight MPFB pair candidates and renders exist; hashes match. Detail: `docs/characters/british/README.md`.
 - Current task reworked private woman's skirt with gathered folds in `tools/characters/build_british_private_pair.py`; rebuilt `WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend` (SHA `14953ce1414e59c786678f7345ec8d87d7b9531da4ca9403c7ddd2a92df6f7f1`) and rerendered three views. Blender and render completed; front/side inspected. A cap/strap experiment clipped and was reverted.
 - Blockers: all remain static unapproved blockouts. Private pair has modern donor seams, floating buttons/straps, oversized headwear and bodice/skirt join; no pose, motion, Godot, or historical costume approval. Next: hand-tailor this pair and verify deformation before propagating changes across ranks.
 

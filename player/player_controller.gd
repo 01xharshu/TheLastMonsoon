@@ -20,6 +20,12 @@ extends CharacterBody3D
 @export_range(0.05, 0.6, 0.01) var max_walk_step_height: float = 0.38
 @export_range(0.0, 0.5, 0.01) var ground_snap_distance: float = 0.3
 var step_lift: float = 0.0
+const MAX_HEALTH := 100.0
+var health: float = MAX_HEALTH
+
+func take_damage(amount: float) -> void:
+	if amount <= 0.0 or health <= 0.0: return
+	health = maxf(0.0, health - amount)
 
 @export var swim_speed: float = 2.6
 var is_swimming := false
@@ -46,6 +52,7 @@ var first_person := false
 var first_person_view: Node3D
 var third_person_height: float
 var third_person_distance: float
+var aim_camera_distance: float = 0.55
 var aim_blend := 0.0
 var aim_sound: AudioStreamPlayer
 const AIM_CLICK = preload("res://audio/weapons/aim_click.wav")
@@ -157,7 +164,7 @@ func _ready() -> void:
 
 	third_person_height = camera_pivot.position.y
 	third_person_distance = $CameraPivot/SpringArm3D.spring_length
-	third_person_distance = minf(third_person_distance, 3.35)
+	third_person_distance = minf(third_person_distance, 2.0)
 	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
 	aim_sound = AudioStreamPlayer.new()
 	aim_sound.stream = AIM_CLICK
@@ -355,7 +362,10 @@ func _physics_process(
 
 
 	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
+	var landing_speed: float = -velocity.y if not is_on_floor() else 0.0
 	move_and_slide()
+	if is_on_floor() and landing_speed > 9.0 and not is_swimming and not get_meta("climbing",false) and not has_meta("mounted_vehicle"):
+		take_damage((landing_speed - 9.0) * 7.0)
 	_try_walk_step(delta, intended_horizontal)
 
 
@@ -460,16 +470,17 @@ func _update_weapon_camera(delta: float) -> void:
 		camera_pivot.position.y = maxf(.45,$StealthStance.camera_height()-.05)
 		return
 	var equipment: Node = $VisualRoot/CharacterVisual.equipment
-	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming))
+	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming) or (equipment.selected == 5 and $DoubleGunCombat.aiming))
 	var previous: float = aim_blend
 	aim_blend = move_toward(aim_blend, 1.0 if gun_aiming else 0.0, delta * 4.5)
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
 	var arm: SpringArm3D = $CameraPivot/SpringArm3D
-	arm.spring_length = lerpf(third_person_distance, 1.35 if equipment != null and equipment.selected == 3 else 1.65, aim_blend)
-	arm.position.x = lerpf(0.0, 0.46, aim_blend)
+	arm.spring_length = lerpf(third_person_distance, aim_camera_distance if equipment != null and equipment.selected == 3 else aim_camera_distance + 0.40, aim_blend)
+	arm.position.x = lerpf(0.0, 0.38, aim_blend)
 	var stance_height: float = $StealthStance.camera_height()
-	camera_pivot.position.y = lerpf(stance_height, minf(1.5,stance_height+.12), aim_blend)
-	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 62.0 if equipment != null and equipment.selected == 3 else 58.0, aim_blend)
+	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-.80)
+	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
+	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 54.0 if equipment != null and equipment.selected == 3 else 56.0, aim_blend)
 
 
 # =========================================================

@@ -19,7 +19,7 @@ func validate() -> void:
 	gear.select_weapon(1)
 	assert(gear.selected == 0)
 	var pickups := store.find_children("*", "StaticBody3D", true, false).filter(func(node): return node.is_in_group("weapon_pickups"))
-	assert(pickups.size() == 2)
+	assert(pickups.size() == 5)
 	if DisplayServer.get_name() != "headless":
 		actor.get_node("UI").hide()
 		var camera := Camera3D.new()

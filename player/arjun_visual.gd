@@ -198,16 +198,48 @@ func _process(delta: float) -> void:
 		pose("lowerarm_r",Vector3(lerpf(-1.15,-0.40,sweep),0,0),release)
 		equipment.apply_sword_strike(slash_phase,slash_target_world)
 	if punch_phase >= 0.0:
-		var punch := sin(PI*punch_phase)
-		pose("spine_02",Vector3(-.12*punch,.18*punch,0),blend)
-		pose("upperarm_r",Vector3(-.75*punch,0,-.35*punch),blend)
-		pose("lowerarm_r",Vector3(-.95+.65*punch,0,0),blend)
+		var windup := smoothstep(0.0,.22,punch_phase)
+		var strike := smoothstep(.25,.43,punch_phase)
+		var recover := 1.0-smoothstep(.58,1.0,punch_phase)
+		var effort := windup*recover
+		pose("pelvis",Vector3(-.08*effort,.16*strike*recover,0),blend)
+		pose("spine_01",Vector3(-.10*effort,.18*strike*recover,0),blend)
+		pose("spine_02",Vector3(-.16*effort,.28*strike*recover,0),blend)
+		pose("upperarm_r",Vector3(lerpf(-.55,-1.35,strike)*effort,0,-.28*effort),blend)
+		pose("lowerarm_r",Vector3(lerpf(-1.35,-.18,strike)*effort,0,0),blend)
+		pose("upperarm_l",Vector3(-.48*effort,0,.42*effort),blend)
+		pose("lowerarm_l",Vector3(-.9*effort,0,0),blend)
 	if kick_phase >= 0.0:
-		var kick := sin(PI*kick_phase)
-		pose("pelvis",Vector3(-.12*kick,0,-.08*kick),blend)
-		pose("thigh_r",Vector3(-1.25*kick,0,0),blend)
-		pose("calf_r",Vector3(-.55+.9*kick,0,0),blend)
-		pose("upperarm_l",Vector3(-.55,0,.48),blend)
+		var chamber := smoothstep(0.0,.27,kick_phase)
+		var extension := smoothstep(.28,.46,kick_phase)
+		var recover := 1.0-smoothstep(.56,1.0,kick_phase)
+		var effort := chamber*recover
+		pose("pelvis",Vector3(-.12*effort,-.10*effort,-.10*effort),blend)
+		pose("spine_01",Vector3(.20*effort,0,.08*effort),blend)
+		pose("spine_02",Vector3(.12*effort,0,0),blend)
+		pose("thigh_r",Vector3(-1.2*effort,0,0),blend)
+		pose("calf_r",Vector3(lerpf(-1.15,.12,extension)*effort,0,0),blend)
+		pose("foot_r",Vector3(-.18*effort,0,0),blend)
+		pose("thigh_l",Vector3(.14*effort,0,0),blend)
+		pose("calf_l",Vector3(.14*effort,0,0),blend)
+		pose("upperarm_l",Vector3(-.55*effort,0,.48*effort),blend)
+		pose("upperarm_r",Vector3(-.42*effort,0,-.4*effort),blend)
+	equipment.reload_progress = -1.0
+	if not equipment.stowed:
+		var reload_node: Node = null
+		var duration := 0.0
+		match equipment.selected:
+			Equipment.Selection.ENFIELD:
+				reload_node = actor.get_node_or_null("RifleCombat")
+				duration = 5.0
+			Equipment.Selection.PISTOL:
+				reload_node = actor.get_node_or_null("PistolCombat")
+				duration = 3.8
+			Equipment.Selection.DOUBLE_GUN:
+				reload_node = actor.get_node_or_null("DoubleGunCombat")
+				duration = 4.4
+		if reload_node != null and reload_node.reload_remaining > 0.0:
+			equipment.reload_progress = clampf(1.0-reload_node.reload_remaining/duration,0.0,1.0)
 	equipment.apply_rifle_grip(armed and slash_phase >= 0.0)
 
 func _pose_river_action(delta: float) -> void:
@@ -345,6 +377,7 @@ func _pose_climb(delta: float) -> void:
 	var ledge_y: float = component.landing.y-.94
 	var base_y: float = ledge_y-4.8
 	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.96,t))
+	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
 		var side_offset: float = -.42 if side=="l" else .42
 		var hand_y: float = base_y+.42+roundf((actor.global_position.y+.80-base_y-.42)/.55)*.55
@@ -352,10 +385,10 @@ func _pose_climb(delta: float) -> void:
 		hand_y = minf(ledge_y+.08,hand_y)
 		var face: Vector3 = component.wall_point+component.wall_normal*.18
 		face.y = hand_y
-		face.z += side_offset
+		face += wall_tangent*side_offset
 		var top_target: Vector3=component.wall_point-component.wall_normal*.24
 		top_target.y=ledge_y+.08
-		top_target.z+=side_offset
+		top_target+=wall_tangent*side_offset
 		climb_targets[side].global_position=climb_targets[side].global_position.lerp(face.lerp(top_target,smoothstep(.68,.82,t)),clampf(delta*13.0,0.0,1.0))
 		climb_ik[side].influence=contact_blend
 	var step_cycle: float = t*TAU*2.5

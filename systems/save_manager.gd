@@ -7,6 +7,7 @@ const SLOT_COUNT := 3
 const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
+	"camera_distance": 2.0, "aim_camera_distance": 0.55,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
@@ -275,6 +276,8 @@ func load_options() -> void:
 	if not options.input_device in ["auto", "keyboard_mouse", "controller"]:
 		options.input_device = "auto"
 	options.vibration = clampf(float(options.vibration),0.0,1.0)
+	options.camera_distance = clampf(float(options.camera_distance),1.8,4.0)
+	options.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 
 func set_option(key: String, value: Variant) -> void:
 	if not DEFAULTS.has(key): return
@@ -302,5 +305,8 @@ func apply_options(world: Node = null) -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if options.vsync else DisplayServer.VSYNC_DISABLED)
 	if world and world.has_node("Player"):
-		world.get_node("Player").mouse_sensitivity = 0.0025*clampf(float(options.mouse),0.3,2.0)
+		var player: Node = world.get_node("Player")
+		player.mouse_sensitivity = 0.0025*clampf(float(options.mouse),0.3,2.0)
+		player.third_person_distance = clampf(float(options.camera_distance),1.8,4.0)
+		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 		if world.has_node("BackgroundMusic"): world.get_node("BackgroundMusic").bus = "Music"

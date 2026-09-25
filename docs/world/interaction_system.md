@@ -1,5 +1,7 @@
 # World interaction status — 2026-09-24
 
+2026-09-25 continuation: the surface marker now disappears inside 3 m while the nearby selector remains anchored to that object. The fresh Forward+/Metal chest approach and prompt captures show the separate states, with no extra dot beside the close selector. `validate_interaction_chest.gd` checks this transition and the held chest reward flow. The store's five pickups also pass held-E acquisition, drawing after weapon selection, and save/load validation (`tools/weapons/validate_equipping.gd`, `tools/world/validate_weapon_store.gd`). Number-key selection now draws an owned weapon after it was stowed. Final body contact and normal-speed interaction motion still need review on the owner-approved Arjun body.
+
 The current interaction UI uses a small surface marker for visible interactables, an icon-only key card when Arjun is close, and a circular hold indicator around the E key. The marker position comes from a camera ray hit on the object's collision surface, with a subtle animated glint. Q remains the alternate action for objects such as mangoes. Controller glyphs use the active device mapping.
 
 The secluded supply chest is inside the colonial compound near the western climb route. Holding E or F for 1.1 seconds makes Arjun lower into a kneel and opens it once. It grants six paper cartridges, four pistol balls, and 26 rupees; the opened state survives saving and loading. Mangoes, roti, and fallen water bags require a short held reach toward the ground. Gate prompts use the same marker and a gate icon.

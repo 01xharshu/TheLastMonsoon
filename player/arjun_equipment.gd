@@ -35,8 +35,12 @@ var rest_rotations: Dictionary = {}
 var aiming := false
 var aim_direction := Vector3.FORWARD
 var recoil := 0.0
+var reload_progress := -1.0
 var rifle_rest_transform := Transform3D.IDENTITY
+var ramrod_rest: Dictionary = {}
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
+const PISTOL_SCALE := 0.78
+const DOUBLE_GUN_SCALE := 0.84
 
 func attach_at_rest(bone: String, scene: PackedScene, placement: Transform3D, label: String) -> Node3D:
 	var socket := BoneAttachment3D.new()
@@ -93,24 +97,35 @@ func setup(rig: Skeleton3D) -> void:
 	var grip_position := Vector3(-0.16, 1.12, 0.16)
 	enfield_hand = attach_at_rest("spine_03", ENFIELD, Transform3D(gun_basis, grip_position - gun_basis * rifle_grip), "EnfieldHeld")
 	rifle_rest_transform = enfield_hand.transform
+	for part_name in ["enfield_ramrod", "enfield_ramrod_tip"]:
+		var part: Node3D = enfield_hand.find_child(part_name, true, false)
+		if part: ramrod_rest[part_name] = part.position
 	double_hand = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(gun_basis, grip_position - gun_basis * rifle_grip), "DoubleGunHeld")
+	double_hand.scale = Vector3.ONE * DOUBLE_GUN_SCALE
 	double_rest_transform = double_hand.transform
 	double_back = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(back_basis, Vector3(-.10,.85,-.21)), "DoubleGunStowed")
-	var left_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_l")) * palm_offsets["l"]
-	var bow_basis: Basis = skeleton.get_bone_global_rest(skeleton.find_bone("hand_l")).basis * palm_axes["l"]
-	bow_hand = attach_at_rest("hand_l", BOW, Transform3D(bow_basis,left_palm), "BowHeld")
+	double_back.scale = Vector3.ONE * DOUBLE_GUN_SCALE
+	# Keep the bow independent of the left hand so both arms can meet real contact points.
+	var bow_axis := Vector3(.75,0,.66).normalized()
+	var bow_basis := Basis(bow_axis,Vector3.UP,bow_axis.cross(Vector3.UP))
+	bow_hand = attach_at_rest("spine_03", BOW, Transform3D(bow_basis,Vector3(.22,1.35,.48)), "BowHeld")
 	bow_back = attach_at_rest("spine_03", BOW, Transform3D(Basis(Vector3.UP, -0.22),Vector3(-0.30,1.08,-0.24)), "BowStowed")
 	quiver_back = attach_at_rest("spine_03", QUIVER, Transform3D(Basis.IDENTITY,Vector3(0.27,0.99,-0.25)), "QuiverBack")
 	var right_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_r")) * palm_offsets["r"]
-	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(blade_basis,right_palm-blade_basis*PISTOL_GRIP), "PistolHeld")
+	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(blade_basis,right_palm-blade_basis*(PISTOL_GRIP*PISTOL_SCALE)), "PistolHeld")
+	pistol_hand.scale = Vector3.ONE * PISTOL_SCALE
 	pistol_hip = attach_at_rest("pelvis", PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "PistolHolstered")
+	pistol_hip.scale = Vector3.ONE * PISTOL_SCALE
 	knife_hand = attach_at_rest("hand_r", KNIFE, Transform3D(blade_basis,right_palm-blade_basis*Vector3(-.045,0,0)), "KnifeHeld")
 	knife_hip = attach_at_rest("pelvis", KNIFE, Transform3D(waist_basis,Vector3(-.26,.86,-.03)), "KnifeSheathed")
 	_refresh()
 
 func select_weapon(value: Selection) -> void:
-	if not owns(value): return
+	if not owns(value):
+		if inventory != null: inventory.message_requested.emit("Find this weapon in Company stores")
+		return
 	selected = value
+	stowed = swimming
 	_refresh()
 
 func owns(value: Selection) -> bool:
@@ -181,7 +196,12 @@ func _solve_arm(side: String, target: Vector3) -> void:
 	_aim_bone(lower, origin + direction * distance, hand)
 
 func apply_rifle_grip(sword_striking := false) -> void:
+	animate_ramrod()
 	if stowed: return
+	# Back-carried long guns obstruct the close shoulder camera while aiming.
+	var firearm_aim: bool = aiming and selected in [Selection.ENFIELD, Selection.PISTOL, Selection.DOUBLE_GUN]
+	enfield_back.visible = owns(Selection.ENFIELD) and not enfield_hand.visible and not firearm_aim
+	double_back.visible = owns(Selection.DOUBLE_GUN) and not double_hand.visible and not firearm_aim
 	if selected == Selection.TALWAR or selected == Selection.KNIFE:
 		if not sword_striking: apply_sword_rest()
 		_grasp("r")
@@ -193,16 +213,24 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		return
 	if selected == Selection.PISTOL:
 		apply_pistol_grip()
-		_grasp("r")
+		_grasp("r", 0.9)
 		return
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
-	if aiming:
+	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else 1.0
+	if reload_progress >= 0.0:
+		# Bring the muzzle up for loading while the right hand keeps the stock grip.
+		var barrel := Vector3(0.18,0.94,0.28).normalized()
+		var side_axis := barrel.cross(Vector3.UP).normalized()
+		var gun_basis := Basis(barrel,side_axis.cross(barrel),side_axis)
+		var grip := Vector3(-0.20,1.00,0.18)
+		longgun.global_transform = skeleton.global_transform * Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
+	elif aiming:
 		var barrel := (skeleton.global_basis.inverse()*aim_direction).normalized()
 		var side_axis := barrel.cross(Vector3.UP).normalized()
 		if side_axis.length_squared() < 0.1: side_axis = Vector3.LEFT
 		var gun_basis := Basis(barrel,side_axis.cross(barrel),side_axis)
-		var grip := Vector3(-0.16,1.34,0.13)-barrel*recoil
-		longgun.global_transform = skeleton.global_transform*Transform3D(gun_basis,grip-gun_basis*rifle_grip)
+		var grip := Vector3(-0.16,1.51,0.13)-barrel*recoil
+		longgun.global_transform = skeleton.global_transform*Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
 	else:
 		longgun.transform = double_rest_transform if selected == Selection.DOUBLE_GUN else rifle_rest_transform
 	# Compute contacts from the weapon transform, so both hands follow torso motion.
@@ -211,10 +239,26 @@ func apply_rifle_grip(sword_striking := false) -> void:
 	for pass_index in 10:
 		for side in ["r", "l"]:
 			var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
-			var contact: Vector3 = gun_transform * (rifle_grip if side=="r" else rifle_support)
+			var support := rifle_support
+			if side == "l" and reload_progress >= 0.0:
+				var pouch := Vector3(0.10,0.87,0.20)
+				var muzzle: Vector3 = gun_transform * Vector3(0.78,0.02,0)
+				var reach := smoothstep(0.20,0.38,reload_progress) * (1.0-smoothstep(0.79,0.98,reload_progress))
+				var pocket := smoothstep(0.02,0.18,reload_progress) * (1.0-smoothstep(0.20,0.38,reload_progress))
+				var target := (gun_transform * rifle_support).lerp(pouch,pocket)
+				support = gun_transform.affine_inverse() * target.lerp(muzzle,reach)
+			var contact: Vector3 = gun_transform * (rifle_grip if side=="r" else support)
 			_solve_arm(side,contact-hand.basis*palm_offsets[side])
 	_grasp("r")
 	_grasp("l")
+
+func animate_ramrod() -> void:
+	var extension := 0.0
+	if not stowed and selected == Selection.ENFIELD and reload_progress >= 0.0:
+		extension = 0.28 * smoothstep(0.36,0.55,reload_progress) * (1.0-smoothstep(0.69,0.86,reload_progress))
+	for part_name in ramrod_rest:
+		var part: Node3D = enfield_hand.find_child(part_name, true, false)
+		if part: part.position = (ramrod_rest[part_name] as Vector3) + Vector3(extension,0,0)
 
 func _rotate_digit(name: String, axis: Vector3, angle: float) -> void:
 	var index := skeleton.find_bone(name)
@@ -225,7 +269,7 @@ func _rotate_digit(name: String, axis: Vector3, angle: float) -> void:
 	skeleton.set_bone_pose_rotation(index,basis.orthonormalized().get_rotation_quaternion())
 	skeleton.force_update_all_bone_transforms()
 
-func _grasp(side: String) -> void:
+func _grasp(side: String, amount: float = 1.0) -> void:
 	# Flex in the actual palm plane. The thumb opposes the fingers independently.
 	for finger in ["index","middle","ring","pinky","thumb"]:
 		for joint in ["01","02","03"]:
@@ -235,15 +279,17 @@ func _grasp(side: String) -> void:
 	var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
 	var palm: Basis = hand.basis*palm_axes[side]
 	for finger in ["index","middle","ring","pinky"]:
-		_rotate_digit(finger+"_01_"+side,palm.x,1.02)
-		_rotate_digit(finger+"_02_"+side,palm.x,0.80)
-		_rotate_digit(finger+"_03_"+side,palm.x,0.52)
-	_rotate_digit("thumb_01_"+side,palm.y,-0.55 if side=="r" else 0.55)
-	_rotate_digit("thumb_02_"+side,palm.x,0.75)
-	_rotate_digit("thumb_03_"+side,palm.x,0.45)
+		var base_curl := 0.78 if finger == "index" and selected == Selection.PISTOL else 1.34
+		_rotate_digit(finger+"_01_"+side,palm.x,base_curl*amount)
+		_rotate_digit(finger+"_02_"+side,palm.x,0.96*amount)
+		_rotate_digit(finger+"_03_"+side,palm.x,0.58*amount)
+	_rotate_digit("thumb_01_"+side,palm.y,(-0.55 if side=="r" else 0.55)*amount)
+	_rotate_digit("thumb_02_"+side,palm.x,0.75*amount)
+	_rotate_digit("thumb_03_"+side,palm.x,0.45*amount)
 
 func grip_errors() -> Dictionary:
-	var gun_transform := skeleton.global_transform.affine_inverse() * enfield_hand.global_transform
+	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
+	var gun_transform := skeleton.global_transform.affine_inverse() * longgun.global_transform
 	return {
 		"right_palm_m": (skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))*palm_offsets["r"]).distance_to(gun_transform * rifle_grip),
 		"left_palm_m": (skeleton.get_bone_global_pose(skeleton.find_bone("hand_l"))*palm_offsets["l"]).distance_to(gun_transform * rifle_support)
@@ -296,8 +342,11 @@ func apply_pistol_grip() -> void:
 	var barrel := (skeleton.global_basis.inverse()*aim_direction).normalized() if aiming else Vector3(0.38,-0.25,0.89).normalized()
 	var side_axis := barrel.cross(Vector3.UP).normalized()
 	var basis := Basis(barrel,side_axis.cross(barrel),side_axis)
-	var hand_target := Vector3(-0.30,1.23,0.24) if aiming else Vector3(-0.36,1.04,0.20)
-	var hand_basis: Basis = basis * (palm_axes["r"] as Basis).inverse()
+	var hand_target := Vector3(-0.30,1.40,0.72) if aiming else Vector3(-0.36,1.04,0.20)
+	if reload_progress >= 0.0: hand_target = Vector3(-0.24,1.10,0.27)
+	# The pistol's imported barrel runs along local +X. Derive the wrist from
+	# its actual socket orientation so the visible barrel follows the camera.
+	var hand_basis: Basis = basis * pistol_hand.transform.basis.inverse()
 	var hand_index := skeleton.find_bone("hand_r")
 	for i in 6:
 		_solve_arm("r",hand_target-hand_basis*palm_offsets["r"])
@@ -305,17 +354,28 @@ func apply_pistol_grip() -> void:
 		var local_basis := skeleton.get_bone_global_pose(parent).basis.inverse()*hand_basis
 		skeleton.set_bone_pose_rotation(hand_index,local_basis.orthonormalized().get_rotation_quaternion())
 		skeleton.force_update_all_bone_transforms()
+	if reload_progress >= 0.0:
+		var cylinder: Vector3 = skeleton.to_local(pistol_hand.to_global(Vector3(-0.048,0.063,0)))
+		var pouch := Vector3(0.10,0.88,0.18)
+		var reach := smoothstep(0.24,0.42,reload_progress) * (1.0-smoothstep(0.83,0.97,reload_progress))
+		var contact := pouch.lerp(cylinder,reach)
+		for i in 6:
+			var left := skeleton.get_bone_global_pose(skeleton.find_bone("hand_l"))
+			_solve_arm("l",contact-left.basis*palm_offsets["l"])
+		_grasp("l")
 
 func apply_bow_grip() -> void:
-	# The bow stays in the left palm; the drawing hand follows the moving nock.
+	# Both palms follow the bow geometry; the right hand follows the moving nock.
 	skeleton.force_update_all_bone_transforms()
 	var draw: float = bow_hand.draw_fraction
-	if draw <= 0.02: return
-	var nock_world: Vector3 = bow_hand.to_global(Vector3(-0.12-0.30*draw,0,0))
-	var contact: Vector3 = skeleton.to_local(nock_world)
-	for i in 6:
-		var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))
-		_solve_arm("r",contact-hand.basis*palm_offsets["r"])
+	var bow_transform := skeleton.global_transform.affine_inverse() * bow_hand.global_transform
+	var grip: Vector3 = bow_transform.origin
+	var nock: Vector3 = bow_transform * Vector3(-0.12-0.30*draw,0,0)
+	for i in 10:
+		for side in ["l", "r"]:
+			var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
+			var contact: Vector3 = grip if side == "l" else nock
+			_solve_arm(side,contact-hand.basis*palm_offsets[side])
 
 func held_contact_errors() -> Dictionary:
 	skeleton.force_update_all_bone_transforms()

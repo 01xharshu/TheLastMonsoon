@@ -6,6 +6,8 @@ var click_age := 0.0
 var kick_time := -1.0
 var punch_time := -1.0
 var kick_cooldown := 0.0
+var kick_landed := false
+var punch_landed := false
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -37,12 +39,18 @@ func _process(delta: float) -> void:
 	if kick_time >= 0.0:
 		kick_time += delta
 		visual.kick_phase = minf(kick_time/.52,1.0)
+		if not kick_landed and visual.kick_phase >= .43:
+			kick_landed = true
+			_melee_hit(1.65,20.0)
 		if kick_time >= .52:
 			kick_time = -1.0
 			visual.kick_phase = -1.0
 	if punch_time >= 0.0:
 		punch_time += delta
 		visual.punch_phase = minf(punch_time/.42,1.0)
+		if not punch_landed and visual.punch_phase >= .40:
+			punch_landed = true
+			_melee_hit(1.35,12.0)
 		if punch_time >= .42:
 			punch_time = -1.0
 			visual.punch_phase = -1.0
@@ -62,17 +70,17 @@ func single_attack() -> void:
 		5: actor.get_node("DoubleGunCombat").fire()
 
 func punch() -> void:
-	if punch_time >= 0.0: return
+	if punch_time >= 0.0 or kick_time >= 0.0 or not available(): return
 	punch_time = 0.0
+	punch_landed = false
 	ControllerFeedback.pulse("melee")
-	_melee_hit(1.35,12.0)
 
 func kick() -> void:
-	if kick_cooldown > 0.0 or not available(): return
+	if kick_cooldown > 0.0 or punch_time >= 0.0 or not available(): return
 	kick_cooldown = .65
 	kick_time = 0.0
+	kick_landed = false
 	ControllerFeedback.pulse("melee")
-	_melee_hit(1.65,20.0)
 
 func _melee_hit(reach: float, damage: float) -> void:
 	var direction := -camera.global_basis.z

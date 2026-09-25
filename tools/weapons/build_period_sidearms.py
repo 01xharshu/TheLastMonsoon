@@ -4,10 +4,11 @@ Not a mechanical reconstruction. Blender source retained; no downloaded meshes.
 import bpy, math
 from pathlib import Path
 R=Path(__file__).resolve().parents[2]
+bpy.context.preferences.filepaths.save_version = 0
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
 def mat(name,color,metal=0):
  m=bpy.data.materials.new(name);m.diffuse_color=(*color,1);m.use_nodes=True;p=m.node_tree.nodes.get('Principled BSDF');p.inputs['Base Color'].default_value=(*color,1);p.inputs['Metallic'].default_value=metal;p.inputs['Roughness'].default_value=.3 if metal else .65;return m
-steel=mat('Worn blued steel',(.055,.065,.075),.85);silver=mat('Honed steel',(.45,.47,.48),.9);wood=mat('Walnut grip',(.12,.047,.018));brass=mat('Brass pins',(.42,.29,.09),.7)
+steel=mat('Worn blued steel',(.055,.065,.075),.85);silver=mat('Honed steel',(.45,.47,.48),.9);wood=mat('Walnut grip',(.12,.047,.018));wood_wear=mat('Raised walnut checkering',(.19,.085,.039));brass=mat('Brass pins',(.42,.29,.09),.7)
 def cube(name,loc,size,material,rot=(0,0,0)):
  bpy.ops.mesh.primitive_cube_add(size=1,location=loc,rotation=rot);o=bpy.context.object;o.name=name;o.dimensions=size;bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.data.materials.append(material);mod=o.modifiers.new('Soft machined edges','BEVEL');mod.width=.0015;mod.segments=3;o.modifiers.new('Weighted normals','WEIGHTED_NORMAL');return o
 def cyl(name,loc,radius,depth,material,verts=32):
@@ -33,9 +34,22 @@ cube('Front blade sight',(.154,0,.081),(.01,.004,.008),silver)
 cube('Grip',(-.126,0,-.015),(.049,.039,.099),wood,(0,-.26,0))
 cube('Grip butt',(-.139,0,-.062),(.047,.042,.009),steel)
 cube('Hammer',(-.123,0,.102),(.025,.012,.012),steel,(0,-.3,0))
+cube('Rear sight notch',(-.105,0,.101),(.009,.021,.004),steel)
 tube('Trigger guard',[(-.102,0,.025),(-.091,0,-.020),(-.046,0,-.023),(-.020,0,.015),(-.025,0,.03)],.003,steel)
 tube('Trigger',[(-.065,0,.03),(-.058,0,.004),(-.069,0,-.01)],.0025,silver)
 cyl('Loading lever',(.048,0,.038),.003,.13,steel,12)
+for side in [-1,1]:
+ y=side*.0215
+ for i in range(6):
+  z=-.048+i*.012
+  tube('Fine grip checkering', [(-.144,y,z),(-.111,y,z+.011)],.00055,wood_wear)
+  tube('Cross grip checkering', [(-.111,y,z),(-.144,y,z+.011)],.00055,wood_wear)
+ for x,z in [(-.111,.064),(-.064,.034),(.020,.044)]:
+  bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=.0023,location=(x,side*.025,z))
+  bpy.context.object.name='Frame and lock screw head'
+  bpy.context.object.data.materials.append(silver)
+ tube('Cylinder stop witness line',[(-.044,side*.029,.036),(-.044,side*.029,.09)],.0008,silver)
+ tube('Loading lever hinge',[(-.012,side*.008,.037),(.002,side*.008,.037)],.0028,brass)
 for x,z in [(-.125,-.008),(-.11,.047)]:
  bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=6,radius=.003,location=(x,-.021,z));bpy.context.object.data.materials.append(brass)
 save('adams_1851')

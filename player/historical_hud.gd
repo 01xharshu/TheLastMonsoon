@@ -4,7 +4,8 @@ extends Control
 const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
 const IVORY := Color(0.92,0.88,0.76)
 const BRASS := Color(0.61,0.47,0.27)
-const INK := Color(0.035,0.046,0.038,0.83)
+const INK := Color(0.035,0.046,0.038,0.38)
+const INTRO_CONTROLS_SECONDS := 10.0
 var region_label: Label
 var weapon_label: Label
 var controls_label: Label
@@ -14,6 +15,7 @@ var heading: float = 0.0
 var health: float = 100.0
 var sight_pulse := 0.0
 var human_target := false
+var controls_elapsed := 0.0
 
 func box(color: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -68,8 +70,6 @@ func _ready() -> void:
 	content.get_node("TitleLabel").add_theme_font_override("font",SERIF)
 	content.get_node("TitleLabel").add_theme_font_size_override("font_size",32)
 	content.get_node("HintLabel").add_theme_font_size_override("font_size",13)
-	var nameplate: Label = label("ARJUN",28,true)
-	nameplate.name = "Nameplate"
 	status_label = label("VITALITY",10)
 	status_label.name = "VitalityLabel"
 	region_label = label("SURYAGARH",27,true)
@@ -97,7 +97,6 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 
 func _layout() -> void:
 	if not is_instance_valid(region_label): return
-	place($Nameplate,Vector2(32,size.y-160),Vector2(240,36))
 	place(status_label,Vector2(34,size.y-122),Vector2(250,16))
 	place($SurvivalHUD,Vector2(30,size.y-94),Vector2(286,68))
 	place(region_label,Vector2(size.x/2-220,19),Vector2(440,38))
@@ -109,12 +108,14 @@ func _layout() -> void:
 	place($PickupMessageLabel,Vector2(size.x/2-280,size.y*0.76),Vector2(560,40))
 
 func _process(delta: float) -> void:
+	controls_elapsed += delta
+	controls_label.visible = controls_elapsed < INTRO_CONTROLS_SECONDS
 	_update_gun_sight(delta)
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)
 	var combat: Node = player.get_node_or_null("CombatComponent")
+	health = player.health
 	if combat:
-		health = combat.health
 		weapon_label.text = combat.get_hud_text()
 		controls_label.text = "1  Talwar    2  Enfield    3  Unarmed    R  Reload    M  Map    TAB  Satchel"
 	else:
@@ -196,7 +197,7 @@ func _draw_ammo() -> void:
 	var spare: int = player.inventory.get_item_count("pistol_ball" if sidearm else ("shot_charge" if double_barrel else "paper_cartridges"))
 	var x: float = size.x-318
 	var y: float = size.y-190
-	draw_style_box(box(Color(.04,.045,.044,.76),Color(BRASS,.56)),Rect2(x,y,288,126))
+	draw_style_box(box(Color(.04,.045,.044,.45),Color(BRASS,.42)),Rect2(x,y,288,126))
 	draw_line(Vector2(x+16,y+42),Vector2(x+272,y+42),Color(IVORY,.35),1,true)
 	_draw_gun_silhouette(Vector2(x+19,y+70),sidearm,double_barrel)
 	var font: Font = ThemeDB.fallback_font
@@ -224,24 +225,25 @@ func _draw() -> void:
 		var center := size * .5
 		var radius: float = lerpf(17.0 if pistol_sight else 12.0, 9.0 if pistol_sight else 6.5, sight_pulse)
 		var color := Color(0.85,0.57,0.32) if human_target else IVORY
-		if pistol_sight:
-			draw_arc(center,radius,0,TAU,32,color,1.5,true)
-		else:
-			for angle in [0.0, PI*.5, PI, PI*1.5]:
-				var axis := Vector2.from_angle(angle)
-				draw_line(center+axis*radius,center+axis*(radius+8.0),color,2.0,true)
-		if human_target: draw_circle(center,2.2,color)
+		for angle in [0.0, PI*.5, PI, PI*1.5]:
+			var axis := Vector2.from_angle(angle)
+			draw_line(center+axis*radius,center+axis*(radius+(10.0 if pistol_sight else 8.0)),color,2.5 if pistol_sight else 2.0,true)
 	elif bow and bow.aiming:
 		var center := size*.5
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
 	var y: float = size.y-172
-	draw_style_box(box(INK,Color(BRASS,0.45)),Rect2(20,y,310,153))
+	draw_style_box(box(INK,Color(BRASS,0.36)),Rect2(20,y,310,153))
 	draw_line(Vector2(33,y+8),Vector2(318,y+8),BRASS,1,true)
 	diamond(Vector2(175,y+8),3,IVORY)
-	draw_rect(Rect2(34,size.y-103,280,3),Color(0.24,0.23,0.18))
-	draw_rect(Rect2(34,size.y-103,280*clampf(health/100.0,0,1),3),Color(0.64,0.25,0.17))
+	var health_per_segment: float = player.MAX_HEALTH / 5.0
+	for segment in 5:
+		var segment_x: float = 34.0 + float(segment) * 56.0
+		var fill: float = clampf((health - float(segment) * health_per_segment) / health_per_segment, 0.0, 1.0)
+		draw_rect(Rect2(segment_x, size.y-103, 52.0, 11.0), Color(0.08,0.08,0.07,0.55))
+		if fill > 0.0:
+			draw_rect(Rect2(segment_x, size.y-103, 52.0 * fill, 11.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
 		var horse_y: float = size.y-211

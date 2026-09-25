@@ -54,23 +54,23 @@ func capture() -> void:
 		labels.append(label)
 	for i in 8: await process_frame
 	await RenderingServer.frame_post_draw
-	var path := "res://docs/characters/arjun/weapon_set_review_2026-09-23.png"
+	var path := "res://docs/characters/arjun/weapon_set_detail_review_2026-09-25.png"
 	assert(root.get_texture().get_image().save_png(path) == OK)
 	print("WEAPON SET CAPTURE ",path)
 	for label in labels: label.hide()
 	for i in range(scenes.size()): scenes[i].hide()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	for i in range(2,6):
+	for i in [0,2,3,4,5]:
 		var scene := scenes[i]
 		scene.show()
 		scene.position = Vector3.ZERO
-		var center_y: float = [0.0,0.43,0.38,0.96][i-2]
-		camera.size = [1.65,1.25,1.15,2.25][i-2]
+		var center_y: float = {0:0.05,2:0.0,3:0.43,4:0.38,5:0.96}[i]
+		camera.size = {0:0.35,2:1.65,3:1.25,4:1.15,5:2.25}[i]
 		camera.position = Vector3(0,center_y+0.25,3.4)
 		camera.look_at(Vector3(0,center_y,0))
 		for frame in 3: await process_frame
 		await RenderingServer.frame_post_draw
-		var detail_path: String = "res://docs/characters/arjun/weapon_%s_detail_2026-09-23.png" % String(items[i][0]).to_lower()
+		var detail_path: String = "res://docs/characters/arjun/weapon_%s_detail_2026-09-25.png" % String(items[i][0]).to_lower().replace(" ", "_")
 		assert(root.get_texture().get_image().save_png(detail_path) == OK)
 		print("WEAPON DETAIL CAPTURE ",detail_path)
 		scene.hide()

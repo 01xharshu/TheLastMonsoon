@@ -76,6 +76,10 @@ func _process(_delta: float) -> void:
 	equipment.selected = source.equipment.selected
 	equipment.stowed = source.equipment.stowed
 	equipment._refresh()
+	equipment.reload_progress = source.equipment.reload_progress
+	equipment.enfield_hand.transform = source.equipment.enfield_hand.transform
+	equipment.double_hand.transform = source.equipment.double_hand.transform
+	equipment.animate_ramrod()
 	# Only held weapons belong in the camera view; carried weapons stay on the body.
 	equipment.talwar_waist.hide()
 	equipment.enfield_back.hide()

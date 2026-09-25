@@ -33,7 +33,7 @@ func _run() -> void:
 	stage.add_child(environment)
 	var actor: CharacterBody3D = load("res://tools/world/interaction_test_actor.gd").new()
 	stage.add_child(actor)
-	actor.position = Vector3(0,0,2.0)
+	actor.position = Vector3(0,0,4.0)
 	var ui := CanvasLayer.new()
 	ui.name = "UI"
 	actor.add_child(ui)
@@ -52,6 +52,11 @@ func _run() -> void:
 	var chest: Interactable = load("res://interaction/treasure_chest.gd").new()
 	stage.add_child(chest)
 	for i in 10: await process_frame
+	overlay.set_target(null)
+	await RenderingServer.frame_post_draw
+	assert(root.get_texture().get_image().save_png("res://docs/world/captures/interaction_chest_approach.png") == OK)
+	actor.position = Vector3(0,0,2.0)
+	for i in 5: await physics_frame
 	await _shot(overlay,chest,.0,"interaction_chest_prompt")
 	await _shot(overlay,chest,.55,"interaction_chest_hold")
 	chest.interact(actor)
