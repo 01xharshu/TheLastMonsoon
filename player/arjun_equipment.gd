@@ -40,7 +40,8 @@ var rifle_rest_transform := Transform3D.IDENTITY
 var ramrod_rest: Dictionary = {}
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
 const PISTOL_SCALE := 0.78
-const DOUBLE_GUN_SCALE := 0.84
+const ENFIELD_SCALE := 0.82
+const DOUBLE_GUN_SCALE := 0.72
 
 func attach_at_rest(bone: String, scene: PackedScene, placement: Transform3D, label: String) -> Node3D:
 	var socket := BoneAttachment3D.new()
@@ -90,17 +91,19 @@ func setup(rig: Skeleton3D) -> void:
 	var back_up := Vector3(0, 0, 1)
 	var back_basis := Basis(barrel, back_up, barrel.cross(back_up))
 	enfield_back = attach_at_rest("spine_03", ENFIELD, Transform3D(back_basis, Vector3(0.09, 0.86, -0.19)), "EnfieldStowed")
+	enfield_back.scale = Vector3.ONE * ENFIELD_SCALE
 	# Low ready, both hands supporting the existing stock. Not a firing implementation.
 	barrel = Vector3(0.5, -0.12, 0.858).normalized()
 	var side := barrel.cross(Vector3.UP).normalized()
 	var gun_basis := Basis(barrel, side.cross(barrel), side)
 	var grip_position := Vector3(-0.16, 1.12, 0.16)
-	enfield_hand = attach_at_rest("spine_03", ENFIELD, Transform3D(gun_basis, grip_position - gun_basis * rifle_grip), "EnfieldHeld")
+	enfield_hand = attach_at_rest("spine_03", ENFIELD, Transform3D(gun_basis, grip_position - gun_basis * (rifle_grip * ENFIELD_SCALE)), "EnfieldHeld")
+	enfield_hand.scale = Vector3.ONE * ENFIELD_SCALE
 	rifle_rest_transform = enfield_hand.transform
 	for part_name in ["enfield_ramrod", "enfield_ramrod_tip"]:
 		var part: Node3D = enfield_hand.find_child(part_name, true, false)
 		if part: ramrod_rest[part_name] = part.position
-	double_hand = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(gun_basis, grip_position - gun_basis * rifle_grip), "DoubleGunHeld")
+	double_hand = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(gun_basis, grip_position - gun_basis * (rifle_grip * DOUBLE_GUN_SCALE)), "DoubleGunHeld")
 	double_hand.scale = Vector3.ONE * DOUBLE_GUN_SCALE
 	double_rest_transform = double_hand.transform
 	double_back = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(back_basis, Vector3(-.10,.85,-.21)), "DoubleGunStowed")
@@ -216,7 +219,7 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		_grasp("r", 0.9)
 		return
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
-	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else 1.0
+	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else ENFIELD_SCALE
 	if reload_progress >= 0.0:
 		# Bring the muzzle up for loading while the right hand keeps the stock grip.
 		var barrel := Vector3(0.18,0.94,0.28).normalized()

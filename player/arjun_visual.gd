@@ -2,6 +2,7 @@ extends Node3D
 ## Rest-relative, model-space procedural animation for the MPFB game rig.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const WeaponWheel = preload("res://player/weapon_wheel.gd")
+const MotionTree = preload("res://player/arjun_motion_tree.gd")
 var equipment: Node3D
 var talwar_equipped: bool:
 	get:
@@ -22,6 +23,7 @@ var base_rotations: Dictionary = {}
 var axes: Dictionary = {}
 var climb_ik: Dictionary = {}
 var climb_targets: Dictionary = {}
+var motion_tree: AnimationTree
 @onready var actor: CharacterBody3D = get_parent().get_parent()
 
 func _ready() -> void:
@@ -50,6 +52,12 @@ func _ready() -> void:
 		bones[bone] = i
 		base_rotations[bone] = skeleton.get_bone_pose_rotation(i)
 		axes[bone] = skeleton.get_bone_global_rest(i).basis.orthonormalized().inverse()
+	motion_tree = MotionTree.new()
+	motion_tree.name = "ArjunMotionTree"
+	add_child(motion_tree)
+	if not motion_tree.configure(model):
+		motion_tree.queue_free()
+		motion_tree = null
 	for side in ["l","r"]:
 		var target := Marker3D.new()
 		target.name = "ClimbPalm_"+side
@@ -94,7 +102,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if SaveManager.active_input_device == "controller": return
 	var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 	match key:
-		KEY_H:
+		KEY_G:
 			equipment.toggle_stowed()
 		KEY_1:
 			equipment.select_weapon(Equipment.Selection.TALWAR)
@@ -122,6 +130,9 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
+	var special_pose: bool = actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("stealth_stance", "") != ""
+	if motion_tree != null:
+		motion_tree.active = not special_pose
 	if actor.get_meta("river_action", "") != "":
 		_pose_river_action(delta)
 		return
@@ -156,39 +167,43 @@ func _process(delta: float) -> void:
 	var swing := sin(phase) * lerpf(0.42, 0.8, sprint) * stride
 	var swimming := swim_blend
 	var armed := talwar_equipped and swimming < 0.5
+	var tree_driven: bool = motion_tree != null and not special_pose
+	if tree_driven:
+		motion_tree.update_motion(delta, speed / maxf(actor.walk_speed, 0.01), speed / maxf(actor.walk_speed, 0.01), actor.is_swimming)
 	# Pivot near the chest when leaning into the water, keeping the face above it.
 	model.rotation.x = lerpf(model.rotation.x, swimming * 1.05, blend)
 	model.position = Vector3(0, -0.9 + swimming * 0.65 + absf(sin(phase)) * stride * 0.045, 0)
-	pose("pelvis", Vector3(0, swing * 0.12, sin(phase) * stride * 0.035), blend)
-	pose("spine_01", Vector3(sprint * stride * 0.12, -swing * 0.18, 0), blend)
-	pose("spine_02", Vector3(sin(breath) * 0.015, -swing * 0.12, 0), blend)
-	pose("head", Vector3(-swimming * 0.55 - sprint * stride * 0.06, 0, 0), blend)
-	for side in ["l", "r"]:
-		var sign_side := 1.0 if side == "l" else -1.0
-		var cycle := phase + (0.0 if side == "l" else PI)
-		var leg := swing * sign_side
-		var air := (1.0 - ground) * (1.0 - swimming)
-		var lift := maxf(0.0, sin(cycle)) * stair
-		pose("thigh_" + side, Vector3(leg - air * 0.22 + swimming * sin(cycle) * 0.24 + lift * 0.38, 0, 0), blend)
-		pose("calf_" + side, Vector3(maxf(0, sin(cycle)) * stride * lerpf(0.65, 1.25, sprint) + air * 0.4 + swimming * (0.2 + maxf(0, sin(cycle)) * 0.35) + lift * 0.45, 0, 0), blend)
-		pose("foot_" + side, Vector3(-leg * 0.25 + swimming * 0.25 - lift * 0.2, 0, 0), blend)
-		var arm := Vector3(-leg * 0.65, 0, -sign_side * 0.45)
-		var elbow := -0.15 - sprint * 0.65
-		if armed and side == "r":
-			arm = Vector3(-0.28 - leg * 0.12, -0.12, 0.32)
-			elbow = -0.65
-		arm = arm.lerp(Vector3(-0.65 + sin(cycle) * 0.85, 0, sign_side * (0.55 + cos(cycle) * 0.4)), swimming)
-		elbow = lerpf(elbow, -0.5 - maxf(0, cos(cycle)) * 0.8, swimming)
-		pose("upperarm_" + side, arm, blend)
-		pose("lowerarm_" + side, Vector3(elbow, 0, 0), blend)
-		for finger in ["index", "middle", "ring", "pinky", "thumb"]:
-			for joint in ["01", "02", "03"]:
-				# Fingers curl around their local hinge, unlike the model-space limbs.
-				var name: String = finger + "_" + joint + "_" + side
-				if bones.has(name):
-					var curl := 0.85 if armed and side == "r" else 0.12
-					var target: Quaternion = base_rotations[name] * Quaternion(Vector3.RIGHT, curl)
-					skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, blend))
+	if not tree_driven:
+		pose("pelvis", Vector3(0, swing * 0.12, sin(phase) * stride * 0.035), blend)
+		pose("spine_01", Vector3(sprint * stride * 0.12, -swing * 0.18, 0), blend)
+		pose("spine_02", Vector3(sin(breath) * 0.015, -swing * 0.12, 0), blend)
+		pose("head", Vector3(-swimming * 0.55 - sprint * stride * 0.06, 0, 0), blend)
+		for side in ["l", "r"]:
+			var sign_side := 1.0 if side == "l" else -1.0
+			var cycle := phase + (0.0 if side == "l" else PI)
+			var leg := swing * sign_side
+			var air := (1.0 - ground) * (1.0 - swimming)
+			var lift := maxf(0.0, sin(cycle)) * stair
+			pose("thigh_" + side, Vector3(leg - air * 0.22 + swimming * sin(cycle) * 0.24 + lift * 0.38, 0, 0), blend)
+			pose("calf_" + side, Vector3(maxf(0, sin(cycle)) * stride * lerpf(0.65, 1.25, sprint) + air * 0.4 + swimming * (0.2 + maxf(0, sin(cycle)) * 0.35) + lift * 0.45, 0, 0), blend)
+			pose("foot_" + side, Vector3(-leg * 0.25 + swimming * 0.25 - lift * 0.2, 0, 0), blend)
+			var arm := Vector3(-leg * 0.65, 0, -sign_side * 0.45)
+			var elbow := -0.15 - sprint * 0.65
+			if armed and side == "r":
+				arm = Vector3(-0.28 - leg * 0.12, -0.12, 0.32)
+				elbow = -0.65
+			arm = arm.lerp(Vector3(-0.65 + sin(cycle) * 0.85, 0, sign_side * (0.55 + cos(cycle) * 0.4)), swimming)
+			elbow = lerpf(elbow, -0.5 - maxf(0, cos(cycle)) * 0.8, swimming)
+			pose("upperarm_" + side, arm, blend)
+			pose("lowerarm_" + side, Vector3(elbow, 0, 0), blend)
+			for finger in ["index", "middle", "ring", "pinky", "thumb"]:
+				for joint in ["01", "02", "03"]:
+					# Fingers curl around their local hinge, unlike the model-space limbs.
+					var name: String = finger + "_" + joint + "_" + side
+					if bones.has(name):
+						var curl := 0.85 if armed and side == "r" else 0.12
+						var target: Quaternion = base_rotations[name] * Quaternion(Vector3.RIGHT, curl)
+						skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, blend))
 	if armed and slash_phase >= 0.0:
 		# Wind up over the right shoulder, then sweep the blade across the rope.
 		var sweep := smoothstep(0.18,0.72,slash_phase)

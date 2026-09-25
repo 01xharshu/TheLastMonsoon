@@ -329,29 +329,29 @@ offset_top = 20.0
 offset_right = 60.0
 offset_bottom = 60.0
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 script = ExtResource("10_kb6p2")
 
 [node name="HydrationRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1187801004]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(56, 58)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("10_yllr7")
 
 [node name="SatietyRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=2079065247]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(56, 58)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("10_yllr7")
 
 [node name="StaminaRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1532508663]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(56, 58)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("10_yllr7")
 
 [node name="EnergyRing" type="Control" parent="UI/HUDRoot/SurvivalHUD" unique_id=1270015521]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(56, 58)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("10_yllr7")

@@ -18,7 +18,7 @@ func _run() -> void:
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	visual.set_process(false)
 	actor.get_node("UI").hide()
-	for item in ["bow", "double_gun", "pistol"]:
+	for item in ["bow", "enfield", "double_gun", "pistol"]:
 		actor.inventory.add_item(item, 1)
 	var camera := Camera3D.new()
 	world.add_child(camera)
@@ -26,7 +26,7 @@ func _run() -> void:
 	camera.global_position = visual.model.to_global(Vector3(1.05, 1.55, 1.65))
 	camera.look_at(visual.model.to_global(Vector3(0, 1.28, .22)))
 	camera.current = true
-	for selection in [2, 5, 3]:
+	for selection in [1, 5, 3]:
 		visual.equipment.select_weapon(selection)
 		visual.equipment.aiming = selection != 2
 		visual.equipment.aim_direction = visual.model.global_basis.z
@@ -35,7 +35,7 @@ func _run() -> void:
 		for i in 15: visual._process(1.0 / 60.0)
 		for i in 3: await process_frame
 		await RenderingServer.frame_post_draw
-		var label: String = ["bow", "double_gun", "pistol"][[2, 5, 3].find(selection)]
+		var label: String = ["enfield", "double_gun", "pistol"][[1, 5, 3].find(selection)]
 		var path: String = "res://docs/characters/arjun/grip_diagnostic_" + label + ".png"
 		assert(root.get_texture().get_image().save_png(path) == OK)
 		print("GRIP DIAGNOSTIC ", path)

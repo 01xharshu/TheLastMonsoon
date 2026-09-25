@@ -19,6 +19,8 @@
 [ext_resource type="Script" uid="uid://dka16rcbjrkcd" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
 [ext_resource type="Script" uid="uid://dltrral1cec8c" path="res://horses/village_stable.gd" id="stable"]
 
+[ext_resource type="PackedScene" path="res://world/ruined_fort/fort_world_piece.tscn" id="fort"]
+
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
 sky_horizon_color = Color(0.66, 0.7, 0.67, 1)
@@ -55,6 +57,9 @@ outline_color = Color(0.09, 0.12, 0.1, 0.85)
 script = ExtResource("1_world")
 
 [node name="Landscape" parent="." unique_id=1227736654 instance=ExtResource("2_land")]
+
+[node name="OldFort" parent="." instance=ExtResource("fort")]
+position = Vector3(520, 120, -350)
 
 [node name="ForestShrine" type="Node3D" parent="." unique_id=236108893]
 script = ExtResource("forest_shrine")

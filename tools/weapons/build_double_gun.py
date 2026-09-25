@@ -54,22 +54,22 @@ def tube(name, x0, x1, y, z, radius, material):
     return obj
 
 # +X is the firing direction, matching Arjun's existing long-gun sockets.
-cube("walnut buttstock",(-.33,0,-.015),(.45,.095,.14),wood,.025)
-cube("stock shoulder heel",(-.53,0,-.015),(.035,.105,.15),brass,.006)
-cube("slender wrist",(-.08,0,-.025),(.22,.07,.075),wood,.014)
-cube("long fore-end",(.27,0,-.044),(.66,.078,.060),wood,.016)
-cube("breech block",(.075,0,.008),(.145,.105,.07),iron,.010)
+cube("walnut buttstock",(-.33,0,-.015),(.45,.073,.102),wood,.016)
+cube("stock shoulder heel",(-.53,0,-.015),(.035,.078,.110),brass,.005)
+cube("slender wrist",(-.08,0,-.025),(.22,.052,.058),wood,.010)
+cube("long fore-end",(.27,0,-.044),(.66,.064,.046),wood,.011)
+cube("breech block",(.075,0,.008),(.145,.080,.055),iron,.008)
 for side in (-1,1):
-    y = side*.027
-    tube("barrel left" if side < 0 else "barrel right",.10,.99,y,.035,.021,iron)
-    tube("muzzle lip",.975,1.00,y,.035,.023,brass)
+    y = side*.022
+    tube("barrel left" if side < 0 else "barrel right",.10,.99,y,.035,.017,iron)
+    tube("muzzle lip",.975,1.00,y,.035,.019,brass)
     tube("percussion nipple",.045,.080,y,.07,.008,iron)
     cube("external hammer",(.03,y,.105),(.05,.020,.085),iron,.004)
     cube("hammer spur",(-.002,y,.146),(.045,.026,.015),iron,.003)
-    cube("lock plate",(-.005,side*.052,.005),(.14,.007,.043),iron,.004)
+    cube("lock plate",(-.005,side*.040,.005),(.14,.007,.038),iron,.004)
     cube("trigger",(-.11,y,-.07),(.014,.009,.051),iron,.003)
 for x in (.42,.77):
-    cube("barrel band", (x,0,.028),(.025,.11,.055),brass,.005)
+    cube("barrel band", (x,0,.028),(.025,.084,.047),brass,.004)
 tube("wooden ramrod",.16,.88,0,-.085,.006,wood_edge)
 cube("double trigger guard",(-.11,0,-.104),(.17,.025,.014),brass,.004)
 

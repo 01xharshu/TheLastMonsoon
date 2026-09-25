@@ -1,10 +1,32 @@
 {
-  "source_sha256": "73b0afc99719af4cdd139919a7d7861779255fdb3ccca65d9a78b52f511fb283",
-  "output_sha256": "d051a7b5d9eea0022c71fcdc3bedf85d3eb84ac83977c1cb912f7cca140369b0",
+  "source_sha256": "f95ba6c0c1faa5eddae9222e28e9711f03cb551b4d469b9b99594656c1b3f467",
+  "output_sha256": "a6a8ea34944ce512d1e7322942d1d7cb2a12500d7b7e12863a53bd70141e75a6",
   "method": "2048x2048 emission bake of original procedural Base Color; original metallic/roughness retained",
   "source_unchanged": true,
   "mesh_count": 32,
   "materials": [
+    {
+      "name": "TLM_Walnut_Dark",
+      "viewport_color": [
+        0.18000000715255737,
+        0.04500000178813934,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4000000059604645
+    },
+    {
+      "name": "TLM_Aged_Brass",
+      "viewport_color": [
+        0.4300000071525574,
+        0.2199999988079071,
+        0.04500000178813934,
+        1.0
+      ],
+      "metallic": 0.800000011920929,
+      "roughness": 0.3400000035762787
+    },
     {
       "name": "TLM_Dark_Iron",
       "viewport_color": [
@@ -28,17 +50,6 @@
       "roughness": 0.4699999988079071
     },
     {
-      "name": "TLM_Aged_Brass",
-      "viewport_color": [
-        0.4300000071525574,
-        0.2199999988079071,
-        0.04500000178813934,
-        1.0
-      ],
-      "metallic": 0.800000011920929,
-      "roughness": 0.3400000035762787
-    },
-    {
       "name": "TLM_Gunmetal_Steel",
       "viewport_color": [
         0.029999999329447746,
@@ -48,17 +59,6 @@
       ],
       "metallic": 0.8799999952316284,
       "roughness": 0.27000001072883606
-    },
-    {
-      "name": "TLM_Walnut_Dark",
-      "viewport_color": [
-        0.18000000715255737,
-        0.04500000178813934,
-        0.012000000104308128,
-        1.0
-      ],
-      "metallic": 0.0,
-      "roughness": 0.4000000059604645
     }
   ]
 }

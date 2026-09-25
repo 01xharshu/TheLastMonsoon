@@ -42,6 +42,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if stance == COVER: stand()
 		else: try_cover()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and (event.physical_keycode == KEY_H or event.keycode == KEY_H):
+		if stance == COVER: stand()
+		else: try_cover()
+		get_viewport().set_input_as_handled()
 
 func enter_prone() -> void:
 	if not can_change(): return

@@ -1,5 +1,9 @@
 class_name SuryagarhLayout
 extends RefCounted
+const FortShape = preload("res://world/ruined_fort/fort_shape.gd")
+const FORT_CENTER := Vector2(520.0, -350.0)
+const FORT_BASE_HEIGHT := 120.0
+const FORT_ACCESS_GRADES := [109.8, 112.1, 117.5, 120.0]
 ## Metres, Y-up. Stable deterministic source shared by baking, runtime and validation.
 const SIZE: float = 1728.0
 const HALF: float = SIZE / 2.0
@@ -16,6 +20,7 @@ const PLOTS: Dictionary = {
 	"DistrictPolice": {"center": Vector2(320, 120), "half": Vector2(20, 22), "grade": 10.0},
 	"CompanyCompound": {"center": Vector2(345, 300), "half": Vector2(67, 63), "grade": 12.0},
 	"GovernmentHouse": {"center": Vector2(-390, -110), "half": Vector2(96, 92), "grade": 8.5},
+	"OldFort": {"center": FORT_CENTER, "half": Vector2(60, 50), "grade": FORT_BASE_HEIGHT},
 }
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
@@ -27,6 +32,8 @@ const ROUTES: Dictionary = {
 	"compound_stores": [Vector2(345, 275), Vector2(376, 298)],
 	"government_house_road": [Vector2(-214, -18), Vector2(-300, -18), Vector2(-390, -18)],
 	"government_house_avenue": [Vector2(-390, -18), Vector2(-390, -123)],
+	"fort_trail": [Vector2(320, 150), Vector2(355, 70), Vector2(395, -30), Vector2(430, -135), Vector2(465, -250)],
+	"fort_access": [Vector2(465, -250), Vector2(565, -255), Vector2(460, -283), Vector2(520, -303)],
 }
 const SITES: Dictionary = {
 	"Bhairavpur village": Vector2(-310, 230),
@@ -34,7 +41,7 @@ const SITES: Dictionary = {
 	"River approach": Vector2(0, 165),
 	"Trading settlement reserve": Vector2(-320, -470),
 	"Company compound": Vector2(340, 290),
-	"Old fort reserve": Vector2(510, -390),
+	"Old fort reserve": FORT_CENTER,
 	"Government House": Vector2(-390, -110),
 	"Wooded ridge": Vector2(620, -260),
 }
@@ -102,7 +109,7 @@ func base_height(x: float, z: float) -> float:
 	var village: float = 1.0 - smoothstep(58.0, 130.0, Vector2(x + 310, z - 230).length())
 	h = lerpf(h, 7.2, village)
 	for plot in PLOTS.values():
-		if plot.center == Vector2(-310, 230): continue
+		if plot.center == Vector2(-310, 230) or plot.center == FORT_CENTER: continue
 		var edge: float = maxf(absf(x-plot.center.x)-plot.half.x, absf(z-plot.center.y)-plot.half.y)
 		h = lerpf(h, plot.grade, 1.0-smoothstep(0.0, 22.0, edge))
 	# The residence's east-west carriage road eases into its surveyed terrace.
@@ -110,6 +117,32 @@ func base_height(x: float, z: float) -> float:
 		var t := (x+294.0)/80.0
 		var target := lerpf(PLOTS["GovernmentHouse"].grade,6.4,t)
 		h = lerpf(h,target,1.0-smoothstep(3.0,11.0,absf(z+18.0)))
+	# Native world terrain is the fort floor: no second overlapping terrain sheet.
+	var local_x: float = x - FORT_CENTER.x
+	var local_z: float = z - FORT_CENTER.y
+	var fort_edge: float = maxf(absf(local_x) - 60.0, absf(local_z) - 50.0)
+	var fort_weight: float = 1.0 - smoothstep(0.0, 120.0, fort_edge)
+	if fort_weight > 0.0:
+		h = lerpf(h, FORT_BASE_HEIGHT + FortShape.height_at(clampf(local_x,-60.0,60.0), clampf(local_z,-50.0,50.0)), fort_weight)
+	# A winding cut-and-fill dirt approach keeps the hill entrance walkable.
+	if x > 438.0 and x < 587.0 and z > -323.0 and z < -228.0:
+		var road: Array = ROUTES["fort_access"]
+		var weighted_height := 0.0
+		var total_weight := 0.0
+		var nearest_road := INF
+		var sample := Vector2(x,z)
+		for i in range(road.size()-1):
+			var a: Vector2 = road[i]
+			var b: Vector2 = road[i+1]
+			var ab: Vector2 = b-a
+			var t: float = clampf((sample-a).dot(ab)/ab.length_squared(),0.0,1.0)
+			var road_dist: float = sample.distance_to(a+ab*t)
+			nearest_road = minf(nearest_road,road_dist)
+			var weight: float = exp(-road_dist*road_dist/85.0)
+			weighted_height += lerpf(FORT_ACCESS_GRADES[i],FORT_ACCESS_GRADES[i+1],t)*weight
+			total_weight += weight
+		if total_weight > 0.0001:
+			h = lerpf(h,weighted_height/total_weight,1.0-smoothstep(4.0,21.0,nearest_road))
 	return h
 
 func normal(x: float, z: float) -> Vector3:

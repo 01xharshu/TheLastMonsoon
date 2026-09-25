@@ -15,6 +15,15 @@ scene.render.engine='CYCLES'
 scene.cycles.samples=1
 meshes=[obj for obj in scene.objects if obj.type=='MESH' and obj.name.startswith('enfield_')]
 assert meshes, 'No Enfield meshes found in source'
+# Refine the carried export's heavy timber silhouette while keeping the
+# authoritative Blender source and the rifle's full-length barrel unchanged.
+for obj in meshes:
+    if obj.name in ('enfield_stock_walnut', 'enfield_butt_plate'):
+        obj.scale.y *= .88
+        obj.scale.z *= .82
+    elif obj.name == 'enfield_wrist_wear':
+        obj.scale.y *= .88
+        obj.scale.z *= .88
 bpy.ops.object.select_all(action='DESELECT')
 for obj in meshes:
     obj.hide_set(False);obj.hide_render=False;obj.select_set(True)

@@ -1,8 +1,8 @@
 {
   "source": "environment/weapons/double_percussion_gun/double_percussion_gun.blend",
-  "source_sha256": "91aaee6b936ae8d8bf9d839941c989fab973eccecd72a3634289909e57d8388e",
+  "source_sha256": "63d90d5ff4dea1825963303e89e1b91cbce69849cceffb40d1be554bd603c23a",
   "export": "environment/weapons/double_percussion_gun/double_percussion_gun.glb",
-  "export_sha256": "f5eacd23d025ae4874169656a87d2a0c7b8902328973bfec8ba9e79b0e2c2092",
+  "export_sha256": "392eb51f28dba8a69f91dbd3760692fc5684d8c6f21c561649ef1e0d615cf3aa",
   "basis": "Plain original candidate informed by a dated 1854 double-barreled percussion sporting gun; local ownership is a fiction.",
   "source_url": "https://www.metmuseum.org/art/collection/search/24946"
 }

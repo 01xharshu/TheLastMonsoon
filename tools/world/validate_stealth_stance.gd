@@ -26,6 +26,19 @@ func _run() -> void:
 		push_error("STANCE BLOCKED: chest cover not detected")
 		quit(1)
 		return
+	var cover_key := InputEventKey.new()
+	cover_key.physical_keycode = KEY_H
+	cover_key.pressed = true
+	stance._unhandled_input(cover_key)
+	if stance.stance != "":
+		push_error("STANCE BLOCKED: H did not leave cover")
+		quit(1)
+		return
+	stance._unhandled_input(cover_key)
+	if stance.stance != "cover":
+		push_error("STANCE BLOCKED: H did not take cover")
+		quit(1)
+		return
 	Input.action_press("aim")
 	if stance.camera_height() < 1.35 or not actor.get_node("CombatInput").available():
 		push_error("STANCE BLOCKED: cannot aim and attack from cover")

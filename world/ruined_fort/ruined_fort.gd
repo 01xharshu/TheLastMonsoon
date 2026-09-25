@@ -16,6 +16,7 @@ var cloth := _mat(Color("aaa08a"))
 var grass := _mat(Color("777b54"))
 var shrub := _mat(Color("68715a"))
 var nodes := {}
+var nav_ground_faces := PackedVector3Array()
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -70,10 +71,18 @@ func _build_terrain() -> void:
 			var b := Vector3(x+GRID, height_at(x+GRID,z), z)
 			var c := Vector3(x, height_at(x,z+GRID), z+GRID)
 			var d := Vector3(x+GRID, height_at(x+GRID,z+GRID), z+GRID)
-			for vertex in [a,b,c,b,d,c]: surface.add_vertex(vertex)
+			for vertex in [a,b,c,b,d,c]:
+				surface.add_vertex(vertex)
+				if embedded_in_world: nav_ground_faces.append(vertex)
 	surface.generate_normals()
 	var mesh := surface.commit()
 	mesh.surface_set_material(0, soil)
+	if not embedded_in_world:
+		_add_standalone_ground(mesh)
+	# Broken cliff chains constrain play while retaining an open entrance.
+	_build_cliffs()
+
+func _add_standalone_ground(mesh: Mesh) -> void:
 	var body := StaticBody3D.new()
 	body.name = "IrregularGround"
 	nodes.Terrain.add_child(body)
@@ -83,7 +92,8 @@ func _build_terrain() -> void:
 	var collision := CollisionShape3D.new()
 	collision.shape = mesh.create_trimesh_shape()
 	body.add_child(collision)
-	# Broken cliff chains constrain play while retaining an open entrance.
+
+func _build_cliffs() -> void:
 	for i in range(-7,8):
 		for side in [-1.0,1.0]:
 			var zz: float = i * 7.0 + rng.randf_range(-1.3,1.3)
@@ -254,6 +264,7 @@ func _build_navigation() -> void:
 	nav.filter_baking_aabb = AABB(Vector3(-59,-2,-49),Vector3(118,18,98))
 	var source := NavigationMeshSourceGeometryData3D.new()
 	NavigationServer3D.parse_source_geometry_data(nav, source, self)
+	if embedded_in_world: source.add_faces(nav_ground_faces, Transform3D.IDENTITY)
 	NavigationServer3D.bake_from_source_geometry_data(nav, source)
 	region.navigation_mesh = nav
 	print("FORT NAVIGATION POLYGONS: ", nav.get_polygon_count())

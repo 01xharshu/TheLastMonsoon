@@ -6,6 +6,7 @@ const IVORY := Color(0.92,0.88,0.76)
 const BRASS := Color(0.61,0.47,0.27)
 const INK := Color(0.035,0.046,0.038,0.38)
 const INTRO_CONTROLS_SECONDS := 10.0
+const CONTROLS_FADE_SECONDS := 1.0
 var region_label: Label
 var weapon_label: Label
 var controls_label: Label
@@ -78,7 +79,7 @@ func _ready() -> void:
 	weapon_label = label("UNARMED",24,true)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	weapon_label.name = "WeaponLabel"
-	controls_label = label("Hold ~  Weapons    H  Stow / draw    V  View    M  Map    TAB  Satchel",12)
+	controls_label = label("Hold ~  Weapons    H  Cover    G  Stow / draw    V  View    M  Map    TAB  Satchel",12)
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	controls_label.name = "ControlsLabel"
 	for node in [$PrimaryInteractionLabel,$SecondaryInteractionLabel,$PickupMessageLabel]:
@@ -97,8 +98,8 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 
 func _layout() -> void:
 	if not is_instance_valid(region_label): return
-	place(status_label,Vector2(34,size.y-122),Vector2(250,16))
-	place($SurvivalHUD,Vector2(30,size.y-94),Vector2(286,68))
+	place(status_label,Vector2(32,size.y-111),Vector2(236,16))
+	place($SurvivalHUD,Vector2(28,size.y-81),Vector2(248,58))
 	place(region_label,Vector2(size.x/2-220,19),Vector2(440,38))
 	place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
 	place(controls_label,Vector2(size.x-610,size.y-46),Vector2(580,25))
@@ -109,7 +110,8 @@ func _layout() -> void:
 
 func _process(delta: float) -> void:
 	controls_elapsed += delta
-	controls_label.visible = controls_elapsed < INTRO_CONTROLS_SECONDS
+	controls_label.modulate.a = 1.0 - clampf((controls_elapsed - INTRO_CONTROLS_SECONDS) / CONTROLS_FADE_SECONDS, 0.0, 1.0)
+	controls_label.visible = controls_label.modulate.a > 0.0
 	_update_gun_sight(delta)
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)
@@ -124,17 +126,17 @@ func _process(delta: float) -> void:
 	var rifle := player.get_node_or_null("RifleCombat")
 	if rifle:
 		weapon_label.text = rifle.get_hud_text()
-		controls_label.text = "RMB Aim · LMB Fire · R Reload · H Stow · M Map · ~ Weapons"
+		controls_label.text = "RMB Aim · LMB Fire · R Reload · H Cover · G Stow · M Map · ~ Weapons"
 	var equipment: Node = player.get_node("VisualRoot/CharacterVisual").equipment
 	if equipment and not equipment.stowed and equipment.selected == 2:
 		weapon_label.text = "BOW · %d ARROWS" % player.inventory.get_item_count("arrow")
-		controls_label.text = "Hold RMB Draw · LMB Loose · H Stow · ~ Weapons"
+		controls_label.text = "Hold RMB Draw · LMB Loose · H Cover · G Stow · ~ Weapons"
 	elif equipment and not equipment.stowed and equipment.selected == 3:
 		var pistol: Node = player.get_node("PistolCombat")
 		weapon_label.text = pistol.get_hud_text()
-		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Stow · ~ Weapons"
+		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Cover · G Stow · ~ Weapons"
 	elif equipment and not equipment.stowed and equipment.selected == 5:
-		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Stow · ~ Weapons"
+		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Cover · G Stow · ~ Weapons"
 	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
 		weapon_label.text = {1:"ENFIELD",3:"ADAMS 1851",5:"DOUBLE GUN"}[equipment.selected]
 		place(weapon_label,Vector2(size.x-303,size.y-181),Vector2(258,28))
@@ -233,17 +235,17 @@ func _draw() -> void:
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
-	var y: float = size.y-172
-	draw_style_box(box(INK,Color(BRASS,0.36)),Rect2(20,y,310,153))
-	draw_line(Vector2(33,y+8),Vector2(318,y+8),BRASS,1,true)
-	diamond(Vector2(175,y+8),3,IVORY)
+	var y: float = size.y-132
+	draw_style_box(box(INK,Color(BRASS,0.36)),Rect2(20,y,264,113))
+	draw_line(Vector2(32,y+8),Vector2(272,y+8),BRASS,1,true)
+	diamond(Vector2(152,y+8),3,IVORY)
 	var health_per_segment: float = player.MAX_HEALTH / 5.0
 	for segment in 5:
-		var segment_x: float = 34.0 + float(segment) * 56.0
+		var segment_x: float = 32.0 + float(segment) * 50.0
 		var fill: float = clampf((health - float(segment) * health_per_segment) / health_per_segment, 0.0, 1.0)
-		draw_rect(Rect2(segment_x, size.y-103, 52.0, 11.0), Color(0.08,0.08,0.07,0.55))
+		draw_rect(Rect2(segment_x, size.y-91, 46.0, 10.0), Color(0.08,0.08,0.07,0.55))
 		if fill > 0.0:
-			draw_rect(Rect2(segment_x, size.y-103, 52.0 * fill, 11.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
+			draw_rect(Rect2(segment_x, size.y-91, 46.0 * fill, 10.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
 		var horse_y: float = size.y-211

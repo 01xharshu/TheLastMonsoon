@@ -2,7 +2,9 @@
 ## RUINED FORT — BLOCKOUT
 - Nav route PASS; player traversal/art open: `docs/world/ruined_fort_blockout.md`.
 ## ARJUN PRONE / COVER — IN_PROGRESS
-- Prone and crate/tree/cart cover controls, collision and poses integrated; test PASS, Metal captures inspected. Motion/contact and enemy sight remain. Detail: `docs/characters/arjun/stealth_stance.md`.
+- H toggles nearby cover; G stows/draws. Stance PASS. Distant shelter, contact and enemy sight open: `docs/characters/arjun/stealth_stance.md`.
+## ARJUN ANIMATIONTREE — IN_PROGRESS
+- Idle/walk/swim blend PASS; motion/contact review open: `docs/characters/arjun/animation_tree.md`.
 ## WORLD INTERACTION — IN_PROGRESS
 - 2026-09-25: E/Q card, object glint, ammo HUD, supply/cart holds. Marker yields to selector inside 3 m; Metal chest capture inspected. Owned number-key weapon selection draws after stow; held-E pickup of five store weapons and save/load PASS. Contact, kneel motion and corpse loot remain open. Detail: `docs/world/interaction_system.md`.
 Updated: 2026-09-24 05:51 IST. Detail before this task: `docs/agent/history/2026-09-24-0023-pre-viceregal.md`. Read only relevant `docs/README.md` rows.
@@ -16,7 +18,7 @@ Updated: 2026-09-24 05:51 IST. Detail before this task: `docs/agent/history/2026
 
 ## BRITISH NPC MAKEHUMAN CANDIDATES — IN_PROGRESS
 - Eight MPFB pair candidates and renders exist; hashes match. Detail: `docs/characters/british/README.md`.
-- Current task reworked private woman's skirt with gathered folds in `tools/characters/build_british_private_pair.py`; rebuilt `WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend` (SHA `14953ce1414e59c786678f7345ec8d87d7b9531da4ca9403c7ddd2a92df6f7f1`) and rerendered three views. Blender and render completed; front/side inspected. A cap/strap experiment clipped and was reverted.
+- Private woman's skirt folds rebuilt in `WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend` (SHA `14953ce1414e59c786678f7345ec8d87d7b9531da4ca9403c7ddd2a92df6f7f1`); front/side inspected. Detail in focused doc.
 - Blockers: all remain static unapproved blockouts. Private pair has modern donor seams, floating buttons/straps, oversized headwear and bodice/skirt join; no pose, motion, Godot, or historical costume approval. Next: hand-tailor this pair and verify deformation before propagating changes across ranks.
 
 ## VICEREGAL RESIDENCE — IN_PROGRESS
