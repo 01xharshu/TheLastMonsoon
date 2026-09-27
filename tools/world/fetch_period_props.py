@@ -6,7 +6,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DEST = ROOT / "assets/props/polyhaven"
-ASSETS = ("wooden_crate_02", "wooden_bucket_02")
+ASSETS = (
+    "wooden_crate_02", "wooden_bucket_02", "brass_pot_01", "wicker_basket_01",
+    "wooden_stool_01", "painted_wooden_bench", "wine_barrel_01",
+)
 records = []
 
 for asset in ASSETS:

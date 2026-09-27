@@ -1,22 +1,20 @@
 {
-	"failures": [
-		"DistrictPolice foundation misses surveyed terrain by 1.87347221374512 m"
-	],
+	"failures": [],
 	"foundations": {
 		"CompanyArmoury": {
-			"foundation_above_grade_m": 0.0,
+			"foundation_above_highest_grade_m": 0.0,
 			"position": "(376.0, 12.0, 308.0)"
 		},
 		"DistrictJail": {
-			"foundation_above_grade_m": 0.0,
+			"foundation_above_highest_grade_m": 0.0,
 			"position": "(347.0, 12.0, 313.0)"
 		},
 		"DistrictPolice": {
-			"foundation_above_grade_m": 1.87347221374512,
+			"foundation_above_highest_grade_m": 0.450000028549248,
 			"position": "(320.0, 11.87347, 120.0)"
 		},
 		"TownHall": {
-			"foundation_above_grade_m": 0.449999809265137,
+			"foundation_above_highest_grade_m": 0.449999809265137,
 			"position": "(-320.0, 8.45, -470.0)"
 		}
 	},
@@ -25,7 +23,7 @@
 	"nature_intrusions": 0,
 	"rocks_checked": 720,
 	"route_contact_samples": 419,
-	"status": "FAIL",
+	"status": "PASS",
 	"trees_checked": 2120,
 	"worst_route_contact_error_m": 0.113330078124999
 }

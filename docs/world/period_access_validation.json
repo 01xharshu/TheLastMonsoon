@@ -1,0 +1,12 @@
+{
+	"buried_samples": 0,
+	"deck_end_y": 0.449999988079071,
+	"deck_samples": 567,
+	"failures": [],
+	"grounded_piles": 20,
+	"jetty_walk_reached": true,
+	"max_burial_m": 0.0,
+	"maximum_down_velocity_m_s": 0.0,
+	"stair_support_count": 196,
+	"status": "PASS"
+}

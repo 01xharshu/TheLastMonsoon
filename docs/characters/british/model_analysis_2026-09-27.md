@@ -10,7 +10,7 @@ Seven military men are placed in the Company compound. The civil official and ei
 
 Male and female walk profiles use different cycle lengths (0.85 and 1.05 seconds) and stride/arm amplitudes. Every actor owns a separate sampled animation resource. Base behavior is a short out-and-back walk with idle pauses and individual timing offsets. Setting movement_enabled to false stops that actor and plays its idle.
 
-- [Runtime validation](candidates/roster_runtime_validation.json): PASS, 16 independent animation players, 8 male and 8 female profiles, actual thigh pose changes on all 16, independent stop test PASS.
+- [Runtime validation](candidates/roster_runtime_validation.json): PASS, 16 independent animation players, 8 male and 8 female profiles, actual thigh pose changes, relaxed downward arms and forward travel facing on all 16, independent stop test PASS.
 - [World validation](candidates/roster_world_validation.json): PASS, 16 models loaded with one skeleton each and positions inside surveyed plots.
 - These are preview patrols. Navigation, collision avoidance, dialogue, combat and story behavior are not implemented by this actor.
 
@@ -65,6 +65,16 @@ The earlier capture encountered a concurrent landscape load failure. The subsequ
 
 ## Later realism and motion pass
 
-The base is functional and remains a candidate. Walk arms retain an outward rest-pose bias. Skirts remain stiff; feet may slide because translation is a timed patrol rather than foot-locking. Normal-speed full-cycle contact review is still required. Hair, faces, headwear, belt thickness and attachment, modern donor garment seams, skirt joins, sword attachment and exact period insignia need refinement. Representative phase images do not establish that every costume deforms correctly.
+The base is functional and remains a candidate. Arm poses now derive a downward correction from each imported rig; women retain extra side clearance for skirts. Skirts remain stiff; feet may slide because translation is a timed patrol rather than foot-locking. Normal-speed full-cycle contact review is still required. Hair, faces, headwear, belt thickness and attachment, modern donor garment seams, skirt joins, sword attachment and exact period insignia need refinement. Representative phase images do not establish that every costume deforms correctly.
 
 Runtime code: characters/npcs/british/british_npc_actor.gd and world/suryagarh/british_npc_roster.gd. Sources retain the original paired editing layout; runtime models and actors are independent. No final realism or historical approval is claimed.
+
+## Continued base motion pass
+
+Imported A-pose arms are corrected using the direction of each upper-arm/elbow pair, without assuming identical bone axes. Crossbelts use torso weights during export; this removes the waist spikes exposed when the arms were lowered. Patrol facing now follows the imported models’ positive-Z front.
+
+All 16 figures have fresh four-phase Metal captures (`<rank>_<man|woman>_walk_{00,25,50,75}.png`). Representative quarter-phase images for private, corporal, major, colonel and official men, and private, sergeant, lieutenant and captain women were inspected. No final all-frame contact approval is claimed. Remaining visible issues include flat/pale dress materials, hair over faces, simple floating-looking epaulette/sword details and stiff skirt silhouettes.
+
+## AnimationTree follow-up
+
+Live locomotion now uses sixteen independent AnimationTrees with a 0.2-second idle/walk blend. See [implementation and checks](animation_tree.md). The personal AnimationPlayers supply clips; the trees control live playback.

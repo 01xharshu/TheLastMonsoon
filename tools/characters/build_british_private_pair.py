@@ -109,7 +109,7 @@ def gathered_skirt(name, mat, rig, tree, weights):
         t=row/(rows-1)
         z=.82-.75*t
         bell=math.sin(t*math.pi/2)**1.35
-        radius=.215+.265*bell
+        radius=.17+.31*bell
         for j in range(sides):
             angle=math.tau*j/sides
             # Narrow gathered folds emerge from the waist and become deeper at
@@ -259,7 +259,7 @@ for z in (1.15,1.23,1.31,1.39):
 
 # The MPFB adult body stays intact beneath separate opaque study garments.
 gathered_skirt("Companion gathered skirt",cotton,wr,wt,ww)
-rings("Companion gathered waistband",[(.795,.212,.192,0,0),(.825,.210,.190,0,0),(.842,.205,.187,0,0)],cotton,wr,wt,ww,"pelvis",sides=64,folds=.012)
+rings("Companion gathered waistband",[(.795,.175,.160,0,0),(.825,.171,.157,0,0),(.842,.168,.154,0,0)],cotton,wr,wt,ww,"pelvis",sides=64,folds=.012)
 rings("Companion bonnet crown",[(1.435,.134,.13,0,.035),(1.49,.145,.142,0,.035),(1.535,.125,.121,0,.035),(1.55,.005,.005,0,.035)],trim,wr,wt,ww,"head",sides=32)
 rings("Companion bonnet brim",[(1.435,.15,.142,0,-.005),(1.45,.158,.148,0,-.005)],cotton,wr,wt,ww,"head",sides=32)
 

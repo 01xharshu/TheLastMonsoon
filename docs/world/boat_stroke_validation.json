@@ -1,0 +1,18 @@
+{
+	"failures": 0,
+	"forward": {
+		"max_palm_error_m": 0.000000238418579101562,
+		"recovery": true,
+		"water_entry": true
+	},
+	"reverse": {
+		"max_palm_error_m": 0.000000298023223876953,
+		"recovery": true,
+		"water_entry": true
+	},
+	"steering": {
+		"max_palm_error_m": 0.0000341197410307359,
+		"recovery": true,
+		"water_entry": true
+	}
+}

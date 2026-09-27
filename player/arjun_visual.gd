@@ -319,7 +319,8 @@ func _pose_seated(delta: float) -> void:
 		pose("upperarm_"+side,Vector3(.28,0,spread*.22),weight)
 		pose("lowerarm_"+side,Vector3(-.72,0,0),weight)
 	pose("pelvis",Vector3(0,0,0),weight)
-	pose("spine_01",Vector3(-.10,0,0),weight)
+	var rowing_lean: float = sin(boat.row_phase)*boat.row_effort*.10 if is_instance_valid(boat) and boat.has_method("paddle_grip_world") else 0.0
+	pose("spine_01",Vector3(-.10+rowing_lean,0,0),weight)
 	pose("spine_02",Vector3(sin(breath)*.015,0,0),weight)
 	pose("head",Vector3(.04,0,0),weight)
 

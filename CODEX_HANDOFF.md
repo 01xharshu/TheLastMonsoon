@@ -1,35 +1,35 @@
 # Current handoff
 ## CHARPAI SIT / SLEEP TRANSITION — IN_PROGRESS
-- 2026-09-27 IST. Current `objects/charpai.gd` jumps time immediately; no sit/lie animation or fade. Scope: add controlled sit-to-sleep transition, fade-covered time jump, wake/restore, and live validation; preserve concurrent player/world edits. Next: implement and run focused Metal test.
+- 2026-09-27 17:47 IST. Sit/recline pose, fade-covered 8h clock jump, energy restore/control release implemented; `tools/world/validate_charpai.gd` Forward+/Metal PASS (`/tmp/tlm_charpai_rest_final.log`). Captures show a hand below the bed and raised leg: visual approval BLOCKED. Next: author/fit sit and sleep rig clips and verify player-driven entry/wake. Detail: `docs/world/charpai_rest_transition.md`.
 ## RUINED FORT — BLOCKOUT
 - Nav route PASS; player traversal/art open: `docs/world/ruined_fort_blockout.md`.
 ## ARJUN PRONE / COVER — IN_PROGRESS
 - H toggles nearby cover; G stows/draws. Stance PASS. Distant shelter, contact and enemy sight open: `docs/characters/arjun/stealth_stance.md`.
 ## ARJUN ANIMATIONTREE — IN_PROGRESS
-- Idle/walk/swim blend PASS; motion/contact review open: `docs/characters/arjun/animation_tree.md`.
+- 2026-09-27 IST. Idle/walk/swim blend PASS. Current task: integrate existing sit clips and rest blend into tree, replace charpai procedural limbs, retest Metal pose/contact. Detail: `docs/characters/arjun/animation_tree.md`.
 ## WORLD INTERACTION — IN_PROGRESS
 - 2026-09-25: E/Q card, object glint, ammo HUD, supply/cart holds. Marker yields to selector inside 3 m; Metal chest capture inspected. Owned number-key weapon selection draws after stow; held-E pickup of five store weapons and save/load PASS. Contact, kneel motion and corpse loot remain open. Detail: `docs/world/interaction_system.md`.
-Updated: 2026-09-24 05:51 IST. Detail before this task: `docs/agent/history/2026-09-24-0023-pre-viceregal.md`. Read only relevant `docs/README.md` rows.
+Updated: 2026-09-27 IST. Archive: `docs/agent/history/2026-09-24-0023-pre-viceregal.md`.
 
-## NEW PROP ASSET INTEGRATION — COMPLETE
-- Prop test PASS. Metal civic run found zero nature intrusions; older headless count was a MultiMesh readback artifact. Detail: `docs/world/new_prop_integration.md`.
+## PERIOD PROPS / CIVIC WORLD — COMPLETE
+- Civic terrain/routes and Metal nature clearance PASS; detail/evidence: `docs/world/new_prop_integration.md`, `docs/world/period_props.md`. Next: actual traversal and broader art review.
 
-## CC0 PERIOD PROP ADDITIONS — COMPLETE
-- 2026-09-27 IST. Poly Haven CC0 crate and bucket added to live world with collision. Headless/Metal structural checks PASS; fresh pixels inspected. Sources, hashes, captures, commands and remaining limits: `docs/world/period_props.md`. Next: broader player traversal and composition review when the world art pass resumes.
-
-## NEW PROP FOLLOW-UP / CIVIC NATURE CHECK — COMPLETE
-- 2026-09-27 IST. Metal: zero intrusions across 2,120 trees and 720 rocks. Civic validator now marks nature unchecked headless; prop test PASS again. Separate civic FAIL: Police foundation +1.87 m and fort access collision gaps 0.128/0.163 m after concurrent trail edits. Next for terrain owner: reconcile grade and rebake, rerun Metal civic/fort checks. Detail: `docs/world/new_prop_integration.md`.
+## CC0 PROP EXPANSION — IN_PROGRESS
+- 2026-09-27 IST. Poly Haven 1K stool, bench and barrel fetched and MD5-verified; manifest now has 35 source files. Added collidable village/compound instances in `settlement_builder.gd` and extended `validate_period_props.gd`. Next: import in Godot, run headless/Metal validation, inspect placement pixels and adjust if needed. Detail target: `docs/world/period_props.md`.
 
 ## INDIAN VILLAGE NPC PAIR — VISUAL_REVIEW_FAILED / MOTION_BLOCKED
-- Two independent MPFB sources; fitted top, original drapes, 9.73 MB combined static Godot previews at Bhairavpur. Fresh Metal still: `docs/characters/npcs/indian_peasant_pair_world.png`. Hands/legs now attached; period tailoring and sari/dhoti drape still fail visual review. Detail/provenance: `docs/characters/npcs/indian_peasant_pair.md`.
-- Separate rigged idle/walk studies now use baked MPFB body/garment masks and load in Godot. Four Metal walk phases per figure at `docs/characters/npcs/indian_peasant_{male,female}_walk_{00,25,50,75}.png` show no prior body/trouser breakthrough; stiff drapes, full-cycle motion and foot contact remain unapproved. Do not promote. Next: tailor period cloth and review normal-speed motion/contact, then NPC behavior. 8GB-device performance untested.
+- MPFB static/walk candidates load; Metal walk phases have no prior body breakthrough, but drape, foot contact, period tailoring and 8GB performance remain unapproved. Next: tailor fabric, review full motion. Detail: `docs/characters/npcs/indian_peasant_pair.md`.
 
-## BRITISH NPC MAKEHUMAN CANDIDATES — BASE_MOTION_READY / REALISM_OPEN
-- 2026-09-27 IST. Eight MPFB sources retained; sixteen independent GLBs use baked masks/fabric colors. Seven military men placed in compound; eight women and official separately in Government House grounds. Personal idle/walk players, distinct profiles, all16 pose playback and independent stop test PASS; surveyed world placement PASS.
-- Representative Metal walk phases inspected: prior severe body breakthrough repaired; outward arms, stiff skirts, foot contact and all-costume deformation remain unapproved. Analysis/evidence: `docs/characters/british/model_analysis_2026-09-27.md` and `.html`. Next: full-cycle contact review and later period/realism pass; patrols have no navigation/gameplay AI.
+## BRITISH NPC — ANIMATIONTREE_BASE_READY / REALISM_OPEN
+- Sixteen separately placed GLBs have personal idle/walk trees with 0.2s blends. Playback, start/stop/idle recovery, independence, facing/arms and placement PASS. Bone axes, knee/elbow/ankle motion and torso straps repaired; full-cycle forward gait samples PASS all16.
+- Representative Metal tree views inspected. Skirts, sole contact, stride-speed matching and period realism open; no navigation/gameplay AI. Evidence/next: `docs/characters/british/animation_tree.md`; HTML: `docs/characters/british/model_analysis_2026-09-27.html`.
 
 ## VICEREGAL RESIDENCE — IN_PROGRESS
-- Government House estate/room checks PASS. Real player stair up/down PASS for both flights, Town Hall and Police (Metal + headless): `docs/world/player_stair_traversal.md`. Low-lip step probe corrected; feet/contact unapproved. Full walk-through, 499-body profile and art open: `docs/world/government_house.md`.
+- House checks, Arjun16 and horse6 stair routes PASS; compound landing added, normal horse jump preserved. Raised-landing dismount/ledge checks PASS; mount hand/foot contact open: `docs/world/horse_stable.md`, `docs/world/player_stair_traversal.md`; estate/performance: `docs/world/government_house.md`.
+- Landing/rail supports repaired: Metal pixels, 567 terrain samples, 20 piles and actual jetty walk PASS. Period form/joinery open; evidence/next: `docs/world/period_access.md`.
+
+## BUILDING INTERIOR / EXTERIOR REFINEMENT — IN_PROGRESS
+- 2026-09-27 IST. Scope: improve visible Government House hall/facade and civic hall/police details using current procedural assets; preserve concurrent character/prop work. Existing captures reviewed: Government House hall is broad and sparse; civic facade reads as flat repeated bays. Next: implement restrained architectural/furnishing detail, capture fresh Metal views, rerun civic/residence traversal tests, record visual limits.
 
 ## FOREST SHRINE — VISUAL_REVIEW_FAILED
 - Forest/cave/idol preview; status, captures, next: `docs/world/forest_shrine.md`.
@@ -38,11 +38,14 @@ Updated: 2026-09-24 05:51 IST. Detail before this task: `docs/agent/history/2026
 - Layout, menus, save/load and river systems have focused PASS results; actual civic traversal, river hand contact and owner-approved Arjun remain open. Horse and cart candidates are not live-world approved. Status: `docs/README.md`, `docs/world/horse_stable.md`, `docs/world/horse_cart_candidates.md`; prior detail in `docs/agent/history/2026-09-27-1215-handoff-snapshot.md`.
 
 ## CIVIC DETAIL / SIDEARMS — IN_PROGRESS
-- Blade/flag and boat paddle/deck Metal tests PASS; body/contact, sound and police NPCs open: `docs/characters/arjun/combat_motion_2026-09-24.md`.
-- Weapon rack: five props measured/laid flat on supported shelves; standing reach and Metal pixels checked. Stable pickup IDs preserve saves across furnishing edits. Details/period limits: `docs/world/weapon_store.md`, `docs/world/historical_accuracy.md`. Next: exact weapon forms and location evidence, then Arjun contact.
+- Wall-blocked sword and full forward/reverse/steering boat cycles PASS; blade-entry ripple added, Metal capture inspected, dry interior preserved. Final body/contact and sound open: `docs/world/historical_accuracy.md`, `docs/characters/arjun/combat_motion_2026-09-24.md`.
 
 ## ANIMAL TOOLS / DUALSENSE — IN_PROGRESS
 - 2026-09-24 06:16 IST. Input/rumble/glyphs/menu and Settings implemented; headless input, map, menu, rifle, bow, river and save tests PASS. Hardware verification remains. Next: physical DualSense USB/Bluetooth route and feel/gyro tuning. Limits/evidence: `docs/world/animal_tools_and_controller.md`; full prior status in history file above.
 
+## DAY / STAMINA / FORAGE
+- Movement drain/frame clock fixed; checks PASS: `docs/world/day_survival_forage.md`.
+
 ## SAFE RESUME
-- Inspect exact diffs before edits; no broad reset/clean/stage. Keep this ledger under 60 lines/6000 chars (`python3 tools/check_agent_docs.py`). Preserve historical detail in focused docs. Later: NPC/story and combat.
+- Civic weapon shelves repaired; six support/bounds/access checks PASS. Render/history limits: `docs/world/weapon_store.md`.
+- Preserve concurrent edits; no broad reset/clean/stage. Ledger gate: `python3 tools/check_agent_docs.py`. Later: NPC/story and combat.

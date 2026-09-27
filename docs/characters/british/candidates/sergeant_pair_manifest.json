@@ -16,7 +16,7 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/sergeant_man.glb",
-      "sha256": "0493d1210f1fb45f5daf29c12d5a1318757984f42a3ecdcc20df50baaadcc10b",
+      "sha256": "016e0eda62cd92cb0b61609f3f24f6aeac425cb536ff1f9d4c8473437e6ab923",
       "bytes": 1477208
     },
     "woman": {
@@ -25,6 +25,6 @@
       "bytes": 1791784
     }
   },
-  "animation": "Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles",
+  "animation": "Independent Godot AnimationTree idle/walk BlendSpace1D; personal AnimationPlayer clips and male/female profiles",
   "placed_in_world": true
 }

@@ -114,6 +114,9 @@ var stamina: float = 100.0
 
 var is_sprinting: bool = false
 
+# 0..1 of full sprint speed, measured by the controller after collision.
+var sprint_effort: float = 0.0
+
 var is_exhausted: bool = false
 
 
@@ -623,6 +626,7 @@ func _update_stamina(
 
 		stamina -= (
 			sprint_stamina_loss_per_second
+			* sprint_effort
 			* delta
 		)
 
@@ -684,7 +688,8 @@ func _update_stamina(
 # =========================================================
 
 func set_sprinting(
-	value: bool
+	value: bool,
+	effort: float = 1.0
 ) -> void:
 
 	if is_exhausted:
@@ -701,7 +706,8 @@ func set_sprinting(
 		return
 
 
-	is_sprinting = value
+	is_sprinting = value and effort > 0.0
+	sprint_effort = clampf(effort, 0.0, 1.0) if is_sprinting else 0.0
 
 
 func can_sprint() -> bool:

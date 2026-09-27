@@ -66,6 +66,7 @@ func validate() -> void:
 	print("PISTOL CONTACT: ", pistol_contacts)
 	assert(pistol_contacts.pistol_palm_m < 0.005)
 	assert(bow_contacts.bow_palm_m < 0.005)
+	assert(bow_contacts.bow_nock_m < 0.005)
 	var rounds_before: int = pistol.rounds
 	assert(pistol.fire())
 	assert(pistol.shots_fired == 1 and pistol.rounds == rounds_before-1)

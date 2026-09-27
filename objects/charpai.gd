@@ -50,6 +50,7 @@ func _run_sleep(player: CharacterBody3D, survival: SurvivalComponent, game_time:
 	var fade_out := create_tween()
 	fade_out.tween_property(black, "color:a", 1.0, 0.6)
 	await fade_out.finished
+	set_meta("sleep_fade_covered", true)
 	game_time.advance_hours(sleep_hours)
 	survival.restore_energy(sleep_hours * energy_restore_per_hour)
 	await get_tree().create_timer(0.25).timeout
@@ -65,4 +66,5 @@ func _run_sleep(player: CharacterBody3D, survival: SurvivalComponent, game_time:
 	player.collision_mask = saved_mask
 	player.set_meta("rest_action", "")
 	player.set_meta("rest_progress", 0.0)
+	remove_meta("sleep_fade_covered")
 	resting = false

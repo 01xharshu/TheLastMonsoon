@@ -16,7 +16,7 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/corporal_man.glb",
-      "sha256": "99a31db0f3f71b39532805de4d3c4c25dc4013eaa184dfac0be3fea02a120d8a",
+      "sha256": "0b00e7fb2639912f0cfab963a4d73a764359a2b234e31cc3c9e656a88b3fdb26",
       "bytes": 1482840
     },
     "woman": {
@@ -25,6 +25,6 @@
       "bytes": 1750336
     }
   },
-  "animation": "Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles",
+  "animation": "Independent Godot AnimationTree idle/walk BlendSpace1D; personal AnimationPlayer clips and male/female profiles",
   "placed_in_world": true
 }

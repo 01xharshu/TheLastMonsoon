@@ -50,6 +50,7 @@ var idle_voice_timer := 13.0
 var body_collision: CollisionShape3D
 var step_ground_grace := 0.0
 var step_up_grace := 0.0
+var stair_activity := 0.0
 
 func _ready() -> void:
 	add_to_group("mountable_vehicles")
@@ -106,7 +107,7 @@ func _update_hoof_contacts(delta: float) -> void:
 	if clip != sound_clip:
 		sound_clip = clip
 		sound_cycle = 0.0
-	if not is_on_floor() or absf(pace) <= .8 or (not clip.ends_with("Walk") and not clip.ends_with("Gallop")):
+	if not _walk_supported() or absf(pace) <= .8 or (not clip.ends_with("Walk") and not clip.ends_with("Gallop")):
 		return
 	var length: float = rigged_anim.get_animation(clip).length
 	if length <= 0.0: return
@@ -279,7 +280,7 @@ func _build_horse() -> void:
 func _update_rigged_animation() -> void:
 	if rigged_anim == null: return
 	var clip := "AnimalArmature|Idle"
-	if not is_on_floor():
+	if not _walk_supported():
 		clip = "AnimalArmature|Gallop_Jump"
 	elif absf(pace) > 7.0:
 		clip = "AnimalArmature|Gallop"
@@ -288,6 +289,11 @@ func _update_rigged_animation() -> void:
 	if rigged_anim.current_animation != clip:
 		rigged_anim.play(clip,.18)
 	rigged_anim.speed_scale = clampf(absf(pace) / (9.0 if clip.ends_with("Gallop") else 4.2),.7,1.7) if clip.ends_with("Walk") or clip.ends_with("Gallop") else 1.0
+
+func _walk_supported() -> bool:
+	if is_on_floor(): return true
+	if velocity.y > 0.0 or velocity.y < -3.0: return false
+	return step_up_grace > 0.0 or (stair_activity > 0.0 and step_ground_grace > 0.0 and absf(velocity.y) < 0.2)
 
 func seat_world() -> Vector3:
 	return to_global(Vector3(0,1.83,.02))
@@ -337,7 +343,13 @@ func dismount() -> bool:
 	var actor := rider
 	for side in [-1.0,1.0]:
 		var p: Vector3 = global_position + global_basis.x * side * 1.55
-		p.y = layout.height(p.x,p.z) + 1.0
+		# Use the landing, bridge or road under the exit, including raised floors.
+		var ground_ray := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.6, p - Vector3.UP * 0.65)
+		ground_ray.exclude = [get_rid(), actor.get_rid()]
+		var ground: Dictionary = get_world_3d().direct_space_state.intersect_ray(ground_ray)
+		if ground.is_empty() or ground.normal.y < 0.7: continue
+		var capsule: CapsuleShape3D = actor.get_node("CollisionShape3D").shape
+		p.y = ground.position.y + capsule.height * 0.5 + 0.04
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = actor.get_node("CollisionShape3D").shape
 		query.transform = Transform3D(Basis.IDENTITY,p)
@@ -355,6 +367,7 @@ func dismount() -> bool:
 	return false
 
 func _physics_process(delta: float) -> void:
+	stair_activity = maxf(0.0, stair_activity - delta)
 	var throttle := 0.0
 	var steer := 0.0
 	var gallop := false
@@ -371,6 +384,8 @@ func _physics_process(delta: float) -> void:
 			tack_player.play()
 	stamina = clampf(stamina + delta * (-1.6 if gallop and absf(throttle)>.1 else 2.5),0.0,MAX_STAMINA)
 	var target := throttle * (GALLOP_SPEED if gallop else WALK_SPEED)
+	if stair_activity > 0.0:
+		target = clampf(target, -2.8, 2.8)
 	pace = move_toward(pace,target,delta * (6.5 if throttle != 0.0 else 9.0))
 	rotation.y += steer * delta * 1.35 * clampf(absf(pace)/2.0,0.0,1.0)
 	var forward := -global_basis.z
@@ -469,10 +484,12 @@ func _walk_stairs(horizontal: Vector3) -> void:
 						global_position += horizontal + Vector3.UP * rise
 						velocity.y = 0.0
 						step_up_grace = 0.25
+						stair_activity = 0.35
 	if not is_on_floor() and step_ground_grace > 0.0 and step_up_grace <= 0.0 and velocity.y >= -3.0:
 		var contact := KinematicCollision3D.new()
 		if test_move(global_transform, Vector3.DOWN * max_walk_step_height, contact) and contact.get_normal().y >= 0.3:
 			global_position += contact.get_travel()
 			velocity.y = 0.0
 			step_ground_grace = 0.15
+			stair_activity = 0.35
 			apply_floor_snap()

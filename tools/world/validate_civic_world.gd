@@ -24,9 +24,17 @@ func validate() -> void:
 		var building: Node3D = settlement.get_node(name)
 		var p := building.global_position
 		var expected := layout.height(p.x,p.z)
+		if name == "TownHall" or name == "DistrictPolice":
+			# Civic buildings use the highest terrain under the whole footprint.
+			# A centre-only comparison falsely flags foundations on a slope.
+			var width: float = building.get("width")
+			var depth: float = building.get("depth")
+			for x in range(-int(width*.5)-2,int(width*.5)+3,2):
+				for z in range(-int(depth*.5)-2,int(depth*.5)+3,2):
+					expected = maxf(expected,layout.height(p.x+x,p.z+z))
 		var gap := p.y-expected
 		check(gap >= -0.03 and gap <= 0.5,name+" foundation misses surveyed terrain by "+str(gap)+" m")
-		ground_samples[name] = {"position":p,"foundation_above_grade_m":gap}
+		ground_samples[name] = {"position":p,"foundation_above_highest_grade_m":gap}
 	var compound: Node3D = settlement.get_node("ColonialCompound")
 	check(absf(compound.position.y-Layout.PLOTS["CompanyCompound"].grade)<0.01,"Compound courtyard grade drifted")
 	var excluded: Array[RID] = [world.get_node("Player").get_rid()]

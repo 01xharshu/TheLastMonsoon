@@ -57,11 +57,7 @@ func _ready() -> void:
 	var ramp := piece(self,"StairRamp",Vector3(stair_x,floor_y*.5-.14,0),Vector3(3.5,.28,sqrt(18*18+floor_y*floor_y)),stone,true)
 	ramp.rotation.x = atan2(floor_y,18.0)
 	ramp.get_child(0).hide()
-	for side in [-1,1]:
-		var rail := piece(self,"StairHandrail",Vector3(stair_x+side*1.7,floor_y*.5+1,0),Vector3(.1,.1,sqrt(18*18+floor_y*floor_y)),wood,false)
-		rail.rotation.x = atan2(floor_y,18.0)
-		for i in 10:
-			piece(self,"StairBaluster",Vector3(stair_x+side*1.7,i*.54+.5,9-i*1.8),Vector3(.08,1,.08),wood,false)
+	stair_guard(self,stair_x,0,18.0,floor_y,true,3.4)
 	piece(self,"GalleryGuard",Vector3(cut_right,floor_y+.55,0),Vector3(.14,1.1,17.5),wood)
 	# Low clay-tile pitch sheds monsoon rain behind a plain masonry parapet.
 	for side in [-1,1]:
@@ -131,19 +127,33 @@ func facade(y: float,z: float,front: bool) -> void:
 	if not front: piece(self,"RearCentre",Vector3(0,y+1.6,z),Vector3(4.4,3.2,.5),plaster)
 
 func armoury() -> void:
+	var rack_x := width*.5-3
+	var rack_z := -depth*.5+3.5
+	piece(self,"ArmouryShelf",Vector3(rack_x,1.02,rack_z),Vector3(2.4,.16,5),wood)
+	for x in [-1.12,1.12]:
+		for z in [-2.35,2.35]:
+			piece(self,"ArmouryPost",Vector3(rack_x+x,.56,rack_z+z),Vector3(.16,.96,.16),wood)
 	for i in 3:
 		var pickup := Pickup.new()
 		pickup.weapon_id = "enfield" if i<2 else "talwar"
-		pickup.position = Vector3(width*.5-3,1.2,-depth*.5+2+i*1.5)
+		pickup.name = "CivicWeapon%d" % i
+		# Preserve the existing persistence identity when replacing the furniture.
+		pickup.store_id = "%s/%s/%s" % [name,pickup.weapon_id,Vector3(rack_x,1.2,-depth*.5+2+i*1.5)]
+		pickup.position = Vector3(rack_x,1.25,-depth*.5+2+i*1.5)
 		add_child(pickup)
 		var source := "res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb" if i<2 else "res://environment/weapons/Talwar/weapon_talwar_01.glb"
-		pickup.add_child(load(source).instantiate())
+		var model: Node3D = load(source).instantiate()
+		pickup.add_child(model)
+		model.basis = Basis(Vector3.RIGHT,PI/2)
+		for animation in model.find_children("*","AnimationPlayer",true,false): animation.stop()
+		var bounds := weapon_bounds(model,pickup)
+		model.position += Vector3(-bounds.get_center().x,1.115-pickup.position.y-bounds.position.y,-bounds.get_center().z)
+		pickup.set_meta("shelf_top",1.10)
 		var collider := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(1.5,.3,.4)
+		shape.size = Vector3(maxf(.4,bounds.size.x),.25,maxf(.4,bounds.size.z))
 		collider.shape = shape
 		pickup.add_child(collider)
-	piece(self,"ArmouryRack",Vector3(width*.5-3,.55,-depth*.5+3.5),Vector3(2.4,1.1,5),wood)
 
 func surface(asset: String,tint: Color,scale_value: float) -> Material:
 	var mat := StandardMaterial3D.new()

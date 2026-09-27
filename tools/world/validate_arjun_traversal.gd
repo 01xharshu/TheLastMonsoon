@@ -1,9 +1,9 @@
-extends SceneTree
+extends Node
 
 var failures := 0
 var actor: CharacterBody3D
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("run")
 
 func check(condition: bool, label: String) -> void:
@@ -28,23 +28,25 @@ func box(parent: Node3D, at: Vector3, size: Vector3, angle := 0.0) -> void:
 
 func walk(frames: int) -> void:
 	Input.action_press("move_forward")
-	for i in frames: await physics_frame
+	for i in frames: await get_tree().physics_frame
 	Input.action_release("move_forward")
-	for i in 5: await physics_frame
+	for i in 5: await get_tree().physics_frame
 
 func run() -> void:
 	var course := Node3D.new()
-	root.add_child(course)
+	get_tree().root.add_child(course)
 	var clock := preload("res://world/suryagarh/systems/game_time_system.gd").new()
 	clock.name = "GameTimeSystem"
 	course.add_child(clock)
 	box(course, Vector3(0,-0.1,0),Vector3(12,0.2,20))
 	actor = preload("res://player/player.tscn").instantiate()
 	course.add_child(actor)
+	actor.set_process_unhandled_input(false)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	actor.global_position = Vector3(0,0.9,2)
 	actor.visual_root.rotation.y = 0.0
 	actor.camera_pivot.rotation.y = 0.0
-	for i in 10: await physics_frame
+	for i in 10: await get_tree().physics_frame
 	check(actor.is_on_floor(),"starts grounded")
 	box(course,Vector3(0,0.16,-1),Vector3(3,0.32,2))
 	await walk(65)
@@ -56,12 +58,12 @@ func run() -> void:
 	var climb := actor.get_node("ClimbComponent")
 	check(climb.try_start(),"reachable untagged ledge starts climb")
 	if climb.active:
-		for i in 160: await physics_frame
+		for i in 160: await get_tree().physics_frame
 		check(not climb.active and actor.global_position.y > 1.8,"reachable ledge climb lands above wall")
 	actor.global_position = Vector3(-3,0.9,0)
 	actor.camera_pivot.rotation.y = -PI/2
 	box(course,Vector3(-1.1,0.17,0),Vector3(3,0.2,2),0.12)
-	for i in 8: await physics_frame
+	for i in 8: await get_tree().physics_frame
 	await walk(70)
 	check(actor.global_position.x > -0.5,"walks up shallow raised road")
 	for index in 3:
@@ -69,8 +71,13 @@ func run() -> void:
 		box(course, Vector3(3, height * 0.5, 0.8 - index * 1.2), Vector3(1.8, height, 1.2))
 	actor.global_position = Vector3(3, 0.9, 2.0)
 	actor.camera_pivot.rotation.y = 0.0
-	for i in 8: await physics_frame
-	await walk(95)
+	for i in 8: await get_tree().physics_frame
+	Input.action_press("move_forward")
+	for i in 240:
+		await get_tree().physics_frame
+		if actor.global_position.z < -1.05: break
+	Input.action_release("move_forward")
+	print("Consecutive stair finish=",actor.global_position)
 	check(actor.global_position.z < -1.0 and actor.global_position.y > 1.5,"keeps walking up three consecutive stairs")
 	if DisplayServer.get_name() != "headless":
 		var light := DirectionalLight3D.new()
@@ -92,8 +99,8 @@ func run() -> void:
 		camera.global_position = Vector3(7, 3.4, 2.7)
 		camera.look_at(Vector3(3, 1.1, -0.5))
 		actor.get_node("UI").hide()
-		for i in 3: await process_frame
-		await RenderingServer.frame_post_draw
-		check(root.get_texture().get_image().save_png("res://docs/world/captures/23_arjun_stair_traversal.png") == OK,"stair traversal capture")
+		for i in 3: await get_tree().process_frame
+		RenderingServer.force_draw(false)
+		check(get_tree().root.get_texture().get_image().save_png("res://docs/world/captures/23_arjun_stair_traversal.png") == OK,"stair traversal capture")
 	print("ARJUN TRAVERSAL ","PASS" if failures==0 else "FAIL "+str(failures))
-	quit(1 if failures else 0)
+	get_tree().quit(1 if failures else 0)

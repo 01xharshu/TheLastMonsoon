@@ -18,7 +18,7 @@ The [2026-09-27 Forward+/Metal rack capture](captures/23_company_weapon_rack.png
 
 ## River and stair review
 
-[The British Museum's 1833–1834 Prinsep collection](https://www.britishmuseum.org/collection/object/P_1871-0812-2526-2535) includes Raj Ghat at Benares. This establishes ghats before 1857, not the design of Suryagarh's timber boat landing. That landing is currently a jetty, not a sourced reconstruction of a masonry ghat. The existing plain timber stair handrails also remain provisional: a modern photograph of an old building cannot establish when its present rail was installed. No new ghat or rail design was added during this review.
+[The British Museum's 1833–1834 Prinsep collection](https://www.britishmuseum.org/collection/object/P_1871-0812-2526-2535) includes Raj Ghat at Benares. This establishes ghats before 1857, not the design of Suryagarh's timber boat landing. That landing is currently a jetty, not a sourced reconstruction of a masonry ghat. The plain timber stair handrails remain provisional: a modern photograph of an old building cannot establish when its present rail was installed. The [2026-09-27 support and landing repair](period_access.md) adds grounded piles, stair stringers and rail posts, with physical/visual evidence and dated architectural references; it does not grant exact historical approval.
 
 ## Asset acceptance rule
 

@@ -1,0 +1,103 @@
+{
+  "actors": [
+    {
+      "actor": "PrivateMan",
+      "forward_swing_m": 0.391242474317551,
+      "lateral_drift_m": 0.000000119209289550781,
+      "vertical_span_m": 0.0372067987918854
+    },
+    {
+      "actor": "PrivateWoman",
+      "forward_swing_m": 0.179458245635033,
+      "lateral_drift_m": 0.000000134110450744629,
+      "vertical_span_m": 0.0191747546195984
+    },
+    {
+      "actor": "CorporalMan",
+      "forward_swing_m": 0.348010897636414,
+      "lateral_drift_m": 0.0000000894069671630859,
+      "vertical_span_m": 0.0333482027053833
+    },
+    {
+      "actor": "CorporalWoman",
+      "forward_swing_m": 0.173152342438698,
+      "lateral_drift_m": 0.0000000596046447753906,
+      "vertical_span_m": 0.0182216763496399
+    },
+    {
+      "actor": "SergeantMan",
+      "forward_swing_m": 0.405898034572601,
+      "lateral_drift_m": 0.000000119209289550781,
+      "vertical_span_m": 0.0395700931549072
+    },
+    {
+      "actor": "SergeantWoman",
+      "forward_swing_m": 0.184421002864838,
+      "lateral_drift_m": 0.000000119209289550781,
+      "vertical_span_m": 0.0198334157466888
+    },
+    {
+      "actor": "LieutenantMan",
+      "forward_swing_m": 0.345745265483856,
+      "lateral_drift_m": 0.0000000745058059692383,
+      "vertical_span_m": 0.0337571203708649
+    },
+    {
+      "actor": "LieutenantWoman",
+      "forward_swing_m": 0.172269940376282,
+      "lateral_drift_m": 0.0000000745058059692383,
+      "vertical_span_m": 0.0180751979351044
+    },
+    {
+      "actor": "CaptainMan",
+      "forward_swing_m": 0.401191264390945,
+      "lateral_drift_m": 0.000000163912773132324,
+      "vertical_span_m": 0.0390305817127228
+    },
+    {
+      "actor": "CaptainWoman",
+      "forward_swing_m": 0.177531987428665,
+      "lateral_drift_m": 0.000000104308128356934,
+      "vertical_span_m": 0.0188835561275482
+    },
+    {
+      "actor": "MajorMan",
+      "forward_swing_m": 0.403570502996445,
+      "lateral_drift_m": 0.00000019371509552002,
+      "vertical_span_m": 0.040119081735611
+    },
+    {
+      "actor": "MajorWoman",
+      "forward_swing_m": 0.191046386957169,
+      "lateral_drift_m": 0.000000104308128356934,
+      "vertical_span_m": 0.020924299955368
+    },
+    {
+      "actor": "ColonelMan",
+      "forward_swing_m": 0.405401229858398,
+      "lateral_drift_m": 0.000000327825546264648,
+      "vertical_span_m": 0.0424177944660187
+    },
+    {
+      "actor": "ColonelWoman",
+      "forward_swing_m": 0.191171392798424,
+      "lateral_drift_m": 0.000000134110450744629,
+      "vertical_span_m": 0.0208944380283356
+    },
+    {
+      "actor": "OfficialMan",
+      "forward_swing_m": 0.393714070320129,
+      "lateral_drift_m": 0.000000238418579101562,
+      "vertical_span_m": 0.0393827855587006
+    },
+    {
+      "actor": "OfficialWoman",
+      "forward_swing_m": 0.190907537937164,
+      "lateral_drift_m": 0.0000000596046447753906,
+      "vertical_span_m": 0.020894467830658
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "scope": "65 samples through actual tree evaluation per actor; skeleton ankle path, not mesh sole contact or foot locking"
+}

@@ -49,6 +49,12 @@ for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
         if obj.parent == rig and obj not in (body, outfit):
             obj.select_set(True)
             if obj.type == 'MESH':
+                # Torso straps must not inherit nearby arm/leg weights from
+                # the donor body's nearest-surface lookup.
+                if 'crossbelt' in obj.name.lower():
+                    obj.vertex_groups.clear()
+                    obj.vertex_groups.new(name='spine_02').add(
+                        list(range(len(obj.data.vertices))), 1.0, 'REPLACE')
                 for slot in obj.material_slots:
                     mat = slot.material
                     if mat is None or not mat.use_nodes:
@@ -86,7 +92,7 @@ manifest_path = ROOT / f'docs/characters/british/candidates/{RANK}_pair_manifest
 manifest = json.loads(manifest_path.read_text())
 manifest['runtime_exports'] = exports
 manifest['runtime_export'] = True
-manifest['animation'] = 'Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles'
+manifest['animation'] = 'Independent Godot AnimationTree idle/walk BlendSpace1D; personal AnimationPlayer clips and male/female profiles'
 manifest['placed_in_world'] = False
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 print('BRITISH_RUNTIME_EXPORT', RANK, json.dumps(exports))

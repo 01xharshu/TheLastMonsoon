@@ -151,6 +151,8 @@ func build_main_house() -> void:
 	for side in [-1.0,1.0]:
 		piece(h,"RoofBalustrade",Vector3(side*34,14.55,0),Vector3(.65,1.1,44),stone)
 		piece(h,"RoofBalustrade",Vector3(0,14.55,side*20.8),Vector3(70,1.1,.65),stone)
+		piece(h,"RoofCoping",Vector3(0,15.14,side*20.8),Vector3(70.6,.14,.85),stone,false)
+		piece(h,"RoofCoping",Vector3(side*34,15.14,0),Vector3(.85,.14,44.6),stone,false)
 	# Porte-cochere: real shaded threshold, large enough for the player capsule.
 	piece(h,"PorticoFloor",Vector3(0,.24,24),Vector3(26,.42,10),stone)
 	piece(h,"PorticoRoof",Vector3(0,5.0,24),Vector3(27,.5,10.5),stone)
@@ -162,6 +164,11 @@ func build_main_house() -> void:
 		var rake := piece(h,"PedimentRake",Vector3(side*6.6,6.2,29),Vector3(13.5,.36,.8),stone,false)
 		rake.rotation.z = -side*.14
 	piece(h,"PorticoFrieze",Vector3(0,5.15,29.2),Vector3(25,.44,.28),brass,false)
+	for x in [-11.0,-7.0,7.0,11.0]:
+		piece(h,"PorticoColumnCollar",Vector3(x,4.68,28.5),Vector3(.85,.16,.85),stone,false)
+	for x in [-5.4,5.4]:
+		piece(h,"EntranceReveal",Vector3(x,2.05,20.55),Vector3(.34,4.1,.65),stone,false)
+	piece(h,"EntranceHeadTrim",Vector3(0,4.18,20.55),Vector3(11.2,.25,.75),stone,false)
 	for step in 4:
 		piece(h,"EntranceStep",Vector3(0,.05+step*.105,29.8-step*.85),Vector3(17,.21,1.0),stone)
 	var sign := Label3D.new()
@@ -175,6 +182,8 @@ func build_main_house() -> void:
 func main_floor(h: Node3D) -> void:
 	piece(h,"GroundFloor",Vector3(0,.17,0),Vector3(68,.34,40),stone)
 	piece(h,"MarbleHallInset",Vector3(0,.355,0),Vector3(27,.035,26),marble,false)
+	piece(h,"EntryRunner",Vector3(0,.387,8),Vector3(3.6,.012,10),carpet,false)
+	for x in [-1.87,1.87]: piece(h,"EntryRunnerBinding",Vector3(x,.398,8),Vector3(.08,.012,10),brass,false)
 	for z in [-12.0,12.0]: piece(h,"HallFloorBorder",Vector3(0,.382,z),Vector3(27,.028,.18),brass,false)
 	for x in [-13.5,13.5]: piece(h,"HallFloorBorder",Vector3(x,.382,0),Vector3(.18,.028,24),brass,false)
 	for level in [1,2]:
@@ -248,8 +257,13 @@ func interior(h: Node3D,level: int) -> void:
 			piece(h,"HallColumnCapital",Vector3(side*9.5,y+4.52,z),Vector3(.95,.3,.95),brass,false)
 	for z in [-19.55,19.55]:
 		piece(h,"InteriorCornice",Vector3(0,y+4.36,z),Vector3(65,.23,.22),stone,false)
+		piece(h,"InteriorDado",Vector3(0,y+1.12,z+( .18 if z<0 else -.18)),Vector3(64,.15,.12),wood,false)
 	for x in [-33.55,33.55]:
 		piece(h,"InteriorCornice",Vector3(x,y+4.36,0),Vector3(.22,.23,39),stone,false)
+	for z in [-12.0,0.0,12.0]:
+		piece(h,"HallCeilingBeam",Vector3(0,y+4.42,z),Vector3(20,.2,.32),wood,false)
+		for side in [-1.0,1.0]:
+			piece(h,"HallCeilingBeamEnd",Vector3(side*9.3,y+4.17,z),Vector3(.3,.28,.5),stone,false)
 	# Rooms open into a central cross hall; no partition seals its doorways.
 	for side in [-1.0,1.0]:
 		for row in [-1.0,1.0]:
@@ -292,6 +306,11 @@ func interior(h: Node3D,level: int) -> void:
 	if level==0:
 		for x in [-8.0,8.0]: piece(h,"MarbleHallBench",Vector3(x,y+.5,8),Vector3(3,.35,.8),stone)
 		for side in [-1.0,1.0]:
+			for z in [-11.0,10.0]:
+				piece(h,"HallWallPanel",Vector3(side*17.2,y+2.25,z),Vector3(.08,2.5,3.2),ochre,false)
+				piece(h,"HallWallPanelFrame",Vector3(side*17.1,y+3.58,z),Vector3(.12,.12,3.45),wood,false)
+				piece(h,"HallWallPanelRail",Vector3(side*17.1,y+.92,z),Vector3(.12,.12,3.45),wood,false)
+		for side in [-1.0,1.0]:
 			piece(h,"ReceptionCabinet",Vector3(side*29,y+1.2,-7),Vector3(3.6,2.3,.75),wood)
 			for shelf in [0.65,1.3,1.95]:
 				piece(h,"CabinetShelf",Vector3(side*29,y+shelf,-6.55),Vector3(3.5,.08,.58),brass,false)
@@ -319,9 +338,7 @@ func staircase(h: Node3D,level: int,x: float,up_toward_back: bool) -> void:
 		var t := (step+.5)/24.0
 		var z := 12.0-24.0*t if up_toward_back else -12.0+24.0*t
 		piece(h,"StairTread",Vector3(x,y+STOREY*t,z),Vector3(3.6,.13,1.0),wood,false)
-	for side in [-1.0,1.0]:
-		var rail := piece(h,"StairRail",Vector3(x+side*1.9,y+STOREY*.5+1,0),Vector3(.12,.12,sqrt(24.0*24.0+STOREY*STOREY)),wood,false)
-		rail.rotation.x=angle
+	stair_guard(h,x,y,24.0,STOREY,up_toward_back,3.44)
 
 func build_wing(side: float) -> void:
 	var wing := Node3D.new()

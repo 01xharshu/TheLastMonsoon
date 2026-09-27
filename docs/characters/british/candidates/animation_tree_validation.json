@@ -1,0 +1,10 @@
+{
+  "animated_skeletons": 16,
+  "errors": [],
+  "independent_stop": true,
+  "passed": true,
+  "personal_graphs": 16,
+  "personal_trees": 16,
+  "scope": "actual tree evaluation and pose changes; cloth and foot contact unapproved",
+  "start_stop_idle_recovery": 16
+}

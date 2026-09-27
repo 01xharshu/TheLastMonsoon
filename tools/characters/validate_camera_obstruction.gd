@@ -56,7 +56,9 @@ func _run() -> void:
  var tight_distance: float = arm.global_position.distance_to(camera.global_position)
  ok = ok and tight_distance < 0.42 and not player.visual_root.visible
  wall.position = Vector3(0, 1.5, -1.0)
- for i in 12: await physics_frame
+ for i in 30:
+  await physics_frame
+  camera._process(1.0 / 60.0)
  var restored_distance: float = arm.global_position.distance_to(camera.global_position)
  ok = ok and restored_distance > 1.6
  print("CAMERA OBSTRUCTION: ", "PASS" if ok else "FAIL", " | open=", open_distance, " blocked=", blocked_distance, " tight=", tight_distance, " restored=", restored_distance)

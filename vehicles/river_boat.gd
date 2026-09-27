@@ -11,6 +11,9 @@ var paddle: Node3D
 var paddle_stow: Transform3D
 var paddle_blend := 0.0
 var row_effort := 0.0
+var blade_in_water := false
+var paddle_contacts := 0
+var stroke_power := 0.0
 var saved_layer: int
 var saved_mask: int
 var mooring := Vector3.ZERO
@@ -146,6 +149,8 @@ func dismount() -> bool:
 	rider = null
 	paddle_blend = 0.0
 	row_effort = 0.0
+	stroke_power = 0.0
+	blade_in_water = false
 	if paddle != null: paddle.transform = paddle_stow
 	actor.set_meta("mounted_vehicle",null)
 	actor.collision_layer = saved_layer
@@ -161,7 +166,22 @@ func _physics_process(delta: float) -> void:
 		throttle = Input.get_axis("move_backward","move_forward")
 		steer = Input.get_axis("move_right","move_left")
 		survival_pause()
-	speed = move_toward(speed,throttle*4.2,delta*1.8)
+	row_effort = move_toward(row_effort,absf(throttle),delta*3.5)
+	paddle_blend = move_toward(paddle_blend,1.0 if rider != null else 0.0,delta*3.5)
+	if row_effort > .05:
+		row_phase = fmod(row_phase+delta*4.8*signf(throttle if absf(throttle)>.05 else speed),TAU)
+	if paddle != null:
+		var stroke := sin(row_phase)*row_effort
+		var dip := cos(row_phase)*row_effort
+		var row_transform := Transform3D(Basis.from_euler(Vector3(0,PI*.5+.22*stroke,-.38-.14*dip)),Vector3(.20,.60,-.24))
+		paddle.transform = paddle_stow.interpolate_with(row_transform,paddle_blend)
+		var immersed := rider != null and row_effort>.2 and paddle_blade_world().y<.035
+		if immersed and not blade_in_water: _paddle_splash(paddle_blade_world())
+		blade_in_water = immersed
+	stroke_power = maxf(0.0,cos(row_phase))*row_effort*absf(throttle) if blade_in_water else 0.0
+	# Water drag acts throughout the cycle; propulsion comes from the submerged pull.
+	speed = clampf(speed+throttle*stroke_power*8.5*delta,-4.2,4.2)
+	speed = move_toward(speed,0.0,delta*(.18+absf(speed)*.18))
 	rotation.y += steer*delta*0.7*clampf(absf(speed),0,1)
 	velocity = -global_basis.z*speed
 	var next: Vector3 = position+velocity*delta
@@ -175,17 +195,31 @@ func _physics_process(delta: float) -> void:
 		speed = 0
 		velocity = Vector3.ZERO
 	position.y = 0.03
-	row_effort = move_toward(row_effort,absf(throttle),delta*3.5)
-	paddle_blend = move_toward(paddle_blend,1.0 if rider != null else 0.0,delta*3.5)
-	if row_effort > .05:
-		row_phase = fmod(row_phase+delta*4.8*signf(throttle if absf(throttle)>.05 else speed),TAU)
-	if paddle != null:
-		# The existing paddle pivots across the beam; a pitch cycle dips its blade into the river.
-		var stroke := sin(row_phase)*row_effort
-		var dip := cos(row_phase)*row_effort
-		var row_transform := Transform3D(Basis.from_euler(Vector3(0,PI*.5+.22*stroke,-.38-.14*dip)),Vector3(.20,.60,-.24))
-		paddle.transform = paddle_stow.interpolate_with(row_transform,paddle_blend)
 	if rider != null: _sync_rider()
+
+func _paddle_splash(point: Vector3) -> void:
+	paddle_contacts += 1
+	var ripple := MeshInstance3D.new()
+	ripple.name = "PaddleRipple"
+	var ring := TorusMesh.new()
+	ring.inner_radius = .15
+	ring.outer_radius = .17
+	ring.rings = 24
+	ring.ring_segments = 6
+	ripple.mesh = ring
+	ripple.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var foam := StandardMaterial3D.new()
+	foam.albedo_color = Color(.72,.82,.73,.45)
+	foam.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	foam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ripple.material_override = foam
+	get_parent().add_child(ripple)
+	ripple.global_position = Vector3(point.x,.075,point.z)
+	ripple.scale = Vector3(.4,.08,.4)
+	var fade := ripple.create_tween().set_parallel(true)
+	fade.tween_property(ripple,"scale",Vector3(2.3,.08,2.3),.7)
+	fade.tween_property(foam,"albedo_color:a",0.0,.7)
+	fade.chain().tween_callback(ripple.queue_free)
 
 func survival_pause() -> void:
 	rider.survival.set_sprinting(false)

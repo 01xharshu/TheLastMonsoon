@@ -1,6 +1,7 @@
 {
   "actors": 16,
   "errors": [],
+  "facing_travel_direction": 16,
   "independent_stop_test": true,
   "passed": true,
   "personal_animation_players": 16,
@@ -8,6 +9,7 @@
     "female": 8,
     "male": 8
   },
+  "relaxed_arm_poses": 16,
   "scope": "actual AnimationPlayer playback and independent movement; foot contact remains visual review",
   "walk_tracks_changed_pose": 16
 }

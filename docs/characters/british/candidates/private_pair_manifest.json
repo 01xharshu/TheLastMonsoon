@@ -1,7 +1,7 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
-  "source_sha256": "9590bb940d8b8617dfff1af70c10d761304a41500ab6d9a74e3609cc1bdf07b2",
+  "source_sha256": "868584ecfeb2310e59bd8d65486066d30bdc82751d4bd3035663ee44e8d6aeb4",
   "reference": "docs/characters/british/references/private_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -10,7 +10,5 @@
   "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
   "runtime_export": false,
   "visual_approved": false,
-  "motion_approved": false,
-  "animation": "Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles",
-  "placed_in_world": true
+  "motion_approved": false
 }

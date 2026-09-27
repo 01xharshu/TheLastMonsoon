@@ -104,6 +104,72 @@ func place_period_props() -> void:
 	bucket_collider.shape = bucket_shape
 	bucket_collider.position.y = .19
 	bucket.add_child(bucket_collider)
+	var pot_x := -345.25
+	var pot_z := 218.9
+	var pot := StaticBody3D.new()
+	pot.name = "BhairavpurBrassPot"
+	pot.position = Vector3(pot_x, layout.height(pot_x,pot_z), pot_z)
+	add_child(pot)
+	pot.add_child(preload("res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf").instantiate())
+	var pot_collider := CollisionShape3D.new()
+	var pot_shape := CylinderShape3D.new()
+	pot_shape.radius = .16
+	pot_shape.height = .30
+	pot_collider.shape = pot_shape
+	pot_collider.position.y = .15
+	pot.add_child(pot_collider)
+	var basket_x := -324.0
+	var basket_z := 219.0
+	var basket := StaticBody3D.new()
+	basket.name = "BhairavpurWickerBasket"
+	basket.position = Vector3(basket_x, layout.height(basket_x,basket_z), basket_z)
+	add_child(basket)
+	basket.add_child(preload("res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf").instantiate())
+	var basket_collider := CollisionShape3D.new()
+	var basket_shape := BoxShape3D.new()
+	basket_shape.size = Vector3(.4,.13,.31)
+	basket_collider.shape = basket_shape
+	basket_collider.position.y = .065
+	basket.add_child(basket_collider)
+	var stool_x := -302.0
+	var stool_z := 219.0
+	var stool := StaticBody3D.new()
+	stool.name = "BhairavpurWoodenStool"
+	stool.position = Vector3(stool_x, layout.height(stool_x,stool_z), stool_z)
+	add_child(stool)
+	stool.add_child(preload("res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf").instantiate())
+	var stool_collider := CollisionShape3D.new()
+	var stool_shape := CylinderShape3D.new()
+	stool_shape.radius = .23
+	stool_shape.height = .44
+	stool_collider.shape = stool_shape
+	stool_collider.position.y = .22
+	stool.add_child(stool_collider)
+	var bench_x := -324.0
+	var bench_z := 226.5
+	var bench := StaticBody3D.new()
+	bench.name = "BhairavpurPaintedBench"
+	bench.position = Vector3(bench_x, layout.height(bench_x,bench_z), bench_z)
+	add_child(bench)
+	bench.add_child(preload("res://assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf").instantiate())
+	var bench_collider := CollisionShape3D.new()
+	var bench_shape := BoxShape3D.new()
+	bench_shape.size = Vector3(1.2,.90,.53)
+	bench_collider.shape = bench_shape
+	bench_collider.position.y = .45
+	bench.add_child(bench_collider)
+	var barrel := StaticBody3D.new()
+	barrel.name = "CompanyStoresWineBarrel"
+	barrel.position = Vector3(court.x+22.2, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+19.0)
+	add_child(barrel)
+	barrel.add_child(preload("res://assets/props/polyhaven/wine_barrel_01/wine_barrel_01_1k.gltf").instantiate())
+	var barrel_collider := CollisionShape3D.new()
+	var barrel_shape := CylinderShape3D.new()
+	barrel_shape.radius = .39
+	barrel_shape.height = .88
+	barrel_collider.shape = barrel_shape
+	barrel_collider.position.y = .44
+	barrel.add_child(barrel_collider)
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
@@ -304,6 +370,8 @@ func compound() -> void:
 	# Walkway staircase gives the player a physical descent into the courtyard.
 	for i in 24:
 		piece(c,"WallWalkStair",Vector3(-47.2,.1+i*.1,-5+i*.38),Vector3(2,.2+i*.2,.4),stone)
+	# A supported pause/turn at the top also accommodates the horse's length.
+	piece(c,"WallWalkStairLanding",Vector3(-48.2,4.65,5.1),Vector3(4.4,.3,3.0),stone)
 	var flag: Node3D = preload("res://assets/props/flags/eic/prop_eic_checkpoint_flag_01.glb").instantiate()
 	flag.position = Vector3(8,.1,-41)
 	c.add_child(flag)
@@ -322,16 +390,80 @@ func landing() -> void:
 	var end: float = layout.river_x(z)-layout.river_width(z)+1.0
 	var start: float = end-43
 	var bank: float = layout.height(start,z)
+	var points: Array[Vector3] = []
 	for i in 64:
 		var t: float = float(i)/63
 		var x: float = lerpf(start,end,t)
 		var y: float = maxf(.45,lerpf(bank+.1,.45,clampf(t/.8,0,1)))
-		piece(dock,"JettyPlank",Vector3(x,y-.09,z),Vector3(.72,.18,3),wood)
-		if i%8==0:
-			for side in [-1.0,1.0]:
-				var ground: float = layout.height(x,z+side*1.25)
-				piece(dock,"JettyPile",Vector3(x,(ground+y)*.5,z+side*1.25),Vector3(.18,maxf(.2,y-ground+.2),.18),wood)
+		for dx in [-.35,0.0,.35]:
+			for dz in [-1.5,0.0,1.5]:
+				y = maxf(y,layout.height(x+dx,z+dz)+.08)
+		points.append(Vector3(x,y,z))
+	# Raise the deck envelope to clear the bank with a walkable maximum grade.
+	var max_delta: float = (end-start)/63.0*.25
+	for i in range(1,64): points[i].y = maxf(points[i].y,points[i-1].y-max_delta)
+	for i in range(62,-1,-1): points[i].y = maxf(points[i].y,points[i+1].y-max_delta)
+	for i in 63:
+		var a: Vector3 = points[i]
+		var b: Vector3 = points[i+1]
+		var angle: float = atan2(b.y-a.y,b.x-a.x)
+		var normal := Vector3(-sin(angle),cos(angle),0)
+		var plank := piece(dock,"JettyPlank%02d"%i,(a+b)*.5-normal*.09,Vector3(a.distance_to(b)+.025,.18,3),wood)
+		# Small visible board joints; the matching collision overlaps underneath.
+		var plank_mesh: BoxMesh = plank.get_child(0).mesh
+		plank_mesh.size.x = a.distance_to(b)-.012
+		plank.rotation.z = angle
+		plank.set_meta("deck_a",a)
+		plank.set_meta("deck_b",b)
+	for i in range(0,64,7):
+		var point: Vector3 = points[i]
+		piece(dock,"JettyBeam%02d"%i,point-Vector3.UP*.27,Vector3(.22,.18,3.2),wood,false)
+		for side in [-1.0,1.0]:
+			var ground: float = layout.height(point.x,z+side*1.25)
+			var bottom: float = ground-.35
+			var top: float = point.y-.18
+			var pile := piece(dock,"JettyPile%02d_%d"%[i,int(side)],Vector3(point.x,(bottom+top)*.5,z+side*1.25),Vector3(.18,maxf(.18,top-bottom),.18),wood)
+			pile.set_meta("ground_y",ground)
 	merge_visuals(dock)
+
+func stair_guard(parent: Node3D, x: float, base_y: float, run: float, rise: float, up_toward_back: bool, rail_width: float) -> void:
+	var angle := atan2(rise,run)*(1.0 if up_toward_back else -1.0)
+	var length := sqrt(run*run+rise*rise)
+	var count := int(ceil(run/.5))
+	for side in [-1.0,1.0]:
+		var edge_x: float = x+side*rail_width*.5
+		var guard := StaticBody3D.new()
+		guard.name = "StairGuard"
+		parent.add_child(guard)
+		guard.add_to_group("stair_guards")
+		var rail_center := Vector3(edge_x,base_y+rise*.5+1,0)
+		var rail := piece(parent,"StairHandrail",rail_center,Vector3(.1,.1,length),wood,false)
+		rail.rotation.x = angle
+		var rail_shape := CollisionShape3D.new()
+		var rail_box := BoxShape3D.new()
+		rail_box.size = Vector3(.1,.1,length)
+		rail_shape.shape = rail_box
+		rail_shape.position = rail_center
+		rail_shape.rotation.x = angle
+		guard.add_child(rail_shape)
+		var stringer := piece(parent,"StairStringer",Vector3(edge_x-side*.10,base_y+rise*.5-.13,0),Vector3(.18,.26,length),wood,false)
+		stringer.rotation.x = angle
+		for i in count+1:
+			var t: float = float(i)/count
+			var z: float = run*.5-run*t if up_toward_back else -run*.5+run*t
+			var floor_height: float = base_y+rise*t
+			var thickness: float = .16 if i == 0 or i == count else .065
+			var center := Vector3(edge_x,floor_height+.5,z)
+			var size := Vector3(thickness,1.0,thickness)
+			var post := piece(parent,"StairSupport",center,size,wood,false)
+			post.set_meta("floor_y",floor_height)
+			post.set_meta("rail_y",floor_height+1)
+			var collision := CollisionShape3D.new()
+			var box := BoxShape3D.new()
+			box.size = size
+			collision.shape = box
+			collision.position = center
+			guard.add_child(collision)
 
 func merge_visuals(parent: Node3D) -> void:
 	var groups: Dictionary = {}

@@ -15,3 +15,9 @@ Company pickups now use stable IDs such as `company_armoury/enfield`. Room furni
 ## Historical limits
 
 [Historical accuracy notes](historical_accuracy.md) record the period/India evidence and distinguish local availability from Company issue. The rack itself, exact weapons, private/held-arms context, and room dressing still require period art review. The rejected Arjun model remains unsuitable for final hand-contact approval. River ghats and stair rails have separate unresolved form/site questions; this placement repair does not approve them.
+
+## Civic shelves — 2026-09-27
+
+Town Hall and District Police now store their three weapons flat on a 2.4 × 5 m timber shelf, supported by four posts. Model bounds determine placement, with the same 15 mm support allowance used in Company stores. Original civic persistence identities are retained so existing saves still recognize collected weapons.
+
+`tools/world/validate_civic_weapon_shelves.gd` passes headless and Metal: all six weapon bounds fit the shelves, are separated, meet the support height and can be targeted from the room side. Render evidence: [Town Hall](captures/civic_weapon_TownHall.png), [Police](captures/civic_weapon_DistrictPolice.png). This verifies placement and pickup access; exact shelf construction and the appropriateness of each weapon in each civic store remain historically provisional.

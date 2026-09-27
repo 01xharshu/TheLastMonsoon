@@ -11,9 +11,12 @@ func _run() -> void:
 	var errors: Array[String] = []
 	var players: Dictionary = {}
 	var animated := 0
+	var relaxed_arms := 0
+	var facing_checks := 0
 	var profiles: Dictionary = {"male":0,"female":0}
 	for actor in actors:
 		actor.set_process(false)
+		(actor.get("animation_tree") as AnimationTree).active = false
 		actor.set("_clock", 0.0)
 		var player: AnimationPlayer = actor.get("animation_player")
 		if player == null or not player.has_animation("walk") or not player.has_animation("idle"):
@@ -23,8 +26,29 @@ func _run() -> void:
 		var profile := str(actor.get("movement_profile"))
 		profiles[profile] += 1
 		actor.call("_process", 0.25)
+		var forward: Vector3 = actor.basis.z.normalized()
+		var travel: Vector3 = actor.get("patrol_axis")
+		if forward.dot(travel.normalized()) > 0.99:
+			facing_checks += 1
+		else:
+			errors.append(actor.name + ": does not face travel direction")
 		player.advance(0.1)
 		var skeleton := actor.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
+		player.play("idle")
+		player.seek(0.0, true)
+		player.advance(0.0)
+		var arms_ok := true
+		for side in ["l", "r"]:
+			var upper := skeleton.get_bone_global_pose(skeleton.find_bone("upperarm_" + side)).origin
+			var elbow := skeleton.get_bone_global_pose(skeleton.find_bone("lowerarm_" + side)).origin
+			if (elbow - upper).normalized().dot(Vector3.DOWN) < 0.90:
+				arms_ok = false
+		if arms_ok:
+			relaxed_arms += 1
+		else:
+			errors.append(actor.name + ": arms do not rest downward")
+		player.play("walk")
+		player.advance(0.1)
 		var index := skeleton.find_bone("thigh_l")
 		var before := skeleton.get_bone_pose_rotation(index)
 		player.advance(0.2)
@@ -43,8 +67,8 @@ func _run() -> void:
 	var independent := frozen.position.is_equal_approx(frozen_before) and other.position.distance_to(other_before) > 0.02
 	if not independent:
 		errors.append("Freezing one actor affected independent movement")
-	var passed := actors.size() == 16 and players.size() == 16 and animated == 16 and independent and errors.is_empty()
-	var report := {"passed":passed,"actors":actors.size(),"personal_animation_players":players.size(),"walk_tracks_changed_pose":animated,"profiles":profiles,"independent_stop_test":independent,"errors":errors,"scope":"actual AnimationPlayer playback and independent movement; foot contact remains visual review"}
+	var passed := actors.size() == 16 and players.size() == 16 and animated == 16 and relaxed_arms == 16 and facing_checks == 16 and independent and errors.is_empty()
+	var report := {"passed":passed,"actors":actors.size(),"personal_animation_players":players.size(),"walk_tracks_changed_pose":animated,"facing_travel_direction":facing_checks,"relaxed_arm_poses":relaxed_arms,"profiles":profiles,"independent_stop_test":independent,"errors":errors,"scope":"actual AnimationPlayer playback and independent movement; foot contact remains visual review"}
 	FileAccess.open(OUTPUT, FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
 	print("BRITISH_ROSTER_VALIDATION ",JSON.stringify(report))
 	quit(0 if passed else 1)

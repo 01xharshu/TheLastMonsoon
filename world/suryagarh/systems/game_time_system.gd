@@ -202,7 +202,8 @@ func _update_readable_time(
 
 	var absolute_minute: int = int(
 		floor(
-			total_game_minutes
+			# Small frame increments can sum to just below an exact minute.
+			total_game_minutes + 0.0000001
 		)
 	)
 

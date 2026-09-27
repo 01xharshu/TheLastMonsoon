@@ -14,14 +14,16 @@ func _run() -> void:
 	var roster := world.get_node("BritishNpcRosterCandidate")
 	for actor in roster.get_children():
 		actor.set_process(false)
+		(actor.get("animation_tree") as AnimationTree).active = false
 		var player: AnimationPlayer = actor.get("animation_player")
 		player.pause()
 	var camera := Camera3D.new()
 	world.add_child(camera)
 	camera.fov = 30.0
 	camera.make_current()
-	for actor_name in ["PrivateMan", "PrivateWoman", "OfficialMan"]:
-		var actor := roster.get_node(actor_name) as Node3D
+	for actor_node in roster.get_children():
+		var actor := actor_node as Node3D
+		var actor_name := str(actor.name)
 		actor.rotation.y = 0.0
 		var player: AnimationPlayer = actor.get("animation_player")
 		camera.global_position = actor.global_position + Vector3(0,1.8,5.5)

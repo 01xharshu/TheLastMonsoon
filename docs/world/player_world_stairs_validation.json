@@ -1,56 +1,57 @@
 {
+	"display_server": "headless",
 	"failures": [],
 	"renderer": "forward_plus",
 	"results": [
 		{
 			"direction": "up",
-			"finish": "(-16.5, 6.300076, -13.3475)",
+			"finish": "(-16.5, 6.300368, -13.3475)",
 			"jump_used": false,
 			"stair": "Town Hall stairs",
 			"start": "(-16.5, 0.901001, 10.20001)"
 		},
 		{
 			"direction": "up",
-			"finish": "(-9.5, 6.300146, -11.34789)",
+			"finish": "(-9.5, 6.300436, -11.34808)",
 			"jump_used": false,
 			"stair": "Police stairs",
-			"start": "(-9.5, 0.900195, 10.2)"
+			"start": "(-9.5, 0.900781, 10.2)"
 		},
 		{
 			"direction": "up",
-			"finish": "(20.0, 5.500233, -19.28691)",
+			"finish": "(20.0, 5.500525, -19.2899)",
 			"jump_used": false,
 			"stair": "Government House first flight",
 			"start": "(20.0, 1.240367, 13.2)"
 		},
 		{
 			"direction": "up",
-			"finish": "(28.0, 10.10107, 19.28907)",
+			"finish": "(28.0, 10.10019, 19.28724)",
 			"jump_used": false,
 			"stair": "Government House second flight",
-			"start": "(28.0, 5.500196, -13.2)"
+			"start": "(28.0, 5.500781, -13.2)"
 		},
 		{
 			"direction": "down",
-			"finish": "(-16.5, 0.900037, 13.349)",
+			"finish": "(-16.5, 0.900615, 13.34949)",
 			"max_fall_speed": 0.0,
 			"stair": "Town Hall stairs"
 		},
 		{
 			"direction": "down",
-			"finish": "(-9.5, 0.900477, 11.34981)",
+			"finish": "(-9.5, 0.900615, 11.34903)",
 			"max_fall_speed": 0.0,
 			"stair": "Police stairs"
 		},
 		{
 			"direction": "down",
-			"finish": "(20.0, 1.240223, 19.28965)",
+			"finish": "(20.0, 1.240586, 19.28994)",
 			"max_fall_speed": 0.0,
 			"stair": "Government House first flight"
 		},
 		{
 			"direction": "down",
-			"finish": "(28.0, 5.500675, -19.28943)",
+			"finish": "(28.0, 5.500628, -19.28949)",
 			"max_fall_speed": 0.0,
 			"stair": "Government House second flight"
 		}

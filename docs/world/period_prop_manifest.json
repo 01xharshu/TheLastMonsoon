@@ -68,5 +68,180 @@
     "sha256": "4873fc1f3cda8a0e49f254861b1a6761bc9d8f192509e7f9b2163fdc84d7e86d",
     "license": "CC0-1.0",
     "asset_page": "https://polyhaven.com/a/wooden_bucket_02"
+  },
+  {
+    "path": "assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/brass_pot_01/brass_pot_01_1k.gltf",
+    "sha256": "972fa20a81e322159a79cadf3812e1513a0001424198c7d9b423ced4cbf84473",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/brass_pot_01"
+  },
+  {
+    "path": "assets/props/polyhaven/brass_pot_01/textures/brass_pot_01_nor_gl_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/brass_pot_01/brass_pot_01_nor_gl_1k.jpg",
+    "sha256": "1de8554794d82812bd35b68655c38d81bea1554736d3cba4b1b28bdd911c6c5f",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/brass_pot_01"
+  },
+  {
+    "path": "assets/props/polyhaven/brass_pot_01/brass_pot_01.bin",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/brass_pot_01/brass_pot_01.bin",
+    "sha256": "ffa78e52e5138d37b3184ceb5b2f95459f7a7a251bb645b12f935715fa58c654",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/brass_pot_01"
+  },
+  {
+    "path": "assets/props/polyhaven/brass_pot_01/textures/brass_pot_01_diff_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/brass_pot_01/brass_pot_01_diff_1k.jpg",
+    "sha256": "6694da42ed8df023265a8245e125fb5048ea6ff998fdc8fc0ece6d61ca359780",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/brass_pot_01"
+  },
+  {
+    "path": "assets/props/polyhaven/brass_pot_01/textures/brass_pot_01_arm_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/brass_pot_01/brass_pot_01_arm_1k.jpg",
+    "sha256": "c99e0f27b65919eb1f378bcbce897114f3907d2f6175a120466b119bfa3825e6",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/brass_pot_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wicker_basket_01/wicker_basket_01_1k.gltf",
+    "sha256": "9ad86c33f00f46a18c9bc8bfc28c0036090ee819f7270d0028ec408512c04094",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wicker_basket_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wicker_basket_01/textures/wicker_basket_01_arm_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wicker_basket_01/wicker_basket_01_arm_1k.jpg",
+    "sha256": "5150638cbcd8f1bc07b76af3b60b31a4c5e7d38ce66ac8906b9c3192f3283b9a",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wicker_basket_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wicker_basket_01/textures/wicker_basket_01_nor_gl_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wicker_basket_01/wicker_basket_01_nor_gl_1k.jpg",
+    "sha256": "d06024a37ef330d05bf128b8488f72769af05e72d266ffbc810d7f09ea2b32f9",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wicker_basket_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wicker_basket_01/textures/wicker_basket_01_diff_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wicker_basket_01/wicker_basket_01_diff_1k.jpg",
+    "sha256": "15156c7855d5642f6bb594edfad5bcdcfe11f87f3e109956cb9e8fdb15fef921",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wicker_basket_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wicker_basket_01/wicker_basket_01.bin",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wicker_basket_01/wicker_basket_01.bin",
+    "sha256": "8e96025ffcdc64a7e75d1aa980f2491b1219912a4554272cd1e192a966c399f8",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wicker_basket_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wooden_stool_01/wooden_stool_01_1k.gltf",
+    "sha256": "f28566454af27175839c10645a37a2a16b373e4be8aecddd0d8a3d704cfc0330",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wooden_stool_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wooden_stool_01/textures/wooden_stool_01_diff_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_stool_01/wooden_stool_01_diff_1k.jpg",
+    "sha256": "cb5c7ec2e27f5ad2ced7791da5e2cc9f1d03ab2c6ffbb63df8256dc271869206",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wooden_stool_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wooden_stool_01/textures/wooden_stool_01_rough_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_stool_01/wooden_stool_01_rough_1k.jpg",
+    "sha256": "23b43e05961731de864e4902a14c614b33d804fd91821c284fa90a8d2ca23fe1",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wooden_stool_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wooden_stool_01/wooden_stool_01.bin",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wooden_stool_01/wooden_stool_01.bin",
+    "sha256": "a9b21b8c75719057db549dfee5b8c1cc76edc2727367790fb9fc49963e34ae7a",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wooden_stool_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wooden_stool_01/textures/wooden_stool_01_nor_gl_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wooden_stool_01/wooden_stool_01_nor_gl_1k.jpg",
+    "sha256": "10b587d76b74e752f15d03d2c4725cddb439b174dcddae2444e1534de61d77dc",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wooden_stool_01"
+  },
+  {
+    "path": "assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/painted_wooden_bench/painted_wooden_bench_1k.gltf",
+    "sha256": "2289ab82f3fe3045bf18f7b9541743d2c65b9f071cb34bbe424d2bc998f3e507",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/painted_wooden_bench"
+  },
+  {
+    "path": "assets/props/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_diff_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/painted_wooden_bench/painted_wooden_bench_diff_1k.jpg",
+    "sha256": "9bc533313091ee71eaca5fa6334b71d27935d9d75311f64df6a53c28a67c435c",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/painted_wooden_bench"
+  },
+  {
+    "path": "assets/props/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_nor_gl_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/painted_wooden_bench/painted_wooden_bench_nor_gl_1k.jpg",
+    "sha256": "a0f53740d77fc61aac01de0b7e1ae6109445d1756839f739ae31fdf10c9911f2",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/painted_wooden_bench"
+  },
+  {
+    "path": "assets/props/polyhaven/painted_wooden_bench/textures/painted_wooden_bench_arm_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/painted_wooden_bench/painted_wooden_bench_arm_1k.jpg",
+    "sha256": "878785565eeff706b8f1e4db7e3d794a544e9cf0e56cee424d9a271ab4ead47e",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/painted_wooden_bench"
+  },
+  {
+    "path": "assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench.bin",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/painted_wooden_bench/painted_wooden_bench.bin",
+    "sha256": "5799bcb20924105cccd6424de8cdb8e67eb57fddc19c395befeac634a7b2e013",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/painted_wooden_bench"
+  },
+  {
+    "path": "assets/props/polyhaven/wine_barrel_01/wine_barrel_01_1k.gltf",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/wine_barrel_01/wine_barrel_01_1k.gltf",
+    "sha256": "503d3339677217c3241a3cdbc1c803ed1eb82d1a48f51436d1545ec5745ae8d8",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wine_barrel_01/wine_barrel_01.bin",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wine_barrel_01/wine_barrel_01.bin",
+    "sha256": "d827c31afed824b923ea9168462c93ab3ad3a88c4a68b155bd35efb1a02cbf00",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wine_barrel_01/textures/wine_barrel_01_diff_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wine_barrel_01/wine_barrel_01_diff_1k.jpg",
+    "sha256": "6bea25b4fadda0636b6b7e46e0cc15153eda21ef62c823d5ee2e06a5a7589214",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wine_barrel_01/textures/wine_barrel_01_arm_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wine_barrel_01/wine_barrel_01_arm_1k.jpg",
+    "sha256": "be658e1389dbe8669e847b8fc7df8affdce46d6582f01ac701555b6446a40b9d",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wine_barrel_01"
+  },
+  {
+    "path": "assets/props/polyhaven/wine_barrel_01/textures/wine_barrel_01_nor_gl_1k.jpg",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/wine_barrel_01/wine_barrel_01_nor_gl_1k.jpg",
+    "sha256": "86cdb0729b44d1687c75d895e6d0ef650f7580d70f3bcb52bce6fedc5fd79b6f",
+    "license": "CC0-1.0",
+    "asset_page": "https://polyhaven.com/a/wine_barrel_01"
   }
 ]

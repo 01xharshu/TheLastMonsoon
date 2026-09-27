@@ -368,6 +368,7 @@ func _physics_process(
 		velocity.z = 0.0
 
 
+	var movement_start := global_position
 	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
 	step_ground_grace = 0.15 if is_on_floor() else maxf(0.0, step_ground_grace - delta)
 	step_up_grace = maxf(0.0, step_up_grace - delta)
@@ -377,6 +378,12 @@ func _physics_process(
 		take_damage((landing_speed - 9.0) * 7.0)
 	_try_walk_step(delta, intended_horizontal)
 	_try_walk_step_down()
+	# Only distance actually travelled counts as sprint effort. A wall or held
+	# ground interaction can stop movement even while Shift + W is pressed.
+	var travelled := global_position - movement_start
+	var actual_speed := Vector2(travelled.x, travelled.z).length() / maxf(delta, 0.0001)
+	if survival.is_sprinting:
+		survival.set_sprinting(actual_speed > 0.1, actual_speed / maxf(sprint_speed, 0.1))
 
 
 	_update_interaction()
@@ -482,11 +489,6 @@ func _handle_mouse_look(
 
 func _process(delta: float) -> void:
 	_update_weapon_camera(delta)
-	# A nearby obstruction can push the spring camera into Arjun's head or torso.
-	# Hide only the world body at that distance; first-person arms have their own view.
-	if not first_person:
-		var camera: Camera3D = $CameraPivot/SpringArm3D/Camera3D
-		visual_root.visible = camera.global_position.distance_to($CameraPivot/SpringArm3D.global_position) > 0.42
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or inventory_ui.is_open() or get_meta("map_open",false) or get_meta("weapon_wheel_open",false):
 		return
 	var stick := Input.get_vector("look_left","look_right","look_up","look_down")

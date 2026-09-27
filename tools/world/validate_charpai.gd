@@ -54,6 +54,7 @@ func validate() -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://docs/world/captures/charpai_sleeping.png")
 	await create_timer(0.85).timeout
+	assert(bed.get_meta("sleep_fade_covered", false), "Clock advanced without covered fade")
 	assert(is_equal_approx(clock.total_game_minutes - before, 480.0))
 	await create_timer(1.7).timeout
 	assert(not bed.resting and player.get_meta("rest_action", "") == "", "Rest did not release player")
@@ -62,15 +63,4 @@ func validate() -> void:
 	print("CHARPAI CHECK PASS ", JSON.stringify(report))
 	var file = FileAccess.open("res://docs/world/charpai_validation.json", FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t") + "\n")
-	# Restore morning light for the placement photograph.
-	clock.total_game_minutes = before
-	clock.advance_minutes(0.01)
-	var camera = Camera3D.new()
-	world.add_child(camera)
-	camera.position = bed.position + Vector3(3.0, 1.8, 3.0)
-	camera.look_at(bed.position + Vector3(0,0.25,0))
-	camera.make_current()
-	for i in 45: await process_frame
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://docs/world/captures/06_charpai.png")
 	quit()

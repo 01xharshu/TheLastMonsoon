@@ -47,6 +47,17 @@ func test(parent: Node3D, at: Vector3, yaw: float, target_z: float, increasing: 
 	if label.ends_with("descent"):
 		check(result.fall > -3.0,label + " avoids a large fall")
 	results.append({"label":label,"reached":result.reached,"position":str(p),"fall_speed":result.fall})
+	if label == "Compound narrow stairs angled" and DisplayServer.get_name() != "headless":
+		player.get_node("UI").hide()
+		world.get_node("LandscapeUI").hide()
+		var camera := Camera3D.new()
+		world.add_child(camera)
+		camera.global_position = parent.to_global(Vector3(-41,7,7))
+		camera.look_at(player.global_position + Vector3.UP * 0.2)
+		camera.make_current()
+		for i in 4: await get_tree().process_frame
+		RenderingServer.force_draw(false)
+		check(get_tree().root.get_texture().get_image().save_png("res://docs/world/captures/arjun_compound_stairs.png") == OK,"compound stair capture")
 
 func run() -> void:
 	world = preload("res://world/suryagarh/suryagarh_world.tscn").instantiate()
