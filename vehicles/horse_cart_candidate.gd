@@ -11,11 +11,20 @@ extends Node3D
 		if is_inside_tree(): _build()
 
 const HorseVisual = preload("res://assets/animals/horse/rigged_horse_candidate.glb")
+const HoofA = preload("res://audio/horses/hoof_dirt_01.wav")
+const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
+const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav")
+const HoofRoadRecordedB = preload("res://audio/horses/hoof_road_recorded_02.wav")
+const HoofTimber = preload("res://audio/horses/hoof_timber.wav")
+const Snort = preload("res://audio/horses/horse_snort.wav")
 var visual_root: Node3D
 var wheels: Array[Node3D] = []
 var horse_animation: AnimationPlayer
 var seat_sockets: Dictionary = {}
 var boarding: Node
+var hoof_players: Array[AudioStreamPlayer3D] = []
+var sound_cycle := 0.0
+var hoof_events := 0
 var rider: CharacterBody3D:
 	get:
 		return boarding.rider if boarding != null else null
@@ -23,11 +32,22 @@ var rider: CharacterBody3D:
 func _ready() -> void:
 	_build()
 	if Engine.is_editor_hint(): return
+	_build_audio()
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
 	add_child(boarding)
 	_add_boarding_point("DriverSeat", Vector3(-1.0, 1.5, 1.7))
 	if variant == 0: _add_boarding_point("PassengerSeat", Vector3(1.0, 1.5, 2.6))
+
+func _build_audio() -> void:
+	for i in 4:
+		var p := AudioStreamPlayer3D.new()
+		p.name = "CartHoofSound%d" % i
+		p.volume_db = -8.0
+		p.unit_size = 5.0
+		p.max_distance = 55.0
+		add_child(p)
+		hoof_players.append(p)
 
 func _add_boarding_point(seat: String, at: Vector3) -> void:
 	var point: Interactable = preload("res://vehicles/cart_boarding_point.gd").new()
@@ -201,3 +221,35 @@ func _animate_motion(speed: float, delta: float) -> void:
 		if horse_animation.current_animation != clip:
 			horse_animation.play(clip,.15)
 		horse_animation.speed_scale = clampf(absf(speed)/4.2,.65,1.5) if clip.ends_with("Walk") else 1.0
+		if clip.ends_with("Walk") and not hoof_players.is_empty():
+			var length: float = horse_animation.get_animation(clip).length
+			if length > 0.0:
+				var previous := sound_cycle
+				sound_cycle += delta * horse_animation.speed_scale / length
+				for contact in [0.10, 0.35, 0.60, 0.85]:
+					if floori(sound_cycle - contact) > floori(previous - contact):
+						_play_cart_hoof()
+				sound_cycle = fmod(sound_cycle, 1.0)
+
+func _play_cart_hoof() -> void:
+	if hoof_players.is_empty(): return
+	var p: AudioStreamPlayer3D = hoof_players[hoof_events % hoof_players.size()]
+	var query := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.5, global_position - Vector3.UP * 1.5)
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	var node: Node = hit.get("collider") as Node
+	var surface := "earth"
+	while node != null:
+		if node.name == "TimberBridge":
+			surface = "timber"
+			break
+		node = node.get_parent()
+	if surface == "timber":
+		p.stream = HoofTimber
+		p.volume_db = -10.0
+	else:
+		p.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
+		p.volume_db = -8.0
+	p.pitch_scale = 1.0 + (float(hoof_events % 5) - 2.0) * 0.025
+	p.play()
+	hoof_events += 1
+

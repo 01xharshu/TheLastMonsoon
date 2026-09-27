@@ -1,4 +1,48 @@
-# Godot 4+ specific ignores
+# ═══════════════════════════════════════════════════════════════
+#  THE LAST MONSOON — .gitignore
+#  Godot 4.x  ·  Blender  ·  macOS  ·  Windows  ·  Linux
+# ═══════════════════════════════════════════════════════════════
+
+# ── Godot 4+ ──────────────────────────────────────────────────
 .godot/
 /android/
+
+# ── Blender backup / autosave ─────────────────────────────────
+*.blend1
+*.blend2
+
+# ── Operating system ──────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Editors & IDEs ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.orig
+
+# ── Python (tools / scripts) ─────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Build / export artifacts ─────────────────────────────────
+/export/
+/build/
+*.pck
+*.zip
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
