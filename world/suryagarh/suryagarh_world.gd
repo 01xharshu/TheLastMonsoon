@@ -34,8 +34,8 @@ func move_to_review_point(index: int) -> void:
 	player.position = Vector3(p.x, layout.height(p.x,p.y)+1.1, p.y)
 	player.velocity = Vector3.ZERO
 	player.rotation.y = -0.85
-	player.camera_pitch = -0.12
-	player.get_node("CameraPivot").rotation.x = -0.12
+	player.camera_pitch = deg_to_rad(-10.0)
+	player.get_node("CameraPivot").rotation.x = player.camera_pitch
 	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · 2.986 km²"
 
 func _unhandled_key_input(event: InputEvent) -> void:

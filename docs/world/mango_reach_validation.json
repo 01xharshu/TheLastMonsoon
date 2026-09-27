@@ -1,0 +1,27 @@
+{
+	"failures": [],
+	"passed": true,
+	"rendered": false,
+	"samples": [
+		{
+			"foot_drift_m": 0.000000166641697774139,
+			"fruit": "(-0.15, 0.135, 0.45)",
+			"largest_frame_palm_step_m": 0.103924542665482,
+			"palm_error_m": 0.0337599962949753
+		},
+		{
+			"foot_drift_m": 0.000000193177044138793,
+			"fruit": "(0.15, 0.135, 0.65)",
+			"largest_frame_palm_step_m": 0.129544287919998,
+			"palm_error_m": 0.0571529604494572
+		},
+		{
+			"largest_frame_palm_step_m": 0.0369554720818996,
+			"mode": "eat"
+		},
+		{
+			"largest_frame_palm_step_m": 0.00858273170888424,
+			"mode": "store"
+		}
+	]
+}

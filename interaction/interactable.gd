@@ -18,6 +18,9 @@ extends StaticBody3D
 
 @export var interaction_text: String = "Interact"
 
+# Ground pickups can use a shorter reach than doors or large props.
+@export_range(0.5, 3.0, 0.05) var interaction_max_distance: float = 2.6
+
 
 # This tells the UI what visual symbol this object should use.
 #

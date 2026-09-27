@@ -1,5 +1,6 @@
 class_name ConsumableComponent
 extends Node
+signal mango_eaten
 
 
 # =========================================================
@@ -246,6 +247,7 @@ func eat_fresh_mango() -> bool:
 		return false
 	survival.restore_satiety(12.0)
 	survival.restore_hydration(6.0)
+	mango_eaten.emit()
 	inventory.request_message("Ate mango")
 	return true
 

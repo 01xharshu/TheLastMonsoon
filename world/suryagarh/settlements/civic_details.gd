@@ -31,6 +31,13 @@ static func furnish(b: Node3D) -> void:
 			# Ledgers and folded paper on desks (no modern objects).
 			b.piece(b,"Ledger",Vector3(1.5,y+.94,z),Vector3(.42,.08,.31),b.wood,false)
 			b.piece(b,"PaperStack",Vector3(2.2,y+.93,z+.1),Vector3(.26,.025,.34),b.plaster,false)
+		# Keep the central route open while giving waiting visitors a defined side bay.
+		for z in [-5.0,5.0]:
+			b.piece(b,"VisitorBenchSeat",Vector3(-6.5,y+.53,z),Vector3(2.6,.16,.68),b.wood)
+			b.piece(b,"VisitorBenchBack",Vector3(-6.5,y+1.0,z-.34),Vector3(2.6,.9,.12),b.wood,false)
+			for dx in [-1.0,1.0]:
+				b.piece(b,"VisitorBenchLeg",Vector3(-6.5+dx,y+.27,z),Vector3(.12,.5,.55),b.wood,false)
+		b.piece(b,"HallRunner",Vector3(-1.8,y+.015,0),Vector3(2.0,.018,b.depth-6),b.ochre,false)
 		# Record shelves in the accessible rear office.
 		for shelf in 5:
 			b.piece(b,"RecordsShelf",Vector3(b.width*.5-1,y+.4+shelf*.52,-b.depth*.5+3),Vector3(.8,.07,4.4),b.wood)
@@ -52,3 +59,14 @@ static func furnish(b: Node3D) -> void:
 		b.piece(b,"Downpipe",Vector3(side*(b.width*.5+.38),5.2,-b.depth*.5+.5),Vector3(.15,10.4,.15),b.iron,false)
 		for y in [1.0,4.0,7.0,10.0]:
 			b.piece(b,"PipeBracket",Vector3(side*(b.width*.5+.38),y,-b.depth*.5+.5),Vector3(.25,.07,.25),b.iron,false)
+	# Shallow front masonry and timber detail keeps the entrance legible from the road.
+	for level in 2:
+		var y: float = level*b.floor_y
+		var front_z: float = b.depth*.5+.33
+		for side in [-1,1]:
+			b.piece(b,"DoorSurroundPier",Vector3(side*2.48,y+1.55,front_z),Vector3(.28,3.1,.18),b.stone,false)
+			b.piece(b,"DoorSurroundFoot",Vector3(side*2.48,y+.16,front_z),Vector3(.48,.22,.33),b.stone,false)
+		b.piece(b,"DoorSurroundLintel",Vector3(0,y+3.22,front_z),Vector3(5.25,.28,.28),b.stone,false)
+		b.piece(b,"FacadeStringcourse",Vector3(0,y+4.82,b.depth*.5+.32),Vector3(b.width+1,.14,.37),b.stone,false)
+	for side in [-1,1]:
+		b.piece(b,"EaveBracket",Vector3(side*(b.width*.5-1),10.7,b.depth*.5+1.72),Vector3(.22,.48,.65),b.wood,false)

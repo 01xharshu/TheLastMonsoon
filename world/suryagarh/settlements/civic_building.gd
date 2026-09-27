@@ -10,6 +10,7 @@ var stair_back := -9.0
 
 func _ready() -> void:
 	plaster = surface("clay_plaster",Color(.95,.91,.80),.45)
+	ochre = material(Color(.37,.18,.13))
 	stone = material(Color(.46,.43,.35),true)
 	wood = surface("dark_wood",Color(.75,.63,.46),.65)
 	tile = material(Color(.48,.23,.14),true)
@@ -145,6 +146,7 @@ func armoury() -> void:
 		var model: Node3D = load(source).instantiate()
 		pickup.add_child(model)
 		model.basis = Basis(Vector3.RIGHT,PI/2)
+		model.scale = Vector3.ONE * stored_weapon_scale(pickup.weapon_id)
 		for animation in model.find_children("*","AnimationPlayer",true,false): animation.stop()
 		var bounds := weapon_bounds(model,pickup)
 		model.position += Vector3(-bounds.get_center().x,1.115-pickup.position.y-bounds.position.y,-bounds.get_center().z)
@@ -171,22 +173,27 @@ func surface(asset: String,tint: Color,scale_value: float) -> Material:
 func sidearm_display() -> void:
 	var supplies = load("res://world/suryagarh/settlements/supply_pickup.gd")
 	var entries := [
-		["pistol","Adams 1851 revolver","res://environment/weapons/adams_1851/adams_1851.glb"],
+		["pistol","Adams revolver","res://environment/weapons/adams_1851/adams_1851.glb"],
 		["utility_knife","Utility knife","res://environment/weapons/period_utility_knife/period_utility_knife.glb"],
 		["paper_cartridges","Paper cartridges · lead bullets","res://environment/props/new_assets/enfield_ammo_packet.glb"]]
 	for i in entries.size():
 		var pickup := StaticBody3D.new()
 		pickup.set_script(supplies)
+		pickup.name = "SidearmSupply_"+entries[i][0]
 		pickup.set("item_id",entries[i][0])
 		pickup.set("display_name",entries[i][1])
 		pickup.set("count",6 if i==2 else 1)
-		pickup.position = Vector3(4+i*.75,floor_y+.96,4)
+		pickup.position = Vector3(4+i*.75,floor_y+1.06,4)
+		pickup.set_meta("support_top",floor_y+.91)
 		add_child(pickup)
 		if entries[i][2] != "":
 			var prop: Node3D = load(entries[i][2]).instantiate()
 			pickup.add_child(prop)
+			prop.scale = Vector3.ONE * stored_weapon_scale(entries[i][0])
 			if i < 2:
 				prop.rotation.x = PI*.5
+			var bounds := weapon_bounds(prop,pickup)
+			prop.position += Vector3(-bounds.get_center().x,-.135-bounds.position.y,-bounds.get_center().z)
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
 		shape.size = Vector3(.42,.12,.22)

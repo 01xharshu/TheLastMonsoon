@@ -92,7 +92,7 @@ manifest_path = ROOT / f'docs/characters/british/candidates/{RANK}_pair_manifest
 manifest = json.loads(manifest_path.read_text())
 manifest['runtime_exports'] = exports
 manifest['runtime_export'] = True
-manifest['animation'] = 'Independent Godot AnimationTree idle/walk BlendSpace1D; personal AnimationPlayer clips and male/female profiles'
+manifest['animation'] = 'Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles'
 manifest['placed_in_world'] = False
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 print('BRITISH_RUNTIME_EXPORT', RANK, json.dumps(exports))

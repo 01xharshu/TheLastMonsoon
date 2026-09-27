@@ -134,7 +134,7 @@ func validate() -> void:
 			fruit = child
 			break
 	check(fruit != null, "No reachable fruit spawned")
-	player.position = fruit.position + Vector3(0,0.8,1.6)
+	player.position = fruit.position + Vector3(0,0.8,0.65)
 	player.rotation = Vector3.ZERO
 	player.visual_root.rotation.y = PI
 	player.camera_pivot.rotation = Vector3(-0.3,0,0)
@@ -156,7 +156,7 @@ func validate() -> void:
 	shape.shape = box
 	wall.add_child(shape)
 	world.add_child(wall)
-	wall.position = player.position + Vector3(0,0,-0.8)
+	wall.position = player.position + Vector3(0,0,-0.325)
 	for i in 3: await physics_frame
 	check(player._find_interactable() == null, "Pickup through wall")
 	wall.queue_free()

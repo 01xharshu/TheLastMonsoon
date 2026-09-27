@@ -7,6 +7,7 @@ const QUIVER = preload("res://environment/weapons/period_quiver/period_quiver.gl
 const PISTOL = preload("res://environment/weapons/adams_1851/adams_1851.glb")
 const KNIFE = preload("res://environment/weapons/period_utility_knife/period_utility_knife.glb")
 const DOUBLE_GUN = preload("res://environment/weapons/double_percussion_gun/double_percussion_gun.glb")
+const EnfieldCartridgeVisual = preload("res://player/enfield_cartridge_visual.gd")
 enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE, DOUBLE_GUN }
 var selected: Selection = Selection.TALWAR
 var stowed := true
@@ -27,8 +28,8 @@ var knife_hip: Node3D
 var double_hand: Node3D
 var double_back: Node3D
 var double_rest_transform := Transform3D.IDENTITY
-var rifle_grip := Vector3(-0.14, -0.012, 0)
-var rifle_support := Vector3(0.20, 0.012, 0)
+var rifle_grip := Vector3(-0.09, -0.045, 0)
+var rifle_support := Vector3(0.20, -0.032, 0)
 var palm_offsets: Dictionary = {}
 var palm_axes: Dictionary = {}
 var rest_rotations: Dictionary = {}
@@ -38,9 +39,10 @@ var recoil := 0.0
 var reload_progress := -1.0
 var rifle_rest_transform := Transform3D.IDENTITY
 var ramrod_rest: Dictionary = {}
+var enfield_cartridge: BoneAttachment3D
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
-const PISTOL_SCALE := 0.78
-const ENFIELD_SCALE := 0.82
+const PISTOL_SCALE := 0.72
+const ENFIELD_SCALE := 1.39065 / 1.41 # Smithsonian P53 overall length / audited source length.
 const DOUBLE_GUN_SCALE := 0.72
 
 func attach_at_rest(bone: String, scene: PackedScene, placement: Transform3D, label: String) -> Node3D:
@@ -79,6 +81,10 @@ func setup(rig: Skeleton3D) -> void:
 		var centre := (index+pinky+middle)/3.0 + normal*.023 - forward*.005
 		palm_offsets[side_name] = hand.affine_inverse()*centre
 		palm_axes[side_name] = hand.basis.inverse()*Basis(across,forward,normal)
+	enfield_cartridge = EnfieldCartridgeVisual.new()
+	enfield_cartridge.name = "EnfieldPaperCartridge"
+	skeleton.add_child(enfield_cartridge)
+	enfield_cartridge.call("setup", palm_offsets["l"], palm_axes["l"])
 	# Talwar grip centre in its source GLB; +X is the blade direction.
 	var hand_rest := skeleton.get_bone_global_rest(skeleton.find_bone("hand_r"))
 	var blade_basis: Basis = hand_rest.basis*palm_axes["r"]
@@ -115,7 +121,10 @@ func setup(rig: Skeleton3D) -> void:
 	bow_back = attach_at_rest("spine_03", BOW, Transform3D(Basis(Vector3.UP, -0.22),Vector3(-0.30,1.08,-0.24)), "BowStowed")
 	quiver_back = attach_at_rest("spine_03", QUIVER, Transform3D(Basis.IDENTITY,Vector3(0.27,0.99,-0.25)), "QuiverBack")
 	var right_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_r")) * palm_offsets["r"]
-	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(blade_basis,right_palm-blade_basis*(PISTOL_GRIP*PISTOL_SCALE)), "PistolHeld")
+	# The pistol barrel follows the fingers, while the palm faces the grip's side.
+	# Reusing the sword basis would point the barrel across the open palm.
+	var pistol_basis := Basis(blade_basis.y,blade_basis.x,-blade_basis.z)
+	pistol_hand = attach_at_rest("hand_r", PISTOL, Transform3D(pistol_basis,right_palm-pistol_basis*(PISTOL_GRIP*PISTOL_SCALE)), "PistolHeld")
 	pistol_hand.scale = Vector3.ONE * PISTOL_SCALE
 	pistol_hip = attach_at_rest("pelvis", PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "PistolHolstered")
 	pistol_hip.scale = Vector3.ONE * PISTOL_SCALE
@@ -196,6 +205,7 @@ func _solve_arm(side: String, target: Vector3) -> void:
 
 func apply_rifle_grip(sword_striking := false) -> void:
 	animate_ramrod()
+	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress)
 	if stowed: return
 	if selected == Selection.TALWAR or selected == Selection.KNIFE:
 		if not sword_striking: apply_sword_rest()
@@ -208,8 +218,7 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		return
 	if selected == Selection.PISTOL:
 		apply_pistol_grip()
-		# This rig's finger skin collapses under a full fist; keep the palm intact.
-		_grasp("r", 0.35)
+		_grasp("r", 1.0)
 		return
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
 	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else ENFIELD_SCALE
@@ -349,6 +358,9 @@ func apply_pistol_grip() -> void:
 	var side_axis := barrel.cross(Vector3.UP).normalized()
 	var basis := Basis(barrel,side_axis.cross(barrel),side_axis)
 	var hand_target := Vector3(-0.30,1.40,0.72) if aiming else Vector3(-0.36,1.04,0.20)
+	if aiming and reload_progress < 0.0:
+		hand_target -= barrel * recoil
+		basis = basis.rotated(basis.z.normalized(), recoil * 1.8)
 	if reload_progress >= 0.0: hand_target = Vector3(-0.24,1.10,0.27)
 	# The pistol's imported barrel runs along local +X. Derive the wrist from
 	# its actual socket orientation so the visible barrel follows the camera.

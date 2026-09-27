@@ -10,8 +10,9 @@ func run() -> void:
 	for i in 8:
 		await process_frame
 	var settlement: Node3D = world.get_node("Settlement")
-	var names := ["CompanyStoresWoodenCrate", "BhairavpurWoodenBucket", "BhairavpurBrassPot", "BhairavpurWickerBasket", "BhairavpurWoodenStool", "BhairavpurPaintedBench", "CompanyStoresWineBarrel"]
+	var names := ["CompanyStoresWoodenCrate", "BhairavpurWoodenBucket", "BhairavpurBrassPot", "BhairavpurWickerBasket", "BhairavpurWoodenStool", "CompanyGuardBench", "CompanyStoresWineBarrel"]
 	var props: Array[StaticBody3D] = []
+	var failures: Array[String] = []
 	for name in names:
 		var prop: StaticBody3D = settlement.get_node_or_null(name)
 		if prop == null or prop.get_child_count() < 2 or not prop.get_child(1) is CollisionShape3D:
@@ -20,7 +21,22 @@ func run() -> void:
 			return
 		props.append(prop)
 	for prop in props:
-		print("PERIOD PROP STRUCTURAL PASS: ", prop.name, " ", prop.global_position)
+		var mesh_bottom := INF
+		for mesh in prop.find_children("*", "MeshInstance3D", true, false):
+			var bounds: AABB = mesh.global_transform * mesh.get_aabb()
+			mesh_bottom = minf(mesh_bottom, bounds.position.y)
+		var ray := PhysicsRayQueryParameters3D.create(prop.global_position + Vector3.UP * 2.0, prop.global_position - Vector3.UP * 2.0)
+		ray.exclude = [prop.get_rid()]
+		var floor_hit := world.get_world_3d().direct_space_state.intersect_ray(ray)
+		var gap: float = mesh_bottom - floor_hit.position.y if not floor_hit.is_empty() else INF
+		var grounded: bool = gap >= -.04 and gap <= .06
+		if not grounded:
+			failures.append(prop.name + " ground gap " + str(gap))
+		print("PERIOD PROP ", "PASS" if grounded else "FAIL", ": ", prop.name, " at ", prop.global_position, " visual-ground-gap=", gap)
+	if not failures.is_empty():
+		push_error("Period prop placement: " + str(failures))
+		quit(1)
+		return
 	if DisplayServer.get_name() != "headless":
 		var camera := Camera3D.new()
 		world.add_child(camera)

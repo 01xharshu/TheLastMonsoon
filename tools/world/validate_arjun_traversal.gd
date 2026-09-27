@@ -56,8 +56,12 @@ func run() -> void:
 	check(actor.global_position.z > -3.0,"high obstacle blocks walking")
 	actor.visual_root.rotation.y = PI
 	var climb := actor.get_node("ClimbComponent")
+	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+	for solver in visual.climb_ik.values(): solver.stop()
 	check(climb.try_start(),"reachable untagged ledge starts climb")
 	if climb.active:
+		for i in 5: await get_tree().physics_frame
+		check(visual.climb_ik["l"].is_running() and visual.climb_ik["r"].is_running(),"climbing restarts hand solvers after riding")
 		for i in 160: await get_tree().physics_frame
 		check(not climb.active and actor.global_position.y > 1.8,"reachable ledge climb lands above wall")
 	actor.global_position = Vector3(-3,0.9,0)

@@ -23,6 +23,9 @@ func audit() -> void:
 		var part: Node3D = scene.find_child(name, true, false)
 		if part: print("ENFIELD PART ", name, " local=", scene.to_local(part.global_position))
 	assert(mesh_count > 0 and absf(dimensions.x - 1.41) < 0.025)
+	var runtime_length := dimensions.x * preload("res://player/arjun_equipment.gd").ENFIELD_SCALE
+	assert(absf(runtime_length - 1.39065) < .005)
+	print("ENFIELD RUNTIME LENGTH: ",runtime_length," m | reference 1.39065 m")
 	var body: Node3D = load("res://characters/arjun/arjun.glb").instantiate()
 	root.add_child(body)
 	var body_min := Vector3(INF, INF, INF)

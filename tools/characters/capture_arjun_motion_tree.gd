@@ -37,8 +37,8 @@ func _run() -> void:
  camera.position = Vector3(0,1.0,2.7)
  camera.look_at(Vector3(0,0.0,0))
  camera.make_current()
- for sample in [["idle",0.0,false],["walk_a",1.0,false],["walk_b",1.0,false],["walk_side",1.0,false],["swim",1.0,true]]:
-  camera.position = Vector3(2.7,1.0,0.0) if sample[0] == "walk_side" else Vector3(0,1.0,2.7)
+ for sample in [["idle",0.0,false],["walk_a",1.0,false],["walk_b",1.0,false],["walk_side",1.0,false],["run_a",1.75,false],["run_side",1.75,false],["swim",1.0,true]]:
+  camera.position = Vector3(2.7,1.0,0.0) if sample[0] in ["walk_side", "run_side"] else Vector3(0,1.0,2.7)
   camera.look_at(Vector3(0,0,0))
   for i in (15 if sample[0] != "walk_b" else 18):
    tree.update_motion(1.0/30.0,sample[1],sample[1],sample[2])

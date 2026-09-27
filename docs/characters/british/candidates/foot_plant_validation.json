@@ -1,0 +1,151 @@
+{
+  "actors": [
+    {
+      "actor": "PrivateMan",
+      "hip_drop_max_m": 0.0227397827917212,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00045013427734375,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.000520706176757812,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "CorporalMan",
+      "hip_drop_max_m": 0.0193896025484475,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.0171737670898438,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "CorporalWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00646305084228516,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "SergeantMan",
+      "hip_drop_max_m": 0.023645975269851,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.000384330749511719,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "SergeantWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.000710487365722656,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "LieutenantMan",
+      "hip_drop_max_m": 0.0184740706234452,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.017704963684082,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "LieutenantWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00817489624023438,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "CaptainMan",
+      "hip_drop_max_m": 0.0231338862409729,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.0000104904174804688,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.00000095367431640625
+    },
+    {
+      "actor": "CaptainWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00194263458251953,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "MajorMan",
+      "hip_drop_max_m": 0.0234903320620609,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.000145912170410156,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "MajorWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00577259063720703,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "ColonelMan",
+      "hip_drop_max_m": 0.0228812286350453,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00103950500488281,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "ColonelWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00576210021972656,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "OfficialMan",
+      "hip_drop_max_m": 0.0227450266914627,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.0143957138061523,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    },
+    {
+      "actor": "OfficialWoman",
+      "hip_drop_max_m": 0.008,
+      "hip_drop_min_m": 0.008,
+      "locked_frames": 218,
+      "min_swing_ankle_clearance_m": 0.00610828399658203,
+      "reach_limited_frames": 0,
+      "worst_ankle_target_error_m": 0.0
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "scope": "flat surveyed-grade world ankle target hold and release; not mesh sole/cloth or uneven-ground approval"
+}

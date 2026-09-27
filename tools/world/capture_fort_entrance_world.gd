@@ -8,8 +8,8 @@ func _run() -> void:
 	for layer in world.find_children("*", "CanvasLayer", true, false): layer.visible = false
 	var camera := Camera3D.new()
 	world.add_child(camera)
-	camera.position = Vector3(520, 125, -282)
-	camera.look_at(Vector3(520, 123, -345))
+	camera.position = Vector3(520, 114, -255)
+	camera.look_at(Vector3(520, 130, -385))
 	camera.fov = 70
 	camera.current = true
 	for i in range(12): await process_frame

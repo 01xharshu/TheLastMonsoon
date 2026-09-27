@@ -1,13 +1,14 @@
 {
   "status": "MOTION_CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend",
-  "source_sha256": "5bb690e859a60592151a06ee27bb90088b1e360771ab445b224afecebc7d47df",
+  "source_sha256": "786f9299312d21e951e6e743b15dea561516bae23497b2937838b2e60b3795c0",
   "runtime": "WorkingAssets/NPCs/village_woman/village_woman_rigged_candidate.glb",
-  "runtime_sha256": "b45623fb8ef87ed2cf2cbc011d999d5a27bda4b72629b5725ae138739fe66fec",
+  "runtime_sha256": "7acd9a1398ccb5378f40a8ab504d5e4671bf24d2c9b947f99294a529da16ea6f",
   "actions": [
     "idle",
     "walk"
   ],
   "motion_approved": false,
-  "in_world": false
+  "in_world": false,
+  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation"
 }

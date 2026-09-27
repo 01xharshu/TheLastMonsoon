@@ -17,6 +17,32 @@ SLUG = "village_woman" if FEMALE else "village_farmer"
 OUT = ROOT / "WorkingAssets/NPCs" / SLUG
 bpy.ops.wm.open_mainfile(filepath=str(OUT / (SLUG + "_mpfb.blend")))
 rig = bpy.data.objects[SLUG + "_rig"]
+# Repair the candidate only; retain the original static source/world preview.
+body = bpy.data.objects[SLUG + "_MakeHuman_body"]
+if FEMALE:
+    visible = body.vertex_groups['Visible period skin']
+    arm_groups = {group.index for group in body.vertex_groups
+                  if group.name.startswith(('upperarm_', 'lowerarm_', 'hand_'))}
+    restored = [vertex.index for vertex in body.data.vertices
+                if sum(g.weight for g in vertex.groups if g.group in arm_groups) > .45]
+    visible.add(restored, 1.0, 'REPLACE')
+
+# Keep the waist anchored; distribute limited thigh motion through the hem.
+# Smooth left/right weights avoid a hard split through the skirt center.
+drape_names = (['Wrapped sari lower drape', 'Sari lower border'] if FEMALE else
+               ['Knee length wrapped dhoti', 'Dhoti woven border', 'Kurta loose lower panel'])
+for name in drape_names:
+    obj = bpy.data.objects[name]
+    obj.vertex_groups.clear()
+    for vertex in obj.data.vertices:
+        x, y, z = vertex.co
+        waist = .98 if FEMALE else .84
+        hem = .13 if FEMALE else .43
+        influence = .30 * max(0.0, min(1.0, (waist-z)/(waist-hem)))
+        left = max(0.0, min(1.0, .5 + x/.5))
+        for bone, weight in [('pelvis', 1.0-influence),
+                             ('thigh_l', influence*left), ('thigh_r', influence*(1.0-left))]:
+            (obj.vertex_groups.get(bone) or obj.vertex_groups.new(name=bone)).add([vertex.index], weight, 'REPLACE')
 scene = bpy.context.scene
 scene.render.fps = 30
 base = {}
@@ -112,6 +138,7 @@ report = dict(status='MOTION_CANDIDATE_NOT_APPROVED', source=str(source.relative
     source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
     runtime=str(runtime.relative_to(ROOT)),
     runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),
-    actions=['idle','walk'], motion_approved=False, in_world=False)
+    actions=['idle','walk'], motion_approved=False, in_world=False,
+    garment_repair='Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation')
 (OUT / 'motion_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
 print('VILLAGE_MOTION', json.dumps(report))

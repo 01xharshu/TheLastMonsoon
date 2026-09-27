@@ -6,6 +6,7 @@ var source: Node3D
 var skeleton: Skeleton3D
 var equipment: Node3D
 var arm_mesh_count := 0
+var carried_mango: MeshInstance3D
 
 func setup(character: Node3D) -> void:
 	source = character
@@ -23,7 +24,7 @@ func setup(character: Node3D) -> void:
 	equipment.inventory = source.actor.inventory
 	equipment.setup(skeleton)
 	# Update after the world animation has applied its weapon grip.
-	process_priority = 10
+	process_priority = 12
 
 func _keep_arms(node: MeshInstance3D) -> void:
 	if node.skin == null:
@@ -77,6 +78,7 @@ func _process(_delta: float) -> void:
 	equipment.stowed = source.equipment.stowed
 	equipment._refresh()
 	equipment.reload_progress = source.equipment.reload_progress
+	equipment.enfield_cartridge.call("update_loading", int(equipment.selected), equipment.stowed, equipment.reload_progress)
 	equipment.enfield_hand.transform = source.equipment.enfield_hand.transform
 	equipment.double_hand.transform = source.equipment.double_hand.transform
 	equipment.animate_ramrod()
@@ -88,3 +90,17 @@ func _process(_delta: float) -> void:
 	equipment.pistol_hip.hide()
 	if equipment.bow_hand and source.equipment.bow_hand:
 		equipment.bow_hand.set_draw_fraction(source.equipment.bow_hand.draw_fraction)
+
+	var pickup = source.actor.get_node("InteractionPoseComponent")
+	if carried_mango == null:
+		carried_mango = MeshInstance3D.new()
+		carried_mango.mesh = pickup.carried_mango.mesh
+		carried_mango.material_override = pickup.carried_mango.material_override
+		add_child(carried_mango)
+	carried_mango.visible = pickup.carried_mango.visible
+	if carried_mango.visible:
+		skeleton.force_update_all_bone_transforms()
+		var hand_index := skeleton.find_bone("hand_r")
+		var world_hand: Transform3D = source.skeleton.global_transform * source.skeleton.get_bone_global_pose(hand_index)
+		var hand_offset: Transform3D = world_hand.affine_inverse() * pickup.carried_mango.global_transform
+		carried_mango.global_transform = skeleton.global_transform * skeleton.get_bone_global_pose(hand_index) * hand_offset

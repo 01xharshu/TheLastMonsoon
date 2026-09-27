@@ -14,6 +14,7 @@ func _run() -> void:
 	var transitions := 0
 	for actor in roster.get_children():
 		actor.set_process(false)
+		actor.set("foot_plant_enabled", false)
 		actor.set("_clock", 0.0)
 		var tree: AnimationTree = actor.get("animation_tree")
 		if tree == null or not tree.active:

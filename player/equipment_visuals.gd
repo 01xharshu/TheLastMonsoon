@@ -1,5 +1,21 @@
 extends Node3D
 
+var bag_rig: Skeleton3D
+var bag_bone := -1
+var bag_offset := Transform3D.IDENTITY
+
+func _process(_delta: float) -> void:
+	if bag_rig == null:
+		var character = get_parent().get_node_or_null("CharacterVisual")
+		if character == null or character.skeleton == null: return
+		bag_rig = character.skeleton
+		bag_bone = bag_rig.find_bone("pelvis")
+		# Preserve the authored standing placement, then follow the animated waist.
+		var standing := bag_rig.global_transform * bag_rig.get_bone_global_rest(bag_bone)
+		bag_offset = standing.affine_inverse() * water_bag_visual.global_transform
+	water_bag_visual.global_transform = bag_rig.global_transform * bag_rig.get_bone_global_pose(bag_bone) * bag_offset
+
+
 
 # =========================================================
 # INVENTORY
@@ -24,6 +40,7 @@ extends Node3D
 # =========================================================
 
 func _ready() -> void:
+	process_priority = 11
 
 	if inventory == null:
 

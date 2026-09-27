@@ -11,7 +11,7 @@ func _run() -> void:
 	for actor in roster.get_children():
 		actor.set_process(false)
 		var tree: AnimationTree = actor.get("animation_tree")
-		tree.set("parameters/locomotion/blend_position", 1.0)
+		tree.set("parameters/locomotion/blend_amount", 1.0)
 		var skeleton := actor.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
 		var foot := skeleton.find_bone("foot_l")
 		var minimum := Vector3(INF, INF, INF)

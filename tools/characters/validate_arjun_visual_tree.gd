@@ -29,5 +29,12 @@ func _run() -> void:
 		push_error("ARJUN VISUAL TREE: swim clip received a second body tilt")
 		quit(1)
 		return
-	print("ARJUN VISUAL TREE: PASS | player speed, ground blend, swim pitch")
+	actor.is_swimming = false
+	actor.set_meta("mounted_vehicle", null)
+	visual._process(0.2)
+	if not visual.motion_tree.active:
+		push_error("ARJUN VISUAL TREE: a cleared vehicle tag left locomotion disabled")
+		quit(1)
+		return
+	print("ARJUN VISUAL TREE: PASS | player speed, ground blend, swim pitch, vehicle exit")
 	quit()

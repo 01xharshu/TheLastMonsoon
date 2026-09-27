@@ -8,7 +8,21 @@
   "male_bones": 53,
   "female_bones": 53,
   "mpfb_data": "/Users/harshmishra/Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data",
-  "runtime_export": false,
+  "runtime_export": true,
   "visual_approved": false,
-  "motion_approved": false
+  "motion_approved": false,
+  "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
+  "runtime_exports": {
+    "man": {
+      "path": "characters/npcs/british/private_man.glb",
+      "sha256": "9947c7b70d6dccc3f169d8100d28b6ab3723675247970183eb5fa5128440e837",
+      "bytes": 1473444
+    },
+    "woman": {
+      "path": "characters/npcs/british/private_woman.glb",
+      "sha256": "6cd28c3ab6e88559e75a25db86eb9f4f0aa6f5f456492b397e3d4a54a77d497e",
+      "bytes": 1766832
+    }
+  },
+  "placed_in_world": false
 }

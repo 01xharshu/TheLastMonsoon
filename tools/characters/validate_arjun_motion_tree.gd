@@ -31,10 +31,30 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: foot contact correction outside bounds")
 		quit(1)
 		return
+	for i in 8: tree.update_motion(0.1, 1.75, 0.0, false)
+	if tree.ground_blend < 1.65 or tree.playback_rate < 1.5 or tree.playback_rate > 1.8:
+		push_error("ARJUN MOTION TREE: sprint did not reach its separate gait and cadence")
+		quit(1)
+		return
 	for i in 10: tree.update_motion(0.1, 0.0, 1.0, true)
 	if tree.swim_blend < 0.9:
 		push_error("ARJUN MOTION TREE: water blend did not engage")
 		quit(1)
 		return
-	print("ARJUN MOTION TREE: PASS | idle, walk, swim blends and in-place root")
+	tree.update_rest(0.3, 1.0)
+	if tree.rest_blend < 0.99 or not tree.get("parameters/rest/blend_amount") > 0.99:
+		push_error("ARJUN MOTION TREE: seated clip did not engage")
+		quit(1)
+		return
+	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
+	if tree.longgun_aim_blend < 0.9 or tree.longgun_recoil_blend < 0.9:
+		push_error("ARJUN MOTION TREE: long gun aim/recoil blend did not engage")
+		quit(1)
+		return
+	tree.update_longgun_motion(0.3, true, false, 0.5, 0.0)
+	if tree.longgun_reload_blend < 0.9 or tree.longgun_aim_blend > 0.1:
+		push_error("ARJUN MOTION TREE: long gun reload did not release aim")
+		quit(1)
+		return
+	print("ARJUN MOTION TREE: PASS | idle, walk, run, swim, sit and long gun envelopes")
 	quit()

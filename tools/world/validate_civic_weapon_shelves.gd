@@ -11,6 +11,7 @@ func validate() -> void:
 		var pickups = store.find_children("*","StaticBody3D",true,false).filter(func(n): return n.is_in_group("weapon_pickups"))
 		assert(pickups.size()==3)
 		for pickup in pickups:
+			assert(pickup.get_child(0).scale.is_equal_approx(Vector3.ONE*store.stored_weapon_scale(pickup.weapon_id)))
 			var bounds: AABB = store.weapon_bounds(pickup.get_child(0),store)
 			assert(absf(bounds.position.y-1.115)<.002)
 			assert(bounds.position.x>=store.width*.5-4.2 and bounds.end.x<=store.width*.5-1.8)

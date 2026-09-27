@@ -27,14 +27,13 @@ func try_toggle() -> bool:
 	return boarded
 
 func _process(_delta: float) -> void:
-	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false): return
+	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false):
+		actor.interaction_overlay.set_ride_prompt("")
+		return
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mounted):
 		var mount_name := "horse" if mounted.is_in_group("horses") else ("cart" if actor.get_meta("cart_role", "") != "" else "boat")
-		actor.secondary_interaction_label.text = ("[△] " if SaveManager.active_input_device == "controller" else "[F] ") + "Dismount " + mount_name
-		actor.secondary_interaction_label.visible = true
+		actor.interaction_overlay.set_ride_prompt("Dismount " + mount_name)
 	else:
 		var nearby := nearest_vehicle()
-		if nearby == null: return
-		actor.secondary_interaction_label.text = ("[△] " if SaveManager.active_input_device == "controller" else "[F] ") + ("Take horse" if nearby.is_in_group("horses") else "Board river boat")
-		actor.secondary_interaction_label.visible = true
+		actor.interaction_overlay.set_ride_prompt(("Take horse" if nearby.is_in_group("horses") else "Board river boat") if nearby != null else "")

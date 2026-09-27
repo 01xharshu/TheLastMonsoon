@@ -25,6 +25,6 @@
       "bytes": 1864548
     }
   },
-  "animation": "Independent Godot AnimationTree idle/walk BlendSpace1D; personal AnimationPlayer clips and male/female profiles",
+  "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true
 }

@@ -175,6 +175,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"double_gun_rounds":actor.get_node("DoubleGunCombat").rounds},
 		"remaining_weapon_ids": _remaining_weapon_pickup_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
+		"collected_forage_ids": _collected_forage_ids(world),
 	}
 	var map: Control = actor.get_node("UI/WorldMap")
 	if is_finite(map.waypoint.x): data["waypoint"] = [map.waypoint.x,map.waypoint.y]
@@ -255,9 +256,23 @@ func apply_pending(world: Node3D) -> void:
 	for chest in world.get_tree().get_nodes_in_group("treasure_chests"):
 		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
 			chest.restore_opened()
+	# Absent in older version-1 saves: preserve their available fruit.
+	if data.get("collected_forage_ids") is Array:
+		for grove in world.get_tree().get_nodes_in_group("forage_groves"):
+			if world.is_ancestor_of(grove):
+				grove.restore_collected(data.collected_forage_ids)
 	var map: Control = actor.get_node("UI/WorldMap")
 	if data.get("waypoint") is Array and data.waypoint.size()==2:
 		map.waypoint = Vector2(float(data.waypoint[0]),float(data.waypoint[1]))
+
+func _collected_forage_ids(world: Node3D) -> Array[String]:
+	var ids: Array[String] = []
+	for grove in world.get_tree().get_nodes_in_group("forage_groves"):
+		if not world.is_ancestor_of(grove): continue
+		for forage_id in grove.collected_ids:
+			if not forage_id in ids: ids.append(forage_id)
+	ids.sort()
+	return ids
 
 func _remaining_weapon_pickup_ids(world: Node3D) -> Array[String]:
 	var remaining: Array[String] = []

@@ -90,12 +90,7 @@ func run() -> void:
 	dummy.global_position = view.global_position-view.global_basis.z*1.0
 	for i in 2: await physics_frame
 	var strike = player.get_node("KnifeStrike")
-	var event := InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = true
-	var probe := PhysicsRayQueryParameters3D.create(view.global_position,view.global_position-view.global_basis.z*1.45)
-	probe.exclude = [player.get_rid()]
-	strike._unhandled_input(event)
+	strike.strike()
 	check(dummy.damage_received >= 18.0,"Utility knife did not strike a reachable target")
 	print("CIVIC INTERIORS ","FAIL" if failed else "PASS")
 	quit(1 if failed else 0)

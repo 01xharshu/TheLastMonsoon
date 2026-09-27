@@ -4,7 +4,7 @@ Implemented 2026-09-23. Suryagarh and the test world use 2.4 game minutes per re
 
 At full sprint speed, running drains 5 stamina per real second (20 seconds from 100 to empty), independently of the accelerated world clock. As of 2026-09-27, drain scales with actual horizontal movement after collision; acceleration uses less, while a wall or held pickup that stops Arjun allows recovery. Walking/rest recover 10 per second; exhaustion clears at 25. Food, hydration and energy retain their existing game-hour rates.
 
-Two mango trees and ten collectible fallen mangoes are beside the Bhairavpur approach, near (-240, 176) and (-246, 186). Fallen fruit snaps to baked terrain collision. Within 2.6 metres, face fruit to see E / Shift+E prompts. Hold E for 0.65 seconds to collect; releasing early cancels. Shift+E or Q eats it directly. Third-person follows body facing; first-person follows horizontal camera facing. Occlusion blocks interaction. The pickup stores one mango, and the Satchel has an Eat mango row. A mango restores 12 food and 6 hydration. Eating when both stats are full preserves the fruit. Collection is guarded against repeated input before deletion.
+Two mango trees and ten collectible fallen mangoes are beside the Bhairavpur approach, near (-240, 176) and (-246, 186). Fallen fruit snaps to baked terrain collision. Within 1.1 metres, face fruit to see E / Shift+E prompts. Hold E for 0.65 seconds to collect; releasing early cancels. Shift+E or Q eats it directly. Third-person follows body facing; first-person follows horizontal camera facing. Occlusion blocks interaction. The pickup stores one mango, and the Satchel has an Eat mango row. A mango restores 12 food and 6 hydration. Eating when both stats are full preserves the fruit. Collection is guarded against repeated input before deletion.
 
 ## Evidence
 
@@ -17,3 +17,15 @@ Run `/Applications/Godot.app/Contents/MacOS/Godot --path . --script tools/world/
 Fruit uses a simple procedural mesh. These checks establish functionality and observed lighting/prompt appearance; they do not approve final fruit art or hand-contact/picking/eating animation. The existing tree model's decorative fruit is not individually harvestable. Collected fruit does not yet respawn.
 
 The 2026-09-27 frame-by-frame clock test exposed floating-point accumulation just below an exact minute. Readable time now uses a tiny boundary tolerance (0.0000001 game minutes) to avoid showing the previous minute at the end of a full 600-second day.
+
+## Fruit save/load — 2026-09-27
+
+Each collectible mango now has a stable grove/fruit ID. Picking or eating records the ID before deferred deletion, and saves store `collected_forage_ids`. Loading a fresh world removes only those recorded mangoes; uncollected fruit and newly added IDs remain available. Re-saving preserves earlier harvest history. Older version-1 files without the new field still load and retain their fruit; their missing historical harvest state cannot be reconstructed. New games start with all ten mangoes. This does not add timed fruit respawning.
+
+`tools/world/validate_forage_save.gd` / `forage_save_validation.json` PASS: immediate save before deletion, picked and directly eaten fruit, satchel/nutrition restoration, fresh-scene reload, untouched fruit usability, stable IDs after renaming/repositioning, repeated reload/resave, legacy compatibility and new-game isolation. Tests use a unique disposable save directory. Existing save-flow and day/stamina/held-pickup regression checks also pass.
+
+## Ground pickup motion — 2026-09-27
+
+Mangoes use a target-specific crouch and right-hand reach. The pelvis moves toward the selected fruit, leg solving holds both feet at their starting positions, and the hand blends from its actual initial position (including a drawn talwar). Weapons are temporarily stowed and restored after recovery if the selection is unchanged. Rest, climbing, vehicle, river and stealth actions clear the pickup pose; swimming keeps weapons stowed. The water bag follows the animated pelvis instead of floating above the crouched body. Other interactables retain their existing poses and 2.6 m range.
+
+`tools/world/validate_mango_reach.gd` checks two lateral fruit positions, closer-approach prompting, anchored feet, transition steps, drawn talwar restoration and rest interruption. Evidence: `mango_reach_validation.json` and `captures/mango_reach_{0,5,11,29,released}.png`. Numerical palm error is 3.4–5.8 cm, consistent with the procedural fruit surface; anchored foot drift is below 0.001 mm. Forward+/Metal captures were inspected: the crouch releases and the water bag follows the waist. The right hand is partly obscured by the trousers from the capture angle, so those pixels do not approve finger/surface contact. This remains a procedural reach, with no finger grasp, fruit carried in hand or mouth/eating animation. Sloped-ground contact and final clothing deformation remain unapproved.

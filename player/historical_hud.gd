@@ -106,7 +106,7 @@ func _layout() -> void:
 	place($InventoryPanel,Vector2((size.x-640)/2,(size.y-420)/2),Vector2(640,420))
 	place($PrimaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62),Vector2(500,38))
 	place($SecondaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62+36),Vector2(500,32))
-	place($PickupMessageLabel,Vector2(size.x/2-280,size.y*0.76),Vector2(560,40))
+	place($PickupMessageLabel,Vector2(size.x/2-280,size.y*0.18),Vector2(560,40))
 
 func _process(delta: float) -> void:
 	controls_elapsed += delta
@@ -138,7 +138,7 @@ func _process(delta: float) -> void:
 	elif equipment and not equipment.stowed and equipment.selected == 5:
 		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Cover · G Stow · ~ Weapons"
 	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
-		weapon_label.text = {1:"ENFIELD",3:"ADAMS 1851",5:"DOUBLE GUN"}[equipment.selected]
+		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN"}[equipment.selected]
 		place(weapon_label,Vector2(size.x-303,size.y-181),Vector2(258,28))
 	else:
 		place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))

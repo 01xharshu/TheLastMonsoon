@@ -11,6 +11,7 @@ var paddle: Node3D
 var paddle_stow: Transform3D
 var paddle_blend := 0.0
 var row_effort := 0.0
+var row_drive := 0.0
 var blade_in_water := false
 var paddle_contacts := 0
 var stroke_power := 0.0
@@ -149,6 +150,7 @@ func dismount() -> bool:
 	rider = null
 	paddle_blend = 0.0
 	row_effort = 0.0
+	row_drive = 0.0
 	stroke_power = 0.0
 	blade_in_water = false
 	if paddle != null: paddle.transform = paddle_stow
@@ -166,10 +168,13 @@ func _physics_process(delta: float) -> void:
 		throttle = Input.get_axis("move_backward","move_forward")
 		steer = Input.get_axis("move_right","move_left")
 		survival_pause()
-	row_effort = move_toward(row_effort,absf(throttle),delta*3.5)
+	# Ease through rest before changing stroke direction; an opposite key must not
+	# instantly reverse the paddle velocity and submerged pull.
+	row_drive = move_toward(row_drive,throttle,delta*3.5)
+	row_effort = absf(row_drive)
 	paddle_blend = move_toward(paddle_blend,1.0 if rider != null else 0.0,delta*3.5)
 	if row_effort > .05:
-		row_phase = fmod(row_phase+delta*4.8*signf(throttle if absf(throttle)>.05 else speed),TAU)
+		row_phase = fmod(row_phase+delta*4.8*row_drive,TAU)
 	if paddle != null:
 		var stroke := sin(row_phase)*row_effort
 		var dip := cos(row_phase)*row_effort
@@ -178,9 +183,9 @@ func _physics_process(delta: float) -> void:
 		var immersed := rider != null and row_effort>.2 and paddle_blade_world().y<.035
 		if immersed and not blade_in_water: _paddle_splash(paddle_blade_world())
 		blade_in_water = immersed
-	stroke_power = maxf(0.0,cos(row_phase))*row_effort*absf(throttle) if blade_in_water else 0.0
+	stroke_power = maxf(0.0,cos(row_phase))*row_effort if blade_in_water else 0.0
 	# Water drag acts throughout the cycle; propulsion comes from the submerged pull.
-	speed = clampf(speed+throttle*stroke_power*8.5*delta,-4.2,4.2)
+	speed = clampf(speed+row_drive*stroke_power*8.5*delta,-4.2,4.2)
 	speed = move_toward(speed,0.0,delta*(.18+absf(speed)*.18))
 	rotation.y += steer*delta*0.7*clampf(absf(speed),0,1)
 	velocity = -global_basis.z*speed

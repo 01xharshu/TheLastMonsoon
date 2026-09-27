@@ -27,7 +27,7 @@ func _run() -> void:
 		camera.look_at(actor.global_position + Vector3(0,0.9,0))
 		var tree: AnimationTree = actor.get("animation_tree")
 		for amount in [0.0, 0.5, 1.0]:
-			tree.set("parameters/locomotion/blend_position", amount)
+			tree.set("parameters/locomotion/blend_amount", amount)
 			tree.advance(0.21)
 			for i in 4:
 				await process_frame

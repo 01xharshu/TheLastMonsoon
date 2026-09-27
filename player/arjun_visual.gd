@@ -130,22 +130,31 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
-	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("rest_action", "") != "" or actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("stealth_stance", "") != ""
+	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
+	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or mounted or actor.get_meta("stealth_stance", "") != ""
 	if motion_tree != null:
 		motion_tree.active = not special_pose
 	if actor.get_meta("rest_action", "") != "":
+		if motion_tree != null:
+			var rest_progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
+			var seated: float = smoothstep(0.0, 0.38, rest_progress) * (1.0 - smoothstep(0.38, 0.9, rest_progress))
+			motion_tree.update_rest(delta, seated)
 		_pose_rest(delta)
 		return
+	if motion_tree != null and motion_tree.rest_blend > 0.0:
+		motion_tree.rest_blend = 0.0
 	if actor.get_meta("river_action", "") != "":
 		_pose_river_action(delta)
 		return
 	if actor.get_meta("climbing",false):
 		_pose_climb(delta)
 		return
-	if actor.has_meta("mounted_vehicle"):
+	if mounted:
 		var mount: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 		if is_instance_valid(mount) and mount.is_in_group("horses"):
-			for solver in climb_ik.values(): solver.influence = 0.0
+			for solver in climb_ik.values():
+				solver.influence = 0.0
+				if solver.is_running(): solver.stop()
 			if actor.get_meta("horse_transition", "") != "":
 				_pose_horse_transition(delta)
 			else:
@@ -261,6 +270,15 @@ func _process(delta: float) -> void:
 				duration = 4.4
 		if reload_node != null and reload_node.reload_remaining > 0.0:
 			equipment.reload_progress = clampf(1.0-reload_node.reload_remaining/duration,0.0,1.0)
+	if motion_tree != null:
+		var pistol_equipped: bool = not equipment.stowed and equipment.selected == Equipment.Selection.PISTOL
+		motion_tree.update_pistol_motion(delta, pistol_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
+		if pistol_equipped:
+			pose("spine_02", Vector3(-0.035 * motion_tree.pistol_aim_blend + 0.045 * motion_tree.pistol_recoil_blend, -0.035 * motion_tree.pistol_aim_blend, 0.0), 0.35)
+		var longgun_equipped: bool = not equipment.stowed and equipment.selected in [Equipment.Selection.ENFIELD, Equipment.Selection.DOUBLE_GUN]
+		motion_tree.update_longgun_motion(delta, longgun_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
+		if longgun_equipped:
+			pose("spine_02", Vector3(-0.025 * motion_tree.longgun_aim_blend + 0.035 * motion_tree.longgun_recoil_blend - 0.025 * motion_tree.longgun_reload_blend, -0.025 * motion_tree.longgun_aim_blend, 0.0), 0.4)
 	equipment.apply_rifle_grip(armed and slash_phase >= 0.0)
 
 func _pose_river_action(delta: float) -> void:
@@ -289,20 +307,36 @@ func _pose_rest(delta: float) -> void:
 	var progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
 	var lie := smoothstep(0.38, 0.9, progress)
 	var weight := 1.0 - exp(-12.0 * delta)
-	model.rotation.x = lerpf(model.rotation.x, 0.0, weight)
-	model.rotation.z = lerpf(model.rotation.z, -PI * 0.5 * lie, weight)
-	model.position = model.position.lerp(Vector3(-0.65 * lie, lerpf(-0.9, -0.1, lie), 0.62 * (1.0 - lie)), weight)
+	# Turn the body's width across the cot, keeping both legs at the same
+	# height. A roll around Z instead stacks left/right limbs vertically.
+	var lie_basis := Basis(Vector3(0, 0, 1), Vector3(1, 0, 0), Vector3(0, 1, 0))
+	var target_rotation := Quaternion.IDENTITY.slerp(lie_basis.get_rotation_quaternion(), lie)
+	model.quaternion = model.quaternion.slerp(target_rotation, weight)
+	model.position = model.position.lerp(Vector3(-0.65 * lie, lerpf(-1.1, -0.1, lie), 0.42 * (1.0 - lie)), weight)
 	pose("pelvis", Vector3.ZERO, weight)
 	pose("spine_01", Vector3(-0.12 * (1.0 - lie), 0, 0), weight)
 	pose("spine_02", Vector3(0.04 * lie, 0, 0), weight)
 	pose("head", Vector3(0.05 * lie, 0, 0), weight)
 	for side in ["l", "r"]:
 		var spread := 1.0 if side == "l" else -1.0
-		pose("thigh_" + side, Vector3(lerpf(-1.2, 0.0, lie), spread * 0.08 * (1.0 - lie), 0), weight)
-		pose("calf_" + side, Vector3(lerpf(1.45, 0.0, lie), 0, 0), weight)
-		pose("foot_" + side, Vector3(-0.2 * (1.0 - lie), 0, 0), weight)
-		pose("upperarm_" + side, Vector3(lerpf(0.25, -0.35, lie), 0, spread * lerpf(0.2, 0.35, lie)), weight)
-		pose("lowerarm_" + side, Vector3(lerpf(-0.65, -0.25, lie), 0, 0), weight)
+		pose("thigh_" + side, Vector3(0.0, 0.0, 0.0), weight * lie)
+		pose("calf_" + side, Vector3(0.0, 0, 0), weight * lie)
+		pose("foot_" + side, Vector3.ZERO, weight * lie)
+		pose("upperarm_" + side, Vector3(-0.35, 0, spread * 0.35), weight * lie)
+		pose("lowerarm_" + side, Vector3(-0.25, 0, 0), weight * lie)
+		if progress < 0.62:
+			_rest_seated_foot_contact(side, smoothstep(0.12, 0.32, progress) * (1.0 - lie))
+
+func _rest_seated_foot_contact(side: String, influence: float) -> void:
+	if influence <= 0.0: return
+	skeleton.force_update_all_bone_transforms()
+	var foot_index := skeleton.find_bone("foot_" + side)
+	var ankle := skeleton.to_global(skeleton.get_bone_global_pose(foot_index).origin)
+	var query := PhysicsRayQueryParameters3D.create(ankle + Vector3.UP * 0.5, ankle - Vector3.UP * 1.0)
+	query.exclude = [actor.get_rid()]
+	var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty(): return
+	_horse_foot_contact(side, hit.position + Vector3.UP * 0.02, influence)
 
 func _pose_seated(delta: float) -> void:
 	var boat: Node = actor.get_meta("mounted_vehicle")
@@ -387,27 +421,82 @@ func _pose_horse_riding(delta: float) -> void:
 	pose("spine_01",Vector3(-.04-lean,0,0),weight)
 	pose("spine_02",Vector3(sin(breath)*.012,0,0),weight)
 	pose("head",Vector3(.03,0,0),weight)
+	for side in ["l", "r"]: _horse_foot_contact(side, mount.stirrup_world(side), 1.0)
 
 func _pose_horse_transition(delta: float) -> void:
 	var t: float = actor.get_meta("horse_transition_progress", 0.0)
 	var dismounting: bool = actor.get_meta("horse_transition", "") == "dismount"
-	var swing: float = sin(t * PI)
-	var seated: float = (1.0 - t) if dismounting else t
-	var weight := 1.0 - exp(-12.0 * delta)
-	model.position = model.position.lerp(Vector3(0, -0.9 + swing * 0.08, 0), weight)
+	var u: float = 1.0 - t if dismounting else t
+	var mount: Node3D = actor.get_meta("mounted_vehicle")
+	var entry_side: float = actor.get_meta("horse_transition_side", -1.0)
+	var crossing_side := "r" if entry_side < 0.0 else "l"
+	var swing := sin(smoothstep(0.25, 0.90, u) * PI)
+	var seated := smoothstep(0.55, 1.0, u)
+	var weight := 1.0 - exp(-24.0 * delta)
+	model.position = model.position.lerp(Vector3(0, -0.9, 0), weight)
 	model.rotation.x = lerpf(model.rotation.x, 0.0, weight)
-	pose("pelvis", Vector3(-0.1 * swing, 0, 0.12 * swing), weight)
-	pose("spine_01", Vector3(-0.3 * swing, 0, 0), weight)
-	pose("spine_02", Vector3(-0.18 * swing, 0, 0), weight)
+	pose("pelvis", Vector3(-0.08 * swing, 0, -entry_side * 0.10 * swing), weight)
+	pose("spine_01", Vector3(-0.24 * swing, 0, 0), weight)
+	pose("spine_02", Vector3(-0.12 * swing, 0, 0), weight)
 	for side in ["l", "r"]:
-		var crossing: float = swing if side == "r" else 0.25 * swing
-		pose("thigh_" + side, Vector3(-0.35 * seated + 1.15 * crossing, 0, (0.55 if side == "l" else -0.55) * seated + crossing * 0.38), weight)
-		pose("calf_" + side, Vector3(0.90 * seated - 0.95 * crossing, 0, 0), weight)
-		pose("foot_" + side, Vector3(0.12 * seated + 0.2 * crossing, 0, 0), weight)
-		pose("upperarm_" + side, Vector3(-0.3 - 0.7 * swing, 0, (-0.4 if side == "l" else 0.4)), weight)
-		pose("lowerarm_" + side, Vector3(-0.50 * seated - 0.55 * swing, 0, 0), weight)
+		var sign_side := 1.0 if side == "l" else -1.0
+		var crossing: float = swing if side == crossing_side else 0.0
+		var supporting: float = sin(u * PI) if side != crossing_side else 0.0
+		pose("thigh_" + side, Vector3(-0.35 * seated - 1.45 * crossing - 0.55 * supporting, 0, sign_side * (0.55 * seated + 0.85 * crossing)), weight)
+		pose("calf_" + side, Vector3(0.90 * seated + 1.15 * crossing + 0.65 * supporting, 0, 0), weight)
+		pose("foot_" + side, Vector3(0.12 * seated - 0.15 * crossing, 0, 0), weight)
+		pose("upperarm_" + side, Vector3(-0.4, 0, -sign_side * 0.35), weight)
+		pose("lowerarm_" + side, Vector3(-0.7, 0, 0), weight)
+	# Hold the top of the pommel/cantle with the palm facing down.
+	skeleton.force_update_all_bone_transforms()
+	var contact := smoothstep(0.0, 0.18, u)
+	var world_palm := Basis(-mount.global_basis.x, -mount.global_basis.z, -mount.global_basis.y)
+	for side in ["l", "r"]:
+		var hand_index := skeleton.find_bone("hand_" + side)
+		var hand_basis: Basis = skeleton.global_basis.inverse() * world_palm * (equipment.palm_axes[side] as Basis).inverse()
+		var target := skeleton.to_local(mount.saddle_grip_world(side))
+		for pass_index in 4:
+			var hand := skeleton.get_bone_global_pose(hand_index)
+			var palm: Vector3 = hand * equipment.palm_offsets[side]
+			equipment._solve_arm(side, palm.lerp(target, contact) - hand_basis * equipment.palm_offsets[side])
+			var parent := skeleton.get_bone_parent(hand_index)
+			var rotation := (skeleton.get_bone_global_pose(parent).basis.inverse() * hand_basis).orthonormalized().get_rotation_quaternion()
+			skeleton.set_bone_pose_rotation(hand_index, skeleton.get_bone_pose_rotation(hand_index).slerp(rotation, contact))
+			skeleton.force_update_all_bone_transforms()
+		equipment._grasp(side, contact * 0.65)
+		var foot_contact := smoothstep(0.1, 0.3, u) if side != crossing_side else seated
+		_horse_foot_contact(side, mount.stirrup_world(side), foot_contact)
+
+func _horse_foot_contact(side: String, world_target: Vector3, weight: float) -> void:
+	if weight <= 0.0: return
+	var thigh := "thigh_" + side
+	var calf := "calf_" + side
+	var foot := "foot_" + side
+	var foot_index := skeleton.find_bone(foot)
+	var rest := skeleton.get_bone_global_rest(foot_index)
+	var sole_offset: Vector3 = rest.basis.inverse() * Vector3(0, -0.085, 0.06)
+	var target: Vector3 = skeleton.to_local(world_target) - rest.basis * sole_offset
+	var current := skeleton.get_bone_global_pose(foot_index)
+	target = current.origin.lerp(target, weight)
+	var origin := skeleton.get_bone_global_pose(skeleton.find_bone(thigh)).origin
+	var a := skeleton.get_bone_global_rest(skeleton.find_bone(thigh)).origin.distance_to(skeleton.get_bone_global_rest(skeleton.find_bone(calf)).origin)
+	var b := skeleton.get_bone_global_rest(skeleton.find_bone(calf)).origin.distance_to(rest.origin)
+	var direction := (target-origin).normalized()
+	var distance := clampf(origin.distance_to(target), 0.001, a+b-0.001)
+	var pole := Vector3(0, 0, 1)
+	pole = (pole-direction*pole.dot(direction)).normalized()
+	var along := (a*a-b*b+distance*distance)/(2.0*distance)
+	for pass_index in 4:
+		equipment._aim_bone(thigh, origin+direction*along+pole*sqrt(maxf(0.0,a*a-along*along)), calf)
+		equipment._aim_bone(calf, origin+direction*distance, foot)
+	var parent := skeleton.get_bone_parent(foot_index)
+	var foot_basis := skeleton.get_bone_global_pose(parent).basis.inverse() * rest.basis
+	skeleton.set_bone_pose_rotation(foot_index, foot_basis.orthonormalized().get_rotation_quaternion())
+	skeleton.force_update_all_bone_transforms()
 
 func _pose_climb(delta: float) -> void:
+	for solver in climb_ik.values():
+		if not solver.is_running(): solver.start()
 	var component: Node = actor.get_node("ClimbComponent")
 	var t: float = clampf(component.progress,0.0,1.0)
 	var weight := 1.0-exp(-15.0*delta)

@@ -306,10 +306,10 @@ func interior(h: Node3D,level: int) -> void:
 	if level==0:
 		for x in [-8.0,8.0]: piece(h,"MarbleHallBench",Vector3(x,y+.5,8),Vector3(3,.35,.8),stone)
 		for side in [-1.0,1.0]:
-			for z in [-11.0,10.0]:
-				piece(h,"HallWallPanel",Vector3(side*17.2,y+2.25,z),Vector3(.08,2.5,3.2),ochre,false)
-				piece(h,"HallWallPanelFrame",Vector3(side*17.1,y+3.58,z),Vector3(.12,.12,3.45),wood,false)
-				piece(h,"HallWallPanelRail",Vector3(side*17.1,y+.92,z),Vector3(.12,.12,3.45),wood,false)
+			for z in [-5.75,5.75]:
+				piece(h,"HallWallPanel",Vector3(side*17.2,y+2.25,z),Vector3(.08,2.5,2.8),ochre,false)
+				piece(h,"HallWallPanelFrame",Vector3(side*17.1,y+3.58,z),Vector3(.12,.12,3.0),wood,false)
+				piece(h,"HallWallPanelRail",Vector3(side*17.1,y+.92,z),Vector3(.12,.12,3.0),wood,false)
 		for side in [-1.0,1.0]:
 			piece(h,"ReceptionCabinet",Vector3(side*29,y+1.2,-7),Vector3(3.6,2.3,.75),wood)
 			for shelf in [0.65,1.3,1.95]:

@@ -167,6 +167,7 @@ func _ready() -> void:
 	third_person_height = camera_pivot.position.y
 	third_person_distance = $CameraPivot/SpringArm3D.spring_length
 	third_person_distance = minf(third_person_distance, 1.8)
+	camera_pitch = camera_pivot.rotation.x
 	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
 	aim_sound = AudioStreamPlayer.new()
 	aim_sound.stream = AIM_CLICK
@@ -263,11 +264,14 @@ func _unhandled_input(
 	if event.is_action_pressed(
 		"secondary_interact"
 	):
-		var selected := _find_interactable()
-		if selected != null and selected.hold_duration > 0.0:
-			_begin_interaction_hold(selected,"secondary_interact")
-		else:
+		if has_meta("mounted_vehicle") and get_meta("mounted_vehicle") != null:
 			$RideComponent.try_toggle()
+		else:
+			var selected := _find_interactable()
+			if selected != null and selected.hold_duration > 0.0:
+				_begin_interaction_hold(selected,"secondary_interact")
+			else:
+				$RideComponent.try_toggle()
 
 
 	# -----------------------------------------------------
@@ -402,6 +406,11 @@ func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 	var traveled := get_position_delta()
 	if Vector2(traveled.x, traveled.z).dot(Vector2(horizontal.x, horizontal.z)) > horizontal.length_squared() * 0.8:
 		return
+	# Small period props have their own visible colliders; do not step over them.
+	for collision_index in get_slide_collision_count():
+		var hit := get_slide_collision(collision_index).get_collider()
+		if hit is Node and hit.is_in_group("solid_period_prop"):
+			return
 	var space := get_world_3d().direct_space_state
 	var raised := global_transform.translated(Vector3.UP * max_walk_step_height)
 	if test_move(global_transform, Vector3.UP * max_walk_step_height):
@@ -512,12 +521,12 @@ func _update_weapon_camera(delta: float) -> void:
 	aim_blend = move_toward(aim_blend, 1.0 if gun_aiming else 0.0, delta * 4.5)
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
 	var arm: SpringArm3D = $CameraPivot/SpringArm3D
-	arm.spring_length = lerpf(third_person_distance, aim_camera_distance if equipment != null and equipment.selected == 3 else aim_camera_distance + 0.40, aim_blend)
-	arm.position.x = lerpf(0.0, 0.38, aim_blend)
+	arm.spring_length = lerpf(third_person_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
+	arm.position.x = lerpf(0.55, 0.50, aim_blend)
 	var stance_height: float = $StealthStance.camera_height()
-	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-.80)
+	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
-	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 54.0 if equipment != null and equipment.selected == 3 else 56.0, aim_blend)
+	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 54.0, aim_blend)
 
 
 # =========================================================
@@ -737,7 +746,7 @@ func _find_interactable() -> Interactable:
 		if candidate == null or not candidate.interaction_available(): continue
 		var offset := candidate.global_position - global_position
 		var distance := offset.length()
-		if distance > 2.6: continue
+		if distance > candidate.interaction_max_distance: continue
 		var flat := Vector3(offset.x, 0, offset.z)
 		var alignment := forward.dot(flat.normalized()) if flat.length() > 0.1 else 1.0
 		if alignment < 0.65: continue

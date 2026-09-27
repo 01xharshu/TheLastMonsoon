@@ -1,5 +1,7 @@
 extends Interactable
 ## One fruit, consumed once: E stores it, Shift+E eats it on the spot.
+signal harvested(forage_id: String)
+@export var forage_id := ""
 var collected := false
 
 func _ready() -> void:
@@ -8,6 +10,7 @@ func _ready() -> void:
 	secondary_interaction_text = "Eat mango"
 	hold_duration = .65
 	interaction_pose = "low_reach"
+	interaction_max_distance = 1.1
 	marker_height = .1
 	var shape := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()
@@ -29,12 +32,16 @@ func _ready() -> void:
 func interact(player: CharacterBody3D) -> void:
 	if collected: return
 	if player.inventory.add_item("mango", 1):
-		collected = true
+		player.get_node("InteractionPoseComponent").complete_mango(false)
+		_finish_collection()
 		player.inventory.request_message("Picked up mango · eat it from the Satchel")
-		queue_free()
 
 func secondary_interact(player: CharacterBody3D) -> void:
 	if collected: return
 	if player.consumables.eat_fresh_mango():
-		collected = true
-		queue_free()
+		_finish_collection()
+
+func _finish_collection() -> void:
+	collected = true
+	harvested.emit(forage_id)
+	queue_free()

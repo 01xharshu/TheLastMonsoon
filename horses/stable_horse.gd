@@ -260,6 +260,9 @@ func _build_horse() -> void:
 			if part.name.begins_with(tack_name):
 				part.position.y -= .15
 				break
+	for side in [-1.0, 1.0]:
+		_cord(body_root,"RiderStirrupLeather",Vector3(side*.30,1.85,.02),Vector3(side*.48,1.15,.02),.022,leather)
+		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.13,.02),Vector3(.18,.04,.14),dark)
 	# The source mesh carries a continuous four-leg skin and its own gait rig.
 	# Keep the simple generated body as an editable fallback, hidden in play.
 	body_model.hide()
@@ -296,7 +299,14 @@ func _walk_supported() -> bool:
 	return step_up_grace > 0.0 or (stair_activity > 0.0 and step_ground_grace > 0.0 and absf(velocity.y) < 0.2)
 
 func seat_world() -> Vector3:
-	return to_global(Vector3(0,1.83,.02))
+	return body_root.to_global(Vector3(0,2.0,.02))
+
+func saddle_grip_world(side: String) -> Vector3:
+	var tack: Node3D = body_root.get_node("Pommel" if side == "l" else "Cantle")
+	return tack.to_global(Vector3(-0.16 if side == "l" else 0.16, 0.06, 0.0))
+
+func stirrup_world(side: String) -> Vector3:
+	return body_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.15, 0.02))
 
 func can_board(actor: CharacterBody3D) -> bool:
 	return rider == null and not actor.get_meta("climbing",false) and actor.global_position.distance_to(global_position) < 3.0
@@ -323,6 +333,7 @@ func board(actor: CharacterBody3D) -> bool:
 	transition = "mount"
 	transition_time = 0.0
 	transition_from = actor.global_position
+	actor.set_meta("horse_transition_side", -1.0 if to_local(actor.global_position).x < 0.0 else 1.0)
 	actor.set_meta("horse_transition", "mount")
 	actor.set_meta("horse_transition_progress", 0.0)
 	actor.inventory.message_requested.emit("Horse taken from stable · W/S ride · A/D turn · Shift gallop · Space jump · F dismount")
@@ -359,6 +370,7 @@ func dismount() -> bool:
 		transition_time = 0.0
 		transition_from = actor.global_position
 		transition_to = p
+		actor.set_meta("horse_transition_side", side)
 		actor.set_meta("horse_transition", "dismount")
 		actor.set_meta("horse_transition_progress", 0.0)
 		tack_player.play()
@@ -416,7 +428,11 @@ func _physics_process(delta: float) -> void:
 				var pelvis: int = visual.skeleton.find_bone("pelvis")
 				var hip_local: Vector3 = rider.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin))
 				transition_to = seat_world() - hip_local
-			rider.global_position = transition_from.lerp(transition_to, smoothstep(0.0, 1.0, t)) + Vector3.UP * (sin(t * PI) * 0.22)
+			# Lift before crossing the saddle; reverse the sequence on exit.
+			var across := smoothstep(0.05, 0.7, t) if transition == "mount" else smoothstep(0.3, 0.95, t)
+			var lift := smoothstep(0.0, 1.0, t)
+			rider.global_position = transition_from.lerp(transition_to, across)
+			rider.global_position.y = lerpf(transition_from.y, transition_to.y, lift) + sin(t * PI) * 0.22
 			rider.visual_root.global_rotation.y = lerp_angle(rider.visual_root.global_rotation.y, rotation.y + PI, t)
 			if t >= 1.0:
 				var transition_actor := rider

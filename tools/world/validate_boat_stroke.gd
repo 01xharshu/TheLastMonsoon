@@ -69,7 +69,11 @@ func run() -> void:
 	check(boat.paddle_contacts>0,"paddle water entry emits ripples")
 	Input.action_release("move_forward")
 	Input.action_press("move_backward")
+	await physics_frame
+	await physics_frame
+	check(boat.row_drive>0.0,"reverse input eases instead of instantly flipping stroke")
 	await sample(boat,visual,"reverse",180)
+	check(boat.row_drive<-.99,"reverse input reaches full reverse stroke")
 	check(boat.speed<0,"reverse rowing reverses boat")
 	var heading: float=boat.rotation.y
 	Input.action_press("move_left")
@@ -81,13 +85,14 @@ func run() -> void:
 	var phase: float=boat.row_phase
 	var contacts: int=boat.paddle_contacts
 	for i in 15: await physics_frame
-	check(boat.row_effort==0.0 and is_equal_approx(phase,boat.row_phase),"idle stops stroke")
+	check(boat.row_drive==0.0 and boat.row_effort==0.0 and is_equal_approx(phase,boat.row_phase),"idle stops stroke")
 	check(boat.paddle_contacts==contacts,"idle emits no paddle ripples")
 	var deck: MeshInstance3D=boat.hull.find_child("DryInnerDeck",true,false)
 	check(deck!=null and deck.to_global(deck.get_aabb().position).y>.069,"inner deck stays above river wave maximum")
 	check(boat.dismount(),"dismount after reversing and steering")
 	check(actor.collision_layer==layer and actor.collision_mask==mask,"dismount restores actor collision")
 	check(boat.paddle.transform.is_equal_approx(boat.paddle_stow),"dismount returns paddle to storage")
+	check(boat.row_drive==0.0,"dismount clears rowing drive")
 	report["failures"]=failures
 	var file:=FileAccess.open("res://docs/world/boat_stroke_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))

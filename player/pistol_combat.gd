@@ -2,13 +2,17 @@ extends Node
 ## Adams sidearm: RMB aligns the muzzle, LMB fires, R loads carried balls.
 const CAPACITY := 5
 const SHOT = preload("res://audio/weapons/adams_shot.wav")
+const RELOAD_CLICK = preload("res://audio/weapons/aim_click.wav")
 var shot_sound: AudioStreamPlayer3D
+var reload_sound: AudioStreamPlayer3D
 const RELOAD_SECONDS := 3.8
 const MUZZLE := Vector3(.175,.064,0)
 var rounds := CAPACITY
 var reload_remaining := 0.0
 var aiming := false
 var shots_fired := 0
+var recoil := 0.0
+var reload_clicks := 0
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -19,6 +23,10 @@ func _ready() -> void:
 	shot_sound.max_distance = 120
 	shot_sound.volume_db = -12
 	actor.add_child.call_deferred(shot_sound)
+	reload_sound = AudioStreamPlayer3D.new()
+	reload_sound.stream = RELOAD_CLICK
+	reload_sound.volume_db = -15.0
+	actor.add_child.call_deferred(reload_sound)
 
 func available() -> bool:
 	var equipment: Node3D = visual.equipment
@@ -31,12 +39,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	recoil = move_toward(recoil, 0.0, delta * 0.38)
 	if reload_remaining > 0.0:
+		var previous_step := int(floor((RELOAD_SECONDS - reload_remaining) / (RELOAD_SECONDS / 5.0)))
 		reload_remaining = maxf(0.0,reload_remaining-delta)
+		var current_step := int(floor((RELOAD_SECONDS - reload_remaining) / (RELOAD_SECONDS / 5.0)))
+		if current_step > previous_step and current_step <= 5:
+			reload_clicks += 1
+			reload_sound.play()
 		if reload_remaining == 0.0: _finish_reload()
 	aiming = available() and reload_remaining == 0.0 and Input.is_action_pressed("aim")
 	if not available(): return
 	visual.equipment.aiming = aiming
+	visual.equipment.recoil = recoil
 	visual.equipment.aim_direction = -camera.global_basis.z
 	if aiming:
 		var barrel := (-camera.global_basis.z).normalized()
@@ -50,6 +65,8 @@ func fire() -> bool:
 		return false
 	rounds -= 1
 	shots_fired += 1
+	recoil = 0.075
+	visual.equipment.recoil = recoil
 	ControllerFeedback.pulse("shot")
 	var origin: Vector3 = visual.equipment.pistol_hand.to_global(MUZZLE)
 	var target := camera.global_position-camera.global_basis.z*90.0
@@ -71,6 +88,9 @@ func fire() -> bool:
 func start_reload() -> bool:
 	if not available() or reload_remaining > 0.0 or rounds >= CAPACITY or actor.inventory.get_item_count("pistol_ball") <= 0: return false
 	reload_remaining = RELOAD_SECONDS
+	recoil = 0.0
+	reload_clicks = 0
+	reload_sound.play()
 	return true
 
 func _finish_reload() -> void:

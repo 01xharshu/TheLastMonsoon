@@ -4,9 +4,9 @@
 
 Each of the sixteen independent actors creates its own `PersonalAnimationTree`, graph and animation resources at runtime. The existing personal AnimationPlayer supplies the idle/walk clips; AnimationTree owns playback. Male and female walk duration and stride profiles are retained.
 
-Graph: **idle (0) → locomotion BlendSpace1D ← walk (1) → output**.
+Graph: **idle → locomotion Blend2 ← walk TimeScale ← walk; locomotion → output**.
 
-`parameters/locomotion/blend_position` is driven by the actor's patrol state. Starting and stopping move the blend across 0–1 over 0.2 seconds. Each tree advances manually once per actor update, keeping movement and animation on the same time step. Disabling `movement_enabled` freezes that actor’s travel while its tree fades to idle. No direct AnimationPlayer.play calls are used for live locomotion.
+`parameters/locomotion/blend_amount` is driven by the actor's patrol state. Starting and stopping move the blend across 0–1 over 0.2 seconds. Each tree advances manually once per actor update, keeping movement and animation on the same time step. Disabling `movement_enabled` freezes that actor’s travel while its tree fades to idle. No direct AnimationPlayer.play calls are used for live locomotion.
 
 The graphs are created by `characters/npcs/british/british_npc_actor.gd`; inspect PersonalAnimationTree in the remote scene while running. They are separate runtime graphs rather than shared scene resources.
 
@@ -49,3 +49,31 @@ Side-view tree evidence:
 ![Male side walk](candidates/private_man_tree_side_100.png)
 
 ![Female side walk](candidates/private_woman_tree_side_100.png)
+
+## Travel-speed cadence
+
+A walk-only TimeScale now drives cadence. Each rig is calibrated by sampling its actual ankle excursion across one cycle; estimated natural speed is twice that excursion divided by clip duration. Live cadence is travel speed divided by that estimate (bounded to 0.1–3). Idle breathing is outside this rate node. Placement offsets are initialized before measuring travel so the first frame does not cause a cadence spike.
+
+[Cadence validation](candidates/cadence_validation.json) PASS for all sixteen: measured travel matches nominal speed × playback rate, half-speed travel produces half cadence, and stopping reaches idle with zero travel. Existing tree transition/independence and world placement checks pass again. This is an excursion-based estimate, not stance-foot locking; residual sliding, sole contact and skirt motion still need review.
+
+Representative Metal poses after 45 live actor updates at 60 Hz:
+
+![Male cadence](candidates/private_man_cadence_world.png)
+
+![Female cadence](candidates/private_woman_cadence_world.png)
+
+![Official cadence](candidates/official_man_cadence_world.png)
+
+## Flat-ground foot planting
+
+A per-actor two-bone stance solver now runs after tree evaluation (`characters/npcs/british/british_foot_plant.gd`). The stance ankle is held at a world target while the swing ankle clears the surveyed flat grade. A 5.5 cm hip drop blends with locomotion to preserve knee reach; ankle orientation comes from the clip. Locks release during idle and reset when facing changes. Mid-stride restarts choose a target within the remaining stance stroke.
+
+[Full patrol foot-plant validation](candidates/foot_plant_validation.json) PASS: 610 updates per actor through outward walk, idle, return and restart, 218 locked samples each; maximum ankle-target error below 0.000001 m, no reach-limited frames and no swing ankle below its reference height. Separate tree clip tests disable this correction to verify underlying playback independently.
+
+This validates ankle targets on the current flat plots. Mesh sole clearance, uneven ground, turn popping, normal-speed visual continuity and cloth remain unapproved. The refreshed male live cadence screenshot includes the final correction and shows a crouched/stiff gait requiring refinement. Female/official captures are from the earlier stance pass; the final capture stalled after the male view and was stopped. `foot_plant_enabled` can disable the correction per actor for clip comparison.
+
+## Adaptive hip clearance follow-up
+
+The fixed 5.5 cm walking hip drop is replaced by a reach calculation for the stance and swing targets. The pelvis is restored before each tree evaluation, preventing the previous correction from affecting the next frame's target calculation. Across the full patrol, men now need 0.8–2.4 cm and women 0.8 cm of hip drop, while all sixteen still hold stance targets without reach-limited frames. Tree transition and idle recovery checks pass again.
+
+Fresh male, female and official Metal cadence views completed and were inspected. The male pose is more upright than the fixed-drop version. Hands still read stiff/open, skirts remain rigid, and snapshots do not approve normal-speed turn/contact continuity. The earlier capture-stall note above records the prior run; this fresh run completed all three views.

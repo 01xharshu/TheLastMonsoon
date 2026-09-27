@@ -145,9 +145,11 @@ mesh = SubResource("CylinderMesh_8t03j")
 script = ExtResource("3_wodsf")
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=2068273779]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+position = Vector3(0, 1, 0)
+rotation = Vector3(-0.174533, 0, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot" unique_id=739968224]
+position = Vector3(0.55, 0, 0)
 shape = SubResource("SphereShape3D_camera")
 spring_length = 1.8
 margin = 0.12

@@ -183,6 +183,6 @@ func muzzle_effect(origin: Vector3) -> void:
 
 func get_hud_text() -> String:
 	if visual.equipment.stowed or visual.equipment.selected != weapon_selection: return visual.equipment.held_name()
-	var title := "ADAMS 1851" if pistol() else ("DOUBLE GUN" if double_gun() else "ENFIELD")
+	var title := "ADAMS REVOLVER" if pistol() else ("DOUBLE GUN" if double_gun() else "ENFIELD")
 	if reload_remaining>0: return "%s · RELOADING %.1fs" % [title,reload_remaining]
 	return "%s · %d/%d · %d SPARE" % [title,rounds,capacity(),actor.inventory.get_item_count(ammo_id())]

@@ -80,7 +80,7 @@ func place_period_props() -> void:
 	var court: Vector2 = Layout.PLOTS["CompanyCompound"].center
 	var crate := StaticBody3D.new()
 	crate.name = "CompanyStoresWoodenCrate"
-	crate.position = Vector3(court.x+20.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+19.0)
+	crate.position = Vector3(court.x+20.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+16.5)
 	add_child(crate)
 	crate.add_child(preload("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf").instantiate())
 	var crate_collider := CollisionShape3D.new()
@@ -145,11 +145,9 @@ func place_period_props() -> void:
 	stool_collider.shape = stool_shape
 	stool_collider.position.y = .22
 	stool.add_child(stool_collider)
-	var bench_x := -324.0
-	var bench_z := 226.5
 	var bench := StaticBody3D.new()
-	bench.name = "BhairavpurPaintedBench"
-	bench.position = Vector3(bench_x, layout.height(bench_x,bench_z), bench_z)
+	bench.name = "CompanyGuardBench"
+	bench.position = Vector3(court.x-15.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y-43.5)
 	add_child(bench)
 	bench.add_child(preload("res://assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf").instantiate())
 	var bench_collider := CollisionShape3D.new()
@@ -160,7 +158,7 @@ func place_period_props() -> void:
 	bench.add_child(bench_collider)
 	var barrel := StaticBody3D.new()
 	barrel.name = "CompanyStoresWineBarrel"
-	barrel.position = Vector3(court.x+22.2, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+19.0)
+	barrel.position = Vector3(court.x+22.2, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+16.5)
 	add_child(barrel)
 	barrel.add_child(preload("res://assets/props/polyhaven/wine_barrel_01/wine_barrel_01_1k.gltf").instantiate())
 	var barrel_collider := CollisionShape3D.new()
@@ -170,6 +168,8 @@ func place_period_props() -> void:
 	barrel_collider.shape = barrel_shape
 	barrel_collider.position.y = .44
 	barrel.add_child(barrel_collider)
+	for prop in [crate, bucket, pot, basket, stool, bench, barrel]:
+		prop.add_to_group("solid_period_prop")
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
@@ -296,6 +296,7 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 			pickup.add_child(model)
 			model.basis = Basis(Vector3.RIGHT,PI/2)
 			if pickup.weapon_id == "bow": model.basis = Basis(Vector3.UP,PI/2)*model.basis
+			model.scale = Vector3.ONE * stored_weapon_scale(pickup.weapon_id)
 			for animation in model.find_children("*","AnimationPlayer",true,false): animation.stop()
 			var bounds := weapon_bounds(model,pickup)
 			model.position += Vector3(-bounds.get_center().x,-.135-bounds.position.y,-.30-bounds.get_center().z)
@@ -315,6 +316,11 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 	b.add_child(sign)
 	merge_visuals(b)
 	return b
+
+func stored_weapon_scale(weapon_id: String) -> float:
+	# Displayed and equipped instances must represent the same physical object.
+	var equipment = preload("res://player/arjun_equipment.gd")
+	return {"enfield":equipment.ENFIELD_SCALE,"double_gun":equipment.DOUBLE_GUN_SCALE,"pistol":equipment.PISTOL_SCALE}.get(weapon_id,1.0)
 
 func weapon_bounds(model: Node3D, relative_to: Node3D) -> AABB:
 	var bounds := AABB()

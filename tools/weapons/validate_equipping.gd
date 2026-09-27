@@ -20,6 +20,7 @@ func _run() -> void:
   actor.get_node("VisualRoot").global_rotation.y = atan2(flat.x,flat.z)
   for i in 4: await physics_frame
   assert(actor._find_interactable() == pickup)
+  assert(actor.interaction_overlay.marker_world_positions.has(pickup), "Weapon interaction card has no visible anchor: " + weapon_id)
   actor._begin_interaction_hold(pickup,"interact")
   Input.action_press("interact")
   for i in 65: await physics_frame
@@ -34,6 +35,16 @@ func _run() -> void:
  for weapon_id in slots:
   gear.select_weapon(slots[weapon_id])
   assert_visible_weapon(gear, weapon_id)
+ var owned_pickup = load("res://world/suryagarh/settlements/weapon_pickup.gd").new()
+ owned_pickup.weapon_id = "talwar"
+ world.add_child(owned_pickup)
+ owned_pickup.global_position = actor.global_position + Vector3(0,0,1)
+ gear.stowed = true
+ gear._refresh()
+ owned_pickup.interact(actor)
+ assert(gear.selected == slots["talwar"] and not gear.stowed)
+ assert_visible_weapon(gear, "talwar")
+ owned_pickup.queue_free()
  gear.toggle_stowed()
  assert_visible_weapon(gear, "")
  print("EQUIP HOLD: PASS | all five store weapons")

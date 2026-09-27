@@ -5,10 +5,12 @@ const DEPTH := 100.0
 const SCENERY_MARGIN := 25.0
 const GRID := 2.0
 const Shape = preload("res://world/ruined_fort/fort_shape.gd")
+const NAV_FILE := "res://world/ruined_fort/fort_navigation.res"
 @export var embedded_in_world := false
-var stone := _mat(Color("a79b84"))
-var pale := _mat(Color("c1b49a"))
-var dark_stone := _mat(Color("817e72"))
+@export var force_navigation_rebake := false
+var stone := _masonry(Color("a79b84"))
+var pale := _masonry(Color("c1b49a"))
+var dark_stone := _rock_material(Color("817e72"))
 var soil := _mat(Color("968875"))
 var rubble_mat := _mat(Color("918b7d"))
 var wood := _mat(Color("715940"))
@@ -16,11 +18,17 @@ var cloth := _mat(Color("aaa08a"))
 var grass := _mat(Color("777b54"))
 var shrub := _mat(Color("68715a"))
 var nodes := {}
+var rock_mesh_shared: SphereMesh
 var nav_ground_faces := PackedVector3Array()
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	rng.seed = 1857
+	rock_mesh_shared = SphereMesh.new()
+	rock_mesh_shared.radius = 0.5
+	rock_mesh_shared.height = 1.0
+	rock_mesh_shared.radial_segments = 7
+	rock_mesh_shared.rings = 4
 	for group in ["Terrain", "Architecture", "Cover", "Props", "Vegetation", "Navigation", "Gameplay", "Lighting"]:
 		var node := Node3D.new()
 		node.name = group
@@ -48,6 +56,18 @@ func _ready() -> void:
 	_build_navigation()
 	if not embedded_in_world: $Gameplay/Player.position = Vector3(0, height_at(0, 47) + 1.1, 47)
 	print("RUINED FORT BLOCKOUT READY | 120 x 100 m | three routes | 8 m ascent")
+
+func _masonry(color: Color) -> ShaderMaterial:
+	var result := ShaderMaterial.new()
+	result.shader = preload("res://world/ruined_fort/fort_masonry.gdshader")
+	result.set_shader_parameter("stone_color", color)
+	return result
+
+func _rock_material(color: Color) -> ShaderMaterial:
+	var result := ShaderMaterial.new()
+	result.shader = preload("res://world/ruined_fort/fort_rock.gdshader")
+	result.set_shader_parameter("rock_color", color)
+	return result
 
 func _mat(color: Color) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()
@@ -94,23 +114,23 @@ func _add_standalone_ground(mesh: Mesh) -> void:
 	body.add_child(collision)
 
 func _build_cliffs() -> void:
-	for i in range(-7,8):
-		for side in [-1.0,1.0]:
-			var zz: float = i * 7.0 + rng.randf_range(-1.3,1.3)
-			var xx: float = side * rng.randf_range(59.0,63.0)
-			_block("BoundaryCliff", "Terrain", Vector3(xx,height_at(xx,zz)+3.0,zz),Vector3(7.0,6.0,8.2),dark_stone,rng.randf_range(-0.2,0.2))
-		if abs(i) > 1:
-			for edge in [-1.0,1.0]:
-				var xx: float = i * 7.0 + rng.randf_range(-1.3,1.3)
-				var zz: float = edge * rng.randf_range(49.5,52.5)
-				_block("BoundaryCliff", "Terrain", Vector3(xx,height_at(xx,zz)+3.0,zz),Vector3(8.2,6.0,7.0),dark_stone,rng.randf_range(-0.2,0.2))
+	if not embedded_in_world:
+		for i in range(-7,8):
+			for side in [-1.0,1.0]:
+				var zz: float = i * 7.0 + rng.randf_range(-1.3,1.3)
+				var xx: float = side * rng.randf_range(59.0,63.0)
+				_block("BoundaryCliff", "Terrain", Vector3(xx,height_at(xx,zz)+3.0,zz),Vector3(7.0,6.0,8.2),dark_stone,rng.randf_range(-0.2,0.2))
+			if abs(i) > 1:
+				for edge in [-1.0,1.0]:
+					var xx: float = i * 7.0 + rng.randf_range(-1.3,1.3)
+					var zz: float = edge * rng.randf_range(49.5,52.5)
+					_block("BoundaryCliff", "Terrain", Vector3(xx,height_at(xx,zz)+3.0,zz),Vector3(8.2,6.0,7.0),dark_stone,rng.randf_range(-0.2,0.2))
 	# Tall peripheral rock faces make the additional 25 m read as inaccessible scenery.
-	for i in range(36):
+	for i in range(14 if embedded_in_world else 36):
 		var side: int = i % 4
 		var x: float = rng.randf_range(-82,82) if side < 2 else (-70.0 if side == 2 else 70.0)
 		var z: float = (-62.0 if side == 0 else 62.0) if side < 2 else rng.randf_range(-64,64)
 		_block("SceneryRidge", "Terrain", Vector3(x,height_at(x,z)+2.8,z), Vector3(rng.randf_range(7,15),rng.randf_range(4,10),rng.randf_range(5,11)), dark_stone, rng.randf_range(-0.45,0.45), false)
-
 func _block(label: String, group: String, at: Vector3, size: Vector3, material: Material, yaw: float = 0.0, collides: bool = true) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.name = label
@@ -118,42 +138,74 @@ func _block(label: String, group: String, at: Vector3, size: Vector3, material: 
 	body.rotation.y = yaw
 	nodes[group].add_child(body)
 	var visual := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	visual.mesh = mesh
+	var is_rock: bool = label in ["BoundaryCliff", "SceneryRidge", "RockyRidge", "RockCover"]
+	if is_rock:
+		visual.mesh = rock_mesh_shared
+		visual.scale = size
+	else:
+		var mesh := BoxMesh.new()
+		mesh.size = size
+		visual.mesh = mesh
 	visual.material_override = material
 	body.add_child(visual)
 	if collides:
 		var shape := CollisionShape3D.new()
 		var box := BoxShape3D.new()
-		box.size = size
+		box.size = size * (0.78 if label == "RockCover" else 1.0)
 		shape.shape = box
 		body.add_child(shape)
 	return body
 
 func _wall(x: float, z: float, length: float, tall: float, yaw: float = 0.0, damaged: bool = false) -> void:
-	var h: float = height_at(x,z)
-	_block("DamagedWall" if damaged else "Wall", "Architecture", Vector3(x,h+tall*0.5,z), Vector3(length,tall,0.75), stone, yaw)
-	if damaged:
-		_block("BrokenCoping", "Architecture", Vector3(x+length*0.28,h+tall+0.12,z), Vector3(length*0.3,0.25,0.9), pale, yaw+0.09)
+	var count: int = maxi(2, ceili(length / 2.8))
+	var section: float = length / count
+	for i in range(count):
+		var offset: float = -length * 0.5 + (i + 0.5) * section
+		var site: Vector3 = Vector3(x,0,z) + Vector3(offset,0,0).rotated(Vector3.UP,yaw)
+		var ground: float = height_at(site.x,site.z)
+		var section_height: float = tall
+		if damaged:
+			section_height *= [0.91,0.58,0.76,0.98,0.67][i % 5]
+		var width: float = section - (0.08 if damaged else 0.025)
+		_block("DamagedWallStone" if damaged else "WallStone", "Architecture", Vector3(site.x,ground+section_height*0.5,site.z), Vector3(width,section_height,0.82), stone if i % 3 else pale, yaw)
+		if damaged and i % 3 == 1:
+			_block("FallenMasonry", "Props", Vector3(site.x+0.8,ground+0.18,site.z+1.1),Vector3(0.7,0.36,0.8),rubble_mat,yaw+0.33,false)
+
+func _arch_block(root: Node3D, label: String, at: Vector3, size: Vector3, material: Material, tilt: float = 0.0) -> void:
+	var body := StaticBody3D.new()
+	body.name = label
+	body.position = at
+	body.rotation.z = tilt
+	root.add_child(body)
+	var visual := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	visual.mesh = mesh
+	visual.material_override = material
+	body.add_child(visual)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
 
 func _arch(x: float, z: float, yaw: float, variant: int) -> void:
-	var h: float = height_at(x,z)
 	var root := Node3D.new()
 	root.name = ["IntactArch", "DamagedArch", "CollapsedArch"][variant]
-	root.position = Vector3(x,h,z)
+	root.position = Vector3(x,height_at(x,z),z)
 	root.rotation.y = yaw
 	nodes.Architecture.add_child(root)
 	for side in [-1.0,1.0]:
-		var pillar := _block("ArchPier", "Architecture", root.position + Vector3(side*2.5,1.75,0).rotated(Vector3.UP,yaw), Vector3(1.0,3.5,1.25), pale, yaw)
-		pillar.reparent(root, true)
-	if variant < 2:
-		var crown := _block("ArchLintel", "Architecture", root.position + Vector3(0,3.75,0), Vector3(6.0,0.65,1.25), stone, yaw)
-		crown.reparent(root, true)
-	if variant == 1:
+		for course in range(5):
+			_arch_block(root,"ArchPierStone",Vector3(side*2.55,0.35+course*0.7,0),Vector3(1.0,0.68,1.25),pale if course % 2 else stone)
+	for index in range(7):
+		if variant == 1 and index == 2: continue
+		if variant == 2 and index in [2,3,4]: continue
+		var theta: float = PI * index / 6.0
+		var at := Vector3(2.0*cos(theta),3.35+2.0*sin(theta),0)
+		_arch_block(root,"ArchVoussoir",at,Vector3(0.92,0.9,1.3),pale if index % 2 else stone,theta+PI*0.5)
+	if variant > 0:
 		_block("FallenVoussoir", "Props", root.position + Vector3(2.0,0.35,1.9), Vector3(1.3,0.7,1.0), rubble_mat, 0.4)
-	if variant == 2:
-		_block("CollapsedSpan", "Architecture", root.position + Vector3(3.4,0.55,1.7), Vector3(3.0,1.1,2.2), dark_stone, 0.3)
 
 func _stairs(x: float, z: float, count: int, direction: float = -1.0) -> void:
 	for i in range(count):
@@ -163,6 +215,10 @@ func _stairs(x: float, z: float, count: int, direction: float = -1.0) -> void:
 
 func _build_architecture() -> void:
 	# Outer gate and fragmented eastern/western curtains leave broad silhouette openings.
+	# Fragmented front curtain gives the fort a readable south entrance.
+	_arch(0,45,0,0)
+	for front in [[-20,45,22,3.2,0.05],[20,45,22,3.6,-0.08],[-42,41,13,2.8,0.12],[43,40,12,3.1,-0.16]]:
+		_wall(front[0],front[1],front[2],front[3],front[4],true)
 	_arch(0,30,0,1)
 	_arch(-7,4,0,0)
 	_arch(8,-21,0,1)
@@ -189,6 +245,8 @@ func _build_architecture() -> void:
 	# Watchtower carcass: three broken sides with a walkable open center.
 	for segment in [[-9,-48,8,0],[9,-48,8,0],[-12,-43,10,PI*0.5],[12,-43,9,PI*0.5]]:
 		_wall(segment[0],segment[1],segment[2],4.8,segment[3],true)
+	_wall(-15,-47,7,8.3,PI*0.5,true)
+	_wall(15,-47,7,7.6,PI*0.5,true)
 	for column_x in [-5.0,5.0]:
 		_block("WatchtowerPier", "Architecture", Vector3(column_x,height_at(column_x,-47)+4.1,-47),Vector3(1.5,8.2,1.5),stone)
 	_block("WatchtowerBase", "Architecture", Vector3(0,height_at(0,-47)+0.35,-47), Vector3(13,0.7,8), pale)
@@ -252,6 +310,10 @@ func _build_navigation() -> void:
 	var region := NavigationRegion3D.new()
 	region.name = "FortWalkableRoutes"
 	nodes.Navigation.add_child(region)
+	if embedded_in_world and not force_navigation_rebake and ResourceLoader.exists(NAV_FILE):
+		region.navigation_mesh = load(NAV_FILE)
+		print("FORT NAVIGATION POLYGONS: ", region.navigation_mesh.get_polygon_count(), " (saved)")
+		return
 	var nav := NavigationMesh.new()
 	nav.agent_height = 2.0
 	nav.agent_radius = 0.5

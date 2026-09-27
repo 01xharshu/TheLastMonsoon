@@ -97,6 +97,7 @@ var actor: CharacterBody3D = null
 var target: Interactable = null
 var river_visible := false
 var river_can_fill := false
+var ride_prompt := ""
 
 
 # =========================================================
@@ -216,6 +217,10 @@ func _ready() -> void:
 func set_river_actions(visible: bool, can_fill: bool) -> void:
 	river_visible = visible
 	river_can_fill = can_fill
+	queue_redraw()
+
+func set_ride_prompt(caption: String) -> void:
+	ride_prompt = caption
 	queue_redraw()
 
 func set_target(
@@ -391,7 +396,7 @@ func _physics_process(
 		)
 
 
-		if hit.is_empty():
+		if hit.is_empty() and candidate != target:
 
 			continue
 
@@ -404,6 +409,8 @@ func _physics_process(
 
 
 		if (
+			candidate != target
+			and
 			collider != candidate
 			and not candidate.is_ancestor_of(
 				collider
@@ -517,17 +524,15 @@ func _icon(center: Vector2, kind: String, color: Color) -> void:
 			draw_circle(center,5.0,color)
 			draw_rect(Rect2(center+Vector2(-2,3),Vector2(4,6)),color)
 
-func _draw_action(at: Vector2, key: String, kind: String, caption: String, count: int = 0) -> void:
+func _draw_action(at: Vector2, key: String, kind: String, caption: String, count: int = 0, label_width: int = 170) -> void:
 	_draw_key(at, key)
 	var key_width := 64.0 if key.length() > 2 else 27.0
 	_icon(at + Vector2(key_width+15.0,13), kind, IVORY)
 	var label_text := caption
 	if count > 0: label_text += "  ×%d" % count
-	draw_string(ThemeDB.fallback_font, at + Vector2(key_width+32.0,19), label_text, HORIZONTAL_ALIGNMENT_LEFT, 170, 14, IVORY)
+	draw_string(ThemeDB.fallback_font, at + Vector2(key_width+32.0,19), label_text, HORIZONTAL_ALIGNMENT_LEFT, label_width, 14, IVORY)
 
 func _target_caption(value: Interactable) -> String:
-	if value.interaction_icon == "weapon" and value.get("weapon_id") != null:
-		return "Take " + str(value.get("weapon_id")).replace("_", " ").capitalize()
 	if value.interaction_icon == "ammo" and value.get("item_id") != null:
 		return "Take " + {"paper_cartridges":"cartridges", "pistol_ball":"pistol balls", "shot_charge":"shot charges"}.get(str(value.get("item_id")),str(value.get("item_id")).replace("_", " "))
 	return value.interaction_text
@@ -666,17 +671,22 @@ func _draw() -> void:
 		var secondary_key := "L1+□" if SaveManager.active_input_device == "controller" else "Shift+E"
 		var primary_key := "□" if SaveManager.active_input_device == "controller" else "E"
 		var row_count := 2 if secondary else 1
-		var panel_width := 276.0 if secondary else 224.0
+		var panel_width := 340.0 if target.interaction_icon == "weapon" else (276.0 if secondary else 224.0)
 		var panel_height := 8.0 + 30.0 * row_count
 		var left := clampf(anchor.x + 12.0, 10.0, size.x-panel_width-10.0)
 		var top := clampf(anchor.y-panel_height*0.5,10.0,size.y-panel_height-10.0)
 		draw_style_box(panel_style,Rect2(left,top,panel_width,panel_height))
 		var item_count: int = target.get("count") if target.get("count") != null else 0
-		_draw_action(Vector2(left+5,top+4),primary_key,target.interaction_icon,_target_caption(target),item_count)
+		_draw_action(Vector2(left+5,top+4),primary_key,target.interaction_icon,_target_caption(target),item_count,275 if target.interaction_icon == "weapon" else 170)
 		if secondary:
 			_draw_action(Vector2(left+5,top+34),secondary_key,target.interaction_icon,target.secondary_interaction_text)
 		if target.hold_duration > 0.0:
 			draw_arc(Vector2(left+18,top+17),17.0,-PI*0.5,-PI*0.5+TAU*progress,32,HOLD_COLOR,2.0,true)
+	elif ride_prompt != "":
+		var ride_top := size.y * 0.62
+		var ride_left := size.x * 0.5 - 112.0
+		draw_style_box(panel_style,Rect2(ride_left,ride_top,224.0,38.0))
+		_draw_action(Vector2(ride_left+5,ride_top+4),"△" if SaveManager.active_input_device == "controller" else "F","horse",ride_prompt)
 	elif river_visible:
 		var river_top := size.y * 0.62
 		var river_rows := 2 if river_can_fill else 1

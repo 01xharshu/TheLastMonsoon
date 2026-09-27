@@ -28,6 +28,8 @@ func _run() -> void:
    player.camera_pivot.rotation = Vector3(player.camera_pitch, sample[2], 0)
    for i in 20: await physics_frame
    for i in 3: await process_frame
+   if variant[0] == "candidate":
+    player.get_node("CameraPivot/SpringArm3D").position.x = 0.95
    await RenderingServer.frame_post_draw
    var path: String = "/tmp/tlm_camera_framing_" + variant[0] + "_" + sample[0] + ".png"
    print("CAMERA FRAMING ", variant[0], " ", sample[0], " ", root.get_texture().get_image().save_png(path), " camera=", camera.global_position, " pivot=", player.camera_pivot.global_position)

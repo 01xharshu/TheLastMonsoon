@@ -6,6 +6,7 @@ extends Node3D
 @export var cycle_offset: float = 0.0
 @export var movement_profile: StringName = &"male"
 @export var movement_enabled: bool = true
+@export var foot_plant_enabled: bool = true
 
 var animation_state: StringName = &"idle"
 var _home: Vector3
@@ -18,6 +19,12 @@ var _yaw_axes: Dictionary = {}
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend: float = 0.0
+var nominal_walk_speed: float = 0.0
+var travel_speed: float = 0.0
+var walk_playback_rate: float = 1.0
+var foot_plant = preload("res://characters/npcs/british/british_foot_plant.gd").new()
+var _walk_phase: float = 0.0
+var _last_facing: float = 0.0
 
 func _ready() -> void:
 	_home = position
@@ -63,30 +70,54 @@ func _ready() -> void:
 	animation_player.root_node = NodePath("..")
 	var library := AnimationLibrary.new()
 	library.add_animation("idle", _make_clip(false))
-	library.add_animation("walk", _make_clip(true))
+	var walk_clip := _make_clip(true)
+	library.add_animation("walk", walk_clip)
+	_measure_stride(walk_clip)
 	animation_player.add_animation_library("", library)
 	animation_tree = AnimationTree.new()
 	animation_tree.name = "PersonalAnimationTree"
 	add_child(animation_tree)
 	animation_tree.anim_player = animation_tree.get_path_to(animation_player)
 	animation_tree.root_node = NodePath("..")
-	var locomotion := AnimationNodeBlendSpace1D.new()
-	locomotion.min_space = 0.0
-	locomotion.max_space = 1.0
 	var idle := AnimationNodeAnimation.new()
 	idle.animation = &"idle"
 	var walk := AnimationNodeAnimation.new()
 	walk.animation = &"walk"
-	locomotion.add_blend_point(idle, 0.0, -1, "idle")
-	locomotion.add_blend_point(walk, 1.0, -1, "walk")
 	var graph := AnimationNodeBlendTree.new()
-	graph.add_node("locomotion", locomotion)
+	graph.add_node("idle", idle)
+	graph.add_node("walk", walk)
+	graph.add_node("walk_rate", AnimationNodeTimeScale.new())
+	graph.add_node("locomotion", AnimationNodeBlend2.new())
+	graph.connect_node("walk_rate", 0, "walk")
+	graph.connect_node("locomotion", 0, "idle")
+	graph.connect_node("locomotion", 1, "walk_rate")
 	graph.connect_node("output", 0, "locomotion")
 	animation_tree.tree_root = graph
 	animation_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	animation_tree.active = true
-	animation_tree.set("parameters/locomotion/blend_position", 0.0)
+	animation_tree.set("parameters/locomotion/blend_amount", 0.0)
+	animation_tree.set("parameters/walk_rate/scale", 1.0)
 	animation_tree.advance(0.0)
+	_process(0.0)
+	foot_plant.configure(_skeleton)
+	_last_facing = rotation.y
+
+func _measure_stride(clip: Animation) -> void:
+	# Calibrate cadence to this rig's actual ankle excursion, not its sex/size label.
+	var foot := _skeleton.find_bone("foot_l")
+	var minimum := INF
+	var maximum := -INF
+	for frame in 65:
+		for track in clip.get_track_count():
+			var bone_name := str(clip.track_get_path(track)).get_slice(":", 1)
+			_skeleton.set_bone_pose_rotation(_bones[bone_name], clip.track_get_key_value(track, frame))
+		var z := _skeleton.get_bone_global_pose(foot).origin.z
+		minimum = minf(minimum, z)
+		maximum = maxf(maximum, z)
+	# A cycle has two stance strokes across the ankle excursion.
+	nominal_walk_speed = maxf(0.05, 2.0 * (maximum - minimum) / clip.length)
+	for bone_name in _base_rotations:
+		_skeleton.set_bone_pose_rotation(_bones[bone_name], _base_rotations[bone_name])
 
 func _make_clip(walking: bool) -> Animation:
 	var clip := Animation.new()
@@ -125,6 +156,7 @@ func _process(delta: float) -> void:
 	if animation_player == null:
 		return
 	if not movement_enabled:
+		travel_speed = 0.0
 		_set_animation(&"idle", delta)
 		return
 	_clock += delta
@@ -140,7 +172,9 @@ func _process(delta: float) -> void:
 	elif segment < 6.0:
 		walking = true
 		progress = 1.0 - (segment - 4.0) / 2.0
+	var previous := position
 	position = _home + axis * patrol_distance * progress
+	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
 	if walking:
 		var direction := axis if segment < 2.0 else -axis
 		rotation.y = atan2(direction.x, direction.z)
@@ -151,5 +185,17 @@ func _set_animation(state: StringName, delta: float) -> void:
 	var target := 1.0 if state == &"walk" else 0.0
 	# Finite blend time avoids an endless residual walk after stopping.
 	locomotion_blend = move_toward(locomotion_blend, target, maxf(delta, 0.0) / 0.2)
-	animation_tree.set("parameters/locomotion/blend_position", locomotion_blend)
+	if state == &"walk" and travel_speed > 0.001:
+		walk_playback_rate = clampf(travel_speed / nominal_walk_speed, 0.1, 3.0)
+	animation_tree.set("parameters/walk_rate/scale", walk_playback_rate)
+	animation_tree.set("parameters/locomotion/blend_amount", locomotion_blend)
+	if foot_plant.skeleton != null:
+		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))
+	if foot_plant.skeleton != null:
+		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
+		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:
+			foot_plant.clear()
+		_last_facing = rotation.y
+		foot_plant.update(_walk_phase, foot_plant_enabled and state == &"walk" and locomotion_blend > 0.95 and travel_speed > 0.001, locomotion_blend if foot_plant_enabled else 0.0, nominal_walk_speed * animation_player.get_animation("walk").length)
+

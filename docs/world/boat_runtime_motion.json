@@ -1,0 +1,7 @@
+{
+	"frames": 300,
+	"max_palm_error_m": 0.0000341197410307359,
+	"native_runtime": true,
+	"p95_palm_error_m": 0.0000170598450495163,
+	"passed": true
+}
