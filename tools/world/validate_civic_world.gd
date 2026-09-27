@@ -59,7 +59,12 @@ func validate() -> void:
 	var rock_count := 0
 	var intrusions := 0
 	var intrusion_samples: Array[Dictionary] = []
+	# The headless renderer does not restore serialized MultiMesh instance buffers;
+	# get_instance_transform then returns the tile origin for every instance.
+	# Inspect baked nature only with a rendering device to avoid false intrusions.
+	var nature_checked := DisplayServer.get_name() != "headless"
 	for batch in world.get_node("Landscape/NatureTiles").find_children("*","MultiMeshInstance3D",true,false):
+		if not nature_checked: continue
 		if batch.name != "BroadleafTrees" and batch.name != "Boulders": continue
 		for i in batch.multimesh.instance_count:
 			var p: Vector3 = batch.to_global(batch.multimesh.get_instance_transform(i).origin)
@@ -74,7 +79,7 @@ func validate() -> void:
 					intrusions += 1
 					if intrusion_samples.size()<20: intrusion_samples.append({"kind":"rock","position":p,"road_distance":layout.road_distance(p.x,p.z),"plot_clearance":layout.plot_clearance(p.x,p.z)})
 	check(intrusions==0,str(intrusions)+" baked trees/rocks intrude into a plot or road")
-	var report := {"status":"PASS" if failures.is_empty() else "FAIL","foundations":ground_samples,"route_contact_samples":route_samples,"worst_route_contact_error_m":worst_contact,"trees_checked":tree_count,"rocks_checked":rock_count,"nature_intrusions":intrusions,"intrusion_samples":intrusion_samples,"failures":failures}
+	var report := {"status":"PASS" if failures.is_empty() else "FAIL","foundations":ground_samples,"route_contact_samples":route_samples,"worst_route_contact_error_m":worst_contact,"nature_checked":nature_checked,"trees_checked":tree_count,"rocks_checked":rock_count,"nature_intrusions":intrusions if nature_checked else null,"intrusion_samples":intrusion_samples,"failures":failures}
 	var file := FileAccess.open(OUT,FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("CIVIC WORLD VALIDATION ",JSON.stringify(report))

@@ -43,14 +43,7 @@ func _draw() -> void:
 		2:
 			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-12),center+Vector2(-7,1),center+Vector2(-1,1),center+Vector2(-4,12),center+Vector2(8,-3),center+Vector2(2,-3)]),icon_color)
 		3:
-			var crescent := PackedVector2Array()
-			for step in 25:
-				var angle: float = -PI * 0.5 + TAU * float(step) / 24.0
-				crescent.append(center + Vector2(cos(angle),sin(angle)) * 10.0)
-			for step in 25:
-				var angle: float = PI * 1.5 - TAU * float(step) / 24.0
-				crescent.append(center + Vector2(4, -2) + Vector2(cos(angle),sin(angle)) * 8.0)
-			draw_colored_polygon(crescent,icon_color)
+			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-11),center+Vector2(-7,-8),center+Vector2(-11,0),center+Vector2(-7,8),center+Vector2(1,11),center+Vector2(7,7),center+Vector2(1,8),center+Vector2(-2,5),center+Vector2(-4,0),center+Vector2(-2,-5),center+Vector2(1,-8)]),icon_color)
 	var names: Array[String] = ["WATER","FOOD","STAMINA","REST"]
 	var font: Font = ThemeDB.fallback_font
 	draw_string(font,Vector2(0,54),names[icon_type],HORIZONTAL_ALIGNMENT_CENTER,size.x,10,Color(icon_color,0.9))

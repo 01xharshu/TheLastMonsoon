@@ -18,7 +18,7 @@ func _run() -> void:
 	else:
 		for actor in roster.get_children():
 			var rank: String = str(actor.get_meta("concept_rank_or_post", ""))
-			var plot_name := "GovernmentHouse" if rank == "official" else "CompanyCompound"
+			var plot_name: String = str(actor.get_meta("placement_plot"))
 			var plot: Dictionary = Layout.PLOTS[plot_name]
 			var pos: Vector3 = (actor as Node3D).global_position
 			var centre: Vector2 = plot.center
@@ -31,7 +31,7 @@ func _run() -> void:
 				errors.append(actor.name + " has no single imported skeleton")
 			placed += 1
 	var passed := errors.is_empty() and placed == 16
-	var report := {"passed":passed,"placed":placed,"errors":errors,"company_compound":"seven military pairs","government_house":"civil official pair","scope":"world load and surveyed placement; visual contact requires rendered review"}
+	var report := {"passed":passed,"placed":placed,"errors":errors,"company_compound":"seven independent military men","government_house":"eight independent women and civil official","scope":"world load and surveyed placement; visual contact requires rendered review"}
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "  ") + "\n")
 	print("BRITISH_WORLD_VALIDATION ", JSON.stringify(report))

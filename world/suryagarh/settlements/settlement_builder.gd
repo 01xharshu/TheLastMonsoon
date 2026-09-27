@@ -40,6 +40,7 @@ func _ready() -> void:
 	make_building("CompanyArmoury",compound_center+Vector2(31,8),Vector2(17,13),true,true)
 	compound()
 	place_new_props()
+	place_period_props()
 	landing()
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
@@ -73,6 +74,36 @@ func place_new_props() -> void:
 	sign_collision.shape = sign_shape
 	sign_collision.position.y = 1.21
 	sign.add_child(sign_collision)
+
+func place_period_props() -> void:
+	# Small static details with simple physical bounds. Keep the armoury approach clear.
+	var court: Vector2 = Layout.PLOTS["CompanyCompound"].center
+	var crate := StaticBody3D.new()
+	crate.name = "CompanyStoresWoodenCrate"
+	crate.position = Vector3(court.x+20.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+19.0)
+	add_child(crate)
+	crate.add_child(preload("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf").instantiate())
+	var crate_collider := CollisionShape3D.new()
+	var crate_box := BoxShape3D.new()
+	crate_box.size = Vector3(1.17,.50,.55)
+	crate_collider.shape = crate_box
+	crate_collider.position.y = .24
+	crate.add_child(crate_collider)
+	# A household water bucket beside the village veranda, off the doorway.
+	var bucket_x := -346.0
+	var bucket_z := 219.0
+	var bucket := StaticBody3D.new()
+	bucket.name = "BhairavpurWoodenBucket"
+	bucket.position = Vector3(bucket_x, layout.height(bucket_x,bucket_z), bucket_z)
+	add_child(bucket)
+	bucket.add_child(preload("res://assets/props/polyhaven/wooden_bucket_02/wooden_bucket_02_1k.gltf").instantiate())
+	var bucket_collider := CollisionShape3D.new()
+	var bucket_shape := CylinderShape3D.new()
+	bucket_shape.radius = .32
+	bucket_shape.height = .38
+	bucket_collider.shape = bucket_shape
+	bucket_collider.position.y = .19
+	bucket.add_child(bucket_collider)
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
@@ -172,11 +203,11 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 		# Timber shelf against the rear masonry, reached through the real doorway.
 		# Keep its front clear of the room's desk and the player capsule.
 		var rack_z: float = -d*.5+1.15
-		piece(b,"WeaponRackShelf",Vector3(0,1.02,rack_z),Vector3(3.6,.16,.78),wood)
-		piece(b,"WeaponRackUpperShelf",Vector3(0,1.70,rack_z),Vector3(3.6,.13,.78),wood)
-		piece(b,"WeaponRackBack",Vector3(0,1.23,rack_z-.34),Vector3(3.6,.65,.12),wood)
+		piece(b,"WeaponRackShelf",Vector3(0,1.02,rack_z),Vector3(4.8,.16,1.0),wood)
+		piece(b,"WeaponRackUpperShelf",Vector3(0,1.70,rack_z),Vector3(4.8,.13,1.0),wood)
+		piece(b,"WeaponRackBack",Vector3(0,1.05,rack_z-.46),Vector3(4.8,1.62,.08),wood)
 		for side in [-1.0,1.0]:
-			piece(b,"WeaponRackPost",Vector3(side*1.72,.58,rack_z),Vector3(.12,1.16,.78),wood)
+			piece(b,"WeaponRackPost",Vector3(side*2.34,1.03,rack_z),Vector3(.12,1.58,1.0),wood)
 		var rack_weapons := [
 			["enfield","res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb"],
 			["talwar","res://environment/weapons/Talwar/weapon_talwar_01.glb"],
@@ -187,14 +218,25 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 		for i in rack_weapons.size():
 			var pickup := Pickup.new()
 			pickup.weapon_id = rack_weapons[i][0]
-			pickup.position = Vector3(-1.10+(i%3)*1.10,1.2+floori(i/3.0)*.68,rack_z+.12)
+			var upper: bool = i in [1,3,4]
+			var shelf_top: float = 1.765 if upper else 1.10
+			var slot_x: float = [-1.12,.45,1.12,-1.3,1.65][i]
+			pickup.name = "StoreWeapon_"+pickup.weapon_id
+			pickup.store_id = "company_armoury/"+pickup.weapon_id
+			pickup.position = Vector3(slot_x,shelf_top+.15,rack_z+.30)
 			b.add_child(pickup)
 			var source: String = rack_weapons[i][1]
 			var model: Node3D = load(source).instantiate()
 			pickup.add_child(model)
+			model.basis = Basis(Vector3.RIGHT,PI/2)
+			if pickup.weapon_id == "bow": model.basis = Basis(Vector3.UP,PI/2)*model.basis
+			for animation in model.find_children("*","AnimationPlayer",true,false): animation.stop()
+			var bounds := weapon_bounds(model,pickup)
+			model.position += Vector3(-bounds.get_center().x,-.135-bounds.position.y,-.30-bounds.get_center().z)
+			pickup.set_meta("shelf_top",shelf_top)
 			var collision := CollisionShape3D.new()
 			var shape := BoxShape3D.new()
-			shape.size = Vector3(1.0,.25,.35) if i < 4 else Vector3(.6,.25,.35)
+			shape.size = Vector3(maxf(.4,bounds.size.x),.25,.5)
 			collision.shape = shape
 			pickup.add_child(collision)
 	var sign := Label3D.new()
@@ -207,6 +249,16 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 	b.add_child(sign)
 	merge_visuals(b)
 	return b
+
+func weapon_bounds(model: Node3D, relative_to: Node3D) -> AABB:
+	var bounds := AABB()
+	var first := true
+	for mesh in model.find_children("*","MeshInstance3D",true,false):
+		if mesh.mesh == null or not mesh.visible or mesh.name.begins_with("tlm_smoke_preview"): continue
+		var box: AABB = (relative_to.global_transform.affine_inverse()*mesh.global_transform)*mesh.get_aabb()
+		bounds = box if first else bounds.merge(box)
+		first = false
+	return bounds
 
 func compound() -> void:
 	var c := Node3D.new()

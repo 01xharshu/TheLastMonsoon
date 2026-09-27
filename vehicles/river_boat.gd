@@ -25,7 +25,13 @@ func _ready() -> void:
 	add_child(hull)
 	_add_dry_floor()
 	paddle = hull.find_child("boat_paddle",true,false)
-	if paddle != null: paddle_stow = paddle.transform
+	if paddle != null:
+		paddle_stow = paddle.transform
+		# The mesh children retained the source parent's placement, but the grip
+		# sockets are local to the shaft. Remove that duplicated placement once.
+		for part in paddle.get_children():
+			if part is Node3D and part.name.begins_with("boat_oar_"):
+				part.position -= paddle_stow.origin
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(1.26,0.62,4.0)
 	var collision := CollisionShape3D.new()
@@ -177,7 +183,7 @@ func _physics_process(delta: float) -> void:
 		# The existing paddle pivots across the beam; a pitch cycle dips its blade into the river.
 		var stroke := sin(row_phase)*row_effort
 		var dip := cos(row_phase)*row_effort
-		var row_transform := Transform3D(Basis.from_euler(Vector3(0,PI*.5+.22*stroke,-.14-.10*dip)),Vector3(.20,.60,-.24))
+		var row_transform := Transform3D(Basis.from_euler(Vector3(0,PI*.5+.22*stroke,-.38-.14*dip)),Vector3(.20,.60,-.24))
 		paddle.transform = paddle_stow.interpolate_with(row_transform,paddle_blend)
 	if rider != null: _sync_rider()
 

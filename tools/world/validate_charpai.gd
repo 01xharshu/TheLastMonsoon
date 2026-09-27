@@ -36,8 +36,27 @@ func validate() -> void:
 	var survival = player.get_node("SurvivalComponent")
 	survival.energy = 20.0
 	var before: float = clock.total_game_minutes
+	player.visible = true
+	var pose_camera := Camera3D.new()
+	world.add_child(pose_camera)
+	pose_camera.global_position = bed.to_global(Vector3(2.7, 2.0, 2.5))
+	pose_camera.look_at(bed.to_global(Vector3(0, 0.65, 0)))
+	pose_camera.make_current()
 	bed.interact(player)
+	assert(bed.resting and player.get_meta("rest_action", "") == "sleep")
+	assert(is_equal_approx(clock.total_game_minutes, before), "Time jumped before the sitting animation")
+	await create_timer(0.32).timeout
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("res://docs/world/captures/charpai_sitting.png")
+	await create_timer(0.68).timeout
+	assert(float(player.get_meta("rest_progress", 0.0)) > 0.9, "Sleep pose did not complete")
+	assert(is_equal_approx(clock.total_game_minutes, before), "Time jumped before fade-out")
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("res://docs/world/captures/charpai_sleeping.png")
+	await create_timer(0.85).timeout
 	assert(is_equal_approx(clock.total_game_minutes - before, 480.0))
+	await create_timer(1.7).timeout
+	assert(not bed.resting and player.get_meta("rest_action", "") == "", "Rest did not release player")
 	assert(survival.energy > 20.0)
 	var report = {"position":str(bed.position), "leg_contacts":contacts, "collision":true, "sleep_hours":8, "energy_after_sleep":survival.energy}
 	print("CHARPAI CHECK PASS ", JSON.stringify(report))

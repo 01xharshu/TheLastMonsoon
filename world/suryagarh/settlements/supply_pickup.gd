@@ -5,6 +5,7 @@ extends Interactable
 var taken := false
 func _ready() -> void:
 	interaction_text = "Take " + display_name
+	interaction_icon = "ammo"
 	hold_duration = .65
 	add_to_group("period_supplies")
 func interact(actor: CharacterBody3D) -> void:

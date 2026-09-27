@@ -4,6 +4,7 @@ const FortShape = preload("res://world/ruined_fort/fort_shape.gd")
 const FORT_CENTER := Vector2(520.0, -350.0)
 const FORT_BASE_HEIGHT := 120.0
 const FORT_ACCESS_GRADES := [109.8, 112.1, 117.5, 120.0]
+const FORT_TRAIL_GRADES := [10.5, 13.7, 31.3, 38.0, 42.0, 46.0, 56.0, 68.0, 76.0, 79.5, 82.0, 89.0, 93.0, 98.5, 109.8]
 ## Metres, Y-up. Stable deterministic source shared by baking, runtime and validation.
 const SIZE: float = 1728.0
 const HALF: float = SIZE / 2.0
@@ -32,7 +33,7 @@ const ROUTES: Dictionary = {
 	"compound_stores": [Vector2(345, 275), Vector2(376, 298)],
 	"government_house_road": [Vector2(-214, -18), Vector2(-300, -18), Vector2(-390, -18)],
 	"government_house_avenue": [Vector2(-390, -18), Vector2(-390, -123)],
-	"fort_trail": [Vector2(320, 150), Vector2(355, 70), Vector2(395, -30), Vector2(430, -135), Vector2(465, -250)],
+	"fort_trail": [Vector2(320, 150), Vector2(380, 90), Vector2(460, 10), Vector2(480, 0), Vector2(490, -10), Vector2(500, -20), Vector2(520, -50), Vector2(510, -120), Vector2(550, -140), Vector2(550, -170), Vector2(510, -170), Vector2(480, -180), Vector2(490, -200), Vector2(510, -230), Vector2(465, -250)],
 	"fort_access": [Vector2(465, -250), Vector2(565, -255), Vector2(460, -283), Vector2(520, -303)],
 }
 const SITES: Dictionary = {
@@ -90,6 +91,22 @@ func height(x: float, z: float) -> float:
 		var t := (z+452.0)/20.0
 		var target := lerpf(PLOTS["TownHall"].grade,base_height(-320.0,-432.0),t)
 		h = lerpf(h,target,1.0-smoothstep(3.0,7.0,absf(x+320.0)))
+	# Follow a surveyed, gently graded mountain trail from the east bridge road.
+	if x > 306.0 and x < 566.0 and z > -266.0 and z < 164.0:
+		var trail: Array = ROUTES["fort_trail"]
+		var trail_point := Vector2(x,z)
+		var nearest_trail := INF
+		var trail_target := h
+		for i in range(trail.size()-1):
+			var a: Vector2 = trail[i]
+			var b: Vector2 = trail[i+1]
+			var ab: Vector2 = b-a
+			var t: float = clampf((trail_point-a).dot(ab)/ab.length_squared(),0.0,1.0)
+			var dist: float = trail_point.distance_to(a+ab*t)
+			if dist < nearest_trail:
+				nearest_trail = dist
+				trail_target = lerpf(FORT_TRAIL_GRADES[i],FORT_TRAIL_GRADES[i+1],t)
+		h = lerpf(h,trail_target,1.0-smoothstep(3.0,14.0,nearest_trail))
 	return h
 
 func base_height(x: float, z: float) -> float:

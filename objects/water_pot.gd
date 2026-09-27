@@ -19,6 +19,7 @@ extends Interactable
 # =========================================================
 
 func _ready() -> void:
+	interaction_icon = "water"
 
 	# E
 	interaction_text = (

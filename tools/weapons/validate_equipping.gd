@@ -30,5 +30,18 @@ func _run() -> void:
   gear._refresh()
   gear.select_weapon(slots[weapon_id])
   assert(not gear.stowed)
+  assert_visible_weapon(gear, weapon_id)
+ for weapon_id in slots:
+  gear.select_weapon(slots[weapon_id])
+  assert_visible_weapon(gear, weapon_id)
+ gear.toggle_stowed()
+ assert_visible_weapon(gear, "")
  print("EQUIP HOLD: PASS | all five store weapons")
  quit()
+
+func assert_visible_weapon(gear: Node, expected: String) -> void:
+ var held := {"talwar":gear.talwar_hand,"enfield":gear.enfield_hand,"bow":gear.bow_hand,"pistol":gear.pistol_hand,"double_gun":gear.double_hand,"utility_knife":gear.knife_hand}
+ for weapon_id in held:
+  assert(held[weapon_id].visible == (weapon_id == expected), "Wrong held weapon visible: " + weapon_id)
+ for carried in [gear.talwar_waist,gear.enfield_back,gear.bow_back,gear.quiver_back,gear.pistol_hip,gear.knife_hip,gear.double_back]:
+  assert(not carried.visible, "Unequipped carried weapon remained visible: " + carried.name)

@@ -16,15 +16,15 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/sergeant_man.glb",
-      "sha256": "8f5d717fdc88554b8604874d8e7d188d0ce8b94606a823ec3c19eaaeaf15424d",
-      "bytes": 7149172
+      "sha256": "0493d1210f1fb45f5daf29c12d5a1318757984f42a3ecdcc20df50baaadcc10b",
+      "bytes": 1477208
     },
     "woman": {
       "path": "characters/npcs/british/sergeant_woman.glb",
-      "sha256": "11092ac833de404e4a6895b3df2ec177e38c65498e216e95c98bfb9cae3b58ca",
-      "bytes": 7149692
+      "sha256": "6635383b46d8ff1692d692c5ad6002ffaac7078d84c426e7577bd15a0bd64b56",
+      "bytes": 1791784
     }
   },
-  "animation": "Godot procedural idle/walk study; no authored Blender clips",
-  "placed_in_world": false
+  "animation": "Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles",
+  "placed_in_world": true
 }

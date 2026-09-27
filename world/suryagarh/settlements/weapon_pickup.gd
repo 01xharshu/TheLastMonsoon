@@ -1,8 +1,13 @@
 extends Interactable
 var weapon_id := "talwar"
 var taken := false
+var store_id := ""
+
+func persistence_id() -> String:
+	return store_id if not store_id.is_empty() else "%s/%s/%s" % [get_parent().name,weapon_id,position]
 func _ready() -> void:
 	interaction_text = "Take and equip " + {"enfield":"Enfield rifle","talwar":"talwar","bow":"bow and quiver","pistol":"Adams pistol","double_gun":"double-barrel gun"}.get(weapon_id,weapon_id)
+	interaction_icon = "weapon"
 	hold_duration = .9
 	add_to_group("weapon_pickups")
 func interact(actor: CharacterBody3D) -> void:

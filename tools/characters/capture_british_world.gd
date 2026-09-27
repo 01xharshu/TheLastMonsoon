@@ -19,11 +19,14 @@ func _capture() -> void:
 	camera.fov = 45.0
 	camera.make_current()
 	var shots := [
+		{"name":"private_pair_world", "eye":Vector3(316, 14.1, 262), "aim":Vector3(316, 12.9, 270), "fov":35.0},
 		{"name":"compound_overview", "eye":Vector3(345, 24, 245), "aim":Vector3(345, 12.8, 280), "fov":65.0},
 		{"name":"corporal_pair_world", "eye":Vector3(330, 14.1, 265), "aim":Vector3(330, 12.9, 273), "fov":35.0},
 		{"name":"captain_pair_world", "eye":Vector3(375, 14.1, 267), "aim":Vector3(375, 12.9, 275), "fov":35.0},
 		{"name":"official_pair_world", "eye":Vector3(-389, 10.6, -94), "aim":Vector3(-389, 9.3, -85), "fov":35.0},
 	]
+	if "--private-only" in OS.get_cmdline_user_args():
+		shots = [shots[0]]
 	for shot in shots:
 		camera.fov = shot.fov
 		camera.global_position = shot.eye

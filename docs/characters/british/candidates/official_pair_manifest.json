@@ -16,15 +16,15 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/official_man.glb",
-      "sha256": "9cc673b4f7e6ef45d0e91cf22400a2d0e8184b0332b227240dfd7afb50a6a23f",
-      "bytes": 7741176
+      "sha256": "51e67cef8d39b55dfa76e7d36bf254b9927ca81aa804cfcdf909652e1957486f",
+      "bytes": 2137884
     },
     "woman": {
       "path": "characters/npcs/british/official_woman.glb",
-      "sha256": "97f22f2824365c5e09f3c0d7228a2e401902801ee7ad585efe6bebbf7a5a2b70",
-      "bytes": 6450284
+      "sha256": "22383de2894b87906b3cfe7988d500ced588279953e7123bd6a0e5f2dab1b617",
+      "bytes": 1549884
     }
   },
-  "animation": "Godot procedural idle/walk study; no authored Blender clips",
-  "placed_in_world": false
+  "animation": "Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles",
+  "placed_in_world": true
 }

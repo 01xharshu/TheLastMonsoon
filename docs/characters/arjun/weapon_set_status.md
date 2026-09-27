@@ -1,5 +1,9 @@
 # Arjun equipment set — standalone asset study
 
+## Selector visibility — 2026-09-25
+
+Only the weapon currently equipped through the selector appears on Arjun. Switching hides every other held, back, hip, and waist model, including the bow quiver; stowing hides the selected weapon too. Inventory ownership and ammunition remain unchanged. `tools/weapons/validate_equipping.gd` passed pickup, switching, and stow visibility checks for the five store weapons. Fresh Forward+/Metal pistol, Enfield, and double gun diagnostic captures show the selected weapon without the other owned weapons on Arjun. These captures use the owner-rejected temporary body, so character fit and grip motion remain unapproved.
+
 Owner reference: `weapon_set_reference_2026-09-23.png` (SHA-256 `d639e90b716d44281badac1f9958417c03c52d6d599ef0974a87ed26cf504439`). The image guides the set's silhouettes and intended carry positions. It is not a source mesh or texture.
 
 | Item | Current asset | State |

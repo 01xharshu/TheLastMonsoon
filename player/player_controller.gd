@@ -18,8 +18,10 @@ extends CharacterBody3D
 @export var jump_velocity: float = 5.0
 
 @export_range(0.05, 0.6, 0.01) var max_walk_step_height: float = 0.38
-@export_range(0.0, 0.5, 0.01) var ground_snap_distance: float = 0.3
+@export_range(0.0, 0.5, 0.01) var ground_snap_distance: float = 0.45
 var step_lift: float = 0.0
+var step_ground_grace: float = 0.0
+var step_up_grace: float = 0.0
 const MAX_HEALTH := 100.0
 var health: float = MAX_HEALTH
 
@@ -71,8 +73,8 @@ func set_first_person(enabled: bool) -> void:
 	if enabled: $CameraPivot/SpringArm3D.position.x = 0.0
 	$CameraPivot/SpringArm3D/Camera3D.near = 0.03 if enabled else 0.05
 	if enabled: $CameraPivot/SpringArm3D/Camera3D.fov = 75.0
-	# Reset immediately rather than waiting for the spring arm's next physics update.
-	$CameraPivot/SpringArm3D/Camera3D.position.z = 0.0 if enabled else third_person_distance
+	# Only snap inward. On return, let the spring arm find a clear position.
+	if enabled: $CameraPivot/SpringArm3D/Camera3D.position.z = 0.0
 
 
 # =========================================================
@@ -164,7 +166,7 @@ func _ready() -> void:
 
 	third_person_height = camera_pivot.position.y
 	third_person_distance = $CameraPivot/SpringArm3D.spring_length
-	third_person_distance = minf(third_person_distance, 2.0)
+	third_person_distance = minf(third_person_distance, 1.8)
 	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
 	aim_sound = AudioStreamPlayer.new()
 	aim_sound.stream = AIM_CLICK
@@ -199,7 +201,7 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "":
+	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "" or get_meta("rest_action", "") != "":
 		return
 
 
@@ -286,6 +288,11 @@ func _unhandled_input(
 func _physics_process(
 	delta: float
 ) -> void:
+	if get_meta("rest_action", "") != "":
+		velocity = Vector3.ZERO
+		survival.set_sprinting(false)
+		_hide_interaction_labels()
+		return
 	if get_meta("river_action", "") != "":
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
@@ -362,11 +369,14 @@ func _physics_process(
 
 
 	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
+	step_ground_grace = 0.15 if is_on_floor() else maxf(0.0, step_ground_grace - delta)
+	step_up_grace = maxf(0.0, step_up_grace - delta)
 	var landing_speed: float = -velocity.y if not is_on_floor() else 0.0
 	move_and_slide()
 	if is_on_floor() and landing_speed > 9.0 and not is_swimming and not get_meta("climbing",false) and not has_meta("mounted_vehicle"):
 		take_damage((landing_speed - 9.0) * 7.0)
 	_try_walk_step(delta, intended_horizontal)
+	_try_walk_step_down()
 
 
 	_update_interaction()
@@ -377,7 +387,9 @@ func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 	step_lift = move_toward(step_lift, 0.0, delta * 4.0)
 	if is_swimming or not is_on_floor() or velocity.y > 0.0:
 		return
-	if horizontal.length_squared() < 0.0001:
+	# A blocked body may only regain acceleration-sized motion each frame.
+	# Keep checking that small motion so a stop at a riser can recover.
+	if horizontal.length_squared() < 0.00000001:
 		return
 	# Only step when the normal slide was blocked in the intended direction.
 	var traveled := get_position_delta()
@@ -402,7 +414,25 @@ func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 		return
 	global_position = Vector3(global_position.x + horizontal.x, global_position.y + rise, global_position.z + horizontal.z)
 	step_lift = maxf(step_lift, rise)
+	step_up_grace = 0.25
+	velocity.x = horizontal.x / delta
+	velocity.z = horizontal.z / delta
 	velocity.y = 0.0
+
+func _try_walk_step_down() -> void:
+	if is_on_floor() or step_ground_grace <= 0.0 or step_up_grace > 0.0 or is_swimming or velocity.y > 0.0 or velocity.y < -3.0:
+		return
+	# Sweep the whole capsule down. The rounded capsule can meet a tread edge
+	# before its centre reaches that tread; follow that contact without overlap.
+	var contact := KinematicCollision3D.new()
+	if not test_move(global_transform, Vector3.DOWN * max_walk_step_height, contact):
+		return
+	if contact.get_normal().y < 0.3:
+		return
+	global_position += contact.get_travel()
+	velocity.y = 0.0
+	step_ground_grace = 0.15
+	apply_floor_snap()
 
 
 # =========================================================
@@ -452,6 +482,11 @@ func _handle_mouse_look(
 
 func _process(delta: float) -> void:
 	_update_weapon_camera(delta)
+	# A nearby obstruction can push the spring camera into Arjun's head or torso.
+	# Hide only the world body at that distance; first-person arms have their own view.
+	if not first_person:
+		var camera: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+		visual_root.visible = camera.global_position.distance_to($CameraPivot/SpringArm3D.global_position) > 0.42
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or inventory_ui.is_open() or get_meta("map_open",false) or get_meta("weapon_wheel_open",false):
 		return
 	var stick := Input.get_vector("look_left","look_right","look_up","look_down")
@@ -719,13 +754,13 @@ func _update_interaction() -> void:
 	if current_interactable == null:
 		interaction_overlay.set_target(null)
 		if river_water.can_use_river():
-			primary_interaction_label.text = ("[□] " if SaveManager.active_input_device == "controller" else "[E] ") + "Drink river water"
-			primary_interaction_label.visible = true
-			secondary_interaction_label.text = ("[L1+□] " if SaveManager.active_input_device == "controller" else "[Shift+E] ") + "Fill water pouch"
-			secondary_interaction_label.visible = inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0
+			primary_interaction_label.visible = false
+			secondary_interaction_label.visible = false
+			interaction_overlay.set_river_actions(true, inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0)
 		else:
 			_hide_interaction_labels()
 		return
+	interaction_overlay.set_river_actions(false, false)
 	primary_interaction_label.visible = false
 	secondary_interaction_label.visible = false
 	interaction_overlay.set_target(current_interactable,hold_elapsed/maxf(current_interactable.hold_duration,.001) if hold_target == current_interactable else 0.0)
@@ -766,6 +801,7 @@ func _hide_interaction_labels() -> void:
 
 	secondary_interaction_label.visible = false
 	interaction_overlay.set_target(null)
+	interaction_overlay.set_river_actions(false, false)
 	hold_target = null
 	hold_elapsed = 0.0
 	set_meta("interaction_reach",false)

@@ -1,5 +1,5 @@
 extends Node3D
-## Places the eight British NPC study pairs in surveyed, walkable civic grounds.
+## Independent male and female preview residents; placement assigns no relationship.
 
 const ACTOR = preload("res://characters/npcs/british/british_npc_actor.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
@@ -18,12 +18,18 @@ func _ready() -> void:
 		{"rank":"colonel", "position":Vector3(321, compound_y, 313)},
 		{"rank":"official", "position":Vector3(-390, residence_y, -85)},
 	]
+	var female_positions := [
+		Vector3(-420, residence_y, -55), Vector3(-408, residence_y, -45),
+		Vector3(-370, residence_y, -45), Vector3(-420, residence_y, -75),
+		Vector3(-370, residence_y, -75), Vector3(-410, residence_y, -95),
+		Vector3(-370, residence_y, -95), Vector3(-405, residence_y, -65),
+	]
 	for i in range(placements.size()):
 		var record: Dictionary = placements[i]
 		var rank: String = record["rank"]
 		var origin: Vector3 = record["position"]
 		_spawn(rank, "man", origin, float(i) * 1.1, 1.1 if rank != "official" else 0.5)
-		_spawn(rank, "woman", origin + Vector3(2.7, 0, 0), 4.0 + float(i) * 1.1, 0.55)
+		_spawn(rank, "woman", female_positions[i], 4.0 + float(i) * 1.1, 0.9)
 
 func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance: float) -> void:
 	var path := MODEL_DIR + rank + "_" + kind + ".glb"
@@ -37,7 +43,10 @@ func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance
 	actor.set("cycle_offset", offset)
 	actor.set("patrol_distance", distance)
 	actor.set("patrol_axis", Vector3(0, 0, -1) if kind == "man" else Vector3(1, 0, 0))
+	actor.set("movement_profile", &"male" if kind == "man" else &"female")
 	actor.set_meta("concept_rank_or_post", rank)
+	actor.set_meta("model_kind", kind)
+	actor.set_meta("placement_plot", "GovernmentHouse" if kind == "woman" or rank == "official" else "CompanyCompound")
 	actor.set_meta("visual_status", "candidate_unapproved")
 	var model := scene.instantiate() as Node3D
 	actor.add_child(model)

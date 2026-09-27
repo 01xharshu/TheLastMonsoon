@@ -4,14 +4,21 @@ Suryagarh is fictional. Before adding an object to a playable scene, record evid
 
 ## Current weapon store
 
-The Company armoury in the existing compound holds the two pickups on a timber rack inside its rear room. Arjun starts with neither weapon and must enter the store to take each item. The rack is a design inference, not a reconstruction of a documented Suryagarh store.
+The Company armoury holds five prototype pickups: Enfield, talwar, double gun, bow, and Adams pistol. Arjun starts unarmed and must enter the store to take each item. The rack and this collection of held/private arms are fictional design inferences, not a reconstruction of documented Company issue.
 
-The [Forward+/Metal rack capture](captures/23_company_weapon_rack.png) was inspected after laying both objects flat on the shelf. A room-side physics ray reaches each pickup without hitting the masonry or rack. This verifies the placement shown; exact weapon contact and final period dressing remain open.
+The [2026-09-27 Forward+/Metal rack capture](captures/23_company_weapon_rack.png) was inspected after refitting all five objects to two shelves. Bounds checks confirm a 15 mm support allowance and containment within the rack; a standing room-side physics ray reaches each pickup. Detailed changes and limitations: [weapon store](weapon_store.md).
 
 | Item | Period evidence | Game decision |
 | --- | --- | --- |
 | Pattern 1853 Enfield | [Royal Armouries](https://royalarmouries.org/schools/learning-resources/the-british-empire) identifies the 1856 third model and states it was given to East India Company sepoys in 1857. [National Army Museum](https://www.nam.ac.uk/explore/why-did-indian-mutiny-happen) documents Pattern 1853 cartridges in 1857. | Plausible in a Company store in a fictional north Indian district in 1857. Exact local supply and model markings still need research. |
 | Talwar | [National Army Museum](https://collection.nam.ac.uk/detail.php?acc=1951-09-11--1) catalogs a talwar associated with Prince Mirza Mughal around 1857. [The Met](https://www.metmuseum.org/art/collection/search/31136) dates an Indian talwar to the 18th–19th century. | Period and region plausible. Its presence in this particular Company store is a gameplay inference; a locally held or confiscated sword should be signaled through room dressing or story. |
+| Bow | William Rice's [1857 account of Rajpootana hunting in 1850–1854](https://archive.org/details/dli.ministry.23914), printed p. 26, describes local bows and arrows. [The Met](https://www.metmuseum.org/art/collection/search/30295) catalogs an Indian bow dated 18th–19th century. | Bows existed locally in the period. Neither reference approves the prototype's exact straight wooden form, quiver, or its presence in Company stores. Keep those details provisional. |
+| Double gun | Rice, same source, preface p. vi describes double guns/rifles; printed p. 115 describes damp gun caps. Both relevant pages were visually inspected in the 1857 scan. | Supports cap-fired sporting arms in India before 1857. Exact model and calibre are not established; this is held/private sporting equipment, not claimed regulation issue. |
+| Adams pistol | [National Army Museum](https://collection.nam.ac.uk/detail.php?acc=1993-02-351-1) documents an Adams used at Jhansi in 1858 and explains the Beaumont improvement ordered in 1855. | Establishes use in the rebellion, but the specimen is later than the game's 1857 date and is not proof of this exact 1851 model's local supply. Exact variant and ownership remain open. |
+
+## River and stair review
+
+[The British Museum's 1833–1834 Prinsep collection](https://www.britishmuseum.org/collection/object/P_1871-0812-2526-2535) includes Raj Ghat at Benares. This establishes ghats before 1857, not the design of Suryagarh's timber boat landing. That landing is currently a jetty, not a sourced reconstruction of a masonry ghat. The existing plain timber stair handrails also remain provisional: a modern photograph of an old building cannot establish when its present rail was installed. No new ghat or rail design was added during this review.
 
 ## Asset acceptance rule
 

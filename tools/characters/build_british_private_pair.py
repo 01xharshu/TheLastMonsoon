@@ -129,9 +129,13 @@ def garment_surface_y(garment, x, z, front=True):
 
 def cloth_strip(name, path, width, mat, rig, tree, weights, garment, front=True):
     verts=[]
-    for x,z in path:
+    raw=[garment_surface_y(garment,x,z,front) for x,z in path]
+    # Fitted donor cloth is triangulated irregularly; smooth the strap's
+    # longitudinal guide so its edge does not copy individual mesh facets.
+    guide=[sum(raw[max(0,i-3):min(len(raw),i+4)])/len(raw[max(0,i-3):min(len(raw),i+4)]) for i in range(len(raw))]
+    for index,(x,z) in enumerate(path):
         for xx in (x-width/2,x+width/2):
-            y=garment_surface_y(garment,xx,z,front)
+            y=guide[index]
             verts.append((xx,y,z))
     faces=[(i*2,i*2+1,i*2+3,i*2+2) for i in range(len(path)-1)]
     obj=make_mesh(name,verts,faces,mat,rig,tree,weights)

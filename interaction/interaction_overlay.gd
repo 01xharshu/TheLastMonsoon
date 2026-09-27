@@ -95,6 +95,8 @@ const FOCUSED_MARKER_RADIUS := 3.0
 var actor: CharacterBody3D = null
 
 var target: Interactable = null
+var river_visible := false
+var river_can_fill := false
 
 
 # =========================================================
@@ -210,6 +212,11 @@ func _ready() -> void:
 # =========================================================
 # CURRENT TARGET
 # =========================================================
+
+func set_river_actions(visible: bool, can_fill: bool) -> void:
+	river_visible = visible
+	river_can_fill = can_fill
+	queue_redraw()
 
 func set_target(
 	value: Interactable,
@@ -479,334 +486,51 @@ func _marker_alpha(
 # DRAW INTERACTION ICON
 # =========================================================
 
-func _icon(
-	center: Vector2,
-	kind: String,
-	color: Color
-) -> void:
+func _shape(center: Vector2, offsets: Array[Vector2], color: Color) -> void:
+	var points := PackedVector2Array()
+	for offset in offsets: points.append(center + offset)
+	draw_colored_polygon(points, color)
 
+func _icon(center: Vector2, kind: String, color: Color) -> void:
 	match kind:
-
-
-		# -------------------------------------------------
-		# AMMUNITION
-		# -------------------------------------------------
-
-		"ammo":
-
-			for x_offset in [
-				-5.0,
-				0.0,
-				5.0
-			]:
-
-				var top := (
-					center
-					+ Vector2(
-						x_offset,
-						-6
-					)
-				)
-
-				var bottom := (
-					center
-					+ Vector2(
-						x_offset,
-						5
-					)
-				)
-
-
-				draw_line(
-					top,
-					bottom,
-					color,
-					2.0,
-					true
-				)
-
-
-				draw_circle(
-					top,
-					1.25,
-					color
-				)
-
-
-		# -------------------------------------------------
-		# MEDICINE
-		# -------------------------------------------------
-
-		"medicine":
-
-			draw_rect(
-				Rect2(
-					center
-					- Vector2(
-						2,
-						7
-					),
-					Vector2(
-						4,
-						14
-					)
-				),
-				color
-			)
-
-
-			draw_rect(
-				Rect2(
-					center
-					- Vector2(
-						7,
-						2
-					),
-					Vector2(
-						14,
-						4
-					)
-				),
-				color
-			)
-
-
-		# -------------------------------------------------
-		# CHEST
-		# -------------------------------------------------
-
-		"chest":
-
-			draw_rect(
-				Rect2(
-					center
-					- Vector2(
-						7,
-						4
-					),
-					Vector2(
-						14,
-						10
-					)
-				),
-				color,
-				false,
-				1.5
-			)
-
-
-			draw_line(
-				center
-				+ Vector2(
-					-6,
-					-5
-				),
-				center
-				+ Vector2(
-					6,
-					-5
-				),
-				color,
-				1.5,
-				true
-			)
-
-
-			draw_circle(
-				center
-				+ Vector2(
-					0,
-					1
-				),
-				1.4,
-				color
-			)
-
-
-		# -------------------------------------------------
-		# WEAPON
-		# -------------------------------------------------
-
-		"weapon":
-
-			draw_line(
-				center
-				+ Vector2(
-					-7,
-					5
-				),
-				center
-				+ Vector2(
-					6,
-					-7
-				),
-				color,
-				2.0,
-				true
-			)
-
-
-			draw_line(
-				center
-				+ Vector2(
-					-7,
-					1
-				),
-				center
-				+ Vector2(
-					-3,
-					5
-				),
-				color,
-				2.0,
-				true
-			)
-
-
-		# -------------------------------------------------
-		# GATE / DOOR
-		# -------------------------------------------------
-
-		"gate":
-
-			draw_rect(
-				Rect2(
-					center
-					- Vector2(
-						6,
-						7
-					),
-					Vector2(
-						12,
-						14
-					)
-				),
-				color,
-				false,
-				1.5
-			)
-
-
-			draw_circle(
-				center
-				+ Vector2(
-					3,
-					1
-				),
-				1.2,
-				color
-			)
-
-
-		# -------------------------------------------------
-		# WATER
-		# -------------------------------------------------
-
 		"water":
-
-			var points := PackedVector2Array(
-				[
-					center
-					+ Vector2(
-						0,
-						-7
-					),
-
-					center
-					+ Vector2(
-						-5,
-						1
-					),
-
-					center
-					+ Vector2(
-						-3,
-						5
-					),
-
-					center
-					+ Vector2(
-						0,
-						7
-					),
-
-					center
-					+ Vector2(
-						3,
-						5
-					),
-
-					center
-					+ Vector2(
-						5,
-						1
-					),
-
-					center
-					+ Vector2(
-						0,
-						-7
-					)
-				]
-			)
-
-
-			draw_polyline(
-				points,
-				color,
-				1.5,
-				true
-			)
-
-
-		# -------------------------------------------------
-		# GENERIC LOOT
-		# -------------------------------------------------
-
-		"loot":
-
-			draw_circle(
-				center
-				+ Vector2(
-					0,
-					-1
-				),
-				4.5,
-				color,
-				false,
-				1.5
-			)
-
-
-			draw_line(
-				center
-				+ Vector2(
-					-6,
-					6
-				),
-				center
-				+ Vector2(
-					6,
-					6
-				),
-				color,
-				1.5,
-				true
-			)
-
-
-		# -------------------------------------------------
-		# DEFAULT INTERACTION
-		# -------------------------------------------------
-
+			_shape(center, [Vector2(0,-9),Vector2(7,2),Vector2(6,7),Vector2(2,9),Vector2(-2,9),Vector2(-6,7),Vector2(-7,2)], color)
+		"food", "mango":
+			draw_circle(center + Vector2(-3,2), 5.0, color)
+			draw_circle(center + Vector2(3,2), 5.0, color)
+			_shape(center + Vector2(1,-7), [Vector2(0,0),Vector2(7,-2),Vector2(4,2)], color)
+		"ammo", "chest", "crate":
+			draw_rect(Rect2(center + Vector2(-8,-3),Vector2(16,11)), color)
+			draw_rect(Rect2(center + Vector2(-9,-7),Vector2(18,4)), color)
+			draw_rect(Rect2(center + Vector2(-1,-6),Vector2(2,14)), KEY_TEXT_COLOR)
+		"weapon":
+			_shape(center, [Vector2(-9,3),Vector2(3,-3),Vector2(8,-3),Vector2(8,-1),Vector2(1,0),Vector2(-1,5),Vector2(-5,5),Vector2(-5,7),Vector2(-9,7)], color)
+		"medicine":
+			draw_rect(Rect2(center+Vector2(-2,-8),Vector2(4,16)),color)
+			draw_rect(Rect2(center+Vector2(-8,-2),Vector2(16,4)),color)
+		"gate":
+			draw_rect(Rect2(center+Vector2(-7,-8),Vector2(14,16)),color)
+			draw_circle(center+Vector2(3,1),1.5,KEY_TEXT_COLOR)
+		"horse", "vehicle":
+			_shape(center,[Vector2(-8,-3),Vector2(5,-3),Vector2(8,3),Vector2(4,3),Vector2(3,8),Vector2(0,8),Vector2(-1,3),Vector2(-6,3)],color)
 		_:
+			draw_circle(center,5.0,color)
+			draw_rect(Rect2(center+Vector2(-2,3),Vector2(4,6)),color)
 
-			draw_circle(
-				center,
-				3.0,
-				color
-			)
+func _draw_action(at: Vector2, key: String, kind: String, caption: String, count: int = 0) -> void:
+	_draw_key(at, key)
+	var key_width := 64.0 if key.length() > 2 else 27.0
+	_icon(at + Vector2(key_width+15.0,13), kind, IVORY)
+	var label_text := caption
+	if count > 0: label_text += "  ×%d" % count
+	draw_string(ThemeDB.fallback_font, at + Vector2(key_width+32.0,19), label_text, HORIZONTAL_ALIGNMENT_LEFT, 170, 14, IVORY)
 
+func _target_caption(value: Interactable) -> String:
+	if value.interaction_icon == "weapon" and value.get("weapon_id") != null:
+		return "Take " + str(value.get("weapon_id")).replace("_", " ").capitalize()
+	if value.interaction_icon == "ammo" and value.get("item_id") != null:
+		return "Take " + {"paper_cartridges":"cartridges", "pistol_ball":"pistol balls", "shot_charge":"shot charges"}.get(str(value.get("item_id")),str(value.get("item_id")).replace("_", " "))
+	return value.interaction_text
 
 # =========================================================
 # DRAW OVERLAY
@@ -912,21 +636,7 @@ func _draw() -> void:
 			)
 
 
-			draw_arc(
-				point,
-				PASSIVE_MARKER_RADIUS,
-				0.0,
-				TAU,
-				24,
-				Color(
-					0.96,
-					0.95,
-					0.91,
-					alpha
-				),
-				1.25,
-				true
-			)
+			draw_circle(point,PASSIVE_MARKER_RADIUS * 0.55,Color(0.96,0.95,0.91,alpha))
 
 
 	# =====================================================
@@ -953,165 +663,29 @@ func _draw() -> void:
 		)
 
 
-		# -------------------------------------------------
-		# SMALLER PANEL
-		# -------------------------------------------------
-
-		var panel_width := (
-			135.0
-			if secondary
-			else 67.0
-		)
-
-		var panel_height := 34.0
-
-
-		# -------------------------------------------------
-		# PLACE BESIDE MARKER
-		# -------------------------------------------------
-
-		var desired_left := (
-			anchor.x
-			+ 12.0
-		)
-
-
-		var desired_top := (
-			anchor.y
-			- panel_height * 0.5
-		)
-
-
-		var left := clampf(
-			desired_left,
-			10.0,
-			size.x
-			- panel_width
-			- 10.0
-		)
-
-
-		var top := clampf(
-			desired_top,
-			10.0,
-			size.y
-			- panel_height
-			- 10.0
-		)
-
-
-		var panel_rect := Rect2(
-			Vector2(
-				left,
-				top
-			),
-			Vector2(
-				panel_width,
-				panel_height
-			)
-		)
-
-
-		draw_style_box(
-			panel_style,
-			panel_rect
-		)
-
-
-		# =================================================
-		# SECONDARY ACTION
-		# =================================================
-
-		var primary_x := (
-			left + 6.0
-		)
-
-
+		var secondary_key := "L1+□" if SaveManager.active_input_device == "controller" else "Shift+E"
+		var primary_key := "□" if SaveManager.active_input_device == "controller" else "E"
+		var row_count := 2 if secondary else 1
+		var panel_width := 276.0 if secondary else 224.0
+		var panel_height := 8.0 + 30.0 * row_count
+		var left := clampf(anchor.x + 12.0, 10.0, size.x-panel_width-10.0)
+		var top := clampf(anchor.y-panel_height*0.5,10.0,size.y-panel_height-10.0)
+		draw_style_box(panel_style,Rect2(left,top,panel_width,panel_height))
+		var item_count: int = target.get("count") if target.get("count") != null else 0
+		_draw_action(Vector2(left+5,top+4),primary_key,target.interaction_icon,_target_caption(target),item_count)
 		if secondary:
-
-			var secondary_key := (
-				"L1"
-				if SaveManager.active_input_device
-				== "controller"
-				else "Q"
-			)
-
-
-			_draw_key(
-				Vector2(
-					left + 5.0,
-					top + 4.0
-				),
-				secondary_key
-			)
-
-
-			_icon(
-				Vector2(
-					left + 51.0,
-					top + 17.0
-				),
-				"hand",
-				IVORY
-			)
-
-
-			primary_x = (
-				left + 70.0
-			)
-
-
-		# =================================================
-		# PRIMARY ACTION
-		# =================================================
-
-		var primary_key := (
-			"□"
-			if SaveManager.active_input_device
-			== "controller"
-			else "E"
-		)
-
-
-		_draw_key(
-			Vector2(
-				primary_x,
-				top + 4.0
-			),
-			primary_key
-		)
-
-
-		_icon(
-			Vector2(
-				primary_x + 44.0,
-				top + 17.0
-			),
-			target.interaction_icon,
-			IVORY
-		)
-
-
-		# =================================================
-		# HOLD ARC
-		# =================================================
-
+			_draw_action(Vector2(left+5,top+34),secondary_key,target.interaction_icon,target.secondary_interaction_text)
 		if target.hold_duration > 0.0:
-
-			draw_arc(
-				Vector2(
-					primary_x + 13.0,
-					top + 17.0
-				),
-				16.0,
-				-PI * 0.5,
-				-PI * 0.5
-				+ TAU * progress,
-				32,
-				HOLD_COLOR,
-				2.0,
-				true
-			)
+			draw_arc(Vector2(left+18,top+17),17.0,-PI*0.5,-PI*0.5+TAU*progress,32,HOLD_COLOR,2.0,true)
+	elif river_visible:
+		var river_top := size.y * 0.62
+		var river_rows := 2 if river_can_fill else 1
+		var river_width := 276.0 if river_can_fill else 224.0
+		var river_left := size.x * 0.5 - river_width * 0.5
+		draw_style_box(panel_style,Rect2(river_left,river_top,river_width,8.0+30.0*river_rows))
+		_draw_action(Vector2(river_left+5,river_top+4),"□" if SaveManager.active_input_device == "controller" else "E","water","Drink river water")
+		if river_can_fill:
+			_draw_action(Vector2(river_left+5,river_top+34),"L1+□" if SaveManager.active_input_device == "controller" else "Shift+E","water","Fill water pouch")
 
 
 	# =====================================================
@@ -1187,6 +761,7 @@ func _draw_key(
 	at: Vector2,
 	label: String
 ) -> void:
+	var key_width := 64.0 if label.length() > 2 else 27.0
 
 	# Outer black backing.
 
@@ -1195,7 +770,7 @@ func _draw_key(
 		Rect2(
 			at,
 			Vector2(
-				27,
+				key_width,
 				26
 			)
 		)
@@ -1213,7 +788,7 @@ func _draw_key(
 				3
 			),
 			Vector2(
-				21,
+				key_width-6.0,
 				20
 			)
 		)
@@ -1236,7 +811,7 @@ func _draw_key(
 		),
 		label,
 		HORIZONTAL_ALIGNMENT_CENTER,
-		21,
+		key_width-6.0,
 		font_size,
 		KEY_TEXT_COLOR
 	)

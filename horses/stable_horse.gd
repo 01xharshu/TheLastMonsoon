@@ -46,12 +46,17 @@ var hoof_events := 0
 var last_hoof_surface := "earth"
 var landing_events := 0
 var idle_voice_timer := 13.0
+@export_range(0.05, 0.5, 0.01) var max_walk_step_height := 0.38
+var body_collision: CollisionShape3D
+var step_ground_grace := 0.0
+var step_up_grace := 0.0
 
 func _ready() -> void:
 	add_to_group("mountable_vehicles")
 	add_to_group("horses")
 	collision_layer = 1
 	collision_mask = 1
+	floor_snap_length = 0.45
 	var shape := CapsuleShape3D.new()
 	shape.radius = 0.43
 	shape.height = 1.65
@@ -59,6 +64,7 @@ func _ready() -> void:
 	collider.shape = shape
 	collider.position.y = 0.83
 	add_child(collider)
+	body_collision = collider
 	_build_horse()
 	_build_audio()
 
@@ -371,9 +377,13 @@ func _physics_process(delta: float) -> void:
 	velocity.x = forward.x * pace
 	velocity.z = forward.z * pace
 	var was_grounded := is_on_floor()
+	step_ground_grace = 0.15 if was_grounded else maxf(0.0, step_ground_grace - delta)
+	step_up_grace = maxf(0.0, step_up_grace - delta)
+	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
 	var fall_speed: float = velocity.y
 	velocity.y -= ProjectSettings.get_setting("physics/3d/default_gravity") * delta
 	move_and_slide()
+	_walk_stairs(intended_horizontal)
 	_update_rigged_animation()
 	_update_hoof_contacts(delta)
 	if not was_grounded and is_on_floor() and fall_speed < -1.0:
@@ -438,3 +448,31 @@ func _physics_process(delta: float) -> void:
 			hoof_clearances[i] = lower_legs[i].to_global(Vector3(0,-.64,-.08)).y - global_position.y
 	neck_root.rotation.x = -.48 + sin(gait*2.0)*.035*stride
 	tail_root.rotation.x = sin(gait*.45)*.10
+
+func _walk_stairs(horizontal: Vector3) -> void:
+	if velocity.y > 0.0:
+		return
+	if is_on_floor() and horizontal.length_squared() > 0.00000001:
+		var traveled := get_position_delta()
+		if Vector2(traveled.x, traveled.z).dot(Vector2(horizontal.x, horizontal.z)) < horizontal.length_squared() * 0.8:
+			var raised := global_transform.translated(Vector3.UP * max_walk_step_height)
+			if not test_move(global_transform, Vector3.UP * max_walk_step_height) and not test_move(raised, horizontal):
+				var capsule: CapsuleShape3D = body_collision.shape
+				var probe: Vector3 = raised.origin + body_collision.position + horizontal + horizontal.normalized() * (capsule.radius + 0.08)
+				var ray := PhysicsRayQueryParameters3D.create(probe + Vector3.UP * 0.05, probe - Vector3.UP * (capsule.height * 0.5 + max_walk_step_height + 0.2))
+				ray.exclude = [get_rid()]
+				ray.collision_mask = collision_mask
+				var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+				if not hit.is_empty() and hit.normal.dot(Vector3.UP) >= cos(floor_max_angle):
+					var rise: float = hit.position.y + capsule.height * 0.5 - body_collision.position.y - global_position.y
+					if rise > 0.025 and rise <= max_walk_step_height:
+						global_position += horizontal + Vector3.UP * rise
+						velocity.y = 0.0
+						step_up_grace = 0.25
+	if not is_on_floor() and step_ground_grace > 0.0 and step_up_grace <= 0.0 and velocity.y >= -3.0:
+		var contact := KinematicCollision3D.new()
+		if test_move(global_transform, Vector3.DOWN * max_walk_step_height, contact) and contact.get_normal().y >= 0.3:
+			global_position += contact.get_travel()
+			velocity.y = 0.0
+			step_ground_grace = 0.15
+			apply_floor_snap()

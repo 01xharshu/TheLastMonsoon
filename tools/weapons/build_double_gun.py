@@ -53,9 +53,40 @@ def tube(name, x0, x1, y, z, radius, material):
     obj.data.materials.append(material)
     return obj
 
+def shaped_stock(name, profiles, material):
+    # Elliptical cross sections give the shoulder stock a tapered cheek and
+    # narrow wrist instead of a constant rectangular beam.
+    sides = 12
+    vertices = []
+    for x, half_width, half_height, centre_z in profiles:
+        for index in range(sides):
+            angle = math.tau * index / sides
+            vertices.append((x, half_width * math.cos(angle),
+                             centre_z + half_height * math.sin(angle)))
+    faces = []
+    for ring in range(len(profiles) - 1):
+        for index in range(sides):
+            next_index = (index + 1) % sides
+            faces.append((ring*sides+index, ring*sides+next_index,
+                          (ring+1)*sides+next_index, (ring+1)*sides+index))
+    faces.append(tuple(reversed(range(sides))))
+    faces.append(tuple((len(profiles)-1)*sides+index for index in range(sides)))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    mesh.materials.append(material)
+    bevel = obj.modifiers.new("soft stock edges", "BEVEL")
+    bevel.width = .004
+    bevel.segments = 2
+    obj.modifiers.new("weighted normals", "WEIGHTED_NORMAL")
+    return obj
+
 # +X is the firing direction, matching Arjun's existing long-gun sockets.
-cube("walnut buttstock",(-.33,0,-.015),(.45,.073,.102),wood,.016)
-cube("stock shoulder heel",(-.53,0,-.015),(.035,.078,.110),brass,.005)
+shaped_stock("walnut buttstock", [(-.55,.037,.052,-.015),(-.43,.041,.053,-.016),
+    (-.31,.037,.047,-.017),(-.19,.030,.034,-.019),(-.10,.026,.029,-.024)], wood)
+shaped_stock("stock shoulder heel", [(-.558,.038,.053,-.015),(-.545,.038,.053,-.015)], brass)
 cube("slender wrist",(-.08,0,-.025),(.22,.052,.058),wood,.010)
 cube("long fore-end",(.27,0,-.044),(.66,.064,.046),wood,.011)
 cube("breech block",(.075,0,.008),(.145,.080,.055),iron,.008)

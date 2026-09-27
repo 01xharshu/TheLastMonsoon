@@ -81,7 +81,7 @@ func bake() -> void:
 	assert(packed.pack(world) == OK)
 	save_resource(packed, "landscape.scn")
 	var report := {"area_km2": Layout.SIZE * Layout.SIZE / 1000000.0, "dimensions_m": [Layout.SIZE, Layout.SIZE],
-		"tiles": 144, "terrain_spacing_m": Layout.STEP, "trees": tree_count, "rocks": rock_count,
+		"tiles": 144, "terrain_spacing_m": Layout.STEP, "fort_tile_spacing_m": 1.5, "trees": tree_count, "rocks": rock_count,
 		"grass_clumps": grass_count, "seed": 1857, "bake_seconds": (Time.get_ticks_msec() - start) / 1000.0,
 		"architecture": "Resident terrain with automatic mesh LOD; spatial MultiMesh batches and visibility ranges. No runtime world streaming yet."}
 	var file := FileAccess.open("res://docs/world/bake_report.json", FileAccess.WRITE)
@@ -105,39 +105,42 @@ func bake_road_mask() -> ImageTexture:
 	return texture
 
 func bake_tile(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
+	# Keep the fort and its hairpin access at 1.5 m collision samples.
+	var grid_size: int = 96 if tx in [9,10] and tz in [3,4] else Layout.GRID
+	var step_size: float = Layout.TILE / grid_size
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var tangents := PackedFloat32Array()
 	var uvs := PackedVector2Array()
 	var heights := PackedFloat32Array()
 	var indices := PackedInt32Array()
-	for z in Layout.GRID + 1:
-		for x in Layout.GRID + 1:
-			var p := origin + Vector2(x, z) * Layout.STEP
+	for z in grid_size + 1:
+		for x in grid_size + 1:
+			var p := origin + Vector2(x, z) * step_size
 			var h: float = layout.height(p.x, p.y)
 			var n: Vector3 = layout.normal(p.x, p.y)
-			vertices.append(Vector3(x * Layout.STEP, h, z * Layout.STEP))
+			vertices.append(Vector3(x * step_size, h, z * step_size))
 			normals.append(n)
 			var tangent: Vector3 = Vector3(n.y, -n.x, 0).normalized()
 			tangents.append_array(PackedFloat32Array([tangent.x, tangent.y, tangent.z, 1.0]))
 			uvs.append(p / 8.0)
-			heights.append(h / Layout.STEP)
-	for z in Layout.GRID:
-		for x in Layout.GRID:
-			var a: int = z * (Layout.GRID + 1) + x
+			heights.append(h / step_size)
+	for z in grid_size:
+		for x in grid_size:
+			var a: int = z * (grid_size + 1) + x
 			var b: int = a + 1
-			var c: int = a + Layout.GRID + 1
+			var c: int = a + grid_size + 1
 			indices.append_array(PackedInt32Array([a, b, c, b, c + 1, c]))
 	# Skirts hide LOD differences between independently simplified neighboring tiles.
 	for edge in 4:
-		for k in Layout.GRID:
+		for k in grid_size:
 			var a: int
 			var b: int
 			match edge:
 				0: a = k; b = k + 1
-				1: a = k * (Layout.GRID + 1) + Layout.GRID; b = (k + 1) * (Layout.GRID + 1) + Layout.GRID
-				2: a = Layout.GRID * (Layout.GRID + 1) + k + 1; b = a - 1
-				_: a = (k + 1) * (Layout.GRID + 1); b = k * (Layout.GRID + 1)
+				1: a = k * (grid_size + 1) + grid_size; b = (k + 1) * (grid_size + 1) + grid_size
+				2: a = grid_size * (grid_size + 1) + k + 1; b = a - 1
+				_: a = (k + 1) * (grid_size + 1); b = k * (grid_size + 1)
 			var ia: int = vertices.size()
 			for id in [a, b]:
 				vertices.append(vertices[id] - Vector3(0, 5, 0))
@@ -166,12 +169,12 @@ func bake_tile(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 	body.name = "GroundCollision"
 	attach(body, tile)
 	var shape := HeightMapShape3D.new()
-	shape.map_width = Layout.GRID + 1
-	shape.map_depth = Layout.GRID + 1
+	shape.map_width = grid_size + 1
+	shape.map_depth = grid_size + 1
 	shape.map_data = heights
 	var collision := CollisionShape3D.new()
 	collision.shape = shape
-	collision.scale = Vector3.ONE * Layout.STEP
+	collision.scale = Vector3.ONE * step_size
 	collision.position = Vector3(Layout.TILE / 2, 0, Layout.TILE / 2)
 	attach(collision, body)
 

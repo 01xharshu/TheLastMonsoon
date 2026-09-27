@@ -18,11 +18,56 @@ bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
 exports = {}
 for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
     rig = bpy.data.objects[f'{slug}_game_engine_rig']
+    body = bpy.data.objects[f'{slug}_MPFB_body']
+    outfit = bpy.data.objects[f'{slug}_fitted_cloth_base']
+    rig.data.pose_position = 'REST'
+    bpy.context.view_layer.update()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
+    def bake_masked_rest(original):
+        # Godot does not apply Blender's MPFB mask modifiers after importing a
+        # skinned glTF. Bake only the rest-pose cutout for this export; retain
+        # the complete editable meshes in the saved .blend source.
+        baked_mesh = bpy.data.meshes.new_from_object(
+            original.evaluated_get(depsgraph),
+            preserve_all_data_layers=True, depsgraph=depsgraph)
+        baked = bpy.data.objects.new(original.name + '_export_cutout', baked_mesh)
+        bpy.context.scene.collection.objects.link(baked)
+        for group in original.vertex_groups:
+            baked.vertex_groups.new(name=group.name)
+        baked.parent = rig
+        baked.matrix_parent_inverse = original.matrix_parent_inverse.copy()
+        baked.matrix_basis = original.matrix_basis.copy()
+        baked.modifiers.new('Armature deformation', 'ARMATURE').object = rig
+        return baked
+
+    cutouts = [bake_masked_rest(body), bake_masked_rest(outfit)]
+    rig.data.pose_position = 'POSE'
     bpy.ops.object.select_all(action='DESELECT')
     rig.select_set(True)
     for obj in bpy.data.objects:
-        if obj.parent == rig:
+        if obj.parent == rig and obj not in (body, outfit):
             obj.select_set(True)
+            if obj.type == 'MESH':
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    if mat is None or not mat.use_nodes:
+                        continue
+                    bs = mat.node_tree.nodes.get('Principled BSDF')
+                    if bs is None:
+                        continue
+                    base = bs.inputs['Base Color']
+                    # glTF cannot represent our procedural Blender noise/ramp;
+                    # export its authored flat color rather than white.
+                    if base.is_linked and base.links[0].from_node.type != 'TEX_IMAGE':
+                        safe = mat.copy()
+                        safe.name = mat.name + ' glTF flat-color'
+                        safe_bs = safe.node_tree.nodes.get('Principled BSDF')
+                        safe_base = safe_bs.inputs['Base Color']
+                        for link in list(safe_base.links):
+                            safe.node_tree.links.remove(link)
+                        safe_base.default_value = tuple(mat.diffuse_color)
+                        slot.material = safe
     bpy.context.view_layer.objects.active = rig
     target = RUNTIME / f'{RANK}_{suffix}.glb'
     bpy.ops.export_scene.gltf(
@@ -34,12 +79,14 @@ for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
     exports[suffix] = {'path': str(target.relative_to(ROOT)),
                        'sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
                        'bytes': target.stat().st_size}
+    bpy.data.objects.remove(cutouts[0], do_unlink=True)
+    bpy.data.objects.remove(cutouts[1], do_unlink=True)
 
 manifest_path = ROOT / f'docs/characters/british/candidates/{RANK}_pair_manifest.json'
 manifest = json.loads(manifest_path.read_text())
 manifest['runtime_exports'] = exports
 manifest['runtime_export'] = True
-manifest['animation'] = 'Godot procedural idle/walk study; no authored Blender clips'
+manifest['animation'] = 'Personal Godot AnimationPlayer idle/walk clips; independent male/female profiles'
 manifest['placed_in_world'] = False
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 print('BRITISH_RUNTIME_EXPORT', RANK, json.dumps(exports))

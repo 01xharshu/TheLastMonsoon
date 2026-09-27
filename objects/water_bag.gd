@@ -17,6 +17,7 @@ extends Interactable
 # =========================================================
 
 func _ready() -> void:
+	interaction_icon = "water"
 	hold_duration = .65
 	interaction_pose = "low_reach"
 	marker_height = .3

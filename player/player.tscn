@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b5pmgc0ssea2m"]
 
 [ext_resource type="Script" uid="uid://dirrf6kqerjgo" path="res://player/player_controller.gd" id="1_oul6g"]
+[ext_resource type="Script" path="res://player/camera_clearance.gd" id="camera_clearance"]
 [ext_resource type="Script" uid="uid://dm3gg1ij7708d" path="res://player/equipment_visuals.gd" id="2_8t03j"]
 [ext_resource type="Script" uid="uid://e6l0xsppxj0x" path="res://player/hydration_debug_label.gd" id="2_g1dw6"]
 [ext_resource type="Script" uid="uid://bhx2fgvli8glh" path="res://player/survival_component.gd" id="2_rkbax"]
@@ -39,6 +40,9 @@
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_camera"]
+radius = 0.18
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_6xif0"]
 
@@ -144,10 +148,14 @@ script = ExtResource("3_wodsf")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot" unique_id=739968224]
-spring_length = 2.0
+shape = SubResource("SphereShape3D_camera")
+spring_length = 1.8
+margin = 0.12
+collision_mask = 4294967295
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D" unique_id=466477624]
 current = true
+script = ExtResource("camera_clearance")
 
 [node name="InteractionRay" type="RayCast3D" parent="CameraPivot/SpringArm3D/Camera3D" unique_id=1578013426]
 target_position = Vector3(0, 0, -8)

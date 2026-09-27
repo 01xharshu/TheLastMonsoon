@@ -130,9 +130,12 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
-	var special_pose: bool = actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("stealth_stance", "") != ""
+	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("rest_action", "") != "" or actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("stealth_stance", "") != ""
 	if motion_tree != null:
 		motion_tree.active = not special_pose
+	if actor.get_meta("rest_action", "") != "":
+		_pose_rest(delta)
+		return
 	if actor.get_meta("river_action", "") != "":
 		_pose_river_action(delta)
 		return
@@ -171,8 +174,11 @@ func _process(delta: float) -> void:
 	if tree_driven:
 		motion_tree.update_motion(delta, speed / maxf(actor.walk_speed, 0.01), speed / maxf(actor.walk_speed, 0.01), actor.is_swimming)
 	# Pivot near the chest when leaning into the water, keeping the face above it.
-	model.rotation.x = lerpf(model.rotation.x, swimming * 1.05, blend)
-	model.position = Vector3(0, -0.9 + swimming * 0.65 + absf(sin(phase)) * stride * 0.045, 0)
+	# The imported swim clips already pitch the skeleton forward. Keep the
+	# previous model tilt only for the procedural fallback path.
+	model.rotation.x = lerpf(model.rotation.x, 0.0 if tree_driven else swimming * 1.05, blend)
+	model.rotation.z = lerpf(model.rotation.z, 0.0, blend)
+	model.position = Vector3(0, -0.9 + swimming * 0.65 + absf(sin(phase)) * stride * 0.045 - (motion_tree.foot_contact_offset if tree_driven else 0.0), 0)
 	if not tree_driven:
 		pose("pelvis", Vector3(0, swing * 0.12, sin(phase) * stride * 0.035), blend)
 		pose("spine_01", Vector3(sprint * stride * 0.12, -swing * 0.18, 0), blend)
@@ -277,6 +283,27 @@ func _pose_river_action(delta: float) -> void:
 		pose("upperarm_"+side,Vector3(-1.0+hand_raise*reach,0,(-0.75 if side == "l" else 0.75)),weight)
 		pose("lowerarm_"+side,Vector3(-0.92-hand_raise*reach,0,0),weight)
 
+func _pose_rest(delta: float) -> void:
+	for solver in climb_ik.values(): solver.influence = 0.0
+	if equipment != null: equipment.set_swimming(false)
+	var progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
+	var lie := smoothstep(0.38, 0.9, progress)
+	var weight := 1.0 - exp(-12.0 * delta)
+	model.rotation.x = lerpf(model.rotation.x, 0.0, weight)
+	model.rotation.z = lerpf(model.rotation.z, -PI * 0.5 * lie, weight)
+	model.position = model.position.lerp(Vector3(-0.65 * lie, lerpf(-0.9, -0.1, lie), 0.62 * (1.0 - lie)), weight)
+	pose("pelvis", Vector3.ZERO, weight)
+	pose("spine_01", Vector3(-0.12 * (1.0 - lie), 0, 0), weight)
+	pose("spine_02", Vector3(0.04 * lie, 0, 0), weight)
+	pose("head", Vector3(0.05 * lie, 0, 0), weight)
+	for side in ["l", "r"]:
+		var spread := 1.0 if side == "l" else -1.0
+		pose("thigh_" + side, Vector3(lerpf(-1.2, 0.0, lie), spread * 0.08 * (1.0 - lie), 0), weight)
+		pose("calf_" + side, Vector3(lerpf(1.45, 0.0, lie), 0, 0), weight)
+		pose("foot_" + side, Vector3(-0.2 * (1.0 - lie), 0, 0), weight)
+		pose("upperarm_" + side, Vector3(lerpf(0.25, -0.35, lie), 0, spread * lerpf(0.2, 0.35, lie)), weight)
+		pose("lowerarm_" + side, Vector3(lerpf(-0.65, -0.25, lie), 0, 0), weight)
+
 func _pose_seated(delta: float) -> void:
 	var boat: Node = actor.get_meta("mounted_vehicle")
 	for solver in climb_ik.values(): solver.influence = 0.0
@@ -299,7 +326,7 @@ func _pose_seated(delta: float) -> void:
 	if is_instance_valid(boat) and boat.has_method("paddle_grip_world") and boat.paddle_blend > .01:
 		skeleton.force_update_all_bone_transforms()
 		var rod_axis: Vector3 = (skeleton.global_basis.inverse()*boat.paddle_rod_world_axis()).normalized()
-		var palm_normal := Vector3.DOWN
+		var palm_normal := (Vector3.DOWN-rod_axis*Vector3.DOWN.dot(rod_axis)).normalized()
 		var finger_axis := palm_normal.cross(rod_axis).normalized()
 		var palm_basis := Basis(rod_axis,finger_axis,palm_normal)
 		for pass_index in 4:

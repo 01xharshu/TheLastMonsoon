@@ -1,10 +1,13 @@
 {
   "actors": 16,
-  "missing_bones": [],
-  "moved_after_one_second": 9,
+  "errors": [],
+  "independent_stop_test": true,
   "passed": true,
-  "scope": "isolated roster; full-world rendering and foot contact are separate",
-  "skeletons": 16,
-  "thigh_pose_changed": 6,
-  "walking_after_one_second": 6
+  "personal_animation_players": 16,
+  "profiles": {
+    "female": 8,
+    "male": 8
+  },
+  "scope": "actual AnimationPlayer playback and independent movement; foot contact remains visual review",
+  "walk_tracks_changed_pose": 16
 }

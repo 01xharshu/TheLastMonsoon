@@ -47,7 +47,8 @@ extends StaticBody3D
 	"food",
 	"water",
 	"horse",
-	"vehicle"
+	"vehicle",
+	"mango"
 )
 var interaction_icon: String = "hand"
 

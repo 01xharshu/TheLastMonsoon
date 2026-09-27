@@ -7,7 +7,7 @@ const SLOT_COUNT := 3
 const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
-	"camera_distance": 2.0, "aim_camera_distance": 0.55,
+	"camera_distance": 1.8, "aim_camera_distance": 0.55,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
@@ -173,7 +173,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed,
 			"pistol_rounds":actor.get_node("PistolCombat").rounds,
 			"double_gun_rounds":actor.get_node("DoubleGunCombat").rounds},
-		"remaining_weapon_pickups": _remaining_weapon_pickup_ids(world),
+		"remaining_weapon_ids": _remaining_weapon_pickup_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 	}
 	var map: Control = actor.get_node("UI/WorldMap")
@@ -242,11 +242,16 @@ func apply_pending(world: Node3D) -> void:
 	actor.get_node("PistolCombat").rounds = clampi(int(weapon.get("pistol_rounds",5)),0,5)
 	actor.get_node("DoubleGunCombat").rounds = clampi(int(weapon.get("double_gun_rounds",0)),0,2)
 	actor.get_node("DoubleGunCombat").loaded = actor.get_node("DoubleGunCombat").rounds > 0
-	if data.has("remaining_weapon_pickups"):
-		var remaining: Array = data.remaining_weapon_pickups
+	if data.has("remaining_weapon_ids"):
+		var remaining: Array = data.remaining_weapon_ids
 		for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
-			if not String(pickup.get_path()) in remaining:
+			if not pickup.persistence_id() in remaining:
 				pickup.queue_free()
+	elif data.has("remaining_weapon_pickups"):
+		# Older saves used engine-generated paths, which change when room props
+		# are added. Preserve unowned weapons and suppress already acquired ones.
+		for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
+			if inventory.has_item(pickup.weapon_id): pickup.queue_free()
 	for chest in world.get_tree().get_nodes_in_group("treasure_chests"):
 		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
 			chest.restore_opened()
@@ -258,7 +263,7 @@ func _remaining_weapon_pickup_ids(world: Node3D) -> Array[String]:
 	var remaining: Array[String] = []
 	for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
 		if is_instance_valid(pickup) and not pickup.is_queued_for_deletion():
-			remaining.append(String(pickup.get_path()))
+			remaining.append(pickup.persistence_id())
 	return remaining
 
 func _opened_treasure_chest_ids(world: Node3D) -> Array[String]:
@@ -273,6 +278,9 @@ func load_options() -> void:
 	if config.load(settings_path)!=OK: return
 	for key in DEFAULTS:
 		options[key] = config.get_value("settings",key,DEFAULTS[key])
+	# The former 2 m default should follow the closer third-person framing.
+	if is_equal_approx(float(options.camera_distance), 2.0):
+		options.camera_distance = 1.8
 	if not options.input_device in ["auto", "keyboard_mouse", "controller"]:
 		options.input_device = "auto"
 	options.vibration = clampf(float(options.vibration),0.0,1.0)

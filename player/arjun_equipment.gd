@@ -149,18 +149,14 @@ func set_swimming(value: bool) -> void:
 func _refresh() -> void:
 	if talwar_hand == null: return
 	talwar_hand.visible = owns(Selection.TALWAR) and not stowed and selected == Selection.TALWAR
-	talwar_waist.visible = owns(Selection.TALWAR) and not talwar_hand.visible
 	enfield_hand.visible = owns(Selection.ENFIELD) and not stowed and selected == Selection.ENFIELD
-	enfield_back.visible = owns(Selection.ENFIELD) and not enfield_hand.visible
 	bow_hand.visible = owns(Selection.BOW) and not stowed and selected == Selection.BOW
-	bow_back.visible = owns(Selection.BOW) and not bow_hand.visible
-	quiver_back.visible = owns(Selection.BOW)
 	pistol_hand.visible = owns(Selection.PISTOL) and not stowed and selected == Selection.PISTOL
-	pistol_hip.visible = owns(Selection.PISTOL) and not pistol_hand.visible
 	knife_hand.visible = owns(Selection.KNIFE) and not stowed and selected == Selection.KNIFE
-	knife_hip.visible = owns(Selection.KNIFE) and not knife_hand.visible
 	double_hand.visible = owns(Selection.DOUBLE_GUN) and not stowed and selected == Selection.DOUBLE_GUN
-	double_back.visible = owns(Selection.DOUBLE_GUN) and not double_hand.visible
+	# Inventory ownership stays independent of what the selector has equipped.
+	for carried in [talwar_waist, enfield_back, bow_back, quiver_back, pistol_hip, knife_hip, double_back]:
+		carried.hide()
 
 func held_name() -> String:
 	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) and not owns(Selection.KNIFE) and not owns(Selection.DOUBLE_GUN) else "STOWED"
@@ -201,10 +197,6 @@ func _solve_arm(side: String, target: Vector3) -> void:
 func apply_rifle_grip(sword_striking := false) -> void:
 	animate_ramrod()
 	if stowed: return
-	# Back-carried long guns obstruct the close shoulder camera while aiming.
-	var firearm_aim: bool = aiming and selected in [Selection.ENFIELD, Selection.PISTOL, Selection.DOUBLE_GUN]
-	enfield_back.visible = owns(Selection.ENFIELD) and not enfield_hand.visible and not firearm_aim
-	double_back.visible = owns(Selection.DOUBLE_GUN) and not double_hand.visible and not firearm_aim
 	if selected == Selection.TALWAR or selected == Selection.KNIFE:
 		if not sword_striking: apply_sword_rest()
 		_grasp("r")
@@ -216,7 +208,8 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		return
 	if selected == Selection.PISTOL:
 		apply_pistol_grip()
-		_grasp("r", 0.9)
+		# This rig's finger skin collapses under a full fist; keep the palm intact.
+		_grasp("r", 0.35)
 		return
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
 	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else ENFIELD_SCALE
@@ -286,9 +279,10 @@ func _grasp(side: String, amount: float = 1.0) -> void:
 		_rotate_digit(finger+"_01_"+side,palm.x,base_curl*amount)
 		_rotate_digit(finger+"_02_"+side,palm.x,0.96*amount)
 		_rotate_digit(finger+"_03_"+side,palm.x,0.58*amount)
-	_rotate_digit("thumb_01_"+side,palm.y,(-0.55 if side=="r" else 0.55)*amount)
-	_rotate_digit("thumb_02_"+side,palm.x,0.75*amount)
-	_rotate_digit("thumb_03_"+side,palm.x,0.45*amount)
+	var pistol_thumb: bool = side == "r" and selected == Selection.PISTOL
+	_rotate_digit("thumb_01_"+side,palm.y,(1.10 if pistol_thumb else (-0.55 if side=="r" else 0.55))*amount)
+	_rotate_digit("thumb_02_"+side,palm.x,(1.0 if pistol_thumb else 0.75)*amount)
+	_rotate_digit("thumb_03_"+side,palm.x,(0.65 if pistol_thumb else 0.45)*amount)
 
 func grip_errors() -> Dictionary:
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
@@ -327,6 +321,9 @@ func apply_sword_strike(progress: float, target_world: Vector3) -> void:
 	var finish := smoothstep(.55,.85,progress)
 	var contact: Vector3 = wind_hand.lerp(hit_hand,sweep).lerp(follow_hand,finish)
 	var blade: Vector3 = wind_blade.lerp(toward,sweep).lerp(follow_blade,finish).normalized()
+	var recovery := smoothstep(.82,1.0,progress)
+	contact = contact.lerp(Vector3(-.39,.91,.16),recovery)
+	blade = blade.lerp(Vector3(-.18,-.91,.38).normalized(),recovery).normalized()
 	var across := Vector3.UP.cross(blade).normalized()
 	if across.length_squared()<.01: across = Vector3.RIGHT
 	var desired := Basis(blade,across,blade.cross(across))
@@ -338,6 +335,12 @@ func apply_sword_strike(progress: float, target_world: Vector3) -> void:
 		var local_basis := skeleton.get_bone_global_pose(parent).basis.inverse()*hand_basis
 		skeleton.set_bone_pose_rotation(hand_index,local_basis.orthonormalized().get_rotation_quaternion())
 		skeleton.force_update_all_bone_transforms()
+
+func sword_blade_segment() -> PackedVector3Array:
+	# BoneAttachments are refreshed later in the frame; use the current rig pose for contact.
+	var hand_pose := skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))
+	var blade_transform := skeleton.global_transform*hand_pose*talwar_hand.transform
+	return PackedVector3Array([blade_transform*Vector3(.08,0,0),blade_transform*Vector3(.81,.13,0)])
 
 func apply_pistol_grip() -> void:
 	# The short barrel follows the camera while the right palm meets the wood grip.

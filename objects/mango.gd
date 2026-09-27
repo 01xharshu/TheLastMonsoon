@@ -4,6 +4,7 @@ var collected := false
 
 func _ready() -> void:
 	interaction_text = "Pick up mango"
+	interaction_icon = "mango"
 	secondary_interaction_text = "Eat mango"
 	hold_duration = .65
 	interaction_pose = "low_reach"

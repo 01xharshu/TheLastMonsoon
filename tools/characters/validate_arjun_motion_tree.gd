@@ -16,10 +16,19 @@ func _run() -> void:
 	var thigh := skeleton.find_bone("thigh_l")
 	tree.update_motion(0.3, 1.0, 0.0, false)
 	var walk_rotation := skeleton.get_bone_pose_rotation(thigh)
+	if tree.playback_rate <= 1.0:
+		push_error("ARJUN MOTION TREE: walk cadence did not increase with travel speed")
+		quit(1)
+		return
 	for i in 10: tree.update_motion(0.1, 0.0, 0.0, false)
 	var idle_rotation := skeleton.get_bone_pose_rotation(thigh)
 	if walk_rotation.angle_to(idle_rotation) < 0.01:
 		push_error("ARJUN MOTION TREE: walk and idle poses did not differ")
+		quit(1)
+		return
+	for i in 12: tree.update_motion(0.1, 1.0, 0.0, false)
+	if tree.foot_contact_offset <= 0.0 or tree.foot_contact_offset > 0.28:
+		push_error("ARJUN MOTION TREE: foot contact correction outside bounds")
 		quit(1)
 		return
 	for i in 10: tree.update_motion(0.1, 0.0, 1.0, true)

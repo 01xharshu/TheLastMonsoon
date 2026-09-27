@@ -25,8 +25,8 @@ func _run() -> void:
 	stage.add_child(chest)
 	actor.global_position = Vector3(0,0,2)
 	for i in 4: await physics_frame
-	if not overlay.markers.has(chest):
-		push_error("ISOLATED INTERACTION BLOCKED: marker missing")
+	if overlay.markers.has(chest) or not overlay.marker_world_positions.has(chest):
+		push_error("ISOLATED INTERACTION BLOCKED: close target should use the key notifier without a distant marker")
 		quit(1)
 		return
 	overlay.set_target(chest,.5)

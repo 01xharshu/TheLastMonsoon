@@ -19,6 +19,7 @@ func validate() -> void:
 	var boat: CharacterBody3D=world.get_node("RiverBoat")
 	var fish: Node=world.get_node("RiverFish")
 	check(fish.fish.size()==36,"36 fish below water")
+	check(boat.paddle.find_child("boat_oar_shaft",true,false).position.length()<.01,"visible oar shaft shares grip-socket origin")
 	actor.set_physics_process(false)
 	actor.get_node("UI").hide()
 	world.get_node("LandscapeUI").hide()
@@ -73,6 +74,7 @@ func validate() -> void:
 		blade_low=minf(blade_low,boat.paddle_blade_world().y)
 	Input.action_release("move_forward")
 	check(blade_high-blade_low>.12,"paddle blade rises and dips through rowing cycle")
+	check(blade_low<.07 and blade_high>.12,"paddle blade enters river and clears it on recovery")
 	check(boat.global_position.distance_to(before_row)>1.0,"W rows boat through deep water")
 	check(actor.global_position.distance_to(boat.seat_world())<1.5,"rider follows moving bench")
 

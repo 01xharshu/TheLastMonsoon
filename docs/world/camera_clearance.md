@@ -1,0 +1,9 @@
+# Third-person camera clearance — 2026-09-27
+
+The player camera uses a 0.18 m sphere on its spring arm, a 0.12 m spring margin, and all physics collision layers. Normal third-person framing is now 1.8 m by default. Previously saved 2.0 m defaults migrate to 1.8 m; explicit non-default camera distances remain adjustable in Settings. When an obstruction pushes the camera within 0.42 m of the pivot, the world body is hidden to avoid seeing through Arjun's head or torso. First-person still uses its separate view.
+
+`player/camera_clearance.gd` checks the final pivot-to-camera segment each rendered frame. This closes a real Government House upper-room case where the spring shape missed a collider and left a wall between the pivot and camera. The camera is clamped to 0.20 m before that collider. Switching from first-person does not snap it blindly through an obstacle.
+
+Evidence: `tools/characters/validate_camera_obstruction.gd` passed open, blocked, alternate collision layer, very tight body-hiding, and restored distances. `tools/world/validate_world_camera_clearance.gd` passed two Government House wall positions on Godot 4.7.2 Metal/Forward+ and headless. Distances were about 0.71 m and 0.78 m at the walls; neither final camera segment hit a collider. Fresh Metal screenshots were inspected at `/tmp/tlm_camera_house_ground_hall.png` and `/tmp/tlm_camera_house_upper_room.png`. `tools/characters/validate_camera_controls.gd` passed on Metal, including first-person switching and movement input.
+
+Scope limit: collision-based clearance requires the visible object to have matching physics collision. The isolated cart candidates are not in the live world and still lack full collision bodies. A camera cannot be guaranteed to stop at their visual shell until those candidates receive suitable colliders. Broad normal-speed player traversal and every world asset's visual/collision alignment remain open.

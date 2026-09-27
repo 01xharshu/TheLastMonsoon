@@ -38,6 +38,26 @@ func _run() -> void:
 			max_grade = maxf(max_grade,absf(layout.height(q.x,q.y)-layout.height(p.x,p.y))/p.distance_to(q))
 	assert(max_grade < 0.30, "Fort approach is too steep")
 	print("FORT ACCESS MAX GRADE ",max_grade)
+	var trail: Array = Layout.ROUTES["fort_trail"]
+	assert(trail[0] == Layout.ROUTES["east_bridge"][-1], "Fort trail misses the bridge road")
+	assert(trail[-1] == access[0], "Fort trail misses the access ramp")
+	var trail_max_grade := 0.0
+	for i in range(trail.size()-1):
+		var a: Vector2 = trail[i]
+		var b: Vector2 = trail[i+1]
+		var steps: int = int(ceil(a.distance_to(b)/2.0))
+		for j in range(steps):
+			var p: Vector2 = a.lerp(b,float(j)/steps)
+			var q: Vector2 = a.lerp(b,float(j+1)/steps)
+			trail_max_grade = maxf(trail_max_grade,absf(layout.height(q.x,q.y)-layout.height(p.x,p.y))/p.distance_to(q))
+	assert(trail_max_grade < 0.31, "Fort trail is too steep")
+	for index in [1,3,5,7,10,12,14]:
+		var p: Vector2 = trail[index]
+		var trail_query := PhysicsRayQueryParameters3D.create(Vector3(p.x,175,p.y),Vector3(p.x,-20,p.y))
+		trail_query.exclude = fort_colliders
+		var trail_hit := space.intersect_ray(trail_query)
+		assert(not trail_hit.is_empty() and absf(trail_hit.position.y-layout.height(p.x,p.y)) < 0.8, "Baked fort trail contact mismatch")
+	print("FORT TRAIL MAX GRADE ",trail_max_grade," | connected to east bridge")
 	var start := Vector3(Layout.FORT_CENTER.x, layout.height(Layout.FORT_CENTER.x,Layout.FORT_CENTER.y+40),Layout.FORT_CENTER.y+40)
 	var finish := Vector3(Layout.FORT_CENTER.x, layout.height(Layout.FORT_CENTER.x,Layout.FORT_CENTER.y-42),Layout.FORT_CENTER.y-42)
 	var path := NavigationServer3D.map_get_path(region.get_navigation_map(),start,finish,true)
