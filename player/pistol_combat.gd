@@ -61,7 +61,7 @@ func _process(delta: float) -> void:
 func fire() -> bool:
 	if not available() or not aiming or reload_remaining > 0.0: return false
 	if rounds <= 0:
-		actor.inventory.message_requested.emit("Pistol empty · press R to reload")
+		actor.inventory.message_requested.emit("Pistol empty")
 		return false
 	rounds -= 1
 	shots_fired += 1

@@ -33,12 +33,14 @@ func _run() -> void:
 	key.pressed = true
 	actor._unhandled_input(key)
 	assert(actor.hold_target == pickup, "E did not start bow hold")
-	for i in 24:
+	for i in 90:
+		if actor.hold_elapsed >= 0.35: break
 		await physics_frame
-		if i < 4: print("BOW HOLD FRAME ", i, " target=", actor.hold_target, " current=", actor.current_interactable, " pressed=", Input.is_action_pressed("interact"), " elapsed=", actor.hold_elapsed)
-	assert(actor.hold_target == pickup, "Bow hold lost its target")
+	assert(actor.hold_target == pickup and actor.hold_elapsed >= 0.35, "Bow hold lost its target")
 	await _capture("/tmp/tlm_upper_shelf_bow_hold.png")
-	for i in 45: await physics_frame
+	for i in 120:
+		if actor.inventory.has_item("bow"): break
+		await physics_frame
 	Input.action_release("interact")
 	assert(actor.inventory.has_item("bow") and gear.selected == 2 and not gear.stowed, "Bow was not equipped")
 	await _capture("/tmp/tlm_upper_shelf_bow_equipped.png")

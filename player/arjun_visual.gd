@@ -481,7 +481,7 @@ func _pose_horse_transition(delta: float) -> void:
 		var foot_contact := smoothstep(0.1, 0.3, u) if side != crossing_side else seated
 		_horse_foot_contact(side, mount.stirrup_world(side), foot_contact)
 
-func _horse_foot_contact(side: String, world_target: Vector3, weight: float) -> void:
+func _horse_foot_contact(side: String, world_target: Vector3, weight: float, knee_pole: Vector3 = Vector3(0, 0, 1)) -> void:
 	if weight <= 0.0: return
 	var thigh := "thigh_" + side
 	var calf := "calf_" + side
@@ -497,7 +497,7 @@ func _horse_foot_contact(side: String, world_target: Vector3, weight: float) -> 
 	var b := skeleton.get_bone_global_rest(skeleton.find_bone(calf)).origin.distance_to(rest.origin)
 	var direction := (target-origin).normalized()
 	var distance := clampf(origin.distance_to(target), 0.001, a+b-0.001)
-	var pole := Vector3(0, 0, 1)
+	var pole := knee_pole
 	pole = (pole-direction*pole.dot(direction)).normalized()
 	var along := (a*a-b*b+distance*distance)/(2.0*distance)
 	for pass_index in 4:
@@ -541,18 +541,14 @@ func _pose_climb(delta: float) -> void:
 	skeleton.force_update_all_bone_transforms()
 	for side in ["l", "r"]:
 		var hand_index: int = skeleton.find_bone("hand_" + side)
-		var wrist: Vector3 = skeleton.get_bone_global_pose(hand_index).origin
+		var hand_pose: Transform3D = skeleton.get_bone_global_pose(hand_index)
+		var palm: Vector3 = hand_pose * equipment.palm_offsets[side]
 		var target_local: Vector3 = skeleton.to_local(climb_targets[side].global_position)
-		var desired: Vector3 = wrist.lerp(target_local, contact_blend)
+		var desired_palm: Vector3 = palm.lerp(target_local, contact_blend)
 		for pass_index in 3:
-			equipment._solve_arm(side, desired)
-		var wall_palm := Basis(-wall_tangent, Vector3.UP, -component.wall_normal)
-		var hand_basis: Basis = skeleton.global_basis.inverse() * wall_palm * (equipment.palm_axes[side] as Basis).inverse()
-		var parent: int = skeleton.get_bone_parent(hand_index)
-		var local_basis: Basis = skeleton.get_bone_global_pose(parent).basis.inverse() * hand_basis
-		var hand_rotation := local_basis.orthonormalized().get_rotation_quaternion()
-		skeleton.set_bone_pose_rotation(hand_index, skeleton.get_bone_pose_rotation(hand_index).slerp(hand_rotation, contact_blend))
-		equipment._grasp(side, contact_blend * .8)
+			var hand: Transform3D = skeleton.get_bone_global_pose(hand_index)
+			equipment._solve_arm(side, desired_palm - hand.basis * equipment.palm_offsets[side])
+		equipment._grasp(side, contact_blend * .6)
 	# A boot presses into the next stone while its opposite leg rises. The
 	# targets follow wall space, so this also works on rotated masonry.
 	var foot_contact: float = smoothstep(.12, .22, t) * (1.0 - smoothstep(.69, .86, t))
@@ -565,4 +561,5 @@ func _pose_climb(delta: float) -> void:
 		foot_target += wall_tangent * ((-.24 if side == "l" else .24)+(.08 if component.has_holds and foot_row%2==1 else 0.0))
 		foot_target.y = base_y + foot_row*.55 + .08 if component.has_holds else actor.global_position.y - .68 + rise
 		climb_foot_targets[side] = foot_target
-		_horse_foot_contact(side, foot_target, foot_contact * (1.0 - smoothstep(.18, .55, cycle)))
+		var wall_knee_pole: Vector3 = skeleton.global_basis.inverse() * -component.wall_normal
+		_horse_foot_contact(side, foot_target, foot_contact * (1.0 - smoothstep(.18, .55, cycle)), wall_knee_pole)

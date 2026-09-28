@@ -17,7 +17,8 @@ void fragment(){
  float u=sin(xz.x*.62+TIME*1.3+xz.y*.22+sin(xz.y*.14)*1.3);
  float v=sin(xz.y*.38-TIME*1.05-xz.x*.23+sin(xz.x*.12)*.8);
  float small=sin(xz.x*2.7+xz.y*1.8-TIME*2.7);
- NORMAL_MAP=normalize(vec3(u*.047+small*.01,v*.045,1.0))*.5+.5;
+ float detail=sin(xz.x*5.1-TIME*3.1+xz.y*2.2)*sin(xz.y*4.3+TIME*2.4);
+ NORMAL_MAP=normalize(vec3(u*.047+small*.01+detail*.008,v*.045+detail*.006,1.0))*.5+.5;
  NORMAL_MAP_DEPTH=.75;
  float scene_depth=texture(depth_texture,SCREEN_UV).r;
  vec4 scene_view=INV_PROJECTION_MATRIX*vec4(SCREEN_UV*2.0-1.0,scene_depth,1.0);
@@ -27,7 +28,9 @@ void fragment(){
  vec3 shallow_color=vec3(.15,.33,.27);
  vec3 deep_color=vec3(.025,.105,.105);
  float foam=(1.0-smoothstep(.02,.35,water_depth))*(.2+.15*max(u*v,0.0));
- ALBEDO=mix(shallow_color,deep_color,shallow)+vec3(.12,.14,.11)*foam+vec3(.025)*max(small,0.0);
+ float current=sin(xz.y*.12-TIME*.7+sin(xz.x*.07)*2.0);
+ float glint=pow(max(0.0,small*.55+detail*.3+current*.15),6.0);
+ ALBEDO=mix(shallow_color,deep_color,shallow)+vec3(.12,.14,.11)*foam+vec3(.025)*max(small,0.0)+vec3(.035,.045,.04)*glint;
  ALPHA=mix(.26,.71,shallow)+foam*.25;
  ROUGHNESS=.19;
  SPECULAR=.8;

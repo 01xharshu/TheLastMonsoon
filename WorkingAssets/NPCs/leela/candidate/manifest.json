@@ -1,0 +1,11 @@
+{
+  "status": "FIRST_PASS_STATIC_VISUAL_STUDY_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/leela/candidate/leela_mpfb_study.blend",
+  "source_sha256": "ea0449a43e5e18d9afb30fc708677917730a6ceef1c282c0101c8a3bfd26fa59",
+  "preview": "WorkingAssets/NPCs/leela/candidate/leela_static_study.glb",
+  "preview_sha256": "56667baa86d7b2d98f0090294272dd273a5f9c6c1892eb9e3502f5d27dd2a21e",
+  "body_origin": "Independent MPFB human",
+  "bone_count": 53,
+  "in_world": false,
+  "story_role": "Arjun's love interest; later introduction"
+}

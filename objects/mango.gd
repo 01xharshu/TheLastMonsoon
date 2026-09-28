@@ -34,7 +34,6 @@ func interact(player: CharacterBody3D) -> void:
 	if player.inventory.add_item("mango", 1):
 		player.get_node("InteractionPoseComponent").complete_mango(false)
 		_finish_collection()
-		player.inventory.request_message("Picked up mango · eat it from the Satchel")
 
 func secondary_interact(_player: CharacterBody3D) -> void:
 	# Kept for older callers; world fruit can only be eaten after collection.

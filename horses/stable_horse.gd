@@ -412,7 +412,6 @@ func board(actor: CharacterBody3D) -> bool:
 	actor.set_meta("horse_transition_side", -1.0 if to_local(actor.global_position).x < 0.0 else 1.0)
 	actor.set_meta("horse_transition", "mount")
 	actor.set_meta("horse_transition_progress", 0.0)
-	actor.inventory.message_requested.emit("Horse taken from stable · W/S ride · A/D turn · Shift gallop · Space jump · F dismount")
 	return true
 
 func _sync_rider() -> void:

@@ -1,16 +1,21 @@
 # Current handoff
+Updated: 2026-09-28 15:36 IST.
+## UI FONTS / ICONS — OWNER PLAY REVIEW OPEN
+- CC0 fonts wired, icons clarified; headless PASS. Metal title, pause and chest captures inspected. No mission screen yet; owner play review: `docs/world/interaction_system.md`.
+## RIVER REFINEMENT — IN_PROGRESS
+- Fish 36→144; ripples/glints, transparent water. Headless PASS; Metal inspected. Art/play open. Next: fish/wake/reflection and route review: `docs/world/river_boat_climb_status.md`.
 ## THANA POLICE NPCS — STATIC CANDIDATE / VISUAL REVIEW OPEN
-- Three 1857 roles (daroga, mohurrir, burkundaz) placed inside DistrictPolice with body collision; headless world load PASS. Next Metal room/cloth/contact review and authored role idles. Evidence and period limits: `docs/characters/npcs/thana_staff.md`.
+- Three roles placed with body collision; headless PASS. Next Metal cloth/contact and role idles: `docs/characters/npcs/thana_staff.md`.
 ## DEV — MAKEHUMAN CANDIDATE
 - 2026-09-28 IST. Dev MPFB body/53-bone rig, editable Blend, static and rigged idle GLBs. Story: sepoy brother disappears; “Find Dev.” Relaxed arms replace A-pose; buttons/placket moved toward measured coat surface. Fresh front/profile and four Godot Metal idle phases inspected. Small side/waist seams, modern collar and coarse shoes remain. Motion/world use unapproved. Next: settle unit, tailor uniform/likeness, author travel and review normal-speed contact. Detail: `docs/characters/npcs/arjun_brother.md`.
 ## ARJUN TALL CLIMB — RENDER REVIEW
-- Tree and climb PASS; wrist/boot contact sampled. Metal capture blocked by autoload errors. Next: inspect mantle and feet. `docs/characters/arjun/animation_tree.md`.
-## UPPER SHELF WEAPON REACH — IN_PROGRESS
-- Updated 2026-09-28 IST. Live Metal E pickup PASS but fixture elevated Arjun above floor; capture angle unsuitable. Correcting standing height and eye-level ray. Next: rerun floor-height upper pickups and normal camera capture; detail: `docs/world/weapon_store.md`.
+- Legs and wrist poses corrected; close Metal frames and palm contact check PASS. Next: full-world grip/mantle motion. `docs/characters/arjun/animation_tree.md`.
+## UPPER SHELF WEAPON REACH — COMPLETE
+- PASS; owner feel review open: `docs/world/weapon_store.md`.
 ## LONG-WEAPON SIZE / SHOULDER ANIMATION — IN_PROGRESS
 - Modern long-gun size/shoulder fit in progress; stock sits behind face. Next authored pose, capture and firearm checks: `docs/characters/arjun/firearm_aim_camera.md`.
 ## REFERENCE THIRD-PERSON CAMERA — COMPLETE
-- 2026-09-28 10:13 IST. Rear/left-third camera and local setting applied. Metal capture, controls, indoor clearance, whitespace PASS; docs gate fails because shared handoff grew past 6 KB. Evidence: `docs/world/reference_camera.md`. Next: owner moving/indoor play review; condense other task sections with their owners.
+- 2026-09-28 15:37 IST. Reference framing and local setting applied; stationary/walking/indoor Metal views inspected. Movement 8.12 m, controls and clearance PASS; docs gate PASS. Files, evidence and fixture limit: `docs/world/reference_camera.md`. Next: owner normal-play review.
 ## AIM HAND / CAMERA — IN_PROGRESS
 - Pistol palm/socket corrected; Metal grip checked. Final art/motion review open: `docs/characters/arjun/firearm_aim_camera.md`.
 ## CHARPAI SIT / SLEEP TRANSITION — IN_PROGRESS
@@ -22,15 +27,12 @@
 ## ARJUN ANIMATIONTREE — IN_PROGRESS
 - Idle/walk/swim/sit blend PASS; charpai sampled contact improved, continuous motion open: `docs/characters/arjun/animation_tree.md`.
 ## WORLD INTERACTION — IN_PROGRESS
-- E/Q card, glint, ammo HUD, holds; chest Metal and five store pickups/save PASS. Contact, kneel and corpse loot open: `docs/world/interaction_system.md`.
-Updated: 2026-09-28 IST. Full prior status: `docs/agent/history/2026-09-28-pre-horse-contact-ledger.md`. Archive: `docs/agent/history/2026-09-24-0023-pre-viceregal.md`.
-
+- Key cards, chest/store PASS. Controls text removed; chest feed handles pickups. Metal frames inspected; live play, contact and loot open: `docs/world/interaction_system.md`.
+History: `docs/agent/history/2026-09-28-pre-horse-contact-ledger.md`.
 ## INDIAN NPCS — FOUR CANDIDATE TREES / VISUAL_REVIEW_FAILED
 - Fruit seller and weaving assistant added as independent rigged candidates; all four trees PASS. Metal motion shows knee breakthrough/floating feet; no new world placement. Next fit cloth/grounded gait. Evidence/limits: `docs/characters/npcs/other_indian_npcs.md`, `docs/characters/npcs/indian_peasant_pair.md`.
-
 ## BRITISH NPC — TREE_READY / VISUAL_CONTACT_OPEN
-- All 16 independently placed; two endpoint turns, tree/cadence/flat-grade foot targets PASS. Eight skirt waists close in source; Metal shows hard band. Next costume, sole/terrain and normal-speed review: `docs/characters/british/animation_tree.md`.
-
+- IN_PROGRESS: 16 trees and isolated body sweeps PASS; full-world Player crosses OfficialWoman (1/2 PASS). Actor body transform, test/report and `docs/characters/british/animation_tree.md` updated. Diff check PASS. Next diagnose Player physics sweep, fix, rerun world/tree checks. Costume/contact review open.
 ## VICEREGAL RESIDENCE — IN_PROGRESS
 - Arjun16/horse6 stairs and flexible reins PASS; Metal rope views inspected. Early mount contact open: `docs/world/horse_stable.md`.
 - Landing/rail supports repaired: Metal pixels, 567 terrain samples, 20 piles and actual jetty walk PASS. Period form/joinery open; evidence/next: `docs/world/period_access.md`.

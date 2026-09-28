@@ -225,6 +225,8 @@ func _process(delta: float) -> void:
 	if walking or turning:
 		var target_yaw := atan2(direction.x, direction.z)
 		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * maxf(delta, 0.0))
+	if body_collider != null:
+		body_collider.force_update_transform()
 	_set_animation(&"walk" if walking else &"idle", delta)
 
 func _set_animation(state: StringName, delta: float) -> void:

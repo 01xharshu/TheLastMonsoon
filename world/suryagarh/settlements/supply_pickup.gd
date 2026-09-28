@@ -12,5 +12,4 @@ func interact(actor: CharacterBody3D) -> void:
 	if taken or actor.global_position.distance_to(global_position)>3.0: return
 	if not actor.inventory.add_item(item_id,count): return
 	taken = true
-	actor.inventory.message_requested.emit("Acquired " + display_name)
 	queue_free()

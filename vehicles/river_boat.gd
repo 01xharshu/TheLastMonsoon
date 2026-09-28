@@ -114,7 +114,6 @@ func board(actor: CharacterBody3D) -> bool:
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
 	_sync_rider()
-	actor.inventory.message_requested.emit("River boat · W/S row · A/D steer · F dismount")
 	return true
 
 func _sync_rider() -> void:

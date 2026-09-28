@@ -31,8 +31,13 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 	for beat in [{"name":"reach","at":.12},{"name":"pull_left","at":.30},{"name":"pull_right","at":.56},{"name":"mantle","at":.85},{"name":"recover","at":.95}]:
-		while climb.active and climb.progress < beat.at:
+		var frames_waited := 0
+		while climb.active and climb.progress < beat.at and frames_waited < 600:
 			await get_tree().physics_frame
+			frames_waited += 1
+		if frames_waited >= 600 or not climb.active and climb.progress < beat.at:
+			push_warning("TALL CLIMB CAPTURE: could not reach " + str(beat.name))
+			break
 		await RenderingServer.frame_post_draw
 		var path: String = "/tmp/tlm_tall_climb_" + str(beat.name) + ".png"
 		print("CLIMB CAPTURE ", beat.name, " ", get_viewport().get_texture().get_image().save_png(path), " ", path)

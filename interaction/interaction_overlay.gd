@@ -63,9 +63,7 @@ const GOLD := Color(
 )
 
 
-const FONT = preload(
-	"res://assets/ui/fonts/CormorantGaramond.ttf"
-)
+const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 
 
 # =========================================================
@@ -246,8 +244,12 @@ func set_target(
 func show_rewards(
 	lines: Array
 ) -> void:
-
-	rewards = lines.duplicate()
+	if reward_timer <= 0.0:
+		rewards.clear()
+	for line in lines:
+		rewards.append(line)
+	while rewards.size() > 5:
+		rewards.pop_front()
 
 	reward_timer = 3.0
 
@@ -502,14 +504,21 @@ func _icon(center: Vector2, kind: String, color: Color) -> void:
 	match kind:
 		"water":
 			_shape(center, [Vector2(0,-9),Vector2(7,2),Vector2(6,7),Vector2(2,9),Vector2(-2,9),Vector2(-6,7),Vector2(-7,2)], color)
-		"food", "mango":
+		"food":
+			draw_circle(center, 7.0, color)
+			draw_line(center + Vector2(-5,-1), center + Vector2(5,-1), PANEL_COLOR, 1.5)
+		"mango":
 			draw_circle(center + Vector2(-3,2), 5.0, color)
 			draw_circle(center + Vector2(3,2), 5.0, color)
 			_shape(center + Vector2(1,-7), [Vector2(0,0),Vector2(7,-2),Vector2(4,2)], color)
-		"ammo", "chest", "crate":
+		"ammo":
+			for offset in [-5.0, 0.0, 5.0]:
+				draw_rect(Rect2(center + Vector2(offset-1.5,-6),Vector2(3,12)), color)
+				draw_circle(center + Vector2(offset,-6),1.5,color)
+		"chest", "crate":
 			draw_rect(Rect2(center + Vector2(-8,-3),Vector2(16,11)), color)
 			draw_rect(Rect2(center + Vector2(-9,-7),Vector2(18,4)), color)
-			draw_rect(Rect2(center + Vector2(-1,-6),Vector2(2,14)), KEY_TEXT_COLOR)
+			draw_rect(Rect2(center + Vector2(-1,-2),Vector2(2,5)), PANEL_COLOR)
 		"weapon":
 			_shape(center, [Vector2(-9,3),Vector2(3,-3),Vector2(8,-3),Vector2(8,-1),Vector2(1,0),Vector2(-1,5),Vector2(-5,5),Vector2(-5,7),Vector2(-9,7)], color)
 		"medicine":
@@ -517,7 +526,8 @@ func _icon(center: Vector2, kind: String, color: Color) -> void:
 			draw_rect(Rect2(center+Vector2(-8,-2),Vector2(16,4)),color)
 		"gate":
 			draw_rect(Rect2(center+Vector2(-7,-8),Vector2(14,16)),color)
-			draw_circle(center+Vector2(3,1),1.5,KEY_TEXT_COLOR)
+			draw_rect(Rect2(center+Vector2(-5,-6),Vector2(10,14)),PANEL_COLOR)
+			draw_circle(center+Vector2(3,1),1.5,color)
 		"horse", "vehicle":
 			_shape(center,[Vector2(-8,-3),Vector2(5,-3),Vector2(8,3),Vector2(4,3),Vector2(3,8),Vector2(0,8),Vector2(-1,3),Vector2(-6,3)],color)
 		_:
@@ -529,7 +539,7 @@ func _draw_action(at: Vector2, key: String, kind: String, count: int = 0) -> voi
 	var key_width := 64.0 if key.length() > 2 else 27.0
 	_icon(at + Vector2(key_width+15.0,13), kind, IVORY)
 	if count > 0:
-		draw_string(ThemeDB.fallback_font, at + Vector2(key_width+29.0,19), "×%d" % count, HORIZONTAL_ALIGNMENT_LEFT, 46, 14, IVORY)
+		draw_string(FONT, at + Vector2(key_width+29.0,19), "×%d" % count, HORIZONTAL_ALIGNMENT_LEFT, 46, 14, IVORY)
 
 # =========================================================
 # DRAW OVERLAY

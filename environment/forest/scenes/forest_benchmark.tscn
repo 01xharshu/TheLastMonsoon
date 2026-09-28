@@ -1,0 +1,91 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="1"]
+[ext_resource type="Resource" path="res://environment/forest/config/benchmark.tres" id="2"]
+[ext_resource type="PackedScene" path="res://player/player.tscn" id="3"]
+[ext_resource type="Script" path="res://world/suryagarh/systems/game_time_system.gd" id="6"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/brown_mud_dry_diff_1k.jpg" id="4"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg" id="5"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/aerial_grass_rock_diff_1k.jpg" id="7"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/aerial_grass_rock_nor_gl_1k.jpg" id="8"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/rock_boulder_dry_diff_1k.jpg" id="9"]
+[ext_resource type="Texture2D" path="res://assets/nature/materials/rock_boulder_dry_nor_gl_1k.jpg" id="10"]
+[ext_resource type="Shader" path="res://environment/forest/shaders/ground.gdshader" id="11"]
+[ext_resource type="Script" path="res://environment/forest/scripts/forest_ground.gd" id="12"]
+
+[sub_resource type="ShaderMaterial" id="GroundMaterial"]
+shader = ExtResource("11")
+shader_parameter/soil_color = ExtResource("4")
+shader_parameter/soil_normal = ExtResource("5")
+shader_parameter/grass_color = ExtResource("7")
+shader_parameter/grass_normal = ExtResource("8")
+shader_parameter/rock_color = ExtResource("9")
+shader_parameter/rock_normal = ExtResource("10")
+
+[sub_resource type="PlaneMesh" id="GroundMesh"]
+material = SubResource("GroundMaterial")
+size = Vector2(60, 60)
+
+[sub_resource type="BoxShape3D" id="GroundCollision"]
+size = Vector3(60, 0.4, 60)
+
+[sub_resource type="ProceduralSkyMaterial" id="ForestSkyMaterial"]
+sky_top_color = Color(0.46, 0.61, 0.65, 1)
+sky_horizon_color = Color(0.77, 0.83, 0.76, 1)
+ground_bottom_color = Color(0.23, 0.29, 0.23, 1)
+ground_horizon_color = Color(0.70, 0.78, 0.70, 1)
+
+[sub_resource type="Sky" id="ForestSky"]
+sky_material = SubResource("ForestSkyMaterial")
+
+[sub_resource type="Environment" id="ForestEnvironment"]
+background_mode = 2
+sky = SubResource("ForestSky")
+ambient_light_source = 1
+ambient_light_color = Color(0.64, 0.72, 0.62, 1)
+ambient_light_energy = 0.82
+fog_enabled = true
+fog_light_color = Color(0.65, 0.72, 0.66, 1)
+fog_density = 0.0012
+ssao_enabled = true
+ssao_radius = 0.85
+ssao_intensity = 0.68
+
+[node name="ForestBenchmark" type="Node3D"]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="VisibleSoil" type="MeshInstance3D" parent="Ground"]
+script = ExtResource("12")
+mesh = SubResource("GroundMesh")
+
+[node name="WalkableCollision" type="CollisionShape3D" parent="Ground"]
+position = Vector3(0, -0.2, 0)
+shape = SubResource("GroundCollision")
+
+[node name="ForestGenerator" type="Node3D" parent="."]
+script = ExtResource("1")
+config = ExtResource("2")
+
+[node name="GameTimeSystem" type="Node" parent="."]
+script = ExtResource("6")
+starting_hour = 9
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("ForestEnvironment")
+
+[node name="SoftDaylight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, -35, 0)
+light_color = Color(0.94, 0.91, 0.81, 1)
+light_energy = 1.1
+shadow_enabled = true
+shadow_blur = 3.0
+shadow_normal_bias = 0.8
+directional_shadow_max_distance = 90.0
+
+[node name="Player" parent="." instance=ExtResource("3")]
+position = Vector3(-25, 1.3, 0)
+
+[node name="OverviewCamera" type="Camera3D" parent="."]
+transform = Transform3D(0.8, 0.2, -0.56, 0, 0.94, 0.34, 0.6, -0.27, 0.75, -36, 34, 42)
+current = false

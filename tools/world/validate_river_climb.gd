@@ -18,7 +18,7 @@ func validate() -> void:
 	var actor: CharacterBody3D=world.get_node("Player")
 	var boat: CharacterBody3D=world.get_node("RiverBoat")
 	var fish: Node=world.get_node("RiverFish")
-	check(fish.fish.size()==36,"36 fish below water")
+	check(fish.fish.size()==144,"144 fish below water")
 	check(boat.paddle.find_child("boat_oar_shaft",true,false).position.length()<.01,"visible oar shaft shares grip-socket origin")
 	actor.set_physics_process(false)
 	actor.get_node("UI").hide()
@@ -100,9 +100,11 @@ func validate() -> void:
 		while climb.progress < .35: await physics_frame
 		var visual: Node=actor.get_node("VisualRoot/CharacterVisual")
 		var closest_boot: float=INF
+		var supporting_knee_forward: float=-INF
 		for side in ["l","r"]:
 			var index: int=visual.skeleton.find_bone("hand_"+side)
 			var wrist: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(index).origin)
+			var palm: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(index)*visual.equipment.palm_offsets[side])
 			var target: Vector3=visual.climb_targets[side].global_position
 			var elbow: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("lowerarm_"+side)).origin)
 			var foot_index: int=visual.skeleton.find_bone("foot_"+side)
@@ -110,11 +112,17 @@ func validate() -> void:
 			print("CLIMB FOOT ",side," ",foot)
 			var foot_gap: float=foot.distance_to(visual.climb_foot_targets[side])
 			closest_boot=minf(closest_boot,foot_gap)
+			var hip: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("thigh_"+side)).origin)
+			var knee: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("calf_"+side)).origin)
+			var along_leg: Vector3=(foot-hip).normalized()
+			var knee_bend: Vector3=knee-(hip+along_leg*(knee-hip).dot(along_leg))
+			if foot_gap<.12: supporting_knee_forward=maxf(supporting_knee_forward,knee_bend.dot(-climb.wall_normal))
 			print("CLIMB FOOT CONTACT ",side," error_m=",snappedf(foot_gap,.001))
 			print("ARM SEGMENTS ",side," ",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin).distance_to(elbow)," ",elbow.distance_to(wrist))
-			print("CLIMB HAND ",side," error_m=",snappedf(wrist.distance_to(target),.001)," wrist=",wrist," target=",target," shoulder=",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin)," actor=",actor.global_position," ik=",visual.climb_ik[side].is_running()," influence=",visual.climb_ik[side].influence," iktarget=",visual.climb_ik[side].get_target_transform().origin," path=",visual.climb_ik[side].target_node," resolved=",visual.climb_ik[side].get_node_or_null(visual.climb_ik[side].target_node))
-			check(wrist.distance_to(target)<.03,"wall climb "+side+" wrist reaches stone")
+			print("CLIMB HAND ",side," palm_error_m=",snappedf(palm.distance_to(target),.001)," wrist=",wrist," target=",target," shoulder=",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin)," actor=",actor.global_position," ik=",visual.climb_ik[side].is_running()," influence=",visual.climb_ik[side].influence," iktarget=",visual.climb_ik[side].get_target_transform().origin," path=",visual.climb_ik[side].target_node," resolved=",visual.climb_ik[side].get_node_or_null(visual.climb_ik[side].target_node))
+			check(palm.distance_to(target)<.03,"wall climb "+side+" palm reaches stone")
 		check(closest_boot<.12,"one boot supports body on wall")
+		check(supporting_knee_forward>.02,"supporting knee bends toward wall")
 		if DisplayServer.get_name()!="headless": await capture("16_arjun_climbing")
 		while climb.progress < .56: await physics_frame
 		var next_boot: float=INF

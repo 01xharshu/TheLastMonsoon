@@ -65,8 +65,6 @@ func interact(actor: CharacterBody3D) -> void:
 	var prizes := {"paper_cartridges":6,"pistol_ball":4,"rupees":26}
 	for item in prizes:
 		actor.inventory.add_item(item,int(prizes[item]))
-	actor.get_node("UI/HUDRoot/InteractionOverlay").show_rewards(["Paper cartridges  +6","Pistol balls  +4","Rupees  +26"])
-	actor.inventory.message_requested.emit("Supply chest opened")
 
 func restore_opened() -> void:
 	opened = true

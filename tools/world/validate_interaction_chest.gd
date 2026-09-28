@@ -41,7 +41,8 @@ func _run() -> void:
 		push_error("INTERACTION BLOCKED: Arjun remained locked in kneel")
 		quit(1)
 		return
-	if chest.interaction_available() or actor.interaction_overlay.rewards.size() != 3:
+	var reward_text: String = " | ".join(actor.interaction_overlay.rewards)
+	if chest.interaction_available() or not reward_text.contains("Paper Cartridges  +6") or not reward_text.contains("Pistol Balls  +4") or not reward_text.contains("Rupees  +26"):
 		push_error("INTERACTION BLOCKED: opened chest still prompts or reward notices missing")
 		quit(1)
 		return

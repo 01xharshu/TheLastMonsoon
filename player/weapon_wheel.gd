@@ -1,7 +1,7 @@
 extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
-const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
+const SERIF = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "STOW WEAPONS"]
 const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Hands free · weapons carried"]
 const STOW_INDEX := 6
@@ -103,7 +103,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _text(value: String, point: Vector2, font_size: int, color: Color = IVORY, serif: bool = false) -> void:
-	var font: Font = SERIF if serif else ThemeDB.fallback_font
+	var font: Font = SERIF
 	var extent := font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	draw_string(font, point - Vector2(extent.x * 0.5, 0), value, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 

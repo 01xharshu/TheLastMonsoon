@@ -17,7 +17,7 @@ func capture() -> void:
 	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
 	root.add_child(menu)
 	current_scene = menu
-	for i in 5: await process_frame
+	await create_timer(2.0).timeout
 	var labels: Array[String] = []
 	for button in menu.find_children("*","Button",true,false): labels.append(button.text)
 	for expected in ["Play Game","Continue","Load Game","Settings"]:
@@ -33,7 +33,7 @@ func capture() -> void:
 	var pause: CanvasLayer = world.get_node("GameMenu")
 	pause.open()
 	check(paused and pause.overlay.visible,"Pause menu did not stop the world")
-	for i in 3: await process_frame
+	await create_timer(2.0, true).timeout
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://docs/world/captures/15_pause_menu.png")
 	pause.close()

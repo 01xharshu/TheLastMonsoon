@@ -2,7 +2,9 @@ extends RefCounted
 ## AAA-grade menu style system — cinematic typography, film-grain overlays,
 ## atmospheric particle hints, and smooth tween transitions.
 
-const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
+const SERIF = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
+const MENU_BOLD = preload("res://assets/ui/fonts/MFBOldstyle-Bold.otf")
+const MISSION_TITLE = preload("res://assets/ui/fonts/Almonte.otf")
 const UI_CLICK = preload("res://audio/ui/ui_click.wav")
 const UI_BACK = preload("res://audio/ui/ui_back.wav")
 
@@ -101,6 +103,7 @@ static func heading(value: String, font_size: int = 52, show_rule: bool = true) 
 
 	var lbl := Label.new()
 	lbl.text = value.to_upper()
+	lbl.add_theme_font_override("font", MENU_BOLD)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", font_size)
 	lbl.add_theme_color_override("font_color", IVORY)

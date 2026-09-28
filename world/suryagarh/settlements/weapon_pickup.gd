@@ -26,7 +26,6 @@ func interact(actor: CharacterBody3D) -> void:
 	taken = true
 	_equip(actor)
 	actor.set_meta("stolen_weapons",int(actor.get_meta("stolen_weapons",0))+1)
-	actor.inventory.message_requested.emit("Taken from the armoury · " + weapon_id.capitalize())
 	queue_free()
 
 func _equip(actor: CharacterBody3D) -> void:

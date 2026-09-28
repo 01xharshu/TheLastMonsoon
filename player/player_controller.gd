@@ -162,6 +162,9 @@ var hold_elapsed := 0.0
 func _ready() -> void:
 	if not inventory.has_water_bag():
 		inventory.add_item("water_bag", 1)
+		# Starting equipment is already owned when play begins, not a pickup.
+		interaction_overlay.rewards.clear()
+		interaction_overlay.reward_timer = 0.0
 	floor_snap_length = ground_snap_distance
 
 	third_person_height = camera_pivot.position.y

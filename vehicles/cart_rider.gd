@@ -87,7 +87,6 @@ func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
 	_sync_rider()
-	actor.inventory.message_requested.emit("W/S travel · A/D steer · F get off" if role == "driver" else "F get off the carriage")
 	return true
 
 func dismount() -> bool:

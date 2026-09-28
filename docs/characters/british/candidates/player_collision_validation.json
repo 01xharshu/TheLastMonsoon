@@ -1,7 +1,9 @@
 {
-  "actual_player_stops": 1,
-  "errors": [],
-  "passed": true,
+  "actual_player_stops": 0,
+  "errors": [
+    "OfficialWoman: Player did not stop at NPC; hit=none actor=(-389.235, 8.54, -95.0) collider=(-389.235, 8.54, -95.0) player=(-389.235, 9.54765, -93.4) mask=1 layer=1 player_shape=(-389.235, 9.54765, -93.4) npc_shape=(-389.235, 9.29, -95.0) npc_shapes=1 same_space=true"
+  ],
+  "passed": false,
   "sampled": 1,
   "scope": "full-world Player capsule approach on Company Compound and Government House plots"
 }

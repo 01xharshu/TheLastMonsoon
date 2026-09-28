@@ -1,7 +1,7 @@
 extends Node3D
-## Sparse, original low-poly fish. One draw call; schools stay below the surface and off the riverbed.
+## Instanced river fish. Dense groups follow the landing and boating channel.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
-const COUNT := 36
+const COUNT := 144
 var layout := Layout.new()
 var school: MultiMeshInstance3D
 var fish: Array[Dictionary] = []
@@ -28,8 +28,8 @@ func _ready() -> void:
 	st.generate_normals()
 	var mesh := st.commit()
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color=Color(.42,.47,.34)
-	mat.roughness=.75
+	mat.albedo_color=Color(.16,.23,.18)
+	mat.roughness=.88
 	mat.cull_mode=BaseMaterial3D.CULL_DISABLED
 	mesh.surface_set_material(0,mat)
 	var mm := MultiMesh.new()
@@ -45,11 +45,17 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed=1857
 	for i in COUNT:
-		var z: float = rng.randf_range(231,239) if i<12 else (rng.randf_range(215,295) if i<28 else rng.randf_range(-380,-330))
+		var z: float
+		if i < 36:
+			z = rng.randf_range(225,252)
+		elif i < 96:
+			z = rng.randf_range(110,390)
+		else:
+			z = rng.randf_range(-650,650)
 		var center: float=layout.river_x(z)
-		var x: float=(layout.river_x(235)-layout.river_width(235)+rng.randf_range(-3,6)) if i<12 else center+rng.randf_range(-layout.river_width(z)*.58,layout.river_width(z)*.58)
+		var x: float=(layout.river_x(235)-layout.river_width(235)+rng.randf_range(-3,8)) if i<16 else center+rng.randf_range(-layout.river_width(z)*.68,layout.river_width(z)*.68)
 		var bed: float=layout.height(x,z)
-		fish.append({"x":x,"z":z,"y":maxf(bed+.5,-.52 if i<12 else -2.1),"speed":rng.randf_range(.35,.85),"phase":rng.randf_range(0,TAU),"scale":rng.randf_range(.78,1.12) if i<12 else rng.randf_range(.62,1.02)})
+		fish.append({"x":x,"z":z,"y":clampf(maxf(bed+.65,-.65 if i<36 else -1.75),-2.5,-.38),"speed":rng.randf_range(.35,.85),"phase":rng.randf_range(0,TAU),"scale":rng.randf_range(.78,1.12) if i<36 else rng.randf_range(.62,1.02)})
 	_update_fish()
 
 func _process(delta: float) -> void:
@@ -60,10 +66,10 @@ func _update_fish() -> void:
 	for i in COUNT:
 		var f: Dictionary=fish[i]
 		var t: float=elapsed*f.speed+f.phase
-		var x: float=f.x+sin(t*.48+i)*2.6
-		var z: float=f.z+cos(t*.37+i)*3.5
+		var x: float=f.x+sin(t*.48+i)*1.8
+		var z: float=f.z+cos(t*.37+i)*2.7
 		var y: float=minf(-.35,f.y+sin(t*1.9)*.11)
-		var direction := atan2(cos(t*.48+i)*.7,-sin(t*.37+i))
+		var direction := atan2(cos(t*.48+i)*.55,-sin(t*.37+i))
 		var scale: float=f.scale
 		var transform := Transform3D(Basis(Vector3.UP,direction).scaled(Vector3.ONE*scale),Vector3(x,y,z))
 		school.multimesh.set_instance_transform(i,transform)

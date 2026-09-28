@@ -1,7 +1,8 @@
 extends Control
 ## Original field-journal HUD: engraved brass rules, restrained ink panels and serif headings.
 ## Keeps the existing inventory, interaction and survival nodes/signals intact.
-const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
+const SERIF = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
+const BOLD = preload("res://assets/ui/fonts/MFBOldstyle-Bold.otf")
 const IVORY := Color(0.92,0.88,0.76)
 const BRASS := Color(0.61,0.47,0.27)
 const INK := Color(0.035,0.046,0.038,0.38)
@@ -43,6 +44,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hud_theme := Theme.new()
 	hud_theme.default_font_size = 17
+	hud_theme.default_font = SERIF
 	hud_theme.set_color("font_color","Label",IVORY)
 	hud_theme.set_color("font_color","Button",IVORY)
 	hud_theme.set_color("font_disabled_color","Button",Color(0.48,0.48,0.41))
@@ -63,7 +65,7 @@ func _ready() -> void:
 	var content: VBoxContainer = $InventoryPanel/ContentMargin/Content
 	content.add_theme_constant_override("separation",22)
 	content.get_node("TitleLabel").text = "THE TRAVELLER’S SATCHEL"
-	content.get_node("TitleLabel").add_theme_font_override("font",SERIF)
+	content.get_node("TitleLabel").add_theme_font_override("font",BOLD)
 	content.get_node("TitleLabel").add_theme_font_size_override("font_size",32)
 	content.get_node("HintLabel").add_theme_font_size_override("font_size",13)
 	status_label = label("VITALITY",10)
@@ -115,7 +117,6 @@ func _process(delta: float) -> void:
 	elif equipment and not equipment.stowed and equipment.selected == 3:
 		var pistol: Node = player.get_node("PistolCombat")
 		weapon_label.text = pistol.get_hud_text()
-	elif equipment and not equipment.stowed and equipment.selected == 5:
 	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
 		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN"}[equipment.selected]
 		place(weapon_label,Vector2(size.x-303,size.y-181),Vector2(258,28))
@@ -176,7 +177,7 @@ func _draw_ammo() -> void:
 	draw_style_box(box(Color(.04,.045,.044,.45),Color(BRASS,.42)),Rect2(x,y,288,126))
 	draw_line(Vector2(x+16,y+42),Vector2(x+272,y+42),Color(IVORY,.35),1,true)
 	_draw_gun_silhouette(Vector2(x+19,y+70),sidearm,double_barrel)
-	var font: Font = ThemeDB.fallback_font
+	var font: Font = SERIF
 	draw_string(font,Vector2(x+178,y+85),str(loaded),HORIZONTAL_ALIGNMENT_RIGHT,55,38,Color(.98,.97,.93))
 	draw_string(font,Vector2(x+234,y+85),str(spare),HORIZONTAL_ALIGNMENT_LEFT,34,19,Color(.92,.91,.86))
 	draw_line(Vector2(x+204,y+61),Vector2(x+204,y+83),Color(IVORY,.52),1,true)
@@ -230,7 +231,7 @@ func _draw() -> void:
 	var cx: float = size.x/2
 	draw_line(Vector2(cx-165,63),Vector2(cx+165,63),Color(BRASS,0.8),1,true)
 	diamond(Vector2(cx,63),4,IVORY)
-	var font: Font = ThemeDB.fallback_font
+	var font: Font = SERIF
 	for offset in range(-90,91,15):
 		var angle: float = fposmod(floor(heading/15.0)*15.0+offset,360.0)
 		var x: float = cx + (angle_difference(deg_to_rad(heading),deg_to_rad(angle))*180/PI)*1.6

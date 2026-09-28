@@ -2,7 +2,7 @@ extends Control
 ## North-up field map; surveyed routes and sites come from SuryagarhLayout.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Bridge = preload("res://world/suryagarh/timber_bridge.gd")
-const FONT = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
+const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const INK := Color(0.20,0.17,0.12)
 const MAP_TEXTURE := "res://world/suryagarh/generated/field_map.res"
 var terrain: Texture2D

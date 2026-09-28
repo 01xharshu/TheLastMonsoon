@@ -1,6 +1,6 @@
 extends Control
 ## A drawn parchment and rollers keep the dossier independent of texture imports.
-const FONT = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
+const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const INK := Color(0.23, 0.17, 0.10)
 const BRASS := Color(0.48, 0.31, 0.13)
 var player: CharacterBody3D

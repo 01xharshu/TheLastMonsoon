@@ -11,16 +11,6 @@ extends Label
 
 
 # =========================================================
-# DISPLAY SETTINGS
-# =========================================================
-
-@export var display_duration: float = 1.8
-
-
-var display_timer: float = 0.0
-
-
-# =========================================================
 # STARTUP
 # =========================================================
 
@@ -45,26 +35,6 @@ func _ready() -> void:
 
 
 # =========================================================
-# UPDATE
-# =========================================================
-
-func _process(
-	delta: float
-) -> void:
-
-	if not visible:
-		return
-
-
-	display_timer -= delta
-
-
-	if display_timer <= 0.0:
-
-		visible = false
-
-
-# =========================================================
 # ITEM PICKUP
 # =========================================================
 
@@ -81,22 +51,7 @@ func _on_item_added(
 	)
 
 
-	if amount <= 1:
-
-		_show_message(
-			display_name
-			+ " collected"
-		)
-
-
-	else:
-
-		_show_message(
-			display_name
-			+ " x"
-			+ str(amount)
-			+ " collected"
-		)
+	_show_reward(display_name + "  +" + str(amount))
 
 
 # =========================================================
@@ -106,29 +61,12 @@ func _on_item_added(
 func _on_message_requested(
 	message: String
 ) -> void:
+	_show_reward(message)
 
-	_show_message(
-		message
-	)
-
-
-# =========================================================
-# SHOW MESSAGE
-# =========================================================
-
-func _show_message(
-	message: String
-) -> void:
-
-	text = message
-
-
-	display_timer = (
-		display_duration
-	)
-
-
-	visible = true
+func _show_reward(message: String) -> void:
+	var overlay: Node = get_parent().get_node_or_null("InteractionOverlay")
+	if overlay != null:
+		overlay.show_rewards([message])
 
 
 # =========================================================
@@ -140,6 +78,10 @@ func _get_display_name(
 ) -> String:
 
 	match item_id:
+		"paper_cartridges":
+			return "Paper Cartridges"
+		"pistol_ball":
+			return "Pistol Balls"
 
 		"roti":
 			return "Roti"

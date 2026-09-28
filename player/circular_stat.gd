@@ -1,5 +1,6 @@
 class_name CircularStat
 extends Control
+const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 ## Small engraved survival medallion. Existing survival signal contract is unchanged.
 @export_enum("Hydration","Satiety","Stamina","Energy") var icon_type: int = 0:
 	set(value):
@@ -45,5 +46,5 @@ func _draw() -> void:
 		3:
 			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-11),center+Vector2(-7,-8),center+Vector2(-11,0),center+Vector2(-7,8),center+Vector2(1,11),center+Vector2(7,7),center+Vector2(1,8),center+Vector2(-2,5),center+Vector2(-4,0),center+Vector2(-2,-5),center+Vector2(1,-8)]),icon_color)
 	var names: Array[String] = ["WATER","FOOD","STAMINA","REST"]
-	var font: Font = ThemeDB.fallback_font
+	var font: Font = FONT
 	draw_string(font,Vector2(0,54),names[icon_type],HORIZONTAL_ALIGNMENT_CENTER,size.x,10,Color(icon_color,0.9))
