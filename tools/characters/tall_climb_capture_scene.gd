@@ -2,6 +2,7 @@ extends Node3D
 ## Launch as a scene so project autoloads initialize before world scripts.
 
 func _ready() -> void:
+	get_window().size = Vector2i(960, 540)
 	_run.call_deferred()
 
 func _run() -> void:
@@ -31,13 +32,11 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 	for beat in [{"name":"reach","at":.12},{"name":"pull_left","at":.30},{"name":"pull_right","at":.56},{"name":"mantle","at":.85},{"name":"recover","at":.95}]:
-		var frames_waited := 0
-		while climb.active and climb.progress < beat.at and frames_waited < 600:
-			await get_tree().physics_frame
-			frames_waited += 1
-		if frames_waited >= 600 or not climb.active and climb.progress < beat.at:
-			push_warning("TALL CLIMB CAPTURE: could not reach " + str(beat.name))
-			break
+		climb.progress = beat.at
+		climb._physics_process(0.0)
+		camera.global_position = actor.global_position + Vector3(-4.0,1.5,3.4)
+		camera.look_at(actor.global_position + Vector3.UP*.15)
+		for i in 3: await get_tree().process_frame
 		await RenderingServer.frame_post_draw
 		var path: String = "/tmp/tlm_tall_climb_" + str(beat.name) + ".png"
 		print("CLIMB CAPTURE ", beat.name, " ", get_viewport().get_texture().get_image().save_png(path), " ", path)

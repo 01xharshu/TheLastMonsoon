@@ -33,6 +33,8 @@ func _ready() -> void:
 		var z: float = 214+(i/4)*35
 		var house := make_building("BhairavpurHouse%d"%i,Vector2(x,z),Vector2(9.5,7.2),false)
 		if i<4: house.rotation.y = PI
+	build_village_water_point()
+	build_village_market_and_gardens()
 	add_civic("TownHall",Layout.PLOTS["TownHall"].center,false)
 	add_civic("DistrictPolice",Layout.PLOTS["DistrictPolice"].center,true)
 	var compound_center: Vector2 = Layout.PLOTS["CompanyCompound"].center
@@ -44,6 +46,109 @@ func _ready() -> void:
 	landing()
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
+
+func build_village_water_point() -> void:
+	# Keep the surveyed east-west aisle at z=230 clear through x=-316.
+	# The well occupies the open space between the two house rows.
+	var center := Vector2(-289.0, 231.0)
+	var well := Node3D.new()
+	well.name = "BhairavpurVillageWell"
+	well.position = Vector3(center.x, layout.height(center.x, center.y), center.y)
+	add_child(well)
+	piece(well, "PavedApron", Vector3(0, .035, 0), Vector3(5.2, .07, 5.2), stone)
+	var body := StaticBody3D.new()
+	body.name = "WellBody"
+	body.position.y = .52
+	well.add_child(body)
+	var wall := MeshInstance3D.new()
+	var wall_mesh := CylinderMesh.new()
+	wall_mesh.top_radius = 1.12
+	wall_mesh.bottom_radius = 1.22
+	wall_mesh.height = .96
+	wall_mesh.radial_segments = 20
+	wall.mesh = wall_mesh
+	wall.material_override = brick
+	body.add_child(wall)
+	var wall_shape := CollisionShape3D.new()
+	var cylinder := CylinderShape3D.new()
+	cylinder.radius = 1.22
+	cylinder.height = .96
+	wall_shape.shape = cylinder
+	body.add_child(wall_shape)
+	var mouth := MeshInstance3D.new()
+	mouth.name = "DarkWellMouth"
+	var mouth_mesh := CylinderMesh.new()
+	mouth_mesh.top_radius = .88
+	mouth_mesh.bottom_radius = .88
+	mouth_mesh.height = .018
+	mouth.mesh = mouth_mesh
+	mouth.material_override = iron
+	mouth.position.y = 1.005
+	well.add_child(mouth)
+	var rim := MeshInstance3D.new()
+	rim.name = "StoneRim"
+	var rim_mesh := TorusMesh.new()
+	rim_mesh.inner_radius = .87
+	rim_mesh.outer_radius = 1.17
+	rim_mesh.rings = 24
+	rim_mesh.ring_segments = 8
+	rim.mesh = rim_mesh
+	rim.material_override = stone
+	rim.position.y = 1.03
+	well.add_child(rim)
+	for side in [-1.0, 1.0]:
+		piece(well, "TimberUpright", Vector3(side * 1.45, 1.35, 0), Vector3(.16, 2.6, .16), wood)
+	piece(well, "CrossBeam", Vector3(0, 2.62, 0), Vector3(3.05, .2, .2), wood)
+	var roller := MeshInstance3D.new()
+	roller.name = "WaterRoller"
+	var roller_mesh := CylinderMesh.new()
+	roller_mesh.top_radius = .16
+	roller_mesh.bottom_radius = .16
+	roller_mesh.height = .72
+	roller.mesh = roller_mesh
+	roller.material_override = wood
+	roller.position = Vector3(0, 2.37, 0)
+	roller.rotation.z = PI * .5
+	well.add_child(roller)
+	for offset: Vector2 in [Vector2(-5.0, 4.0), Vector2(5.0, 4.0)]:
+		var p: Vector2 = center + offset
+		var seat := Node3D.new()
+		seat.name = "BhairavpurWellSeat"
+		seat.position = Vector3(p.x, layout.height(p.x, p.y), p.y)
+		add_child(seat)
+		piece(seat, "StoneSeat", Vector3(0, .24, 0), Vector3(2.1, .48, .7), stone)
+
+func build_village_market_and_gardens() -> void:
+	# North of the houses, with the two house-row doors and cart approach unobstructed.
+	var earth := material(Color(.31, .23, .14))
+	var leaves := material(Color(.24, .32, .14))
+	for i in 2:
+		var x: float = -336.0 + i * 22.0
+		var z := 264.0
+		var stall := Node3D.new()
+		stall.name = "BhairavpurMarketStall%d" % i
+		stall.position = Vector3(x, layout.height(x, z), z)
+		add_child(stall)
+		piece(stall, "Counter", Vector3(0, .84, 0), Vector3(3.8, .18, 1.2), wood)
+		for side in [-1.0, 1.0]:
+			piece(stall, "FrontPost", Vector3(side * 1.7, 1.25, 1.1), Vector3(.13, 2.5, .13), wood)
+			piece(stall, "RearPost", Vector3(side * 1.7, 1.25, -1.1), Vector3(.13, 2.5, .13), wood)
+		piece(stall, "Shade", Vector3(0, 2.55, 0), Vector3(4.2, .12, 2.7), tile, false)
+		for tray in [-1.0, 0.0, 1.0]:
+			piece(stall, "ProduceTray", Vector3(tray * 1.05, .99, 0), Vector3(.8, .13, .72), wood, false)
+			piece(stall, "Produce", Vector3(tray * 1.05, 1.08, 0), Vector3(.62, .1, .5), leaves, false)
+	for i in 2:
+		var x: float = -347.0 + i * 29.0
+		var z := 277.0
+		var garden := Node3D.new()
+		garden.name = "BhairavpurKitchenGarden%d" % i
+		garden.position = Vector3(x, layout.height(x, z), z)
+		add_child(garden)
+		piece(garden, "RaisedEarth", Vector3(0, .10, 0), Vector3(6.0, .2, 3.4), earth, false)
+		for side in [-1.0, 1.0]:
+			piece(garden, "Border", Vector3(0, .2, side * 1.7), Vector3(6.2, .28, .18), wood)
+		for row in 3:
+			piece(garden, "CropRow", Vector3(0, .25, -1.05 + row * 1.05), Vector3(5.2, .2, .38), leaves, false)
 
 func place_new_props() -> void:
 	# One artillery display in the open west court, clear of the jail and stores.

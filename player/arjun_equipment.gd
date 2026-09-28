@@ -237,7 +237,7 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		var gun_basis := Basis(barrel,side_axis.cross(barrel),side_axis)
 		# Seat the butt below the cheek and ahead of the neck, then let both
 		# palms solve to the scaled receiver and forward support.
-		var grip := Vector3(-0.16, 1.43, 0.22 if selected == Selection.DOUBLE_GUN else 0.18) - barrel * recoil
+		var grip := Vector3(-0.16, 1.43, 0.17 if selected == Selection.DOUBLE_GUN else 0.13) - barrel * recoil
 		longgun.global_transform = skeleton.global_transform*Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
 	else:
 		longgun.transform = double_rest_transform if selected == Selection.DOUBLE_GUN else rifle_rest_transform
@@ -258,7 +258,8 @@ func apply_rifle_grip(sword_striking := false) -> void:
 			var contact: Vector3 = gun_transform * (rifle_grip if side=="r" else support)
 			_solve_arm(side,contact-hand.basis*palm_offsets[side])
 	_grasp("r")
-	_grasp("l")
+	if not (selected == Selection.ENFIELD and reload_progress >= 0.10 and reload_progress <= 0.52): _grasp("l")
+	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress)
 
 func animate_ramrod() -> void:
 	var extension := 0.0

@@ -46,6 +46,9 @@ func regenerate() -> void:
 	_noise.frequency = config.biome_noise_scale
 	_noise.fractal_octaves = 3
 	_tree_positions.clear()
+	if _terrain != null and _terrain.has_method("sample_forest_existing_tree_points"):
+		for point in _terrain.call("sample_forest_existing_tree_points"):
+			_tree_positions.append(point)
 	_counts.clear()
 	_make_meshes()
 	var buckets: Dictionary = {}

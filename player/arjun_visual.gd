@@ -140,7 +140,7 @@ func _process(delta: float) -> void:
 		if motion_tree != null:
 			var rest_progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
 			var seated: float = smoothstep(0.0, 0.38, rest_progress) * (1.0 - smoothstep(0.38, 0.9, rest_progress))
-			motion_tree.update_rest(delta, seated)
+			motion_tree.update_rest(delta, seated, rest_progress, actor.get_meta("rest_waking", false))
 		_pose_rest(delta)
 		return
 	if motion_tree != null and motion_tree.rest_blend > 0.0:
@@ -357,7 +357,7 @@ func _pose_seated(delta: float) -> void:
 	for solver in climb_ik.values(): solver.influence = 0.0
 	var weight := 1.0-exp(-9.0*delta)
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
-	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
+	model.position = model.position.lerp(Vector3(0,-.9+.22*mantle_shift,0),weight)
 	breath += delta*1.8
 	for side in ["l","r"]:
 		var spread := 1.0 if side=="l" else -1.0
@@ -517,12 +517,13 @@ func _pose_climb(delta: float) -> void:
 	var t: float = clampf(component.progress,0.0,1.0)
 	if motion_tree != null: motion_tree.update_climb(delta, t)
 	var weight := 1.0-exp(-15.0*delta)
-	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
+	var mantle_shift: float = smoothstep(.70,.84,t)*(1.0-smoothstep(.91,1.0,t))
+	model.rotation.x = lerpf(model.rotation.x,.36*mantle_shift,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	# Four beats: reach, alternating handholds, a two-handed mantle, then recovery.
 	var ledge_y: float = component.landing.y-.94
 	var base_y: float = component.hold_base_y if component.has_holds else ledge_y-4.8+.42
-	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.96,t))
+	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.91,t))
 	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
 		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds else (-.42 if side=="l" else .42)

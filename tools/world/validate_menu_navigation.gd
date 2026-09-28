@@ -40,7 +40,7 @@ func validate() -> void:
 	change_scene_to_file("res://ui/main_menu.tscn")
 	for i in 3: await process_frame
 	var menu: Control = current_scene
-	var continue_button := button_with_text(menu.column,"Continue")
+	var continue_button := button_with_text(menu.main_panel,"Continue")
 	check(continue_button != null and not continue_button.disabled,"Title Continue was unavailable")
 	if continue_button: continue_button.pressed.emit()
 	for i in 5: await process_frame

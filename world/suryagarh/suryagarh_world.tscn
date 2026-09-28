@@ -21,6 +21,9 @@
 [ext_resource type="Script" path="res://world/suryagarh/live_carts.gd" id="live_carts"]
 
 [ext_resource type="PackedScene" path="res://world/ruined_fort/fort_world_piece.tscn" id="fort"]
+[ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="forest_generator"]
+[ext_resource type="Script" path="res://environment/forest/adapters/suryagarh_terrain_adapter.gd" id="forest_adapter"]
+[ext_resource type="Resource" path="res://environment/forest/config/suryagarh_patch.tres" id="forest_config"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)

@@ -54,7 +54,9 @@ func try_start() -> bool:
 	if not space.intersect_shape(shape,1).is_empty(): return false
 	start = actor.global_position
 	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.28
-	crest = Vector3(hit.position.x,top+1.1,hit.position.z)+wall_normal*.27
+	# Stop the vertical pull with the boots below the coping. The last phase
+	# must carry the hips and trailing feet over the lip before landing.
+	crest = Vector3(hit.position.x,top+0.72,hit.position.z)+wall_normal*.27
 	# Keep tall climbs at a human climbing pace; a short ledge still uses the
 	# original quick reach and mantle timing.
 	duration = maxf(2.4, (crest.y - grip.y) / .85 + .95)

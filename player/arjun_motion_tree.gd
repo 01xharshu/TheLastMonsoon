@@ -10,6 +10,8 @@ var foot_contact_offset := 0.0
 var skeleton: Skeleton3D
 var idle_foot_y := 0.0
 var rest_blend := 0.0
+var sit_down_seconds := 1.5
+var stand_up_seconds := 1.5
 var climb_blend := 0.0
 var pistol_aim_blend := 0.0
 var pistol_reload_blend := 0.0
@@ -25,6 +27,8 @@ func configure(model: Node3D) -> bool:
 		push_error("Arjun animation tree needs an AnimationPlayer")
 		return false
 	var source: AnimationPlayer = players[0]
+	if source.has_animation("sit_down"): sit_down_seconds = source.get_animation("sit_down").length
+	if source.has_animation("stand_up"): stand_up_seconds = source.get_animation("stand_up").length
 	var rigs := model.find_children("*", "Skeleton3D", true, false)
 	if rigs.is_empty():
 		push_error("Arjun animation tree needs a Skeleton3D")
@@ -75,7 +79,13 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("longgun_aim", longgun_aim)
 	graph.add_node("longgun_ready_pose", _clip("motion/longgun_ready"))
 	graph.add_node("longgun_aim_pose", _clip("motion/longgun_aim"))
-	graph.add_node("sit", _clip("motion/sit_idle"))
+	graph.add_node("sit_down", _clip("motion/sit_down"))
+	graph.add_node("stand_up", _clip("motion/stand_up"))
+	graph.add_node("sit_down_seek", AnimationNodeTimeSeek.new())
+	graph.add_node("stand_up_seek", AnimationNodeTimeSeek.new())
+	graph.add_node("sit_transition", AnimationNodeBlend2.new())
+	graph.add_node("sit_idle", _clip("motion/sit_idle"))
+	graph.add_node("sit", AnimationNodeBlend2.new())
 	graph.add_node("rest", AnimationNodeBlend2.new())
 	var climb := AnimationNodeBlendSpace1D.new()
 	climb.min_space = 0.0
@@ -91,6 +101,12 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("longgun_aim", 0, "longgun_ready")
 	graph.connect_node("longgun_aim", 1, "longgun_aim_pose")
 	graph.connect_node("rest", 0, "longgun_aim")
+	graph.connect_node("sit_down_seek", 0, "sit_down")
+	graph.connect_node("stand_up_seek", 0, "stand_up")
+	graph.connect_node("sit_transition", 0, "sit_down_seek")
+	graph.connect_node("sit_transition", 1, "stand_up_seek")
+	graph.connect_node("sit", 0, "sit_transition")
+	graph.connect_node("sit", 1, "sit_idle")
 	graph.connect_node("rest", 1, "sit")
 	graph.connect_node("climb", 0, "rest")
 	graph.connect_node("climb", 1, "climb_pose")
@@ -245,10 +261,18 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	var correction := clampf((_lowest_foot_y() - idle_foot_y) + ground_blend * 0.04, 0.0, 0.20)
 	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend), weight)
 
-func update_rest(delta: float, seated_weight: float) -> void:
+func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false) -> void:
 	rest_blend = clampf(seated_weight, 0.0, 1.0)
+	longgun_ready_blend = 0.0
+	longgun_aim_blend = 0.0
+	set("parameters/longgun_ready/blend_amount", 0.0)
+	set("parameters/longgun_aim/blend_amount", 0.0)
 	set("parameters/ground/blend_position", 0.0)
 	set("parameters/swim/blend_amount", 0.0)
+	set("parameters/sit_transition/blend_amount", 1.0 if waking else 0.0)
+	set("parameters/sit/blend_amount", smoothstep(0.2, 0.38, progress))
+	set("parameters/sit_down_seek/seek_request", clampf(progress / 0.38, 0.0, 1.0) * sit_down_seconds)
+	set("parameters/stand_up_seek/seek_request", clampf((0.38 - progress) / 0.38, 0.0, 1.0) * stand_up_seconds)
 	set("parameters/rest/blend_amount", rest_blend)
 	advance(delta)
 

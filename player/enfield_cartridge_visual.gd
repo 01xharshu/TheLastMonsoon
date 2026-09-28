@@ -1,5 +1,6 @@
 extends BoneAttachment3D
 ## Small paper cartridge carried by the left palm during the loading gesture.
+var hand_offset := Transform3D.IDENTITY
 
 func setup(palm_offset: Vector3, palm_basis: Basis) -> void:
 	bone_name = "hand_l"
@@ -30,8 +31,13 @@ func setup(palm_offset: Vector3, palm_basis: Basis) -> void:
 	sealed_end.material_override = fold
 	sealed_end.position.y = 0.039
 	add_child(sealed_end)
-	transform = Transform3D(palm_basis, palm_offset + palm_basis * Vector3(0.0, 0.04, 0.0))
+	hand_offset = Transform3D(palm_basis, palm_offset + palm_basis * Vector3(0.0, 0.035, -0.045))
+	set_as_top_level(true)
 	visible = false
 
 func update_loading(selected_weapon: int, stowed_weapon: bool, progress: float) -> void:
 	visible = selected_weapon == 1 and not stowed_weapon and progress >= 0.10 and progress <= 0.52
+	if not visible: return
+	var rig := get_parent() as Skeleton3D
+	var hand := rig.get_bone_global_pose(rig.find_bone("hand_l"))
+	global_transform = rig.global_transform * hand * hand_offset

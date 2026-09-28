@@ -55,6 +55,18 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: seated clip did not engage")
 		quit(1)
 		return
+	var seated_pose := skeleton.get_bone_pose_rotation(thigh)
+	tree.update_rest(0.1, 0.8, 0.15, false)
+	var entering_pose := skeleton.get_bone_pose_rotation(thigh)
+	if tree.get("parameters/sit_transition/blend_amount") > 0.01 or entering_pose.angle_to(seated_pose) < 0.01:
+		push_error("ARJUN MOTION TREE: sit-down clip not sought")
+		quit(1)
+		return
+	tree.update_rest(0.1, 0.8, 0.15, true)
+	if tree.get("parameters/sit_transition/blend_amount") < 0.99 or entering_pose.angle_to(skeleton.get_bone_pose_rotation(thigh)) < 0.01:
+		push_error("ARJUN MOTION TREE: stand-up clip did not replace sit-down")
+		quit(1)
+		return
 	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
 	tree.rest_blend = 0.0
 	tree.update_motion(0.1, 0.0, 0.0, false)
@@ -75,5 +87,5 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: long gun reload did not release aim")
 		quit(1)
 		return
-	print("ARJUN MOTION TREE: PASS | idle, walk, run, swim, sit and long gun envelopes")
+	print("ARJUN MOTION TREE: PASS | idle, walk, run, swim, sit entry/exit and long gun envelopes")
 	quit()

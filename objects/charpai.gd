@@ -58,6 +58,7 @@ func _run_sleep(player: CharacterBody3D, survival: SurvivalComponent, game_time:
 	fade_in.tween_property(black, "color:a", 0.0, 0.7)
 	await fade_in.finished
 	shade.queue_free()
+	player.set_meta("rest_waking", true)
 	var rise := create_tween()
 	rise.tween_method(func(value: float) -> void: player.set_meta("rest_progress", value), 1.0, 0.0, 0.7)
 	await rise.finished
@@ -66,5 +67,6 @@ func _run_sleep(player: CharacterBody3D, survival: SurvivalComponent, game_time:
 	player.collision_mask = saved_mask
 	player.set_meta("rest_action", "")
 	player.set_meta("rest_progress", 0.0)
+	player.remove_meta("rest_waking")
 	remove_meta("sleep_fade_covered")
 	resting = false

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ForestConfig" load_steps=2 format=3]
+[ext_resource type="Script" path="res://environment/forest/scripts/forest_config.gd" id="1"]
+[resource]
+script = ExtResource("1")
+seed = 18570928
+overall_density = 0.78
+min_height = 10.0
+max_height = 200.0
+max_slope = 0.24
+path_exclusion_radius = 3.4
+near_distance = 28.0
+medium_distance = 55.0
+far_distance = 105.0

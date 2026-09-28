@@ -7,8 +7,8 @@ extends Resource
 @export_range(0.001, 0.2, 0.001) var biome_noise_scale: float = 0.035
 @export_range(0.0, 1.0, 0.01) var biome_threshold: float = 0.15
 @export_range(0.0, 1.0, 0.01) var max_slope: float = 0.4
-@export_range(0.0, 20.0, 0.1) var min_height: float = 0.0
-@export_range(0.0, 20.0, 0.1) var max_height: float = 20.0
+@export_range(-100.0, 300.0, 0.1) var min_height: float = 0.0
+@export_range(-100.0, 300.0, 0.1) var max_height: float = 20.0
 @export_range(0.0, 2.0, 0.01) var hero_density: float = 0.35
 @export_range(0.0, 2.0, 0.01) var canopy_density: float = 0.8
 @export_range(0.0, 2.0, 0.01) var small_tree_density: float = 0.4
