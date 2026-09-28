@@ -11,6 +11,7 @@ func _run() -> void:
 	var trees: Dictionary = {}
 	var graphs: Dictionary = {}
 	var moving := 0
+	var relaxed_hands := 0
 	var transitions := 0
 	for actor in roster.get_children():
 		actor.set_process(false)
@@ -24,6 +25,13 @@ func _run() -> void:
 		graphs[tree.tree_root.get_instance_id()] = true
 		var skeleton := actor.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
 		var thigh := skeleton.find_bone("thigh_l")
+		var finger_index := skeleton.find_bone("index_02_l")
+		var finger_rest: Quaternion = actor.get("_finger_rest")[finger_index]
+		var finger_pose := skeleton.get_bone_pose_rotation(finger_index)
+		if absf(finger_rest.dot(finger_pose)) < 0.995:
+			relaxed_hands += 1
+		else:
+			errors.append(str(actor.name) + ": finger pose did not relax")
 		actor.set("movement_enabled", false)
 		actor.call("_process", 0.2)
 		var idle := skeleton.get_bone_pose_rotation(thigh)
@@ -55,8 +63,8 @@ func _run() -> void:
 	first.call("_process", 0.2)
 	var independent := first.position.is_equal_approx(fixed_position) and is_zero_approx(float(first.get("locomotion_blend"))) and is_equal_approx(float(second.get("locomotion_blend")),1.0)
 	if not independent: errors.append("Trees do not stop independently")
-	var passed := trees.size()==16 and graphs.size()==16 and moving==16 and transitions==16 and independent and errors.is_empty()
-	var report := {"passed":passed,"personal_trees":trees.size(),"personal_graphs":graphs.size(),"animated_skeletons":moving,"start_stop_idle_recovery":transitions,"independent_stop":independent,"errors":errors,"scope":"actual tree evaluation and pose changes; cloth and foot contact unapproved"}
+	var passed := trees.size()==16 and graphs.size()==16 and moving==16 and relaxed_hands==16 and transitions==16 and independent and errors.is_empty()
+	var report := {"passed":passed,"personal_trees":trees.size(),"personal_graphs":graphs.size(),"animated_skeletons":moving,"relaxed_hand_poses":relaxed_hands,"start_stop_idle_recovery":transitions,"independent_stop":independent,"errors":errors,"scope":"actual tree evaluation and pose changes; cloth and foot contact unapproved"}
 	FileAccess.open(OUTPUT,FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
 	print("BRITISH_ANIMATION_TREE ",JSON.stringify(report))
 	quit(0 if passed else 1)

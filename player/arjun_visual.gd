@@ -131,9 +131,10 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 func _process(delta: float) -> void:
 	if skeleton == null: return
 	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
-	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("river_action", "") != "" or actor.get_meta("climbing",false) or mounted or actor.get_meta("stealth_stance", "") != ""
+	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("river_action", "") != "" or mounted or actor.get_meta("stealth_stance", "") != ""
 	if motion_tree != null:
 		motion_tree.active = not special_pose
+		if not actor.get_meta("climbing", false): motion_tree.release_climb(delta)
 	if actor.get_meta("rest_action", "") != "":
 		if motion_tree != null:
 			var rest_progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
@@ -324,6 +325,14 @@ func _pose_rest(delta: float) -> void:
 		pose("foot_" + side, Vector3.ZERO, weight * lie)
 		pose("upperarm_" + side, Vector3(-0.35, 0, spread * 0.35), weight * lie)
 		pose("lowerarm_" + side, Vector3(-0.25, 0, 0), weight * lie)
+	# Keep the hips close to the woven surface while the body turns. The
+	# imported sit and idle clips place their pelvis at different rig heights.
+	skeleton.force_update_all_bone_transforms()
+	var hip_index := skeleton.find_bone("pelvis")
+	var hip_y := skeleton.to_global(skeleton.get_bone_global_pose(hip_index).origin).y
+	var desired_hip_y := actor.global_position.y - 0.17 + 0.07 * lie
+	model.position.y += clampf(desired_hip_y - hip_y, -0.25, 0.25)
+	for side in ["l", "r"]:
 		if progress < 0.62:
 			_rest_seated_foot_contact(side, smoothstep(0.12, 0.32, progress) * (1.0 - lie))
 
@@ -496,16 +505,16 @@ func _horse_foot_contact(side: String, world_target: Vector3, weight: float) -> 
 
 func _pose_climb(delta: float) -> void:
 	for solver in climb_ik.values():
-		if not solver.is_running(): solver.start()
+		# The AnimationTree is advanced manually; solve contact after that pose.
+		solver.influence = 0.0
+		if solver.is_running(): solver.stop()
 	var component: Node = actor.get_node("ClimbComponent")
 	var t: float = clampf(component.progress,0.0,1.0)
+	if motion_tree != null: motion_tree.update_climb(delta, t)
 	var weight := 1.0-exp(-15.0*delta)
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	# Four beats: reach, alternating handholds, a two-handed mantle, then recovery.
-	var reach: float = smoothstep(0.0,.14,t)
-	var mantle: float = smoothstep(.68,.88,t)
-	var settle: float = smoothstep(.91,1.0,t)
 	var ledge_y: float = component.landing.y-.94
 	var base_y: float = ledge_y-4.8
 	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.96,t))
@@ -522,21 +531,13 @@ func _pose_climb(delta: float) -> void:
 		top_target.y=ledge_y+.08
 		top_target+=wall_tangent*side_offset
 		climb_targets[side].global_position=climb_targets[side].global_position.lerp(face.lerp(top_target,smoothstep(.68,.82,t)),clampf(delta*13.0,0.0,1.0))
-		climb_ik[side].influence=contact_blend
-	var step_cycle: float = t*TAU*2.5
-	pose("pelvis",Vector3(-.09*(1.0-mantle),sin(step_cycle)*.05*(1.0-mantle),0),weight)
-	pose("spine_01",Vector3(-.22*(1.0-mantle)+.38*mantle*(1.0-settle),0,0),weight)
-	pose("spine_02",Vector3(-.14*(1.0-mantle)+.25*mantle*(1.0-settle),0,0),weight)
-	pose("head",Vector3(.13*(1.0-mantle)-.16*mantle*(1.0-settle),0,0),weight)
-	for side in ["l","r"]:
-		var offset: float=0.0 if side=="l" else PI
-		var pull: float=maxf(0.0,sin(step_cycle+offset))*(1.0-mantle)
-		var upper: Vector3=Vector3(-1.65+.6*pull,-.08,(-.22 if side=="l" else .22))
-		upper=upper.lerp(Vector3(-.75,0,(-.13 if side=="l" else .13)),mantle)
-		upper=upper.lerp(Vector3.ZERO,settle)
-		pose("upperarm_"+side,upper*reach,weight)
-		pose("lowerarm_"+side,Vector3(-.35-1.05*pull,0,0)*reach*(1.0-settle),weight)
-		var knee: float=maxf(0.0,sin(step_cycle+offset+PI*.55))*(1.0-mantle)
-		pose("thigh_"+side,Vector3(.4+.75*knee+.65*mantle,0,0)*reach*(1.0-settle),weight)
-		pose("calf_"+side,Vector3(-.45-1.05*knee-.25*mantle,0,0)*reach*(1.0-settle),weight)
-		pose("foot_"+side,Vector3(.15+.25*knee,0,0)*reach*(1.0-settle),weight)
+	# Solve from the final blended rig pose. SkeletonIK's separate update order
+	# left the wrists more than a hand width away on this tall wall.
+	skeleton.force_update_all_bone_transforms()
+	for side in ["l", "r"]:
+		var hand_index: int = skeleton.find_bone("hand_" + side)
+		var wrist: Vector3 = skeleton.get_bone_global_pose(hand_index).origin
+		var target_local: Vector3 = skeleton.to_local(climb_targets[side].global_position)
+		var desired: Vector3 = wrist.lerp(target_local, contact_blend)
+		for pass_index in 3:
+			equipment._solve_arm(side, desired)

@@ -1,0 +1,11 @@
+{
+  "status": "visual_candidate_unapproved",
+  "source": "characters/npcs/village_farmer.glb",
+  "base_license": "MPFB core CC0-1.0",
+  "roles": [
+    "daroga",
+    "mohurrir",
+    "burkundaz"
+  ],
+  "scope": "stationary staff inside DistrictPolice only"
+}

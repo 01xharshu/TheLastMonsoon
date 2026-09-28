@@ -166,7 +166,7 @@ func _ready() -> void:
 
 	third_person_height = camera_pivot.position.y
 	third_person_distance = $CameraPivot/SpringArm3D.spring_length
-	third_person_distance = minf(third_person_distance, 1.8)
+	third_person_distance = minf(third_person_distance, 1.25)
 	camera_pitch = camera_pivot.rotation.x
 	$CameraPivot/SpringArm3D.add_excluded_object(get_rid())
 	aim_sound = AudioStreamPlayer.new()
@@ -522,7 +522,7 @@ func _update_weapon_camera(delta: float) -> void:
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
 	var arm: SpringArm3D = $CameraPivot/SpringArm3D
 	arm.spring_length = lerpf(third_person_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
-	arm.position.x = lerpf(0.55, 0.50, aim_blend)
+	arm.position.x = lerpf(0.6, 0.50, aim_blend)
 	var stance_height: float = $StealthStance.camera_height()
 	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
@@ -737,6 +737,8 @@ func _find_interactable() -> Interactable:
 	var forward: Vector3 = -camera_pivot.global_basis.z if first_person else visual_root.global_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
+	var view_camera: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+	var view_rect: Rect2 = get_viewport().get_visible_rect()
 	var best: Interactable
 	var best_score := -INF
 	var origin := global_position + Vector3.UP * 0.2
@@ -744,6 +746,11 @@ func _find_interactable() -> Interactable:
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
 		var candidate := node as Interactable
 		if candidate == null or not candidate.interaction_available(): continue
+		var screen_point := Vector2.ZERO
+		if view_camera != null:
+			if view_camera.is_position_behind(candidate.interaction_anchor()): continue
+			screen_point = view_camera.unproject_position(candidate.interaction_anchor())
+			if not view_rect.has_point(screen_point): continue
 		var offset := candidate.global_position - global_position
 		var distance := offset.length()
 		if distance > candidate.interaction_max_distance: continue
@@ -755,6 +762,8 @@ func _find_interactable() -> Interactable:
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider != candidate: continue
 		var score := alignment * 2.0 - distance * 0.25
+		if candidate.is_in_group("weapon_pickups") and view_camera != null:
+			score -= screen_point.distance_to(view_rect.size * 0.5) / maxf(view_rect.size.y, 1.0) * 1.5
 		if score > best_score:
 			best = candidate
 			best_score = score

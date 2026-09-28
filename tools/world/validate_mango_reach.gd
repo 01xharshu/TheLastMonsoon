@@ -25,6 +25,7 @@ func validate() -> void:
 	world.add_child(player)
 	player.global_position = Vector3(0,0.9,0)
 	player.set_physics_process(false)
+	player.get_node("CameraPivot/SpringArm3D/Camera3D").set_process(false)
 	player.set_process_unhandled_input(false)
 	var visual = player.get_node("VisualRoot/CharacterVisual")
 	var component = player.get_node("InteractionPoseComponent")
@@ -50,6 +51,7 @@ func validate() -> void:
 	camera.position = Vector3(-1.7,1.25,1.8)
 	camera.look_at(Vector3(0,0.65,0.15))
 	camera.make_current()
+	player.get_node("CameraPivot/SpringArm3D/Camera3D").global_transform = camera.global_transform
 	root.mode = Window.MODE_WINDOWED
 	root.size = Vector2i(1280,720)
 	root.grab_focus()
@@ -64,6 +66,7 @@ func validate() -> void:
 		var fruit = load("res://objects/mango.gd").new()
 		world.add_child(fruit)
 		fruit.position = offset
+		player.get_node("CameraPivot/SpringArm3D/Camera3D").global_transform = camera.global_transform
 		player._update_interaction()
 		if offset.z > 0.7:
 			check(player.current_interactable != fruit, "Unreachable fruit should require closer approach")
@@ -138,6 +141,7 @@ func validate() -> void:
 		check(component.carried_mango.visible,"Successful action has no held fruit")
 		var largest_step := 0.0
 		var previous_palm: Vector3 = component.carried_start
+		var bite_head_rotation := Quaternion.IDENTITY
 		for frame in 110:
 			visual._process(1.0/60.0)
 			component._process(1.0/60.0)
@@ -146,7 +150,10 @@ func validate() -> void:
 			if component.ground_pickup: largest_step = maxf(largest_step,previous_palm.distance_to(palm))
 			previous_palm = palm
 			if frame in [15,44,59]: await capture(mode + "_" + str(frame))
+			if frame == 54 and mode == "eat": bite_head_rotation = visual.skeleton.get_bone_pose_rotation(visual.skeleton.find_bone("head"))
 			if frame == 59 and mode == "eat":
+				check(bite_head_rotation.angle_to(visual.skeleton.get_bone_pose_rotation(visual.skeleton.find_bone("head"))) > 0.006,"Eating head did not react to bite")
+				check(component.carried_mango.mesh == component.bitten_mango_mesh,"Eating showed no bite")
 				var head: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("head")).origin)
 				check(palm.distance_to(head+visual.global_basis*Vector3(0,-0.085,0.15)) < 0.06,"Eating hand missed mouth target")
 		check(not component.ground_pickup and not component.carried_mango.visible,"Action left fruit/pose active")
@@ -154,6 +161,7 @@ func validate() -> void:
 		check(largest_step < 0.15,"Carried action snapped hand")
 		samples.append({"mode":mode,"largest_frame_palm_step_m":largest_step})
 	player.set_first_person(true)
+	player.get_node("CameraPivot/SpringArm3D/Camera3D").make_current()
 	player.first_person_view.set_process(false)
 	player.survival.satiety = 40.0
 	player.consumables.eat_fresh_mango()
@@ -161,7 +169,9 @@ func validate() -> void:
 		visual._process(1.0/60.0)
 		component._process(1.0/60.0)
 		player.first_person_view._process(1.0/60.0)
+		if frame in [15,44,59]: await capture("first_person_eat_" + str(frame))
 	check(player.first_person_view.carried_mango.visible,"First-person fruit missing")
+	check(player.first_person_view.carried_mango.mesh == component.bitten_mango_mesh,"First-person bite did not sync")
 	check(not component.carried_root.visible,"First-person rendered duplicate world fruit")
 	player.set_meta("rest_action","sit")
 	component._process(1.0/60.0)
@@ -169,6 +179,50 @@ func validate() -> void:
 	check(not player.first_person_view.carried_mango.visible,"Interrupted first-person fruit remained")
 	player.remove_meta("rest_action")
 	player.set_first_person(false)
+	camera.make_current()
+	var slope := StaticBody3D.new()
+	var slope_shape := CollisionShape3D.new()
+	var slope_box := BoxShape3D.new()
+	slope_box.size = Vector3(3,0.1,3)
+	slope_shape.shape = slope_box
+	slope.add_child(slope_shape)
+	var slope_visual := MeshInstance3D.new()
+	var slope_mesh := BoxMesh.new()
+	slope_mesh.size = slope_box.size
+	slope_visual.mesh = slope_mesh
+	slope_visual.material_override = material
+	slope.add_child(slope_visual)
+	world.add_child(slope)
+	plane.hide()
+	slope.position.y = -0.05
+	slope.rotation.z = 0.18
+	await physics_frame
+	var slope_fruit = load("res://objects/mango.gd").new()
+	world.add_child(slope_fruit)
+	slope_fruit.position = Vector3(0.15,0.16,0.45)
+	player._begin_interaction_hold(slope_fruit,"interact")
+	for frame in 30:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+		carried._process(1.0/60.0)
+	var max_ground_error := 0.0
+	for side in ["l","r"]:
+		var ankle: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_"+side)).origin)
+		var query := PhysicsRayQueryParameters3D.create(ankle+Vector3.UP*0.35,ankle+Vector3.DOWN*0.45)
+		query.exclude = [player.get_rid()]
+		var hit: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
+		check(not hit.is_empty(),"Slope foot has no ground")
+		if not hit.is_empty(): max_ground_error = maxf(max_ground_error,absf((ankle.y-hit.position.y)-0.07))
+	check(max_ground_error < 0.015,"Slope boot ankle did not follow ground")
+	samples.append({"mode":"slope","boot_sole_error_m":max_ground_error})
+	await capture("slope")
+	player._hide_interaction_labels()
+	for frame in 30:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+	slope_fruit.queue_free()
+	slope.queue_free()
+	plane.show()
 	player.survival.satiety = 100.0
 	player.survival.hydration = 100.0
 	check(not player.consumables.eat_fresh_mango(),"Full player ate fruit")

@@ -15,6 +15,10 @@ var previous_stowed := true
 var pickup_weapon := -1
 var carried_root: Node3D
 var carried_mango: MeshInstance3D
+var whole_mango_mesh: Mesh
+var bitten_mango_mesh: Mesh
+var whole_mango_material: StandardMaterial3D
+var bitten_mango_material: StandardMaterial3D
 var carried_action := ""
 var carried_elapsed := 0.0
 var carried_start := Vector3.ZERO
@@ -27,11 +31,17 @@ func _ready() -> void:
 	var mesh := SphereMesh.new()
 	mesh.radius = 0.05
 	mesh.height = 0.13
-	carried_mango.mesh = mesh
+	whole_mango_mesh = mesh
+	bitten_mango_mesh = _make_bitten_mango(mesh)
+	carried_mango.mesh = whole_mango_mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.93,0.53,0.07)
 	material.roughness = 0.75
-	carried_mango.material_override = material
+	whole_mango_material = material
+	bitten_mango_material = material.duplicate()
+	bitten_mango_material.vertex_color_use_as_albedo = true
+	bitten_mango_material.albedo_color = Color(0.92, 0.78, 0.55)
+	carried_mango.material_override = whole_mango_material
 	carried_root = Node3D.new()
 	add_child(carried_root)
 	carried_root.add_child(carried_mango)
@@ -92,6 +102,8 @@ func complete_mango(eat: bool) -> void:
 	carried_elapsed = 0.0
 	var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_r"))
 	carried_start = visual.skeleton.to_global(hand * visual.equipment.palm_offsets["r"])
+	carried_mango.mesh = whole_mango_mesh
+	carried_mango.material_override = whole_mango_material
 	carried_mango.show()
 
 func _begin_ground_pickup() -> void:
@@ -107,14 +119,26 @@ func _begin_ground_pickup() -> void:
 	visual.equipment._refresh()
 	for side in ["l", "r"]:
 		var foot: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_" + side))
-		foot_anchors[side] = visual.skeleton.to_global(foot.origin)
-		foot_bases[side] = visual.skeleton.global_basis * foot.basis
+		var ankle: Vector3 = visual.skeleton.to_global(foot.origin)
+		var basis: Basis = visual.skeleton.global_basis * foot.basis
+		var query := PhysicsRayQueryParameters3D.create(ankle + Vector3.UP * 0.35, ankle + Vector3.DOWN * 0.45)
+		query.exclude = [actor.get_rid()]
+		var ground := actor.get_world_3d().direct_space_state.intersect_ray(query)
+		if not ground.is_empty() and ground.normal.y > 0.70 and absf((ankle.y - ground.position.y) - 0.07) < 0.20:
+			# This rig's ankle is 7 cm above the sole on level ground.
+			ankle.y = ground.position.y + 0.07
+			basis = Basis(Quaternion(Vector3.UP, ground.normal)) * basis
+		foot_anchors[side] = ankle
+		foot_bases[side] = basis
 
 func _process_ground_pickup(delta: float, active: bool) -> void:
 	# Settle before the short hold completes, then leave the hand at the fruit
 	# briefly during recovery without keeping a reference to a freed pickup.
 	if not carried_action.is_empty():
 		carried_elapsed += delta
+		if carried_action == "eat" and carried_elapsed >= 0.88:
+			carried_mango.mesh = bitten_mango_mesh
+			carried_mango.material_override = bitten_mango_material
 		active = false
 	if active:
 		release_linger = 0.08
@@ -133,6 +157,9 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 	visual.pose("spine_01", Vector3(0.50, 0, 0), weight)
 	visual.pose("spine_02", Vector3(0.25, 0, 0), weight)
 	visual.pose("head", Vector3(-0.20, 0, 0), weight)
+	if carried_action == "eat":
+		var reaction := smoothstep(0.82, 0.92, carried_elapsed) * (1.0 - smoothstep(1.22, 1.48, carried_elapsed))
+		visual.pose("head", Vector3(-0.035 * sin((carried_elapsed - 0.82) * TAU * 5.0), 0, 0), reaction)
 	visual.pose("upperarm_l", Vector3(-0.25, 0, -0.25), weight)
 	visual.pose("lowerarm_l", Vector3(-0.60, 0, 0), weight)
 	for side in (["l", "r"] if weight > 0.001 else []):
@@ -188,6 +215,25 @@ func _finish_ground_pickup() -> void:
 	if visual.equipment.selected == pickup_weapon and visual.equipment.stowed and not visual.equipment.swimming:
 		visual.equipment.stowed = previous_stowed
 		visual.equipment._refresh()
+
+func _make_bitten_mango(source: SphereMesh) -> ArrayMesh:
+	var arrays := source.get_mesh_arrays()
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var colors := PackedColorArray()
+	colors.resize(vertices.size())
+	for i in vertices.size():
+		var point := vertices[i]
+		var radial := Vector2(point.x, point.y - 0.03).length()
+		var depth := smoothstep(0.042, 0.012, radial) * smoothstep(0.0, 0.025, point.z)
+		point.z -= 0.038 * depth
+		point.y -= 0.006 * depth
+		vertices[i] = point
+		colors[i] = Color(0.93, 0.53, 0.07).lerp(Color(1.0, 0.86, 0.52), depth)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_COLOR] = colors
+	var bitten := ArrayMesh.new()
+	bitten.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return bitten
 
 func _set_world_basis(bone: String, world_basis: Basis) -> void:
 	var rig: Skeleton3D = visual.skeleton

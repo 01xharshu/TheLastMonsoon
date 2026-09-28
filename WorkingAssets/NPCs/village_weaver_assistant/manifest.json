@@ -1,0 +1,11 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend",
+  "source_sha256": "2aacb78c160a4b1c1bcbdfd8c6a8cc406554a16edd01f64c78ecd3ac67b234c5",
+  "runtime": "characters/npcs/village_weaver_assistant.glb",
+  "runtime_sha256": "b3b6d53f90dcb701e8607d5252df16c9fd53418a60dced3d270d0897987159a3",
+  "mpfb_core_assets_license": "CC0-1.0",
+  "bone_count": 53,
+  "mesh_count": 10,
+  "body_vertices": 19158
+}

@@ -1,0 +1,37 @@
+{
+	"failures": [],
+	"renderer": "forward_plus",
+	"results": [
+		{
+			"check": "BhairavpurWoodenBucket sprint",
+			"crossed": false,
+			"pass": true,
+			"touched": true
+		},
+		{
+			"check": "BhairavpurBrassPot sprint",
+			"crossed": false,
+			"pass": true,
+			"touched": true
+		},
+		{
+			"check": "BhairavpurWickerBasket sprint",
+			"crossed": false,
+			"pass": true,
+			"touched": true
+		},
+		{
+			"check": "compound gate lane",
+			"finish": "(345.0, 12.98, 282.5031)",
+			"pass": true,
+			"touched_prop": false
+		},
+		{
+			"check": "village aisle",
+			"finish": "(-306.9966, 8.1, 230.0)",
+			"pass": true,
+			"touched_prop": false
+		}
+	],
+	"status": "PASS"
+}

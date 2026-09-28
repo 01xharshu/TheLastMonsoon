@@ -37,6 +37,9 @@ func _run() -> void:
 	for i in 6:
 		visual._process(1.0 / 60.0)
 		await process_frame
+	var grip_error: float = visual.equipment.held_contact_errors()["pistol_palm_m"]
+	var barrel_direction: Vector3 = visual.equipment.pistol_hand.global_basis.x.normalized()
+	print("AIM GRIP palm_m=", grip_error, " barrel_dot_camera=", barrel_direction.dot(-camera.global_basis.z))
 	await RenderingServer.frame_post_draw
 	var path := "/tmp/tlm_aim_camera_reference.png"
 	assert(root.get_texture().get_image().save_png(path) == OK)

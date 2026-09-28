@@ -15,6 +15,8 @@ func _run() -> void:
 	for i in 12: await physics_frame
 	var actor: CharacterBody3D = world.get_node("Player")
 	actor.set_physics_process(false)
+	actor.get_node("RifleCombat").set_process(false)
+	actor.get_node("DoubleGunCombat").set_process(false)
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	visual.set_process(false)
 	actor.get_node("UI").hide()

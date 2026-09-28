@@ -1,0 +1,11 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend",
+  "source_sha256": "405107b1c97937d80e3d4167026bae2fa3f22deaa6c79248c5d129248ba326d9",
+  "runtime": "characters/npcs/village_fruit_seller.glb",
+  "runtime_sha256": "30103b8dec71bbd1c3692069c92115c306bea15619a7aa3f66cecebfa7d174e9",
+  "mpfb_core_assets_license": "CC0-1.0",
+  "bone_count": 53,
+  "mesh_count": 8,
+  "body_vertices": 19158
+}

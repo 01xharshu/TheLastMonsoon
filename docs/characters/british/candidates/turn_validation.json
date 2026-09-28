@@ -1,0 +1,103 @@
+{
+  "actors": [
+    {
+      "actor": "PrivateMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "CorporalMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "CorporalWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "SergeantMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "SergeantWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "LieutenantMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "LieutenantWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "CaptainMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "CaptainWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "MajorMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "MajorWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "ColonelMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.05499267578125,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "ColonelWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "OfficialMan",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.0250015258789062,
+      "stationary_turn_drift_m": 0.0
+    },
+    {
+      "actor": "OfficialWoman",
+      "return_heading_dot": 1.0,
+      "return_step_m": 0.04498291015625,
+      "stationary_turn_drift_m": 0.0
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "scope": "0.5s root turn, stationary anchor and first return step; foot/mesh turn contact remains visual review"
+}

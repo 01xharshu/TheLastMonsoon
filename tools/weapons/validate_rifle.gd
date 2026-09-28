@@ -69,8 +69,12 @@ func run() -> void:
 	rifle.reload_remaining = 4.4
 	visual._process(1.0/60.0)
 	var early_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
+	rifle.reload_remaining = 3.4
+	visual._process(1.0/60.0)
+	check(visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge was absent at the loading hand")
 	rifle.reload_remaining = 1.8
 	visual._process(1.0/60.0)
+	check(not visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge remained after the loading gesture")
 	var loading_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
 	check(early_left.distance_to(loading_left) > 0.06,"Enfield loading hand did not move")
 	check(visual.equipment.reload_progress > 0.5,"Enfield reload pose did not follow timer")

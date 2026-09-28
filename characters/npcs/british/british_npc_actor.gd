@@ -16,6 +16,8 @@ var _bones: Dictionary = {}
 var _base_rotations: Dictionary = {}
 var _pitch_axes: Dictionary = {}
 var _yaw_axes: Dictionary = {}
+var _finger_rest: Dictionary = {}
+var _finger_pitch: Dictionary = {}
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend: float = 0.0
@@ -64,6 +66,17 @@ func _ready() -> void:
 		var inverse := _skeleton.get_bone_global_pose(_bones[bone_name]).basis.orthonormalized().inverse()
 		_pitch_axes[bone_name] = (inverse * Vector3.RIGHT).normalized()
 		_yaw_axes[bone_name] = (inverse * Vector3.UP).normalized()
+	# Relax the imported spread fingers without adding hundreds of clip tracks.
+	for side in ["l", "r"]:
+		for finger in ["index", "middle", "ring", "pinky", "thumb"]:
+			for joint in ["01", "02", "03"]:
+				var bone_name: String = finger + "_" + joint + "_" + side
+				var index := _skeleton.find_bone(bone_name)
+				if index < 0:
+					continue
+				_finger_rest[index] = _skeleton.get_bone_pose_rotation(index)
+				var inverse := _skeleton.get_bone_global_pose(index).basis.orthonormalized().inverse()
+				_finger_pitch[index] = (inverse * Vector3.RIGHT).normalized()
 	animation_player = AnimationPlayer.new()
 	animation_player.name = "PersonalAnimationPlayer"
 	add_child(animation_player)
@@ -145,7 +158,7 @@ func _make_clip(walking: bool) -> Animation:
 				"calf_r": angle = 0.35 * maxf(0.0, -stride) if walking else 0.0
 				"upperarm_l": angle = (0.10 if female else 0.16) * stride if walking else 0.012 * stride
 				"upperarm_r": angle = -(0.10 if female else 0.16) * stride if walking else -0.012 * stride
-				"lowerarm_l", "lowerarm_r": angle = -0.10 - (0.04 * absf(stride) if walking else 0.0)
+				"lowerarm_l", "lowerarm_r": angle = 0.08 + (0.02 * absf(stride) if walking else 0.0)
 				"foot_l": angle = ((0.22 if female else 0.32) * stride - 0.35 * maxf(0.0, stride)) if walking else 0.0
 				"foot_r": angle = (-(0.22 if female else 0.32) * stride - 0.35 * maxf(0.0, -stride)) if walking else 0.0
 			var base: Quaternion = _base_rotations[bone_name]
@@ -164,20 +177,29 @@ func _process(delta: float) -> void:
 	var axis := patrol_axis.normalized()
 	var progress := 0.0
 	var walking := false
+	var turning := false
+	var direction := axis
 	if segment < 2.0:
 		walking = true
 		progress = segment / 2.0
 	elif segment < 4.0:
 		progress = 1.0
-	elif segment < 6.0:
+	elif segment < 4.5:
+		progress = 1.0
+		turning = true
+		direction = -axis
+	elif segment < 6.5:
 		walking = true
-		progress = 1.0 - (segment - 4.0) / 2.0
+		direction = -axis
+		progress = 1.0 - (segment - 4.5) / 2.0
+	else:
+		direction = -axis
 	var previous := position
 	position = _home + axis * patrol_distance * progress
 	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
-	if walking:
-		var direction := axis if segment < 2.0 else -axis
-		rotation.y = atan2(direction.x, direction.z)
+	if walking or turning:
+		var target_yaw := atan2(direction.x, direction.z)
+		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * delta if delta > 0.0 else PI)
 	_set_animation(&"walk" if walking else &"idle", delta)
 
 func _set_animation(state: StringName, delta: float) -> void:
@@ -192,6 +214,12 @@ func _set_animation(state: StringName, delta: float) -> void:
 	if foot_plant.skeleton != null:
 		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))
+	for index in _finger_rest:
+		var finger_name := _skeleton.get_bone_name(index)
+		var curl := 0.22 if "_01_" in finger_name else (0.32 if "_02_" in finger_name else 0.18)
+		if finger_name.begins_with("thumb"):
+			curl *= 0.55
+		_skeleton.set_bone_pose_rotation(index, _finger_rest[index] * Quaternion(_finger_pitch[index], curl))
 	if foot_plant.skeleton != null:
 		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
 		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:

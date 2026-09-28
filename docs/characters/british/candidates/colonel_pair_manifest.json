@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/colonel_woman.glb",
-      "sha256": "72356a12a7f8b482c1ab08d7270d9e56fc42fec48b2c5f48097970013fab8e29",
-      "bytes": 1864548
+      "sha256": "4e49a47e39f40cf507db823e72f9553ae7ae84a6585aac76e9755955cef375bc",
+      "bytes": 1933500
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

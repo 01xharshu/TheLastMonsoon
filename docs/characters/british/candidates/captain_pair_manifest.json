@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/captain_woman.glb",
-      "sha256": "262099317601553b7b39060e840e701b3a0d8dd63349bab11d4021b455ecc7c5",
-      "bytes": 1550288
+      "sha256": "8a18ba63b023ebbf8c28ab0169352dcdc8b78298b28973a6439a7f5790db6142",
+      "bytes": 1619232
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

@@ -42,8 +42,9 @@ var ramrod_rest: Dictionary = {}
 var enfield_cartridge: BoneAttachment3D
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
 const PISTOL_SCALE := 0.72
-const ENFIELD_SCALE := 1.39065 / 1.41 # Smithsonian P53 overall length / audited source length.
-const DOUBLE_GUN_SCALE := 0.72
+# Gameplay fit on the current rig; source GLBs keep their original dimensions.
+const ENFIELD_SCALE := 0.85 # 1.20 m rendered length from a 1.41 m source.
+const DOUBLE_GUN_SCALE := 0.77 # 1.20 m rendered length from a 1.558 m source.
 
 func attach_at_rest(bone: String, scene: PackedScene, placement: Transform3D, label: String) -> Node3D:
 	var socket := BoneAttachment3D.new()
@@ -234,7 +235,9 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		var side_axis := barrel.cross(Vector3.UP).normalized()
 		if side_axis.length_squared() < 0.1: side_axis = Vector3.LEFT
 		var gun_basis := Basis(barrel,side_axis.cross(barrel),side_axis)
-		var grip := Vector3(-0.16,1.51,0.13)-barrel*recoil
+		# Seat the butt below the cheek and ahead of the neck, then let both
+		# palms solve to the scaled receiver and forward support.
+		var grip := Vector3(-0.16, 1.43, 0.22 if selected == Selection.DOUBLE_GUN else 0.18) - barrel * recoil
 		longgun.global_transform = skeleton.global_transform*Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
 	else:
 		longgun.transform = double_rest_transform if selected == Selection.DOUBLE_GUN else rifle_rest_transform

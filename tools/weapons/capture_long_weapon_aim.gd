@@ -29,6 +29,7 @@ func _run() -> void:
 	var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 	camera.make_current()
 	actor.get_node("RifleCombat").aiming = true
+	actor.get_node("RifleCombat").set_process(false)
 	actor.camera_pivot.rotation = Vector3(0.0, PI, 0.0)
 	visual.equipment.aim_direction = -camera.global_basis.z
 	actor.aim_blend = 1.0
@@ -37,6 +38,7 @@ func _run() -> void:
 	for i in 6:
 		visual._process(1.0 / 60.0)
 		await process_frame
+	print("LONG AIM gun_visible=", visual.equipment.enfield_hand.visible, " gun=", visual.equipment.enfield_hand.global_position, " screen=", camera.unproject_position(visual.equipment.enfield_hand.global_position), " camera=", camera.global_position, " grip_errors=", visual.equipment.grip_errors(), " reload=", visual.equipment.reload_progress, " aiming=", visual.equipment.aiming)
 	await RenderingServer.frame_post_draw
 	var path := "/tmp/tlm_aim_long_enfield.png"
 	assert(root.get_texture().get_image().save_png(path) == OK)

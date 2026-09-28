@@ -1,7 +1,7 @@
 {
 	"failures": [],
 	"passed": true,
-	"rendered": false,
+	"rendered": true,
 	"samples": [
 		{
 			"foot_drift_m": 0.000000166641697774139,
@@ -22,6 +22,10 @@
 		{
 			"largest_frame_palm_step_m": 0.00858273170888424,
 			"mode": "store"
+		},
+		{
+			"boot_sole_error_m": 0.000000141859054558768,
+			"mode": "slope"
 		}
 	]
 }

@@ -11,6 +11,15 @@ func _run() -> void:
  for p in store.find_children("*","StaticBody3D",true,false):
   if p.is_in_group("weapon_pickups"): pickups.append(p)
  assert(pickups.size() == 5)
+ for pickup in pickups:
+  if not pickup.weapon_id in ["talwar", "bow", "pistol"]: continue
+  for side in [-0.45, 0.45]:
+   actor.global_position = pickup.to_global(Vector3(side,-.6,1.8))
+   var toward: Vector3 = pickup.global_position - actor.global_position
+   actor.get_node("VisualRoot").global_rotation.y = atan2(toward.x,toward.z)
+   for i in 3: await physics_frame
+   actor.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(pickup.global_position)
+   assert(actor._find_interactable() == pickup, "Upper shelf needs precise positioning: " + pickup.weapon_id + " side " + str(side))
  var slots := {"talwar":0,"enfield":1,"bow":2,"pistol":3,"double_gun":5}
  for pickup in pickups:
   var weapon_id: String = pickup.weapon_id
@@ -19,6 +28,8 @@ func _run() -> void:
   flat.y = 0
   actor.get_node("VisualRoot").global_rotation.y = atan2(flat.x,flat.z)
   for i in 4: await physics_frame
+  actor.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(pickup.global_position)
+  for i in 2: await physics_frame
   assert(actor._find_interactable() == pickup)
   assert(actor.interaction_overlay.marker_world_positions.has(pickup), "Weapon interaction card has no visible anchor: " + weapon_id)
   actor._begin_interaction_hold(pickup,"interact")

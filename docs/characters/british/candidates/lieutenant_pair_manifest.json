@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/lieutenant_woman.glb",
-      "sha256": "ca188da491c94dc7da3decd9f60be35fe2319c62d75b40cb6c760931e8308bbf",
-      "bytes": 1739424
+      "sha256": "60c598f1e97d86e3a9445d00cbde4cc911cfa1b7043e3f07e215c62ebe43feca",
+      "bytes": 1808376
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

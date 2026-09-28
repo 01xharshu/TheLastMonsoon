@@ -113,6 +113,11 @@ func _ready() -> void:
 	armoury()
 	sidearm_display()
 	merge_visuals(self)
+	if police:
+		var staff := Node3D.new()
+		staff.name = "ThanaStaff"
+		staff.set_script(preload("res://world/suryagarh/settlements/thana_staff.gd"))
+		add_child(staff)
 
 func entrance_point(start: Vector3, end: Vector3, t: float) -> Vector3:
 	var point := start.lerp(end,t)

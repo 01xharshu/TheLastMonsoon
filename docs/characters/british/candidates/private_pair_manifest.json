@@ -20,8 +20,8 @@
     },
     "woman": {
       "path": "characters/npcs/british/private_woman.glb",
-      "sha256": "6cd28c3ab6e88559e75a25db86eb9f4f0aa6f5f456492b397e3d4a54a77d497e",
-      "bytes": 1766832
+      "sha256": "7a42c5fbbdc34c18f4b823d4580c053d372b3fc76d5bb0fe7acf86ef978ad41b",
+      "bytes": 1835760
     }
   },
   "placed_in_world": false

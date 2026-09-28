@@ -10,10 +10,12 @@ var foot_contact_offset := 0.0
 var skeleton: Skeleton3D
 var idle_foot_y := 0.0
 var rest_blend := 0.0
+var climb_blend := 0.0
 var pistol_aim_blend := 0.0
 var pistol_reload_blend := 0.0
 var pistol_recoil_blend := 0.0
 var longgun_aim_blend := 0.0
+var longgun_ready_blend := 0.0
 var longgun_reload_blend := 0.0
 var longgun_recoil_blend := 0.0
 
@@ -42,6 +44,10 @@ func configure(model: Node3D) -> bool:
 			if str(clip.track_get_path(track)).ends_with(":Root") and clip.track_get_type(track) == Animation.TYPE_POSITION_3D:
 				clip.remove_track(track)
 		library.add_animation(name, clip)
+	library.add_animation("longgun_ready", _longgun_pose_clip(skeleton, source.get_animation("idle"), false))
+	library.add_animation("longgun_aim", _longgun_pose_clip(skeleton, source.get_animation("idle"), true))
+	for beat in ["reach", "pull", "mantle", "recover"]:
+		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
@@ -59,13 +65,36 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("ground", ground)
 	graph.add_node("water", water)
 	graph.add_node("swim", AnimationNodeBlend2.new())
+	var longgun_ready := AnimationNodeBlend2.new()
+	var longgun_aim := AnimationNodeBlend2.new()
+	for layer in [longgun_ready, longgun_aim]:
+		layer.set_filter_enabled(true)
+		for bone in ["spine_02", "head"]:
+			layer.set_filter_path(NodePath("Arjun_Rig/Skeleton3D:" + bone), true)
+	graph.add_node("longgun_ready", longgun_ready)
+	graph.add_node("longgun_aim", longgun_aim)
+	graph.add_node("longgun_ready_pose", _clip("motion/longgun_ready"))
+	graph.add_node("longgun_aim_pose", _clip("motion/longgun_aim"))
 	graph.add_node("sit", _clip("motion/sit_idle"))
 	graph.add_node("rest", AnimationNodeBlend2.new())
+	var climb := AnimationNodeBlendSpace1D.new()
+	climb.min_space = 0.0
+	climb.max_space = 1.0
+	for beat in [{"name":"reach","at":0.0},{"name":"pull","at":0.35},{"name":"mantle","at":0.78},{"name":"recover","at":1.0}]:
+		climb.add_blend_point(_clip("motion/climb_" + beat.name), beat.at, -1, beat.name)
+	graph.add_node("climb_pose", climb)
+	graph.add_node("climb", AnimationNodeBlend2.new())
 	graph.connect_node("swim", 0, "ground")
 	graph.connect_node("swim", 1, "water")
-	graph.connect_node("rest", 0, "swim")
+	graph.connect_node("longgun_ready", 0, "swim")
+	graph.connect_node("longgun_ready", 1, "longgun_ready_pose")
+	graph.connect_node("longgun_aim", 0, "longgun_ready")
+	graph.connect_node("longgun_aim", 1, "longgun_aim_pose")
+	graph.connect_node("rest", 0, "longgun_aim")
 	graph.connect_node("rest", 1, "sit")
-	graph.connect_node("output", 0, "rest")
+	graph.connect_node("climb", 0, "rest")
+	graph.connect_node("climb", 1, "climb_pose")
+	graph.connect_node("output", 0, "climb")
 	tree_root = graph
 	callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	active = true
@@ -75,6 +104,66 @@ func _clip(name: String) -> AnimationNodeAnimation:
 	var node := AnimationNodeAnimation.new()
 	node.animation = name
 	return node
+
+func _climb_pose_clip(rig: Skeleton3D, idle: Animation, beat: String) -> Animation:
+	var clip := Animation.new()
+	clip.length = 0.25
+	clip.loop_mode = Animation.LOOP_LINEAR
+	var poses := {
+		"reach": {"pelvis":Vector3(-.10,0,0), "spine_01":Vector3(-.20,0,0), "spine_02":Vector3(-.13,0,0), "head":Vector3(.13,0,0), "upperarm_l":Vector3(-1.55,-.08,-.22), "upperarm_r":Vector3(-1.35,-.08,.22), "lowerarm_l":Vector3(-.45,0,0), "lowerarm_r":Vector3(-.55,0,0), "thigh_l":Vector3(.40,0,0), "thigh_r":Vector3(.65,0,0), "calf_l":Vector3(-.5,0,0), "calf_r":Vector3(-.8,0,0)},
+		"pull": {"pelvis":Vector3(-.08,.04,0), "spine_01":Vector3(-.24,0,0), "spine_02":Vector3(-.16,0,0), "head":Vector3(.10,0,0), "upperarm_l":Vector3(-1.72,-.08,-.22), "upperarm_r":Vector3(-1.72,-.08,.22), "lowerarm_l":Vector3(-.55,0,0), "lowerarm_r":Vector3(-.55,0,0), "thigh_l":Vector3(1.0,0,0), "thigh_r":Vector3(.45,0,0), "calf_l":Vector3(-1.35,0,0), "calf_r":Vector3(-.55,0,0)},
+		"mantle": {"pelvis":Vector3(.10,0,0), "spine_01":Vector3(.35,0,0), "spine_02":Vector3(.23,0,0), "head":Vector3(-.15,0,0), "upperarm_l":Vector3(-.75,0,-.13), "upperarm_r":Vector3(-.75,0,.13), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0), "thigh_l":Vector3(1.05,0,0), "thigh_r":Vector3(.75,0,0), "calf_l":Vector3(-.7,0,0), "calf_r":Vector3(-.6,0,0)},
+		"recover": {}
+	}
+	var angles: Dictionary = poses[beat]
+	for bone in ["pelvis","spine_01","spine_02","head","upperarm_l","upperarm_r","lowerarm_l","lowerarm_r","thigh_l","thigh_r","calf_l","calf_r","foot_l","foot_r"]:
+		var index := rig.find_bone(bone)
+		if index < 0: continue
+		var path := NodePath("Arjun_Rig/Skeleton3D:" + bone)
+		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+		clip.track_set_path(track, path)
+		var idle_track := idle.find_track(path, Animation.TYPE_ROTATION_3D)
+		var base: Quaternion = idle.track_get_key_value(idle_track, 0) if idle_track >= 0 else rig.get_bone_pose_rotation(index)
+		var axes := rig.get_bone_global_rest(index).basis.orthonormalized().inverse()
+		var angle: Vector3 = angles.get(bone, Vector3.ZERO)
+		var rotation := base * Quaternion(axes * Vector3.RIGHT, angle.x) * Quaternion(axes * Vector3.UP, angle.y) * Quaternion(axes * Vector3.BACK, angle.z)
+		clip.rotation_track_insert_key(track, 0.0, rotation)
+		clip.rotation_track_insert_key(track, clip.length, rotation)
+	return clip
+
+func update_climb(delta: float, progress: float) -> void:
+	climb_blend = minf(1.0, climb_blend + delta * 10.0)
+	set("parameters/climb/blend_amount", climb_blend)
+	set("parameters/climb_pose/blend_position", clampf(progress, 0.0, 1.0))
+	advance(delta)
+
+func release_climb(delta: float) -> void:
+	climb_blend = maxf(0.0, climb_blend - delta * 10.0)
+	set("parameters/climb/blend_amount", climb_blend)
+
+func _longgun_pose_clip(rig: Skeleton3D, idle: Animation, aimed: bool) -> Animation:
+	# A library pose for cheek weld and upper-torso support. Hand/stock contact
+	# remains a post-tree solve so locomotion never pulls palms off the gun.
+	var clip := Animation.new()
+	clip.length = 0.5
+	clip.loop_mode = Animation.LOOP_LINEAR
+	var angles := {
+		"spine_02": Vector3(-0.055 if aimed else -0.025, -0.035 if aimed else 0.0, 0.0),
+		"head": Vector3(0.11 if aimed else 0.025, -0.055 if aimed else 0.0, -0.025 if aimed else 0.0)
+	}
+	for bone in angles:
+		var index := rig.find_bone(bone)
+		if index < 0: continue
+		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+		clip.track_set_path(track, NodePath("Arjun_Rig/Skeleton3D:" + bone))
+		var idle_track := idle.find_track(NodePath("Arjun_Rig/Skeleton3D:" + bone), Animation.TYPE_ROTATION_3D)
+		var base: Quaternion = idle.track_get_key_value(idle_track, 0) if idle_track >= 0 else rig.get_bone_pose_rotation(index)
+		var axes := rig.get_bone_global_rest(index).basis.orthonormalized().inverse()
+		var angle: Vector3 = angles[bone]
+		var rotation := base * Quaternion(axes * Vector3.RIGHT, angle.x) * Quaternion(axes * Vector3.UP, angle.y) * Quaternion(axes * Vector3.BACK, angle.z)
+		clip.rotation_track_insert_key(track, 0.0, rotation)
+		clip.rotation_track_insert_key(track, clip.length, rotation)
+	return clip
 
 func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Animation:
 	var clip := Animation.new()
@@ -86,13 +175,22 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
 		clip.track_set_path(track, NodePath("Arjun_Rig/Skeleton3D:" + bone))
 		tracks[bone] = track
+	if running:
+		for side in ["l", "r"]:
+			for finger in ["index", "middle", "ring", "pinky"]:
+				for joint in ["01", "02"]:
+					var bone: String = finger + "_" + joint + "_" + side
+					if skeleton.find_bone(bone) < 0: continue
+					var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+					clip.track_set_path(track, NodePath("Arjun_Rig/Skeleton3D:" + bone))
+					tracks[bone] = track
 	for frame in 25:
 		var cycle := TAU * float(frame) / 24.0
 		var left := cos(cycle)
 		var right := -left
 		var stride := 0.80 if running else 0.52
 		var knee := 1.05 if running else 0.72
-		var arm_swing := 0.34 if running else 0.12
+		var arm_swing := 0.72 if running else 0.12
 		var angles := {
 			"pelvis": Vector3(0.0, sin(cycle) * (0.085 if running else 0.06), sin(cycle) * 0.025),
 			"spine_01": Vector3(0.17 if running else 0.07, -sin(cycle) * 0.045, 0.0),
@@ -106,11 +204,17 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 			"foot_r": Vector3(-right * 0.20, 0.0, 0.0),
 			"upperarm_l": Vector3(-left * arm_swing, 0.0, 0.0),
 			"upperarm_r": Vector3(-right * arm_swing, 0.0, 0.0),
-			"lowerarm_l": Vector3(-0.12, 0.0, 0.0),
-			"lowerarm_r": Vector3(-0.12, 0.0, 0.0)
+			"lowerarm_l": Vector3(-0.72 if running else -0.12, 0.0, 0.0),
+			"lowerarm_r": Vector3(-0.72 if running else -0.12, 0.0, 0.0)
 		}
 		for bone in tracks:
 			var index := skeleton.find_bone(bone)
+			if bone.contains("_01_") or bone.contains("_02_"):
+				var idle_finger_track := idle.find_track(NodePath("Arjun_Rig/Skeleton3D:" + bone), Animation.TYPE_ROTATION_3D)
+				var finger_base: Quaternion = idle.track_get_key_value(idle_finger_track, 0) if idle_finger_track >= 0 else skeleton.get_bone_pose_rotation(index)
+				var bend := 0.20 if bone.contains("_01_") else 0.16
+				clip.rotation_track_insert_key(tracks[bone], clip.length * float(frame) / 24.0, finger_base * Quaternion(Vector3.RIGHT, bend))
+				continue
 			var axes := skeleton.get_bone_global_rest(index).basis.orthonormalized().inverse()
 			var angle: Vector3 = angles[bone]
 			var idle_track := idle.find_track(NodePath("Arjun_Rig/Skeleton3D:" + bone), Animation.TYPE_ROTATION_3D)
@@ -159,9 +263,12 @@ func update_longgun_motion(delta: float, equipped: bool, aiming: bool, reload_fr
 	# These weights follow the same manual tree advance as locomotion. The
 	# stock and two palm targets are solved after the blended skeleton updates.
 	var weight := 1.0 - exp(-12.0 * delta)
+	longgun_ready_blend = lerpf(longgun_ready_blend, 1.0 if equipped else 0.0, weight)
 	longgun_aim_blend = lerpf(longgun_aim_blend, 1.0 if equipped and aiming and reload_fraction < 0.0 else 0.0, weight)
 	longgun_reload_blend = lerpf(longgun_reload_blend, 1.0 if equipped and reload_fraction >= 0.0 else 0.0, weight)
 	longgun_recoil_blend = lerpf(longgun_recoil_blend, clampf(shot_recoil / 0.075, 0.0, 1.0) if equipped else 0.0, weight)
+	set("parameters/longgun_ready/blend_amount", longgun_ready_blend)
+	set("parameters/longgun_aim/blend_amount", longgun_aim_blend)
 
 func _lowest_foot_y() -> float:
 	if skeleton == null: return 0.0

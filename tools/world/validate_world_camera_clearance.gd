@@ -36,7 +36,8 @@ func _run() -> void:
    for i in 3: await process_frame
    camera._process(0.0)
    var distance: float = arm.global_position.distance_to(camera.global_position)
-   var clear: bool = distance > 0.08 and distance < 1.5
+   var max_open_distance := arm.spring_length + 0.1
+   var clear: bool = distance > 0.08 and distance <= max_open_distance
    var query := PhysicsRayQueryParameters3D.create(arm.global_position, camera.global_position)
    query.collision_mask = arm.collision_mask
    query.exclude = [player.get_rid()]

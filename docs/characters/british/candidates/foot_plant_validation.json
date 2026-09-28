@@ -2,10 +2,10 @@
   "actors": [
     {
       "actor": "PrivateMan",
-      "hip_drop_max_m": 0.0227397827917212,
+      "hip_drop_max_m": 0.0226750515990639,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00045013427734375,
+      "min_swing_ankle_clearance_m": 0.00802421569824219,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -14,7 +14,7 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.000520706176757812,
+      "min_swing_ankle_clearance_m": 0.00851726531982422,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -23,7 +23,7 @@
       "hip_drop_max_m": 0.0193896025484475,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.0171737670898438,
+      "min_swing_ankle_clearance_m": 0.00455570220947266,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -32,16 +32,16 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00646305084228516,
+      "min_swing_ankle_clearance_m": 0.0143613815307617,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "SergeantMan",
-      "hip_drop_max_m": 0.023645975269851,
+      "hip_drop_max_m": 0.0235743979475428,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.000384330749511719,
+      "min_swing_ankle_clearance_m": 0.0145940780639648,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -50,7 +50,7 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.000710487365722656,
+      "min_swing_ankle_clearance_m": 0.0026702880859375,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -59,7 +59,7 @@
       "hip_drop_max_m": 0.0184740706234452,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.017704963684082,
+      "min_swing_ankle_clearance_m": 0.00551128387451172,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -68,34 +68,34 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00817489624023438,
+      "min_swing_ankle_clearance_m": 0.0136833190917969,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "CaptainMan",
-      "hip_drop_max_m": 0.0231338862409729,
+      "hip_drop_max_m": 0.0230569249744013,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.0000104904174804688,
+      "min_swing_ankle_clearance_m": 0.0126857757568359,
       "reach_limited_frames": 0,
-      "worst_ankle_target_error_m": 0.00000095367431640625
+      "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "CaptainWoman",
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00194263458251953,
+      "min_swing_ankle_clearance_m": 0.0102758407592773,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "MajorMan",
-      "hip_drop_max_m": 0.0234903320620609,
+      "hip_drop_max_m": 0.0234568289183215,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.000145912170410156,
+      "min_swing_ankle_clearance_m": 0.0142602920532227,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -104,34 +104,34 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00577259063720703,
+      "min_swing_ankle_clearance_m": 0.000914573669433594,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "ColonelMan",
-      "hip_drop_max_m": 0.0228812286350453,
+      "hip_drop_max_m": 0.0229181991113261,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00103950500488281,
+      "min_swing_ankle_clearance_m": 0.0153179168701172,
       "reach_limited_frames": 0,
-      "worst_ankle_target_error_m": 0.0
+      "worst_ankle_target_error_m": 0.00000095367431640625
     },
     {
       "actor": "ColonelWoman",
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00576210021972656,
+      "min_swing_ankle_clearance_m": 0.00138759613037109,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
     {
       "actor": "OfficialMan",
-      "hip_drop_max_m": 0.0227450266914627,
+      "hip_drop_max_m": 0.022748371737943,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.0143957138061523,
+      "min_swing_ankle_clearance_m": 0.000880241394042969,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     },
@@ -140,7 +140,7 @@
       "hip_drop_max_m": 0.008,
       "hip_drop_min_m": 0.008,
       "locked_frames": 218,
-      "min_swing_ankle_clearance_m": 0.00610828399658203,
+      "min_swing_ankle_clearance_m": 0.000153541564941406,
       "reach_limited_frames": 0,
       "worst_ankle_target_error_m": 0.0
     }

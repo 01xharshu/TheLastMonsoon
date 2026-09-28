@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/sergeant_woman.glb",
-      "sha256": "6635383b46d8ff1692d692c5ad6002ffaac7078d84c426e7577bd15a0bd64b56",
-      "bytes": 1791784
+      "sha256": "1416183da471331a6e8ef2a27966bcc0d7ad81d15c62cd2da2597c5d4fbac06b",
+      "bytes": 1860736
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

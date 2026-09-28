@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/major_woman.glb",
-      "sha256": "150b30ce2902353dafc29dc866826061ea97cb360dccd7a83ceea7e116970b9f",
-      "bytes": 1724816
+      "sha256": "706db5982c8ae7537c4a7fe19a5604c9973df518f0b505ad4929843417c30f51",
+      "bytes": 1793764
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

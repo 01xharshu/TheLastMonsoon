@@ -23,3 +23,9 @@ The first actual Player approach test found that walk-step assist climbed over t
 `tools/world/validate_period_props.gd` now compares each imported model's lowest world-space mesh point with the supporting floor ray. All seven gaps were between -0.010 m and +0.001 m in the final Metal run. The fresh crate, barrel and relocated bench captures above were inspected; each sits on its support. The existing eight-route real Player stair regression still passed after the step change (`/tmp/tlm_prop_stair_regression.log`). The headless collision test printed a Godot resource-in-use diagnostic only during shutdown after its PASS marker.
 
 The stool and bench remain visual furniture without a seating action. Jumping, repeated crowd contact, exact 1857 object provenance, and 8GB-device performance have not been approved by these checks.
+
+## Fast contact and route clearance — 2026-09-28
+
+`tools/world/validate_period_prop_routes.gd` drove the live Player at the three low props with sprint held. The bucket, brass pot and basket all registered contact and none was crossed. The same fixture walked the central Company compound gate lane from `(345, 256)` past `(345, 274)` and the Bhairavpur aisle from `(-336, 230)` past `(-316, 230)` without touching a period prop. Headless and Forward+/Metal runs passed; machine-readable result: `period_prop_route_validation.json`.
+
+The code deliberately blocks walk-step over these small props after contact with their visible colliders. A deliberate jump may clear a low object, which is physically different from passing through it. The current British NPC preview actor extends `Node3D` and has no gameplay physics body, so NPC crowd contact cannot yet be checked as a solid-body interaction. The 8GB-device performance limit still requires a run on that class of hardware.

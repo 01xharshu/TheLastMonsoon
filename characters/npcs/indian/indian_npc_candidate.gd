@@ -1,6 +1,6 @@
 extends Node3D
 ## Isolated motion study; clothing and ground contact remain unapproved.
-@export_enum("village_farmer", "village_woman") var candidate_slug: String = "village_farmer"
+@export_enum("village_farmer", "village_woman", "village_fruit_seller", "village_weaver_assistant") var candidate_slug: String = "village_farmer"
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend := 0.0

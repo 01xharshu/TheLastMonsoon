@@ -21,6 +21,10 @@ func _run() -> void:
 	ground.add_child(ground_mesh)
 	var bed := load("res://objects/charpai.tscn").instantiate() as Node3D
 	scene.add_child(bed)
+	var clock := GameTimeSystem.new()
+	clock.name = "GameTimeSystem"
+	clock.clock_paused = true
+	scene.add_child(clock)
 	var player := load("res://player/player.tscn").instantiate() as CharacterBody3D
 	scene.add_child(player)
 	player.set_meta("mounted_vehicle", null)
@@ -39,17 +43,27 @@ func _run() -> void:
 	player.set_meta("rest_action", "sleep")
 	var sample_name := OS.get_environment("TLM_REST_SAMPLE")
 	if sample_name == "": sample_name = "sit"
-	var samples := [{"label":"lie", "progress":1.0}] if sample_name == "lie" else [{"label":"sit", "progress":0.35}]
+	var samples := [{"label":"sit", "progress":0.35}]
+	if sample_name == "lie": samples = [{"label":"lie", "progress":1.0}]
+	elif sample_name == "mid": samples = [{"label":"mid", "progress":0.65}]
 	for sample in samples:
 		player.set_meta("rest_progress", sample.progress)
-		for frame in 35: await process_frame
+		for frame in 12: await process_frame
 		var visual: Node3D = player.get_node("VisualRoot/CharacterVisual")
 		var rig: Skeleton3D = visual.skeleton
 		var positions := {}
+		var points := {}
 		for bone in ["pelvis", "foot_l", "foot_r", "hand_l", "hand_r", "head"]:
-			positions[bone] = str(rig.to_global(rig.get_bone_global_pose(rig.find_bone(bone)).origin))
-		await RenderingServer.frame_post_draw
+			var point: Vector3 = rig.to_global(rig.get_bone_global_pose(rig.find_bone(bone)).origin)
+			points[bone] = point
+			positions[bone] = str(point)
+		if sample.label == "sit":
+			assert(absf(points.foot_l.y - 0.105) < 0.05 and absf(points.foot_r.y - 0.105) < 0.05, "Seated boots missed the floor")
+		elif sample.label == "lie":
+			assert(absf(points.foot_l.y - points.foot_r.y) < 0.07, "Reclined legs are vertically stacked")
+			assert(points.hand_l.y > 0.60 and points.hand_r.y > 0.60, "Reclined hand fell below cot weave")
+		if not DisplayServer.get_name() == "headless": await RenderingServer.frame_post_draw
 		var path: String = "res://docs/characters/arjun/charpai_" + str(sample.label) + "_contact.png"
-		root.get_texture().get_image().save_png(path)
+		if not DisplayServer.get_name() == "headless": root.get_texture().get_image().save_png(path)
 		print("REST CONTACT ", sample.label, " ", JSON.stringify(positions))
 	quit()

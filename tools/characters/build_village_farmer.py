@@ -17,7 +17,14 @@ from mathutils.kdtree import KDTree
 
 ROOT = Path(__file__).resolve().parents[2]
 FEMALE = "--female" in sys.argv
-SLUG = "village_woman" if FEMALE else "village_farmer"
+FRUIT_SELLER = "--fruit-seller" in sys.argv
+WEAVER_ASSISTANT = "--weaver-assistant" in sys.argv
+if FRUIT_SELLER and WEAVER_ASSISTANT:
+    raise ValueError("Choose one role")
+FEMALE = FEMALE or FRUIT_SELLER
+SLUG = ("village_fruit_seller" if FRUIT_SELLER else
+        "village_weaver_assistant" if WEAVER_ASSISTANT else
+        "village_woman" if FEMALE else "village_farmer")
 OUT = ROOT / "WorkingAssets/NPCs" / SLUG
 RUNTIME = ROOT / "characters/npcs" / (SLUG + ".glb")
 DATA = Path.home() / "Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data"
@@ -30,6 +37,10 @@ macro = dict(gender=0.0 if FEMALE else 1.0, age=.63 if FEMALE else .67,
              muscle=.38 if FEMALE else .42, weight=.49 if FEMALE else .47, proportions=.5,
              height=.40 if FEMALE else .42, cupsize=.45, firmness=.5,
              race=dict(asian=.55, caucasian=.20, african=.25))
+if FRUIT_SELLER:
+    macro.update(age=.48, muscle=.35, weight=.43, height=.34)
+if WEAVER_ASSISTANT:
+    macro.update(age=.38, muscle=.39, weight=.41, height=.47)
 body = HumanService.create_human(macro_detail_dict=macro)
 body.name = SLUG + "_MakeHuman_body"
 body["source_workflow"] = "MPFB core basemesh; independent adult village NPC"
@@ -230,9 +241,9 @@ def draped_pallu(material):
 
 if FEMALE:
     # Patna-region 1800-1850 fruit-seller painting: sari over blouse, head drape.
-    sari = mat("Faded madder cotton sari", (.36,.12,.10))
-    border = mat("Indigo woven sari border", (.09,.12,.16))
-    blouse = mat("Mustard cotton blouse", (.40,.30,.12))
+    sari = mat("Indigo and white cotton sari" if FRUIT_SELLER else "Faded madder cotton sari", (.16,.26,.42) if FRUIT_SELLER else (.36,.12,.10))
+    border = mat("Pale woven sari border" if FRUIT_SELLER else "Indigo woven sari border", (.72,.69,.57) if FRUIT_SELLER else (.09,.12,.16))
+    blouse = mat("Ochre cotton blouse" if FRUIT_SELLER else "Mustard cotton blouse", (.51,.36,.13) if FRUIT_SELLER else (.40,.30,.12))
     outfit.data.materials.clear(); outfit.data.materials.append(blouse)
     rings("Wrapped sari lower drape", [(.14,.30,.25,0,0),(.31,.31,.26,0,0),
           (.61,.29,.24,0,0),(.94,.245,.20,0,0),(1.08,.22,.18,0,0),
@@ -240,11 +251,18 @@ if FEMALE:
           sari, "torso", flutter=.055)
     rings("Sari lower border", [(.14,.303,.253,0,0),(.205,.31,.26,0,0)], border, "torso", flutter=.05)
     draped_pallu(sari)
+    if FRUIT_SELLER:
+        basket = mat("Woven carrying basket", (.34,.23,.11))
+        rings("Fruit seller head basket", [(1.53,.10,.10,0,0), (1.61,.19,.19,0,0),
+              (1.79,.22,.22,0,0), (1.83,.22,.22,0,0)], basket, "head", sides=24, flutter=.035)
 else:
     # Cloth head wrap, loose kurta and dhoti, without martial clothing/equipment.
     outfit.data.materials.clear(); outfit.data.materials.append(cotton)
     turban = mat("Weathered ochre head cloth", (.40,.33,.23))
     dhoti_cotton = mat("Unbleached dhoti cotton", (.52,.49,.42))
+    if WEAVER_ASSISTANT:
+        turban = mat("Indigo head cloth", (.12,.20,.39))
+        dhoti_cotton = mat("Weaver assistant white dhoti", (.69,.67,.58))
     rings("Kurta loose lower panel", [(.66,.22,.18,0,0),(.72,.215,.18,0,0),
           (.85,.21,.175,0,0),(.92,.205,.17,0,0)], cotton, "torso", flutter=.04)
     rings("Knee length wrapped dhoti", [(.43,.25,.21,0,0),(.49,.255,.21,0,0),
@@ -254,6 +272,12 @@ else:
            (1.60,.13,.12,0,0),(1.64,.10,.09,0,0),
            (1.675,.012,.012,0,0)], turban, "head", flutter=.025)
     rings("Head wrap fold", [(1.575,.132,.122,0,0),(1.59,.133,.123,0,0)], hem, "head")
+    if WEAVER_ASSISTANT:
+        cloth = mat("Woven striped carrying cloth", (.19,.31,.55))
+        verts = [(-.29,-.15,.95),(-.49,-.15,.95),(-.49,-.22,.95),(-.29,-.22,.95),
+                 (-.29,-.15,.73),(-.49,-.15,.70),(-.49,-.22,.70),(-.29,-.22,.73)]
+        mesh("Weaver assistant folded cloth", verts,
+             [(0,1,2,3),(0,4,5,1),(3,2,6,7),(4,7,6,5)], cloth, mode="body")
 
 # Keep an intact editable MPFB body in the source, but mask skin physically
 # covered by the period outfit. MPFB's outfit deletion map includes its removed

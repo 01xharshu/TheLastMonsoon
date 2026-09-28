@@ -7,7 +7,7 @@ const SLOT_COUNT := 3
 const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
-	"camera_distance": 1.8, "aim_camera_distance": 0.55,
+	"camera_distance": 1.25, "aim_camera_distance": 0.55,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
@@ -293,13 +293,13 @@ func load_options() -> void:
 	if config.load(settings_path)!=OK: return
 	for key in DEFAULTS:
 		options[key] = config.get_value("settings",key,DEFAULTS[key])
-	# The former 2 m default should follow the closer third-person framing.
-	if is_equal_approx(float(options.camera_distance), 2.0):
-		options.camera_distance = 1.8
+	# Former default values follow the reference third-person framing.
+	if is_equal_approx(float(options.camera_distance), 2.0) or is_equal_approx(float(options.camera_distance), 1.8):
+		options.camera_distance = 1.25
 	if not options.input_device in ["auto", "keyboard_mouse", "controller"]:
 		options.input_device = "auto"
 	options.vibration = clampf(float(options.vibration),0.0,1.0)
-	options.camera_distance = clampf(float(options.camera_distance),1.8,4.0)
+	options.camera_distance = clampf(float(options.camera_distance),1.25,4.0)
 	options.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 
 func set_option(key: String, value: Variant) -> void:
@@ -330,6 +330,6 @@ func apply_options(world: Node = null) -> void:
 	if world and world.has_node("Player"):
 		var player: Node = world.get_node("Player")
 		player.mouse_sensitivity = 0.0025*clampf(float(options.mouse),0.3,2.0)
-		player.third_person_distance = clampf(float(options.camera_distance),1.8,4.0)
+		player.third_person_distance = clampf(float(options.camera_distance),1.25,4.0)
 		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 		if world.has_node("BackgroundMusic"): world.get_node("BackgroundMusic").bus = "Music"

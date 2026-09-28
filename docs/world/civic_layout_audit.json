@@ -1,7 +1,7 @@
 {
 	"entrances": {
 		"DistrictPolice": {
-			"maximum_ramp_slope": 0.0659222745313848,
+			"maximum_ramp_slope": 0.0626608866102796,
 			"minimum_ramp_clearance_m": 0.0600000000000005
 		},
 		"TownHall": {
@@ -9,7 +9,12 @@
 			"minimum_ramp_clearance_m": 0.0599999999999996
 		}
 	},
-	"failures": [],
+	"failures": [
+		"DistrictPolice terrain grade varies by 1.26586208000339 m",
+		"OldFort terrain grade varies by 9.31294508425455 m",
+		"fort_trail has a terrain slope above 24%: 0.29963335851555",
+		"fort_access has a terrain slope above 24%: 0.25226440546714"
+	],
 	"layout_size_m": 1728.0,
 	"plots": {
 		"Bhairavpur": {
@@ -27,7 +32,7 @@
 		"DistrictPolice": {
 			"center": "(320.0, 120.0)",
 			"grade_m": 10.0,
-			"grade_spread_m": 0.0,
+			"grade_spread_m": 1.26586208000339,
 			"half_extent": "(20.0, 22.0)"
 		},
 		"GovernmentHouse": {
@@ -35,6 +40,12 @@
 			"grade_m": 8.5,
 			"grade_spread_m": 0.0,
 			"half_extent": "(96.0, 92.0)"
+		},
+		"OldFort": {
+			"center": "(520.0, -350.0)",
+			"grade_m": 120.0,
+			"grade_spread_m": 9.31294508425455,
+			"half_extent": "(60.0, 50.0)"
 		},
 		"TownHall": {
 			"center": "(-320.0, -470.0)",
@@ -66,7 +77,38 @@
 			"waypoint_elevations_m": [
 				9.58987110331894,
 				10.1648856505193,
-				10.4929118434394
+				10.5
+			]
+		},
+		"fort_access": {
+			"length_m": 272.039695739746,
+			"maximum_terrain_slope": 0.252264405467139,
+			"waypoint_elevations_m": [
+				109.8,
+				112.1,
+				117.499992172064,
+				119.999996630389
+			]
+		},
+		"fort_trail": {
+			"length_m": 609.405654907227,
+			"maximum_terrain_slope": 0.299633358515548,
+			"waypoint_elevations_m": [
+				10.5,
+				13.7,
+				31.3,
+				38.0,
+				42.0,
+				46.0,
+				56.0,
+				68.0,
+				76.0,
+				79.5,
+				82.0,
+				89.0,
+				93.0,
+				98.5,
+				109.8
 			]
 		},
 		"government_house_avenue": {
@@ -90,7 +132,7 @@
 			"length_m": 105.641311645508,
 			"maximum_terrain_slope": 0.183062376409593,
 			"waypoint_elevations_m": [
-				10.4929118434394,
+				10.5,
 				11.8448714147093,
 				12.0
 			]
@@ -105,5 +147,5 @@
 			]
 		}
 	},
-	"status": "PASS"
+	"status": "FAIL"
 }

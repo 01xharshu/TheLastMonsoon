@@ -98,6 +98,8 @@ func _process(_delta: float) -> void:
 		carried_mango.material_override = pickup.carried_mango.material_override
 		add_child(carried_mango)
 	carried_mango.visible = pickup.carried_mango.visible
+	carried_mango.mesh = pickup.carried_mango.mesh
+	carried_mango.material_override = pickup.carried_mango.material_override
 	if carried_mango.visible:
 		skeleton.force_update_all_bone_transforms()
 		var hand_index := skeleton.find_bone("hand_r")

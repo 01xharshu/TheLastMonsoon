@@ -3,7 +3,7 @@
 	"routes": [
 		{
 			"fall_speed": 0.0,
-			"finish": "(0.0, 0.445874, 24.02822)",
+			"finish": "(0.0, 0.445874, 24.02821)",
 			"jump_used": false,
 			"reached": true,
 			"route": "Government entrance up"
@@ -31,14 +31,14 @@
 		},
 		{
 			"fall_speed": 0.0,
-			"finish": "(-47.20001, 4.795874, 4.444519)",
+			"finish": "(-47.20001, 4.795874, 4.444489)",
 			"jump_used": false,
 			"reached": true,
 			"route": "Compound stairs up"
 		},
 		{
 			"fall_speed": 0.0,
-			"finish": "(-47.20001, 0.075875, -6.221039)",
+			"finish": "(-47.20001, 0.075875, -6.219147)",
 			"jump_used": false,
 			"reached": true,
 			"route": "Compound stairs down"

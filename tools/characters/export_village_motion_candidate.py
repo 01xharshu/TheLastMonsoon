@@ -12,8 +12,10 @@ from pathlib import Path
 from mathutils import Vector, Quaternion
 
 ROOT = Path(__file__).resolve().parents[2]
-FEMALE = "--female" in sys.argv
-SLUG = "village_woman" if FEMALE else "village_farmer"
+FEMALE = "--female" in sys.argv or "--fruit-seller" in sys.argv
+SLUG = ("village_fruit_seller" if "--fruit-seller" in sys.argv else
+        "village_weaver_assistant" if "--weaver-assistant" in sys.argv else
+        "village_woman" if FEMALE else "village_farmer")
 OUT = ROOT / "WorkingAssets/NPCs" / SLUG
 bpy.ops.wm.open_mainfile(filepath=str(OUT / (SLUG + "_mpfb.blend")))
 rig = bpy.data.objects[SLUG + "_rig"]

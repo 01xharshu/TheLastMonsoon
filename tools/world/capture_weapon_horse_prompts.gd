@@ -39,12 +39,15 @@ func _run() -> void:
 	weapon.add_child(collider)
 	for i in 8: await physics_frame
 	overlay.set_target(weapon, 0.42)
+	for i in 2: await physics_frame
+	assert(overlay.marker_world_positions.has(weapon), "Weapon card has no visible anchor")
 	await RenderingServer.frame_post_draw
 	assert(root.get_texture().get_image().save_png("/tmp/tlm_weapon_equip_prompt.png") == OK)
 	weapon.hide()
 	overlay.set_target(null)
 	overlay.set_ride_prompt("Dismount horse")
 	for i in 8: await physics_frame
+	assert(overlay.ride_prompt == "Dismount horse")
 	await RenderingServer.frame_post_draw
 	assert(root.get_texture().get_image().save_png("/tmp/tlm_horse_exit_prompt.png") == OK)
 	print("WEAPON / HORSE PROMPT CAPTURE PASS")

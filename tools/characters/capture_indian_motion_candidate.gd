@@ -55,7 +55,9 @@ func capture() -> void:
 	var capture_name := "pair"
 	if "--male-only" in run_args: capture_name = "male"
 	if "--female-only" in run_args: capture_name = "female"
-	for datum in [["village_farmer", -1.25], ["village_woman", 1.25]]:
+	var candidates := [["village_weaver_assistant", -1.25], ["village_fruit_seller", 1.25]] if "--other" in run_args else [["village_farmer", -1.25], ["village_woman", 1.25]]
+	if "--other" in run_args: capture_name = "other"
+	for datum in candidates:
 		var slug: String = datum[0]
 		if "--male-only" in run_args and slug != "village_farmer": continue
 		if "--female-only" in run_args and slug != "village_woman": continue

@@ -51,6 +51,8 @@ var body_collision: CollisionShape3D
 var step_ground_grace := 0.0
 var step_up_grace := 0.0
 var stair_activity := 0.0
+const REIN_SEGMENTS := 12
+var reins: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group("mountable_vehicles")
@@ -174,6 +176,80 @@ func _cord(parent: Node3D, label: String, a: Vector3, b: Vector3, radius: float,
 	mesh.material_override = mat
 	parent.add_child(mesh)
 
+func _build_rein(side: String, material: Material) -> void:
+	var segments: Array[MeshInstance3D] = []
+	for index in REIN_SEGMENTS:
+		var piece := MeshInstance3D.new()
+		piece.name = "FlexibleRein_%s_%02d" % [side, index]
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = 0.012
+		cylinder.bottom_radius = 0.012
+		cylinder.height = 1.0
+		cylinder.radial_segments = 6
+		piece.mesh = cylinder
+		piece.material_override = material
+		add_child(piece)
+		segments.append(piece)
+	reins[side] = {"pieces": segments, "points": [], "previous": []}
+
+func _rein_anchors(side: String) -> Array[Vector3]:
+	var sign_side := -1.0 if side == "l" else 1.0
+	var bit := body_root.to_global(Vector3(sign_side * 0.18, 1.88, -1.43))
+	var hand := body_root.to_global(Vector3(sign_side * 0.28, 1.93, -0.23))
+	if rider != null and transition == "":
+		var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
+		if visual.skeleton != null:
+			var skeleton: Skeleton3D = visual.skeleton
+			var index := skeleton.find_bone("hand_" + side)
+			if index >= 0:
+				hand = skeleton.to_global(skeleton.get_bone_global_pose(index) * visual.equipment.palm_offsets[side])
+	return [bit, hand]
+
+func _update_reins(delta: float) -> void:
+	for side in ["l", "r"]:
+		var rein: Dictionary = reins[side]
+		var anchors := _rein_anchors(side)
+		var start: Vector3 = anchors[0]
+		var finish: Vector3 = anchors[1]
+		var points: Array = rein.points
+		var previous: Array = rein.previous
+		if points.is_empty() or (points[0] as Vector3).distance_to(start) > 2.0:
+			points.clear()
+			previous.clear()
+			for index in REIN_SEGMENTS + 1:
+				var initial := start.lerp(finish, float(index) / REIN_SEGMENTS)
+				initial.y -= sin(PI * float(index) / REIN_SEGMENTS) * 0.22
+				points.append(initial)
+				previous.append(initial)
+		var step := maxf(start.distance_to(finish) * 1.04, 1.55) / REIN_SEGMENTS
+		var elapsed := minf(delta, 1.0 / 30.0)
+		for index in range(1, REIN_SEGMENTS):
+			var current: Vector3 = points[index]
+			var drift: Vector3 = (current - previous[index]) * 0.90
+			previous[index] = current
+			points[index] = current + drift + Vector3.DOWN * (8.0 * elapsed * elapsed)
+		for iteration in 5:
+			points[0] = start
+			points[REIN_SEGMENTS] = finish
+			for index in REIN_SEGMENTS:
+				var span: Vector3 = points[index + 1] - points[index]
+				var length := span.length()
+				if length < 0.0001: continue
+				var correction := span * ((length - step) / length)
+				if index != 0: points[index] += correction * 0.5
+				if index + 1 != REIN_SEGMENTS: points[index + 1] -= correction * 0.5
+		points[0] = start
+		points[REIN_SEGMENTS] = finish
+		var pieces: Array = rein.pieces
+		for index in REIN_SEGMENTS:
+			var a: Vector3 = to_local(points[index])
+			var b: Vector3 = to_local(points[index + 1])
+			var span := b - a
+			var piece: MeshInstance3D = pieces[index]
+			piece.position = (a + b) * 0.5
+			piece.basis = Basis(Quaternion(Vector3.UP, span.normalized()))
+			piece.scale = Vector3(1.0, span.length() * 1.05, 1.0)
+
 func _taper(parent: Node3D, label: String, at: Vector3, height: float, top: float, bottom: float, mat: Material) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
@@ -221,8 +297,6 @@ func _build_horse() -> void:
 		_ellipsoid(neck_root,"Ear",Vector3(side*.12,1.02,-.20),Vector3(.055,.12,.065),bay)
 		_ellipsoid(neck_root,"Nostril",Vector3(side*.13,.56,-.72),Vector3(.025,.018,.022),dark)
 		_box(neck_root,"BridleCheek",Vector3(side*.205,.68,-.40),Vector3(.025,.34,.045),leather)
-		_cord(body_root,"ReinFront",Vector3(side*.18,1.88,-1.43),Vector3(side*.30,2.14,-.77),.016,leather)
-		_cord(body_root,"ReinBack",Vector3(side*.30,2.14,-.77),Vector3(side*.38,2.06,-.29),.016,leather)
 		_cord(body_root,"StirrupLeather",Vector3(side*.36,1.94,.15),Vector3(side*.48,1.38,.20),.023,leather)
 		_box(body_root,"StirrupTread",Vector3(side*.48,1.32,.21),Vector3(.20,.035,.19),dark)
 		_box(body_root,"StirrupFront",Vector3(side*.48,1.41,.11),Vector3(.027,.18,.027),dark)
@@ -263,6 +337,8 @@ func _build_horse() -> void:
 	for side in [-1.0, 1.0]:
 		_cord(body_root,"RiderStirrupLeather",Vector3(side*.30,1.85,.02),Vector3(side*.48,1.15,.02),.022,leather)
 		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.13,.02),Vector3(.18,.04,.14),dark)
+	_build_rein("l", leather)
+	_build_rein("r", leather)
 	# The source mesh carries a continuous four-leg skin and its own gait rig.
 	# Keep the simple generated body as an editable fallback, hidden in play.
 	body_model.hide()
@@ -444,6 +520,7 @@ func _physics_process(delta: float) -> void:
 					transition_actor.velocity = Vector3.ZERO
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
+	_update_reins(delta)
 	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
 	if rider == null:
 		idle_voice_timer -= delta

@@ -21,10 +21,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/official_woman.glb",
-      "sha256": "22383de2894b87906b3cfe7988d500ced588279953e7123bd6a0e5f2dab1b617",
-      "bytes": 1549884
+      "sha256": "7d1f26a0acdce376b191ed7ce7d1304cbea40a220c2154befa43441a6f8fc9be",
+      "bytes": 1618836
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": true
+  "placed_in_world": false
 }

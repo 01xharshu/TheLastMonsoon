@@ -18,7 +18,7 @@ func _ready() -> void:
 	# ── Camera ───────────────────────────────────────────────
 	_section("Camera")
 	add_slider("Mouse sensitivity", "mouse", 0.3, 2.0, 0.05)
-	add_slider("Camera distance", "camera_distance", 1.8, 4.0, 0.05, " m")
+	add_slider("Camera distance", "camera_distance", 1.25, 4.0, 0.05, " m")
 	add_slider("Aim camera distance", "aim_camera_distance", 0.5, 2.0, 0.05, " m")
 
 	# ── Controller ───────────────────────────────────────────

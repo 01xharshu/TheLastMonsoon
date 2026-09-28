@@ -23,6 +23,12 @@ func _run() -> void:
 	sun.rotation_degrees = Vector3(-40,-30,0)
 	sun.light_energy = 1.8
 	stage.add_child(sun)
+	var ground := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(8,8)
+	ground.mesh = plane
+	ground.position.y = -0.38
+	stage.add_child(ground)
 	var model: Node3D = load("res://characters/arjun/arjun.glb").instantiate()
 	stage.add_child(model)
 	var tree: AnimationTree = load("res://player/arjun_motion_tree.gd").new()
