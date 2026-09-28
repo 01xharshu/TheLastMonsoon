@@ -1,4 +1,4 @@
-"""Export Dev's fitted MPFB source as an isolated rigged idle study."""
+"""Export Dev's fitted MPFB source as isolated idle and walk studies."""
 import bpy
 import hashlib
 import json
@@ -22,26 +22,39 @@ rig.animation_data_create()
 for bone in rig.pose.bones:
     bone.rotation_mode = 'QUATERNION'
 base = {bone.name: bone.rotation_quaternion.copy() for bone in rig.pose.bones}
-action = bpy.data.actions.new("Dev_idle_study")
-action.use_fake_user = True
-rig.animation_data.action = action
-for frame in range(1,61):
-    phase = (frame-1)/60
-    breath = math.sin(phase*math.tau)
-    for bone in rig.pose.bones:
-        bone.rotation_quaternion = base[bone.name].copy()
-    for name, axis, amount in [("spine01",(1,0,0),.009),
-                               ("neck_01",(0,0,1),.006),
-                               ("upperarm_l",(1,0,0),.004),
-                               ("upperarm_r",(1,0,0),-.004)]:
-        bone = rig.pose.bones.get(name)
-        if bone:
-            local_axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector(axis)
-            bone.rotation_quaternion = base[name] @ Quaternion(local_axis, amount*breath)
-    for bone in rig.pose.bones:
-        bone.keyframe_insert("rotation_quaternion",frame=frame,group=bone.name)
-action["loop"] = True
-action["review_status"] = "CANDIDATE_NOT_APPROVED"
+def rotate(name, axis, amount):
+    bone = rig.pose.bones.get(name)
+    if bone:
+        local_axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector(axis)
+        bone.rotation_quaternion = base[name] @ Quaternion(local_axis, amount)
+
+for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
+    action = bpy.data.actions.new(clip)
+    action.use_fake_user = True
+    rig.animation_data.action = action
+    for frame in range(1,frames+1):
+        phase = (frame-1)/(frames-1)
+        wave = math.sin(phase*math.tau)
+        for bone in rig.pose.bones:
+            bone.rotation_quaternion = base[bone.name].copy()
+        if clip == "Dev_idle_study":
+            rotate("spine01",(1,0,0),.009*wave)
+            rotate("neck_01",(0,0,1),.006*wave)
+            rotate("upperarm_l",(1,0,0),.004*wave)
+            rotate("upperarm_r",(1,0,0),-.004*wave)
+        else:
+            rotate("thigh_l",(1,0,0),.33*wave)
+            rotate("thigh_r",(1,0,0),-.33*wave)
+            rotate("calf_l",(1,0,0),-.25*max(0,wave))
+            rotate("calf_r",(1,0,0),-.25*max(0,-wave))
+            rotate("upperarm_l",(1,0,0),-.18*wave)
+            rotate("upperarm_r",(1,0,0),.18*wave)
+            rotate("spine01",(0,0,1),.012*math.sin(phase*math.tau*2))
+        for bone in rig.pose.bones:
+            bone.keyframe_insert("rotation_quaternion",frame=frame,group=bone.name)
+    action["loop"] = True
+    action["review_status"] = "CANDIDATE_NOT_APPROVED"
+rig.animation_data.action = bpy.data.actions["Dev_idle_study"]
 scene.frame_set(1)
 source = OUT / "dev_idle_candidate.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
@@ -77,11 +90,11 @@ bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selectio
     export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,
     export_frame_range=False,export_cameras=False,export_lights=False,
     export_yup=True,export_skins=True,export_apply=False)
-report={"status":"RIGGED_IDLE_STUDY_NOT_APPROVED",
+report={"status":"RIGGED_MOTION_STUDY_NOT_APPROVED",
         "source":str(source.relative_to(ROOT)),
         "source_sha256":hashlib.sha256(source.read_bytes()).hexdigest(),
         "runtime":str(runtime.relative_to(ROOT)),
         "runtime_sha256":hashlib.sha256(runtime.read_bytes()).hexdigest(),
-        "action":"Dev_idle_study","in_world":False,"motion_approved":False}
+        "actions":["Dev_idle_study","Dev_walk_study"],"in_world":False,"motion_approved":False}
 (OUT/"idle_manifest.json").write_text(json.dumps(report,indent=2)+"\n")
 print("DEV_IDLE",json.dumps(report))

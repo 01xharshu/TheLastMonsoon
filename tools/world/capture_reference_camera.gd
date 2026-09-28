@@ -20,10 +20,6 @@ func _capture() -> void:
 	camera.make_current()
 	for i in 70:
 		await physics_frame
-	# The local user:// settings may contain an intentionally longer custom distance.
-	# Pin this capture to the new default so it is comparable across machines.
-	player.third_person_distance = 1.25
-	player.get_node("CameraPivot/SpringArm3D").spring_length = 1.25
 	for i in 3:
 		await process_frame
 	await RenderingServer.frame_post_draw

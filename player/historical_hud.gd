@@ -5,18 +5,13 @@ const SERIF = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
 const IVORY := Color(0.92,0.88,0.76)
 const BRASS := Color(0.61,0.47,0.27)
 const INK := Color(0.035,0.046,0.038,0.38)
-const INTRO_CONTROLS_SECONDS := 10.0
-const CONTROLS_FADE_SECONDS := 1.0
-var region_label: Label
 var weapon_label: Label
-var controls_label: Label
 var status_label: Label
 var player: CharacterBody3D
 var heading: float = 0.0
 var health: float = 100.0
 var sight_pulse := 0.0
 var human_target := false
-var controls_elapsed := 0.0
 
 func box(color: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -73,15 +68,9 @@ func _ready() -> void:
 	content.get_node("HintLabel").add_theme_font_size_override("font_size",13)
 	status_label = label("VITALITY",10)
 	status_label.name = "VitalityLabel"
-	region_label = label("SURYAGARH",27,true)
-	region_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	region_label.name = "RegionHeading"
 	weapon_label = label("UNARMED",24,true)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	weapon_label.name = "WeaponLabel"
-	controls_label = label("Hold ~  Weapons    H  Cover    G  Stow / draw    V  View    M  Map    TAB  Satchel",12)
-	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	controls_label.name = "ControlsLabel"
 	for node in [$PrimaryInteractionLabel,$SecondaryInteractionLabel,$PickupMessageLabel]:
 		node.add_theme_font_override("font",SERIF)
 		node.add_theme_font_size_override("font_size",24)
@@ -97,21 +86,16 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 	node.size = extent
 
 func _layout() -> void:
-	if not is_instance_valid(region_label): return
+	if not is_instance_valid(weapon_label): return
 	place(status_label,Vector2(32,size.y-111),Vector2(236,16))
 	place($SurvivalHUD,Vector2(28,size.y-81),Vector2(248,58))
-	place(region_label,Vector2(size.x/2-220,19),Vector2(440,38))
 	place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
-	place(controls_label,Vector2(size.x-610,size.y-46),Vector2(580,25))
 	place($InventoryPanel,Vector2((size.x-640)/2,(size.y-420)/2),Vector2(640,420))
 	place($PrimaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62),Vector2(500,38))
 	place($SecondaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62+36),Vector2(500,32))
 	place($PickupMessageLabel,Vector2(size.x/2-280,size.y*0.18),Vector2(560,40))
 
 func _process(delta: float) -> void:
-	controls_elapsed += delta
-	controls_label.modulate.a = 1.0 - clampf((controls_elapsed - INTRO_CONTROLS_SECONDS) / CONTROLS_FADE_SECONDS, 0.0, 1.0)
-	controls_label.visible = controls_label.modulate.a > 0.0
 	_update_gun_sight(delta)
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)
@@ -119,34 +103,24 @@ func _process(delta: float) -> void:
 	health = player.health
 	if combat:
 		weapon_label.text = combat.get_hud_text()
-		controls_label.text = "1  Talwar    2  Enfield    3  Unarmed    R  Reload    M  Map    TAB  Satchel"
 	else:
 		var character := player.get_node_or_null("VisualRoot/CharacterVisual")
 		weapon_label.text = character.equipment.held_name() if character and character.equipment else "STOWED"
 	var rifle := player.get_node_or_null("RifleCombat")
 	if rifle:
 		weapon_label.text = rifle.get_hud_text()
-		controls_label.text = "RMB Aim · LMB Fire · R Reload · H Cover · G Stow · M Map · ~ Weapons"
 	var equipment: Node = player.get_node("VisualRoot/CharacterVisual").equipment
 	if equipment and not equipment.stowed and equipment.selected == 2:
 		weapon_label.text = "BOW · %d ARROWS" % player.inventory.get_item_count("arrow")
-		controls_label.text = "Hold RMB Draw · LMB Loose · H Cover · G Stow · ~ Weapons"
 	elif equipment and not equipment.stowed and equipment.selected == 3:
 		var pistol: Node = player.get_node("PistolCombat")
 		weapon_label.text = pistol.get_hud_text()
-		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Cover · G Stow · ~ Weapons"
 	elif equipment and not equipment.stowed and equipment.selected == 5:
-		controls_label.text = "Hold RMB Aim · LMB Fire · R Reload · H Cover · G Stow · ~ Weapons"
 	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
 		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN"}[equipment.selected]
 		place(weapon_label,Vector2(size.x-303,size.y-181),Vector2(258,28))
 	else:
 		place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
-	var world: Node = player.get_parent()
-	var location: Label = world.get_node_or_null("LandscapeUI/Location") as Label
-	if location:
-		var parts: PackedStringArray = location.text.split("\n")[0].split("/")
-		region_label.text = parts[parts.size()-1].strip_edges().to_upper()
 	queue_redraw()
 
 func _update_gun_sight(delta: float) -> void:

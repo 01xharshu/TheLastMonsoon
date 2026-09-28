@@ -1,7 +1,7 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
-  "source_sha256": "868584ecfeb2310e59bd8d65486066d30bdc82751d4bd3035663ee44e8d6aeb4",
+  "source_sha256": "55268342e03e1d8a1c505966bbd3dbb6c272f563618f0c77cc4ed16da67a47aa",
   "reference": "docs/characters/british/references/private_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -20,9 +20,10 @@
     },
     "woman": {
       "path": "characters/npcs/british/private_woman.glb",
-      "sha256": "7a42c5fbbdc34c18f4b823d4580c053d372b3fc76d5bb0fe7acf86ef978ad41b",
-      "bytes": 1835760
+      "sha256": "1176f612c8fa6a7c00fe0f9833e1a3826932a037709bfd06645dc2768d8d8d29",
+      "bytes": 1903444
     }
   },
-  "placed_in_world": false
+  "placed_in_world": true,
+  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
 }

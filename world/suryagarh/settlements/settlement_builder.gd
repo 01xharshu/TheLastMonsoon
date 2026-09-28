@@ -346,13 +346,15 @@ func compound() -> void:
 			body.add_to_group("climbable_walls")
 			body.set_meta("top_y",16.8)
 			body.set_meta("climb_center_z",300.0)
+			body.set_meta("climb_hold_base_y",c.position.y+.42)
+			body.set_meta("climb_hold_center_z",c.position.z)
 		piece(c,"WallWalk",Vector3(side*50.3,4.62,0),Vector3(3.5,.36,96),stone)
 		piece(c,"Coping",Vector3(side*52,4.8,0),Vector3(1.55,.14,96),stone,false)
 		# Worn projecting masonry communicates the climb route.
 		if side<0:
 			for row in 8:
-				for col in 3:
-					piece(c,"ClimbingStone",Vector3(side*52.78,.42+row*.55,-.9+col*.8+(row%2)*.22),Vector3(.2,.14,.42),stone,false)
+				for col in 4:
+					piece(c,"ClimbingStone",Vector3(side*52.78,.42+row*.55,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),stone,false)
 	piece(c,"SouthWall",Vector3(0,2.4,48),Vector3(104,4.8,1.4),brick)
 	for side in [-1.0,1.0]:
 		piece(c,"GateWall",Vector3(side*28,2.4,-48),Vector3(48,4.8,1.4),brick)

@@ -1,5 +1,5 @@
 extends Node
-## Shoreline interaction shared by river drinking and the carried water pouch.
+## Shoreline interaction fills the carried water pouch; drinking is done from inventory.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const ACTION_SECONDS := 1.8
 var layout := Layout.new()
@@ -24,12 +24,7 @@ func can_use_river() -> bool:
 	return false
 
 func start_drink() -> bool:
-	if not can_use_river(): return false
-	if survival.hydration >= survival.max_hydration:
-		inventory.request_message("You are not thirsty")
-		return false
-	start_action("drink")
-	return true
+	return false
 
 func start_fill() -> bool:
 	if not can_use_river(): return false
@@ -61,12 +56,8 @@ func _process(delta: float) -> void:
 	elapsed += delta
 	actor.set_meta("river_action_progress",clampf(elapsed/ACTION_SECONDS,0.0,1.0))
 	if elapsed < ACTION_SECONDS: return
-	if action == "drink":
-		var restored: float = survival.restore_hydration(30.0)
-		inventory.request_message("Drank from the river  ·  +%d water" % roundi(restored))
-	else:
-		var filled: float = inventory.add_water(inventory.get_available_water_capacity_liters())
-		inventory.request_message("Filled water pouch  ·  %.2f L" % filled)
+	var filled: float = inventory.add_water(inventory.get_available_water_capacity_liters())
+	inventory.request_message("Filled water pouch  ·  %.2f L" % filled)
 	ControllerFeedback.pulse("water")
 	cancel()
 

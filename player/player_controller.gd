@@ -741,13 +741,13 @@ func _find_interactable() -> Interactable:
 	var view_rect: Rect2 = get_viewport().get_visible_rect()
 	var best: Interactable
 	var best_score := -INF
-	var origin := global_position + Vector3.UP * 0.2
+	var origin := global_position + Vector3.UP * 1.35
 	for node in get_tree().get_nodes_in_group("interactables"):
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
 		var candidate := node as Interactable
 		if candidate == null or not candidate.interaction_available(): continue
 		var screen_point := Vector2.ZERO
-		if view_camera != null:
+		if view_camera != null and candidate.is_in_group("weapon_pickups"):
 			if view_camera.is_position_behind(candidate.interaction_anchor()): continue
 			screen_point = view_camera.unproject_position(candidate.interaction_anchor())
 			if not view_rect.has_point(screen_point): continue
@@ -760,6 +760,9 @@ func _find_interactable() -> Interactable:
 		var query := PhysicsRayQueryParameters3D.create(origin, candidate.global_position)
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty() and hit.collider != candidate:
+			query.from = global_position + Vector3.UP * 0.2
+			hit = get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider != candidate: continue
 		var score := alignment * 2.0 - distance * 0.25
 		if candidate.is_in_group("weapon_pickups") and view_camera != null:
@@ -770,13 +773,16 @@ func _find_interactable() -> Interactable:
 	return best
 
 func _update_interaction() -> void:
-	current_interactable = _find_interactable()
+	if is_instance_valid(hold_target) and hold_target.interaction_available() and Input.is_action_pressed(hold_action) and global_position.distance_to(hold_target.global_position) <= hold_target.interaction_max_distance:
+		current_interactable = hold_target
+	else:
+		current_interactable = _find_interactable()
 	if current_interactable == null:
 		interaction_overlay.set_target(null)
-		if river_water.can_use_river():
+		if river_water.can_use_river() and inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0:
 			primary_interaction_label.visible = false
 			secondary_interaction_label.visible = false
-			interaction_overlay.set_river_actions(true, inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0)
+			interaction_overlay.set_river_actions(true, false)
 		else:
 			_hide_interaction_labels()
 		return
@@ -836,7 +842,7 @@ func _try_primary_interaction() -> void:
 	current_interactable = _find_interactable()
 
 	if current_interactable == null:
-		if river_water.start_drink(): ControllerFeedback.pulse("interaction")
+		if river_water.can_use_river() and inventory.has_water_bag() and inventory.get_available_water_capacity_liters() > 0.0 and river_water.start_fill(): ControllerFeedback.pulse("interaction")
 		return
 
 
@@ -855,7 +861,6 @@ func _try_secondary_interaction() -> void:
 	current_interactable = _find_interactable()
 
 	if current_interactable == null:
-		if river_water.start_fill(): ControllerFeedback.pulse("interaction")
 		return
 
 

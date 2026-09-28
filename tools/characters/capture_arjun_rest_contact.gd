@@ -40,9 +40,26 @@ func _run() -> void:
 	camera.global_position = Vector3(2.5, 1.65, 2.2)
 	camera.look_at(Vector3(0, 0.55, 0))
 	camera.make_current()
-	player.set_meta("rest_action", "sleep")
 	var sample_name := OS.get_environment("TLM_REST_SAMPLE")
 	if sample_name == "": sample_name = "sit"
+	if sample_name == "sequence":
+		var survival: SurvivalComponent = player.get_node("SurvivalComponent")
+		survival.energy = 20.0
+		var before: float = clock.total_game_minutes
+		bed.interact(player)
+		var progress_samples: Array[float] = []
+		for step in 16:
+			await create_timer(0.25).timeout
+			progress_samples.append(float(player.get_meta("rest_progress", -1.0)))
+		assert(not bed.resting and player.get_meta("rest_action", "") == "", "Charpai did not release player")
+		assert(is_equal_approx(clock.total_game_minutes - before, 480.0), "Charpai did not advance eight hours")
+		assert(survival.energy > 20.0, "Charpai did not restore energy")
+		var final_model: Node3D = player.get_node("VisualRoot/CharacterVisual").model
+		assert(final_model.quaternion.angle_to(Quaternion.IDENTITY) < 0.08, "Charpai left the visual rig rolled after wake")
+		print("REST SEQUENCE PASS ", JSON.stringify(progress_samples))
+		quit()
+		return
+	player.set_meta("rest_action", "sleep")
 	var samples := [{"label":"sit", "progress":0.35}]
 	if sample_name == "lie": samples = [{"label":"lie", "progress":1.0}]
 	elif sample_name == "mid": samples = [{"label":"mid", "progress":0.65}]

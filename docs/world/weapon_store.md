@@ -1,5 +1,9 @@
 # Company weapon store — 2026-09-27
 
+## Upper shelf interaction — 2026-09-28
+
+Standing near the upper shelf could focus the Enfield below the bow even when the Enfield was off screen. Shelf pickups now allow a 3 m interaction distance. Weapon selection ignores off-screen pickups and favors the visible pickup nearer the screen center; once E is held, the selected target remains stable while Arjun stays within reach. The shared mango-style hold card and actual weapon placement remain in use. `tools/weapons/validate_equipping.gd` checks the talwar, bow, and pistol from both 0.45 m lateral offsets and 2.25 m in front of their targets, then completes held equip from an off-center position for all three. All five store weapons PASS. `tools/world/validate_interaction_chest.gd` also PASS after the hold stability change. Normal-speed owner play feel remains to review.
+
 ## Placement repair
 
 The prior five-weapon render showed an upright bow penetrating the upper shelf, a floating pistol, and crowded long guns. The two-shelf rack now measures 4.8 × 1.0 m. Posts reach both shelves, and the rear panel closes the storage bay. Rifles occupy the lower shelf; bow, talwar, and pistol occupy the upper shelf.

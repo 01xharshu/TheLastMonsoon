@@ -46,7 +46,7 @@ func configure(model: Node3D) -> bool:
 		library.add_animation(name, clip)
 	library.add_animation("longgun_ready", _longgun_pose_clip(skeleton, source.get_animation("idle"), false))
 	library.add_animation("longgun_aim", _longgun_pose_clip(skeleton, source.get_animation("idle"), true))
-	for beat in ["reach", "pull", "mantle", "recover"]:
+	for beat in ["reach", "pull_left", "pull_right", "mantle", "recover"]:
 		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
@@ -80,7 +80,7 @@ func configure(model: Node3D) -> bool:
 	var climb := AnimationNodeBlendSpace1D.new()
 	climb.min_space = 0.0
 	climb.max_space = 1.0
-	for beat in [{"name":"reach","at":0.0},{"name":"pull","at":0.35},{"name":"mantle","at":0.78},{"name":"recover","at":1.0}]:
+	for beat in [{"name":"reach","at":0.0},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.82},{"name":"recover","at":1.0}]:
 		climb.add_blend_point(_clip("motion/climb_" + beat.name), beat.at, -1, beat.name)
 	graph.add_node("climb_pose", climb)
 	graph.add_node("climb", AnimationNodeBlend2.new())
@@ -111,7 +111,8 @@ func _climb_pose_clip(rig: Skeleton3D, idle: Animation, beat: String) -> Animati
 	clip.loop_mode = Animation.LOOP_LINEAR
 	var poses := {
 		"reach": {"pelvis":Vector3(-.10,0,0), "spine_01":Vector3(-.20,0,0), "spine_02":Vector3(-.13,0,0), "head":Vector3(.13,0,0), "upperarm_l":Vector3(-1.55,-.08,-.22), "upperarm_r":Vector3(-1.35,-.08,.22), "lowerarm_l":Vector3(-.45,0,0), "lowerarm_r":Vector3(-.55,0,0), "thigh_l":Vector3(.40,0,0), "thigh_r":Vector3(.65,0,0), "calf_l":Vector3(-.5,0,0), "calf_r":Vector3(-.8,0,0)},
-		"pull": {"pelvis":Vector3(-.08,.04,0), "spine_01":Vector3(-.24,0,0), "spine_02":Vector3(-.16,0,0), "head":Vector3(.10,0,0), "upperarm_l":Vector3(-1.72,-.08,-.22), "upperarm_r":Vector3(-1.72,-.08,.22), "lowerarm_l":Vector3(-.55,0,0), "lowerarm_r":Vector3(-.55,0,0), "thigh_l":Vector3(1.0,0,0), "thigh_r":Vector3(.45,0,0), "calf_l":Vector3(-1.35,0,0), "calf_r":Vector3(-.55,0,0)},
+		"pull_left": {"pelvis":Vector3(-.08,.04,-.035), "spine_01":Vector3(-.24,-.04,0), "spine_02":Vector3(-.16,-.03,0), "head":Vector3(.10,.03,0), "upperarm_l":Vector3(-1.72,-.08,-.22), "upperarm_r":Vector3(-1.60,-.08,.22), "lowerarm_l":Vector3(-.68,0,0), "lowerarm_r":Vector3(-.42,0,0), "thigh_l":Vector3(1.0,0,0), "thigh_r":Vector3(.45,0,0), "calf_l":Vector3(-1.35,0,0), "calf_r":Vector3(-.55,0,0)},
+		"pull_right": {"pelvis":Vector3(-.08,-.04,.035), "spine_01":Vector3(-.24,.04,0), "spine_02":Vector3(-.16,.03,0), "head":Vector3(.10,-.03,0), "upperarm_l":Vector3(-1.60,-.08,-.22), "upperarm_r":Vector3(-1.72,-.08,.22), "lowerarm_l":Vector3(-.42,0,0), "lowerarm_r":Vector3(-.68,0,0), "thigh_l":Vector3(.45,0,0), "thigh_r":Vector3(1.0,0,0), "calf_l":Vector3(-.55,0,0), "calf_r":Vector3(-1.35,0,0)},
 		"mantle": {"pelvis":Vector3(.10,0,0), "spine_01":Vector3(.35,0,0), "spine_02":Vector3(.23,0,0), "head":Vector3(-.15,0,0), "upperarm_l":Vector3(-.75,0,-.13), "upperarm_r":Vector3(-.75,0,.13), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0), "thigh_l":Vector3(1.05,0,0), "thigh_r":Vector3(.75,0,0), "calf_l":Vector3(-.7,0,0), "calf_r":Vector3(-.6,0,0)},
 		"recover": {}
 	}
@@ -185,7 +186,8 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 					clip.track_set_path(track, NodePath("Arjun_Rig/Skeleton3D:" + bone))
 					tracks[bone] = track
 	for frame in 25:
-		var cycle := TAU * float(frame) / 24.0
+		# Reverse the in-place stride so a low foot travels against the body.
+		var cycle := -TAU * float(frame) / 24.0
 		var left := cos(cycle)
 		var right := -left
 		var stride := 0.80 if running else 0.52
@@ -235,7 +237,7 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	# The collision body travels at 4 m/s at its normal pace. Match the
 	# in-place gait cadence to that travel so planted feet slide less.
 	var run_mix := clampf((ground_speed - 1.0) / 0.75, 0.0, 1.0)
-	var ground_rate := lerpf(clampf(ground_speed * 1.7, 0.7, 1.7), 1.6, run_mix)
+	var ground_rate := lerpf(clampf(ground_speed * 1.7, 0.7, 1.7), 1.4, run_mix)
 	playback_rate = lerpf(playback_rate, lerpf(ground_rate, 1.0, swim_blend), weight)
 	advance(delta * playback_rate)
 	# The source boots rise as the thighs swing. Move only the visual rig down

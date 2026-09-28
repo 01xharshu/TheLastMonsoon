@@ -15,37 +15,40 @@ skirt = bpy.data.objects['Companion gathered skirt']
 existing = bpy.data.objects.get('Companion fitted waist transition')
 if existing:
     bpy.data.objects.remove(existing, do_unlink=True)
-scale = max(v.co.z for v in skirt.data.vertices) / .82
-sides = 72
-levels = []
-for t in [0, .20, .40, .60, .80, 1.0]:
-    # Lower edge matches the gathered skirt. Upper edge tucks into the
-    # fitted bodice instead of leaving an open annulus behind the waist.
-    smooth = t*t*(3-2*t)
-    levels.append(((.82+.18*t)*scale,
-                   (.17-.065*smooth)*scale,
-                   (.156-.071*smooth)*scale,
-                   -.0625*smooth*scale))
+top_z = max(v.co.z for v in skirt.data.vertices)
+scale = top_z / .82
+top_ring = [v.co.copy() for v in skirt.data.vertices if abs(v.co.z-top_z)<0.0001]
+sides = len(top_ring)
+assert sides in (72,144), (rank,sides)
 vertices = []
-for z, rx, ry, center_y in levels:
-    for j in range(sides):
+for row, t in enumerate([0, .20, .40, .60, .80, 1.0]):
+    # Gather most of the skirt fullness immediately above its top edge,
+    # leaving the upper transition tucked close to the bodice silhouette.
+    smooth = 1.0-(1.0-t)**3
+    for j, bottom in enumerate(top_ring):
         theta = math.tau*j/sides
-        vertices.append((rx*math.cos(theta), center_y+ry*math.sin(theta), z))
+        upper_x = .105*scale*math.cos(theta)
+        upper_y = (-.0625+.085*math.sin(theta))*scale
+        vertices.append((bottom.x*(1-smooth)+upper_x*smooth,
+                         bottom.y*(1-smooth)+upper_y*smooth,
+                         top_z+.18*scale*t))
 faces = []
-for row in range(len(levels)-1):
+for row in range(5):
     for j in range(sides):
         nxt = (j+1)%sides
         faces.append((row*sides+j,row*sides+nxt,(row+1)*sides+nxt,(row+1)*sides+j))
 mesh = bpy.data.meshes.new('Companion fitted waist transition mesh')
 mesh.from_pydata(vertices, [], faces)
 mesh.update()
+for face in mesh.polygons:
+    face.use_smooth = True
 obj = bpy.data.objects.new('Companion fitted waist transition', mesh)
 bpy.context.scene.collection.objects.link(obj)
 obj.parent = rig
 obj.data.materials.append(skirt.data.materials[0])
 pelvis = obj.vertex_groups.new(name='pelvis')
 spine = obj.vertex_groups.new(name='spine_01')
-for row in range(len(levels)):
+for row in range(6):
     indices=list(range(row*sides,(row+1)*sides))
     upper=max(0.0,min(0.75,(row/5-.30)*1.1))
     pelvis.add(indices,1.0-upper,'REPLACE')
@@ -55,4 +58,4 @@ mod=obj.modifiers.new('Rig deformation','ARMATURE')
 mod.object=rig
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
-print('BRITISH_WAIST_BRIDGE',rank,'rows',len(levels),'vertices',len(vertices))
+print('BRITISH_WAIST_BRIDGE',rank,'rows',6,'vertices',len(vertices))

@@ -49,9 +49,10 @@ func validate() -> void:
 	player.survival.hydration = 50
 	fruit[0].interact(player)
 	fruit[0].interact(player)
-	fruit[1].secondary_interact(player)
+	fruit[1].interact(player)
+	check(player.consumables.eat_mango(), "Satchel eating failed")
 	check(player.inventory.get_item_count("mango") == 1, "Repeated pickup duplicated inventory")
-	check(player.survival.satiety == 62 and player.survival.hydration == 56, "Direct eating did not restore nutrition")
+	check(player.survival.satiety == 62 and player.survival.hydration == 56, "Satchel eating did not restore nutrition")
 	# Save immediately, before queue_free completes.
 	check(saves.save_game(world, 1), "Could not save harvested fruit")
 	var data: Dictionary = saves.read_slot(1)

@@ -1,5 +1,5 @@
 extends Interactable
-## One fruit, consumed once: E stores it, Shift+E eats it on the spot.
+## World fruit is collected here; eating happens from the Satchel.
 signal harvested(forage_id: String)
 @export var forage_id := ""
 var collected := false
@@ -7,7 +7,7 @@ var collected := false
 func _ready() -> void:
 	interaction_text = "Pick up mango"
 	interaction_icon = "mango"
-	secondary_interaction_text = "Eat mango"
+	secondary_interaction_text = ""
 	hold_duration = .65
 	interaction_pose = "low_reach"
 	interaction_max_distance = 1.1
@@ -36,10 +36,9 @@ func interact(player: CharacterBody3D) -> void:
 		_finish_collection()
 		player.inventory.request_message("Picked up mango · eat it from the Satchel")
 
-func secondary_interact(player: CharacterBody3D) -> void:
-	if collected: return
-	if player.consumables.eat_fresh_mango():
-		_finish_collection()
+func secondary_interact(_player: CharacterBody3D) -> void:
+	# Kept for older callers; world fruit can only be eaten after collection.
+	pass
 
 func _finish_collection() -> void:
 	collected = true

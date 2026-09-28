@@ -106,7 +106,10 @@ func height(x: float, z: float) -> float:
 			if dist < nearest_trail:
 				nearest_trail = dist
 				trail_target = lerpf(FORT_TRAIL_GRADES[i],FORT_TRAIL_GRADES[i+1],t)
-		h = lerpf(h,trail_target,1.0-smoothstep(3.0,14.0,nearest_trail))
+		var police: Dictionary = PLOTS["DistrictPolice"]
+		var police_edge: float = maxf(absf(x-police.center.x)-police.half.x,absf(z-police.center.y)-police.half.y)
+		var clear_of_police: float = smoothstep(0.0,8.0,maxf(0.0,police_edge))
+		h = lerpf(h,trail_target,(1.0-smoothstep(3.0,14.0,nearest_trail))*clear_of_police)
 	return h
 
 func base_height(x: float, z: float) -> float:

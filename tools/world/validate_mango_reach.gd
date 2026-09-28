@@ -102,8 +102,8 @@ func validate() -> void:
 		if offset.z > 0.5:
 			player.survival.satiety = 40.0
 			fruit.secondary_interact(player)
-		else:
-			fruit.interact(player)
+			check(not fruit.collected,"World eating bypassed the Satchel")
+		fruit.interact(player)
 		check(component.carried_mango.visible,"Completed ground pickup did not show hand fruit")
 		for frame in 110:
 			visual._process(1.0/60.0)

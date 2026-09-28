@@ -65,6 +65,12 @@ top_radius = 0.06
 bottom_radius = 0.075
 height = 0.13
 
+[sub_resource type="CylinderMesh" id="BagCordMesh"]
+material = SubResource("StandardMaterial3D_oj0j4")
+top_radius = 0.012
+bottom_radius = 0.012
+height = 0.5
+
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_oj0j4"]
 radius = 0.28
 height = 0.72
@@ -131,15 +137,19 @@ mesh = SubResource("CapsuleMesh_6xif0")
 script = ExtResource("2_8t03j")
 
 [node name="WaterBagVisual" type="Node3D" parent="VisualRoot/EquipmentVisuals" unique_id=1724261517]
-transform = Transform3D(0.3939231, 0.069459274, 0, -0.069459274, 0.3939231, 0, 0, 0, 0.4, 0.14076918, -0.13430867, 0.18145865)
+transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0.3, 0.18, -0.12)
 
 [node name="BagBody" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=496508896]
-transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, 0.25, 0)
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, -0.65, 0)
 mesh = SubResource("SphereMesh_hg6s5")
 
 [node name="BagNeck" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=1724466129]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0005128607, 0.40164506, 0.004646886)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0005128607, -0.5, 0.004646886)
 mesh = SubResource("CylinderMesh_8t03j")
+
+[node name="BagCord" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual"]
+position = Vector3(0, -0.25, 0)
+mesh = SubResource("BagCordMesh")
 
 [node name="CharacterVisual" type="Node3D" parent="VisualRoot" unique_id=509518366]
 script = ExtResource("3_wodsf")
@@ -173,6 +183,7 @@ offset_bottom = 648.0
 mouse_filter = 2
 
 [node name="PrimaryInteractionLabel" type="Label" parent="UI/HUDRoot" unique_id=603483299]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -191,6 +202,7 @@ vertical_alignment = 1
 uppercase = true
 
 [node name="SecondaryInteractionLabel" type="Label" parent="UI/HUDRoot" unique_id=1762028143]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5

@@ -204,7 +204,10 @@ func validate() -> void:
 	var fresh = load("res://objects/mango.gd").new()
 	world.add_child(fresh)
 	fresh.secondary_interact(player)
-	check(fresh.collected and survival.satiety == 74, "Eat on spot failed")
+	check(not fresh.collected and survival.satiety == 62, "World eating was still allowed")
+	fresh.interact(player)
+	check(fresh.collected and player.inventory.get_item_count("mango") == 1, "Second mango was not collected")
+	check(player.consumables.eat_mango() and survival.satiety == 74, "Satchel eating failed")
 	var full_fruit = load("res://objects/mango.gd").new()
 	world.add_child(full_fruit)
 	survival.satiety = 100

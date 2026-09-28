@@ -2,10 +2,10 @@
   "actors": [
     {
       "actor": "PrivateMan",
-      "half_speed_rate": 0.298754322705462,
+      "half_speed_rate": 0.244387135706243,
       "nominal_m_s": 0.920570492744446,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.597508645410923
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.488774271412486
     },
     {
       "actor": "PrivateWoman",
@@ -16,10 +16,10 @@
     },
     {
       "actor": "CorporalMan",
-      "half_speed_rate": 0.335866949148968,
+      "half_speed_rate": 0.274746021873745,
       "nominal_m_s": 0.818849293624654,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.671733898297936
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.549492043747491
     },
     {
       "actor": "CorporalWoman",
@@ -30,10 +30,10 @@
     },
     {
       "actor": "SergeantMan",
-      "half_speed_rate": 0.28796740010316,
+      "half_speed_rate": 0.235563212778572,
       "nominal_m_s": 0.955053988625022,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.575934800206319
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.471126425557144
     },
     {
       "actor": "SergeantWoman",
@@ -44,10 +44,10 @@
     },
     {
       "actor": "LieutenantMan",
-      "half_speed_rate": 0.338067863977767,
+      "half_speed_rate": 0.276546415140268,
       "nominal_m_s": 0.81351835938061,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.676135727955534
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.553092830280536
     },
     {
       "actor": "LieutenantWoman",
@@ -58,10 +58,10 @@
     },
     {
       "actor": "CaptainMan",
-      "half_speed_rate": 0.291345689603397,
+      "half_speed_rate": 0.238326722565052,
       "nominal_m_s": 0.943979691056644,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.582691379206795
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.476653445130103
     },
     {
       "actor": "CaptainWoman",
@@ -72,10 +72,10 @@
     },
     {
       "actor": "MajorMan",
-      "half_speed_rate": 0.289628155240543,
+      "half_speed_rate": 0.236921744388957,
       "nominal_m_s": 0.949577619047726,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.579256310481086
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.473843488777915
     },
     {
       "actor": "MajorWoman",
@@ -86,10 +86,10 @@
     },
     {
       "actor": "ColonelMan",
-      "half_speed_rate": 0.288320166763079,
+      "half_speed_rate": 0.235851783108901,
       "nominal_m_s": 0.953885457094978,
-      "travel_m_s": 0.550048828125,
-      "walk_rate": 0.576640333526158
+      "travel_m_s": 0.449951171875,
+      "walk_rate": 0.471703566217803
     },
     {
       "actor": "ColonelWoman",

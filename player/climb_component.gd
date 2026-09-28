@@ -3,6 +3,7 @@ extends Node
 @onready var actor: CharacterBody3D = get_parent()
 var active := false
 var progress := 0.0
+var duration := 2.4
 var start := Vector3.ZERO
 var crest := Vector3.ZERO
 var grip := Vector3.ZERO
@@ -10,6 +11,9 @@ var landing := Vector3.ZERO
 var saved_mask: int
 var wall_normal := Vector3.ZERO
 var wall_point := Vector3.ZERO
+var hold_base_y := 0.0
+var hold_center_z := 0.0
+var has_holds := false
 
 func try_start() -> bool:
 	if active or actor.is_swimming or actor.has_meta("mounted_vehicle"): return false
@@ -22,9 +26,12 @@ func try_start() -> bool:
 	var hit: Dictionary = space.intersect_ray(ray)
 	if hit.is_empty() or absf(hit.normal.y) > 0.25: return false
 	var authored: bool = hit.collider.is_in_group("climbable_walls")
+	has_holds = hit.collider.has_meta("climb_hold_base_y")
 	if authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>2.3: return false
 	wall_normal = hit.normal
 	wall_point = hit.position
+	hold_base_y = float(hit.collider.get_meta("climb_hold_base_y",hit.position.y))
+	hold_center_z = float(hit.collider.get_meta("climb_hold_center_z",hit.position.z))
 	var top: float
 	if authored:
 		top = hit.collider.get_meta("top_y")
@@ -48,6 +55,9 @@ func try_start() -> bool:
 	start = actor.global_position
 	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.28
 	crest = Vector3(hit.position.x,top+1.1,hit.position.z)+wall_normal*.27
+	# Keep tall climbs at a human climbing pace; a short ledge still uses the
+	# original quick reach and mantle timing.
+	duration = maxf(2.4, (crest.y - grip.y) / .85 + .95)
 	progress = 0
 	active = true
 	saved_mask = actor.collision_mask
@@ -63,12 +73,17 @@ func try_start() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if not active: return
-	progress += delta/2.4
+	progress += delta/duration
 	var t: float = clampf(progress,0,1)
 	if t < 0.14:
 		actor.global_position = start.lerp(grip,smoothstep(0,0.14,t))
 	elif t < 0.78:
-		actor.global_position = grip.lerp(crest,smoothstep(0.14,0.78,t))
+		var ascent: float = (t - .14) / .64
+		var step_count: float = maxf(1.0, ceilf((crest.y - grip.y) / .72))
+		var step_number: float = floorf(ascent * step_count)
+		var step_phase: float = fposmod(ascent * step_count, 1.0)
+		var stepped: float = (step_number + smoothstep(0.08, .92, step_phase)) / step_count
+		actor.global_position = grip.lerp(crest, minf(1.0, stepped))
 	else:
 		actor.global_position = crest.lerp(landing,smoothstep(0.78,1.0,t))
 	if t >= 1:

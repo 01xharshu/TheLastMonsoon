@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "pairs": [
+    {
+      "rank": "private",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 144,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "corporal",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "sergeant",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "lieutenant",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "captain",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "major",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "colonel",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    },
+    {
+      "rank": "official",
+      "upper_edge_seam_error_m": 0.0,
+      "ring_vertices": 72,
+      "editable_source_sha_verified": true,
+      "runtime_exports_sha_verified": true,
+      "front_side_back_views_refreshed": true
+    }
+  ],
+  "scope": "editable mesh seam and SHA/render presence; runtime shape/style requires Metal inspection"
+}

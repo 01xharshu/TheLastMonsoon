@@ -72,6 +72,9 @@ func run() -> void:
 	rifle.reload_remaining = 3.4
 	visual._process(1.0/60.0)
 	check(visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge was absent at the loading hand")
+	var cartridge_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
+	print("CARTRIDGE DEBUG ", visual.equipment.enfield_cartridge.global_position, " palm ", cartridge_palm)
+	check(visual.equipment.enfield_cartridge.global_position.distance_to(cartridge_palm) < 0.10,"Enfield cartridge was not in the left palm")
 	rifle.reload_remaining = 1.8
 	visual._process(1.0/60.0)
 	check(not visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge remained after the loading gesture")

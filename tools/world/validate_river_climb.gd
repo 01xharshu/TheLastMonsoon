@@ -93,10 +93,13 @@ func validate() -> void:
 	var climb: Node=actor.get_node("ClimbComponent")
 	check(climb.try_start(),"wall climb begins on authored masonry")
 	if climb.active:
-		for i in 38: await physics_frame
+		print("CLIMB WALL point=",climb.wall_point," normal=",climb.wall_normal," top=",climb.landing)
+		check(climb.duration>4.0,"tall wall climb uses height-based ascent time")
+		while climb.progress < .12: await physics_frame
 		if DisplayServer.get_name()!="headless": await capture("16a_climb_reach")
-		for i in 16: await physics_frame
+		while climb.progress < .35: await physics_frame
 		var visual: Node=actor.get_node("VisualRoot/CharacterVisual")
+		var closest_boot: float=INF
 		for side in ["l","r"]:
 			var index: int=visual.skeleton.find_bone("hand_"+side)
 			var wrist: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(index).origin)
@@ -105,14 +108,26 @@ func validate() -> void:
 			var foot_index: int=visual.skeleton.find_bone("foot_"+side)
 			var foot: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot_index).origin)
 			print("CLIMB FOOT ",side," ",foot)
+			var foot_gap: float=foot.distance_to(visual.climb_foot_targets[side])
+			closest_boot=minf(closest_boot,foot_gap)
+			print("CLIMB FOOT CONTACT ",side," error_m=",snappedf(foot_gap,.001))
 			print("ARM SEGMENTS ",side," ",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin).distance_to(elbow)," ",elbow.distance_to(wrist))
 			print("CLIMB HAND ",side," error_m=",snappedf(wrist.distance_to(target),.001)," wrist=",wrist," target=",target," shoulder=",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin)," actor=",actor.global_position," ik=",visual.climb_ik[side].is_running()," influence=",visual.climb_ik[side].influence," iktarget=",visual.climb_ik[side].get_target_transform().origin," path=",visual.climb_ik[side].target_node," resolved=",visual.climb_ik[side].get_node_or_null(visual.climb_ik[side].target_node))
+			check(wrist.distance_to(target)<.03,"wall climb "+side+" wrist reaches stone")
+		check(closest_boot<.12,"one boot supports body on wall")
 		if DisplayServer.get_name()!="headless": await capture("16_arjun_climbing")
-		for i in 42: await physics_frame
+		while climb.progress < .56: await physics_frame
+		var next_boot: float=INF
+		for side in ["l","r"]:
+			var next_foot_index: int=visual.skeleton.find_bone("foot_"+side)
+			var next_foot: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(next_foot_index).origin)
+			next_boot=minf(next_boot,next_foot.distance_to(visual.climb_foot_targets[side]))
+		check(next_boot<.12,"alternating ascent retains a supporting boot")
+		while climb.progress < .68: await physics_frame
 		if DisplayServer.get_name()!="headless": await capture("16b_climb_pull")
-		for i in 15: await physics_frame
+		while climb.progress < .85: await physics_frame
 		if DisplayServer.get_name()!="headless": await capture("16c_climb_mantle")
-		for i in 63: await physics_frame
+		while climb.active: await physics_frame
 		check(not climb.active,"wall climb completes")
 		check(actor.global_position.y>16,"Arjun lands on wall walk")
 	print("RIVER BOAT CLIMB ","PASS" if failures==0 else "FAIL "+str(failures))

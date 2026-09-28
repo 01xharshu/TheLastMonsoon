@@ -9,6 +9,7 @@ func _ready() -> void:
 	interaction_text = "Take and equip " + {"enfield":"Enfield rifle","talwar":"talwar","bow":"bow and quiver","pistol":"Adams pistol","double_gun":"double-barrel gun"}.get(weapon_id,weapon_id)
 	interaction_icon = "weapon"
 	hold_duration = .9
+	interaction_max_distance = 3.0
 	marker_height = 0.0
 	add_to_group("weapon_pickups")
 func interact(actor: CharacterBody3D) -> void:

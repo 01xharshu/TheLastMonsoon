@@ -13,7 +13,7 @@ radius = 0.45
 
 [node name="WaterPot" type="StaticBody3D" unique_id=770139238]
 script = ExtResource("1_omui8")
-interaction_text = "Drink Water"
+interaction_text = "Fill Water Bag"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=96572679]
 mesh = SubResource("CylinderMesh_6xif0")

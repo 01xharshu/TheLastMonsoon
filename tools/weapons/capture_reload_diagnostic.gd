@@ -5,6 +5,7 @@ func _initialize() -> void:
 
 func capture() -> void:
 	if DisplayServer.get_name() == "headless": quit(1); return
+	root.size = Vector2i(1280, 720)
 	var world := Node3D.new()
 	root.add_child(world)
 	current_scene = world

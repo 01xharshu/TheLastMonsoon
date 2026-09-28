@@ -27,10 +27,12 @@ var walk_playback_rate: float = 1.0
 var foot_plant = preload("res://characters/npcs/british/british_foot_plant.gd").new()
 var _walk_phase: float = 0.0
 var _last_facing: float = 0.0
+var body_collider: AnimatableBody3D
 
 func _ready() -> void:
 	_home = position
 	_clock = cycle_offset
+	_create_body_collider()
 	var found := find_children("*", "Skeleton3D", true, false)
 	if found.is_empty():
 		push_error("British NPC has no imported skeleton: " + name)
@@ -115,6 +117,26 @@ func _ready() -> void:
 	foot_plant.configure(_skeleton)
 	_last_facing = rotation.y
 
+func _create_body_collider() -> void:
+	# A moving physics body follows this preview actor's patrol transform. The
+	# capsule represents the torso and legs, not the full width of a dress.
+	body_collider = AnimatableBody3D.new()
+	body_collider.name = "BodyCollider"
+	body_collider.collision_layer = 1
+	body_collider.collision_mask = 1
+	# The parent patrol owns the transform; sync_to_physics would keep this child
+	# at its spawn point while the visible actor moves.
+	body_collider.sync_to_physics = false
+	add_child(body_collider)
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.29 if movement_profile == &"male" else 0.30
+	shape.height = 1.60 if movement_profile == &"male" else 1.50
+	var collision := CollisionShape3D.new()
+	collision.name = "BodyShape"
+	collision.shape = shape
+	collision.position.y = shape.height * 0.5
+	body_collider.add_child(collision)
+
 func _measure_stride(clip: Animation) -> void:
 	# Calibrate cadence to this rig's actual ankle excursion, not its sex/size label.
 	var foot := _skeleton.find_bone("foot_l")
@@ -192,14 +214,17 @@ func _process(delta: float) -> void:
 		walking = true
 		direction = -axis
 		progress = 1.0 - (segment - 4.5) / 2.0
-	else:
+	elif segment < 9.5:
 		direction = -axis
+	else:
+		turning = true
+		direction = axis
 	var previous := position
 	position = _home + axis * patrol_distance * progress
 	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
 	if walking or turning:
 		var target_yaw := atan2(direction.x, direction.z)
-		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * delta if delta > 0.0 else PI)
+		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * maxf(delta, 0.0))
 	_set_animation(&"walk" if walking else &"idle", delta)
 
 func _set_animation(state: StringName, delta: float) -> void:
@@ -226,4 +251,3 @@ func _set_animation(state: StringName, delta: float) -> void:
 			foot_plant.clear()
 		_last_facing = rotation.y
 		foot_plant.update(_walk_phase, foot_plant_enabled and state == &"walk" and locomotion_blend > 0.95 and travel_speed > 0.001, locomotion_blend if foot_plant_enabled else 0.0, nominal_walk_speed * animation_player.get_animation("walk").length)
-

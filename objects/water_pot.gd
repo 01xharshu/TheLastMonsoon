@@ -8,9 +8,6 @@ extends Interactable
 @export_category("Water Source")
 
 
-@export var direct_drink_hydration: float = 20.0
-
-
 @export var water_available_per_fill: float = 10.0
 
 
@@ -20,93 +17,17 @@ extends Interactable
 
 func _ready() -> void:
 	interaction_icon = "water"
+	interaction_text = "Fill Water Bag"
+	secondary_interaction_text = ""
 
-	# E
-	interaction_text = (
-		"Drink Water"
-	)
+func interact(player: CharacterBody3D) -> void:
+	_fill_water_bag(player)
 
+func secondary_interact(_player: CharacterBody3D) -> void:
+	# Direct drinking and secondary filling are retired; use the Satchel to drink.
+	pass
 
-	# F
-	secondary_interaction_text = (
-		"Fill Water Bag"
-	)
-
-
-# =========================================================
-# E — DRINK DIRECTLY
-# =========================================================
-
-func interact(
-	player: CharacterBody3D
-) -> void:
-
-	var survival := (
-		player.get_node_or_null(
-			"SurvivalComponent"
-		) as SurvivalComponent
-	)
-
-
-	var inventory := (
-		player.get_node_or_null(
-			"InventoryComponent"
-		) as InventoryComponent
-	)
-
-
-	if survival == null:
-
-		push_warning(
-			"Water source could not find "
-			+ "SurvivalComponent."
-		)
-
-		return
-
-
-	if (
-		survival.hydration
-		>= survival.max_hydration
-	):
-
-		if inventory != null:
-
-			inventory.request_message(
-				"You are not thirsty"
-			)
-
-		return
-
-
-	var restored_amount := (
-		survival.restore_hydration(
-			direct_drink_hydration
-		)
-	)
-
-
-	if inventory != null:
-
-		inventory.request_message(
-			"Drank directly from water source"
-		)
-
-
-	print(
-		"Arjun drank directly from the source. "
-		+ "Hydration restored: ",
-		restored_amount
-	)
-
-
-# =========================================================
-# F — FILL WATER BAG
-# =========================================================
-
-func secondary_interact(
-	player: CharacterBody3D
-) -> void:
+func _fill_water_bag(player: CharacterBody3D) -> void:
 
 	var inventory := (
 		player.get_node_or_null(

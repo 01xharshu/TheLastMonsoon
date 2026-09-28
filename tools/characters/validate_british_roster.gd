@@ -18,6 +18,8 @@ func _run() -> void:
 		actor.set_process(false)
 		(actor.get("animation_tree") as AnimationTree).active = false
 		actor.set("_clock", 0.0)
+		var axis: Vector3 = actor.get("patrol_axis")
+		actor.rotation.y = atan2(axis.x, axis.z)
 		var player: AnimationPlayer = actor.get("animation_player")
 		if player == null or not player.has_animation("walk") or not player.has_animation("idle"):
 			errors.append(actor.name + ": missing personal idle/walk clips")

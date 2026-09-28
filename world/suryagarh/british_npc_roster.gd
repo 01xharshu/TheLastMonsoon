@@ -22,13 +22,13 @@ func _ready() -> void:
 		Vector3(-420, residence_y, -55), Vector3(-408, residence_y, -45),
 		Vector3(-370, residence_y, -45), Vector3(-420, residence_y, -75),
 		Vector3(-370, residence_y, -75), Vector3(-410, residence_y, -95),
-		Vector3(-370, residence_y, -95), Vector3(-405, residence_y, -65),
+		Vector3(-370, residence_y, -95), Vector3(-390, residence_y, -95),
 	]
 	for i in range(placements.size()):
 		var record: Dictionary = placements[i]
 		var rank: String = record["rank"]
 		var origin: Vector3 = record["position"]
-		_spawn(rank, "man", origin, float(i) * 1.1, 1.1 if rank != "official" else 0.5)
+		_spawn(rank, "man", origin, float(i) * 1.1, 0.9 if rank != "official" else 0.5)
 		_spawn(rank, "woman", female_positions[i], 4.0 + float(i) * 1.1, 0.9)
 
 func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance: float) -> void:

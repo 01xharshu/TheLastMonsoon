@@ -1,0 +1,8 @@
+{
+  "actors": 16,
+  "capsules": 16,
+  "errors": [],
+  "passed": true,
+  "player_sweeps_stopped": 16,
+  "scope": "isolated player-sized physical sweeps; live route and clothing contact separate"
+}

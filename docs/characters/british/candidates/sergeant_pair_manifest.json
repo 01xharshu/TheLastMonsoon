@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "sergeant",
   "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
-  "source_sha256": "7e5afc3c2ac3f37bd948a1f209e0c28a65442b975fbbc7e96db68a4d793b0f48",
+  "source_sha256": "c1d82211b090723883d926fc0a6398610b2b635c63e7e502cda252339416fcdf",
   "reference": "docs/characters/british/references/sergeant_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -21,10 +21,11 @@
     },
     "woman": {
       "path": "characters/npcs/british/sergeant_woman.glb",
-      "sha256": "1416183da471331a6e8ef2a27966bcc0d7ad81d15c62cd2da2597c5d4fbac06b",
-      "bytes": 1860736
+      "sha256": "e0a31f3e197bbd16ca43e1047494456eede40a453ce1a8f42fdb128ad6f6b706",
+      "bytes": 1860740
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": false
+  "placed_in_world": true,
+  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
 }

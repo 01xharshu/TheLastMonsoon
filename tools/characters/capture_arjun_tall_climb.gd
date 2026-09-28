@@ -15,6 +15,10 @@ func _run() -> void:
 	current_scene = world
 	for i in 5: await physics_frame
 	var actor: CharacterBody3D = world.get_node("Player")
+	if actor.get_script() == null:
+		push_error("TALL CLIMB CAPTURE: Player script did not load")
+		quit(1)
+		return
 	actor.set_physics_process(false)
 	actor.get_node("UI").hide()
 	world.get_node("LandscapeUI").hide()

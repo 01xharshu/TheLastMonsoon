@@ -23,6 +23,7 @@ var base_rotations: Dictionary = {}
 var axes: Dictionary = {}
 var climb_ik: Dictionary = {}
 var climb_targets: Dictionary = {}
+var climb_foot_targets: Dictionary = {}
 var motion_tree: AnimationTree
 @onready var actor: CharacterBody3D = get_parent().get_parent()
 
@@ -182,11 +183,12 @@ func _process(delta: float) -> void:
 	var armed := talwar_equipped and swimming < 0.5
 	var tree_driven: bool = motion_tree != null and not special_pose
 	if tree_driven:
-		motion_tree.update_motion(delta, speed / maxf(actor.walk_speed, 0.01), speed / maxf(actor.walk_speed, 0.01), actor.is_swimming)
+		motion_tree.update_motion(delta, speed / maxf(actor.walk_speed, 0.01), speed / maxf(actor.swim_speed, 0.01), actor.is_swimming)
 	# Pivot near the chest when leaning into the water, keeping the face above it.
 	# The imported swim clips already pitch the skeleton forward. Keep the
 	# previous model tilt only for the procedural fallback path.
 	model.rotation.x = lerpf(model.rotation.x, 0.0 if tree_driven else swimming * 1.05, blend)
+	model.rotation.y = lerpf(model.rotation.y, 0.0, blend)
 	model.rotation.z = lerpf(model.rotation.z, 0.0, blend)
 	model.position = Vector3(0, -0.9 + swimming * 0.65 + absf(sin(phase)) * stride * 0.045 - (motion_tree.foot_contact_offset if tree_driven else 0.0), 0)
 	if not tree_driven:
@@ -333,10 +335,10 @@ func _pose_rest(delta: float) -> void:
 	var desired_hip_y := actor.global_position.y - 0.17 + 0.07 * lie
 	model.position.y += clampf(desired_hip_y - hip_y, -0.25, 0.25)
 	for side in ["l", "r"]:
-		if progress < 0.62:
-			_rest_seated_foot_contact(side, smoothstep(0.12, 0.32, progress) * (1.0 - lie))
+		if progress < 0.98:
+			_rest_seated_foot_contact(side, smoothstep(0.12, 0.32, progress) * (1.0 - smoothstep(0.88, 0.98, progress)), smoothstep(0.44, 0.62, progress))
 
-func _rest_seated_foot_contact(side: String, influence: float) -> void:
+func _rest_seated_foot_contact(side: String, influence: float, cot_lift: float) -> void:
 	if influence <= 0.0: return
 	skeleton.force_update_all_bone_transforms()
 	var foot_index := skeleton.find_bone("foot_" + side)
@@ -345,7 +347,10 @@ func _rest_seated_foot_contact(side: String, influence: float) -> void:
 	query.exclude = [actor.get_rid()]
 	var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty(): return
-	_horse_foot_contact(side, hit.position + Vector3.UP * 0.02, influence)
+	var sign_side := 1.0 if side == "l" else -1.0
+	var cot_target := actor.to_global(Vector3(-0.55, -0.18, sign_side * 0.18))
+	var target: Vector3 = (hit.position + Vector3.UP * 0.02).lerp(cot_target, cot_lift)
+	_horse_foot_contact(side, target, influence)
 
 func _pose_seated(delta: float) -> void:
 	var boat: Node = actor.get_meta("mounted_vehicle")
@@ -516,17 +521,17 @@ func _pose_climb(delta: float) -> void:
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	# Four beats: reach, alternating handholds, a two-handed mantle, then recovery.
 	var ledge_y: float = component.landing.y-.94
-	var base_y: float = ledge_y-4.8
+	var base_y: float = component.hold_base_y if component.has_holds else ledge_y-4.8+.42
 	var contact_blend: float = smoothstep(.04,.16,t)*(1.0-smoothstep(.78,.96,t))
 	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
-		var side_offset: float = -.42 if side=="l" else .42
-		var hand_y: float = base_y+.42+roundf((actor.global_position.y+.80-base_y-.42)/.55)*.55
-		hand_y -= .10 if side=="r" else 0.0
+		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds else (-.42 if side=="l" else .42)
+		var row: int = clampi(roundi((actor.global_position.y+.75-base_y)/.55),0,7)
+		var hand_y: float = base_y+row*.55+.07
 		hand_y = minf(ledge_y+.08,hand_y)
 		var face: Vector3 = component.wall_point+component.wall_normal*.18
 		face.y = hand_y
-		face += wall_tangent*side_offset
+		face += wall_tangent*(side_offset+(.08 if component.has_holds and row%2==1 else 0.0))
 		var top_target: Vector3=component.wall_point-component.wall_normal*.24
 		top_target.y=ledge_y+.08
 		top_target+=wall_tangent*side_offset
@@ -541,3 +546,23 @@ func _pose_climb(delta: float) -> void:
 		var desired: Vector3 = wrist.lerp(target_local, contact_blend)
 		for pass_index in 3:
 			equipment._solve_arm(side, desired)
+		var wall_palm := Basis(-wall_tangent, Vector3.UP, -component.wall_normal)
+		var hand_basis: Basis = skeleton.global_basis.inverse() * wall_palm * (equipment.palm_axes[side] as Basis).inverse()
+		var parent: int = skeleton.get_bone_parent(hand_index)
+		var local_basis: Basis = skeleton.get_bone_global_pose(parent).basis.inverse() * hand_basis
+		var hand_rotation := local_basis.orthonormalized().get_rotation_quaternion()
+		skeleton.set_bone_pose_rotation(hand_index, skeleton.get_bone_pose_rotation(hand_index).slerp(hand_rotation, contact_blend))
+		equipment._grasp(side, contact_blend * .8)
+	# A boot presses into the next stone while its opposite leg rises. The
+	# targets follow wall space, so this also works on rotated masonry.
+	var foot_contact: float = smoothstep(.12, .22, t) * (1.0 - smoothstep(.69, .86, t))
+	for side in ["l", "r"]:
+		var step_offset: float = 0.0 if side == "l" else .5
+		var cycle: float = fposmod((t - .14) * 3.0 + step_offset, 1.0)
+		var rise: float = smoothstep(.22, .62, cycle) * .32
+		var foot_target: Vector3 = component.wall_point + component.wall_normal * .13
+		var foot_row: int = clampi(roundi((actor.global_position.y-.68+rise-base_y)/.55),0,7)
+		foot_target += wall_tangent * ((-.24 if side == "l" else .24)+(.08 if component.has_holds and foot_row%2==1 else 0.0))
+		foot_target.y = base_y + foot_row*.55 + .08 if component.has_holds else actor.global_position.y - .68 + rise
+		climb_foot_targets[side] = foot_target
+		_horse_foot_contact(side, foot_target, foot_contact * (1.0 - smoothstep(.18, .55, cycle)))

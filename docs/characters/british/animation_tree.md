@@ -10,6 +10,14 @@ Graph: **idle → locomotion Blend2 ← walk TimeScale ← walk; locomotion → 
 
 The graphs are created by `characters/npcs/british/british_npc_actor.gd`; inspect PersonalAnimationTree in the remote scene while running. They are separate runtime graphs rather than shared scene resources.
 
+## Physical body contact
+
+Each preview actor now creates a torso-sized `AnimatableBody3D` capsule on collision layer 1. The capsule follows the actor's patrol transform while its personal AnimationTree continues to drive the skeleton. This stops the player walking through the figures; the dress hem remains visual cloth outside the body capsule. `sync_to_physics` is disabled on the child because its earlier enabled state left some capsules at spawn while the visible actors moved.
+
+[All-actor capsule validation](candidates/body_collision_validation.json) PASS: a player-sized capsule sweep stopped at each of the sixteen current actor positions. [Full-world Player validation](candidates/player_collision_validation.json) PASS in headless for PrivateMan in the Company Compound and OfficialWoman at Government House. A separate Metal run passed the OfficialWoman sweep; its image shows the candidate woman beside a raised garden edge, but the Player is not visible in that framing. The [PrivateMan Metal capture](candidates/private_man_player_block.png) shows the Player stopped in front of the soldier. These establish body blocking at the sampled routes, not navigation, crowd avoidance, moving-NPC response, or cloth contact.
+
+Recheck with `tools/characters/validate_british_body_collision.gd`, `tools/characters/validate_british_player_collision.gd`, and `tools/characters/validate_british_animation_tree.gd`. The full-world Metal capture stalled after saving PrivateMan when both samples ran in one process; `--official-only` completed the second sample separately.
+
 ## Verification
 
 [Tree validation](candidates/animation_tree_validation.json) PASS: sixteen distinct active trees and graphs, actual thigh pose playback on all sixteen, half/full start blend, half/zero stop blend, idle pose recovery and independent stop. Existing clip/facing/arm checks and full-world surveyed placement also PASS.
@@ -82,4 +90,10 @@ Fresh male, female and official Metal cadence views completed and were inspected
 
 The hand preview now applies a small curl to the imported finger joints after the tree update; forearms bend slightly back toward the body. The [tree validation](candidates/animation_tree_validation.json) confirms actual relaxed finger poses on all sixteen, along with the earlier playback and independent stop checks. Close [male](candidates/private_man_hands_world.png) and [female](candidates/private_woman_hands_world.png) Metal views were inspected. Fingers look less spread, but the hands still need tailored art/skin review.
 
-At the outer patrol endpoint, each NPC now turns in place for 0.5 s before moving back. [Turn validation](candidates/turn_validation.json) PASS on all sixteen: no root translation during the turn, completed 180° facing, then the expected first return step. Foot-plant and tree checks pass after the change. [Male](candidates/private_man_turn_world.png) and [female](candidates/private_woman_turn_world.png) mid-turn snapshots show the current geometry; they do not prove continuous turn contact. The skirt waist gap is especially visible in the female view.
+Each NPC now turns in place for 0.5 s at both patrol endpoints. Initial facing respects each actor's cycle offset. [Turn validation](candidates/turn_validation.json) PASS on all sixteen: no root translation during either turn, completed 180° facing, and expected first steps in both directions. [Male](candidates/private_man_turn_world.png) and [female](candidates/private_woman_turn_world.png) mid-turn snapshots show the current geometry; they do not prove continuous turn contact.
+
+## Fitted waist and latest patrol check
+
+All eight editable pair sources now include a six-ring fitted transition from bodice to skirt. Its lower ring matches the actual skirt top vertices; [source seam validation](candidates/waist_validation.json) reports 0 m edge mismatch on each pair. All sixteen runtime models and the front, side and back turnarounds were re-exported. This closes the earlier open waist gap at the source mesh, but the connector still reads as a hard horizontal band in [Private](candidates/private_woman_waist_back.png), [Captain](candidates/captain_woman_waist_back.png), and [Official](candidates/official_woman_waist_back_wide.png) Metal rear views. The Official woman was moved onto the open paved path because the raised garden border obscured her skirt in the prior view.
+
+Military men's preview routes were shortened from 1.1 m to 0.9 m to keep knee targets within reach; the Official man's route remains 0.5 m and women's routes 0.9 m. Post-export [full patrol foot-plant](candidates/foot_plant_validation.json), [cadence](candidates/cadence_validation.json), [tree](candidates/animation_tree_validation.json), [turn](candidates/turn_validation.json), [world placement](candidates/roster_world_validation.json), and [runtime separation](candidates/roster_runtime_validation.json) checks PASS for all sixteen. These structural checks do not approve sole-to-terrain contact, cloth behavior, tailoring or normal-speed motion.

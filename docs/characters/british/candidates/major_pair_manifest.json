@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "major",
   "source": "WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend",
-  "source_sha256": "1e676b2bc524edd15bf85c3d2d9174792ae5ea49dde16b2d9df3a2cc211abe10",
+  "source_sha256": "fcfaa4c2707f8a92be01ac0d41cae74018937a55c899c4ef63da332eedd64a39",
   "reference": "docs/characters/british/references/major_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -21,10 +21,11 @@
     },
     "woman": {
       "path": "characters/npcs/british/major_woman.glb",
-      "sha256": "706db5982c8ae7537c4a7fe19a5604c9973df518f0b505ad4929843417c30f51",
-      "bytes": 1793764
+      "sha256": "933e7f19342261403499e516f9e4a5647fed31afd9d150ff3fd49d53ff5f8da6",
+      "bytes": 1793768
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
-  "placed_in_world": false
+  "placed_in_world": true,
+  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
 }

@@ -1,7 +1,7 @@
 {
 	"entrances": {
 		"DistrictPolice": {
-			"maximum_ramp_slope": 0.0626608866102796,
+			"maximum_ramp_slope": 0.0621148288468198,
 			"minimum_ramp_clearance_m": 0.0600000000000005
 		},
 		"TownHall": {
@@ -10,7 +10,6 @@
 		}
 	},
 	"failures": [
-		"DistrictPolice terrain grade varies by 1.26586208000339 m",
 		"OldFort terrain grade varies by 9.31294508425455 m",
 		"fort_trail has a terrain slope above 24%: 0.29963335851555",
 		"fort_access has a terrain slope above 24%: 0.25226440546714"
@@ -32,7 +31,7 @@
 		"DistrictPolice": {
 			"center": "(320.0, 120.0)",
 			"grade_m": 10.0,
-			"grade_spread_m": 1.26586208000339,
+			"grade_spread_m": 0.0,
 			"half_extent": "(20.0, 22.0)"
 		},
 		"GovernmentHouse": {

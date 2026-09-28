@@ -41,7 +41,7 @@ func _run() -> void:
 		quit(1)
 		return
 	for i in 8: tree.update_motion(0.1, 1.75, 0.0, false)
-	if tree.ground_blend < 1.65 or tree.playback_rate < 1.5 or tree.playback_rate > 1.8:
+	if tree.ground_blend < 1.65 or tree.playback_rate < 1.3 or tree.playback_rate > 1.5:
 		push_error("ARJUN MOTION TREE: sprint did not reach its separate gait and cadence")
 		quit(1)
 		return

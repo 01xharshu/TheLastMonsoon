@@ -24,9 +24,10 @@ func _run() -> void:
 		quit(1)
 		return
 	actor.is_swimming = true
+	actor.velocity.x = actor.swim_speed
 	for i in 8: visual._process(0.1)
-	if visual.model.rotation.x > 0.1 or visual.motion_tree.swim_blend < 0.9:
-		push_error("ARJUN VISUAL TREE: swim clip received a second body tilt")
+	if visual.model.rotation.x > 0.1 or visual.motion_tree.swim_blend < 0.9 or visual.motion_tree.water_blend < 0.9:
+		push_error("ARJUN VISUAL TREE: full swim speed failed to reach forward stroke or received a second body tilt")
 		quit(1)
 		return
 	actor.is_swimming = false

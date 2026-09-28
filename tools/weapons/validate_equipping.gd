@@ -14,16 +14,19 @@ func _run() -> void:
  for pickup in pickups:
   if not pickup.weapon_id in ["talwar", "bow", "pistol"]: continue
   for side in [-0.45, 0.45]:
-   actor.global_position = pickup.to_global(Vector3(side,-.6,1.8))
+   actor.global_position = pickup.to_global(Vector3(side,0,2.25))
+   actor.global_position.y = store.global_position.y + .3
    var toward: Vector3 = pickup.global_position - actor.global_position
    actor.get_node("VisualRoot").global_rotation.y = atan2(toward.x,toward.z)
    for i in 3: await physics_frame
-   actor.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(pickup.global_position)
+   actor.camera_pivot.look_at(pickup.global_position)
+   actor.camera_pitch = actor.camera_pivot.rotation.x
    assert(actor._find_interactable() == pickup, "Upper shelf needs precise positioning: " + pickup.weapon_id + " side " + str(side))
  var slots := {"talwar":0,"enfield":1,"bow":2,"pistol":3,"double_gun":5}
  for pickup in pickups:
   var weapon_id: String = pickup.weapon_id
-  actor.global_position = pickup.to_global(Vector3(0,-.25,1.7))
+  actor.global_position = pickup.to_global(Vector3(.35,0,1.8) if weapon_id in ["talwar", "bow", "pistol"] else Vector3(0,0,1.7))
+  actor.global_position.y = store.global_position.y + .3
   var flat: Vector3 = pickup.global_position-actor.global_position
   flat.y = 0
   actor.get_node("VisualRoot").global_rotation.y = atan2(flat.x,flat.z)

@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "WorkingAssets/NPCs/arjun_brother"
@@ -122,13 +122,17 @@ for side,sign in [("left",1),("right",-1)]:
     group.add(list(range(len(shoe.data.vertices))),1,'REPLACE')
     shoe.modifiers.new("Rig",'ARMATURE').object=rig
 # Broad webbing crosses the front of the coat without a cylindrical silhouette.
-attach("Crossbody leather webbing",[(-.205,-.173,1.345),(-.165,-.181,1.345),(.16,-.186,.91),(.12,-.193,.91)],
+attach("Crossbody leather webbing",[(-.205,-.12,1.345),(-.165,-.125,1.345),(.16,-.186,.91),(.12,-.193,.91)],
        [(0,1,2,3)],leather,"spine01")
-attach("Coat front placket",[(-.018,-.201,.87),(.018,-.201,.87),(.018,-.188,1.405),(-.018,-.188,1.405)],
-       [(0,1,2,3)],coat,"spine01")
+attach("Coat front placket",[(-.018,-.205,.87),(.018,-.205,.87),
+                               (-.018,-.175,1.0),(.018,-.175,1.0),
+                               (-.018,-.155,1.35),(.018,-.155,1.35),
+                               (-.018,-.105,1.405),(.018,-.105,1.405)],
+       [(0,1,3,2),(2,3,5,4),(4,5,7,6)],coat,"spine01")
 for i in range(6):
     z=1.01+i*.065
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,location=(.012,-.205,z))
+    y=-.174+.015*(z-1.0)/.33
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,location=(.012,y,z))
     button=bpy.context.object;button.name="Coat brass button %d"%(i+1)
     button.scale=(.011,.006,.011);button.data.materials.append(trim)
     button.parent=rig
@@ -145,6 +149,16 @@ visible.add(indices,1,'REPLACE')
 mask=body.modifiers.new("Hide clothed skin",'MASK'); mask.vertex_group=visible.name
 for mod in body.modifiers:
     if mod.name.startswith("Delete."): mod.show_viewport=False; mod.show_render=False
+
+# Relax the imported A-pose for the review source and the idle's base pose.
+# Retain the underlying game-engine rig and weighted garment for later clips.
+for side, sign in [("l", 1), ("r", -1)]:
+    bone = rig.pose.bones.get("upperarm_" + side)
+    if bone:
+        axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector((0, 1, 0))
+        bone.rotation_mode = 'QUATERNION'
+        bone.rotation_quaternion = Quaternion(axis, sign * math.radians(28))
+rig.data.pose_position = 'POSE'
 
 blend=OUT/"arjun_brother_mpfb.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(blend))

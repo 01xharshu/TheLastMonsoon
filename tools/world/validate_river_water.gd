@@ -40,8 +40,9 @@ func validate() -> void:
 		check(player.is_on_floor(),"Riverbank does not support player")
 		check(river.can_use_river(),"Grounded riverbank offers no water interaction")
 		survival.hydration=45.0
-		check(river.start_drink(),"Drink action did not start")
-		check(player.get_meta("river_action","")=="drink","Drink pose state missing")
+		check(not river.start_drink(),"Direct river drinking is still available")
+		check(river.start_fill(),"Pouch fill did not start")
+		check(player.get_meta("river_action","")=="fill","Fill pose state missing")
 		if DisplayServer.get_name() != "headless":
 			river._process(0.65)
 			var camera: Camera3D = world.get_node("SurveyCamera")
@@ -53,12 +54,12 @@ func validate() -> void:
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://docs/world/captures/20_river_drink.png")
 		river._process(2.0)
-		check(survival.hydration>70.0,"Drinking did not restore hydration")
-		check(player.get_meta("river_action","")=="","Drink action did not finish")
-		check(river.start_fill(),"Pouch fill did not start")
-		river._process(2.0)
+		check(is_equal_approx(survival.hydration,45.0),"Filling directly restored hydration")
+		check(player.get_meta("river_action","")=="","Fill action did not finish")
 		check(inventory.get_stored_water_liters()>1.9,"Pouch did not fill")
 		check(not river.start_fill(),"Full pouch accepted refill")
+		check(player.consumables.drink_from_water_bag(),"Satchel drinking failed")
+		check(survival.hydration>45.0,"Satchel drinking did not restore hydration")
 		player.global_position=Vector3(-320,layout.height(-320,230)+1.0,230)
 		for i in 12: await physics_frame
 		check(not river.can_use_river(),"Distant land offered river interaction")

@@ -78,3 +78,7 @@ All 16 figures have fresh four-phase Metal captures (`<rank>_<man|woman>_walk_{0
 ## AnimationTree follow-up
 
 Live locomotion now uses sixteen independent AnimationTrees with a 0.2-second idle/walk blend. See [implementation and checks](animation_tree.md). The personal AnimationPlayers supply clips; the trees control live playback.
+
+## 28 September base follow-up
+
+All eight editable women now have a fitted six-ring bodice-to-skirt transition, with its lower edge sampled from the skirt top. [Seam checks](candidates/waist_validation.json) report zero source edge mismatch; all sixteen GLBs and pair turnarounds were refreshed. Representative [Private](candidates/private_woman_waist_back.png), [Captain](candidates/captain_woman_waist_back.png), and [Official](candidates/official_woman_waist_back_wide.png) Metal rear views show the gap closed but a visible hard band. Official Woman now stands on the open Government House path so the garden border does not hide her skirt. Both patrol endpoints have 0.5 s stationary turns, and all current world, tree, turn, cadence and flat-grade foot-target checks pass. See [animation details](animation_tree.md); costume finish, sole contact and normal-speed movement remain open.
