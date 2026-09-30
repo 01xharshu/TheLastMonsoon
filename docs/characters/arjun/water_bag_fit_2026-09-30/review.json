@@ -1,30 +1,38 @@
 {
 	"motion": [
 		{
-			"max_pin_error_m": 0.0000000149011611938477,
-			"max_sway_radians": 0.0187217399489469,
-			"position": "(0.0, 0.901, -1.5)",
+			"max_pin_error_m": 0.000000119209289550781,
+			"max_relaxed_wrist_radians": 0.498334020376205,
+			"max_sway_radians": 0.0153542490032822,
+			"min_palm_envelope_margin_m": 0.00264697195962071,
+			"position": "(0.0, 0.901, -1.900001)",
 			"segment": "walk",
 			"speed_m_s": 4.0
 		},
 		{
-			"max_pin_error_m": 0.000000119209289550781,
-			"max_sway_radians": 0.0212132903888435,
-			"position": "(0.0, 0.901, -4.883335)",
+			"max_pin_error_m": 0.00000011944189282076,
+			"max_relaxed_wrist_radians": 0.53402191400528,
+			"max_sway_radians": 0.0245024448354246,
+			"min_palm_envelope_margin_m": 0.015636820346117,
+			"position": "(0.0, 0.901, -5.983336)",
 			"segment": "run",
 			"speed_m_s": 7.0
 		},
 		{
-			"max_pin_error_m": 0.0000000596046447753906,
-			"max_sway_radians": 0.0280002169272192,
-			"position": "(-1.76, 0.901, -6.85667)",
+			"max_pin_error_m": 0.000000119209289550781,
+			"max_relaxed_wrist_radians": 0.532300591468811,
+			"max_sway_radians": 0.030032328072979,
+			"min_palm_envelope_margin_m": 0.0107970871031284,
+			"position": "(-3.500002, 0.901, -7.966671)",
 			"segment": "turn",
-			"speed_m_s": 6.42806196212769
+			"speed_m_s": 7.0
 		},
 		{
-			"max_pin_error_m": 0.0,
-			"max_sway_radians": 0.0261827962755002,
-			"position": "(-2.986666, 0.901, -6.863337)",
+			"max_pin_error_m": 0.0000000596046447753906,
+			"max_relaxed_wrist_radians": 0.49218288064003,
+			"max_sway_radians": 0.0220696778161238,
+			"min_palm_envelope_margin_m": 0.0117590762674809,
+			"position": "(-4.973334, 0.901, -7.966671)",
 			"segment": "stop",
 			"speed_m_s": 0.0
 		}
@@ -32,21 +40,21 @@
 	"states": [
 		{
 			"belt_error_m": 0.0,
-			"body_bounds": "[P: (-0.1248, 0.0, -0.00113), S: (0.2496, 0.335, 0.108373)]",
+			"body_bounds": "[P: (-0.103234, 0.0, -0.008022), S: (0.206467, 0.335, 0.075054)]",
 			"fullness": 0.0,
 			"liters": 0.0,
 			"state": "empty"
 		},
 		{
 			"belt_error_m": 0.0,
-			"body_bounds": "[P: (-0.1274, 0.0, -0.00113), S: (0.2548, 0.335, 0.179832)]",
+			"body_bounds": "[P: (-0.105384, 0.0, -0.008022), S: (0.210769, 0.335, 0.144927)]",
 			"fullness": 0.5,
 			"liters": 1.0,
 			"state": "half"
 		},
 		{
 			"belt_error_m": 0.0,
-			"body_bounds": "[P: (-0.13, 0.0, -0.00113), S: (0.26, 0.335, 0.20863)]",
+			"body_bounds": "[P: (-0.107535, 0.0, -0.008022), S: (0.21507, 0.335, 0.174704)]",
 			"fullness": 1.0,
 			"liters": 2.0,
 			"state": "full"

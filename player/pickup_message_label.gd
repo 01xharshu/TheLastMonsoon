@@ -25,6 +25,9 @@ func _ready() -> void:
 
 	visible = false
 	inventory.collection_message_requested.connect(_show_reward)
+	inventory.water_collected.connect(func(amount: float):
+		var overlay: Node = get_parent().get_node_or_null("InteractionOverlay")
+		if overlay != null: overlay.show_collection("water", amount))
 
 
 	inventory.item_added.connect(
@@ -47,14 +50,9 @@ func _on_item_added(
 	_new_total: int
 ) -> void:
 
-	var display_name := (
-		_get_display_name(
-			item_id
-		)
-	)
-
-
-	_show_reward(display_name + "  +" + str(amount), ItemCatalog.icon(item_id))
+	var overlay: Node = get_parent().get_node_or_null("InteractionOverlay")
+	if overlay != null:
+		overlay.show_collection(item_id, amount)
 
 
 # =========================================================

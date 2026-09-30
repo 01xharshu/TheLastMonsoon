@@ -65,16 +65,16 @@ func run() -> void:
 	check(rifle.shots_fired==1,"Empty rifle fired twice")
 	actor.inventory.add_item("paper_cartridges",2)
 	rifle.start_reload()
-	check(rifle.reload_remaining>0,"Reload did not start")
-	rifle.reload_remaining = 4.4
+	check(is_equal_approx(rifle.reload_remaining,rifle.RELOAD_SECONDS),"Reload did not use shared pacing duration")
+	rifle.reload_remaining = rifle.RELOAD_SECONDS*0.88
 	visual._process(1.0/60.0)
 	var early_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
-	rifle.reload_remaining = 3.4
+	rifle.reload_remaining = rifle.RELOAD_SECONDS*0.68
 	visual._process(1.0/60.0)
 	check(visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge was absent at the loading hand")
 	var cartridge_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
 	check(visual.equipment.enfield_cartridge.global_position.distance_to(cartridge_palm) < 0.10,"Enfield cartridge was not in the left palm")
-	rifle.reload_remaining = 1.8
+	rifle.reload_remaining = rifle.RELOAD_SECONDS*0.36
 	visual._process(1.0/60.0)
 	check(not visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge remained after the loading gesture")
 	var loading_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
@@ -85,17 +85,41 @@ func run() -> void:
 	check(visual.equipment.reload_progress > 0.5,"Enfield reload pose did not follow timer")
 	var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
 	check(rod != null and rod.position.x > (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x + 0.1,"Enfield ramrod did not extend")
+	var sample_count := int(rifle.RELOAD_SECONDS*60.0)
 	var max_pinch_error := 0.0
-	for sample in 301:
-		rifle.reload_remaining = maxf(0.001,5.0*(1.0-sample/300.0))
+	var previous_contact := Vector3.ZERO
+	var maximum_step := 0.0
+	for sample in sample_count+1:
+		rifle.reload_remaining = maxf(0.001,rifle.RELOAD_SECONDS*(1.0-float(sample)/sample_count))
 		visual._process(1.0/60.0)
 		var rig: Skeleton3D = visual.skeleton
 		var pinch := rig.to_global((rig.get_bone_global_pose(rig.find_bone("index_03_l")).origin+rig.get_bone_global_pose(rig.find_bone("thumb_03_l")).origin)*0.5)
 		var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(visual.equipment.reload_progress)
+		if sample > 0 and previous_contact.distance_to(loading.contact) > maximum_step:
+			maximum_step = previous_contact.distance_to(loading.contact)
+		previous_contact = loading.contact
+		if (visual.equipment.reload_progress >= 0.52 and visual.equipment.reload_progress < 0.58) or (visual.equipment.reload_progress >= 0.91 and visual.equipment.reload_progress < 0.96):
+			var head := rig.to_global(rig.get_bone_global_pose(rig.find_bone("head")).origin)
+			var motion: Transform3D = loading.rod
+			var tip_a: Vector3 = visual.equipment.enfield_hand.to_global(motion*Vector3(0.08,-0.003,0))
+			var tip_b: Vector3 = visual.equipment.enfield_hand.to_global(motion*Vector3(1.04,-0.003,0))
+			check(head.distance_to(Geometry3D.get_closest_point_to_segment(head,tip_a,tip_b)) > 0.16,"Ramrod turn entered head envelope")
+		if visual.equipment.enfield_cartridge.visible:
+			check(visual.equipment.enfield_cartridge.global_basis.y.dot(visual.equipment.enfield_hand.global_basis.x.normalized()) > 0.999,"Cartridge axis missed bore")
 		max_pinch_error = maxf(max_pinch_error,pinch.distance_to(visual.equipment.enfield_hand.to_global(loading.contact)))
 	check(max_pinch_error < 0.005,"Loading fingers lost cartridge/ramrod contact: " + str(max_pinch_error))
-	print("RELOAD CONTACT SWEEP: ",max_pinch_error," m / 301 poses")
-	rifle._process(5.1)
+	for boundary in [0.10,0.26,0.34,0.36,0.395,0.42,0.45,0.48,0.52,0.58,0.63,0.65,0.70,0.72,0.76,0.80,0.82,0.86,0.88,0.91,0.96]:
+		var before: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(boundary-0.00001)
+		var after: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(boundary+0.00001)
+		check((before.contact as Vector3).distance_to(after.contact) < 0.001,"Loading contact jumps at phase " + str(boundary))
+		check((before.rod as Transform3D).origin.distance_to((after.rod as Transform3D).origin) < 0.001,"Ramrod jumps at phase " + str(boundary))
+	check(maximum_step*visual.equipment.ENFIELD_SCALE < 0.06,"Reload movement still exceeds 60 mm per 60 fps frame")
+	print("RELOAD PATH MAX STEP: ",maximum_step," source m")
+	print("RELOAD CONTACT SWEEP: ",max_pinch_error," m / ",sample_count+1," poses")
+	rifle.reload_remaining = rifle.RELOAD_SECONDS
+	rifle._process(5.0)
+	check(not rifle.loaded and is_equal_approx(rifle.reload_remaining,rifle.RELOAD_SECONDS-5.0),"Slower reload completed at the old five-second deadline")
+	rifle._process(rifle.RELOAD_SECONDS-5.0+0.1)
 	check(rifle.loaded,"Reload did not chamber a round")
 	visual._process(1.0/60.0)
 	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x) < 0.001,"Enfield ramrod did not return")

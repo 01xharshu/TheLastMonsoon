@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf" id="1_5n15p"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_m2ljf"]
+height = 0.3
+radius = 0.16
+
+[node name="BrassPot" type="StaticBody3D" unique_id=1547699680 groups=["solid_period_prop"]]
+metadata/asset_source = "res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Model" type="Node3D" parent="." unique_id=480592104 instance=ExtResource("1_5n15p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0008529216, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=380528623]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15085292, 0)
+shape = SubResource("CylinderShape3D_m2ljf")
+
+[node name="GripLeft" type="Marker3D" parent="." unique_id=1361077314]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15101326, 0.29094765, 0)
+
+[node name="GripRight" type="Marker3D" parent="." unique_id=323160147]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1509324, 0.29094765, 0)
+
+[node name="Opening" type="Marker3D" parent="." unique_id=741243123]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.29094765, 0)

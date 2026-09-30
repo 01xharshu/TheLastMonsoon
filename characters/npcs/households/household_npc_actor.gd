@@ -3,6 +3,17 @@ extends "res://characters/npcs/british/british_npc_actor.gd"
 @export var household_job:String="resident"
 func _ready() -> void:
 	super._ready()
+	for node in find_children("*","MeshInstance3D",true,false):
+		if household_job=="Coachman" and "kurta loose lower panel" in node.name.to_lower():node.hide()
+		if household_job!="resident":continue
+		for surface in node.mesh.get_surface_count():
+			var original:=node.get_active_material(surface) as StandardMaterial3D
+			if original==null:continue
+			var label:=original.resource_name.to_lower()
+			if not ("cotton" in label or "shawl" in label or "woven" in label or "waistcoat" in label or "ivory coat" in label):continue
+			var woven:=ShaderMaterial.new();woven.shader=load("res://characters/npcs/households/household_cloth.gdshader")
+			woven.set_shader_parameter("cloth_color",original.albedo_color)
+			node.set_surface_override_material(surface,woven)
 	if household_job not in ["Cook","WaterBearer"] or animation_tree==null:return
 	var clip:=Animation.new();clip.length=2.8;clip.loop_mode=Animation.LOOP_LINEAR
 	var skeleton_path:=str(get_path_to(_skeleton))
@@ -36,6 +47,29 @@ func _process(delta:float) -> void:
 	if household_job=="WaterBearer" and _skeleton!=null:
 		var pot:=get_node_or_null("CarriedWaterPot") as Node3D
 		if pot!=null:
-			var left:=_skeleton.find_bone("hand_l");var right:=_skeleton.find_bone("hand_r")
-			var palms:=(_skeleton.get_bone_global_pose(left).origin+_skeleton.get_bone_global_pose(right).origin)*.5
-			pot.position=to_local(_skeleton.to_global(palms))+Vector3(0,-.11,0)
+			# Keep the vessel at the torso and solve each hand to its side.
+			pot.position=Vector3(0,.92,.24)
+			for side in ["l","r"]:
+				var contact:=pot.to_global(Vector3(.135 if side=="l" else -.135,.035,0))
+				solve_hand_contact(side,contact)
+
+func palm_world(side:String) -> Vector3:
+	var pose:=_skeleton.get_bone_global_pose(_skeleton.find_bone("hand_"+side))
+	return _skeleton.to_global(pose*Vector3(0,.055,0))
+
+func solve_hand_contact(side:String,target_world:Vector3) -> void:
+	var target:=_skeleton.to_local(target_world)
+	for iteration in 18:
+		for part in ["lowerarm_","upperarm_"]:
+			var index:=_skeleton.find_bone(part+side)
+			var current:=_skeleton.get_bone_global_pose(index)
+			var palm:=_skeleton.to_local(palm_world(side))
+			var from_direction:=(palm-current.origin).normalized()
+			var to_direction:=(target-current.origin).normalized()
+			var desired:=Basis(Quaternion(from_direction,to_direction))*current.basis
+			var parent:=_skeleton.get_bone_parent(index)
+			if parent>=0:desired=_skeleton.get_bone_global_pose(parent).basis.inverse()*desired
+			_skeleton.set_bone_pose_rotation(index,desired.orthonormalized().get_rotation_quaternion())
+			_skeleton.force_update_all_bone_transforms()
+		if palm_world(side).distance_to(target_world)<.001:break
+	set_meta("hand_contact_"+side,palm_world(side).distance_to(target_world))

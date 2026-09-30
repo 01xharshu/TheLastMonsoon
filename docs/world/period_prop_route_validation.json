@@ -22,13 +22,13 @@
 		},
 		{
 			"check": "compound gate lane",
-			"finish": "(345.0, 12.98, 282.5031)",
+			"finish": "(345.0, 12.98, 271.0017)",
 			"pass": true,
 			"touched_prop": false
 		},
 		{
 			"check": "village aisle",
-			"finish": "(-306.9966, 8.1, 230.0)",
+			"finish": "(-316.9978, 8.1, 230.0)",
 			"pass": true,
 			"touched_prop": false
 		}

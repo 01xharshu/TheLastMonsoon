@@ -57,6 +57,7 @@ const SITES: Dictionary = {
 	"Old fort reserve": FORT_CENTER,
 	"Government House": Vector2(-390, -110),
 	"Wooded ridge": Vector2(620, -260),
+	"Forest grove": Vector2(370, -105),
 	"Hooghly Reach Port": PORT_CENTER,
 }
 var noise := FastNoiseLite.new()

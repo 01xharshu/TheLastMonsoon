@@ -32,6 +32,10 @@ func _run() -> void:
 		camera.global_position=owner.global_position+Vector3(1.8,1.6,2.8)
 		camera.look_at(owner.global_position+Vector3.UP*.9)
 		await _save(name.to_snake_case()+"_resident")
+		if name!="BritishHousehold":
+			camera.global_position=owner.global_position+Vector3(.45,1.6,1.05)
+			camera.look_at(owner.global_position+Vector3.UP*1.48)
+			await _save(name.to_snake_case()+"_face")
 	var coach:=manager.get_node("BritishHouseholdCoach") as Node3D
 	coach.get_node("HouseholdTravel").step(12.1)
 	camera.global_position=coach.global_position+Vector3(6,4,-6)
@@ -43,6 +47,7 @@ func _run() -> void:
 	var driver:Node3D=coach.get_node("HouseholdTravel").driver
 	var skeleton:Skeleton3D=driver.get("_skeleton")
 	print("DRIVER_POSITION ",driver.global_position," head ",skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("head")).origin))
+	print("DRIVER_CONTACT ",driver.get_meta("hand_contact_l",-1)," ",driver.get_meta("hand_contact_r",-1))
 	quit()
 func _save(label:String) -> void:
 	for frame in 4:await process_frame

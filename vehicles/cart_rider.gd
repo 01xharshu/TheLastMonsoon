@@ -12,6 +12,12 @@ var rider_turn := 0.0
 var cart_handle_rids: Array[RID] = []
 var collision_body: AnimatableBody3D
 var clearance_shapes: Array[CollisionShape3D] = []
+var transition := ""
+var transition_progress := 0.0
+var transition_start := Vector3.ZERO
+var transition_ground := Vector3.ZERO
+var transition_side := 1.0
+const TRANSITION_SECONDS := 1.2
 
 func configure(owner_cart: Node3D) -> void:
 	cart = owner_cart
@@ -69,6 +75,23 @@ func _clearance_at(next_at: Vector3) -> bool:
 func rein_grip_world(side: String) -> Vector3:
 	return cart.rein_grip_world(side)
 
+func foot_support_world(side: String) -> Vector3:
+	var socket: Node3D = cart.seat_sockets.get(seat_name)
+	var x: float = socket.position.x + (-.18 if side == "l" else .18)
+	if cart.has_method("show_coachman_blockout"):
+		if role == "passenger":
+			var on_floor: Vector3 = socket.position + socket.basis * Vector3(-.18 if side == "l" else .18, 0, -.55)
+			on_floor.y = 1.369
+			return cart.to_global(on_floor)
+		return cart.to_global(Vector3(x, 1.17, .50))
+	if cart.variant == 1:
+		return cart.to_global(Vector3(x, .845, 1.28))
+	return cart.to_global(Vector3(x, 1.105, 2.02))
+
+func passenger_hand_world(side: String) -> Vector3:
+	var socket: Node3D = cart.seat_sockets.get(seat_name)
+	return socket.to_global(Vector3(-.19 if side == "l" else .19, .12, -.28))
+
 func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 	if rider != null or actor.get_meta("climbing", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	var socket: Node3D = cart.seat_sockets.get(seat)
@@ -88,11 +111,17 @@ func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 	var visual: Node = actor.get_node("VisualRoot/CharacterVisual")
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
+	transition = "boarding"
+	transition_progress = 0.0
+	transition_side = -1.0 if cart.to_local(actor.global_position).x < 0.0 else 1.0
+	visual.skeleton.force_update_all_bone_transforms()
+	transition_start = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("pelvis")).origin)
+	speed = 0.0
 	_sync_rider()
 	return true
 
 func dismount() -> bool:
-	if rider == null: return false
+	if rider == null or transition != "": return false
 	var shape: CollisionShape3D = rider.get_node("CollisionShape3D")
 	for side in [-1.0, 1.0]:
 		var exit_at: Vector3 = cart.global_position + cart.global_basis.x * side * 2.35 + cart.global_basis.z * 2.2
@@ -106,21 +135,35 @@ func dismount() -> bool:
 		clearance.transform = Transform3D(Basis.IDENTITY, exit_at)
 		clearance.exclude = _vehicle_exclusions()
 		if not rider.get_world_3d().direct_space_state.intersect_shape(clearance, 1).is_empty(): continue
-		var actor := rider
-		rider = null
-		actor.set_meta("mounted_vehicle", null)
-		actor.set_meta("cart_role", "")
-		actor.collision_layer = saved_layer
-		actor.collision_mask = saved_mask
-		actor.global_position = exit_at
-		actor.velocity = Vector3.ZERO
-		if cart.has_method("show_coachman_blockout"): cart.show_coachman_blockout()
+		transition = "exiting"
+		transition_progress = 0.0
+		transition_side = side
+		transition_ground = exit_at
+		transition_start = cart.seat_sockets[seat_name].global_position
+		speed = 0.0
 		return true
 	rider.inventory.message_requested.emit("No clear ground beside the cart")
 	return false
 
 func _physics_process(delta: float) -> void:
 	if rider == null or not is_instance_valid(cart): return
+	if transition != "":
+		transition_progress = minf(1.0, transition_progress + delta / TRANSITION_SECONDS)
+		cart.set_forward_motion(0.0, delta)
+		_sync_rider()
+		if transition_progress >= 1.0:
+			if transition == "exiting":
+				var actor := rider
+				rider = null
+				actor.set_meta("mounted_vehicle", null)
+				actor.set_meta("cart_role", "")
+				actor.collision_layer = saved_layer
+				actor.collision_mask = saved_mask
+				actor.global_position = transition_ground
+				actor.velocity = Vector3.ZERO
+				if cart.has_method("show_coachman_blockout"): cart.show_coachman_blockout()
+			transition = ""
+		return
 	if role == "driver" and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
 		var throttle := Input.get_axis("move_backward", "move_forward")
 		var steer := Input.get_axis("move_right", "move_left")
@@ -165,5 +208,16 @@ func _sync_rider() -> void:
 	if pelvis < 0: return
 	rider.visual_root.global_rotation.y = socket.global_rotation.y + PI
 	var hip_world: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin)
-	rider.global_position += socket.global_position - hip_world
+	var target: Vector3 = socket.global_position
+	if transition != "":
+		var boarding_progress := transition_progress if transition == "boarding" else 1.0 - transition_progress
+		var outside: Vector3 = transition_start if transition == "boarding" else transition_ground
+		var step_local := Vector3(transition_side * 1.18, socket.position.y + .35, socket.position.z - .25)
+		if cart.has_method("show_coachman_blockout") and role == "passenger": step_local.z = 2.77
+		var step: Vector3 = cart.to_global(step_local)
+		if boarding_progress < .55:
+			target = outside.lerp(step, smoothstep(0.0, .55, boarding_progress))
+		else:
+			target = step.lerp(socket.global_position, smoothstep(.55, 1.0, boarding_progress))
+	rider.global_position += target - hip_world
 	rider.velocity = Vector3.ZERO

@@ -16,7 +16,7 @@
 			"mesh_nodes": 5,
 			"ray_contact": true,
 			"scene": "res://objects/oil_lamp.tscn",
-			"triangles": 2340
+			"triangles": 2350
 		}
 	],
 	"lamp_switch": "PASS: light and flame switch together",

@@ -3,23 +3,23 @@
 [ext_resource type="ArrayMesh" path="res://assets/props/household/water_pot.res" id="1_xdhq5"]
 [ext_resource type="ArrayMesh" path="res://assets/props/household/pot_water.res" id="2_1yfa1"]
 
-[node name="WaterPotVisual" type="Node3D" unique_id=79177213]
+[node name="WaterPotVisual" type="Node3D" unique_id=1305981328]
 
-[node name="EarthenShell" type="MeshInstance3D" parent="." unique_id=1236433019]
+[node name="EarthenShell" type="MeshInstance3D" parent="." unique_id=943371718]
 mesh = ExtResource("1_xdhq5")
 
-[node name="StoredWater" type="MeshInstance3D" parent="." unique_id=1339732734]
+[node name="StoredWater" type="MeshInstance3D" parent="." unique_id=333935483]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.565, 0)
 mesh = ExtResource("2_1yfa1")
 
-[node name="Mouth" type="Marker3D" parent="." unique_id=1318023613]
+[node name="Mouth" type="Marker3D" parent="." unique_id=1324762748]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 
-[node name="WaterSurface" type="Marker3D" parent="." unique_id=383758547]
+[node name="WaterSurface" type="Marker3D" parent="." unique_id=682714150]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.567, 0)
 
-[node name="LeftGrip" type="Marker3D" parent="." unique_id=2007673250]
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=1949465693]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0.7, 0)
 
-[node name="RightGrip" type="Marker3D" parent="." unique_id=1661536682]
+[node name="RightGrip" type="Marker3D" parent="." unique_id=1319114079]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.7, 0)

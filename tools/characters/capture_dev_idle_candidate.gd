@@ -58,7 +58,7 @@ func _capture() -> void:
 		for frame in 72:
 			player.seek(fmod(float(frame) / 30.0, duration), true)
 			await process_frame
-			await RenderingServer.frame_post_draw
+			RenderingServer.force_draw(false)
 			var error := viewport.get_texture().get_image().save_png(folder + "/%04d.png" % frame)
 			if error != OK:
 				quit(1)
@@ -70,7 +70,7 @@ func _capture() -> void:
 		player.seek(duration * phase, true)
 		for frame in 4:
 			await process_frame
-		await RenderingServer.frame_post_draw
+		RenderingServer.force_draw(false)
 		var label := "walk" if walking else "idle"
 		var path := "res://docs/characters/npcs/dev_%s_%02d.png" % [label, roundi(phase * 100)]
 		var error := viewport.get_texture().get_image().save_png(path)

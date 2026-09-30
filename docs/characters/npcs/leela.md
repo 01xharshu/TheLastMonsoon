@@ -14,7 +14,7 @@ Source image SHA-256: first sheet `7eac284e7a5740ad593f766bf4aab1c5fbc35e773b458
 
 ## Body first — current work
 
-Owner direction: refine the body before clothes. The current [editable body source](../../../WorkingAssets/NPCs/leela/body_study/leela_body_study.blend) is built by [the body-study builder](../../../tools/characters/build_leela_body_study.py); its [manifest](../../../WorkingAssets/NPCs/leela/body_study/manifest.json) records the 53-bone rig, editable facial targets, and source hash. The anatomy review uses uniform clay shading. The source includes packed skin, eye, brow, lash, and temporary ponytail textures and the review cameras/lights.
+Owner direction initially: refine the body before clothes. On 2026-09-30 the owner authorized clothes alongside the remaining face/body work. The current [editable body source](../../../WorkingAssets/NPCs/leela/body_study/leela_body_study.blend) is built by [the body-study builder](../../../tools/characters/build_leela_body_study.py); its [manifest](../../../WorkingAssets/NPCs/leela/body_study/manifest.json) records the 53-bone rig, editable facial targets, and source hash. The anatomy review uses uniform clay shading. The source includes packed skin, eye, brow, lash, and temporary ponytail textures and the review cameras/lights.
 
 2026-09-30 refinement: smoothed the anatomy surface, adjusted cheek/chin/lip shapes, reduced the open-mouth gap, added fitted brows and lashes, replaced the low-poly eyes, and introduced restrained skin relief/subsurface shading. Restored hair-card texture and alpha rather than covering the cards with an opaque material. The earlier floating brows/curls/bun were removed; the bindi now fits the evaluated forehead surface. Previous jagged body shader coverage was removed from the anatomy renders.
 
@@ -26,7 +26,7 @@ Reference-calibrated face pass (2026-09-30): added the reversible `Leela_referen
 
 Review evidence: [body front](../../../WorkingAssets/NPCs/leela/body_study/body_front.png), [side](../../../WorkingAssets/NPCs/leela/body_study/body_side.png), [back](../../../WorkingAssets/NPCs/leela/body_study/body_back.png), [three-quarter](../../../WorkingAssets/NPCs/leela/body_study/body_three_quarter.png), [relaxed arms](../../../WorkingAssets/NPCs/leela/body_study/body_relaxed.png), [face front](../../../WorkingAssets/NPCs/leela/body_study/face_front.png), [face three-quarter](../../../WorkingAssets/NPCs/leela/body_study/face_three_quarter.png), and [face profile](../../../WorkingAssets/NPCs/leela/body_study/face_profile.png). Blender 5.2 Cycles renders were inspected. The relaxed-arm image is a static rig pose for proportion review; it is not an animation/contact test. Leela's likeness remains unapproved: eye/cheek balance, skin detail, and the temporary straight ponytail still differ from the reference portraits. No movement/contact or Godot appearance approval is implied by these static renders.
 
-Next: continue matching the body silhouette and facial landmarks; author the wavy updo after the facial form settles. Resume garments only after the body review. No world placement or gameplay actor has been added.
+Next: continue matching the body silhouette and facial landmarks; author the wavy updo after the facial form settles. Continue garments alongside face/body refinement under the latest owner instruction. No world placement or gameplay actor has been added.
 
 ## Earlier clothed blockout — superseded
 
@@ -34,4 +34,28 @@ The reproducible [Blender builder](../../../tools/characters/build_leela_candida
 
 Blender 5.2 generated [front](../../../WorkingAssets/NPCs/leela/candidate/front.png), [side](../../../WorkingAssets/NPCs/leela/candidate/side.png), [back](../../../WorkingAssets/NPCs/leela/candidate/back.png), and [three-quarter](../../../WorkingAssets/NPCs/leela/candidate/three_quarter.png) renders. They were inspected. **Visual review failed:** the generic face and low-detail ponytail do not capture either reference; the scarf is a rigid strip with poor shoulder fit; tunic, trousers, and boots have crude cylindrical shapes; skin, fabric, and embroidery lack the source's detail. This is an editable anatomy and palette blockout only, not a likeness or costume candidate for approval. Godot 4.7.2 headless project import completed, which checks file import rather than rendered appearance or movement.
 
-The two reference sheets differ on outfit and footwear; the final costume choice remains open. This earlier clothing blockout is paused while the body is refined.
+The two reference sheets differ on outfit and footwear; the final costume choice remains open. This earlier clothing blockout is superseded by the costume study below.
+
+## Clothes alongside likeness — current costume study
+
+Owner authorized clothing work alongside the other refinements. The first sheet’s green tunic, rust-red shoulder drape, cream gathered trousers and brown footwear are the provisional direction. The second sheet continues to guide facial likeness.
+
+Builder: `tools/characters/build_leela_costume.py`. Editable source: `WorkingAssets/NPCs/leela/costume_study/leela_costume_study.blend`. This opens the current body/face source, retaining the corrected bust and reversible face fit. The costume contains a fitted native bodice, separate split tunic panels, copper hem trim and embroidered sprigs, pleated front/back scarf, waist wrap/straps/buckle/pouch, gathered trousers, fitted footwear and boot shafts. Packed source and four rendered views are recorded by its manifest.
+
+The first rendered draft exposed neckline/arm visibility gaps, an elevated scarf and trousers breaking through the skirt. Neck/arm coverage, scarf height and upper-trouser volume were revised after that inspection. This remains a **static costume fitting draft**, not an approved reference match: short sleeves need the reference’s longer rolled treatment; scarf edges/fringe, tailored neckline, boot fit, weave/embroidery scale and cloth folds need refinement. The generated skirt, scarf and trouser meshes are not weighted for movement. Facial lips/brows/profile and temporary ponytail remain open. No game actor or early-world placement was added.
+
+Evidence: [front](../../../WorkingAssets/NPCs/leela/costume_study/front.png), [three-quarter](../../../WorkingAssets/NPCs/leela/costume_study/three_quarter.png), [side](../../../WorkingAssets/NPCs/leela/costume_study/side.png), [back](../../../WorkingAssets/NPCs/leela/costume_study/back.png). Next: tailored sleeves/neckline and scarf surface clearance, then cloth weights and movement review; continue facial/hair likeness alongside them.
+
+### Sleeve and scarf refinement
+
+Added forearm sleeve extensions and rolled cuffs, copper cuff stitching and front placket trim. Sleeve centers are sampled from the shaped body’s skin vertices, avoiding the earlier manually positioned tubes that floated or exposed the arm through their side. Added borders to both scarf edges and fine fringe to the hanging tail. Before-pass source and renders are preserved in `costume_study/reviews/before-sleeve-scarf-refinement/`. Refreshed four Cycles views after revisions. This remains a static fitting candidate: sleeve/bodice joins require tailoring, the neckline trim does not yet create the reference’s actual opening, and cloth motion/face/hair remain open.
+
+Side-view inspection exposed excessive air between scarf and bodice. Added front/back ray fitting against the evaluated blouse so overlapping scarf vertices follow its actual surface with a small cloth clearance. Free hanging sections remain procedural. Neckline trim still floats at some angles and needs a surface-fitted sewn opening.
+
+### Fabric realism pass
+
+Added finer object-coordinate fabric relief, subdued broad colour variation and cotton sheen. Replaced the trousers’ regular vertical ribs with denser, less uniform angular/diagonal folds that fade at the endpoints; tapered sleeve cuffs and introduced small sleeve wrinkles. Scarf paths now interpolate smoothly between their anchors, and scarf/front-placket fitting evaluates the actual blouse surface. Fixed a builder variable collision that prevented the previously attempted scarf-ray fit from completing; the earlier source was still the pre-fit save. The new build completes the fit and refreshes the source/manifest/views. Increased boot-top coverage after the front render exposed trousers breaking through the old shaft rim.
+
+Before-pass evidence: `costume_study/reviews/before-fabric-realism/`. Static realism still open: gathered cloth has an overly regular pattern, sleeve joins are separate pieces, scarf shoulder has an excessive rolled edge, and boot shafts need tailored calf shape. Face and hairstyle are still below reference likeness; no motion/cloth simulation approval is implied.
+
+Final front inspection: trouser fabric is narrowed and folds fade inside boot shafts, eliminating the visible cream breakthroughs at the rims in this static view. Shoulder ray fitting reduces floating fabric but leaves a pinched fold that needs hand tailoring. These are visible fitting results, not motion/contact approval.

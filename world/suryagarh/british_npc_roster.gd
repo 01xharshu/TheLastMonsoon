@@ -45,6 +45,9 @@ func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance
 	actor.set("patrol_axis", Vector3(0, 0, -1) if kind == "man" else Vector3(1, 0, 0))
 	actor.set("movement_profile", &"male" if kind == "man" else &"female")
 	actor.set_meta("concept_rank_or_post", rank)
+	if rank == "official" and kind == "man":
+		actor.set_meta("story_role", "district commander")
+		actor.set_meta("authority", "issues village rules from the occupied command fort")
 	actor.set_meta("model_kind", kind)
 	actor.set_meta("placement_plot", "GovernmentHouse" if kind == "woman" or rank == "official" else "CompanyCompound")
 	actor.set_meta("visual_status", "candidate_unapproved")

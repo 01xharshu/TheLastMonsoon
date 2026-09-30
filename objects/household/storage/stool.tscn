@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf" id="1_xlg4w"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_yc3mr"]
+height = 0.44
+radius = 0.23
+
+[node name="Stool" type="StaticBody3D" unique_id=1009060781 groups=["solid_period_prop"]]
+metadata/asset_source = "res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Model" type="Node3D" parent="." unique_id=119463173 instance=ExtResource("1_xlg4w")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.6797417e-05, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1592015639]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.21996321, 0)
+shape = SubResource("CylinderShape3D_yc3mr")
+
+[node name="Seat" type="Marker3D" parent="." unique_id=316410755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.44, 0)
+
+[node name="Approach" type="Marker3D" parent="." unique_id=1676852825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.65)

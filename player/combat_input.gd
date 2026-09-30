@@ -13,6 +13,8 @@ var punch_landed := false
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 
 func available() -> bool:
+	if actor.get_meta("telescope_open", false): return false
+	if actor.get_meta("detention_action", "") != "": return false
 	return actor.is_physics_processing() and not actor.is_swimming and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless")
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -30,6 +32,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if actor.get_meta("detention_action", "") != "":
+		pending_single = false
+		kick_time = -1.0
+		punch_time = -1.0
+		visual.kick_phase = -1.0
+		visual.punch_phase = -1.0
+		return
 	kick_cooldown = maxf(0.0,kick_cooldown-delta)
 	if pending_single:
 		click_age += delta

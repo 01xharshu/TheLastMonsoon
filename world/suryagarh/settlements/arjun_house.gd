@@ -6,6 +6,14 @@ func furnish(b, home: Node3D) -> void:
 	home.set_meta("story", "Dev raised Arjun after their parents died early; Dev serves as a sepoy.")
 	for node in home.get_children():
 		if str(node.name).begins_with("Sleeping") or str(node.name) in ["CookingHearth","HearthOpening","CookingPot","StorageChest","ChestLid"]: node.free()
+	# Open the sleeping-room shutter so Arjun can actually look outside.
+	# Apply before the village batches static meshes; preserve the other shutters.
+	for node in home.get_children():
+		if str(node.name).begins_with("ClosedWoodWindow") and node.position.x < 0:
+			node.free()
+	for z in [-1.1,1.1]:
+		b.piece(home,"OpenSleepingWindowShutter",Vector3(-5.30,1.915,z),Vector3(1.1,1.15,0.12),b.wood)
+	home.set_meta("sleeping_window", "open outward")
 	var lime: Material = b.material(Color(0.73,0.68,0.55))
 	var earth: Material = b.material(Color(0.40,0.31,0.21))
 	var cloth: Material = b.material(Color(0.34,0.30,0.22))

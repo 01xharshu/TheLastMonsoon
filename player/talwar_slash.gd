@@ -20,6 +20,8 @@ func strike() -> bool:
 	return true
 
 func available() -> bool:
+	if actor.get_meta("telescope_open", false): return false
+	if actor.get_meta("detention_action", "") != "": return false
 	return elapsed >= DURATION and visual.equipment != null and not visual.equipment.stowed and visual.equipment.selected == 0 and not actor.is_swimming and not actor.get_meta("scroll_open",false) and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.inventory_ui.is_open() and not actor.get_meta("climbing",false) and not actor.has_meta("mounted_vehicle")
 
 func _find_target() -> Node3D:
@@ -39,6 +41,11 @@ func _find_target() -> Node3D:
 	return best
 
 func _process(delta: float) -> void:
+	if actor.get_meta("detention_action", "") != "":
+		elapsed = DURATION
+		target = null
+		visual.slash_phase = -1.0
+		return
 	if elapsed >= DURATION: return
 	elapsed = minf(DURATION, elapsed + delta)
 	visual.slash_phase = elapsed / DURATION

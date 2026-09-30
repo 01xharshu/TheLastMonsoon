@@ -1,0 +1,23 @@
+{
+  "shape_key": "Arjun_multiview_face_fit",
+  "control_count": 60,
+  "maximum_displacement_m": 0.007603583495625894,
+  "reference": "WorkingAssets/Arjun/references/arjun_core_multiview.png",
+  "reference_sha256": {
+    "arjun_core_multiview.png": "2ea627fc0d0d65ae59dd7ef3cae57c49a684e988b2a1ec22197d70d14b4aae67",
+    "arjun_equipped_multiview.png": "757bf809d029c38744dfc579b3288d1b3ffef5ec960e7b13b315beb4b54dbe86"
+  },
+  "calibration": "WorkingAssets/Arjun/reference_fit/reference_face_fit.json",
+  "status": "CANDIDATE_NOT_EXACT_OR_APPROVED",
+  "source": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend",
+  "source_sha256": "85302e915a67ee9a426743e83b66d2a65c4e18cfe6506722087cf724e1c7f075",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_multiview_fit_candidate.blend",
+  "changes": [
+    "measured frontal face shape key",
+    "moustache/brow face fit",
+    "fuller crown hair",
+    "broader diagonal trouser drape",
+    "shaped split hem"
+  ],
+  "runtime_replaced": false
+}

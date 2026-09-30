@@ -24,6 +24,7 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 func open() -> void:
+	if actor.get_meta("detention_action", "") != "": return
 	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
 	if not actor.is_physics_processing(): return
 	selected = int(equipment.selected)

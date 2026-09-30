@@ -36,7 +36,9 @@ func _ready() -> void:
 	build_estate()
 	build_main_house()
 	for side in [-1.0,1.0]: build_wing(side)
+	preload("res://world/suryagarh/settlements/occupied_fort.gd").new().build(self)
 	merge_visuals(self)
+	preload("res://world/suryagarh/settlements/occupied_fort.gd").new().staff(self)
 
 func textured(asset: String, tint: Color, scale_value: float) -> Material:
 	var mat := StandardMaterial3D.new()
@@ -85,9 +87,14 @@ func build_estate() -> void:
 		box("PerimeterWall",Vector3(side*96,2.7,0),Vector3(1.2,5.4,184),brick)
 		box("WallCoping",Vector3(side*96,5.47,0),Vector3(1.5,.16,184),stone,false)
 		box("GatePier",Vector3(side*5.5,3.2,92),Vector3(1.8,6.4,2.0),stone)
-		box("GateLeafOpen",Vector3(side*5.45,2.25,88.9),Vector3(.18,4.5,5.0),iron,false)
-		for bar in 9:
-			box("GateRail",Vector3(side*5.58,2.25,86.7+bar*.55),Vector3(.08,4.5,.08),brass,false)
+	var gate := preload("res://objects/hinged_door.gd").new()
+	gate.name = "FortEntranceGate"
+	gate.width = 9.2
+	gate.height = 4.5
+	gate.position = Vector3(-4.6,.08,92)
+	gate.night_lock = true
+	gate.build(iron)
+	add_child(gate)
 	box("GateArchitrave",Vector3(0,6.5,92),Vector3(13,.45,2.0),stone)
 	box("NorthCopingLeft",Vector3(-51,5.48,92),Vector3(90,.16,1.5),stone,false)
 	box("NorthCopingRight",Vector3(51,5.48,92),Vector3(90,.16,1.5),stone,false)

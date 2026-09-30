@@ -39,6 +39,10 @@
 [ext_resource type="Script" path="res://player/stealth_stance.gd" id="stealth_stance"]
 [ext_resource type="PackedScene" path="res://objects/household/water_pouch_visual.tscn" id="water_pouch_visual"]
 
+[ext_resource type="Script" path="res://player/detention_component.gd" id="detention"]
+
+[ext_resource type="Script" path="res://player/field_telescope.gd" id="field_telescope"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -139,7 +143,7 @@ mesh = SubResource("CapsuleMesh_6xif0")
 script = ExtResource("2_8t03j")
 
 [node name="WaterBagVisual" type="Node3D" parent="VisualRoot/EquipmentVisuals" unique_id=1724261517]
-position = Vector3(0.146, 0.175, -0.067)
+position = Vector3(0.13, 0.175, -0.09)
 script = ExtResource("water_bag_visual")
 
 [node name="PouchModel" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" instance=ExtResource("water_pouch_visual")]
@@ -438,3 +442,9 @@ script = ExtResource("24_knife")
 
 [node name="CombatInput" type="Node" parent="."]
 script = ExtResource("25_combat")
+
+[node name="DetentionComponent" type="Node" parent="."]
+script = ExtResource("detention")
+
+[node name="FieldTelescope" type="Node" parent="."]
+script = ExtResource("field_telescope")

@@ -1,0 +1,21 @@
+# Arjun detention animation
+
+## Scope and behavior
+
+2026-09-30: two states on the existing authoritative Arjun body/rig: hands-behind-back arrest and standing cell waiting. Both are six-second loops with quiet breathing; waiting adds a restrained head glance. Entry eases over 1.15 seconds, release over 0.85 seconds, and changing from arrest to waiting blends over 0.67 seconds. The planted lower body is held rather than stretching the short imported idle into a long loop with a foot snap.
+
+The actual player scene includes `DetentionComponent`. Mission code calls `begin_detention("arrest")`, `wait_in_cell()` and `release_detention()`. The component holds the current collision-body transform, zeroes travel, stows weapons and blocks ordinary interactions. It rejects mounted/swimming/climbing/rest/river/low-stance/airborne and modal UI conflicts. No automatic police arrest trigger, crime rules, escort AI, confiscation, sentence or save-state persistence is added by this animation task. Waiting is standing; a seated platform pose remains a separate contact task. No handcuff/rope prop or officer hand contact is claimed.
+
+The AnimationTree blends original detention clips after ordinary locomotion layers. A rest-relative arm solve runs after the tree advances and brings wrists behind the lower back, with partial finger curl. The skeleton forward direction is +Z; an initial incorrect +Z wrist target was caught in rendered inspection and replaced with -Z. Melee/pending sword strikes cancel during detention; firearm availability, low stance, inventory and riding are gated. Rifle reload reserves remain paused, rather than discarded; pistol reload pauses while detained.
+
+## Evidence
+
+- `tools/characters/validate_arjun_detention.gd` runs the actual player in a lower DistrictPolice cell. Timed arrest entry/hold, waiting, release, recovered walking, repeated arrest/release and invalid-state rejection are covered. Pending melee cancellation and action guards are checked. Explicit `ARJUN DETENTION PASS` in headless and Forward+/Metal.
+- `detention_validation.json` and `detention_validation_metal.json`: zero held actor drift, wrist gap approximately 0.161 m; both wrists checked behind the pelvis. These are wrist bone measurements, not fingertip or restraint contact approval.
+- `ARJUN MOTION TREE: PASS` for existing idle/walk/run/swim/sit/long-gun envelopes after the additional tree layer.
+- Fresh Metal `detention_entry.png`, `detention_arrest_front.png`, `detention_arrest_back.png`, `detention_waiting.png`, `detention_release.png`. Rendered inspection confirmed wrist side, visible elbow bend and cell clearance; final art acceptance remains open.
+- `detention_motion.mp4`: 7.8-second 30 fps Metal simulation capture, exported at normal playback rate. Includes entry, hold, camera changes, arrest-to-wait, release and returned travel. Sampled transition frames inspected; this is a controlled in-world harness, not owner-controlled gameplay approval.
+
+## Remaining work
+
+Owner motion review, detailed finger/wrist/clothing contact, officer restraint/escort animation, seated cell waiting, and a mission/crime integration remain. Existing FortCook/FortSteward missing-skeleton errors occur during full-world loading and are outside this task. Two small original runtime clips and the existing rig add no imported texture/character assets; physical 8 GB hardware performance remains unverified.

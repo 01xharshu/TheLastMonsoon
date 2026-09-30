@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf" id="1_d7ju3"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qpjgg"]
+size = Vector3(0.55, 0.5, 1.17)
+
+[node name="Crate" type="StaticBody3D" unique_id=1282269257 groups=["solid_period_prop"]]
+metadata/asset_source = "res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Model" type="Node3D" parent="." unique_id=1275531874 instance=ExtResource("1_d7ju3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.00982365, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=270497966]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24982364, 0)
+shape = SubResource("BoxShape3D_qpjgg")
+
+[node name="TopReference" type="Marker3D" parent="." unique_id=1495597989]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.46395457, 0)

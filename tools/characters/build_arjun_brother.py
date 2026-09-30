@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 from mathutils import Vector, Quaternion
+from mathutils.bvhtree import BVHTree
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "WorkingAssets/NPCs/arjun_brother"
@@ -31,6 +32,15 @@ def mat(name, color, texture=None):
     bs = m.node_tree.nodes.get("Principled BSDF")
     bs.inputs["Base Color"].default_value = (*color, 1)
     bs.inputs["Roughness"].default_value = .84
+    if "coat" in name.lower() or "cotton" in name.lower():
+        noise = m.node_tree.nodes.new('ShaderNodeTexNoise')
+        noise.inputs['Scale'].default_value = 180
+        noise.inputs['Detail'].default_value = 2
+        bump = m.node_tree.nodes.new('ShaderNodeBump')
+        bump.inputs['Strength'].default_value = .12
+        bump.inputs['Distance'].default_value = .00035
+        m.node_tree.links.new(noise.outputs['Fac'],bump.inputs['Height'])
+        m.node_tree.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
     if texture:
         tex = m.node_tree.nodes.new("ShaderNodeTexImage")
         tex.image = bpy.data.images.load(str(texture), check_existing=True)
@@ -73,7 +83,8 @@ for vertex in outfit.data.vertices:
     height_by_component[component] = max(height_by_component.get(component, 0), vertex.co.z)
 upper_component = max(height_by_component, key=height_by_component.get)
 upper_group = outfit.vertex_groups.new(name="Fitted upper only")
-upper_group.add([v.index for v in outfit.data.vertices if find(v.index)==upper_component], 1, 'REPLACE')
+upper_group.add([v.index for v in outfit.data.vertices if find(v.index)==upper_component
+    ], 1, 'REPLACE')
 outfit_mask = outfit.modifiers.new("Keep fitted upper", 'MASK')
 outfit_mask.vertex_group = upper_group.name
 
@@ -109,18 +120,27 @@ def tube(name, start, end, radius_a, radius_b, material, bone, sides=12):
 
 # Costume is a readable first design study. Unit-specific tailoring and insignia
 # remain deliberately unresolved until the story fixes his regiment and year.
-rings("Coat lower skirts", [(.76,.275,.23,0,0),(.84,.255,.205,0,0),(.96,.212,.166,0,0),(1.055,.155,.125,0,0)], coat)
-rings("Coat waist seam", [(.96,.232,.187,0,0),(.975,.232,.187,0,0)], trim)
+skirt = rings("Coat lower skirts", [(.76,.245,.19,0,0),(.80,.24,.182,0,0),
+    (.84,.234,.175,0,0),(.90,.22,.166,0,0),(.96,.205,.16,0,0),(1.055,.155,.125,0,0)], coat, sides=40)
+for vertex in skirt.data.vertices:
+    angle = math.atan2(vertex.co.y,vertex.co.x)
+    fold = .0035*math.cos(angle*8)*(1.055-vertex.co.z)/.295
+    vertex.co.x += math.cos(angle)*fold
+    vertex.co.y += math.sin(angle)*fold
+waist_leather = mat("Dark leather waist belt",(.045,.022,.012))
+rings("Coat waist seam", [(.96,.212,.166,0,0),(.988,.212,.166,0,0)], waist_leather, sides=40)
+rings("Uniform standing collar",[(1.405,.105,.081,0,0),(1.435,.103,.079,0,0),
+    (1.465,.095,.074,0,0)],coat,"spine03",sides=40)
 for side,sign in [("left",1),("right",-1)]:
     suffix = "l" if sign == 1 else "r"
     thigh = rig.data.bones["thigh_" + suffix]
     calf = rig.data.bones["calf_" + suffix]
     levels = []
-    for z in [.20,.30,.42,.47,.52,.57,.68,.84]:
+    for z in [.09,.14,.20,.30,.42,.47,.52,.57,.68,.84]:
         bone = calf if z < calf.head_local.z else thigh
         t = (z-bone.head_local.z)/(bone.tail_local.z-bone.head_local.z)
         center = bone.head_local.lerp(bone.tail_local,t)
-        radius = .092 + .026 * (z-.20)/.64
+        radius = .077 + .041 * (z-.09)/.75
         levels.append((z,radius,radius,center.x,center.y))
     trousers = rings(side+" trouser",levels,cotton,"thigh_"+suffix)
     trousers.vertex_groups.clear()
@@ -129,25 +149,40 @@ for side,sign in [("left",1),("right",-1)]:
         for name,weight in [("thigh_"+suffix,upper),("calf_"+suffix,1-upper)]:
             if weight > 0:
                 (trousers.vertex_groups.get(name) or trousers.vertex_groups.new(name=name)).add([vertex.index],weight,'REPLACE')
-    tube(side+" boot",(sign*.17,-.016,.32),(sign*.188,-.011,.075),.11,.094,leather,"calf_"+suffix)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, location=(sign*.19,-.067,.041))
-    shoe=bpy.context.object; shoe.name=side+" leather shoe"
-    shoe.scale=(.112,.18,.059); shoe.data.materials.append(leather)
-    shoe.parent=rig
-    group=shoe.vertex_groups.new(name="foot_"+("l" if sign==1 else "r"))
-    group.add(list(range(len(shoe.data.vertices))),1,'REPLACE')
-    shoe.modifiers.new("Rig",'ARMATURE').object=rig
-# Broad webbing crosses the front of the coat without a cylindrical silhouette.
-attach("Crossbody leather webbing",[(-.205,-.12,1.345),(-.165,-.125,1.345),(.16,-.186,.91),(.12,-.193,.91)],
-       [(0,1,2,3)],leather,"spine01")
-attach("Coat front placket",[(-.018,-.205,.87),(.018,-.205,.87),
-                               (-.018,-.175,1.0),(.018,-.175,1.0),
-                               (-.018,-.155,1.35),(.018,-.155,1.35),
-                               (-.018,-.105,1.405),(.018,-.105,1.405)],
-       [(0,1,3,2),(2,3,5,4),(4,5,7,6)],coat,"spine01")
+boots = HumanService.add_mhclo_asset(str(DATA / "clothes/shoes03/shoes03.mhclo"),
+    body,asset_type="Clothes",subdiv_levels=0)
+boots.name = "Dev_fitted_boots"
+boot_leather = mat("Worn dark boot leather",(.055,.035,.022),DATA / "clothes/shoes03/shoes03_diffuse.png")
+boots.data.materials.clear();boots.data.materials.append(boot_leather)
+for polygon in boots.data.polygons: polygon.use_smooth = True
+# Sample the actual garment surface so trim sits against the fitted coat.
+bpy.context.view_layer.update()
+garment_trees = []
+deps = bpy.context.evaluated_depsgraph_get()
+for garment in [outfit,skirt]:
+    evaluated = garment.evaluated_get(deps)
+    mesh = evaluated.to_mesh()
+    garment_trees.append(BVHTree.FromPolygons([v.co for v in mesh.vertices],
+        [list(p.vertices) for p in mesh.polygons]))
+    evaluated.to_mesh_clear()
+def front_y(x,z):
+    hits = [tree.ray_cast(Vector((x,-1,z)),Vector((0,1,0)),2)[0] for tree in garment_trees]
+    values = [hit.y for hit in hits if hit is not None]
+    return min(values)-.005 if values else -.15
+def fitted_strip(name,start,end,width,material):
+    vertices=[]
+    for i in range(18):
+        t=i/17
+        x=start[0]*(1-t)+end[0]*t
+        z=start[1]*(1-t)+end[1]*t
+        for dx in [-width/2,width/2]:
+            vertices.append((x+dx,front_y(x+dx,z),z))
+    return attach(name,vertices,[(2*i,2*i+1,2*i+3,2*i+2) for i in range(17)],material,"spine01")
+fitted_strip("Crossbody leather webbing",(-.18,1.34),(.14,.91),.038,leather)
+fitted_strip("Coat front placket",(0,.87),(0,1.36),.03,coat)
 for i in range(6):
     z=1.01+i*.065
-    y=-.174+.015*(z-1.0)/.33
+    y=front_y(.012,z)-.003
     bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,location=(.012,y,z))
     button=bpy.context.object;button.name="Coat brass button %d"%(i+1)
     button.scale=(.011,.006,.011);button.data.materials.append(trim)
@@ -175,6 +210,10 @@ for side, sign in [("l", 1), ("r", -1)]:
         bone.rotation_mode = 'QUATERNION'
         bone.rotation_quaternion = Quaternion(axis, sign * math.radians(28))
 rig.data.pose_position = 'POSE'
+for bone in rig.pose.bones:
+    if bone.name.startswith(('index_','middle_','ring_','pinky_')):
+        bone.rotation_mode = 'QUATERNION'
+        bone.rotation_quaternion = Quaternion((1,0,0),.25 if '_01_' in bone.name else .18)
 
 blend=OUT/"arjun_brother_mpfb.blend"
 bpy.ops.wm.save_as_mainfile(filepath=str(blend))

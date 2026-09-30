@@ -7,6 +7,7 @@ var pose_kind := "none"
 var release_linger := 0.0
 var ground_pickup := false
 var pickup_target := Vector3.ZERO
+var pickup_target_local := Vector3.ZERO
 var pickup_start_palm := Vector3.ZERO
 var pickup_start_basis := Basis.IDENTITY
 var foot_anchors: Dictionary = {}
@@ -22,6 +23,8 @@ var bitten_mango_material: StandardMaterial3D
 var carried_action := ""
 var carried_elapsed := 0.0
 var carried_start := Vector3.ZERO
+var carried_start_local := Vector3.ZERO
+var pickup_anchor_transform := Transform3D.IDENTITY
 
 func _ready() -> void:
 	process_priority = 10
@@ -50,7 +53,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	carried_root.visible = not actor.first_person
 	if visual.skeleton == null: return
-	if actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("river_action","") != "" or actor.get_meta("stealth_stance","") != "" or actor.get_meta("rest_action", "") != "":
+	if actor.get_meta("detention_action", "") != "" or actor.get_meta("climbing",false) or actor.has_meta("mounted_vehicle") or actor.get_meta("river_action","") != "" or actor.get_meta("stealth_stance","") != "" or actor.get_meta("rest_action", "") != "":
 		if ground_pickup: _finish_ground_pickup()
 		amount = 0.0
 		release_linger = 0.0
@@ -61,9 +64,11 @@ func _process(delta: float) -> void:
 		return
 	var active: bool = actor.get_meta("interaction_reach",false)
 	if active and is_instance_valid(actor.hold_target) and actor.hold_target.interaction_icon == "mango":
-		if not ground_pickup:
+		if not ground_pickup or not carried_action.is_empty():
+			if ground_pickup: _finish_ground_pickup()
 			_begin_ground_pickup()
 		pickup_target = actor.hold_target.global_position + Vector3.UP * 0.025
+		pickup_target_local = visual.to_local(pickup_target)
 	if ground_pickup:
 		_process_ground_pickup(delta, active)
 		return
@@ -102,6 +107,7 @@ func complete_mango(eat: bool) -> void:
 	carried_elapsed = 0.0
 	var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_r"))
 	carried_start = visual.skeleton.to_global(hand * visual.equipment.palm_offsets["r"])
+	carried_start_local = visual.to_local(carried_start)
 	carried_mango.mesh = whole_mango_mesh
 	carried_mango.material_override = whole_mango_material
 	carried_mango.show()
@@ -112,6 +118,7 @@ func _begin_ground_pickup() -> void:
 	release_linger = 0.0
 	previous_stowed = visual.equipment.stowed
 	pickup_weapon = visual.equipment.selected
+	pickup_anchor_transform = visual.global_transform
 	var start_hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_r"))
 	pickup_start_palm = visual.skeleton.to_global(start_hand * visual.equipment.palm_offsets["r"])
 	pickup_start_basis = visual.skeleton.global_basis * start_hand.basis
@@ -150,7 +157,7 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		return
 	var weight := smoothstep(0.0, 1.0, amount)
 	visual.model.position.y -= 0.55 * weight
-	var local_target := visual.to_local(pickup_target)
+	var local_target := visual.to_local(pickup_target) if active else pickup_target_local
 	visual.model.position.x += clampf(local_target.x * 0.8, -0.15, 0.15) * weight
 	visual.model.position.z += clampf(local_target.z * 0.3, 0.0, 0.2) * weight
 	visual.pose("pelvis", Vector3(0.10, 0, 0), weight)
@@ -163,14 +170,20 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 	visual.pose("upperarm_l", Vector3(-0.25, 0, -0.25), weight)
 	visual.pose("lowerarm_l", Vector3(-0.60, 0, 0), weight)
 	for side in (["l", "r"] if weight > 0.001 else []):
-		var target: Vector3 = visual.skeleton.to_local(foot_anchors[side])
-		_solve_limb("thigh_" + side, "calf_" + side, "foot_" + side, target, Vector3(0, 0, 1))
-		_set_world_basis("foot_" + side, foot_bases[side])
+		# Keep the feet planted during the held reach. Once controls resume,
+		# carry the recovering crouch with the body instead of stretching back.
+		var follow := Transform3D.IDENTITY if active else visual.global_transform * pickup_anchor_transform.affine_inverse()
+		var target: Vector3 = visual.skeleton.to_local(follow * foot_anchors[side])
+		var right_axis: Vector3 = (visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_r")).origin - visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_l")).origin).normalized()
+		var forward_axis: Vector3 = (visual.skeleton.global_basis.inverse() * visual.global_basis.z).normalized()
+		var knee_pole: Vector3 = right_axis * (0.60 if side == "r" else -0.60) + forward_axis * 1.0
+		_solve_limb("thigh_" + side, "calf_" + side, "foot_" + side, target, knee_pole)
+		_set_world_basis("foot_" + side, follow.basis * foot_bases[side])
 	var hand_index: int = visual.skeleton.find_bone("hand_r")
 	var palm_offset: Vector3 = visual.equipment.palm_offsets["r"]
 	var hand: Transform3D = visual.skeleton.get_bone_global_pose(hand_index)
 	var palm: Vector3 = visual.skeleton.to_global(hand * palm_offset)
-	var target_world: Vector3 = (pickup_start_palm if active else palm).lerp(pickup_target, weight)
+	var target_world: Vector3 = (pickup_start_palm if active else palm).lerp(pickup_target if active else visual.to_global(pickup_target_local), weight)
 	var forward := visual.global_basis.z.normalized()
 	var normal := Vector3.DOWN
 	var across := forward.cross(normal).normalized()
@@ -185,18 +198,23 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 			hand_world_basis = hand_world_basis.orthonormalized().slerp(eat_basis.orthonormalized(),lift)
 		else:
 			var pelvis: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("pelvis"))
-			destination = visual.skeleton.to_global(pelvis.origin) + visual.global_basis * Vector3(-0.23,-0.12,0.15)
-		target_world = carried_start.lerp(destination,lift)
+			destination = visual.skeleton.to_global(pelvis.origin) + visual.global_basis * Vector3(-0.40,0.02,0.30)
+		target_world = visual.to_global(carried_start_local).lerp(destination,lift)
+		target_world += visual.global_basis.z * sin(lift * PI) * 0.18
 		if carried_elapsed > 1.1 and carried_action == "eat":
 			target_world = target_world.lerp(palm,smoothstep(1.1,1.6,carried_elapsed))
 		if carried_elapsed > (1.1 if carried_action == "eat" else 0.55): carried_mango.hide()
+	if not carried_action.is_empty():
+		target_world = target_world.lerp(_outside_pickup_clothes(target_world), smoothstep(0.0,0.15,carried_elapsed))
 	var start_basis: Basis = pickup_start_basis if active else visual.skeleton.global_basis * hand.basis
 	hand_world_basis = start_basis.orthonormalized().slerp(hand_world_basis.orthonormalized(), maxf(weight, smoothstep(0.0,0.3,carried_elapsed)) if not carried_action.is_empty() else weight)
 	for i in 3:
 		_set_world_basis("hand_r", hand_world_basis)
 		hand = visual.skeleton.get_bone_global_pose(hand_index)
 		var wrist_target: Vector3 = visual.skeleton.to_local(target_world) - hand.basis * palm_offset
-		_solve_limb("upperarm_r", "lowerarm_r", "hand_r", wrist_target, Vector3(-1, 0, -0.2))
+		var right_axis: Vector3 = (visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_r")).origin - visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_l")).origin).normalized()
+		var forward_axis: Vector3 = (visual.skeleton.global_basis.inverse() * visual.global_basis.z).normalized()
+		_solve_limb("upperarm_r", "lowerarm_r", "hand_r", wrist_target, right_axis + forward_axis * 0.8)
 	_set_world_basis("hand_r", hand_world_basis)
 	var grip := smoothstep(0.65,1.0,amount) * 0.35 if carried_action.is_empty() else 0.35
 	visual.equipment._grasp("r",grip)
@@ -215,6 +233,26 @@ func _finish_ground_pickup() -> void:
 	if visual.equipment.selected == pickup_weapon and visual.equipment.stowed and not visual.equipment.swimming:
 		visual.equipment.stowed = previous_stowed
 		visual.equipment._refresh()
+
+func _outside_pickup_clothes(world_point: Vector3) -> Vector3:
+	var rig: Skeleton3D = visual.skeleton
+	var point := rig.to_local(world_point)
+	var forward := (rig.global_basis.inverse() * visual.global_basis.z).normalized()
+	var right := (rig.get_bone_global_rest(rig.find_bone("upperarm_r")).origin - rig.get_bone_global_rest(rig.find_bone("upperarm_l")).origin).normalized()
+	# The trousers extend beyond the leg bones. Include hand width in these
+	# conservative envelopes, then route around the outside of the garment.
+	for pass_index in 3:
+		for pair in [["thigh_r","calf_r",0.25],["thigh_l","calf_l",0.25],["calf_r","foot_r",0.20],["calf_l","foot_l",0.20],["pelvis","spine_03",0.29]]:
+			var a := rig.get_bone_global_pose(rig.find_bone(pair[0])).origin
+			var b := rig.get_bone_global_pose(rig.find_bone(pair[1])).origin
+			var segment := b-a
+			var nearest := a + segment * clampf((point-a).dot(segment)/maxf(segment.length_squared(),0.0001),0.0,1.0)
+			var outward := point-nearest
+			if outward.length() < float(pair[2]):
+				if outward.length_squared() < 0.0001: outward = right+forward
+				if outward.dot(right) < 0.0: outward += right * float(pair[2])
+				point = nearest + outward.normalized() * float(pair[2])
+	return rig.to_global(point)
 
 func _make_bitten_mango(source: SphereMesh) -> ArrayMesh:
 	var arrays := source.get_mesh_arrays()
@@ -250,7 +288,7 @@ func _solve_limb(upper: String, lower: String, tip: String, target: Vector3, pol
 	var a := rig.get_bone_global_rest(rig.find_bone(upper)).origin.distance_to(rig.get_bone_global_rest(rig.find_bone(lower)).origin)
 	var b := rig.get_bone_global_rest(rig.find_bone(lower)).origin.distance_to(rig.get_bone_global_rest(rig.find_bone(tip)).origin)
 	var direction := (target - origin).normalized()
-	var distance := clampf(origin.distance_to(target), absf(a - b) + 0.0001, a + b - 0.0001)
+	var distance := clampf(origin.distance_to(target), absf(a - b) + 0.035, a + b - 0.0001)
 	pole = pole - direction * pole.dot(direction)
 	if pole.length_squared() < 0.0001: pole = direction.cross(Vector3.RIGHT)
 	pole = pole.normalized()

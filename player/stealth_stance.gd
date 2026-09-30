@@ -30,6 +30,7 @@ func camera_height() -> float:
 	return base_height
 
 func can_change() -> bool:
+	if actor.get_meta("detention_action", "") != "": return false
 	return actor.is_on_floor() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and actor.get_meta("river_action","") == "" and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("interaction_reach",false)
 
 func _unhandled_input(event: InputEvent) -> void:

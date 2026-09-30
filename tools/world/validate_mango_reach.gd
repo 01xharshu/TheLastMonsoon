@@ -223,6 +223,71 @@ func validate() -> void:
 	slope_fruit.queue_free()
 	slope.queue_free()
 	plane.show()
+	await process_frame
+	for mode in ["eat","store"]:
+		var stationary_palms: Dictionary = {}
+		var stationary_feet: Dictionary = {}
+		var moving_error := 0.0
+		var recovery_foot_error := 0.0
+		for moving in [false,true]:
+			player.global_position = Vector3(0,0.9,0)
+			player.rotation = Vector3.ZERO
+			player.visual_root.rotation = Vector3.ZERO
+			visual._process(1.0/60.0)
+			player.survival.satiety = 40.0
+			if mode == "eat": player.consumables.eat_fresh_mango()
+			else:
+				var fruit = load("res://objects/mango.gd").new()
+				world.add_child(fruit)
+				fruit.position = Vector3(-0.15,0.135,0.45)
+				player._begin_interaction_hold(fruit,"interact")
+				for frame in 30:
+					visual._process(1.0/60.0)
+					component._process(1.0/60.0)
+				player._hide_interaction_labels()
+				fruit.interact(player)
+			for frame in 110:
+				if moving:
+					player.global_position += Vector3(0.03,0,0.02)
+					player.rotation.y += 0.01
+				visual._process(1.0/60.0)
+				component._process(1.0/60.0)
+				carried._process(1.0/60.0)
+				if frame in [7,15,35,59]:
+					var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_r"))
+					var palm: Vector3 = visual.to_local(visual.skeleton.to_global(hand*visual.equipment.palm_offsets["r"]))
+					var foot: Vector3 = visual.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_l")).origin))
+					if moving:
+						moving_error = maxf(moving_error,palm.distance_to(stationary_palms[frame]))
+						recovery_foot_error = maxf(recovery_foot_error,foot.distance_to(stationary_feet[frame]))
+					else:
+						stationary_palms[frame] = palm
+						stationary_feet[frame] = foot
+				if moving and frame in [7,59]:
+					camera.position = player.global_position + Vector3(-1.7,0.35,1.8)
+					camera.look_at(player.global_position+Vector3(0,-0.25,0.15))
+					await capture("moving_"+mode+"_"+str(frame))
+			check(not component.ground_pickup and not component.carried_mango.visible,"Moving action did not release")
+		check(moving_error < 0.015,"Held fruit hand lagged behind moving/turning body")
+		check(recovery_foot_error < 0.015,"Recovering foot stretched behind moving/turning body")
+		samples.append({"mode":"moving_"+mode,"local_hand_error_m":moving_error,"local_foot_error_m":recovery_foot_error})
+	# A second held pickup should replace the cosmetic eating action immediately.
+	player.global_position = Vector3(0,0.9,0)
+	player.rotation = Vector3.ZERO
+	player.survival.satiety = 40.0
+	player.consumables.eat_fresh_mango()
+	var next_fruit = load("res://objects/mango.gd").new()
+	world.add_child(next_fruit)
+	next_fruit.position = Vector3(-0.15,0.135,0.45)
+	player._begin_interaction_hold(next_fruit,"interact")
+	visual._process(1.0/60.0)
+	component._process(1.0/60.0)
+	check(component.carried_action.is_empty() and not component.carried_mango.visible,"New pickup left stale eating fruit active")
+	player._hide_interaction_labels()
+	for frame in 30:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+	next_fruit.queue_free()
 	player.survival.satiety = 100.0
 	player.survival.hydration = 100.0
 	check(not player.consumables.eat_fresh_mango(),"Full player ate fruit")

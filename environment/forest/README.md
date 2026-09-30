@@ -84,3 +84,9 @@ Integration files:
 - `review/capture_world_patch.gd`, `review/world_entry.png`, `review/world_inside.png`: main-world render capture and evidence.
 - `../../docs/README.md`, `../../CODEX_HANDOFF.md`: index and current status pointers.
 - This README and Godot-generated UID/import metadata document the integration.
+
+## In-game map marker — 2026-09-30
+
+`world/suryagarh/landscape_layout.gd` now adds **Forest grove** to `SITES` at (370, -105), the integrated patch centre. Press **M** during play to open the map. Hover over its marker or zoom in to reveal the name; click the marker to set the existing waypoint. The marker uses the current map projection and interaction system. The terrain raster remains the existing survey image; it does not depict individual generated trees or the new vegetation footprint. No forest generation or gameplay files changed for this map addition.
+
+Verification: Godot headless confirmed the marker coordinate matches `WorldForestPatch` in the main scene. Map appearance/label readability still needs player review.

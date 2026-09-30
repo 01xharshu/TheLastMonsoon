@@ -8,6 +8,7 @@ var cooldown := 0.0
 func _process(delta: float) -> void:
 	cooldown = maxf(0.0,cooldown-delta)
 func strike() -> bool:
+	if actor.get_meta("detention_action", "") != "": return false
 	if cooldown>0 or visual.equipment.stowed or visual.equipment.selected!=4 or not visual.equipment.owns(4): return false
 	if actor.is_swimming or actor.has_meta("mounted_vehicle") or actor.get_meta("map_open",false) or actor.get_meta("scroll_open",false) or actor.inventory_ui.is_open(): return false
 	cooldown = .62

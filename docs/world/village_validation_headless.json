@@ -1,11 +1,15 @@
 {
 	"cultivated_beds": 12,
 	"display_server": "headless",
-	"failures": [],
-	"ground_samples": 700,
+	"failures": [
+		"farm beds aisle blocked segment 0 at (-413.0, 8.100778, 275.424)",
+		"farm beds aisle actual Player traversal"
+	],
+	"ground_samples": 714,
 	"homes": 33,
 	"market_stalls": 8,
 	"renderer": "forward_plus",
+	"route_scope": "six complete lane chains and farm aisle",
 	"routes": [
 		{
 			"finish": "(-229.5972, 8.100998, 180.349)",
@@ -41,14 +45,14 @@
 			"worst_vertical_speed_mps": 0.0
 		},
 		{
-			"finish": "(-249.0695, 8.100778, 275.079)",
+			"finish": "(-249.0695, 8.100781, 275.079)",
 			"jump_used": false,
 			"max_lane_deviation_m": 0.9305419921875,
 			"pass": true,
 			"route": "village_north_lane",
 			"segments_expected": 2,
 			"segments_reached": 2,
-			"start": "(-374.0, 8.100778, 312.0)",
+			"start": "(-374.0, 8.100781, 312.0)",
 			"worst_vertical_speed_mps": 0.0
 		},
 		{
@@ -74,17 +78,28 @@
 			"worst_vertical_speed_mps": 0.0
 		},
 		{
-			"finish": "(-413.0, 8.100778, 312.9219)",
+			"finish": "(-321.0, 8.100781, 329.9187)",
 			"jump_used": false,
 			"max_lane_deviation_m": 0.0,
 			"pass": true,
-			"route": "farm beds aisle",
+			"route": "village_estate_approach",
 			"segments_expected": 1,
 			"segments_reached": 1,
+			"start": "(-321.0, 8.100781, 312.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-413.0, 8.100778, 275.424)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": false,
+			"route": "farm beds aisle",
+			"segments_expected": 1,
+			"segments_reached": 0,
 			"start": "(-413.0, 8.100778, 227.0)",
 			"worst_vertical_speed_mps": 0.0
 		}
 	],
-	"status": "PASS",
+	"status": "FAIL",
 	"worst_ground_gap_m": 0.00000305175781267764
 }

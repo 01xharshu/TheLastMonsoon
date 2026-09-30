@@ -55,6 +55,8 @@ func configure(model: Node3D) -> bool:
 		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	for beat in ["jump_rise", "jump_fall"]:
 		library.add_animation(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
+	library.add_animation("detention_arrest", _detention_clip(source.get_animation("idle"), true))
+	library.add_animation("detention_wait", _detention_clip(source.get_animation("idle"), false))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
@@ -126,7 +128,15 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("sleep", 1, "sleep_pose")
 	graph.connect_node("climb", 0, "sleep")
 	graph.connect_node("climb", 1, "climb_pose")
-	graph.connect_node("output", 0, "climb")
+	graph.add_node("detention_pose", AnimationNodeBlend2.new())
+	graph.add_node("detention_arrest", _clip("motion/detention_arrest"))
+	graph.add_node("detention_wait", _clip("motion/detention_wait"))
+	graph.add_node("detention", AnimationNodeBlend2.new())
+	graph.connect_node("detention_pose", 0, "detention_wait")
+	graph.connect_node("detention_pose", 1, "detention_arrest")
+	graph.connect_node("detention", 0, "climb")
+	graph.connect_node("detention", 1, "detention_pose")
+	graph.connect_node("output", 0, "detention")
 	tree_root = graph
 	callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	active = true
@@ -261,6 +271,7 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 	return clip
 
 func update_motion(delta: float, ground_speed: float, water_speed: float, in_water: bool, grounded: bool = true, vertical_speed: float = 0.0) -> void:
+	set("parameters/detention/blend_amount", 0.0)
 	set("parameters/sleep/blend_amount", 0.0)
 	set("parameters/rest/blend_amount", rest_blend)
 	var weight := 1.0 - exp(-8.0 * delta)
@@ -328,3 +339,52 @@ func _lowest_foot_y() -> float:
 		if index >= 0:
 			lowest = minf(lowest, (skeleton.transform * skeleton.get_bone_global_pose(index)).origin.y)
 	return 0.0 if lowest == INF else lowest
+
+func _detention_clip(idle: Animation, restrained: bool) -> Animation:
+	var clip: Animation = idle.duplicate(true)
+	clip.length = 6.0
+	clip.loop_mode = Animation.LOOP_LINEAR
+	# Hold the planted lower body; author the six-second breathing loop above it.
+	for track in clip.get_track_count():
+		if clip.track_get_key_count(track)==0: continue
+		var first: Variant = clip.track_get_key_value(track, 0)
+		for key in range(clip.track_get_key_count(track)-1,-1,-1): clip.track_remove_key(track,key)
+		clip.track_insert_key(track,0.0,first)
+		clip.track_insert_key(track,clip.length,first)
+	for bone in ["spine_01", "spine_02", "head", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r"]:
+		var index := skeleton.find_bone(bone)
+		if index < 0: continue
+		var path := NodePath("Arjun_Rig/Skeleton3D:" + bone)
+		var old := clip.find_track(path, Animation.TYPE_ROTATION_3D)
+		if old >= 0: clip.remove_track(old)
+		var track := clip.add_track(Animation.TYPE_ROTATION_3D)
+		clip.track_set_path(track, path)
+		var source_track := idle.find_track(path, Animation.TYPE_ROTATION_3D)
+		var base: Quaternion = idle.track_get_key_value(source_track, 0) if source_track >= 0 else skeleton.get_bone_pose_rotation(index)
+		var axes := skeleton.get_bone_global_rest(index).basis.orthonormalized().inverse()
+		for frame in 33:
+			var t := float(frame)/32.0
+			var breathe := sin(t*TAU*2.0)
+			var angles := Vector3.ZERO
+			if bone=="spine_01": angles.x = 0.055 if restrained else 0.035
+			if bone=="spine_02": angles.x = breathe*0.012
+			if bone=="head": angles = Vector3(0.055, sin(t*TAU)*0.10 if not restrained else sin(t*TAU)*0.035, 0)
+			if restrained and bone.begins_with("upperarm"): angles = Vector3(0.40,0,0.12 if bone.ends_with("l") else -0.12)
+			if restrained and bone.begins_with("lowerarm"): angles.x = -1.05
+			var rotation := base * Quaternion(axes*Vector3.RIGHT,angles.x) * Quaternion(axes*Vector3.UP,angles.y) * Quaternion(axes*Vector3.BACK,angles.z)
+			clip.rotation_track_insert_key(track, t*clip.length, rotation)
+	return clip
+
+func update_detention(delta: float, amount: float, arrested: bool) -> void:
+	set("parameters/ground/blend_position", 0.0)
+	set("parameters/air/blend_amount", 0.0)
+	set("parameters/swim/blend_amount", 0.0)
+	set("parameters/rest/blend_amount", 0.0)
+	set("parameters/sleep/blend_amount", 0.0)
+	set("parameters/climb/blend_amount", 0.0)
+	set("parameters/longgun_ready/blend_amount", 0.0)
+	set("parameters/longgun_aim/blend_amount", 0.0)
+	set("parameters/detention/blend_amount", amount)
+	var mode_weight: float = get("parameters/detention_pose/blend_amount")
+	set("parameters/detention_pose/blend_amount", move_toward(mode_weight, 1.0 if arrested else 0.0, delta*1.5))
+	advance(delta)

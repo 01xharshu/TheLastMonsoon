@@ -7,7 +7,7 @@ func lathe(label: String, profile: Array[Vector2], mat: Material, depth := 1.0) 
 	for ring in range(profile.size()-1):
 		for segment in 64:
 			var a: float = TAU*segment/64.0
-			var b: float = TAU*(segment+1)/64.0
+			var b: float = TAU*((segment+1)%64)/64.0
 			var p := Vector3(profile[ring].x*cos(a),profile[ring].y,profile[ring].x*sin(a)*depth)
 			var q := Vector3(profile[ring+1].x*cos(a),profile[ring+1].y,profile[ring+1].x*sin(a)*depth)
 			var r := Vector3(profile[ring+1].x*cos(b),profile[ring+1].y,profile[ring+1].x*sin(b)*depth)
@@ -107,10 +107,25 @@ func lamp() -> void:
 	var visual := Node3D.new()
 	visual.name = "OilLampVisual"
 	mesh_node(visual,"Reservoir",shell)
-	var spout := BoxMesh.new()
-	spout.size = Vector3(.038,.017,.11)
-	spout.material = brass
-	mesh_node(visual,"WickSpout",spout,Vector3(0,.056,.135))
+	# Cast tapered trough, with raised side lips rather than a rectangular block.
+	surface = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var start := [Vector3(-.029,.067,.085),Vector3(-.014,.050,.085),Vector3(.014,.050,.085),Vector3(.029,.067,.085)]
+	var end := [Vector3(-.020,.078,.191),Vector3(-.012,.061,.191),Vector3(.012,.061,.191),Vector3(.020,.078,.191)]
+	for strip in 3:
+		triangle(start[strip],end[strip+1],end[strip])
+		triangle(start[strip],start[strip+1],end[strip+1])
+		var down := Vector3.DOWN*.005
+		triangle(start[strip]+down,end[strip]+down,end[strip+1]+down)
+		triangle(start[strip]+down,end[strip+1]+down,start[strip+1]+down)
+		triangle(end[strip],end[strip+1],end[strip+1]+down)
+		triangle(end[strip],end[strip+1]+down,end[strip]+down)
+	for side in [0,3]:
+		var down := Vector3.DOWN*.005
+		triangle(start[side],end[side],end[side]+down)
+		triangle(start[side],end[side]+down,start[side]+down)
+	var trough := finish("lamp_spout",brass)
+	mesh_node(visual,"WickSpout",trough)
 	var oil := material(Color(.045,.03,.01))
 	oil.roughness = .22
 	mesh_node(visual,"Oil",disk("lamp_oil",.096,.002,oil),Vector3(0,.055,0))

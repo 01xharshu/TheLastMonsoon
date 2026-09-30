@@ -65,7 +65,10 @@ func board_at(actor: CharacterBody3D, seat: String, role: String) -> bool:
 	return boarding.board_at(actor, seat, role) if boarding != null else false
 
 func rein_grip_world(side: String) -> Vector3:
-	return to_global(Vector3(-.30 if side == "l" else .30, 1.64, 1.80))
+	return to_global(_rein_grip_local(side))
+
+func _rein_grip_local(side: String) -> Vector3:
+	return Vector3(-.30 if side == "l" else .30, 1.97 if variant == 1 else 1.64, 1.10 if variant == 1 else 1.80)
 
 func set_forward_motion(speed: float, delta: float) -> void:
 	_animate_motion(speed, delta)
@@ -170,7 +173,7 @@ func _build() -> void:
 		for side in [-1.0,1.0]:
 			_box("LowSideRail",Vector3(side*.87,1.47,2.51),Vector3(.08,.42,1.37),wood)
 			_beam("SeatSupport",Vector3(side*.68,1.13,2.45),Vector3(side*.68,1.41,2.45),.08,wood)
-		_box("FrontFootboard",Vector3(0,1.06,1.56),Vector3(1.55,.09,.44),wood)
+		_box("FrontFootboard",Vector3(0,1.06,2.02),Vector3(1.55,.09,.44),wood)
 		_box("DriverCushion",Vector3(-.43,1.56,2.55),Vector3(.73,.06,.58),leather)
 		_box("PassengerCushion",Vector3(.43,1.56,2.55),Vector3(.73,.06,.58),leather)
 		_seat("DriverSeat",Vector3(-.43,1.59,2.55))
@@ -181,11 +184,17 @@ func _build() -> void:
 			for i in 5:
 				_box("SideSlatGap",Vector3(side*.925,1.33,deck_z-1.0+float(i)*.5),Vector3(.015,.04,.08),dark_wood)
 		for end in [-1.0,1.0]:
-			_box("EndBoard",Vector3(0,1.43,deck_z+end*deck_length*.48),Vector3(1.7,.47,.09),wood)
+			# Keep the driver's thighs clear of the front load board.
+			var board_y := 1.27 if end < 0.0 else 1.43
+			var board_height := .15 if end < 0.0 else .47
+			_box("EndBoard",Vector3(0,board_y,deck_z+end*deck_length*.48),Vector3(1.7,board_height,.09),wood)
 		for i in 5:
 			_box("ProduceBundle",Vector3(-.52+float(i%3)*.46,1.35,deck_z-.61+float(i/3)*.55),Vector3(.37,.33,.43),straw)
 		_beam("LoadTie",Vector3(-.84,1.69,deck_z),Vector3(.84,1.69,deck_z),.02,rope)
 		_box("DriverBench",Vector3(0,1.44,1.70),Vector3(1.45,.13,.48),dark_wood)
+		_box("DriverFootboard",Vector3(0,.80,1.28),Vector3(1.4,.09,.50),wood)
+		for side in [-1.0,1.0]:
+			_beam("FootboardBracket",Vector3(side*.62,.80,1.28),Vector3(side*.62,1.11,1.65),.055,worn_iron)
 		_seat("DriverSeat",Vector3(0,1.51,1.70))
 	if show_horse:
 		var horse := HorseVisual.instantiate() as Node3D
@@ -203,7 +212,7 @@ func _build() -> void:
 		for side in [-1.0,1.0]:
 			_beam("BreastCollar",Vector3(side*.36,1.53,-1.40),Vector3(side*.24,1.82,-1.83),.055,leather)
 			_beam("CollarToTrace",Vector3(side*.36,1.53,-1.40),Vector3(side*.46,1.22,-1.0),.025,leather)
-			_beam("Rein",Vector3(side*.22,1.86,-2.30),Vector3(side*.30,1.64,1.80),.012,leather)
+			_beam("Rein",Vector3(side*.22,1.86,-2.30),_rein_grip_local("l" if side < 0.0 else "r"),.012,leather)
 
 func _seat(label: String, at: Vector3) -> void:
 	var socket := Node3D.new()
@@ -240,4 +249,3 @@ func _play_cart_hoof() -> void:
 	p.pitch_scale = 1.0 + (float(hoof_events % 5) - 2.0) * 0.025
 	p.play()
 	hoof_events += 1
-

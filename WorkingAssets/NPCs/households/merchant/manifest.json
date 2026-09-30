@@ -1,5 +1,6 @@
 {
   "role": "merchant",
   "donor": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
-  "status": "derived household costume candidate; not final likeness or period approval"
+  "facial_variant": "broader jaw, thin black moustache",
+  "status": "sculpted household costume candidate; not final period approval"
 }

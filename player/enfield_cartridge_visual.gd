@@ -37,6 +37,7 @@ func setup(palm_offset: Vector3, palm_basis: Basis) -> void:
 func update_loading(selected_weapon: int, stowed_weapon: bool, progress: float, weapon: Node3D = null) -> void:
 	var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(progress)
 	visible = selected_weapon == 1 and not stowed_weapon and loading.cartridge_visible
+	get_node("FoldedEnd").visible = progress < 0.26
 	if not visible: return
 	var rig := get_parent() as Skeleton3D
 	if weapon:

@@ -23,6 +23,7 @@ static func vent(b: Node3D, label: String, center: Vector3, width: float, sidewa
 static func chair(b: Node3D, center: Vector3, yaw: float = 0.0) -> void:
 	var node := Node3D.new()
 	node.name = "StationChair"
+	node.add_to_group("station_furnishing_chairs")
 	node.position = center
 	node.rotation.y = yaw
 	b.add_child(node)
@@ -45,12 +46,14 @@ static func papers(b: Node3D, center: Vector3) -> void:
 	var pen: Node3D = b.piece(b,"WritingReed",center+Vector3(0.30,0.09,0.04),Vector3(0.008,0.20,0.008),b.wood,false)
 	pen.rotation.z = 0.30
 
-static func lamp(b: Node3D, label: String, center: Vector3, range_value: float = 6.0) -> void:
+static func lamp(b: Node3D, label: String, center: Vector3, range_value: float = 6.0, ceiling_y: float = 4.9) -> void:
 	var fixture := Node3D.new()
 	fixture.name = label
 	fixture.position = center
 	b.add_child(fixture)
-	b.piece(fixture,"LampWallBracket",Vector3(0,0,0.18),Vector3(0.055,0.08,0.36),b.iron,false)
+	var suspension: float = maxf(0.10, ceiling_y-center.y-0.25)
+	b.piece(fixture,"LampSuspension",Vector3(0,0.25+suspension*0.5,0),Vector3(0.018,suspension,0.018),b.iron,false)
+	b.piece(fixture,"CeilingHook",Vector3(0,ceiling_y-center.y,0),Vector3(0.10,0.04,0.10),b.iron,false)
 	b.piece(fixture,"OilReservoir",Vector3(0,-0.12,0),Vector3(0.21,0.11,0.21),b.iron,false)
 	b.piece(fixture,"LampHood",Vector3(0,0.22,0),Vector3(0.28,0.055,0.28),b.iron,false)
 	for x in [-0.10,0.10]:
@@ -101,20 +104,21 @@ static func furnish(b: Node3D) -> void:
 		for z in [-7.0,4.0]:
 			chair(b,Vector3(-9.5,y,z+1.2))
 			papers(b,Vector3(-9.85,y+0.93,z))
-			lamp(b,"OfficeOilLamp",Vector3(-12.6,y+2.2,z),5.5)
-		# Individual office storage is tucked beside the outer wall.
+			lamp(b,"OfficeOilLamp",Vector3(-12.6,y+2.2,z),5.5,y+4.94)
+		# Freestanding register cabinet beside the office bay.
+		b.piece(b,"RegisterCabinetBack",Vector3(-12.75,y+1.2,-9.5),Vector3(0.08,2.25,2.5),b.wood,false)
 		for shelf in 4:
 			b.piece(b,"StationRegisterShelf",Vector3(-12.45,y+0.50+shelf*0.48,-9.5),Vector3(0.55,0.065,2.5),b.wood)
 			for bundle in 5:
 				b.piece(b,"TiedRegisterBundle",Vector3(-12.45,y+0.60+shelf*0.48,-10.4+bundle*0.43),Vector3(0.43,0.13,0.30),b.ochre,false)
-		lamp(b,"HallOilLamp",Vector3(5,y+2.4,12),7.0)
+		lamp(b,"HallOilLamp",Vector3(5,y+2.4,12),7.0,y+4.94)
 	# Officer's wall board, duty pegs and folded bedding make upper rooms distinct.
-	b.piece(b,"OfficerNoticeBoard",Vector3(-12.8,b.floor_y+1.7,4),Vector3(0.07,0.90,1.30),b.wood,false)
-	for z in [-8.2,-7.6,-7.0,-6.4]:
-		b.piece(b,"DutyCoatPeg",Vector3(-12.7,b.floor_y+1.6,z),Vector3(0.22,0.045,0.045),b.wood,false)
+	b.piece(b,"OfficerNoticeBoard",Vector3(-10,b.floor_y+1.7,8.82),Vector3(1.30,0.90,0.07),b.wood,false)
+	for x in [-11.8,-11.2,-10.6,-10.0]:
+		b.piece(b,"DutyCoatPeg",Vector3(x,b.floor_y+1.6,-11.82),Vector3(0.045,0.045,0.22),b.wood,false)
 	b.piece(b,"DutyStorageChest",Vector3(-11.9,b.floor_y+0.32,-4.2),Vector3(1.1,0.64,0.62),b.wood)
 	b.piece(b,"FoldedDutyBlanket",Vector3(-11.9,b.floor_y+0.69,-4.2),Vector3(0.85,0.09,0.50),b.ochre,false)
 	for z in [-10.0,4.0]:
-		lamp(b,"CellarOilLamp",Vector3(6,-1.65,z),7.5)
+		lamp(b,"CellarOilLamp",Vector3(6,-1.65,z),7.5,-0.38)
 	b.set_meta("station_room_program",["reception","records","report_office","officer_room","duty_room","armoury","holding_cells","lower_detention"])
 	b.set_meta("station_local_lights",8)

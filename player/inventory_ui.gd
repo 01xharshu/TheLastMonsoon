@@ -53,6 +53,9 @@ extends PanelContainer
 # STARTUP
 # =========================================================
 
+var bandage_label: Label
+var bandage_button: Button
+
 var mango_label: Label
 var eat_mango_button: Button
 
@@ -70,6 +73,17 @@ func _ready() -> void:
 		consumables.eat_mango()
 		_refresh_inventory())
 
+	var medical_row := HBoxContainer.new()
+	bandage_label = Label.new()
+	bandage_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	medical_row.add_child(bandage_label)
+	bandage_button = Button.new()
+	bandage_button.text = "Use bandage"
+	medical_row.add_child(bandage_button)
+	$ContentMargin/Content.add_child(medical_row)
+	bandage_button.pressed.connect(func():
+		consumables.use_bandage()
+		_refresh_inventory())
 	visible = false
 
 
@@ -158,6 +172,7 @@ func toggle_inventory() -> void:
 
 
 func open_inventory() -> void:
+	if get_parent().get_parent().get_parent().get_meta("detention_action", "") != "": return
 
 	visible = true
 
@@ -195,6 +210,10 @@ func is_open() -> bool:
 # =========================================================
 
 func _refresh_inventory() -> void:
+	if bandage_label:
+		var count := inventory.get_item_count("medkit") + inventory.get_item_count("bandage")
+		bandage_label.text = "Bandage    × " + str(count)
+		bandage_button.disabled = count <= 0
 
 	_refresh_roti()
 

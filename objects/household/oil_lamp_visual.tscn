@@ -1,56 +1,47 @@
 [gd_scene format=3]
 
 [ext_resource type="ArrayMesh" path="res://assets/props/household/oil_lamp.res" id="1_gtrdt"]
-[ext_resource type="Shader" path="res://assets/props/household/aged_brass_surface.gdshader" id="2_1olnw"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/lamp_spout.res" id="2_1olnw"]
 [ext_resource type="ArrayMesh" path="res://assets/props/household/lamp_oil.res" id="3_gpqo6"]
 [ext_resource type="ArrayMesh" path="res://assets/props/household/lamp_flame.res" id="4_lrvqh"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_6v7nx"]
-render_priority = 0
-shader = ExtResource("2_1olnw")
-
-[sub_resource type="BoxMesh" id="BoxMesh_iggvx"]
-material = SubResource("ShaderMaterial_6v7nx")
-size = Vector3(0.038, 0.017, 0.11)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1fhsa"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iggvx"]
 albedo_color = Color(0.13, 0.075, 0.02, 1)
 roughness = 0.92
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_mate3"]
-material = SubResource("StandardMaterial3D_1fhsa")
+[sub_resource type="CylinderMesh" id="CylinderMesh_1fhsa"]
+material = SubResource("StandardMaterial3D_iggvx")
 top_radius = 0.004
 bottom_radius = 0.004
 height = 0.07034913
 radial_segments = 6
 rings = 0
 
-[node name="OilLampVisual" type="Node3D" unique_id=1619981711]
+[node name="OilLampVisual" type="Node3D" unique_id=63737979]
 
-[node name="Reservoir" type="MeshInstance3D" parent="." unique_id=1572372995]
+[node name="Reservoir" type="MeshInstance3D" parent="." unique_id=1073238617]
 mesh = ExtResource("1_gtrdt")
 
-[node name="WickSpout" type="MeshInstance3D" parent="." unique_id=1761316623]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0.135)
-mesh = SubResource("BoxMesh_iggvx")
+[node name="WickSpout" type="MeshInstance3D" parent="." unique_id=557373196]
+mesh = ExtResource("2_1olnw")
 
-[node name="Oil" type="MeshInstance3D" parent="." unique_id=682485699]
+[node name="Oil" type="MeshInstance3D" parent="." unique_id=1433373542]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.055, 0)
 mesh = ExtResource("3_gpqo6")
 
-[node name="Wick" type="MeshInstance3D" parent="." unique_id=791928918]
+[node name="Wick" type="MeshInstance3D" parent="." unique_id=1611986092]
 transform = Transform3D(1, 0, 0, 0, 0.099503756, -0.9950372, 0, 0.9950372, 0.099503756, 0, 0.0685, 0.15)
-mesh = SubResource("CylinderMesh_mate3")
+mesh = SubResource("CylinderMesh_1fhsa")
 
-[node name="Flame" type="MeshInstance3D" parent="." unique_id=712793897]
+[node name="Flame" type="MeshInstance3D" parent="." unique_id=43268715]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.072, 0.18)
 mesh = ExtResource("4_lrvqh")
 
-[node name="WickContact" type="Marker3D" parent="." unique_id=1370246093]
+[node name="WickContact" type="Marker3D" parent="." unique_id=1959959100]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.073, 0.18)
 
-[node name="LeftGrip" type="Marker3D" parent="." unique_id=569944670]
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=1937171028]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.105, 0.04, 0)
 
-[node name="RightGrip" type="Marker3D" parent="." unique_id=1365948285]
+[node name="RightGrip" type="Marker3D" parent="." unique_id=1867376785]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.105, 0.04, 0)

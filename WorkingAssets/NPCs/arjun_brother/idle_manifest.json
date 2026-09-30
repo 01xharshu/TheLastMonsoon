@@ -1,9 +1,9 @@
 {
   "status": "RIGGED_MOTION_STUDY_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/arjun_brother/dev_idle_candidate.blend",
-  "source_sha256": "4d153985e5a4e0ca50c42d75a9809c3c20c68bac20a2359a0ae4fc918f8b3333",
+  "source_sha256": "567883b8de6c491490cc7578d956317331bf16040ca2ae1d7624ba472e7d0034",
   "runtime": "characters/npcs/dev/dev_idle_candidate.glb",
-  "runtime_sha256": "24ee762abb8b509805f399a60441309855d80d6a2ee5cee9ca7211ff20808bbd",
+  "runtime_sha256": "993bcb16e6e4bf1e8ec46495cf5e0600278042ff624afec5eee431597c5a272c",
   "actions": [
     "Dev_idle_study",
     "Dev_walk_study"

@@ -4,7 +4,7 @@ const SHOT = preload("res://audio/weapons/enfield_shot.wav")
 const RELOAD = preload("res://audio/weapons/enfield_reload.wav")
 const EMPTY = preload("res://audio/weapons/enfield_empty.wav")
 const PISTOL_SHOT = preload("res://audio/weapons/adams_shot.wav")
-const RELOAD_SECONDS := 5.0
+const RELOAD_SECONDS = preload("res://player/enfield_loading_sequence.gd").RELOAD_SECONDS
 @export var weapon_selection := 1
 var rounds := 1
 var pending_rounds := 0
@@ -45,6 +45,8 @@ func _ready() -> void:
 	mark_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 func available() -> bool:
+	if actor.get_meta("telescope_open", false): return false
+	if actor.get_meta("detention_action", "") != "": return false
 	var equipment = visual.equipment
 	return actor.is_physics_processing() and not actor.is_swimming and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == weapon_selection
 
@@ -75,6 +77,7 @@ func _process(delta: float) -> void:
 		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
 
 func start_reload() -> void:
+	if actor.get_meta("item_use", "") != "": return
 	if not available() or rounds>=capacity() or reload_remaining>0: return
 	pending_rounds = mini(capacity()-rounds,actor.inventory.get_item_count(ammo_id()))
 	if pending_rounds==0 or not actor.inventory.remove_item(ammo_id(),pending_rounds):

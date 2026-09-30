@@ -1,0 +1,8 @@
+{
+  "failures": [],
+  "max_detained_drift_m": 0.0,
+  "passed": true,
+  "renderer": "forward_plus",
+  "restrained_wrist_gap_m": 0.161247819662094,
+  "scope": "Actual station cell, timed arrest/wait/release, action guards and recovered locomotion; visual approval separate"
+}

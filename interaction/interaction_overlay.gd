@@ -125,6 +125,7 @@ var marker_world_positions: Dictionary = {}
 
 var rewards: Array = []
 var reward_icons: Array[String] = []
+var reward_entries: Array[Dictionary] = []
 var pending_rewards: Array[Dictionary] = []
 
 var reward_timer: float = 0.0
@@ -252,15 +253,53 @@ func show_rewards(
 	if reward_timer <= 0.0:
 		rewards.clear()
 		reward_icons.clear()
+		reward_entries.clear()
+	reward_entries.resize(rewards.size())
 	reward_icons.resize(rewards.size())
 	for i in range(lines.size()):
 		var icon := str(icons[i]) if i < icons.size() else "item"
 		if rewards.size() < 5 and pending_rewards.is_empty():
 			rewards.append(lines[i])
 			reward_icons.append(icon)
+			reward_entries.append({})
 		else:
 			pending_rewards.append({"text": str(lines[i]), "icon": icon})
 	reward_timer = 3.0
+	queue_redraw()
+
+func _collection_text(item_id: String, amount: float) -> String:
+	var catalog = preload("res://interaction/item_catalog.gd")
+	return catalog.display_name(item_id) + "  +" + ("%.2f L" % amount if item_id == "water" else str(int(amount)))
+
+func show_collection(item_id: String, amount: float) -> void:
+	if amount <= 0: return
+	var catalog = preload("res://interaction/item_catalog.gd")
+	if reward_timer <= 0.0:
+		rewards.clear()
+		reward_icons.clear()
+		reward_entries.clear()
+	reward_entries.resize(rewards.size())
+	for i in range(reward_entries.size()):
+		if reward_entries[i].get("item_id", "") == item_id:
+			reward_entries[i].amount += amount
+			rewards[i] = _collection_text(item_id, reward_entries[i].amount)
+			reward_timer = 3.0
+			queue_redraw()
+			return
+	for entry in pending_rewards:
+		if entry.get("item_id", "") == item_id:
+			entry.amount += amount
+			entry.text = _collection_text(item_id, entry.amount)
+			queue_redraw()
+			return
+	var entry := {"item_id": item_id, "amount": amount, "icon": "water" if item_id == "water" else catalog.icon(item_id), "text": _collection_text(item_id, amount)}
+	if rewards.size() < 5 and pending_rewards.is_empty():
+		rewards.append(entry.text)
+		reward_icons.append(entry.icon)
+		reward_entries.append(entry)
+	else:
+		pending_rewards.append(entry)
+	if reward_timer <= 0.0: reward_timer = 3.0
 	queue_redraw()
 
 func _advance_reward_feed(delta: float) -> void:
@@ -270,10 +309,12 @@ func _advance_reward_feed(delta: float) -> void:
 	if reward_timer <= 0.0 and not pending_rewards.is_empty():
 		rewards.clear()
 		reward_icons.clear()
+		reward_entries.clear()
 		while rewards.size() < 5 and not pending_rewards.is_empty():
 			var entry: Dictionary = pending_rewards.pop_front()
 			rewards.append(entry.text)
 			reward_icons.append(entry.icon)
+			reward_entries.append(entry)
 		reward_timer = 3.0
 	queue_redraw()
 

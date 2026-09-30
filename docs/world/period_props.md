@@ -29,3 +29,7 @@ The stool and bench remain visual furniture without a seating action. Jumping, r
 `tools/world/validate_period_prop_routes.gd` drove the live Player at the three low props with sprint held. The bucket, brass pot and basket all registered contact and none was crossed. The same fixture walked the central Company compound gate lane from `(345, 256)` past `(345, 274)` and the Bhairavpur aisle from `(-336, 230)` past `(-316, 230)` without touching a period prop. Headless and Forward+/Metal runs passed; machine-readable result: `period_prop_route_validation.json`.
 
 The code deliberately blocks walk-step over these small props after contact with their visible colliders. A deliberate jump may clear a low object, which is physically different from passing through it. The current British NPC preview actor extends `Node3D` and has no gameplay physics body, so NPC crowd contact cannot yet be checked as a solid-body interaction. The 8GB-device performance limit still requires a run on that class of hardware.
+
+## Shared asset scenes — 2026-09-30
+
+The seven placements now instantiate reusable floor-normalized scenes in `objects/household/storage/`; source packages and world coordinates remain unchanged. The crate collider was corrected from a wide X-axis box to match its long Z-axis body. Fresh native-render and contact review, pending actions and limitations: [asset batch 03](../assets/household_batch_03.md).

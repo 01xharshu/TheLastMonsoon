@@ -25,4 +25,4 @@ Roti: approach at ground/table height → free hands/stow weapon → reach/grip 
 
 Sack/mat: no animation required while decorative. If lifting sack or sitting/resting on mat becomes supported, add weight-aware lift/carry/place or sit/rest/get-up respectively before advertising the interaction.
 
-Next: integrate sack/mat into agreed locations with floor and route checks, then complete roti held-prop/satchel animation against the accepted hero rig. Main-world player feel, historical form, owner art approval and target-device performance remain open.
+Next: integrate sack/mat into agreed locations with floor and route checks; roti held-prop/satchel animation is deferred to the final pass by owner direction. Main-world player feel, historical form, owner art approval and target-device performance remain open.

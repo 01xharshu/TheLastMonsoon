@@ -1,0 +1,20 @@
+# Household access and occupied command fort
+
+Updated 2026-09-30 IST. Status: implemented gameplay/prototype construction; final appearance, motion contact and owner play approval open.
+
+Bhairavpur's 33 homes now have a physical hinged timber entrance leaf. The leaf swings over 0.85 seconds and retains collision throughout. At 20:00, 25 private homes close and latch; at 06:00 they reopen. Arjun's home, selected other households and the three workshops do not latch automatically. A player outside cannot release a private night latch; a player inside can open it to leave. A character standing in the doorway postpones closure until a later clock update. Interaction uses the existing E prompt. This is mechanical door motion, not an authored hand-to-latch animation. Door states are currently derived from clock/policy after loading rather than saved individually.
+
+Four homes (4, 11, 19, 28) retain deliberate unbarred window approaches. The other homes have solid wooden shutters or iron grilles with physical collision envelopes. No window glass was added to village homes. Existing mud/plaster wall, khapra/clay tile, thatch and earth-roof variations remain. Windows currently have fixed shutters; opening shutter animation and individual window infiltration routes still need a follow-up. Courtyard fence gates are not yet animated. This pass covers Bhairavpur homes, not every civic or wealthy-household doorway.
+
+The existing surveyed Government House estate is now a **fortified command residence prototype**, retaining its identity, location, road access, three furnished floors and wings. It has four solid corner bastions with merlons, a physical animated main gate, a rear paved service court, kitchen, provision stores and servant quarters with entrance doors, hearth, preparation table, storage chests and three staff beds. A courtyard board carries placeholder district orders. The existing male official has the district-commander story role; this metadata does not implement enforcement or missions. Two independently animated staff candidates (cook and steward) use existing Indian model assets. Their clothing/contact defects remain unapproved; they have no daily AI schedule. Existing Government House glazing remains. The ruined hill fort is separate and unchanged.
+
+This adapts the existing estate rather than creating a second surveyed fort plot. The rendered overview still reads as a fortified colonial residence. It does **not** establish the owner's requested finished realistic fort: room-specific art, watchtower access, kitchen utensils, latrines, staff routines, guard response, mission/rule behavior and close interior/contact review remain open.
+
+## Evidence
+
+- `tools/world/validate_house_access.gd`: world load, 33 homes, 25 night latches, four window-entry homes; entrance collision ray; blocked outside interaction; inside exit; dawn access; fort rooms and two staff actors. Metal run passes. [Result](house_access_validation.json).
+- [Fort overview](captures/occupied_fort_candidate.png), [house](captures/house_access_candidate.png), [kitchen](captures/fort_kitchen_candidate.png): fresh Metal fixture captures. Inspected: house opening/shutter geometry is visible; the fort remains a colonial estate with corner bastions; the kitchen is sparse and staff/ceiling contact needs refinement. These are prototype views, not realistic-art approval.
+- Existing `tools/world/validate_village_area.gd` rerun refreshes [village regression evidence](village_validation_headless.json). Regression **FAIL**: six village lane chains pass, but the farm aisle is blocked at (-413, 8.10, 275.42) by `WealthyHouseholds/MerchantHousehold/RearWall`. No merchant-house or landscape fix was made in this scope. Well collision/filling pass.
+- Logs: `/tmp/tlm_house_access_metal.log`, `/tmp/tlm_house_access_world.log`.
+
+Next: normal E interaction and moving-player doorway tests, camera/contact review during a complete swing, then refine the occupied fort's architectural form and service interiors. Save manual door state and extend access rules to the remaining household/civic gates.

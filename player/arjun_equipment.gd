@@ -186,7 +186,7 @@ func _aim_bone(name: String, endpoint: Vector3, child: String) -> void:
 	skeleton.set_bone_pose_rotation(index, desired.orthonormalized().get_rotation_quaternion())
 	skeleton.force_update_all_bone_transforms()
 
-func _solve_arm(side: String, target: Vector3) -> void:
+func _solve_arm(side: String, target: Vector3, elbow_pole: Vector3 = Vector3.ZERO) -> void:
 	var upper := "upperarm_" + side
 	var lower := "lowerarm_" + side
 	var hand := "hand_" + side
@@ -197,8 +197,9 @@ func _solve_arm(side: String, target: Vector3) -> void:
 	var a := rest_upper.distance_to(rest_lower)
 	var b := rest_lower.distance_to(rest_hand)
 	var direction := (target - origin).normalized()
-	var distance := clampf(origin.distance_to(target), 0.001, a + b - 0.0001)
+	var distance := clampf(origin.distance_to(target), absf(a - b) + 0.035, a + b - 0.0001)
 	var pole := Vector3(0.65 if side == "l" else -0.65, -0.7, -0.1)
+	if not elbow_pole.is_zero_approx(): pole = elbow_pole
 	pole = (pole - direction * pole.dot(direction)).normalized()
 	var along := (a * a - b * b + distance * distance) / (2.0 * distance)
 	var elbow := origin + direction * along + pole * sqrt(maxf(0, a * a - along * along))
@@ -446,3 +447,39 @@ func held_contact_errors() -> Dictionary:
 		"bow_palm_m": left_palm.distance_to(bow_hand.global_position),
 		"bow_nock_m": right_palm.distance_to(bow_hand.to_global(Vector3(-0.12-0.30*bow_hand.draw_fraction,0,0)))
 	}
+
+func keep_relaxed_hands_clear() -> void:
+	# Clothing envelopes include palm/finger width. Only ordinary unarmed
+	# locomotion uses this; authored contacts keep their own target solvers.
+	for side in ["l", "r"]:
+		var hand_index := skeleton.find_bone("hand_" + side)
+		var hand := skeleton.get_bone_global_pose(hand_index)
+		var palm: Vector3 = hand * palm_offsets[side]
+		var target := palm
+		var shoulder := skeleton.get_bone_global_rest(skeleton.find_bone("upperarm_" + side)).origin
+		var other := skeleton.get_bone_global_rest(skeleton.find_bone("upperarm_" + ("r" if side == "l" else "l"))).origin
+		var side_axis := (shoulder - other).normalized()
+		for iteration in 3:
+			for envelope in [["pelvis", "spine_03", 0.32], ["thigh_l", "calf_l", 0.27], ["thigh_r", "calf_r", 0.27]]:
+				var a := skeleton.get_bone_global_pose(skeleton.find_bone(envelope[0])).origin
+				var b := skeleton.get_bone_global_pose(skeleton.find_bone(envelope[1])).origin
+				var segment := b - a
+				var nearest := a + segment * clampf((target - a).dot(segment) / maxf(segment.length_squared(), 0.0001), 0.0, 1.0)
+				var outward := target - nearest
+				if outward.length() < float(envelope[2]):
+					outward += side_axis * maxf(0.0, 0.12 - outward.dot(side_axis))
+					target = nearest + outward.normalized() * float(envelope[2])
+		if target.distance_to(palm) > 0.001:
+			for solve_pass in 3:
+				_solve_arm(side, target - hand.basis * palm_offsets[side])
+				var parent := skeleton.get_bone_parent(hand_index)
+				var local := (skeleton.get_bone_global_pose(parent).basis.inverse() * hand.basis).orthonormalized().get_rotation_quaternion()
+				skeleton.set_bone_pose_rotation(hand_index, local)
+				skeleton.force_update_all_bone_transforms()
+		# Limit the relaxed wrist relative to its imported neutral pose.
+		var neutral: Quaternion = rest_rotations["hand_" + side]
+		var rotation := skeleton.get_bone_pose_rotation(hand_index)
+		var angle := neutral.angle_to(rotation)
+		if angle > 0.85:
+			skeleton.set_bone_pose_rotation(hand_index, neutral.slerp(rotation, 0.85 / angle))
+		skeleton.force_update_all_bone_transforms()

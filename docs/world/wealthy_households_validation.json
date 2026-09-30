@@ -1,32 +1,102 @@
 {
+  "clear_new_home_entrances": 2,
   "coaches": 3,
-  "errors": [],
+  "errors": [
+    "LandownerHouseholdCoachman: l palm contact exceeds 15 mm",
+    "LandownerHouseholdCoachman: r palm contact exceeds 15 mm",
+    "MerchantHouseholdCoachman: l palm contact exceeds 15 mm",
+    "MerchantHouseholdCoachman: r palm contact exceeds 15 mm",
+    "BritishHouseholdCoachman: l palm contact exceeds 15 mm",
+    "BritishHouseholdCoachman: r palm contact exceeds 15 mm"
+  ],
+  "hand_contacts": [
+    {
+      "actor": "LandownerHouseholdWaterBearer",
+      "error_m": 0.000874777208082378,
+      "hand": "l"
+    },
+    {
+      "actor": "LandownerHouseholdWaterBearer",
+      "error_m": 0.000846944923978299,
+      "hand": "r"
+    },
+    {
+      "actor": "MerchantHouseholdWaterBearer",
+      "error_m": 0.00103279761970043,
+      "hand": "l"
+    },
+    {
+      "actor": "MerchantHouseholdWaterBearer",
+      "error_m": 0.00103279761970043,
+      "hand": "r"
+    },
+    {
+      "actor": "BritishHouseholdWaterBearer",
+      "error_m": 0.000848210591357201,
+      "hand": "l"
+    },
+    {
+      "actor": "BritishHouseholdWaterBearer",
+      "error_m": 0.000848210591357201,
+      "hand": "r"
+    },
+    {
+      "actor": "LandownerHouseholdCoachman",
+      "error_m": 0.10251597315073,
+      "hand": "l"
+    },
+    {
+      "actor": "LandownerHouseholdCoachman",
+      "error_m": 0.102524146437645,
+      "hand": "r"
+    },
+    {
+      "actor": "MerchantHouseholdCoachman",
+      "error_m": 0.102563053369522,
+      "hand": "l"
+    },
+    {
+      "actor": "MerchantHouseholdCoachman",
+      "error_m": 0.102563053369522,
+      "hand": "r"
+    },
+    {
+      "actor": "BritishHouseholdCoachman",
+      "error_m": 0.102549508213997,
+      "hand": "l"
+    },
+    {
+      "actor": "BritishHouseholdCoachman",
+      "error_m": 0.102549508213997,
+      "hand": "r"
+    }
+  ],
   "households": 3,
   "independent_trees": 13,
   "journeys": [
     {
       "blocked_frames": 0,
       "coach": "LandownerHouseholdCoach",
-      "distance_m": 219.986694335934,
+      "distance_m": 244.790182176227,
       "phase": "home",
-      "round_trips": 5
+      "round_trips": 4
     },
     {
       "blocked_frames": 0,
       "coach": "MerchantHouseholdCoach",
-      "distance_m": 248.235992391402,
+      "distance_m": 248.435992391402,
       "phase": "returning",
       "round_trips": 3
     },
     {
       "blocked_frames": 0,
       "coach": "BritishHouseholdCoach",
-      "distance_m": 276.799993896477,
+      "distance_m": 276.999993896477,
       "phase": "returning",
       "round_trips": 2
     }
   ],
-  "passed": true,
+  "passed": false,
   "residents": 4,
   "scope": "world population, personal trees and bounded occupied driveway cycles; visual garment/seat contact and wider-road traffic remain review",
   "staff": 9

@@ -12,6 +12,7 @@ var direction:=1
 var distance_travelled:=0.0
 var completed_trips:=0
 var blocked_frames:=0
+var driver_lean:=0.0
 
 func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachman:Node3D) -> void:
 	coach=vehicle;residents=people;route=points;driver=coachman
@@ -87,6 +88,8 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
 			var index:=skeleton.find_bone(bone)
 			if index>=0:skeleton.set_bone_pose_rotation(index,bases[bone]*Quaternion(axes[bone],entry[1]))
 	if socket_name=="CoachmanSeat":
+		var spine:=skeleton.find_bone("spine_02")
+		skeleton.set_bone_pose_rotation(spine,bases["spine_02"]*Quaternion(axes["spine_02"],driver_lean))
 		for side in ["l","r"]:
 			for entry in [["upperarm_",-.5],["lowerarm_",-.7]]:
 				var bone:String=entry[0]+side
@@ -96,6 +99,8 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
 	var pelvis:=skeleton.find_bone("pelvis")
 	var hip:Vector3=skeleton.to_global(skeleton.get_bone_global_pose(pelvis).origin)
 	actor.global_position+=socket.global_position-hip
+	if socket_name=="CoachmanSeat":
+		for side in ["l","r"]:actor.call("solve_hand_contact",side,coach.rein_grip_world(side))
 
 func _clear(at:Vector3,basis:Basis) -> bool:
 	var exclusions:Array[RID]=[coach.boarding.collision_body.get_rid(),driver.get_node("BodyCollider").get_rid()]

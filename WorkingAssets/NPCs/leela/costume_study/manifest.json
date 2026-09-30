@@ -1,0 +1,8 @@
+{
+  "status": "COSTUME_FITTING_VISUAL_REVIEW_OPEN",
+  "source_sha256": "4ef9bdd4c18f1c48bc87461d2b9fc440a55e0920699e437d990e7e43b48a621d",
+  "body_source": "body_study/leela_body_study.blend",
+  "direction": "first reference: green tunic, rust drape, cream trousers, brown boots",
+  "in_world": false,
+  "limitations": "Procedural fabric draft; skirt/drape/trousers not skinned for motion. Hair and facial likeness open."
+}

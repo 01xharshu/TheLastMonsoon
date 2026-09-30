@@ -15,6 +15,18 @@ rig = bpy.data.objects["Brother_game_engine_rig"]
 body = bpy.data.objects["Arjun_brother_independent_MakeHuman_body"]
 outfit = bpy.data.objects["Dev_fitted_uniform_upper"]
 
+# Keep the waist attached while allowing the lower coat to follow each thigh.
+skirt = bpy.data.objects["Coat lower skirts"]
+skirt.vertex_groups.clear()
+for vertex in skirt.data.vertices:
+    x, y, z = vertex.co
+    influence = .18 * max(0.0,min(1.0,(.96-z)/.20))
+    left = max(0.0,min(1.0,.5+x/.45))
+    for name,weight in [("pelvis",1-influence),("thigh_l",influence*left),
+                        ("thigh_r",influence*(1-left))]:
+        if weight > 0:
+            (skirt.vertex_groups.get(name) or skirt.vertex_groups.new(name=name)).add([vertex.index],weight,'REPLACE')
+
 scene = bpy.context.scene
 scene.render.fps = 30
 rig.animation_data_clear()
@@ -46,15 +58,16 @@ for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
         else:
             rotate("thigh_l",(1,0,0),.33*wave)
             rotate("thigh_r",(1,0,0),-.33*wave)
-            rotate("calf_l",(1,0,0),-.25*max(0,wave))
-            rotate("calf_r",(1,0,0),-.25*max(0,-wave))
+            # Knee flex peaks during recovery rather than at full extension.
+            rotate("calf_l",(1,0,0),-.30*max(0,math.sin(phase*math.tau-.55)))
+            rotate("calf_r",(1,0,0),-.30*max(0,math.sin(phase*math.tau+math.pi-.55)))
             rotate("upperarm_l",(1,0,0),-.18*wave)
             rotate("upperarm_r",(1,0,0),.18*wave)
             rotate("spine01",(0,0,1),.012*math.sin(phase*math.tau*2))
         bpy.context.view_layer.update()
         deps = bpy.context.evaluated_depsgraph_get()
         lowest = 100.0
-        for name in ["left leather shoe","right leather shoe"]:
+        for name in ["Dev_fitted_boots"]:
             shoe = bpy.data.objects[name]
             evaluated = shoe.evaluated_get(deps)
             mesh = evaluated.to_mesh()

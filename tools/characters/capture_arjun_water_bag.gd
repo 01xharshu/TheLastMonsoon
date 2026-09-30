@@ -20,6 +20,9 @@ func _run() -> void:
 	root.content_scale_size = Vector2i(1280, 900)
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
+	if "--world" in OS.get_cmdline_user_args():
+		await _capture_world()
+		return
 	var stage := Node3D.new()
 	root.add_child(stage)
 	current_scene = stage
@@ -86,13 +89,19 @@ func _run() -> void:
 		if segment[2]: Input.action_press("sprint")
 		var max_pin_error := 0.0
 		var max_sway := 0.0
+		var max_wrist_angle := 0.0
+		var min_hand_clearance := INF
 		for frame in 30:
 			await physics_frame
+			await process_frame
 			_point_camera(Vector3(0.62, 0.07, -0.80))
 			max_pin_error = maxf(max_pin_error, bag.belt_pin_world().distance_to(bag.global_position))
 			max_sway = maxf(max_sway, absf(equipment.bag_sway_x) + absf(equipment.bag_sway_z))
+			var hands := _hand_clearance()
+			max_wrist_angle = maxf(max_wrist_angle, hands.x)
+			min_hand_clearance = minf(min_hand_clearance, hands.y)
 		await _shot("motion_" + segment[0])
-		report.motion.append({"segment":segment[0], "position":str(actor.global_position), "speed_m_s":actor.velocity.length(), "max_pin_error_m":max_pin_error, "max_sway_radians":max_sway})
+		report.motion.append({"segment":segment[0], "position":str(actor.global_position), "speed_m_s":actor.velocity.length(), "max_pin_error_m":max_pin_error, "max_sway_radians":max_sway, "max_relaxed_wrist_radians":max_wrist_angle, "min_palm_envelope_margin_m":min_hand_clearance})
 	for action in ["move_forward", "move_left", "sprint"]: Input.action_release(action)
 	var file := FileAccess.open(OUTPUT + "review.json", FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "\t"))
@@ -109,7 +118,45 @@ func _point_camera(offset: Vector3) -> void:
 
 func _shot(label: String) -> void:
 	for frame in 3: await process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw()
 	var path := OUTPUT + label + ".png"
 	assert(root.get_texture().get_image().save_png(path) == OK)
 	print("BAG CAPTURE ", label)
+
+func _capture_world() -> void:
+	var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
+	root.add_child(world)
+	current_scene = world
+	actor = world.get_node("Player")
+	bag = actor.get_node("VisualRoot/EquipmentVisuals/WaterBagVisual")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	actor.get_node("CameraPivot/SpringArm3D/Camera3D").make_current()
+	for frame in 20: await physics_frame
+	actor.inventory.consume_water(2.0)
+	for frame in 24: await process_frame
+	await _shot("world_empty")
+	actor.inventory.add_water(2.0)
+	for frame in 24: await process_frame
+	await _shot("world_full")
+	Input.action_press("move_forward")
+	for frame in 40: await physics_frame
+	await _shot("world_walk")
+	Input.action_release("move_forward")
+	print("WATER BAG WORLD: captured ordinary camera and movement; position=", actor.global_position)
+	quit()
+
+func _hand_clearance() -> Vector2:
+	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+	var rig: Skeleton3D = visual.skeleton
+	var result := Vector2(0.0, INF)
+	for side in ["l", "r"]:
+		var index := rig.find_bone("hand_" + side)
+		result.x = maxf(result.x, (visual.equipment.rest_rotations["hand_" + side] as Quaternion).angle_to(rig.get_bone_pose_rotation(index)))
+		var palm: Vector3 = rig.get_bone_global_pose(index) * visual.equipment.palm_offsets[side]
+		for envelope in [["pelvis", "spine_03", 0.28], ["thigh_l", "calf_l", 0.23], ["thigh_r", "calf_r", 0.23]]:
+			var a := rig.get_bone_global_pose(rig.find_bone(envelope[0])).origin
+			var b := rig.get_bone_global_pose(rig.find_bone(envelope[1])).origin
+			var line := b - a
+			var nearest := a + line * clampf((palm - a).dot(line) / maxf(line.length_squared(), 0.0001), 0.0, 1.0)
+			result.y = minf(result.y, palm.distance_to(nearest) - float(envelope[2]))
+	return result

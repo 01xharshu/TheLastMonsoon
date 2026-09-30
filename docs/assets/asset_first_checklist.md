@@ -2,6 +2,10 @@
 
 Updated: 2026-09-30 IST. Ordered by manageable production effort, not story chronology. This inventories the checked project files and established vision; no complete chapter-by-chapter story script was found, so it is not a claim that every future story asset is covered. Add concrete story requirements here when supplied.
 
+## Production order
+
+Owner direction (2026-09-30): continue assets first; character animations are done in the final pass. Keep per-asset animation/contact requirements attached to each row. Model-batch completion does not close the corresponding interaction or whole-game task.
+
 ## Completion rule
 
 Track **model/material**, **placement/collision**, **gameplay**, **hero animation/contact**, and **normal-speed review** separately. An interactive prop is not finished just because its mesh renders or inventory changes. Decorative objects need no hero animation unless an action is explicitly supported. Do not show a usable prompt for unsupported actions.
@@ -12,9 +16,9 @@ For every animated interaction, specify: standing/table/ground approach; weapon 
 
 | Batch | Asset group | Existing state / remaining work | Required animation work |
 | --- | --- | --- | --- |
-| 1A — current | Roti, tied grain sack, woven mat | Three reusable candidates; see [first-batch evidence](household_batch_01.md). Sack/mat await location integration and owner art review. | Roti pickup → carry → open satchel/store; retrieve → eat → put away. Sack decorative unless handling is added. Mat decorative unless sit/rest is added. |
-| 1B | Pot, water pouch, lamps | Water pot/pouch primitive visuals; village lamp has local detail replacement. Coordinate dirty water-pot code before editing. | Pouch pickup/store; unclip → open → fill at pot → close → reattach; unclip → drink → close → reattach. Lamp lighting/extinguishing requires wick-level hand action; source of ignition must be decided. |
-| 1C | Crate, bucket, brass pot, basket, stool, bench, barrel | Seven imported candidates already placed, support/player-route checks exist. Exact period form and owner review open. Avoid duplicate models. | None for static dressing. Carrying, container opening, pouring, or stool/bench sitting needs its own action if enabled. |
+| 1A — candidates built | Roti, tied grain sack, woven mat | Three reusable candidates; see [first-batch evidence](household_batch_01.md). Sack/mat await location integration and owner art review. | Roti pickup → carry → open satchel/store; retrieve → eat → put away. Sack decorative unless handling is added. Mat decorative unless sit/rest is added. |
+| 1B — candidates built | Pot, water pouch, lamps | Hollow pot, stitched pouch and brass lamp built; [batch evidence](household_batch_02.md). Pickup/fill/light checks pass; village replacement dressing separate. | Pouch pickup/store; unclip → open → fill at pot → close → reattach; unclip → drink → close → reattach. Lamp lighting/extinguishing requires wick-level hand action; source of ignition must be decided. |
+| 1C — reusable scenes built | Crate, bucket, brass pot, basket, stool, bench, barrel | Seven shared scenes now placed; floor normalization and crate collider repaired. [Review/evidence](household_batch_03.md). Art/period/LOD review open. | None for static dressing. Carrying, container opening, pouring, or stool/bench sitting needs its own action if enabled. |
 | 2 | Letters, records, clues, bandages, supply bundles | Some records/ammunition dressing and bandage icon exist; exact story object list unconfirmed. | Pick up/store/read/fold paper; apply bandage at body location; collect supplies; grip/hand attachment. |
 | 3 | Cooking, bedding, market/craft, police desk, armoury sets | Existing village/civic kits; refine assembled sets. Cooking/workstation gameplay not implied by dressing. | Charpai sit/lie/wake exists but authored lie transition open; cooking and crafting need task-specific manipulation if usable. |
 | 4 | Gates, fences, cover, ledges, barricades, rubble | Existing gate/climb/cover prototypes and fort cover markers. | Gate push/pull or unbar; climb/mantle; enter/exit cover, peek and shoot. Match handholds and cover height. |
@@ -39,4 +43,4 @@ For every animated interaction, specify: standing/table/ground approach; weapon 
 | Fill at river/pond | River component has timed filling and visual crouch. Pouch follows pelvis in `EquipmentVisuals`. No generic pond implementation verified. | Actual pouch hand attachment and water contact, opening/closing, planted feet/knees, stand recovery; generic water-source support for pond. |
 | Drink from pouch | Inventory consumption/hydration behavior exists; direct source drinking is currently disabled. | Visible pouch retrieval, stopper, tilt/mouth contact, swallow, return to belt; prevent duplicate belt/hand copies. |
 
-Next: finish 1A prop/world review, then implement roti pickup/store with table/ground contact and normal-speed captures; coordinate the accepted hero rig and satchel attachment. Food/water animation remains an explicit production task, not an optional polish pass.
+Next: paper/clue/supply objects. After asset batches, complete the final hero-animation pass, including roti pickup/store/eating, pot and shoreline filling, pouch drinking, and lamp use. Coordinate the accepted hero rig and satchel attachment; keep all pending contacts listed.

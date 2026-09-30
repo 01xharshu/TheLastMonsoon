@@ -127,6 +127,7 @@ func _ready() -> void:
 	if police:
 		preload("res://world/suryagarh/settlements/police_interior.gd").furnish(self)
 		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, self, Vector3(width * 0.5 - 3, 0, -depth * 0.5 + 7), "district_police/ammunition")
+		preload("res://world/suryagarh/settlements/medical_supply.gd").furnish(self, self, Vector3(width*0.5-4.7,0,-depth*0.5+7), "district_police/bandage")
 		preload("res://world/suryagarh/settlements/police_refinement.gd").furnish(self)
 	merge_visuals(self)
 	if police:

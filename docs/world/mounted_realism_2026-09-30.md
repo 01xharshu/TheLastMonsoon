@@ -24,3 +24,13 @@ Animated tack/seat frame now follows Torso pose relative to its rest; bridle bit
 Continuous seated-motion diagnostic: knees ~98 degrees maximum, seated/walk/gallop contact stable, but jump apex had one large asynchronous seat/hand error. Imported AnimationPlayer now advances explicitly with horse physics before updating animated tack and rider targets; native motion validation pending. New `tools/horses/validate_rider_seated_motion.gd` checks all sampled contacts and leans, records actual input-driven phases.
 
 Apex defect fixed by applying rider pose after the final horse physics/back transform, rather than at an independent render phase. New continuous headless check PASS across 102 samples: knees maximum 98.26 degrees (180 straight), seated lean 6.84 degrees, gallop 23.07, jump 35.77; seat/stirrup/rein residuals below 0.000004 m. Native render/movie next, no cloth approval implied.
+
+## Step 1 — trouser waist and knee weights
+
+Runtime-only `player/arjun_trouser_fit.gd` now smoothly anchors the upper trouser rings to pelvis, blends into each matching thigh, and smooths the thigh/calf transition. Applied once by clothing setup; source GLB and Blender files preserved. Both legs contain 118,272 imported vertices; no additional meshes or per-frame geometry rebuilds. The animation lookup now guards an empty/finished horse clip rather than logging missing-animation errors during jump recovery.
+
+`tools/horses/review_rider_trouser_fit.gd` uses the current physical rider fixture and records fresh seated/walk/gallop/jump/recovery views without the frame-post-draw stall encountered in the movie fixture. Headless and Metal PASS across 102 samples. Native maximum knee angle 98.31 degrees, seated lean 6.90, gallop 23.40, jump 35.31. Seat/sole/palm residuals under 0.000004 m. Evidence: `trouser_fit_motion_metal.json`, `trouser_fit_motion_headless.json`, `captures/trouser_fit_seated.png`, `captures/trouser_fit_jump.png`. These are pose/contact checks and sampled pixels, not a normal-speed movie. Sharp trouser folds remain; source body and cloth are unapproved.
+
+Older combined `validate_mounted_realism.gd` fails its cart speed >4 m/s assertion in this checkout; that failure is independent of trouser weights and is retained as an unresolved cart regression. Next step: close finger/thumb grip and cart passenger fit, then continuous route review.
+
+Cart driver Metal frame refreshed, but `capture_cart_boarding.gd` stops at its dismount assertion (line 45), so passenger capture was not reached. Driver frame is not a boarding/dismount PASS. Preserve current cart collision work; fix the exit fixture/contract before extending passenger review.

@@ -119,8 +119,50 @@ func _openings(house_node: Node3D,extent: Vector2,index: int) -> void:
 		_piece(house_node,"RearWindowRail",Vector3(0,y,-d*.5-.21),Vector3(1.5,.09,.12),settlement.wood,false)
 	_piece(house_node,"DoorHeader",Vector3(0,2.65,d*.5+.20),Vector3(2.75,.16,.12),settlement.wood,false)
 	_piece(house_node,"EntranceApron",Vector3(0,.015,d*.5+1.75),Vector3(2.7,.03,1.5),roof_earth,false)
-	if index%3 == 0:
-		_piece(house_node,"OpenDoorLeaf",Vector3(-1.25,1.36,d*.5+.70),Vector3(.09,2.22,.92),settlement.wood)
+	var door := preload("res://objects/hinged_door.gd").new()
+	door.name = "EntranceDoor"
+	door.position = Vector3(-1.3,.24,d*.5+.20)
+	door.night_lock = index != 0 and index%5 != 0
+	door.always_open = WORKSHOPS.has(index)
+	door.build(settlement.wood)
+	house_node.add_child(door)
+	# A few unbarred openings support deliberate infiltration; most cannot be crossed.
+	var accessible := index in [4,11,19,28]
+	var grille := index%3 == 2
+	house_node.set_meta("window_access", "open" if accessible else ("iron grille" if grille else "wood shutter"))
+	for side in [-1.0,1.0]:
+		if accessible:
+			var portal := Node3D.new()
+			portal.name = "OpenWindowTraversal"
+			portal.position = Vector3(side*w*.5,1.34,0)
+			house_node.add_child(portal)
+			portal.add_to_group("climbable_windows")
+			continue
+		if grille:
+			for bar in 8:
+				_piece(house_node,"SideWindowIronBar",Vector3(side*w*.5,1.915,-.96+bar*.275),Vector3(.07,1.15,.055),settlement.iron,false)
+			# Continuous physical envelope prevents capsule squeezing between bars.
+			_window_barrier(house_node,Vector3(side*w*.5,1.915,0),Vector3(.12,1.15,2.2))
+		else:
+			_piece(house_node,"ClosedWoodWindow",Vector3(side*w*.5,1.915,0),Vector3(.12,1.15,2.2),settlement.wood)
+	if not accessible:
+		if grille:
+			for bar in 7:
+				_piece(house_node,"RearWindowIronBar",Vector3(-.60+bar*.2,1.675,-d*.5),Vector3(.055,.85,.07),settlement.iron,false)
+			_window_barrier(house_node,Vector3(0,1.675,-d*.5),Vector3(1.4,.85,.12))
+		else:
+			_piece(house_node,"RearWoodShutter",Vector3(0,1.675,-d*.5),Vector3(1.4,.85,.12),settlement.wood)
+
+func _window_barrier(parent: Node3D,at: Vector3,size: Vector3) -> void:
+	var body := StaticBody3D.new()
+	body.name = "WindowBarrier"
+	body.position = at
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
+	parent.add_child(body)
 
 func _interior(house_node: Node3D,extent: Vector2,index: int) -> void:
 	for x in [-2.66,-1.34]:

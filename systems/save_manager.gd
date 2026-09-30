@@ -165,6 +165,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"camera_pitch": actor.camera_pitch,
 		"game_minutes": world.get_node("GameTimeSystem").total_game_minutes,
 		"items": inventory.items.duplicate(true),
+		"health": actor.health,
 		"water_liters": inventory.stored_water_liters,
 		"survival": {
 			"hydration":survival.hydration,"satiety":survival.satiety,
@@ -181,6 +182,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"double_gun_rounds":actor.get_node("DoubleGunCombat").rounds},
 		"remaining_weapon_ids": _remaining_weapon_pickup_ids(world),
 		"remaining_ammunition_ids": _remaining_ammunition_ids(world),
+		"remaining_medical_ids": _remaining_medical_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
@@ -208,7 +210,13 @@ func start_loaded_game(slot: int) -> bool:
 func apply_pending(world: Node3D) -> void:
 	apply_options(world)
 	if pending_slot <= 0:
+		var is_new_game := pending_slot == 0
 		pending_slot = -1
+		if is_new_game:
+			var opening := preload("res://story/opening_sequence.gd").new()
+			opening.name = "OpeningSequence"
+			world.add_child(opening)
+			opening.start(world)
 		return
 	var data := read_slot(pending_slot)
 	pending_slot = -1
@@ -228,6 +236,7 @@ func apply_pending(world: Node3D) -> void:
 	time.total_game_minutes = maxf(0.0,float(data.get("game_minutes",540.0)))
 	time._update_readable_time(true)
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
+	actor.health = clampf(float(data.get("health",actor.MAX_HEALTH)),0.0,actor.MAX_HEALTH)
 	inventory.items = data.get("items",{}).duplicate(true)
 	if not inventory.has_water_bag(): inventory.items["water_bag"] = 1
 	inventory.stored_water_liters = clampf(float(data.get("water_liters",0.0)),0.0,inventory.get_total_water_capacity_liters())
@@ -257,6 +266,10 @@ func apply_pending(world: Node3D) -> void:
 		firearm.reload_remaining = clampf(float(weapon.get(entry[1]+"_reload",0.0)),0.0,entry[2])
 		firearm.pending_rounds = clampi(int(weapon.get(entry[1]+"_pending",0)),0,entry[3]-firearm.rounds) if firearm.reload_remaining > 0.0 else 0
 	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
+	if data.get("remaining_medical_ids") is Array:
+		for pickup in world.get_tree().get_nodes_in_group("medical_supplies"):
+			if world.is_ancestor_of(pickup) and not pickup.persistence_id() in data.remaining_medical_ids:
+				pickup.queue_free()
 	if data.get("remaining_ammunition_ids") is Array:
 		for pickup in world.get_tree().get_nodes_in_group("ammunition_pickups"):
 			if world.is_ancestor_of(pickup) and not pickup.persistence_id() in data.remaining_ammunition_ids:
@@ -358,3 +371,10 @@ func apply_options(world: Node = null) -> void:
 		player.third_person_distance = clampf(float(options.camera_distance),1.25,4.0)
 		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 		if world.has_node("BackgroundMusic"): world.get_node("BackgroundMusic").bus = "Music"
+
+func _remaining_medical_ids(world: Node3D) -> Array[String]:
+	var remaining: Array[String] = []
+	for pickup in world.get_tree().get_nodes_in_group("medical_supplies"):
+		if world.is_ancestor_of(pickup) and not pickup.is_queued_for_deletion():
+			remaining.append(pickup.persistence_id())
+	return remaining

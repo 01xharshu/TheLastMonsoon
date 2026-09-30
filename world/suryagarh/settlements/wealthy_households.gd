@@ -152,7 +152,7 @@ func _staff(home:Node3D,job:String,at:Vector3,slug:String,axis:Vector3) -> Node3
 	actor.add_child(document.generate_scene(state));add_child(actor)
 	if job=="WaterBearer":
 		var pot:=MeshInstance3D.new();pot.name="CarriedWaterPot"
-		var mesh:=CylinderMesh.new();mesh.top_radius=.11;mesh.bottom_radius=.15;mesh.height=.30
+		var mesh:=_carried_pot_mesh()
 		pot.mesh=mesh;pot.material_override=ochre;pot.position=Vector3(0,.76,.27)
 		actor.add_child(pot)
 	return actor
@@ -168,3 +168,17 @@ func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
 	var driver:=_staff(home,"Coachman",home.to_local(route[0]),"village_farmer",Vector3.FORWARD)
 	var travel:=Travel.new();travel.name="HouseholdTravel";travel.configure(coach,people,route,driver)
 	coach.add_child(travel)
+
+func _carried_pot_mesh() -> ArrayMesh:
+	# Rounded vessel with a recessed inner rim; radius at hand height is .135 m.
+	var profile:=[Vector2(.075,-.15),Vector2(.12,-.12),Vector2(.15,-.045),Vector2(.135,.035),Vector2(.085,.12),Vector2(.095,.145),Vector2(.082,.145),Vector2(.074,.105)]
+	var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for row in profile.size()-1:
+		for segment in 48:
+			var points:Array[Vector3]=[]
+			for entry in [[row,segment],[row,(segment+1)%48],[row+1,segment],[row+1,(segment+1)%48]]:
+				var ring:Vector2=profile[entry[0]];var angle:=TAU*float(entry[1])/48.0
+				points.append(Vector3(cos(angle)*ring.x,ring.y,sin(angle)*ring.x))
+			for index in [0,2,1,1,2,3]:surface.add_vertex(points[index])
+	surface.index();surface.generate_normals()
+	return surface.commit()

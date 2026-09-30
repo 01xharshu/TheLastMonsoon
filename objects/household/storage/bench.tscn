@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf" id="1_yadhc"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_owe07"]
+size = Vector3(1.2, 0.9, 0.53)
+
+[node name="Bench" type="StaticBody3D" unique_id=866694026 groups=["solid_period_prop"]]
+metadata/asset_source = "res://assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Model" type="Node3D" parent="." unique_id=1411099378 instance=ExtResource("1_yadhc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0004994967, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1833642621]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4504995, 0)
+shape = SubResource("BoxShape3D_owe07")
+
+[node name="SeatLeft" type="Marker3D" parent="." unique_id=2114610238]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.32, 0.44, 0)
+
+[node name="SeatRight" type="Marker3D" parent="." unique_id=2093519859]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.32, 0.44, 0)
+
+[node name="Approach" type="Marker3D" parent="." unique_id=2092157697]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)

@@ -28,7 +28,7 @@ void fragment() {
 	float variation = 0.90 + 0.16 * block_hash(cell);
 	float grain = sin(face.x * 79.0 + face.y * 27.0) * sin(face.y * 91.0 - face.x * 13.0);
 	vec3 stone = stone_color.rgb * (variation + grain * 0.018);
-	vec3 joint = vec3(0.40, 0.38, 0.32);
+	vec3 joint = stone_color.rgb * 0.76;
 	float lower_damp = 1.0 - smoothstep(-2.7, 0.7, masonry_position.y - building_grade);
 	ALBEDO = mix(stone, joint, mortar) * (1.0 - lower_damp * 0.13);
 	ROUGHNESS = mix(0.86, 0.98, mortar);

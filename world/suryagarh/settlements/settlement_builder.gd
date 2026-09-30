@@ -72,100 +72,23 @@ func place_new_props() -> void:
 	sign.add_child(sign_collision)
 
 func place_period_props() -> void:
-	# Small static details with simple physical bounds. Keep the armoury approach clear.
+	# Shared wrappers retain original materials, normalized bases and matching collision.
 	var court: Vector2 = Layout.PLOTS["CompanyCompound"].center
-	var crate := StaticBody3D.new()
-	crate.name = "CompanyStoresWoodenCrate"
-	crate.position = Vector3(court.x+20.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+16.5)
-	add_child(crate)
-	crate.add_child(preload("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf").instantiate())
-	var crate_collider := CollisionShape3D.new()
-	var crate_box := BoxShape3D.new()
-	crate_box.size = Vector3(1.17,.50,.55)
-	crate_collider.shape = crate_box
-	crate_collider.position.y = .24
-	crate.add_child(crate_collider)
-	# A household water bucket beside the village veranda, off the doorway.
-	var bucket_x := -346.0
-	var bucket_z := 219.0
-	var bucket := StaticBody3D.new()
-	bucket.name = "BhairavpurWoodenBucket"
-	bucket.position = Vector3(bucket_x, layout.height(bucket_x,bucket_z), bucket_z)
-	add_child(bucket)
-	bucket.add_child(preload("res://assets/props/polyhaven/wooden_bucket_02/wooden_bucket_02_1k.gltf").instantiate())
-	var bucket_collider := CollisionShape3D.new()
-	var bucket_shape := CylinderShape3D.new()
-	bucket_shape.radius = .32
-	bucket_shape.height = .38
-	bucket_collider.shape = bucket_shape
-	bucket_collider.position.y = .19
-	bucket.add_child(bucket_collider)
-	var pot_x := -345.25
-	var pot_z := 218.9
-	var pot := StaticBody3D.new()
-	pot.name = "BhairavpurBrassPot"
-	pot.position = Vector3(pot_x, layout.height(pot_x,pot_z), pot_z)
-	add_child(pot)
-	pot.add_child(preload("res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf").instantiate())
-	var pot_collider := CollisionShape3D.new()
-	var pot_shape := CylinderShape3D.new()
-	pot_shape.radius = .16
-	pot_shape.height = .30
-	pot_collider.shape = pot_shape
-	pot_collider.position.y = .15
-	pot.add_child(pot_collider)
-	var basket_x := -324.0
-	var basket_z := 219.0
-	var basket := StaticBody3D.new()
-	basket.name = "BhairavpurWickerBasket"
-	basket.position = Vector3(basket_x, layout.height(basket_x,basket_z), basket_z)
-	add_child(basket)
-	basket.add_child(preload("res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf").instantiate())
-	var basket_collider := CollisionShape3D.new()
-	var basket_shape := BoxShape3D.new()
-	basket_shape.size = Vector3(.4,.13,.31)
-	basket_collider.shape = basket_shape
-	basket_collider.position.y = .065
-	basket.add_child(basket_collider)
-	var stool_x := -302.0
-	var stool_z := 219.0
-	var stool := StaticBody3D.new()
-	stool.name = "BhairavpurWoodenStool"
-	stool.position = Vector3(stool_x, layout.height(stool_x,stool_z), stool_z)
-	add_child(stool)
-	stool.add_child(preload("res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf").instantiate())
-	var stool_collider := CollisionShape3D.new()
-	var stool_shape := CylinderShape3D.new()
-	stool_shape.radius = .23
-	stool_shape.height = .44
-	stool_collider.shape = stool_shape
-	stool_collider.position.y = .22
-	stool.add_child(stool_collider)
-	var bench := StaticBody3D.new()
-	bench.name = "CompanyGuardBench"
-	bench.position = Vector3(court.x-15.0, Layout.PLOTS["CompanyCompound"].grade+.08, court.y-43.5)
-	add_child(bench)
-	bench.add_child(preload("res://assets/props/polyhaven/painted_wooden_bench/painted_wooden_bench_1k.gltf").instantiate())
-	var bench_collider := CollisionShape3D.new()
-	var bench_shape := BoxShape3D.new()
-	bench_shape.size = Vector3(1.2,.90,.53)
-	bench_collider.shape = bench_shape
-	bench_collider.position.y = .45
-	bench.add_child(bench_collider)
-	var barrel := StaticBody3D.new()
-	barrel.name = "CompanyStoresWineBarrel"
-	barrel.position = Vector3(court.x+22.2, Layout.PLOTS["CompanyCompound"].grade+.08, court.y+16.5)
-	add_child(barrel)
-	barrel.add_child(preload("res://assets/props/polyhaven/wine_barrel_01/wine_barrel_01_1k.gltf").instantiate())
-	var barrel_collider := CollisionShape3D.new()
-	var barrel_shape := CylinderShape3D.new()
-	barrel_shape.radius = .39
-	barrel_shape.height = .88
-	barrel_collider.shape = barrel_shape
-	barrel_collider.position.y = .44
-	barrel.add_child(barrel_collider)
-	for prop in [crate, bucket, pot, basket, stool, bench, barrel]:
-		prop.add_to_group("solid_period_prop")
+	var grade: float = Layout.PLOTS["CompanyCompound"].grade+.08
+	var placements := [
+		["crate","CompanyStoresWoodenCrate",Vector3(court.x+20.0,grade,court.y+16.5)],
+		["bucket","BhairavpurWoodenBucket",Vector3(-346,layout.height(-346,219),219)],
+		["brass_pot","BhairavpurBrassPot",Vector3(-345.25,layout.height(-345.25,218.9),218.9)],
+		["basket","BhairavpurWickerBasket",Vector3(-324,layout.height(-324,219),219)],
+		["stool","BhairavpurWoodenStool",Vector3(-302,layout.height(-302,219),219)],
+		["bench","CompanyGuardBench",Vector3(court.x-15.0,grade,court.y-43.5)],
+		["barrel","CompanyStoresWineBarrel",Vector3(court.x+22.2,grade,court.y+16.5)]
+	]
+	for placement in placements:
+		var prop: StaticBody3D = load("res://objects/household/storage/"+str(placement[0])+".tscn").instantiate()
+		prop.name = placement[1]
+		prop.position = placement[2]
+		add_child(prop)
 
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
@@ -304,6 +227,7 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 			pickup.add_child(collision)
 	if label == "CompanyArmoury":
 		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, b, Vector3(5, 0, -3), "company_armoury/ammunition")
+		preload("res://world/suryagarh/settlements/medical_supply.gd").furnish(self, b, Vector3(3.3,0,-3), "company_armoury/bandage")
 	var sign := Label3D.new()
 	sign.text = {"SuryagarhTownHall":"SURYAGARH · TOWN HALL","PoliceThana":"POLICE THANA","DistrictJail":"DISTRICT JAIL","CompanyArmoury":"COMPANY STORES"}.get(label,"")
 	sign.font = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
@@ -346,13 +270,15 @@ func compound() -> void:
 			body.set_meta("climb_center_z",300.0)
 			body.set_meta("climb_hold_base_y",c.position.y+.42)
 			body.set_meta("climb_hold_center_z",c.position.z)
+			body.set_meta("climb_hold_spacing",.40)
+			body.set_meta("climb_hold_rows",11)
 		piece(c,"WallWalk",Vector3(side*50.3,4.62,0),Vector3(3.5,.36,96),stone)
 		piece(c,"Coping",Vector3(side*52,4.8,0),Vector3(1.55,.14,96),stone,false)
 		# Worn projecting masonry communicates the climb route.
 		if side<0:
-			for row in 8:
+			for row in 11:
 				for col in 4:
-					piece(c,"ClimbingStone",Vector3(side*52.78,.42+row*.55,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),stone,false)
+					piece(c,"ClimbingStone",Vector3(side*52.78,.42+row*.40,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),stone,false)
 	piece(c,"SouthWall",Vector3(0,2.4,48),Vector3(104,4.8,1.4),brick)
 	for side in [-1.0,1.0]:
 		piece(c,"GateWall",Vector3(side*28,2.4,-48),Vector3(48,4.8,1.4),brick)
@@ -504,3 +430,9 @@ func add_civic(label: String,p: Vector2,police: bool) -> void:
 	building.set("police",police)
 	building.position = Vector3(p.x,0,p.y)
 	add_child(building)
+	var notice := preload("res://interaction/wall_notice.gd").new()
+	notice.name = "PostedDistrictNotice"
+	notice.headline = "ROAD WATCH" if police else "MARKET NEWS"
+	notice.message = "Report unsafe roads and disturbances to the district office." if police else "Grain sellers and travellers: keep the entrance and water steps clear. Market enquiries are received here."
+	notice.position = Vector3(7,1.50,18.27 if police else 14.27)
+	building.add_child(notice)

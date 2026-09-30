@@ -4,28 +4,28 @@
 [ext_resource type="ArrayMesh" path="res://assets/props/household/pouch_seams_loop.res" id="2_012fu"]
 [ext_resource type="ArrayMesh" path="res://assets/props/household/pouch_stopper.res" id="3_40j0q"]
 
-[node name="WaterPouchVisual" type="Node3D" unique_id=130829822]
+[node name="WaterPouchVisual" type="Node3D" unique_id=1561062348]
 
-[node name="LeatherBody" type="MeshInstance3D" parent="." unique_id=75274462]
+[node name="LeatherBody" type="MeshInstance3D" parent="." unique_id=1787236392]
 mesh = ExtResource("1_o7qc3")
 
-[node name="BindingAndLoop" type="Node3D" parent="." unique_id=396906461]
+[node name="BindingAndLoop" type="Node3D" parent="." unique_id=1747711694]
 
-[node name="pouch_seams_loop" type="MeshInstance3D" parent="BindingAndLoop" unique_id=2005509336]
+[node name="pouch_seams_loop" type="MeshInstance3D" parent="BindingAndLoop" unique_id=43661024]
 mesh = ExtResource("2_012fu")
 
-[node name="Stopper" type="MeshInstance3D" parent="." unique_id=693822217]
+[node name="Stopper" type="MeshInstance3D" parent="." unique_id=988315318]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.329, 0)
 mesh = ExtResource("3_40j0q")
 
-[node name="Mouth" type="Marker3D" parent="." unique_id=2050067283]
+[node name="Mouth" type="Marker3D" parent="." unique_id=358727834]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.335, 0)
 
-[node name="RightGrip" type="Marker3D" parent="." unique_id=1342534814]
+[node name="RightGrip" type="Marker3D" parent="." unique_id=982287991]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.18, 0.025)
 
-[node name="LeftGrip" type="Marker3D" parent="." unique_id=477394256]
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=1237571296]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.18, 0.025)
 
-[node name="BeltLoop" type="Marker3D" parent="." unique_id=1571366532]
+[node name="BeltLoop" type="Marker3D" parent="." unique_id=1884013900]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.41, 0)

@@ -1,6 +1,6 @@
 extends Node3D
-## Real timed climb with visible masonry. Records normal-speed movie frames
-## when launched with Godot --write-movie; headless checks contact and pauses.
+## Timed climb with visible masonry. --capture-sequence renders fixed 30 Hz
+## simulation frames; default playback checks contact, pauses and completion.
 var actor: CharacterBody3D
 var climb: Node
 var visual: Node
@@ -12,12 +12,15 @@ var previous_phase := 0.0
 var max_wait_travel := 0.0
 var max_hold_travel := 0.0
 var max_palm_gap := 0.0
+var max_sole_gap := 0.0
+var max_wrist_angle := 0.0
 var previous_holds: Dictionary = {}
 var finished := false
 var started := false
 var ticks := 0
 var reported_steps: Array[int] = []
 var capture_sequence := false
+var close_camera := false
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -69,9 +72,9 @@ func _run() -> void:
 	wall.set_meta("climb_hold_base_y",.42)
 	wall.set_meta("climb_hold_center_z",0.0)
 	_box("Coping",Vector3(.7,4.80,0),Vector3(1.55,.14,5),Color(.61,.60,.47),false)
-	for row in 8:
+	for row in 11:
 		for col in 4:
-			_box("Stone",Vector3(-.08,.42+row*.55,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),Color(.61,.60,.47),false)
+			_box("Stone",Vector3(-.08,.42+row*.40,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),Color(.61,.60,.47),false)
 	actor = preload("res://player/player.tscn").instantiate()
 	add_child(actor)
 	actor.set_physics_process(false)
@@ -79,6 +82,7 @@ func _run() -> void:
 	actor.global_position = Vector3(-.85,.95,0)
 	actor.visual_root.global_rotation.y = PI/2
 	visual = actor.get_node("VisualRoot/CharacterVisual")
+	visual.set_process(false)
 	climb = actor.get_node("ClimbComponent")
 	camera = Camera3D.new()
 	camera.fov = 48.0
@@ -112,19 +116,41 @@ func _record_sequence() -> void:
 		camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
 		camera.look_at(actor.global_position+Vector3.UP*.15)
 		await get_tree().process_frame
-		await RenderingServer.frame_post_draw
+		RenderingServer.force_draw(false)
 		var pixels := get_viewport().get_texture().get_image()
 		pixels.resize(960,540)
 		pixels.save_png(folder+"/frame_%04d.png"%frame)
+		if frame in [120,240,360]:
+			for side in ["l","r"]:
+				var wrist_index: int = visual.skeleton.find_bone("hand_"+side)
+				var wrist_rotation: Quaternion = visual.skeleton.get_bone_pose_rotation(wrist_index)
+				print("WRIST ",frame," ",side," rest_angle=",wrist_rotation.angle_to(visual.skeleton.get_bone_rest(wrist_index).basis.get_rotation_quaternion()))
+			close_camera = true
+			var saved_camera := camera.global_transform
+			var saved_fov := camera.fov
+			var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l"))
+			var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets["l"])
+			camera.fov = 35.0
+			camera.global_position = palm+Vector3(-.65,.20,-.75)
+			camera.look_at(palm)
+			await get_tree().process_frame
+			RenderingServer.force_draw(false)
+			get_viewport().get_texture().get_image().save_png("/tmp/tlm_climb_grip_%04d.png"%frame)
+			camera.global_transform = saved_camera
+			camera.fov = saved_fov
+			close_camera = false
 		frame += 1
 		if frame%90 == 0: print("STEP MOVIE frame=",frame," progress=",climb.progress)
 	print("STEP MOVIE FRAMES ",frame)
 	get_tree().quit(1 if failures else 0)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not started or finished: return
-	camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
-	camera.look_at(actor.global_position+Vector3.UP*.15)
+	# Sample the final pose, after the tree and contact solve for this frame.
+	if not capture_sequence: visual._process(delta)
+	if not close_camera:
+		camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
+		camera.look_at(actor.global_position+Vector3.UP*.15)
 	ticks += 1
 	if climb.progress >= .14 and climb.progress < .78:
 		if previous_step == climb.step_index:
@@ -136,6 +162,15 @@ func _process(_delta: float) -> void:
 					if previous_holds.has(side): max_hold_travel = maxf(max_hold_travel,hold.distance_to(previous_holds[side]))
 		if climb.step_phase > .53:
 			for side in ["l","r"]:
+				var wrist_index: int = visual.skeleton.find_bone("hand_"+side)
+				max_wrist_angle = maxf(max_wrist_angle,visual.skeleton.get_bone_pose_rotation(wrist_index).angle_to(visual.skeleton.get_bone_rest(wrist_index).basis.get_rotation_quaternion()))
+				var foot_index: int = visual.skeleton.find_bone("foot_"+side)
+				var rest: Transform3D = visual.skeleton.get_bone_global_rest(foot_index)
+				var sole: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot_index)*(rest.basis.inverse()*Vector3(0,-.085,.06)))
+				max_sole_gap = maxf(max_sole_gap,sole.distance_to(visual.climb_foot_targets[side]))
+				if sole.distance_to(visual.climb_foot_targets[side]) > .08 and not reported_steps.has(100+climb.step_index):
+					reported_steps.append(100+climb.step_index)
+					print("BOOT GAP step=",climb.step_index," side=",side," gap=",sole.distance_to(visual.climb_foot_targets[side]))
 				var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_"+side))
 				var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets[side])
 				max_palm_gap = maxf(max_palm_gap,palm.distance_to(visual.climb_targets[side].global_position))
@@ -146,14 +181,16 @@ func _process(_delta: float) -> void:
 	previous_position = actor.global_position
 	previous_step = climb.step_index
 	previous_phase = climb.step_phase
-	if not climb.active or ticks > 3000:
+	if not climb.active or (not capture_sequence and ticks > 3000):
 		finished = true
 		_check(not climb.active,"completed and restored movement")
 		_check(max_wait_travel < .002,"body waits for hand and boot placement")
 		_check(max_hold_travel < .002,"handholds remain fixed during upward push")
-		_check(max_palm_gap < .08,"palms retain holds during pushes")
+		_check(max_palm_gap < .01,"palms retain holds during pushes")
+		_check(max_sole_gap < .01,"boot soles retain holds during pushes")
+		_check(max_wrist_angle < .701,"wrists stay within bend limit")
 		_check(actor.collision_mask == climb.saved_mask,"collision restored")
-		print("STEP CLIMB ","PASS" if failures == 0 else "FAIL", " wait_travel=",max_wait_travel," hold_travel=",max_hold_travel," max_palm_gap=",max_palm_gap)
+		print("STEP CLIMB ","PASS" if failures == 0 else "FAIL", " wait_travel=",max_wait_travel," hold_travel=",max_hold_travel," max_palm_gap=",max_palm_gap," max_sole_gap=",max_sole_gap," max_wrist_angle=",max_wrist_angle)
 		if not capture_sequence: get_tree().quit(1 if failures else 0)
 
 func _check(ok: bool, label: String) -> void:

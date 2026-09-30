@@ -20,6 +20,8 @@ signal item_removed(
 )
 
 
+signal water_collected(amount_liters: float)
+
 signal collection_message_requested(message: String, icon: String)
 
 signal inventory_changed
@@ -307,6 +309,7 @@ func add_water(
 	stored_water_liters += (
 		amount_added
 	)
+	water_collected.emit(amount_added)
 
 
 	_emit_water_changed()

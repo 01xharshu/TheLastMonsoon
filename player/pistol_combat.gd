@@ -29,6 +29,8 @@ func _ready() -> void:
 	actor.add_child.call_deferred(reload_sound)
 
 func available() -> bool:
+	if actor.get_meta("telescope_open", false): return false
+	if actor.get_meta("detention_action", "") != "": return false
 	var equipment: Node3D = visual.equipment
 	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == 3
 
@@ -39,6 +41,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if actor.get_meta("detention_action", "") != "":
+		aiming = false
+		return
 	recoil = move_toward(recoil, 0.0, delta * 0.38)
 	if reload_remaining > 0.0:
 		var previous_step := int(floor((RELOAD_SECONDS - reload_remaining) / (RELOAD_SECONDS / 5.0)))
@@ -86,6 +91,7 @@ func fire() -> bool:
 	return true
 
 func start_reload() -> bool:
+	if actor.get_meta("item_use", "") != "": return false
 	if not available() or reload_remaining > 0.0 or rounds >= CAPACITY or actor.inventory.get_item_count("pistol_ball") <= 0: return false
 	reload_remaining = RELOAD_SECONDS
 	recoil = 0.0

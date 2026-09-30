@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf" id="1_djpkk"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_00vis"]
+size = Vector3(0.4, 0.13, 0.31)
+
+[node name="Basket" type="StaticBody3D" unique_id=389557273 groups=["solid_period_prop"]]
+metadata/asset_source = "res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Model" type="Node3D" parent="." unique_id=808886181 instance=ExtResource("1_djpkk")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0009166552, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1580525968]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06591666, 0)
+shape = SubResource("BoxShape3D_00vis")
+
+[node name="GripLeft" type="Marker3D" parent="." unique_id=1863464576]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.19188227, 0.11742293, 0)
+
+[node name="GripRight" type="Marker3D" parent="." unique_id=625345865]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.19134198, 0.11742293, 0)
+
+[node name="Opening" type="Marker3D" parent="." unique_id=435846888]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11742293, 0)

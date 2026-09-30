@@ -15,6 +15,7 @@ func nearest_vehicle() -> Node3D:
 	return closest
 
 func try_toggle() -> bool:
+	if actor.get_meta("detention_action", "") != "": return false
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false): return false
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mounted):
@@ -27,7 +28,7 @@ func try_toggle() -> bool:
 	return boarded
 
 func _process(_delta: float) -> void:
-	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false):
+	if actor.get_meta("detention_action", "") != "" or actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false):
 		actor.interaction_overlay.set_ride_prompt("")
 		return
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
