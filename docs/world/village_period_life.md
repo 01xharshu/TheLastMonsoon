@@ -1,5 +1,5 @@
 # Bhairavpur: 1850s social landscape and night life
-Status: COMPLETE for researched environment milestone; resident/art approval remains open. Updated 2026-09-30 16:28 IST. Chat `01a0e88d-3689-7963-8dd7-09f101cc449c`.
+Status: IN_PROGRESS for owner corrections; resident/art approval remains open. Updated 2026-09-30 16:50 IST. Chat `01a0e88d-3689-7963-8dd7-09f101cc449c`.
 Objective: owner-requested historical research and environment implementation: existing oil lamps, interior light spilling outside, night gathering fires, wealthy Indian landowner estate/farm contrast, period roads, pond approaches and bridge. People remain deferred until existing NPC clothing/gait defects are resolved.
 
 ## Research and design decisions
@@ -38,7 +38,7 @@ Godot --path . --windowed --resolution 1280x720 --rendering-driver metal --scrip
 ```
 Reports: `docs/world/village_life_headless.json`, `docs/world/village_life_metal.json`. Captures: `docs/world/captures/village_{estate_day,estate_courtyard,estate_night,pond_day,pond_bridge,houses_night,lamp_spill,gathering_fire,pond_night}.png`. Logs: `/tmp/tlm_village_life_{bake,map,headless,metal,capture}_20260930.log`.
 
-Next after environment milestone: owner normal-play/art review; improve estate joinery/window facade, pond shoreline/ripples and fire art against specific regional references. Add landless/traveller night gatherings and women collecting water/laundry only after NPC clothing/gait fixes, then validate approach, seated contact, water-vessel carrying and day/night schedules. Social roles/dialogue must distinguish tenant labour, debt bondage and coerced labour; research does not authenticate a generic slavery scenario.
+Next after environment milestone: owner normal-play/art review; improve estate joinery/window facade and fire art against specific regional references. Add landless/traveller night gatherings and women collecting water/laundry only after NPC clothing/gait fixes, then validate approach, seated contact, water-vessel carrying and day/night schedules. Social roles/dialogue must distinguish tenant labour, debt bondage and coerced labour; research does not authenticate a generic slavery scenario.
 
 16:28 IST verification: final headless and Metal PASS, 34 lamps, four clock states, manual extinguish/persistence/relight, two fire lights, six baked terrain samples (worst gap 0.0000031 m), seven actual-player routes without jumping. Logs and reports above. One final capture stalled at night transition; only its PID 57733 was terminated and full capture retried in `/tmp/tlm_village_life_capture_retry_20260930.log`. Earlier corrected 33-house/night/pond images were inspected. Headless reported two leaked ObjectDB instances/one retained resource on one run; latest fixture exited cleanly. No full-world performance or NPC/social-action approval.
 
@@ -54,3 +54,24 @@ Owner sound correction: retain the existing recorded hoofbeat pair on every surf
 Native isolated actual-horse before/after captures exited cleanly. Candidate smooths facets and refines barrel/neck, but revealed existing saddle/back gap and simplified shoulders/legs. Sound correction also applies to ekka/goods cart and family carriage, whose bridge-specific overrides remained. Next: back/tack fit, native idle/walk/gallop/jump/body parity, recorded-stream assertions across earth/road/timber for all three horse routes.
 
 Candidate render FAILED: subdividing source duplicated flat-face borders opened holes across the mesh. Candidate remains isolated. Corrected builder to weld coincident borders before subdivision, then restore dorsal volume under existing saddle; rebuild/reimport/recapture required before any live swap.
+
+Welded revision exported: 6,548 vertices, 50 original bones/actions; first subdivided candidate had separated face borders and was rejected. Native recapture pending. Uniform hoof validator PASS: 90 events across ridden horse/cart/carriage and earth/road/timber; `docs/world/uniform_hoof_validation.json`, `/tmp/tlm_uniform_hoof_20260930.log`. Shutdown reports leaked objects/resources; stream assertions passed.
+
+Welded candidate fresh Metal idle side/front/quarter inspected: surface holes resolved and rounded body visible. Saddle/tack remains a simplified prototype; historical breed and final motion approval open. Next capture preserved Walk/Gallop/Gallop_Jump then integrate only if skin remains intact.
+
+Metal Walk/Gallop/Gallop_Jump samples inspected, skin intact. Applying refined GLB to the three existing horse visual preloads; rig/actions unchanged. Sampled jump shows tack/body separation in frozen fixture (physics disabled); live mounted regression required. Final saddle art and continuous motion approval remain open.
+
+Live refined-body integration completed for ridden/cart/carriage. Headless and Metal mounted fixture PASS: cart sprint, horse gallop/jump/landing; palms rounded 0.000 m, soles max 0.004 m. Metal seated/gallop pixels inspected; simplified saddle and rider clothing remain unresolved visual defects. Logs `/tmp/tlm_horse_refined_mount_20260930.log`, `/tmp/tlm_horse_refined_mount_metal_20260930.log`; captures `cart_arjun_horse_*_refinement.png`. Next post-removal Metal full-world village verification.
+
+Post-removal Metal full-world initialization recovered, lamp/fire/terrain checks PASS; estate courtyard traversal FAILED at (-321,8.101,334.007). Report `docs/world/village_life_metal.json`. Next identify actual collision at gate route and repair it; previous headless pass does not supersede native failure.
+
+Collision diagnosed: parked `WealthyHouseholds/LandownerHouseholdCoach/CartBodyCollision` obstructed gate centreline. Move only its home parking point five metres east, retaining its existing exit route via the gate; preserve other household work.
+
+Estate parking correction Metal PASS: both actual Player routes now complete without jumping, 34 lamps/manual toggle, two gathering fires and six restored terrain samples pass. `/tmp/tlm_estate_parking_20260930.log`, `docs/world/village_life_metal.json`. Field-map bake PASS (`/tmp/tlm_pond_removal_map_20260930.log`). Next fresh day/night/restored-land capture then record remaining art/history limits.
+
+## Current handoff — 2026-09-30 17:15 IST
+Owner correction implementation verified: pond/basin/steps/bridge/access removed, 144 terrain tiles and map rebaked, headless and fresh Metal terrain/lamp/fire checks passed. Parked household coach moved out of gate centreline; both native Player estate routes pass. Fresh capture run exited 0; restored land and lamp-spill pixels inspected (`village_former_pond_restored.png`, `village_lamp_spill.png`). Original pond captures are rejected historical evidence, not current scene.
+
+Refined body integrated in ridden horse/cart/carriage; see `horse_body_refinement_2026-09-30.md` for source/hash/native poses and mounted results. Uniform recorded hoof sounds verified for all three across all surfaces (90 events). Existing source remains recoverable. No final historical breed, saddle, anatomy or continuous motion approval is claimed. No additional villagers placed by this pass; NPC gait/clothing gating remains the user's preference.
+
+Exact next action: improve saddle cloth shape and saddle-to-back contact through normal-speed walk/gallop/jump, compare horse proportions with dated regional references, then audit estate joinery and village material/detail against those references. Preserve concurrent household and character work. Root documentation gate exceeded 6000 characters after another active task added its section; own entry compacted, other entries preserved. Last source `git diff --check` passed.

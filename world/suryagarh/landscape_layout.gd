@@ -12,6 +12,8 @@ const TILE: float = 144.0
 const GRID: int = 48
 const STEP: float = TILE / GRID
 const WATER_LEVEL: float = 0.0
+const PORT_CENTER := Vector2(-194.0, 668.0)
+const SEA_LIMIT_Z: float = 820.0
 const SPAWN: Vector2 = Vector2(-230.0, 180.0)
 ## Surveyed plot centres and footprint half-extents. Keep building placement, grading,
 ## nature clearance and the map tied to these coordinates as the world grows.
@@ -23,6 +25,7 @@ const PLOTS: Dictionary = {
 	"CompanyCompound": {"center": Vector2(345, 300), "half": Vector2(67, 63), "grade": 12.0},
 	"GovernmentHouse": {"center": Vector2(-390, -110), "half": Vector2(96, 92), "grade": 8.5},
 	"OldFort": {"center": FORT_CENTER, "half": Vector2(60, 50), "grade": FORT_BASE_HEIGHT},
+	"HooghlyPort": {"center": PORT_CENTER, "half": Vector2(43, 45), "grade": 2.8},
 }
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
@@ -43,6 +46,7 @@ const ROUTES: Dictionary = {
 	"government_house_avenue": [Vector2(-390, -18), Vector2(-390, -123)],
 	"fort_trail": [Vector2(320, 150), Vector2(380, 90), Vector2(460, 10), Vector2(480, 0), Vector2(490, -10), Vector2(500, -20), Vector2(520, -50), Vector2(510, -120), Vector2(550, -140), Vector2(550, -170), Vector2(510, -170), Vector2(480, -180), Vector2(490, -200), Vector2(510, -230), Vector2(465, -250)],
 	"fort_access": [Vector2(465, -250), Vector2(565, -255), Vector2(460, -283), Vector2(520, -303)],
+	"port_approach": [Vector2(-185,500), Vector2(-200,560), Vector2(-194,623), Vector2(-194,650)],
 }
 const SITES: Dictionary = {
 	"Bhairavpur village": Vector2(-310, 230),
@@ -53,6 +57,7 @@ const SITES: Dictionary = {
 	"Old fort reserve": FORT_CENTER,
 	"Government House": Vector2(-390, -110),
 	"Wooded ridge": Vector2(620, -260),
+	"Hooghly Reach Port": PORT_CENTER,
 }
 var noise := FastNoiseLite.new()
 
@@ -66,7 +71,9 @@ func river_x(z: float) -> float:
 	return 60.0 + 76.0 * sin(z * 0.0045) + 22.0 * sin(z * 0.011)
 
 func river_width(z: float) -> float:
-	return 55.0 + 8.0 * sin(z * 0.008 + 1.0)
+	# The downstream channel opens continuously into a compact estuary, then a
+	# purely scenic sea. Keep the same coast for terrain, swimming and water mesh.
+	return 55.0 + 8.0 * sin(z * 0.008 + 1.0) + 340.0 * smoothstep(500.0,850.0,z) + 5600.0 * smoothstep(850.0,1600.0,z)
 
 func road_x(z: float) -> float:
 	return -210.0 + 42.0 * sin(z * 0.005)
@@ -118,6 +125,20 @@ func height(x: float, z: float) -> float:
 		var police_edge: float = maxf(absf(x-police.center.x)-police.half.x,absf(z-police.center.y)-police.half.y)
 		var clear_of_police: float = smoothstep(0.0,8.0,maxf(0.0,police_edge))
 		h = lerpf(h,trail_target,(1.0-smoothstep(3.0,14.0,nearest_trail))*clear_of_police)
+	if z > 492.0 and z < 658.0 and x > -218.0 and x < -170.0:
+		var route: Array = ROUTES["port_approach"]
+		var point := Vector2(x,z)
+		var nearest := INF
+		var target := h
+		for i in range(route.size()-1):
+			var a: Vector2 = route[i]
+			var b: Vector2 = route[i+1]
+			var t := clampf((point-a).dot(b-a)/(b-a).length_squared(),0.0,1.0)
+			var d := point.distance_to(a.lerp(b,t))
+			if d < nearest:
+				nearest = d
+				target = lerpf(base_height(a.x,a.y),base_height(b.x,b.y),t)
+		h = lerpf(h,target,1.0-smoothstep(3.0,9.0,nearest))
 	return h
 
 func base_height(x: float, z: float) -> float:
@@ -130,7 +151,7 @@ func base_height(x: float, z: float) -> float:
 	h += upland
 	# Continuous channel and smooth banks; the water surface stays level.
 	var d: float = absf(x - river_x(z))
-	var channel: float = -4.5 + 0.65 * sin(z * 0.023)
+	var channel: float = -4.5 + 0.65 * sin(z * 0.023) - 8.0 * smoothstep(500.0,850.0,z)
 	var bank: float = smoothstep(river_width(z) - 9.0, river_width(z) + 37.0, d)
 	h = lerpf(channel, h, bank)
 	# A shared surveyed terrace supports the expanded houses, market and fields.

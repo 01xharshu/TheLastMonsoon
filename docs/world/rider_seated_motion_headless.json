@@ -1,0 +1,1349 @@
+{
+	"checks": {
+		"bent_knees": true,
+		"gallop_forward_response": true,
+		"jump_forward_response": true,
+		"landed": true,
+		"rein_grip": true,
+		"seat_follows_back": true,
+		"stirrups": true
+	},
+	"gallop_lean_deg": 23.0728726172097,
+	"jump_lean_deg": 35.7731569056607,
+	"max_knee_deg": 98.2598307306654,
+	"max_palm_error_m": 0.00000381516292691231,
+	"max_seat_error_m": 0.00000000186264514923096,
+	"max_sole_error_m": 0.000000477767571283039,
+	"physics_hz": 60,
+	"recorded_fps": 15,
+	"samples": [
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.14516691757525,
+			"knees_deg": [
+				93.2141933460046,
+				93.2146311669391
+			],
+			"palm_error_m": 0.000000333200091517938,
+			"seat_error_m": 0.00000000186264514923096,
+			"sole_error_m": 0.000000168103085229632,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.15852066813245,
+			"knees_deg": [
+				93.2160061995331,
+				93.2162490537411
+			],
+			"palm_error_m": 0.000000133280039449346,
+			"seat_error_m": 0.00000000186264514923096,
+			"sole_error_m": 0.000000198841192400323,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.15866247632906,
+			"knees_deg": [
+				93.2177591977554,
+				93.2178498406723
+			],
+			"palm_error_m": 0.000000342402614705861,
+			"seat_error_m": 0.00000000186264514923096,
+			"sole_error_m": 0.000000189377061587948,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.14858472782517,
+			"knees_deg": [
+				93.2194078739569,
+				93.2194540506109
+			],
+			"palm_error_m": 0.000000158401519456675,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000323757518572165,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.12990453482275,
+			"knees_deg": [
+				93.2210975988079,
+				93.2211437755385
+			],
+			"palm_error_m": 0.000000214907601048253,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000015876250358815,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.10370363206391,
+			"knees_deg": [
+				93.2228198212534,
+				93.2227941674716
+			],
+			"palm_error_m": 0.000000247556670274207,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000163669184871651,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.07091755908653,
+			"knees_deg": [
+				93.2244360108073,
+				93.224439431317
+			],
+			"palm_error_m": 0.000000160490415623826,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000195364748378779,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.03240059077803,
+			"knees_deg": [
+				93.226688418946,
+				93.2267055215326
+			],
+			"palm_error_m": 0.000000214907601048253,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000258478507930704,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.98910187645349,
+			"knees_deg": [
+				93.2289664860134,
+				93.2289562244386
+			],
+			"palm_error_m": 0.000000127315573195119,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000313301114829301,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.94202768086926,
+			"knees_deg": [
+				93.2312308760603,
+				93.231229165794
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000174900293359315,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.89225126326705,
+			"knees_deg": [
+				93.2335568408853,
+				93.2335397381834
+			],
+			"palm_error_m": 0.000000190827975643515,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240735630541167,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.84089209296132,
+			"knees_deg": [
+				93.2358024281637,
+				93.2357870356978
+			],
+			"palm_error_m": 0.000000302827373843684,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000264993587961726,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.844214072251,
+			"knees_deg": [
+				93.2382002351528,
+				93.2381694501484
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000338634066565646,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.8692339264319,
+			"knees_deg": [
+				93.1974246033289,
+				93.2782591632218
+			],
+			"palm_error_m": 0.000000246207576992674,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000124281854141373,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.90058541343174,
+			"knees_deg": [
+				93.1287123760843,
+				93.2907960789786
+			],
+			"palm_error_m": 0.000000158401519456675,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000281154541426076,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.92080622993292,
+			"knees_deg": [
+				93.041983267546,
+				93.2340511090978
+			],
+			"palm_error_m": 0.000000158401519456675,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000287403196352898,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.93203340531853,
+			"knees_deg": [
+				93.0618292087821,
+				93.1805398424591
+			],
+			"palm_error_m": 0.000000287403196352898,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000357627868652344,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.94783197480443,
+			"knees_deg": [
+				93.112818861495,
+				93.1448198969707
+			],
+			"palm_error_m": 0.000000158401519456675,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000107453800524127,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.99025632130941,
+			"knees_deg": [
+				93.1740548544267,
+				93.1025225777379
+			],
+			"palm_error_m": 0.00000026023758437077,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.09559685699004,
+			"knees_deg": [
+				93.2580789924413,
+				93.08420122045
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000178813934326172,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.30851180060264,
+			"knees_deg": [
+				93.3372062793263,
+				93.0880693021995
+			],
+			"palm_error_m": 0.000000245756240246919,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000178813934326172,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.65926005418881,
+			"knees_deg": [
+				93.320098528847,
+				93.0848527398649
+			],
+			"palm_error_m": 0.000000119209289550781,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000305382940268828,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.128444966352,
+			"knees_deg": [
+				93.2808982307742,
+				93.1002259780618
+			],
+			"palm_error_m": 0.000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.56806993975196,
+			"knees_deg": [
+				93.1221507571594,
+				93.1107513883824
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.77703671503991,
+			"knees_deg": [
+				93.0369440367375,
+				93.2083289579186
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.71965686566863,
+			"knees_deg": [
+				93.0894407474751,
+				93.3783724930428
+			],
+			"palm_error_m": 0.000000477767571283039,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.44770622522753,
+			"knees_deg": [
+				93.0960329437087,
+				93.3890958017906
+			],
+			"palm_error_m": 0.000000134110450744629,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.08958254385237,
+			"knees_deg": [
+				93.04103082205,
+				93.2418140591245
+			],
+			"palm_error_m": 0.000000533952515979763,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000477767571283039,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.80482566337869,
+			"knees_deg": [
+				93.1155105157791,
+				93.1492781962073
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.72323451430227,
+			"knees_deg": [
+				93.2221391411302,
+				93.0848681300921
+			],
+			"palm_error_m": 0.000000480548010273196,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000254631146390238,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.89462489291997,
+			"knees_deg": [
+				93.3387542358284,
+				93.0908002242787
+			],
+			"palm_error_m": 0.000000546285605196317,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.26920830734928,
+			"knees_deg": [
+				93.3184958683665,
+				93.0857145929327
+			],
+			"palm_error_m": 0.00000047706993200336,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000178813934326172,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.71735438393655,
+			"knees_deg": [
+				93.2645046541219,
+				93.1112968999182
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.08040753675037,
+			"knees_deg": [
+				93.1027636953424,
+				93.129546903404
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000254631146390238,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.23359098710698,
+			"knees_deg": [
+				93.0295023652797,
+				93.2323972783428
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.13509823721924,
+			"knees_deg": [
+				93.098444107437,
+				93.4018257158347
+			],
+			"palm_error_m": 0.000000985844394563173,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.84246105817581,
+			"knees_deg": [
+				93.0865678965594,
+				93.3693563843256
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.48933510575076,
+			"knees_deg": [
+				93.0392558899587,
+				93.2095551920133
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.23165373290993,
+			"knees_deg": [
+				93.1369208704237,
+				93.1341077437591
+			],
+			"palm_error_m": 0.000000104308128356934,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.18549661388952,
+			"knees_deg": [
+				93.2520570028567,
+				93.0852802462596
+			],
+			"palm_error_m": 0.000000163912773132324,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.38078830632467,
+			"knees_deg": [
+				93.3359183129573,
+				93.088676363169
+			],
+			"palm_error_m": 0.000000984040866569558,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.74925508101817,
+			"knees_deg": [
+				93.3142403641413,
+				93.0849963819943
+			],
+			"palm_error_m": 0.000000266560078898692,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000362560911071341,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.23771862785115,
+			"knees_deg": [
+				93.2254262488504,
+				93.1103991146253
+			],
+			"palm_error_m": 0.00000024978896817629,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.95343115101566,
+			"knees_deg": [
+				93.0730570511481,
+				93.1682112173245
+			],
+			"palm_error_m": 0.000000163912773132324,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 10.0477239765215,
+			"knees_deg": [
+				93.280012269536,
+				93.5197522742522
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 10.4014114063305,
+			"knees_deg": [
+				93.2263070313399,
+				93.5371116634779
+			],
+			"palm_error_m": 0.00000098854354746436,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000429815202096506,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 11.3274151401399,
+			"knees_deg": [
+				92.7275938385234,
+				93.0162880526096
+			],
+			"palm_error_m": 0.000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 13.2564813000333,
+			"knees_deg": [
+				92.2570955344232,
+				92.5089137708084
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 16.1433254320369,
+			"knees_deg": [
+				92.7265664390698,
+				93.0139967673386
+			],
+			"palm_error_m": 0.000000119209289550781,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.9229888658681,
+			"knees_deg": [
+				93.7738480169281,
+				94.1264306724083
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.0149102413675,
+			"knees_deg": [
+				94.1086416323011,
+				94.4788719084453
+			],
+			"palm_error_m": 0.00000192271181731485,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.0778466190393,
+			"knees_deg": [
+				93.6531339114992,
+				93.9981550197351
+			],
+			"palm_error_m": 0.000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.0448198210991,
+			"knees_deg": [
+				92.8412680058865,
+				93.1351491982805
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.2496573322245,
+			"knees_deg": [
+				92.2424796161749,
+				92.4905435718655
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.0394698855477,
+			"knees_deg": [
+				93.3833620925135,
+				93.7122603031997
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.9376012782265,
+			"knees_deg": [
+				94.0899970349196,
+				94.4585586456486
+			],
+			"palm_error_m": 0.00000192271181731485,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000178813934326172,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.6245745328946,
+			"knees_deg": [
+				93.6402825023435,
+				93.9843193594081
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.769373474405,
+			"knees_deg": [
+				92.7121846481529,
+				92.9967216573972
+			],
+			"palm_error_m": 0.000000240274005136598,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.3096411692398,
+			"knees_deg": [
+				92.3416496470816,
+				92.5974423658155
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.8553520747191,
+			"knees_deg": [
+				93.7523531711447,
+				94.1024341365604
+			],
+			"palm_error_m": 0.000000240274005136598,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.4151256560526,
+			"knees_deg": [
+				94.0920153759232,
+				94.4605077353383
+			],
+			"palm_error_m": 0.00000190758146345615,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.6423797629569,
+			"knees_deg": [
+				93.2975469227864,
+				93.6211725511641
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.8187830054938,
+			"knees_deg": [
+				92.4486065337088,
+				92.7134701643902
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.1970261244187,
+			"knees_deg": [
+				92.8033622883533,
+				93.0947777727062
+			],
+			"palm_error_m": 0.000000104308128356934,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.0728726172097,
+			"knees_deg": [
+				93.9872788668113,
+				94.3497722903968
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.5191272595234,
+			"knees_deg": [
+				93.9238374967785,
+				94.2837573567473
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.9692350301645,
+			"knees_deg": [
+				92.9876934990841,
+				93.2911569666079
+			],
+			"palm_error_m": 0.000000238418579101562,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.4038666449337,
+			"knees_deg": [
+				92.2669130435435,
+				92.5169572233733
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000281154541426076,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.1824687854978,
+			"knees_deg": [
+				93.3627709659505,
+				93.6906899652399
+			],
+			"palm_error_m": 0.000000242573321429518,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.0290424835178,
+			"knees_deg": [
+				94.0904832166812,
+				94.4594612550817
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.6753134701984,
+			"knees_deg": [
+				93.6401250904019,
+				93.9843467463566
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.849576856572,
+			"knees_deg": [
+				92.7119179720833,
+				92.9964583350597
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 24.4493912787017,
+			"knees_deg": [
+				93.445774465786,
+				93.7720477754196
+			],
+			"palm_error_m": 0.0,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000387430191040039,
+			"stage": "jump",
+			"vertical_velocity": 4.8833327293396
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 30.0995823150551,
+			"knees_deg": [
+				93.5834448827149,
+				93.9215166255004
+			],
+			"palm_error_m": 0.000000238418579101562,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "jump",
+			"vertical_velocity": 4.06666564941406
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.605492538727,
+			"knees_deg": [
+				93.232592248943,
+				93.548510836014
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000298023223876953,
+			"stage": "jump",
+			"vertical_velocity": 3.24999856948853
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.2760426454064,
+			"knees_deg": [
+				92.6940337146945,
+				92.9732144031439
+			],
+			"palm_error_m": 0.000000245756240246919,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000476837158203125,
+			"stage": "jump",
+			"vertical_velocity": 2.43333148956299
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.7731569056607,
+			"knees_deg": [
+				92.0840240715224,
+				92.3110183240702
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "jump",
+			"vertical_velocity": 1.61666476726532
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.6023551977447,
+			"knees_deg": [
+				91.8334571173787,
+				92.0355820962951
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "jump",
+			"vertical_velocity": 0.799998164176941
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.0740780003488,
+			"knees_deg": [
+				91.4271192198598,
+				91.5781439915877
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": -0.0166685059666634
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 34.4837579043147,
+			"knees_deg": [
+				91.9490271277635,
+				92.1644672702963
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "jump",
+			"vertical_velocity": -0.833335220813751
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 34.0760003690566,
+			"knees_deg": [
+				92.786746869627,
+				93.0734931028433
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "jump",
+			"vertical_velocity": -1.65000176429749
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.8427168706703,
+			"knees_deg": [
+				93.987751293502,
+				94.3471744629
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000254631146390238,
+			"stage": "jump",
+			"vertical_velocity": -2.46666860580444
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.7216135273452,
+			"knees_deg": [
+				95.9198272356049,
+				96.3647688871347
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": -3.28333568572998
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.6619018864028,
+			"knees_deg": [
+				97.7538009528212,
+				98.2598307306654
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000298023223876953,
+			"stage": "jump",
+			"vertical_velocity": -4.10000276565552
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.6314147386944,
+			"knees_deg": [
+				97.2628846517368,
+				97.7547108580763
+			],
+			"palm_error_m": 0.000000208616256713867,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "jump",
+			"vertical_velocity": -4.91666984558105
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 33.6356679972823,
+			"knees_deg": [
+				95.1540987222407,
+				95.5710960995605
+			],
+			"palm_error_m": 0.000000134110450744629,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 29.1954889461594,
+			"knees_deg": [
+				93.1157943882331,
+				93.425402672744
+			],
+			"palm_error_m": 0.00000381516292691231,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000298023223876953,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 26.0433623592693,
+			"knees_deg": [
+				92.3132638693815,
+				92.5649198662192
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 25.8721066380918,
+			"knees_deg": [
+				93.2561001637187,
+				93.5760914968016
+			],
+			"palm_error_m": 0.00000024978896817629,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 25.2831865793694,
+			"knees_deg": [
+				94.0816429718317,
+				94.4488732194732
+			],
+			"palm_error_m": 0.000000119209289550781,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.1630130058443,
+			"knees_deg": [
+				93.726245541884,
+				94.0749358177019
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.5715694287661,
+			"knees_deg": [
+				92.8562480475649,
+				93.1505436931382
+			],
+			"palm_error_m": 0.00000026023758437077,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.8870917264912,
+			"knees_deg": [
+				92.2581191497665,
+				92.5077446883273
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.4947646039766,
+			"knees_deg": [
+				93.0917304836235,
+				93.4021969077319
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.4350570064745,
+			"knees_deg": [
+				93.9489498740927,
+				94.3114154273254
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000376972877802473,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.0833779609865,
+			"knees_deg": [
+				94.0897796227485,
+				94.4595263389167
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 15.7882295974638,
+			"knees_deg": [
+				93.6751276837117,
+				94.0215407782707
+			],
+			"palm_error_m": 0.000000104308128356934,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 12.8679972974464,
+			"knees_deg": [
+				93.0726295496591,
+				93.3833843293872
+			],
+			"palm_error_m": 0.000000134110450744629,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 10.8413502249001,
+			"knees_deg": [
+				92.5304394329163,
+				92.805336870184
+			],
+			"palm_error_m": 0.000000273548948825919,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.36763581354279,
+			"knees_deg": [
+				92.9697622235479,
+				93.1985447912439
+			],
+			"palm_error_m": 0.000000119209289550781,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.33973276449481,
+			"knees_deg": [
+				93.0983004634866,
+				93.1669747715625
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.76545983201671,
+			"knees_deg": [
+				93.1821918791536,
+				93.1040188758179
+			],
+			"palm_error_m": 0.000000245756240246919,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		}
+	],
+	"seated_lean_deg": 6.84089209296132,
+	"status": "PASS"
+}

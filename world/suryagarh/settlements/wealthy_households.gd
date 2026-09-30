@@ -59,7 +59,7 @@ func _build_households() -> void:
 		actor.global_position=british.to_global(Vector3(-1 if label=="OfficialMan" else 2,.24,2))
 		actor.set("_home",actor.position); actor.set("movement_enabled",false)
 		actor.set_meta("household","BritishHousehold"); couple.append(actor)
-	_coach(landlord,[landowner],[Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
+	_coach(landlord,[landowner],[Vector3(-316,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
 	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-395,7.24,312),Vector3(-379,7.24,312)])
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
 	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 3 household coaches")

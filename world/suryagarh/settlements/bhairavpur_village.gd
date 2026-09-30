@@ -87,6 +87,8 @@ func _build_homes() -> void:
 				mesh.material_override = wall_palette[i % wall_palette.size()]
 		_household_detail(house, site.size, i)
 		house_detail.house(house,site.size,i)
+		if i == 0:
+			preload("res://world/suryagarh/settlements/arjun_house.gd").new().furnish(settlement, house)
 
 func _household_detail(house: Node3D, extent: Vector2, index: int) -> void:
 	var w := extent.x

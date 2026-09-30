@@ -261,7 +261,7 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 func bake_water() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for k in 360:
+	for k in 1000:
 		var z: float = -1440.0 + k * 8.0
 		var points: Array[Vector3] = []
 		for dz in [0.0, 8.0]:

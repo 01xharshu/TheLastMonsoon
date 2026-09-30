@@ -14,17 +14,6 @@
 			"worst_vertical_speed_mps": 0.0
 		},
 		{
-			"finish": "(-395.9584, 8.100209, 187.1295)",
-			"jump_used": false,
-			"max_lane_deviation_m": 0.103164188563824,
-			"pass": true,
-			"route": "village_pond_approach",
-			"segments_expected": 2,
-			"segments_reached": 2,
-			"start": "(-374.0, 8.10078, 190.0)",
-			"worst_vertical_speed_mps": 0.0
-		},
-		{
 			"finish": "(-321.0, 8.100781, 349.9193)",
 			"jump_used": false,
 			"max_lane_deviation_m": 0.0,
@@ -34,50 +23,6 @@
 			"segments_reached": 1,
 			"start": "(-321.0, 8.100781, 327.0)",
 			"worst_vertical_speed_mps": 0.0
-		},
-		{
-			"finish": "(-422.8845, 8.040374, 179.0)",
-			"jump_used": false,
-			"max_lane_deviation_m": 0.0000457763671875,
-			"pass": true,
-			"route": "pond bridge east-west",
-			"segments_expected": 1,
-			"segments_reached": 1,
-			"start": "(-399.0, 8.042538, 179.0)",
-			"worst_vertical_speed_mps": 0.0
-		},
-		{
-			"finish": "(-399.1207, 8.028225, 179.0002)",
-			"jump_used": false,
-			"max_lane_deviation_m": 0.00018310546875,
-			"pass": true,
-			"route": "pond bridge west-east",
-			"segments_expected": 1,
-			"segments_reached": 1,
-			"start": "(-423.0, 8.042538, 179.0)",
-			"worst_vertical_speed_mps": -0.816666662693024
-		},
-		{
-			"finish": "(-401.4064, 7.100441, 187.0)",
-			"jump_used": false,
-			"max_lane_deviation_m": 0.0,
-			"pass": true,
-			"route": "utility steps down",
-			"segments_expected": 1,
-			"segments_reached": 1,
-			"start": "(-394.0, 8.08799, 187.0)",
-			"worst_vertical_speed_mps": 0.0
-		},
-		{
-			"finish": "(-394.087, 8.085902, 187.0)",
-			"jump_used": false,
-			"max_lane_deviation_m": 0.0,
-			"pass": true,
-			"route": "utility steps up",
-			"segments_expected": 1,
-			"segments_reached": 1,
-			"start": "(-401.5, 7.100781, 187.0)",
-			"worst_vertical_speed_mps": -0.489999979734421
 		}
 	],
 	"status": "PASS",

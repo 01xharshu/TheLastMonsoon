@@ -34,8 +34,8 @@ func _run() -> void:
 	scene.add_child(horse)
 	horse.set_physics_process(false)
 	var stage := "after" if "--after" in OS.get_cmdline_user_args() else "before"
-	if stage == "after":
-		var replacement: Node3D = load("res://assets/animals/horse/horse_body_refinement.glb").instantiate()
+	if stage == "before":
+		var replacement: Node3D = load("res://assets/animals/horse/rigged_horse_candidate.glb").instantiate()
 		replacement.transform = horse.rigged_model.transform
 		horse.rigged_model.free()
 		horse.body_root.add_child(replacement)
@@ -45,8 +45,8 @@ func _run() -> void:
 	scene.add_child(camera)
 	camera.fov = 48
 	camera.make_current()
-	for view in [["side",Vector3(-5,2.2,0)],["front",Vector3(0,2.2,-5)],["quarter",Vector3(-4,2.5,-3)]]:
-		horse.rigged_anim.play("AnimalArmature|Idle")
+	for view in [["side",Vector3(-5,2.2,0),"Idle"],["front",Vector3(0,2.2,-5),"Idle"],["quarter",Vector3(-4,2.5,-3),"Idle"],["walk",Vector3(-5,2.2,0),"Walk"],["gallop",Vector3(-5,2.2,0),"Gallop"],["jump",Vector3(-5,2.2,0),"Gallop_Jump"]]:
+		horse.rigged_anim.play("AnimalArmature|"+view[2])
 		horse.rigged_anim.seek(.25,true)
 		horse.rigged_anim.pause()
 		camera.global_position = view[1]

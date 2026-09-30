@@ -2,7 +2,7 @@ extends CharacterBody3D
 ## One rideable village horse. Forward is local -Z; the stable owns its starting place.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const BodyModel = preload("res://assets/animals/horse/village_horse_body.glb")
-const RiggedBody = preload("res://assets/animals/horse/rigged_horse_candidate.glb")
+const RiggedBody = preload("res://assets/animals/horse/horse_body_refinement.glb")
 const HoofA = preload("res://audio/horses/hoof_dirt_01.wav")
 const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
 const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav")
@@ -32,6 +32,8 @@ var transition_to := Vector3.ZERO
 var legs: Array[Node3D] = []
 var lower_legs: Array[Node3D] = []
 var hoof_clearances: Array[float] = []
+var tack_root: Node3D
+var rigged_skeleton: Skeleton3D
 var body_root: Node3D
 var neck_root: Node3D
 var tail_root: Node3D
@@ -142,6 +144,7 @@ func _material(color: Color) -> StandardMaterial3D:
 func _ellipsoid(parent: Node3D, label: String, at: Vector3, scale_by: Vector3, mat: Material) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
+	mesh.set_meta("horse_piece",label)
 	var sphere := SphereMesh.new()
 	sphere.radius = 1.0
 	sphere.height = 2.0
@@ -154,6 +157,7 @@ func _ellipsoid(parent: Node3D, label: String, at: Vector3, scale_by: Vector3, m
 func _box(parent: Node3D, label: String, at: Vector3, size: Vector3, mat: Material) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
+	mesh.set_meta("horse_piece",label)
 	var box := BoxMesh.new()
 	box.size = size
 	mesh.mesh = box
@@ -164,6 +168,7 @@ func _box(parent: Node3D, label: String, at: Vector3, size: Vector3, mat: Materi
 func _cord(parent: Node3D, label: String, a: Vector3, b: Vector3, radius: float, mat: Material) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
+	mesh.set_meta("horse_piece",label)
 	var cylinder := CylinderMesh.new()
 	cylinder.top_radius = radius
 	cylinder.bottom_radius = radius
@@ -193,8 +198,8 @@ func _build_rein(side: String, material: Material) -> void:
 
 func _rein_anchors(side: String) -> Array[Vector3]:
 	var sign_side := -1.0 if side == "l" else 1.0
-	var bit := body_root.to_global(Vector3(sign_side * 0.18, 1.88, -1.43))
-	var hand := body_root.to_global(Vector3(sign_side * 0.28, 1.93, -0.23))
+	var bit := body_root.to_global(_animated_frame_delta("Head") * Vector3(sign_side * 0.18, 1.88, -1.43))
+	var hand := tack_root.to_global(Vector3(sign_side * 0.28, 1.93, -0.23))
 	if rider != null and transition == "":
 		var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
 		if visual.skeleton != null:
@@ -252,6 +257,7 @@ func _update_reins(delta: float) -> void:
 func _taper(parent: Node3D, label: String, at: Vector3, height: float, top: float, bottom: float, mat: Material) -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
+	mesh.set_meta("horse_piece",label)
 	var cylinder := CylinderMesh.new()
 	cylinder.top_radius = top
 	cylinder.bottom_radius = bottom
@@ -334,8 +340,19 @@ func _build_horse() -> void:
 				part.position.y -= .15
 				break
 	for side in [-1.0, 1.0]:
-		_cord(body_root,"RiderStirrupLeather",Vector3(side*.30,1.85,.02),Vector3(side*.48,1.15,.02),.022,leather)
-		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.13,.02),Vector3(.18,.04,.14),dark)
+		_cord(body_root,"RiderStirrupLeather",Vector3(side*.30,1.85,.02),Vector3(side*.48,1.42,.02),.022,leather)
+		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.40,.02),Vector3(.18,.04,.14),dark)
+	tack_root = Node3D.new()
+	tack_root.name = "AnimatedTack"
+	body_root.add_child(tack_root)
+	for part in body_root.get_children():
+		if part is MeshInstance3D:
+			var label := str(part.get_meta("horse_piece",part.name))
+			if label.begins_with("Stirrup"):
+				part.hide() # Replaced by the fitted rider stirrups.
+			elif label.begins_with("RiderStirrup") or label.begins_with("Girth") or label in ["SaddleCloth","LeatherSaddle","Pommel","Cantle"]:
+				part.reparent(tack_root,false)
+	process_priority = -20
 	_build_rein("l", leather)
 	_build_rein("r", leather)
 	# The source mesh carries a continuous four-leg skin and its own gait rig.
@@ -353,7 +370,29 @@ func _build_horse() -> void:
 	rigged_anim = rigged_model.find_child("AnimationPlayer",true,false) as AnimationPlayer
 	for clip in ["AnimalArmature|Idle","AnimalArmature|Walk","AnimalArmature|Gallop"]:
 		rigged_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	rigged_anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	rigged_anim.play("AnimalArmature|Idle")
+
+func _animated_frame_delta(bone_name: String) -> Transform3D:
+	if not is_instance_valid(rigged_skeleton):
+		var rigs := rigged_model.find_children("*", "Skeleton3D", true, false)
+		if rigs.is_empty(): return Transform3D.IDENTITY
+		rigged_skeleton = rigs[0]
+	rigged_skeleton.force_update_all_bone_transforms()
+	var index := rigged_skeleton.find_bone(bone_name)
+	if index < 0: return Transform3D.IDENTITY
+	var frame := body_root.global_transform.affine_inverse() * rigged_skeleton.global_transform
+	var rest := frame * rigged_skeleton.get_bone_global_rest(index)
+	var animated := frame * rigged_skeleton.get_bone_global_pose(index)
+	return animated * rest.affine_inverse()
+
+func _process(delta: float) -> void:
+	if tack_root == null: return
+	# Imported gait clips translate/pitch the skinned back independently of the
+	# physics capsule. Seat, stirrups and saddle must follow that same frame.
+	tack_root.transform = _animated_frame_delta("Torso")
+	if rider != null and transition == "": _sync_rider()
+	_update_reins.call_deferred(delta)
 
 func _update_rigged_animation() -> void:
 	if rigged_anim == null: return
@@ -374,17 +413,17 @@ func _walk_supported() -> bool:
 	return step_up_grace > 0.0 or (stair_activity > 0.0 and step_ground_grace > 0.0 and absf(velocity.y) < 0.2)
 
 func seat_world() -> Vector3:
-	return body_root.to_global(Vector3(0,2.0,.02))
+	return tack_root.to_global(Vector3(0,2.0,.02))
 
 func saddle_grip_world(side: String) -> Vector3:
-	var tack: Node3D = body_root.get_node("Pommel" if side == "l" else "Cantle")
+	var tack: Node3D = tack_root.get_node("Pommel" if side == "l" else "Cantle")
 	return tack.to_global(Vector3(-0.16 if side == "l" else 0.16, 0.06, 0.0))
 
 func riding_rein_world(side: String) -> Vector3:
-	return body_root.to_global(Vector3(-0.18 if side == "l" else 0.18, 2.24, -0.42))
+	return tack_root.to_global(Vector3(-0.18 if side == "l" else 0.18, 2.24, -0.42))
 
 func stirrup_world(side: String) -> Vector3:
-	return body_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.15, 0.02))
+	return tack_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.42, 0.02))
 
 func can_board(actor: CharacterBody3D) -> bool:
 	return rider == null and not actor.get_meta("climbing",false) and actor.global_position.distance_to(global_position) < 3.0
@@ -490,6 +529,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_walk_stairs(intended_horizontal)
 	_update_rigged_animation()
+	rigged_anim.advance(delta)
+	tack_root.transform = _animated_frame_delta("Torso")
 	_update_hoof_contacts(delta)
 	if not was_grounded and is_on_floor() and fall_speed < -1.0:
 		landing_player.play()
@@ -523,7 +564,6 @@ func _physics_process(delta: float) -> void:
 					transition_actor.velocity = Vector3.ZERO
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
-	_update_reins(delta)
 	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
 	if rider == null:
 		idle_voice_timer -= delta
@@ -559,6 +599,10 @@ func _physics_process(delta: float) -> void:
 			hoof_clearances[i] = lower_legs[i].to_global(Vector3(0,-.64,-.08)).y - global_position.y
 	neck_root.rotation.x = -.48 + sin(gait*2.0)*.035*stride
 	tail_root.rotation.x = sin(gait*.45)*.10
+	if rider != null and transition == "":
+		tack_root.transform = _animated_frame_delta("Torso")
+		_sync_rider()
+		rider.get_node("VisualRoot/CharacterVisual")._pose_horse_riding(delta)
 
 func _walk_stairs(horizontal: Vector3) -> void:
 	if velocity.y > 0.0:

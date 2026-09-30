@@ -22,6 +22,7 @@ func _run() -> void:
 	camera.make_current()
 	var home: Node3D = world.get_node("Settlement/BhairavpurHouse0")
 	var views := [
+		["village_former_pond_restored",12,Vector3(-438,19,170),Vector3(-411,7.2,187)],
 		["village_estate_day",12,Vector3(-350,19,313),Vector3(-321,10,344)],
 		["village_estate_courtyard",12,Vector3(-321,9.0,332),Vector3(-321,9.2,352)],
 		["village_houses_night",21,Vector3(-351,10.5,196),Vector3(-331,9,214)],

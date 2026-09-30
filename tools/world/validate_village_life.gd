@@ -44,10 +44,10 @@ func _run() -> void:
 	_check(get_nodes_in_group("village_gathering_fire").size()==2,"two night gathering bays")
 	for fire in get_nodes_in_group("village_gathering_fire"):
 		_check(fire.get_node("FireLight").visible,"fire light at night")
-	# Pond terrain uses 3 m baked sampling: verify representative centre and dry banks.
+	# Verify the restored former basin and estate ground against baked terrain.
 	for p in [Vector2(-411,187),Vector2(-429,187),Vector2(-393,187),Vector2(-411,202),Vector2(-411,172),Vector2(-321,344)]:
 		_sample_ground(p,layout.height(p.x,p.y),"social place")
-	_check(worst_ground_gap < .035,"baked pond/estate survey samples")
+	_check(worst_ground_gap < .035,"restored ground/estate survey samples")
 	checking_routes = true
 	for route in ["village_estate_approach"]:
 		await _walk_route(route,Layout.ROUTES[route])

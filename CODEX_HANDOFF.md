@@ -1,15 +1,17 @@
 # Current handoff
+## ARJUN / DEV HOUSE — IN_PROGRESS
+- 09-30 IST: surveyed House0 furnished, charpai inside; 112 clearance samples + sleep/time release PASS; Metal exterior/both rooms inspected; docs gate PASS. Files/evidence: `docs/world/arjun_dev_home.md`. Next: normal player traversal/camera and detail refinement; broader layout follows.
 Updated: Leela face fit: `docs/characters/npcs/leela.md`; likeness open.
 ## ASSET-FIRST HOUSEHOLD BATCH — IN_PROGRESS
 - Props/actions: `docs/assets/asset_first_checklist.md`. Checks PASS; art/motion open. Next: roti grip/store. Evidence: `docs/assets/household_batch_01.md`.
 ## MOUNTED RIDER REALISM — IN_PROGRESS
-- 2026-09-30: stride-following torso, gallop/takeoff/landing response, rein grip solve and cart acceleration/turn response added; sprint drive 5.2 m/s. Headless/Metal fixture and boarding/rein checks PASS. Normal-speed/full-world seat and mesh contact open: `docs/world/mounted_realism_2026-09-30.md`.
+- 09-30 IST: owner rejects standing-like mounted pose. Next shorten stirrups, bend knees and strengthen gallop/jump response; render motion/contact. `docs/world/mounted_realism_2026-09-30.md`.
 ## TITLE MENU — METAL REVIEWED / INTEGRATED ROUTE BLOCKED
-- Selected stormy riverside direction built with live controls; isolated menu PASS, Metal title inspected. Full save/continue route blocked by concurrent `arjun_visual.gd` parse error. Next integrated rerun and owner feel: `docs/world/title_menu_design.md`.
+- Menu/Metal PASS; save/continue blocked by `arjun_visual.gd` parse error. Next integrated rerun/owner feel: `docs/world/title_menu_design.md`.
 ## BHAIRAVPUR / HORSE — IN_PROGRESS
-- 2026-09-30 IST. Owner rejected pond/steps; remove basin/bridge/access and rebake. Audit historical fit and live horse body next. Files/evidence/Next: `docs/world/village_period_life.md`.
-## RIVER REFINEMENT — IN_PROGRESS
-- Fish 36→144; ripples/glints, transparent water. Headless PASS; Metal inspected. Art/play open. Next: fish/wake/reflection and route review: `docs/world/river_boat_climb_status.md`.
+- 09-30 IST: removal/routes, body and hoof checks PASS. Art open; next tack/gait. Evidence: `docs/world/village_period_life.md`.
+## RIVER / HOOGHLY PORT — IN_PROGRESS
+- Updated 2026-09-30 IST. Connect downstream river to compact fictional port/sea, moored 1850s cargo ship and invisible swim boundary. River refinement retained. Next: author layout/ship/port and validate. Scope/files/evidence: `docs/world/hooghly_port.md`.
 ## THANA POLICE NPCS — STATIC CANDIDATE / VISUAL REVIEW OPEN
 - Three roles placed with body collision; headless PASS. Next Metal cloth/contact and role idles: `docs/characters/npcs/thana_staff.md`.
 ## DEV — MAKEHUMAN CANDIDATE
@@ -32,7 +34,7 @@ Updated: Leela face fit: `docs/characters/npcs/leela.md`; likeness open.
 ## INDIAN NPCS — FOUR CANDIDATE TREES / VISUAL_REVIEW_FAILED
 - Fruit seller and weaving assistant added as independent rigged candidates; all four trees PASS. Metal motion shows knee breakthrough/floating feet; no new world placement. Next fit cloth/grounded gait. Evidence/limits: `docs/characters/npcs/other_indian_npcs.md`, `docs/characters/npcs/indian_peasant_pair.md`.
 ## BRITISH NPC — TREE_READY / VISUAL_CONTACT_OPEN
-- 2026-09-30: hats/waists fitted; all16 iris exports corrected and stepping-turn tree checks PASS. Fresh Metal eyes/turns inspected; skirt/contact open. Evidence: `docs/characters/british/realism_turn_2026-09-30.md`; prior Player checks in `animation_tree.md`. Next normal-speed sole/cloth review.
+- 09-30 21:21 IST: contact COMPLETE: wait/idle/resume; 56 moving + 16 static PASS, 0m drift; tree/turn/foot/Metal pair PASS. Next cloth/sole. Files/evidence: `docs/characters/british/animation_tree.md`.
 
 ## VICEREGAL RESIDENCE — IN_PROGRESS
 - Arjun16/horse6 stairs and flexible reins PASS; Metal rope views inspected. Early mount contact open: `docs/world/horse_stable.md`.

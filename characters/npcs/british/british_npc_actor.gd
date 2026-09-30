@@ -30,6 +30,28 @@ var foot_plant = preload("res://characters/npcs/british/british_foot_plant.gd").
 var _walk_phase: float = 0.0
 var _last_facing: float = 0.0
 var body_collider: AnimatableBody3D
+var contact_blocked: bool = false
+
+func _patrol_body_blocked(local_motion: Vector3) -> bool:
+	if body_collider == null or local_motion.length_squared() < 0.00000001:
+		return false
+	var body_shape := body_collider.get_node("BodyShape") as CollisionShape3D
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = body_shape.shape
+	query.collision_mask = body_collider.collision_mask
+	query.exclude = [body_collider.get_rid()]
+	query.margin = 0.015
+	var world_motion := get_parent_node_3d().global_basis * local_motion
+	var steps := maxi(1, int(ceil(world_motion.length() / 0.1)))
+	var start := body_shape.global_transform
+	for step in range(1, steps + 1):
+		query.transform = start
+		query.transform.origin += world_motion * float(step) / float(steps)
+		for hit in get_world_3d().direct_space_state.intersect_shape(query, 16):
+			var other: Object = hit.collider
+			if other is CharacterBody3D or (other is AnimatableBody3D and other.name == "BodyCollider"):
+				return true
+	return false
 
 func _ready() -> void:
 	_home = position
@@ -217,9 +239,11 @@ func _process(delta: float) -> void:
 	if animation_player == null:
 		return
 	if not movement_enabled:
+		contact_blocked = false
 		travel_speed = 0.0
 		_set_animation(&"idle", delta)
 		return
+	var previous_clock := _clock
 	_clock += delta
 	var segment := fmod(_clock, 10.0)
 	var axis := patrol_axis.normalized()
@@ -248,7 +272,18 @@ func _process(delta: float) -> void:
 		direction = axis
 		_turn_progress = (segment - 9.5) / 0.5
 	var previous := position
-	position = _home + axis * patrol_distance * progress
+	var desired := _home + axis * patrol_distance * progress
+	contact_blocked = walking and _patrol_body_blocked(desired - previous)
+	if contact_blocked:
+		# Freeze patrol time as well as travel: clearing the obstruction resumes
+		# here rather than jumping to a later point on the timed path.
+		_clock = previous_clock
+		travel_speed = 0.0
+		rotation.y = rotate_toward(rotation.y, atan2(direction.x, direction.z), TAU * maxf(delta, 0.0))
+		body_collider.force_update_transform()
+		_set_animation(&"idle", delta)
+		return
+	position = desired
 	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
 	if walking or turning:
 		var target_yaw := atan2(direction.x, direction.z)

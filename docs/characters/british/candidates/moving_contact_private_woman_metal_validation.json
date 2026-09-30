@@ -1,0 +1,48 @@
+{
+  "cases": 4,
+  "errors": [],
+  "passed": true,
+  "results": [
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 82,
+      "maximum_player_step_m": 0.00333309173583984,
+      "minimum_body_gap_m": 0.720001220703125,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.217498779296875,
+      "scenario": "front",
+      "standing_player_drift_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 82,
+      "maximum_player_step_m": 0.00970554351806641,
+      "minimum_body_gap_m": 0.720001220703125,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "return",
+      "standing_player_drift_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 0,
+      "maximum_player_step_m": 0.0739509761333466,
+      "minimum_body_gap_m": 0.703518271446228,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "side",
+      "standing_player_drift_m": 0.492511123418808
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 0,
+      "maximum_player_step_m": 0.0820906460285187,
+      "minimum_body_gap_m": 0.700995802879333,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "turn",
+      "standing_player_drift_m": 1.41589307785034
+    }
+  ],
+  "scope": "actual Player and manually stepped live patrols in Suryagarh; body capsules, not cloth or sole approval"
+}

@@ -1,0 +1,62 @@
+{
+  "automatic_actor_updates": true,
+  "cases": 4,
+  "errors": [],
+  "passed": true,
+  "results": [
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 81,
+      "ground_collider": "/root/Suryagarh/Settlement/GovernmentHouse/EstateGround/@StaticBody3D@18855",
+      "ground_height_m": 8.54000091552734,
+      "maximum_player_step_m": 0.00333309173583984,
+      "minimum_body_gap_m": 0.720001220703125,
+      "npc_grade_m": 8.53999996185303,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "front",
+      "standing_player_drift_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 81,
+      "ground_collider": "/root/Suryagarh/Settlement/GovernmentHouse/EstateGround/@StaticBody3D@18855",
+      "ground_height_m": 8.54000091552734,
+      "maximum_player_step_m": 0.00970554351806641,
+      "minimum_body_gap_m": 0.720001220703125,
+      "npc_grade_m": 8.53999996185303,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "return",
+      "standing_player_drift_m": 0.0
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 0,
+      "ground_collider": "/root/Suryagarh/Settlement/GovernmentHouse/EstateGround/@StaticBody3D@18855",
+      "ground_height_m": 8.54000091552734,
+      "maximum_player_step_m": 0.0192864425480366,
+      "minimum_body_gap_m": 0.702633202075958,
+      "npc_grade_m": 8.53999996185303,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "side",
+      "standing_player_drift_m": 0.420810699462891
+    },
+    {
+      "actor": "PrivateWoman",
+      "blocked_idle_frames": 0,
+      "ground_collider": "/root/Suryagarh/Settlement/GovernmentHouse/EstateGround/@StaticBody3D@18855",
+      "ground_height_m": 8.54000091552734,
+      "maximum_player_step_m": 0.0822524130344391,
+      "minimum_body_gap_m": 0.700982391834259,
+      "npc_grade_m": 8.53999996185303,
+      "required_gap_m": 0.700000011920929,
+      "resume_travel_m": 0.225006103515625,
+      "scenario": "turn",
+      "standing_player_drift_m": 1.4135822057724
+    }
+  ],
+  "scope": "actual Player and patrols after Suryagarh setup; household/coach updates paused; stationary residents excluded; body capsules, not cloth or sole approval",
+  "stationary_actors": []
+}

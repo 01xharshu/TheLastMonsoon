@@ -33,7 +33,8 @@ func _piece(parent: Node3D,label: String,at: Vector3,size: Vector3,material: Mat
 func house(house_node: Node3D,extent: Vector2,index: int) -> void:
 	_roof(house_node,extent,index)
 	_openings(house_node,extent,index)
-	_interior(house_node,extent,index)
+	if index != 0:
+		_interior(house_node,extent,index)
 	if index >= 8 and index%3 == 0:
 		var z := extent.y*.5+5.2
 		for side in [-1.0,1.0]:

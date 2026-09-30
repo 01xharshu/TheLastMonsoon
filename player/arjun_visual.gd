@@ -12,6 +12,7 @@ var model: Node3D
 var weapon: Node3D
 var phase := 0.0
 var breath := 0.0
+var horse_riding_fold := 0.0
 var motion := 0.0
 var swim_blend := 0.0
 var slash_phase := -1.0
@@ -159,8 +160,7 @@ func _process(delta: float) -> void:
 				if solver.is_running(): solver.stop()
 			if actor.get_meta("horse_transition", "") != "":
 				_pose_horse_transition(delta)
-			else:
-				_pose_horse_riding(delta)
+			# The horse applies the riding pose after its final physics/back update.
 		elif actor.get_meta("cart_role", "") == "driver":
 			_pose_cart_driver(delta)
 		else:
@@ -438,9 +438,11 @@ func _pose_horse_riding(delta: float) -> void:
 		if clip != null and clip.length > 0.0:
 			cycle = TAU * mount.rigged_anim.current_animation_position / clip.length
 	var airborne: bool = not mount._walk_supported()
-	var jump_fold: float = clampf((mount.velocity.y + 2.0) / 7.7, 0.0, 1.0) if airborne else 0.0
+	var desired_fold: float = lerpf(.65,1.0,clampf(mount.velocity.y/5.7,0.0,1.0)) if airborne else 0.0
+	horse_riding_fold = lerpf(horse_riding_fold,desired_fold,1.0-exp(-12.0*delta))
+	var jump_fold: float = horse_riding_fold
 	var landing: float = mount.rider_landing
-	var lean: float = stride*.10 + gallop*.08 + jump_fold*.20 + landing*.09
+	var lean: float = stride*.08 + gallop*.22 + jump_fold*.38 + landing*.16
 	var follow: float = sin(cycle)*stride*(.025 + gallop*.035) if not airborne else 0.0
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
@@ -452,10 +454,13 @@ func _pose_horse_riding(delta: float) -> void:
 		pose("foot_"+side,Vector3(.12,0,0),weight)
 		pose("upperarm_"+side,Vector3(-.30,0,-s*.40),weight)
 		pose("lowerarm_"+side,Vector3(-.50,0,0),weight)
-	pose("pelvis",Vector3(0,0,0),weight)
-	pose("spine_01",Vector3(.04+lean-follow,0,0),weight)
-	pose("spine_02",Vector3(-follow*.55+sin(breath)*.008,0,0),weight)
-	pose("head",Vector3(.03-lean*.45+follow*.3,0,0),weight)
+	pose("pelvis",Vector3(lean*.12,0,0),weight)
+	pose("spine_01",Vector3(.06+lean*.55-follow,0,0),weight)
+	pose("spine_02",Vector3(lean*.30-follow*.55+sin(breath)*.008,0,0),weight)
+	pose("head",Vector3(.03-lean*.55+follow*.3,0,0),weight)
+	# Seat alignment must use this frame's pelvis pose before solving limbs.
+	skeleton.force_update_all_bone_transforms()
+	mount._sync_rider()
 	# Keep both palms near the pommel while elbows absorb the upper-body motion.
 	skeleton.force_update_all_bone_transforms()
 	for pass_index in 4:

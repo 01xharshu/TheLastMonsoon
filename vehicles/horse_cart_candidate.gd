@@ -10,7 +10,7 @@ extends Node3D
 		show_horse = value
 		if is_inside_tree(): _build()
 
-const HorseVisual = preload("res://assets/animals/horse/rigged_horse_candidate.glb")
+const HorseVisual = preload("res://assets/animals/horse/horse_body_refinement.glb")
 const HoofA = preload("res://audio/horses/hoof_dirt_01.wav")
 const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
 const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav")

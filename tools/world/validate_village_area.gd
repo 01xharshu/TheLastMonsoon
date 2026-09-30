@@ -126,6 +126,8 @@ func _walk_route(label: String, points: Array) -> void:
 				break
 		Input.action_release("move_forward")
 		if not reached:
+			for contact in player.get_slide_collision_count():
+				print("BLOCKED CONTACT ",player.get_slide_collision(contact).get_collider().get_path())
 			failures.append(label+" blocked segment "+str(i)+" at "+str(player.global_position))
 			break
 		finished_segments += 1

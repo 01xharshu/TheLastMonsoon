@@ -9,6 +9,15 @@ func _initialize() -> void:
 func _run() -> void:
 	var world := load("res://world/suryagarh/suryagarh_world.tscn").instantiate() as Node3D
 	root.add_child(world)
+	for startup_frame in 4:
+		await process_frame
+	# Finish household placement before freezing the contact fixture; coach
+	# updates must not relocate a sampled resident during a manual approach.
+	world.set_process(false)
+	world.set_physics_process(false)
+	for child in world.find_children("*", "", true, false):
+		child.set_process(false)
+		child.set_physics_process(false)
 	await physics_frame
 	var player := world.get_node("Player") as CharacterBody3D
 	var roster := world.get_node("BritishNpcRosterCandidate") as Node3D

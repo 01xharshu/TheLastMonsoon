@@ -1,0 +1,13 @@
+{
+  "name": "Fictional Hooghly merchantman",
+  "era": "1850s",
+  "source": "Original project geometry",
+  "generator": "tools/world/build_merchant_ship.py",
+  "blend": "WorkingAssets/Ships/hooghly_merchant_1850s.blend",
+  "hull_length_m": 51,
+  "beam_m": 11.8,
+  "draft_m": 4.8,
+  "mast_count": 3,
+  "state": "Moored, furled; explorable main deck, forecastle, helm, captain cabin, cargo hold and crew berths",
+  "historical_approval": false
+}
