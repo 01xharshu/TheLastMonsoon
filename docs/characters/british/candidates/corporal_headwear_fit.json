@@ -1,0 +1,31 @@
+{
+  "rank": "corporal",
+  "fits": [
+    {
+      "actor": "Corporal",
+      "parts": [
+        "corporal cap band",
+        "corporal forage cap",
+        "corporal forage cap visor"
+      ],
+      "scalp_top_m": 1.5783178806304932,
+      "crown_width_m": 0.1567916992902756,
+      "crown_depth_m": 0.19925775489211084,
+      "base_m": 1.5233178806304932,
+      "head_weight": 1.0
+    },
+    {
+      "actor": "Companion",
+      "parts": [
+        "Companion bonnet brim",
+        "Companion bonnet crown"
+      ],
+      "scalp_top_m": 1.4102400541305542,
+      "crown_width_m": 0.14832129812240602,
+      "crown_depth_m": 0.1868594970405102,
+      "base_m": 1.3652400541305543,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

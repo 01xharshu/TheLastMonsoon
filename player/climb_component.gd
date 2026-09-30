@@ -14,6 +14,11 @@ var wall_point := Vector3.ZERO
 var hold_base_y := 0.0
 var hold_center_z := 0.0
 var has_holds := false
+var ascent_steps := 1
+var step_index := 0
+var step_phase := 0.0
+var first_hand_row := 0
+var first_foot_row := 0
 
 func try_start() -> bool:
 	if active or actor.is_swimming or actor.has_meta("mounted_vehicle"): return false
@@ -56,10 +61,15 @@ func try_start() -> bool:
 	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.28
 	# Stop the vertical pull with the boots below the coping. The last phase
 	# must carry the hips and trailing feet over the lip before landing.
-	crest = Vector3(hit.position.x,top+0.72,hit.position.z)+wall_normal*.27
+	crest = Vector3(hit.position.x,top-0.65,hit.position.z)+wall_normal*.36
 	# Keep tall climbs at a human climbing pace; a short ledge still uses the
 	# original quick reach and mantle timing.
-	duration = maxf(2.4, (crest.y - grip.y) / .85 + .95)
+	ascent_steps = maxi(1, roundi((crest.y - grip.y) / .275))
+	duration = maxf(2.8, (ascent_steps * .70) / .64)
+	first_hand_row = clampi(floori((grip.y+.35-hold_base_y)/.55),0,7)
+	first_foot_row = maxi(0,roundi((grip.y-.65-hold_base_y)/.55))
+	step_index = 0
+	step_phase = 0.0
 	progress = 0
 	active = true
 	saved_mask = actor.collision_mask
@@ -81,15 +91,51 @@ func _physics_process(delta: float) -> void:
 		actor.global_position = start.lerp(grip,smoothstep(0,0.14,t))
 	elif t < 0.78:
 		var ascent: float = (t - .14) / .64
-		var step_count: float = maxf(1.0, ceilf((crest.y - grip.y) / .72))
-		var step_number: float = floorf(ascent * step_count)
-		var step_phase: float = fposmod(ascent * step_count, 1.0)
-		var stepped: float = (step_number + smoothstep(0.08, .92, step_phase)) / step_count
+		step_index = mini(ascent_steps-1, floori(ascent * ascent_steps))
+		step_phase = fposmod(ascent * ascent_steps, 1.0)
+		# Reach, place the opposite boot, then push. Root travel occurs only
+		# after the next pair of contacts is established.
+		var stepped: float = (step_index + smoothstep(.50,.94,step_phase)) / ascent_steps
 		actor.global_position = grip.lerp(crest, minf(1.0, stepped))
+	elif t < .90:
+		# Lift outside the face until the trailing boot clears the coping.
+		var clearance := Vector3(crest.x, landing.y + .10, crest.z)
+		actor.global_position = crest.lerp(clearance,smoothstep(.78,.90,t))
 	else:
-		actor.global_position = crest.lerp(landing,smoothstep(0.78,1.0,t))
+		var clearance := Vector3(crest.x, landing.y + .10, crest.z)
+		actor.global_position = clearance.lerp(landing,smoothstep(.90,1.0,t))
 	if t >= 1:
 		active = false
 		actor.set_meta("climbing",false)
 		actor.collision_mask = saved_mask
 		actor.velocity = Vector3.ZERO
+
+func tree_pose_progress() -> float:
+	if progress < .14 or progress >= .78: return progress
+	var transfer := smoothstep(.28,.70,step_phase)
+	return lerpf(.28,.56,transfer) if step_index%2 == 0 else lerpf(.56,.28,transfer)
+
+func step_contact(side: String, foot: bool) -> Vector3:
+	var tangent := Vector3.UP.cross(wall_normal).normalized()
+	var moving_left: bool = step_index%2 == 0
+	if foot: moving_left = not moving_left
+	var moving: bool = (side == "l") == moving_left
+	var count: int = (step_index+1)/2 if ((side == "l") != foot) else step_index/2
+	var row: int = (first_foot_row if foot else first_hand_row)+count
+	var move: float = smoothstep(.28,.50,step_phase) if foot else smoothstep(0.0,.28,step_phase)
+	if not moving: move = 0.0
+	var from := _hold(row,side,foot,tangent)
+	var to := _hold(row+1,side,foot,tangent)
+	var point := from.lerp(to,move)
+	# Lift clear of the stone during the transfer, then lock to its surface.
+	point += wall_normal*sin(move*PI)*(.12 if foot else .07)
+	return point
+
+func _hold(row: int, side: String, foot: bool, tangent: Vector3) -> Vector3:
+	var point := wall_point+wall_normal*(.13 if foot else .18)
+	point += tangent*((-.24 if side == "l" else .24)+(.08 if posmod(row,2)==1 else 0.0))
+	point.y = hold_base_y+row*.55+(.08 if foot else .07)
+	if row >= 8:
+		point.y = landing.y-.94+.08
+		point -= wall_normal*.20
+	return point

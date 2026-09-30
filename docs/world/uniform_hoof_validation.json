@@ -1,0 +1,51 @@
+{
+	"checks": [
+		{
+			"events": 10,
+			"script": "res://horses/stable_horse.gd",
+			"surface": "earth"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/horse_cart_candidate.gd",
+			"surface": "earth"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/family_carriage_candidate.gd",
+			"surface": "earth"
+		},
+		{
+			"events": 10,
+			"script": "res://horses/stable_horse.gd",
+			"surface": "road"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/horse_cart_candidate.gd",
+			"surface": "road"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/family_carriage_candidate.gd",
+			"surface": "road"
+		},
+		{
+			"events": 10,
+			"script": "res://horses/stable_horse.gd",
+			"surface": "timber"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/horse_cart_candidate.gd",
+			"surface": "timber"
+		},
+		{
+			"events": 10,
+			"script": "res://vehicles/family_carriage_candidate.gd",
+			"surface": "timber"
+		}
+	],
+	"failures": [],
+	"status": "PASS"
+}

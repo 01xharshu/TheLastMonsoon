@@ -95,13 +95,14 @@ func _fill_water_bag(player: CharacterBody3D) -> void:
 	)
 
 
-	inventory.request_message(
+	inventory.collection_message_requested.emit(
 		"Water Bag filled • "
 		+ "%.1f / %.1f L"
 		% [
 			current_water,
 			maximum_water
-		]
+		],
+		"water"
 	)
 
 

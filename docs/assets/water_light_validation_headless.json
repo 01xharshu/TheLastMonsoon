@@ -1,0 +1,26 @@
+{
+	"assets": [
+		{
+			"mesh_nodes": 2,
+			"ray_contact": true,
+			"scene": "res://objects/water_pot.tscn",
+			"triangles": 3200
+		},
+		{
+			"mesh_nodes": 3,
+			"ray_contact": true,
+			"scene": "res://objects/water_bag.tscn",
+			"triangles": 3680
+		},
+		{
+			"mesh_nodes": 5,
+			"ray_contact": true,
+			"scene": "res://objects/oil_lamp.tscn",
+			"triangles": 2340
+		}
+	],
+	"lamp_switch": "PASS: light and flame switch together",
+	"renderer": "forward_plus",
+	"shared_carried_pouch": "PASS: player scene references same pouch visual",
+	"water_transactions": "PASS: no-pouch refusal, pickup/removal, fill, full refusal, partial refill"
+}

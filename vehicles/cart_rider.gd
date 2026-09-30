@@ -7,6 +7,8 @@ var role := ""
 var saved_layer := 0
 var saved_mask := 0
 var speed := 0.0
+var rider_acceleration := 0.0
+var rider_turn := 0.0
 var cart_handle_rids: Array[RID] = []
 var collision_body: AnimatableBody3D
 var clearance_shapes: Array[CollisionShape3D] = []
@@ -122,7 +124,11 @@ func _physics_process(delta: float) -> void:
 	if role == "driver" and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
 		var throttle := Input.get_axis("move_backward", "move_forward")
 		var steer := Input.get_axis("move_right", "move_left")
-		speed = move_toward(speed, throttle * 3.4, delta * 1.5)
+		var previous_speed := speed
+		var target_speed := 5.2 if Input.is_action_pressed("sprint") and throttle > 0.0 else 3.4
+		speed = move_toward(speed, throttle * target_speed, delta * 1.5)
+		rider_acceleration = lerpf(rider_acceleration, (speed - previous_speed) / maxf(delta, 0.001), 1.0 - exp(-6.0 * delta))
+		rider_turn = lerpf(rider_turn, steer * clampf(absf(speed) / 5.2, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
 		var old_heading: float = cart.rotation.y
 		cart.rotation.y += steer * delta * 0.42 * clampf(absf(speed), 0.0, 1.0)
 		if not _clearance_at(cart.global_position):
@@ -145,6 +151,8 @@ func _physics_process(delta: float) -> void:
 			speed = 0.0
 	else:
 		speed = move_toward(speed, 0.0, delta * 2.0)
+		rider_acceleration = move_toward(rider_acceleration, 0.0, delta * 6.0)
+		rider_turn = move_toward(rider_turn, 0.0, delta * 4.0)
 	cart.set_forward_motion(speed, delta)
 	_sync_rider()
 

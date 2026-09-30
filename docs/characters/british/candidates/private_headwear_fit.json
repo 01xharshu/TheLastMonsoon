@@ -1,0 +1,31 @@
+{
+  "rank": "private",
+  "fits": [
+    {
+      "actor": "Private",
+      "parts": [
+        "Private cap band",
+        "Private forage cap",
+        "Private forage cap visor"
+      ],
+      "scalp_top_m": 1.74498450756073,
+      "crown_width_m": 0.15761933958530427,
+      "crown_depth_m": 0.20563947147130968,
+      "base_m": 1.68998450756073,
+      "head_weight": 1.0
+    },
+    {
+      "actor": "Companion",
+      "parts": [
+        "Companion bonnet brim",
+        "Companion bonnet crown"
+      ],
+      "scalp_top_m": 1.4738490581512451,
+      "crown_width_m": 0.14899374282360078,
+      "crown_depth_m": 0.1887527789771557,
+      "base_m": 1.4288490581512452,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

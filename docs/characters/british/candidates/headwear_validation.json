@@ -1,0 +1,186 @@
+{
+  "passed": true,
+  "actors_with_headwear": 11,
+  "actors": [
+    {
+      "actor": "captain_man",
+      "crown_width_m": 0.1604525420665741,
+      "parts": [
+        {
+          "part": "captain cap band",
+          "vertices": 48
+        },
+        {
+          "part": "captain forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "captain forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "colonel_man",
+      "crown_width_m": 0.1581504318714142,
+      "parts": [
+        {
+          "part": "colonel cap band",
+          "vertices": 48
+        },
+        {
+          "part": "colonel forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "colonel forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "corporal_man",
+      "crown_width_m": 0.1567916992902756,
+      "parts": [
+        {
+          "part": "corporal cap band",
+          "vertices": 48
+        },
+        {
+          "part": "corporal forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "corporal forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "corporal_woman",
+      "crown_width_m": 0.14832129812240602,
+      "parts": [
+        {
+          "part": "Companion bonnet brim",
+          "vertices": 48
+        },
+        {
+          "part": "Companion bonnet crown",
+          "vertices": 96
+        }
+      ]
+    },
+    {
+      "actor": "lieutenant_man",
+      "crown_width_m": 0.15802332496643068,
+      "parts": [
+        {
+          "part": "lieutenant cap band",
+          "vertices": 48
+        },
+        {
+          "part": "lieutenant forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "lieutenant forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "major_man",
+      "crown_width_m": 0.15969560778141023,
+      "parts": [
+        {
+          "part": "major cap band",
+          "vertices": 48
+        },
+        {
+          "part": "major forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "major forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "official_man",
+      "crown_width_m": 0.15808871126174928,
+      "parts": [
+        {
+          "part": "Official dark top hat",
+          "vertices": 120
+        }
+      ]
+    },
+    {
+      "actor": "private_man",
+      "crown_width_m": 0.15761933958530427,
+      "parts": [
+        {
+          "part": "Private cap band",
+          "vertices": 64
+        },
+        {
+          "part": "Private forage cap",
+          "vertices": 160
+        },
+        {
+          "part": "Private forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "private_woman",
+      "crown_width_m": 0.14899374282360078,
+      "parts": [
+        {
+          "part": "Companion bonnet brim",
+          "vertices": 64
+        },
+        {
+          "part": "Companion bonnet crown",
+          "vertices": 128
+        }
+      ]
+    },
+    {
+      "actor": "sergeant_man",
+      "crown_width_m": 0.15677702164649965,
+      "parts": [
+        {
+          "part": "sergeant cap band",
+          "vertices": 48
+        },
+        {
+          "part": "sergeant forage cap",
+          "vertices": 120
+        },
+        {
+          "part": "sergeant forage cap visor",
+          "vertices": 14
+        }
+      ]
+    },
+    {
+      "actor": "sergeant_woman",
+      "crown_width_m": 0.14961436128616334,
+      "parts": [
+        {
+          "part": "Companion bonnet brim",
+          "vertices": 48
+        },
+        {
+          "part": "Companion bonnet crown",
+          "vertices": 96
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "scope": "exported skin weights and fitted dimensions; rendered scalp contact reviewed separately"
+}

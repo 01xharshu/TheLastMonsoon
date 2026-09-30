@@ -1,6 +1,6 @@
 # Leela — character reference
 
-Status: **EDITABLE MODEL STUDY BUILT; VISUAL REVIEW FAILED** (2026-09-28).
+Status: **BODY AND FACE REALISM IN PROGRESS; LIKENESS OPEN** (2026-09-30).
 
 Leela is Arjun's love interest and appears later in the game. Her introduction point, role in the plot, personality, background, and relationship arc have not yet been specified.
 
@@ -12,10 +12,26 @@ Do not place Leela in the current early game world or imply a first encounter un
 
 Source image SHA-256: first sheet `7eac284e7a5740ad593f766bf4aab1c5fbc35e773b45861af10639ff0f47b068`; second sheet `721d3d6319b59da03a369ec5923d97b10d1a547194071908f98116871a18c8e9`.
 
-## First model study
+## Body first — current work
+
+Owner direction: refine the body before clothes. The current [editable body source](../../../WorkingAssets/NPCs/leela/body_study/leela_body_study.blend) is built by [the body-study builder](../../../tools/characters/build_leela_body_study.py); its [manifest](../../../WorkingAssets/NPCs/leela/body_study/manifest.json) records the 53-bone rig, editable facial targets, and source hash. The anatomy review uses uniform clay shading. The source includes packed skin, eye, brow, lash, and temporary ponytail textures and the review cameras/lights.
+
+2026-09-30 refinement: smoothed the anatomy surface, adjusted cheek/chin/lip shapes, reduced the open-mouth gap, added fitted brows and lashes, replaced the low-poly eyes, and introduced restrained skin relief/subsurface shading. Restored hair-card texture and alpha rather than covering the cards with an opaque material. The earlier floating brows/curls/bun were removed; the bindi now fits the evaluated forehead surface. Previous jagged body shader coverage was removed from the anatomy renders.
+
+After owner feedback that the cup size did not match, increased bust fullness/projection and firmness while retaining the same shoulder, waist, and hip parameters. MPFB controls are `cupsize=0.66`, `firmness=0.68`; these are modeling settings, not a bra-size designation. The clothed references provide a silhouette estimate, and the body is still a candidate for owner review.
+
+Latest landmark refinement (2026-09-30): broadened the eye openings, strengthened the cheek contour, softened/narrowed the chin, refined the nose bridge/tip, widened the mouth slightly, and raised the lip corners. Fitted fuller brows with a gentler angle. Darkened saturated iris pixels while retaining the sclera; switched skin relief to isotropic object coordinates after the profile render exposed stretched grain. The previous face/front-body renders are preserved in [the before-review folder](../../../WorkingAssets/NPCs/leela/body_study/reviews/2026-09-30-before-landmark-refinement/). Bust settings remain at the corrected values above.
+
+Reference-calibrated face pass (2026-09-30): added the reversible `Leela_reference_face_fit` shape key using the second sheet’s frontal portrait. The fit narrows the cheek/jaw silhouette, shortens the lower face, and adjusts nose and mouth placement without changing the torso or corrected bust. Calibration and measurement scripts are `tools/characters/fit_leela_face.py` and `tools/characters/measure_leela_face.py`; local measurement requires MediaPipe 0.10.21 and its official face-landmarker model. The first fit reduced frontal landmark RMS from 0.0896 to 0.0429 iris-distance units (52%); this measures proportions, not identity or visual approval. A further outer-eye correction addresses the narrowed eye openings; the final frontal RMS is 0.0394 (56% below baseline). All eight views were regenerated from that same source. Baseline source and portraits are preserved in `body_study/reviews/2026-09-30-before-reference-fit/`. Automated profile detection failed on the rendered profile; profile depth remains a manual review task. Hair, brow shape and lip form still differ from the reference.
+
+Review evidence: [body front](../../../WorkingAssets/NPCs/leela/body_study/body_front.png), [side](../../../WorkingAssets/NPCs/leela/body_study/body_side.png), [back](../../../WorkingAssets/NPCs/leela/body_study/body_back.png), [three-quarter](../../../WorkingAssets/NPCs/leela/body_study/body_three_quarter.png), [relaxed arms](../../../WorkingAssets/NPCs/leela/body_study/body_relaxed.png), [face front](../../../WorkingAssets/NPCs/leela/body_study/face_front.png), [face three-quarter](../../../WorkingAssets/NPCs/leela/body_study/face_three_quarter.png), and [face profile](../../../WorkingAssets/NPCs/leela/body_study/face_profile.png). Blender 5.2 Cycles renders were inspected. The relaxed-arm image is a static rig pose for proportion review; it is not an animation/contact test. Leela's likeness remains unapproved: eye/cheek balance, skin detail, and the temporary straight ponytail still differ from the reference portraits. No movement/contact or Godot appearance approval is implied by these static renders.
+
+Next: continue matching the body silhouette and facial landmarks; author the wavy updo after the facial form settles. Resume garments only after the body review. No world placement or gameplay actor has been added.
+
+## Earlier clothed blockout — superseded
 
 The reproducible [Blender builder](../../../tools/characters/build_leela_candidate.py) created an independent MPFB body with a 53-bone game-engine rig, an editable [Blend source](../../../WorkingAssets/NPCs/leela/candidate/leela_mpfb_study.blend), and an isolated [static GLB preview](../../../WorkingAssets/NPCs/leela/candidate/leela_static_study.glb). The [manifest](../../../WorkingAssets/NPCs/leela/candidate/manifest.json) records hashes and scope. It follows the first sheet's covered green-tunic, red-drape, light-trouser, brown-boot direction provisionally; the second sheet informs later face work. No gameplay actor, animation, or world placement was added.
 
 Blender 5.2 generated [front](../../../WorkingAssets/NPCs/leela/candidate/front.png), [side](../../../WorkingAssets/NPCs/leela/candidate/side.png), [back](../../../WorkingAssets/NPCs/leela/candidate/back.png), and [three-quarter](../../../WorkingAssets/NPCs/leela/candidate/three_quarter.png) renders. They were inspected. **Visual review failed:** the generic face and low-detail ponytail do not capture either reference; the scarf is a rigid strip with poor shoulder fit; tunic, trousers, and boots have crude cylindrical shapes; skin, fabric, and embroidery lack the source's detail. This is an editable anatomy and palette blockout only, not a likeness or costume candidate for approval. Godot 4.7.2 headless project import completed, which checks file import rather than rendered appearance or movement.
 
-Next: sculpt the face and hair against the close portraits, tailor actual garment meshes from the selected costume direction, and fit/weight the drape and lower clothing. Then review neutral-pose renders before authoring motion or considering in-world use. The two reference sheets differ on outfit and footwear; the final costume choice remains open.
+The two reference sheets differ on outfit and footwear; the final costume choice remains open. This earlier clothing blockout is paused while the body is refined.

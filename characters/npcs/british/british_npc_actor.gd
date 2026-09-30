@@ -21,6 +21,8 @@ var _finger_pitch: Dictionary = {}
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend: float = 0.0
+var turn_blend: float = 0.0
+var _turn_progress: float = 0.0
 var nominal_walk_speed: float = 0.0
 var travel_speed: float = 0.0
 var walk_playback_rate: float = 1.0
@@ -87,6 +89,7 @@ func _ready() -> void:
 	library.add_animation("idle", _make_clip(false))
 	var walk_clip := _make_clip(true)
 	library.add_animation("walk", walk_clip)
+	library.add_animation("turn", _make_clip(false, true))
 	_measure_stride(walk_clip)
 	animation_player.add_animation_library("", library)
 	animation_tree = AnimationTree.new()
@@ -103,15 +106,24 @@ func _ready() -> void:
 	graph.add_node("walk", walk)
 	graph.add_node("walk_rate", AnimationNodeTimeScale.new())
 	graph.add_node("locomotion", AnimationNodeBlend2.new())
+	var turn := AnimationNodeAnimation.new()
+	turn.animation = &"turn"
+	graph.add_node("turn", turn)
+	graph.add_node("turn_seek", AnimationNodeTimeSeek.new())
+	graph.add_node("turning", AnimationNodeBlend2.new())
 	graph.connect_node("walk_rate", 0, "walk")
 	graph.connect_node("locomotion", 0, "idle")
 	graph.connect_node("locomotion", 1, "walk_rate")
-	graph.connect_node("output", 0, "locomotion")
+	graph.connect_node("turn_seek", 0, "turn")
+	graph.connect_node("turning", 0, "locomotion")
+	graph.connect_node("turning", 1, "turn_seek")
+	graph.connect_node("output", 0, "turning")
 	animation_tree.tree_root = graph
 	animation_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	animation_tree.active = true
 	animation_tree.set("parameters/locomotion/blend_amount", 0.0)
 	animation_tree.set("parameters/walk_rate/scale", 1.0)
+	animation_tree.set("parameters/turning/blend_amount", 0.0)
 	animation_tree.advance(0.0)
 	_process(0.0)
 	foot_plant.configure(_skeleton)
@@ -154,10 +166,12 @@ func _measure_stride(clip: Animation) -> void:
 	for bone_name in _base_rotations:
 		_skeleton.set_bone_pose_rotation(_bones[bone_name], _base_rotations[bone_name])
 
-func _make_clip(walking: bool) -> Animation:
+func _make_clip(walking: bool, turning: bool = false) -> Animation:
 	var clip := Animation.new()
 	var female := movement_profile == &"female"
 	clip.length = (1.05 if female else 0.85) if walking else 3.5
+	if turning:
+		clip.length = 0.5
 	clip.loop_mode = Animation.LOOP_LINEAR
 	var path := str(get_path_to(_skeleton))
 	for bone_name in _base_rotations:
@@ -183,6 +197,18 @@ func _make_clip(walking: bool) -> Animation:
 				"lowerarm_l", "lowerarm_r": angle = 0.08 + (0.02 * absf(stride) if walking else 0.0)
 				"foot_l": angle = ((0.22 if female else 0.32) * stride - 0.35 * maxf(0.0, stride)) if walking else 0.0
 				"foot_r": angle = (-(0.22 if female else 0.32) * stride - 0.35 * maxf(0.0, -stride)) if walking else 0.0
+			if turning:
+				# Two small alternating lifts let each foot reposition during the
+				# root pivot. Keep the ankle level through hip/knee compensation.
+				var left_lift := maxf(0.0, stride)
+				var right_lift := maxf(0.0, -stride)
+				match bone_name:
+					"thigh_l": angle = -0.23 * left_lift
+					"thigh_r": angle = -0.23 * right_lift
+					"calf_l": angle = 0.46 * left_lift
+					"calf_r": angle = 0.46 * right_lift
+					"foot_l": angle = -0.23 * left_lift
+					"foot_r": angle = -0.23 * right_lift
 			var base: Quaternion = _base_rotations[bone_name]
 			clip.rotation_track_insert_key(track, fraction * clip.length, base * Quaternion(axis, angle))
 	return clip
@@ -210,6 +236,7 @@ func _process(delta: float) -> void:
 		progress = 1.0
 		turning = true
 		direction = -axis
+		_turn_progress = (segment - 4.0) / 0.5
 	elif segment < 6.5:
 		walking = true
 		direction = -axis
@@ -219,6 +246,7 @@ func _process(delta: float) -> void:
 	else:
 		turning = true
 		direction = axis
+		_turn_progress = (segment - 9.5) / 0.5
 	var previous := position
 	position = _home + axis * patrol_distance * progress
 	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
@@ -227,7 +255,7 @@ func _process(delta: float) -> void:
 		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * maxf(delta, 0.0))
 	if body_collider != null:
 		body_collider.force_update_transform()
-	_set_animation(&"walk" if walking else &"idle", delta)
+	_set_animation(&"turn" if turning else (&"walk" if walking else &"idle"), delta)
 
 func _set_animation(state: StringName, delta: float) -> void:
 	animation_state = state
@@ -238,6 +266,10 @@ func _set_animation(state: StringName, delta: float) -> void:
 		walk_playback_rate = clampf(travel_speed / nominal_walk_speed, 0.1, 3.0)
 	animation_tree.set("parameters/walk_rate/scale", walk_playback_rate)
 	animation_tree.set("parameters/locomotion/blend_amount", locomotion_blend)
+	turn_blend = move_toward(turn_blend, 1.0 if state == &"turn" else 0.0, maxf(delta, 0.0) / 0.08)
+	animation_tree.set("parameters/turning/blend_amount", turn_blend)
+	if state == &"turn":
+		animation_tree.set("parameters/turn_seek/seek_request", clampf(_turn_progress, 0.0, 1.0) * 0.5)
 	if foot_plant.skeleton != null:
 		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))

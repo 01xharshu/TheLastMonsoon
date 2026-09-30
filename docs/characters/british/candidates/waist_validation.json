@@ -66,5 +66,5 @@
       "front_side_back_views_refreshed": true
     }
   ],
-  "scope": "editable mesh seam and SHA/render presence; runtime shape/style requires Metal inspection"
+  "scope": "smooth fitted source bridge matches skirt upper edge; visual seam and cloth remain open"
 }

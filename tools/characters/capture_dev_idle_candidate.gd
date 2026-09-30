@@ -10,9 +10,13 @@ func _capture() -> void:
 		return
 	root.size = Vector2i(900, 900)
 	root.content_scale_size = Vector2i(900, 900)
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(900, 900)
+	viewport.own_world_3d = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
 	var stage := Node3D.new()
-	root.add_child(stage)
-	current_scene = stage
+	viewport.add_child(stage)
 	var environment := WorldEnvironment.new()
 	environment.environment = Environment.new()
 	environment.environment.background_mode = Environment.BG_COLOR
@@ -48,6 +52,20 @@ func _capture() -> void:
 	player.play(clip)
 	player.pause()
 	var duration := player.get_animation(clip).length
+	if "--record" in OS.get_cmdline_user_args():
+		var folder := "/tmp/tlm_dev_walk_frames"
+		DirAccess.make_dir_recursive_absolute(folder)
+		for frame in 72:
+			player.seek(fmod(float(frame) / 30.0, duration), true)
+			await process_frame
+			await RenderingServer.frame_post_draw
+			var error := viewport.get_texture().get_image().save_png(folder + "/%04d.png" % frame)
+			if error != OK:
+				quit(1)
+				return
+		print("DEV_WALK_RECORD 72 frames at fixed 30 Hz; in-place studio study")
+		quit(0)
+		return
 	for phase in [0.0, .25, .5, .75]:
 		player.seek(duration * phase, true)
 		for frame in 4:
@@ -55,8 +73,8 @@ func _capture() -> void:
 		await RenderingServer.frame_post_draw
 		var label := "walk" if walking else "idle"
 		var path := "res://docs/characters/npcs/dev_%s_%02d.png" % [label, roundi(phase * 100)]
-		var error := root.get_texture().get_image().save_png(path)
-		print("DEV_IDLE_CAPTURE ", path, " ", error)
+		var error := viewport.get_texture().get_image().save_png(path)
+		print("DEV_CAPTURE ", path, " ", error)
 		if error != OK:
 			quit(1)
 			return

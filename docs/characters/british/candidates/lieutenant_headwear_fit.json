@@ -1,0 +1,19 @@
+{
+  "rank": "lieutenant",
+  "fits": [
+    {
+      "actor": "Lieutenant",
+      "parts": [
+        "lieutenant cap band",
+        "lieutenant forage cap",
+        "lieutenant forage cap visor"
+      ],
+      "scalp_top_m": 1.558583378791809,
+      "crown_width_m": 0.15802332496643068,
+      "crown_depth_m": 0.20092363765835763,
+      "base_m": 1.5035833787918091,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

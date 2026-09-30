@@ -71,6 +71,9 @@ func _apply_lamp_state() -> void:
 	lamp_light.visible = (
 		is_lit
 	)
+	var flame := get_node_or_null("LampBody/Flame") as Node3D
+	if flame != null:
+		flame.visible = is_lit
 
 
 	if is_lit:

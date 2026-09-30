@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dirrf6kqerjgo" path="res://player/player_controller.gd" id="1_oul6g"]
 [ext_resource type="Script" path="res://player/camera_clearance.gd" id="camera_clearance"]
 [ext_resource type="Script" uid="uid://dm3gg1ij7708d" path="res://player/equipment_visuals.gd" id="2_8t03j"]
+[ext_resource type="Script" path="res://player/water_bag_visual.gd" id="water_bag_visual"]
 [ext_resource type="Script" uid="uid://e6l0xsppxj0x" path="res://player/hydration_debug_label.gd" id="2_g1dw6"]
 [ext_resource type="Script" uid="uid://bhx2fgvli8glh" path="res://player/survival_component.gd" id="2_rkbax"]
 [ext_resource type="Script" path="res://player/arjun_visual.gd" id="3_wodsf"]
@@ -36,6 +37,7 @@
 [ext_resource type="Script" path="res://interaction/interaction_overlay.gd" id="interaction_overlay"]
 [ext_resource type="Script" path="res://player/interaction_pose_component.gd" id="interaction_pose"]
 [ext_resource type="Script" path="res://player/stealth_stance.gd" id="stealth_stance"]
+[ext_resource type="PackedScene" path="res://objects/household/water_pouch_visual.tscn" id="water_pouch_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
@@ -137,19 +139,11 @@ mesh = SubResource("CapsuleMesh_6xif0")
 script = ExtResource("2_8t03j")
 
 [node name="WaterBagVisual" type="Node3D" parent="VisualRoot/EquipmentVisuals" unique_id=1724261517]
-transform = Transform3D(0.4, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0.3, 0.18, -0.12)
+position = Vector3(0.146, 0.175, -0.067)
+script = ExtResource("water_bag_visual")
 
-[node name="BagBody" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=496508896]
-transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, -0.65, 0)
-mesh = SubResource("SphereMesh_hg6s5")
-
-[node name="BagNeck" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" unique_id=1724466129]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0005128607, -0.5, 0.004646886)
-mesh = SubResource("CylinderMesh_8t03j")
-
-[node name="BagCord" type="MeshInstance3D" parent="VisualRoot/EquipmentVisuals/WaterBagVisual"]
-position = Vector3(0, -0.25, 0)
-mesh = SubResource("BagCordMesh")
+[node name="PouchModel" parent="VisualRoot/EquipmentVisuals/WaterBagVisual" instance=ExtResource("water_pouch_visual")]
+transform = Transform3D(0, 0, -0.8, 0, 0.8, 0, 0.8, 0, 0, 0, -0.328, 0)
 
 [node name="CharacterVisual" type="Node3D" parent="VisualRoot" unique_id=509518366]
 script = ExtResource("3_wodsf")

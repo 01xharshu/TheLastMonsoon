@@ -1,4 +1,4 @@
-# Forest Benchmark — first milestone (2026-09-28)
+# Forest system and benchmark — main-world integration (2026-09-30)
 
 ## Reference reading
 
@@ -18,7 +18,7 @@ The six supplied frames show a canopy made from overlapping, irregular crowns ra
 
 `ForestConfig` is a portable Resource. For each metre cell and vegetation layer, the generator derives a local random stream from the seed, cell and layer. Separate layer draws allow ground plants beneath canopy trees. Seeded fractal biome noise creates clusters; an explicit, feathered path polyline suppresses density along the playable corridor. Object-specific rates and Inspector density multipliers set layer abundance. Height, slope and optional biome-mask checks precede placement. Tree types share a minimum-separation rule. Generation runs over the complete area before spatial bucketing, so changing chunk size does not change positions. A map can supply terrain functions through `terrain_source`: `sample_forest_height(x,z)`, `sample_forest_normal(x,z)`, and optionally `sample_forest_biome_mask(x,z)`. Without a source, the benchmark is flat at Y=0.
 
-The Inspector exposes seed, overall and per-layer density, chunk size, biome noise scale/threshold, height and slope limits, tree separation, scale ranges, path radius/feather, path points, near/medium/far distances, wind strength, shelf-fungus attachment probability, collision toggle, and terrain source. `wind_strength` now affects the procedural plant shader. Distance bands still control visibility only; real mesh LOD switching is pending.
+The Inspector exposes seed, overall and per-layer density, chunk size, biome noise scale/threshold, height and slope limits, tree separation, scale ranges, path radius/feather, additional tree-path clearance, path points, near/medium/far distances, wind strength, shelf-fungus attachment probability, collision toggle, and terrain source. `wind_strength` now affects the procedural plant shader. Distance bands still control visibility only; real mesh LOD switching is pending.
 
 ## Planned asset and rendering interface
 
@@ -28,7 +28,7 @@ Each final species should provide named LOD0/LOD1/LOD2 mesh parts, materials, di
 
 Imported tree and boulder meshes are provisional; dead trees, fallen logs, shrubs, broad leaves, grass, floor plants, debris and shelf fungi use simple visible placeholders. The ground is a flat plane with a layered material, not varied geometry. Procedural shelf fungi can attach to some trunks, but there are no authored sockets, cavities or moss attachments. Benchmark SSAO helps contact, while its strength was reduced after rendered inspection. Fog remains light; it does not hide missing art. Authored LODs and true near/medium/far mesh transitions are still absent. The scene is ready to judge distribution, corridor, surface balance and draw-distance behavior, not reference-level appearance.
 
-At current defaults, headless inspection found 25 occupied 12 m chunks and 475 generator nodes. Instance counts included 48 island-tree canopy trees, 9 broad-canopy mango variants, 18 small trees, 4 hero trees, 720 short-grass clumps, 306 tall-grass clumps, 231 shrubs, 172 broad-leaf placeholders and 17 shelf-fungus attachments. Repeated vegetation is GPU-instanced. Simplified physics bodies are made only for trunks, rocks and large fallen logs; no grass or leaf collision is made. Final asset profiling remains necessary, especially imported tree shadow and draw-call cost. Visibility bands currently cull whole batches; they do not yet provide cheaper far meshes.
+The 2026-09-28 benchmark inspection found 25 occupied 12 m chunks and 475 generator nodes before the extra tree-path clearance was introduced. The current benchmark contains 445 generator nodes. Instance counts included 48 island-tree canopy trees, 9 broad-canopy mango variants, 18 small trees, 4 hero trees, 720 short-grass clumps, 306 tall-grass clumps, 231 shrubs, 172 broad-leaf placeholders and 17 shelf-fungus attachments. Repeated vegetation is GPU-instanced. Simplified physics bodies are made only for trunks, rocks and large fallen logs; no grass or leaf collision is made. Final asset profiling remains necessary, especially imported tree shadow and draw-call cost. Visibility bands currently cull whole batches; they do not yet provide cheaper far meshes.
 
 ## Blender assets required
 
@@ -58,4 +58,29 @@ Headless editor import and benchmark runtime load passed. A deterministic valida
 - `README.md`: audit, reference analysis, architecture, limits and review instructions.
 - Godot-generated `.uid` and screenshot `.import` metadata beside these files.
 
-No existing gameplay, world or global rendering files were changed for this forest milestone.
+The original benchmark milestone was isolated. The following integration changes place a bounded forest in the main world without rebaking terrain or vegetation.
+
+
+## Main-world integration — 2026-09-30
+
+The main scene now contains `Suryagarh/WorldForestPatch` at world X=370, Z=-105. Its 60 × 60 m footprint spans X=340..400 and Z=-135..-75. `TerrainAdapter` supplies the existing Suryagarh height, normal and surveyed road/plot/field masks. Terrain elevations across the area are approximately 24..43 m; there is no duplicate flat floor or extra terrain collision. The forest uses the main world's existing sun, time, environment and terrain material. The benchmark's blended ground shader remains available in its separate scene.
+
+Six nearby existing tree collider positions participate in new-tree separation. Existing baked trees and rocks remain. The adapter temporarily filters 669 old grass instances from MultiMesh buffers within the footprint because their cards appeared as black specks in the rendered view; the new instanced plant layers replace them. Original batch resources are retained and restored before regeneration or when the adapter option is disabled. The generated landscape files are not changed or rebaked. New tree candidates receive an additional 2.5 m of path clearance to accommodate broad bases and roots.
+
+The integrated patch contains 25 chunks, 29 ordinary canopy trees, 11 broad-canopy variants, 17 small trees, 3 hero trees, 548 short-grass clumps, 242 tall-grass clumps, 199 shrubs, 151 broad-leaf placeholders, 268 floor plants and 12 fungus attachments at its current seed. The patch still uses placeholder art and visibility cutoffs rather than authored mesh LOD transitions.
+
+To review in the main world, open `res://world/suryagarh/suryagarh_world.tscn`, run the current scene with F6, then press F4 five times from a fresh start. This selects the **Forest biome patch** review point at (344, -105), facing along the corridor. On a Mac keyboard, use Fn with the function keys if necessary. The ordinary game startup and player spawn remain unchanged. Walk forward through the stand, turn into its vegetation, and inspect the slope/root fit and camera clearance.
+
+The full main-world scene loads and the forest validator passes. A 3 m/s manual capsule sweep reached all three corridor segments, staying grounded for 1,140/1,145 frames. `review/world_patch_validation.json` records the results. `review/world_entry.png` and `review/world_inside.png` were captured and inspected with Forward+/Metal on Apple M4. The entry is open and the patch follows terrain; angular plants, repeated crowns, bright existing world ground and root flares extending across slopes remain visible art limitations. Player-controlled camera and foot-contact approval are open. The full world reports two object leaks and one resource still in use at shutdown; the same warning occurs with this forest node removed, so it is tracked as a baseline world issue rather than a forest load failure.
+
+Integration files:
+
+- `adapters/suryagarh_terrain_adapter.gd`: terrain/mask bridge, existing tree spacing, reversible local replacement of baked grass.
+- `config/suryagarh_patch.tres`: separate map seed, density, elevation, slope and distance settings.
+- `scripts/forest_generator.gd`, `scripts/forest_config.gd`: optional map preparation, existing tree spacing and extra trunk/roots path clearance.
+- `../../world/suryagarh/suryagarh_world.tscn`: adds `WorldForestPatch/TerrainAdapter`.
+- `../../world/suryagarh/suryagarh_world.gd`: forest review entry and facing direction.
+- `review/validate_world_patch.gd`, `review/world_patch_validation.json`: integrated placement and capsule traversal evidence.
+- `review/capture_world_patch.gd`, `review/world_entry.png`, `review/world_inside.png`: main-world render capture and evidence.
+- `../../docs/README.md`, `../../CODEX_HANDOFF.md`: index and current status pointers.
+- This README and Godot-generated UID/import metadata document the integration.

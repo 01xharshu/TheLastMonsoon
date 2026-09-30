@@ -112,9 +112,25 @@ def tube(name, start, end, radius_a, radius_b, material, bone, sides=12):
 rings("Coat lower skirts", [(.76,.275,.23,0,0),(.84,.255,.205,0,0),(.96,.212,.166,0,0),(1.055,.155,.125,0,0)], coat)
 rings("Coat waist seam", [(.96,.232,.187,0,0),(.975,.232,.187,0,0)], trim)
 for side,sign in [("left",1),("right",-1)]:
-    tube(side+" trouser",(sign*.115,0,.84),(sign*.12,0,.21),.13,.105,cotton,"thigh_"+("l" if sign==1 else "r"))
-    tube(side+" boot",(sign*.12,0,.26),(sign*.12,0,.09),.105,.105,leather,"calf_"+("l" if sign==1 else "r"))
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, location=(sign*.12,-.07,.055))
+    suffix = "l" if sign == 1 else "r"
+    thigh = rig.data.bones["thigh_" + suffix]
+    calf = rig.data.bones["calf_" + suffix]
+    levels = []
+    for z in [.20,.30,.42,.47,.52,.57,.68,.84]:
+        bone = calf if z < calf.head_local.z else thigh
+        t = (z-bone.head_local.z)/(bone.tail_local.z-bone.head_local.z)
+        center = bone.head_local.lerp(bone.tail_local,t)
+        radius = .092 + .026 * (z-.20)/.64
+        levels.append((z,radius,radius,center.x,center.y))
+    trousers = rings(side+" trouser",levels,cotton,"thigh_"+suffix)
+    trousers.vertex_groups.clear()
+    for vertex in trousers.data.vertices:
+        upper = max(0,min(1,(vertex.co.z-.43)/.13))
+        for name,weight in [("thigh_"+suffix,upper),("calf_"+suffix,1-upper)]:
+            if weight > 0:
+                (trousers.vertex_groups.get(name) or trousers.vertex_groups.new(name=name)).add([vertex.index],weight,'REPLACE')
+    tube(side+" boot",(sign*.17,-.016,.32),(sign*.188,-.011,.075),.11,.094,leather,"calf_"+suffix)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, location=(sign*.19,-.067,.041))
     shoe=bpy.context.object; shoe.name=side+" leather shoe"
     shoe.scale=(.112,.18,.059); shoe.data.materials.append(leather)
     shoe.parent=rig

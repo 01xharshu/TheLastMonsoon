@@ -37,6 +37,7 @@ for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
         wave = math.sin(phase*math.tau)
         for bone in rig.pose.bones:
             bone.rotation_quaternion = base[bone.name].copy()
+            bone.location = (0,0,0)
         if clip == "Dev_idle_study":
             rotate("spine01",(1,0,0),.009*wave)
             rotate("neck_01",(0,0,1),.006*wave)
@@ -50,8 +51,22 @@ for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
             rotate("upperarm_l",(1,0,0),-.18*wave)
             rotate("upperarm_r",(1,0,0),.18*wave)
             rotate("spine01",(0,0,1),.012*math.sin(phase*math.tau*2))
+        bpy.context.view_layer.update()
+        deps = bpy.context.evaluated_depsgraph_get()
+        lowest = 100.0
+        for name in ["left leather shoe","right leather shoe"]:
+            shoe = bpy.data.objects[name]
+            evaluated = shoe.evaluated_get(deps)
+            mesh = evaluated.to_mesh()
+            lowest = min(lowest,min((evaluated.matrix_world @ vertex.co).z for vertex in mesh.vertices))
+            evaluated.to_mesh_clear()
+        root_bone = rig.pose.bones.get("Root")
+        if root_bone:
+            root_bone.location = root_bone.bone.matrix_local.to_3x3().inverted() @ Vector((0,0,-lowest))
         for bone in rig.pose.bones:
             bone.keyframe_insert("rotation_quaternion",frame=frame,group=bone.name)
+            if bone.name == "Root":
+                bone.keyframe_insert("location",frame=frame,group=bone.name)
     action["loop"] = True
     action["review_status"] = "CANDIDATE_NOT_APPROVED"
 rig.animation_data.action = bpy.data.actions["Dev_idle_study"]

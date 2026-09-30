@@ -1,8 +1,8 @@
 {
   "status": "VISUAL_CANDIDATE",
   "source": "WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend",
-  "source_sha256": "67dd8c73c7ce663eab6ee681baf89f6dfca0db87e214a9eb8fc32b58577cd2b2",
-  "preview_sha256": "e307e0670e700369d7c426d1a21a555aa85f12962cceb8849b094d89493f28ff",
+  "source_sha256": "513e4b27bc8f3571525be6317b33c6ebcc58fef5e04bb0c4c9b62ee6f3dbbab5",
+  "preview_sha256": "285b23db9a657e92d7fbaa4af2217b9ef4ad481b5c87081868a0b59a722d0eb4",
   "body_origin": "Independent MPFB human",
   "bone_count": 53,
   "age_years": 29,

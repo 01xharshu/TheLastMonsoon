@@ -1,0 +1,31 @@
+{
+	"failures": [],
+	"lamps": 34,
+	"routes": [
+		{
+			"finish": "(-321.0, 8.100781, 329.9187)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "village_estate_approach",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.100781, 312.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-321.0, 8.100781, 349.9193)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "estate gate and courtyard",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.100781, 327.0)",
+			"worst_vertical_speed_mps": 0.0
+		}
+	],
+	"status": "PASS",
+	"terrain_samples": 6,
+	"worst_gap_m": 0.00000305175781267764
+}

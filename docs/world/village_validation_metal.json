@@ -1,0 +1,47 @@
+{
+	"cultivated_beds": 12,
+	"display_server": "macOS",
+	"failures": [],
+	"ground_samples": 700,
+	"homes": 33,
+	"market_stalls": 8,
+	"renderer": "forward_plus",
+	"route_scope": "three Metal samples",
+	"routes": [
+		{
+			"finish": "(-374.0, 8.100998, 279.9181)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "west lane Metal sample",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-374.0, 8.100998, 230.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-278.0745, 8.100778, 275.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "market Metal sample",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-352.0, 8.100778, 275.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-413.0, 8.100778, 279.919)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "farm Metal sample",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-413.0, 8.100778, 245.0)",
+			"worst_vertical_speed_mps": 0.0
+		}
+	],
+	"status": "PASS",
+	"worst_ground_gap_m": 0.00000305175781267764
+}

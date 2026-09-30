@@ -1,0 +1,19 @@
+{
+  "rank": "major",
+  "fits": [
+    {
+      "actor": "Major",
+      "parts": [
+        "major cap band",
+        "major forage cap",
+        "major forage cap visor"
+      ],
+      "scalp_top_m": 1.7991660833358765,
+      "crown_width_m": 0.15969560778141023,
+      "crown_depth_m": 0.2089592713713646,
+      "base_m": 1.7441660833358765,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

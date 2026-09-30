@@ -1,7 +1,7 @@
 extends Node3D
 ## Base landscape runtime. Player, inventory and survival continue using their existing scene.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
-const REVIEW_POINTS: Array[Vector2] = [Vector2(-230,180), Vector2(12,155), Vector2(470,-250), Vector2(-440,-200), Vector2(520,-300), Vector2(370,-105)]
+const REVIEW_POINTS: Array[Vector2] = [Vector2(-230,180), Vector2(12,155), Vector2(470,-250), Vector2(-440,-200), Vector2(520,-300), Vector2(344,-105)]
 const REVIEW_NAMES: Array[String] = ["Bhairavpur approach", "Riverbank", "Eastern wooded hills", "Agricultural plains", "Old fort approach", "Forest biome patch"]
 var layout = Layout.new()
 var review_index: int = 0
@@ -33,7 +33,7 @@ func move_to_review_point(index: int) -> void:
 	var p: Vector2 = REVIEW_POINTS[review_index]
 	player.position = Vector3(p.x, layout.height(p.x,p.y)+1.1, p.y)
 	player.velocity = Vector3.ZERO
-	player.rotation.y = -0.85
+	player.rotation.y = -PI * 0.5 if REVIEW_NAMES[review_index] == "Forest biome patch" else -0.85
 	player.camera_pitch = deg_to_rad(-10.0)
 	player.get_node("CameraPivot").rotation.x = player.camera_pitch
 	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · 2.986 km²"

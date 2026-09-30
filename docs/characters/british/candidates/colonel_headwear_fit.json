@@ -1,0 +1,19 @@
+{
+  "rank": "colonel",
+  "fits": [
+    {
+      "actor": "Colonel",
+      "parts": [
+        "colonel cap band",
+        "colonel forage cap",
+        "colonel forage cap visor"
+      ],
+      "scalp_top_m": 1.816062331199646,
+      "crown_width_m": 0.1581504318714142,
+      "crown_depth_m": 0.208487969994545,
+      "base_m": 1.761062331199646,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

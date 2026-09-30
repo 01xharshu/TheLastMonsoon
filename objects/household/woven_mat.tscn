@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/props/household/woven_reed_mat_0.res" id="1_h5vlo"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/woven_reed_mat_1.res" id="2_rec7h"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/woven_reed_mat_2.res" id="3_50gx8"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/woven_reed_mat_3.res" id="4_5iy4p"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/woven_reed_mat_4.res" id="5_w3qda"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mh7xx"]
+size = Vector3(0.91, 0.018, 1.61)
+
+[node name="WovenReedMat" type="StaticBody3D" unique_id=1192648679]
+
+[node name="@CollisionShape3D@247" type="CollisionShape3D" parent="." unique_id=1467080611]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.009, 0)
+shape = SubResource("BoxShape3D_mh7xx")
+
+[node name="Surface0" type="MeshInstance3D" parent="." unique_id=910815429]
+mesh = ExtResource("1_h5vlo")
+
+[node name="Surface1" type="MeshInstance3D" parent="." unique_id=1128056681]
+mesh = ExtResource("2_rec7h")
+
+[node name="Surface2" type="MeshInstance3D" parent="." unique_id=1342611485]
+mesh = ExtResource("3_50gx8")
+
+[node name="Surface3" type="MeshInstance3D" parent="." unique_id=833041402]
+mesh = ExtResource("4_5iy4p")
+
+[node name="Surface4" type="MeshInstance3D" parent="." unique_id=255820515]
+mesh = ExtResource("5_w3qda")

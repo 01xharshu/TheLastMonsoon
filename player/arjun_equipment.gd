@@ -7,6 +7,7 @@ const QUIVER = preload("res://environment/weapons/period_quiver/period_quiver.gl
 const PISTOL = preload("res://environment/weapons/adams_1851/adams_1851.glb")
 const KNIFE = preload("res://environment/weapons/period_utility_knife/period_utility_knife.glb")
 const DOUBLE_GUN = preload("res://environment/weapons/double_percussion_gun/double_percussion_gun.glb")
+const LoadingSequence = preload("res://player/enfield_loading_sequence.gd")
 const EnfieldCartridgeVisual = preload("res://player/enfield_cartridge_visual.gd")
 enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE, DOUBLE_GUN }
 var selected: Selection = Selection.TALWAR
@@ -39,7 +40,7 @@ var recoil := 0.0
 var reload_progress := -1.0
 var rifle_rest_transform := Transform3D.IDENTITY
 var ramrod_rest: Dictionary = {}
-var enfield_cartridge: BoneAttachment3D
+var enfield_cartridge: Node3D
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
 const PISTOL_SCALE := 0.72
 # Gameplay fit on the current rig; source GLBs keep their original dimensions.
@@ -109,7 +110,7 @@ func setup(rig: Skeleton3D) -> void:
 	rifle_rest_transform = enfield_hand.transform
 	for part_name in ["enfield_ramrod", "enfield_ramrod_tip"]:
 		var part: Node3D = enfield_hand.find_child(part_name, true, false)
-		if part: ramrod_rest[part_name] = part.position
+		if part: ramrod_rest[part_name] = part.transform
 	double_hand = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(gun_basis, grip_position - gun_basis * (rifle_grip * DOUBLE_GUN_SCALE)), "DoubleGunHeld")
 	double_hand.scale = Vector3.ONE * DOUBLE_GUN_SCALE
 	double_rest_transform = double_hand.transform
@@ -206,7 +207,7 @@ func _solve_arm(side: String, target: Vector3) -> void:
 
 func apply_rifle_grip(sword_striking := false) -> void:
 	animate_ramrod()
-	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress)
+	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress, enfield_hand)
 	if stowed: return
 	if selected == Selection.TALWAR or selected == Selection.KNIFE:
 		if not sword_striking: apply_sword_rest()
@@ -225,11 +226,12 @@ func apply_rifle_grip(sword_striking := false) -> void:
 	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else ENFIELD_SCALE
 	if reload_progress >= 0.0:
 		# Bring the muzzle up for loading while the right hand keeps the stock grip.
-		var barrel := Vector3(0.18,0.94,0.28).normalized()
+		var barrel := Vector3(0.0,0.995,0.10).normalized() if selected == Selection.ENFIELD else Vector3(0.18,0.94,0.28).normalized()
 		var side_axis := barrel.cross(Vector3.UP).normalized()
 		var gun_basis := Basis(barrel,side_axis.cross(barrel),side_axis)
-		var grip := Vector3(-0.20,1.00,0.18)
-		longgun.global_transform = skeleton.global_transform * Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
+		var grip := Vector3(0.02,0.80,0.30) if selected == Selection.ENFIELD else Vector3(-0.22,0.95,0.30)
+		var held_grip := Vector3(0.55,-0.03,0) if selected == Selection.ENFIELD else rifle_grip
+		longgun.global_transform = skeleton.global_transform * Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(held_grip*gun_scale))
 	elif aiming:
 		var barrel := (skeleton.global_basis.inverse()*aim_direction).normalized()
 		var side_axis := barrel.cross(Vector3.UP).normalized()
@@ -248,26 +250,51 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		for side in ["r", "l"]:
 			var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
 			var support := rifle_support
-			if side == "l" and reload_progress >= 0.0:
+			if side == "l" and reload_progress >= 0.0 and selected != Selection.ENFIELD:
 				var pouch := Vector3(0.10,0.87,0.20)
-				var muzzle: Vector3 = gun_transform * Vector3(0.78,0.02,0)
+				# Keep the palm beside the actual muzzle, not through the fore-end.
+				var muzzle: Vector3 = gun_transform * Vector3(1.04,0.057,0.13)
+				var outward := gun_transform.basis.z.normalized()
+				var barrel_axis := gun_transform.basis.x.normalized()
+				var palm_basis := Basis(barrel_axis.cross(outward).normalized(), barrel_axis, outward)
+				var desired_hand: Basis = palm_basis * (palm_axes["l"] as Basis).inverse()
+				var hand_index := skeleton.find_bone("hand_l")
+				var parent := skeleton.get_bone_parent(hand_index)
+				skeleton.set_bone_pose_rotation(hand_index, (skeleton.get_bone_global_pose(parent).basis.inverse()*desired_hand).orthonormalized().get_rotation_quaternion())
+				skeleton.force_update_all_bone_transforms()
+				hand = skeleton.get_bone_global_pose(hand_index)
 				var reach := smoothstep(0.20,0.38,reload_progress) * (1.0-smoothstep(0.79,0.98,reload_progress))
 				var pocket := smoothstep(0.02,0.18,reload_progress) * (1.0-smoothstep(0.20,0.38,reload_progress))
 				var target := (gun_transform * rifle_support).lerp(pouch,pocket)
 				support = gun_transform.affine_inverse() * target.lerp(muzzle,reach)
-			var contact: Vector3 = gun_transform * (rifle_grip if side=="r" else support)
+			var held_contact := Vector3(0.55,-0.03,0) if side == "r" and selected == Selection.ENFIELD and reload_progress >= 0 else rifle_grip
+			if side == "l" and selected == Selection.ENFIELD and reload_progress >= 0:
+				var loading: Dictionary = LoadingSequence.state(reload_progress)
+				var outward := -gun_transform.basis.z.normalized()
+				var axis := gun_transform.basis.x.normalized()
+				var desired: Basis = Basis(axis.cross(outward).normalized(),axis,outward) * (palm_axes["l"] as Basis).inverse()
+				var wrist := skeleton.find_bone("hand_l")
+				var parent := skeleton.get_bone_parent(wrist)
+				skeleton.set_bone_pose_rotation(wrist,(skeleton.get_bone_global_pose(parent).basis.inverse()*desired).orthonormalized().get_rotation_quaternion())
+				_grasp("l",loading.curl)
+				hand = skeleton.get_bone_global_pose(wrist)
+				var pinch := (skeleton.get_bone_global_pose(skeleton.find_bone("index_03_l")).origin + skeleton.get_bone_global_pose(skeleton.find_bone("thumb_03_l")).origin)*0.5
+				var destination: Vector3 = gun_transform * loading.contact
+				_solve_arm("l",destination-(pinch-hand.origin))
+				continue
+			var contact: Vector3 = gun_transform * (held_contact if side=="r" else support)
 			_solve_arm(side,contact-hand.basis*palm_offsets[side])
 	_grasp("r")
-	if not (selected == Selection.ENFIELD and reload_progress >= 0.10 and reload_progress <= 0.52): _grasp("l")
-	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress)
+	_grasp("l", LoadingSequence.state(reload_progress).curl if selected == Selection.ENFIELD and reload_progress >= 0 else 1.0)
+	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress, enfield_hand)
 
 func animate_ramrod() -> void:
-	var extension := 0.0
+	var motion := Transform3D.IDENTITY
 	if not stowed and selected == Selection.ENFIELD and reload_progress >= 0.0:
-		extension = 0.28 * smoothstep(0.36,0.55,reload_progress) * (1.0-smoothstep(0.69,0.86,reload_progress))
+		motion = LoadingSequence.state(reload_progress).rod
 	for part_name in ramrod_rest:
 		var part: Node3D = enfield_hand.find_child(part_name, true, false)
-		if part: part.position = (ramrod_rest[part_name] as Vector3) + Vector3(extension,0,0)
+		if part: part.transform = motion * (ramrod_rest[part_name] as Transform3D)
 
 func _rotate_digit(name: String, axis: Vector3, angle: float) -> void:
 	var index := skeleton.find_bone(name)
@@ -377,14 +404,25 @@ func apply_pistol_grip() -> void:
 		skeleton.set_bone_pose_rotation(hand_index,local_basis.orthonormalized().get_rotation_quaternion())
 		skeleton.force_update_all_bone_transforms()
 	if reload_progress >= 0.0:
-		var cylinder: Vector3 = skeleton.to_local(pistol_hand.to_global(Vector3(-0.048,0.063,0)))
+		# Use the current hand pose and approach the outside of the cylinder.
+		# The hand attachment itself is refreshed later in the rendered frame.
+		var pistol_pose: Transform3D = skeleton.get_bone_global_pose(hand_index) * pistol_hand.transform
+		var cylinder: Vector3 = pistol_pose * Vector3(-0.048,0.063,0.10)
 		var pouch := Vector3(0.10,0.88,0.18)
 		var reach := smoothstep(0.24,0.42,reload_progress) * (1.0-smoothstep(0.83,0.97,reload_progress))
 		var contact := pouch.lerp(cylinder,reach)
+		var outward := pistol_pose.basis.z.normalized()
+		var barrel_axis := pistol_pose.basis.x.normalized()
+		var palm_basis := Basis(barrel_axis.cross(outward).normalized(), barrel_axis, outward)
+		var desired_hand: Basis = palm_basis * (palm_axes["l"] as Basis).inverse()
+		var left_index := skeleton.find_bone("hand_l")
+		var left_parent := skeleton.get_bone_parent(left_index)
+		skeleton.set_bone_pose_rotation(left_index,(skeleton.get_bone_global_pose(left_parent).basis.inverse()*desired_hand).orthonormalized().get_rotation_quaternion())
+		skeleton.force_update_all_bone_transforms()
 		for i in 6:
 			var left := skeleton.get_bone_global_pose(skeleton.find_bone("hand_l"))
 			_solve_arm("l",contact-left.basis*palm_offsets["l"])
-		_grasp("l")
+		_grasp("l",0.35)
 
 func apply_bow_grip() -> void:
 	# Both palms follow the bow geometry; the right hand follows the moving nock.

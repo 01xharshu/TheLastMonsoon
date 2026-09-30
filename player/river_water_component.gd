@@ -57,7 +57,7 @@ func _process(delta: float) -> void:
 	actor.set_meta("river_action_progress",clampf(elapsed/ACTION_SECONDS,0.0,1.0))
 	if elapsed < ACTION_SECONDS: return
 	var filled: float = inventory.add_water(inventory.get_available_water_capacity_liters())
-	inventory.request_message("Filled water pouch  ·  %.2f L" % filled)
+	inventory.collection_message_requested.emit("Water  +%.2f L" % filled, "water")
 	ControllerFeedback.pulse("water")
 	cancel()
 

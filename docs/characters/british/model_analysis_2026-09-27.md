@@ -82,3 +82,11 @@ Live locomotion now uses sixteen independent AnimationTrees with a 0.2-second id
 ## 28 September base follow-up
 
 All eight editable women now have a fitted six-ring bodice-to-skirt transition, with its lower edge sampled from the skirt top. [Seam checks](candidates/waist_validation.json) report zero source edge mismatch; all sixteen GLBs and pair turnarounds were refreshed. Representative [Private](candidates/private_woman_waist_back.png), [Captain](candidates/captain_woman_waist_back.png), and [Official](candidates/official_woman_waist_back_wide.png) Metal rear views show the gap closed but a visible hard band. Official Woman now stands on the open Government House path so the garden border does not hide her skirt. Both patrol endpoints have 0.5 s stationary turns, and all current world, tree, turn, cadence and flat-grade foot-target checks pass. See [animation details](animation_tree.md); costume finish, sole contact and normal-speed movement remain open.
+
+## 30 September full-world body check
+
+PrivateMan and OfficialWoman block the actual Player during both a long sweep and 100 ordinary walking steps. The prior OfficialWoman failure was caused by the fixture spawning the Player partly inside terrain; starting at ray-surveyed ground height resolves it. The separate Metal OfficialWoman check passes, although its capture does not show the Player mesh. [Current evidence and remaining limits](animation_tree.md).
+
+## Headwear fit and waist shape — 30 September
+
+The oversized caps and bonnets are now fitted to each actual scalp, centered on the head and fully skinned to its head bone. Eight male hats/caps and three female bonnets pass [exported attachment checks](candidates/headwear_validation.json). All pair sources, runtime exports and turnarounds were refreshed. The Private pair's [updated Metal patrol recording](candidates/private_pair_patrol_2026-09-30.mp4) shows the fitted headwear through both turns. Waist fullness now gathers near the skirt edge; a visible seam remains. The Official's donor hair still protrudes around his hat. See [current evidence and remaining contact review](animation_tree.md).

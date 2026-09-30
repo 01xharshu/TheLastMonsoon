@@ -171,9 +171,16 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"energy":survival.energy,"warmth":survival.warmth,"stamina":survival.stamina,
 		},
 		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed,
+			"rifle_rounds":actor.get_node("RifleCombat").rounds,
+			"rifle_reload":actor.get_node("RifleCombat").reload_remaining,
+			"rifle_pending":actor.get_node("RifleCombat").pending_rounds,
+			"pistol_reload":actor.get_node("PistolCombat").reload_remaining,
+			"double_gun_reload":actor.get_node("DoubleGunCombat").reload_remaining,
+			"double_gun_pending":actor.get_node("DoubleGunCombat").pending_rounds,
 			"pistol_rounds":actor.get_node("PistolCombat").rounds,
 			"double_gun_rounds":actor.get_node("DoubleGunCombat").rounds},
 		"remaining_weapon_ids": _remaining_weapon_pickup_ids(world),
+		"remaining_ammunition_ids": _remaining_ammunition_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
@@ -240,9 +247,20 @@ func apply_pending(world: Node3D) -> void:
 	equipment.selected = clampi(int(weapon.get("selected",0)),0,5)
 	equipment.stowed = bool(weapon.get("stowed",true))
 	equipment._refresh()
+	actor.get_node("RifleCombat").rounds = clampi(int(weapon.get("rifle_rounds",1)),0,1)
+	actor.get_node("RifleCombat").loaded = actor.get_node("RifleCombat").rounds > 0
 	actor.get_node("PistolCombat").rounds = clampi(int(weapon.get("pistol_rounds",5)),0,5)
 	actor.get_node("DoubleGunCombat").rounds = clampi(int(weapon.get("double_gun_rounds",0)),0,2)
 	actor.get_node("DoubleGunCombat").loaded = actor.get_node("DoubleGunCombat").rounds > 0
+	for entry in [["RifleCombat","rifle",5.0,1],["DoubleGunCombat","double_gun",4.4,2]]:
+		var firearm: Node = actor.get_node(entry[0])
+		firearm.reload_remaining = clampf(float(weapon.get(entry[1]+"_reload",0.0)),0.0,entry[2])
+		firearm.pending_rounds = clampi(int(weapon.get(entry[1]+"_pending",0)),0,entry[3]-firearm.rounds) if firearm.reload_remaining > 0.0 else 0
+	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
+	if data.get("remaining_ammunition_ids") is Array:
+		for pickup in world.get_tree().get_nodes_in_group("ammunition_pickups"):
+			if world.is_ancestor_of(pickup) and not pickup.persistence_id() in data.remaining_ammunition_ids:
+				pickup.queue_free()
 	if data.has("remaining_weapon_ids"):
 		var remaining: Array = data.remaining_weapon_ids
 		for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
@@ -278,6 +296,13 @@ func _remaining_weapon_pickup_ids(world: Node3D) -> Array[String]:
 	var remaining: Array[String] = []
 	for pickup in world.get_tree().get_nodes_in_group("weapon_pickups"):
 		if is_instance_valid(pickup) and not pickup.is_queued_for_deletion():
+			remaining.append(pickup.persistence_id())
+	return remaining
+
+func _remaining_ammunition_ids(world: Node3D) -> Array[String]:
+	var remaining: Array[String] = []
+	for pickup in world.get_tree().get_nodes_in_group("ammunition_pickups"):
+		if world.is_ancestor_of(pickup) and not pickup.is_queued_for_deletion():
 			remaining.append(pickup.persistence_id())
 	return remaining
 

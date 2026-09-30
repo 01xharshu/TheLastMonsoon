@@ -63,6 +63,9 @@ const GOLD := Color(
 )
 
 
+
+const ITEM_TEXTURES = preload("res://interaction/collection_icon_assets.gd").TEXTURES
+
 const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 
 
@@ -121,6 +124,8 @@ var marker_world_positions: Dictionary = {}
 # =========================================================
 
 var rewards: Array = []
+var reward_icons: Array[String] = []
+var pending_rewards: Array[Dictionary] = []
 
 var reward_timer: float = 0.0
 
@@ -242,17 +247,34 @@ func set_target(
 # =========================================================
 
 func show_rewards(
-	lines: Array
+	lines: Array, icons: Array = []
 ) -> void:
 	if reward_timer <= 0.0:
 		rewards.clear()
-	for line in lines:
-		rewards.append(line)
-	while rewards.size() > 5:
-		rewards.pop_front()
-
+		reward_icons.clear()
+	reward_icons.resize(rewards.size())
+	for i in range(lines.size()):
+		var icon := str(icons[i]) if i < icons.size() else "item"
+		if rewards.size() < 5 and pending_rewards.is_empty():
+			rewards.append(lines[i])
+			reward_icons.append(icon)
+		else:
+			pending_rewards.append({"text": str(lines[i]), "icon": icon})
 	reward_timer = 3.0
+	queue_redraw()
 
+func _advance_reward_feed(delta: float) -> void:
+	if reward_timer <= 0.0:
+		return
+	reward_timer = maxf(0.0, reward_timer - delta)
+	if reward_timer <= 0.0 and not pending_rewards.is_empty():
+		rewards.clear()
+		reward_icons.clear()
+		while rewards.size() < 5 and not pending_rewards.is_empty():
+			var entry: Dictionary = pending_rewards.pop_front()
+			rewards.append(entry.text)
+			reward_icons.append(entry.icon)
+		reward_timer = 3.0
 	queue_redraw()
 
 
@@ -269,12 +291,7 @@ func _physics_process(
 		return
 
 
-	if reward_timer > 0.0:
-
-		reward_timer = maxf(
-			0.0,
-			reward_timer - delta
-		)
+	_advance_reward_feed(delta)
 
 
 	markers.clear()
@@ -501,29 +518,12 @@ func _shape(center: Vector2, offsets: Array[Vector2], color: Color) -> void:
 	draw_colored_polygon(points, color)
 
 func _icon(center: Vector2, kind: String, color: Color) -> void:
+	var texture_key := "chest" if kind == "crate" else kind
+	if ITEM_TEXTURES.has(texture_key):
+		draw_texture_rect(ITEM_TEXTURES[texture_key], Rect2(center - Vector2(12,12), Vector2(26,26)), false, Color(0,0,0,0.75))
+		draw_texture_rect(ITEM_TEXTURES[texture_key], Rect2(center - Vector2(13,13), Vector2(26,26)), false, color)
+		return
 	match kind:
-		"water":
-			_shape(center, [Vector2(0,-9),Vector2(7,2),Vector2(6,7),Vector2(2,9),Vector2(-2,9),Vector2(-6,7),Vector2(-7,2)], color)
-		"food":
-			draw_circle(center, 7.0, color)
-			draw_line(center + Vector2(-5,-1), center + Vector2(5,-1), PANEL_COLOR, 1.5)
-		"mango":
-			draw_circle(center + Vector2(-3,2), 5.0, color)
-			draw_circle(center + Vector2(3,2), 5.0, color)
-			_shape(center + Vector2(1,-7), [Vector2(0,0),Vector2(7,-2),Vector2(4,2)], color)
-		"ammo":
-			for offset in [-5.0, 0.0, 5.0]:
-				draw_rect(Rect2(center + Vector2(offset-1.5,-6),Vector2(3,12)), color)
-				draw_circle(center + Vector2(offset,-6),1.5,color)
-		"chest", "crate":
-			draw_rect(Rect2(center + Vector2(-8,-3),Vector2(16,11)), color)
-			draw_rect(Rect2(center + Vector2(-9,-7),Vector2(18,4)), color)
-			draw_rect(Rect2(center + Vector2(-1,-2),Vector2(2,5)), PANEL_COLOR)
-		"weapon":
-			_shape(center, [Vector2(-9,3),Vector2(3,-3),Vector2(8,-3),Vector2(8,-1),Vector2(1,0),Vector2(-1,5),Vector2(-5,5),Vector2(-5,7),Vector2(-9,7)], color)
-		"medicine":
-			draw_rect(Rect2(center+Vector2(-2,-8),Vector2(4,16)),color)
-			draw_rect(Rect2(center+Vector2(-8,-2),Vector2(16,4)),color)
 		"gate":
 			draw_rect(Rect2(center+Vector2(-7,-8),Vector2(14,16)),color)
 			draw_rect(Rect2(center+Vector2(-5,-6),Vector2(10,14)),PANEL_COLOR)
@@ -727,6 +727,8 @@ func _draw() -> void:
 				+ float(i) * 31.0
 			)
 
+
+			_icon(Vector2(size.x - 25.0, position.y - 7.0), reward_icons[i] if i < reward_icons.size() else "item", IVORY)
 
 			# Shadow
 

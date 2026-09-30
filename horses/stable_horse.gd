@@ -16,6 +16,7 @@ var layout := Layout.new()
 var rider: CharacterBody3D
 var stolen := false
 var pace := 0.0
+var rider_landing := 0.0
 var gait := 0.0
 const WALK_SPEED := 6.0
 const GALLOP_SPEED := 13.5
@@ -94,11 +95,9 @@ func _hoof_sound() -> void:
 	var index: int = hoof_events % hoof_players.size()
 	var player: AudioStreamPlayer3D = hoof_players[index]
 	last_hoof_surface = ground_sound_surface()
-	match last_hoof_surface:
-		"timber": player.stream = HoofTimber
-		"road": player.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
-		_: player.stream = HoofA if hoof_events % 2 == 0 else HoofB
-	player.volume_db = -10.0 if last_hoof_surface == "timber" else -8.0
+	# Owner preference: the same recorded hoofbeat pair and mix on every surface.
+	player.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
+	player.volume_db = -8.0
 	player.pitch_scale = 1.0 + (float(hoof_events % 5)-2.0)*.025
 	player.play()
 	hoof_events += 1
@@ -381,6 +380,9 @@ func saddle_grip_world(side: String) -> Vector3:
 	var tack: Node3D = body_root.get_node("Pommel" if side == "l" else "Cantle")
 	return tack.to_global(Vector3(-0.16 if side == "l" else 0.16, 0.06, 0.0))
 
+func riding_rein_world(side: String) -> Vector3:
+	return body_root.to_global(Vector3(-0.18 if side == "l" else 0.18, 2.24, -0.42))
+
 func stirrup_world(side: String) -> Vector3:
 	return body_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.15, 0.02))
 
@@ -454,6 +456,7 @@ func dismount() -> bool:
 	return false
 
 func _physics_process(delta: float) -> void:
+	rider_landing = move_toward(rider_landing, 0.0, delta * 3.0)
 	stair_activity = maxf(0.0, stair_activity - delta)
 	var throttle := 0.0
 	var steer := 0.0
@@ -491,6 +494,7 @@ func _physics_process(delta: float) -> void:
 	if not was_grounded and is_on_floor() and fall_speed < -1.0:
 		landing_player.play()
 		landing_events += 1
+		rider_landing = clampf(absf(fall_speed) / 8.0, 0.0, 1.0)
 	if rider != null:
 		if transition == "":
 			_sync_rider()

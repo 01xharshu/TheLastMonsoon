@@ -17,6 +17,10 @@ func _run() -> void:
 	var overlay: Control = load("res://interaction/interaction_overlay.gd").new()
 	overlay.name = "InteractionOverlay"
 	hud.add_child(overlay)
+	# Rewards are produced by the inventory listener, as in the player HUD.
+	var pickup_label := Label.new()
+	pickup_label.set_script(load("res://player/pickup_message_label.gd"))
+	hud.add_child(pickup_label)
 	var camera := Camera3D.new()
 	actor.add_child(camera)
 	camera.position = Vector3(0,1.6,3)

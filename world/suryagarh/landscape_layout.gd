@@ -16,7 +16,8 @@ const SPAWN: Vector2 = Vector2(-230.0, 180.0)
 ## Surveyed plot centres and footprint half-extents. Keep building placement, grading,
 ## nature clearance and the map tied to these coordinates as the world grows.
 const PLOTS: Dictionary = {
-	"Bhairavpur": {"center": Vector2(-310, 230), "half": Vector2(45, 32), "grade": 7.2},
+	"Bhairavpur": {"center": Vector2(-332, 232), "half": Vector2(104, 88), "grade": 7.2},
+	"BhairavpurEstate": {"center": Vector2(-308,344), "half": Vector2(38,26), "grade": 7.2},
 	"TownHall": {"center": Vector2(-320, -470), "half": Vector2(27, 16), "grade": 8.0},
 	"DistrictPolice": {"center": Vector2(320, 120), "half": Vector2(20, 22), "grade": 10.0},
 	"CompanyCompound": {"center": Vector2(345, 300), "half": Vector2(67, 63), "grade": 12.0},
@@ -26,6 +27,13 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"village_spine": [Vector2(-422,230), Vector2(-301,230), Vector2(-297,225), Vector2(-281,225), Vector2(-276,230), Vector2(-250,230), Vector2(-250,210), Vector2(-230,180)],
+	"village_west_lane": [Vector2(-374,162), Vector2(-374,312)],
+	"village_market_lane": [Vector2(-355,230), Vector2(-355,275), Vector2(-250,275), Vector2(-250,230)],
+	"village_north_lane": [Vector2(-374,312), Vector2(-250,312), Vector2(-250,275)],
+	"village_south_lane": [Vector2(-374,190), Vector2(-285,190), Vector2(-285,174), Vector2(-250,174), Vector2(-230,180)],
+	"village_west_link": [Vector2(-355,190), Vector2(-355,230)],
+	"village_estate_approach": [Vector2(-321,312),Vector2(-321,330)],
 	"town_hall": [Vector2(-240, -470), Vector2(-275, -432), Vector2(-320, -432)],
 	"east_bridge": [Vector2(273, 165), Vector2(300, 165), Vector2(320, 150)],
 	"police_to_compound": [Vector2(320, 150), Vector2(345, 234), Vector2(345, 252)],
@@ -125,11 +133,13 @@ func base_height(x: float, z: float) -> float:
 	var channel: float = -4.5 + 0.65 * sin(z * 0.023)
 	var bank: float = smoothstep(river_width(z) - 9.0, river_width(z) + 37.0, d)
 	h = lerpf(channel, h, bank)
-	# Flatten the village reserve gently without creating an abrupt shelf.
-	var village: float = 1.0 - smoothstep(58.0, 130.0, Vector2(x + 310, z - 230).length())
+	# A shared surveyed terrace supports the expanded houses, market and fields.
+	var village_plot: Dictionary = PLOTS["Bhairavpur"]
+	var village_edge: float = maxf(absf(x-village_plot.center.x)-village_plot.half.x, absf(z-village_plot.center.y)-village_plot.half.y)
+	var village: float = 1.0 - smoothstep(0.0, 30.0, village_edge)
 	h = lerpf(h, 7.2, village)
 	for plot in PLOTS.values():
-		if plot.center == Vector2(-310, 230) or plot.center == FORT_CENTER: continue
+		if plot.center == village_plot.center or plot.center == FORT_CENTER: continue
 		var edge: float = maxf(absf(x-plot.center.x)-plot.half.x, absf(z-plot.center.y)-plot.half.y)
 		h = lerpf(h, plot.grade, 1.0-smoothstep(0.0, 22.0, edge))
 	# The residence's east-west carriage road eases into its surveyed terrace.

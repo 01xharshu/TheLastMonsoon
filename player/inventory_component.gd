@@ -20,6 +20,8 @@ signal item_removed(
 )
 
 
+signal collection_message_requested(message: String, icon: String)
+
 signal inventory_changed
 
 

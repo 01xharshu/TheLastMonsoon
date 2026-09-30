@@ -1,0 +1,33 @@
+{
+  "coaches": 3,
+  "errors": [],
+  "households": 3,
+  "independent_trees": 13,
+  "journeys": [
+    {
+      "blocked_frames": 0,
+      "coach": "LandownerHouseholdCoach",
+      "distance_m": 219.986694335934,
+      "phase": "home",
+      "round_trips": 5
+    },
+    {
+      "blocked_frames": 0,
+      "coach": "MerchantHouseholdCoach",
+      "distance_m": 248.235992391402,
+      "phase": "returning",
+      "round_trips": 3
+    },
+    {
+      "blocked_frames": 0,
+      "coach": "BritishHouseholdCoach",
+      "distance_m": 276.799993896477,
+      "phase": "returning",
+      "round_trips": 2
+    }
+  ],
+  "passed": true,
+  "residents": 4,
+  "scope": "world population, personal trees and bounded occupied driveway cycles; visual garment/seat contact and wider-road traffic remain review",
+  "staff": 9
+}

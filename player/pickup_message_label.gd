@@ -1,5 +1,7 @@
 extends Label
 
+const ItemCatalog = preload("res://interaction/item_catalog.gd")
+
 
 # =========================================================
 # INVENTORY REFERENCE
@@ -22,6 +24,7 @@ func _ready() -> void:
 
 
 	visible = false
+	inventory.collection_message_requested.connect(_show_reward)
 
 
 	inventory.item_added.connect(
@@ -51,7 +54,7 @@ func _on_item_added(
 	)
 
 
-	_show_reward(display_name + "  +" + str(amount))
+	_show_reward(display_name + "  +" + str(amount), ItemCatalog.icon(item_id))
 
 
 # =========================================================
@@ -63,10 +66,10 @@ func _on_message_requested(
 ) -> void:
 	_show_reward(message)
 
-func _show_reward(message: String) -> void:
+func _show_reward(message: String, icon: String = "item") -> void:
 	var overlay: Node = get_parent().get_node_or_null("InteractionOverlay")
 	if overlay != null:
-		overlay.show_rewards([message])
+		overlay.show_rewards([message], [icon])
 
 
 # =========================================================
@@ -77,17 +80,4 @@ func _get_display_name(
 	item_id: String
 ) -> String:
 
-	match item_id:
-		"paper_cartridges":
-			return "Paper Cartridges"
-		"pistol_ball":
-			return "Pistol Balls"
-
-		"roti":
-			return "Roti"
-
-		"water_bag":
-			return "Water Bag"
-
-		_:
-			return item_id.capitalize()
+	return ItemCatalog.display_name(item_id)

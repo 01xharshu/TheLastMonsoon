@@ -1,0 +1,19 @@
+{
+  "rank": "captain",
+  "fits": [
+    {
+      "actor": "Captain",
+      "parts": [
+        "captain cap band",
+        "captain forage cap",
+        "captain forage cap visor"
+      ],
+      "scalp_top_m": 1.7673476934432983,
+      "crown_width_m": 0.1604525420665741,
+      "crown_depth_m": 0.2102410543560982,
+      "base_m": 1.7123476934432984,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

@@ -2,102 +2,182 @@
   "actors": [
     {
       "actor": "PrivateMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.033686101436615,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.033686101436615,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "PrivateWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0283428132534027,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0283428132534027,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "CorporalMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0336146950721741,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0336146950721741,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "CorporalWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0272102057933807,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0272102057933807,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "SergeantMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0347755253314972,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0347755253314972,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "SergeantWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0291324257850647,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0291324257850647,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "LieutenantMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0354466736316681,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0354466736316681,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "LieutenantWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0270318984985352,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0270318984985352,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "CaptainMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0363464057445526,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0363464057445526,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "CaptainWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0279959440231323,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0279959440231323,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "MajorMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0350075960159302,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0350075960159302,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "MajorWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0303410589694977,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0303410589694977,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "ColonelMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0362176299095154,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
-      "return_step_m": 0.05499267578125,
+      "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0362176299095154,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "ColonelWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0303962528705597,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0303962528705597,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "OfficialMan",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0344575643539429,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.0250015258789062,
+      "right_turn_lift_m": 0.0344575643539429,
       "stationary_turn_drift_m": 0.0
     },
     {
       "actor": "OfficialWoman",
+      "home_turn_drift_m": 0.0,
+      "left_turn_lift_m": 0.0303500592708588,
+      "maximum_turn_blend": 1.0,
+      "outbound_heading_dot": 1.0,
       "return_heading_dot": 1.0,
       "return_step_m": 0.04498291015625,
+      "right_turn_lift_m": 0.0303500592708588,
       "stationary_turn_drift_m": 0.0
     }
   ],
   "errors": [],
   "passed": true,
-  "scope": "0.5s root turn, stationary anchor and first return step; foot/mesh turn contact remains visual review"
+  "scope": "0.5s turns, tree-driven alternating ankle lifts, stationary anchors and first movement steps; mesh sole and normal-speed contact remain visual review"
 }

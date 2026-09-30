@@ -22,7 +22,7 @@ func _run() -> void:
 		player.pause()
 	var camera := Camera3D.new()
 	world.add_child(camera)
-	camera.fov = 30.0
+	camera.fov = 38.0
 	camera.make_current()
 	for actor_name in ["PrivateMan", "PrivateWoman"]:
 		var actor := roster.get_node(actor_name) as Node3D
@@ -33,11 +33,11 @@ func _run() -> void:
 		for step in 15:
 			actor.call("_process", 1.0/60.0)
 		var direction := actor.basis.z.normalized()
-		camera.global_position = actor.global_position + actor.basis.x * 2.8 + Vector3.UP*1.8
+		camera.global_position = actor.global_position + actor.basis.x * 3.4 + Vector3.UP*1.2
 		camera.look_at(actor.global_position + Vector3.UP*0.9)
 		for i in 4:
 			await process_frame
 		await RenderingServer.frame_post_draw
 		var path: String = "res://docs/characters/british/candidates/"+actor_name.to_snake_case()+"_turn_world.png"
-		print("BRITISH_CADENCE_CAPTURE ", path, " ", root.get_texture().get_image().save_png(path))
+		print("BRITISH_TURN_CAPTURE ", path, " ", root.get_texture().get_image().save_png(path))
 	quit(0)

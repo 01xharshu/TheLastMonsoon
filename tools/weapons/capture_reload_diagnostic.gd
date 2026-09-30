@@ -37,28 +37,31 @@ func capture() -> void:
 	camera.make_current()
 	actor.inventory.add_item("enfield",1)
 	actor.inventory.add_item("pistol",1)
-	for weapon in [1,3]:
-		visual.equipment.selected = weapon
-		visual.equipment.stowed = false
-		visual.equipment._refresh()
-		var combat: Node = actor.get_node("RifleCombat" if weapon == 1 else "PistolCombat")
-		combat.set_process(false)
-		combat.reload_remaining = 1.8 if weapon == 1 else 1.5
-		for i in 8: visual._process(1.0/60.0)
-		for i in 3: await process_frame
-		await RenderingServer.frame_post_draw
-		var path := "/tmp/tlm_%s_reload_diagnostic.png" % ("enfield" if weapon == 1 else "adams")
-		assert(root.get_texture().get_image().save_png(path) == OK)
-		print("RELOAD DIAGNOSTIC ",path)
-		if weapon == 1:
-			combat.reload_remaining = 3.4
-			for i in 8: visual._process(1.0/60.0)
-			var palm: Vector3 = visual.equipment.enfield_cartridge.global_position
-			camera.global_position = palm + Vector3(0.45,0.35,0.70)
-			camera.look_at(palm)
-			for i in 3: await process_frame
-			await RenderingServer.frame_post_draw
-			var cartridge_path := "/tmp/tlm_enfield_cartridge_diagnostic.png"
-			assert(root.get_texture().get_image().save_png(cartridge_path) == OK)
-			print("RELOAD DIAGNOSTIC ",cartridge_path)
-	quit()
+	var combat: Node = actor.get_node("RifleCombat")
+	combat.set_process(false)
+	visual.equipment.selected = 1
+	visual.equipment.stowed = false
+	visual.equipment._refresh()
+	visual.set_process(false)
+	var maximum := 0.0
+	for frame in 301:
+		var progress := frame / 300.0
+		combat.reload_remaining = 5.0*(1-progress) if frame < 300 else 0.001
+		visual._process(1.0/60.0)
+		var rig: Skeleton3D = visual.skeleton
+		var pinch := rig.to_global((rig.get_bone_global_pose(rig.find_bone("index_03_l")).origin+rig.get_bone_global_pose(rig.find_bone("thumb_03_l")).origin)*0.5)
+		var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(visual.equipment.reload_progress)
+		var error := pinch.distance_to(visual.equipment.enfield_hand.to_global(loading.contact))
+		if error > maximum:
+			maximum = error
+			print("CONTACT MAX ",progress," ",error)
+		if true:
+			var center := rig.to_global(Vector3(0.10,1.40,0.35))
+			camera.global_position = center + Vector3(0.8,0.15,1.4)
+			camera.look_at(center)
+			camera.make_current()
+			await process_frame
+			RenderingServer.force_draw()
+			root.get_texture().get_image().save_png("/tmp/tlm_loading_%03d.png" % frame)
+	print("MAX LOADING PINCH ERROR ",maximum)
+	quit(0 if maximum < 0.015 else 1)

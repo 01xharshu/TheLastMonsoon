@@ -50,6 +50,18 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: water blend did not engage")
 		quit(1)
 		return
+	for i in 10: tree.update_motion(0.1, 1.0, 0.0, false, false, 5.0)
+	var rise_pose := skeleton.get_bone_pose_rotation(thigh)
+	for i in 10: tree.update_motion(0.1, 1.0, 0.0, false, false, -5.0)
+	if tree.air_blend < 0.99 or rise_pose.angle_to(skeleton.get_bone_pose_rotation(thigh)) < 0.1 or tree.foot_contact_offset > 0.01:
+		push_error("ARJUN MOTION TREE: jump rise/fall or airborne ground correction failed")
+		quit(1)
+		return
+	for i in 10: tree.update_motion(0.1, 1.0, 1.0, true, false, 0.0)
+	if tree.air_blend > 0.01:
+		push_error("ARJUN MOTION TREE: swimming retained jump pose")
+		quit(1)
+		return
 	tree.update_rest(0.3, 1.0)
 	if tree.rest_blend < 0.99 or not tree.get("parameters/rest/blend_amount") > 0.99:
 		push_error("ARJUN MOTION TREE: seated clip did not engage")
@@ -68,8 +80,18 @@ func _run() -> void:
 		quit(1)
 		return
 	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
+	tree.update_rest(0.1, 0.0, 1.0)
+	if tree.get("parameters/sleep/blend_amount") < 0.99:
+		push_error("ARJUN MOTION TREE: sleeping branch did not engage")
+		quit(1)
+		return
+	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
 	tree.rest_blend = 0.0
 	tree.update_motion(0.1, 0.0, 0.0, false)
+	if tree.get("parameters/sleep/blend_amount") > 0.01:
+		push_error("ARJUN MOTION TREE: sleeping branch survived locomotion recovery")
+		quit(1)
+		return
 	if skeleton.get_bone_pose_rotation(head).angle_to(neutral_head) < 0.03:
 		push_error("ARJUN MOTION TREE: long gun library pose did not move head")
 		quit(1)

@@ -1,0 +1,31 @@
+{
+  "rank": "sergeant",
+  "fits": [
+    {
+      "actor": "Sergeant",
+      "parts": [
+        "sergeant cap band",
+        "sergeant forage cap",
+        "sergeant forage cap visor"
+      ],
+      "scalp_top_m": 1.8024383783340454,
+      "crown_width_m": 0.15677702164649965,
+      "crown_depth_m": 0.2090508576333523,
+      "base_m": 1.7474383783340455,
+      "head_weight": 1.0
+    },
+    {
+      "actor": "Companion",
+      "parts": [
+        "Companion bonnet brim",
+        "Companion bonnet crown"
+      ],
+      "scalp_top_m": 1.5175940990447998,
+      "crown_width_m": 0.14961436128616334,
+      "crown_depth_m": 0.19020388758182527,
+      "base_m": 1.4725940990447999,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

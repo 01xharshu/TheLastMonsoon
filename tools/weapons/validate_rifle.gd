@@ -77,15 +77,28 @@ func run() -> void:
 	rifle.reload_remaining = 1.8
 	visual._process(1.0/60.0)
 	check(not visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge remained after the loading gesture")
+	var loading_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
+	var loading_contact: Vector3 = visual.equipment.enfield_hand.to_local(loading_palm)
+	check(loading_contact.x > 1.08 or Vector2(loading_contact.y-0.057, loading_contact.z).length() > 0.035,"Enfield loading palm entered the barrel/fore-end")
 	var loading_left: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
 	check(early_left.distance_to(loading_left) > 0.06,"Enfield loading hand did not move")
 	check(visual.equipment.reload_progress > 0.5,"Enfield reload pose did not follow timer")
 	var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
-	check(rod != null and rod.position.x > (visual.equipment.ramrod_rest["enfield_ramrod"] as Vector3).x + 0.1,"Enfield ramrod did not extend")
+	check(rod != null and rod.position.x > (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x + 0.1,"Enfield ramrod did not extend")
+	var max_pinch_error := 0.0
+	for sample in 301:
+		rifle.reload_remaining = maxf(0.001,5.0*(1.0-sample/300.0))
+		visual._process(1.0/60.0)
+		var rig: Skeleton3D = visual.skeleton
+		var pinch := rig.to_global((rig.get_bone_global_pose(rig.find_bone("index_03_l")).origin+rig.get_bone_global_pose(rig.find_bone("thumb_03_l")).origin)*0.5)
+		var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(visual.equipment.reload_progress)
+		max_pinch_error = maxf(max_pinch_error,pinch.distance_to(visual.equipment.enfield_hand.to_global(loading.contact)))
+	check(max_pinch_error < 0.005,"Loading fingers lost cartridge/ramrod contact: " + str(max_pinch_error))
+	print("RELOAD CONTACT SWEEP: ",max_pinch_error," m / 301 poses")
 	rifle._process(5.1)
 	check(rifle.loaded,"Reload did not chamber a round")
 	visual._process(1.0/60.0)
-	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Vector3).x) < 0.001,"Enfield ramrod did not return")
+	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x) < 0.001,"Enfield ramrod did not return")
 	actor.set_meta("map_open",true)
 	rifle.aiming = true
 	rifle.fire()

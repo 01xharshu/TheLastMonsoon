@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "lieutenant",
   "source": "WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend",
-  "source_sha256": "10ef70a5ec71cfa1d233e515b0f1d73ec58b84a0a78f0b42cf0788995d4536f6",
+  "source_sha256": "4cc2116cfcfccc6d59ede2f9a9136123fb1f7b2a97afff2fdeb88f71acaa67f7",
   "reference": "docs/characters/british/references/lieutenant_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -16,16 +16,18 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/lieutenant_man.glb",
-      "sha256": "ed6058cb64322097a2c2e07b8148e107472629358871fe72ca1207883415281a",
-      "bytes": 1595812
+      "sha256": "23e51d714e764ea6f548fee3c1df07da5a92388187067516b01fb88a03b3e8b7",
+      "bytes": 1615388
     },
     "woman": {
       "path": "characters/npcs/british/lieutenant_woman.glb",
-      "sha256": "5484edad9847c75b5ecd68eabdfabe1b33d5381785584c3a1dab738f646687f7",
-      "bytes": 1808376
+      "sha256": "cfbeb8b77b1949b65bcd3c32b0890fa7b82cb22823943424fac17b60c98e2e12",
+      "bytes": 1783904
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true,
-  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
+  "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
+  "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
 }

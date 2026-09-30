@@ -1,0 +1,210 @@
+{
+	"display_server": "macOS",
+	"entrance_scope": "seven representative homes",
+	"failures": [],
+	"renderer": "forward_plus",
+	"roof_families": {
+		"clay tile gable": 17,
+		"earth terrace": 8,
+		"thatch gable": 8
+	},
+	"routes": [
+		{
+			"finish": "(-343.0, 8.340157, 213.9669)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse0 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-343.0, 8.100998, 203.8)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-343.0, 8.100509, 203.9331)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse0 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-343.0, 8.34078, 214.1)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-321.0, 8.340158, 213.9669)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse1 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.100778, 203.8)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-321.0, 8.100509, 203.9331)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse1 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.34078, 214.1)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-299.0, 8.340152, 213.9668)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse2 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-299.0, 8.100778, 203.8)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-299.0, 8.100509, 203.9331)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse2 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-299.0, 8.34078, 214.1)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-382.9534, 8.34017, 249.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse18 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-373.2, 8.100778, 249.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-373.3487, 8.100619, 249.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse18 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-383.1, 8.34078, 249.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-237.0499, 8.340149, 278.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse25 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-246.8, 8.100778, 278.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-246.65, 8.100619, 278.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse25 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-236.9, 8.34078, 278.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-321.0, 8.340174, 299.0132)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse27 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.100778, 309.1)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-321.0, 8.100839, 308.9855)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse27 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-321.0, 8.34078, 298.9)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-343.0, 8.340155, 166.0165)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse30 entry",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-343.0, 8.100778, 176.1)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-343.0, 8.100839, 175.9844)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "BhairavpurHouse30 exit",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-343.0, 8.34078, 165.9)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-374.0, 8.100778, 279.9181)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "detailed west lane",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-374.0, 8.100778, 230.0)",
+			"worst_vertical_speed_mps": 0.0
+		},
+		{
+			"finish": "(-278.0745, 8.100778, 275.0)",
+			"jump_used": false,
+			"max_lane_deviation_m": 0.0,
+			"pass": true,
+			"route": "detailed market lane",
+			"segments_expected": 1,
+			"segments_reached": 1,
+			"start": "(-352.0, 8.100778, 275.0)",
+			"worst_vertical_speed_mps": 0.0
+		}
+	],
+	"status": "PASS",
+	"workstations": [
+		{
+			"contact": true,
+			"craft": "carpenter",
+			"finish_local": "(2.25, 0.900778, 4.976044)",
+			"pass": true
+		},
+		{
+			"contact": true,
+			"craft": "weaver",
+			"finish_local": "(2.25, 0.900778, 5.450562)",
+			"pass": true
+		},
+		{
+			"contact": true,
+			"craft": "potter",
+			"finish_local": "(2.25, 1.056348, 5.200272)",
+			"pass": true
+		}
+	]
+}

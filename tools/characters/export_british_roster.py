@@ -49,6 +49,26 @@ for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
         if obj.parent == rig and obj not in (body, outfit):
             obj.select_set(True)
             if obj.type == 'MESH':
+                if obj.name.endswith('_eyes'):
+                    # Preserve MPFB's iris map with a direct glTF connection.
+                    # Its MixRGB tint otherwise enters the flat-color fallback.
+                    images = [node.image for slot in obj.material_slots
+                              if slot.material and slot.material.use_nodes
+                              for node in slot.material.node_tree.nodes
+                              if node.type == 'TEX_IMAGE' and node.image]
+                    if not images:
+                        raise RuntimeError(f'No source iris map on {obj.name}')
+                    eye_image = images[0]
+                    eye_image.reload()
+                    eye_mat = bpy.data.materials.new(obj.name + ' authored iris')
+                    eye_mat.use_nodes = True
+                    eye_bs = eye_mat.node_tree.nodes.get('Principled BSDF')
+                    eye_bs.inputs['Roughness'].default_value = .35
+                    eye_tex = eye_mat.node_tree.nodes.new('ShaderNodeTexImage')
+                    eye_tex.image = eye_image
+                    eye_mat.node_tree.links.new(eye_tex.outputs['Color'], eye_bs.inputs['Base Color'])
+                    obj.data.materials.clear()
+                    obj.data.materials.append(eye_mat)
                 # Torso straps must not inherit nearby arm/leg weights from
                 # the donor body's nearest-surface lookup.
                 if 'crossbelt' in obj.name.lower():
@@ -94,5 +114,6 @@ manifest['runtime_exports'] = exports
 manifest['runtime_export'] = True
 manifest['animation'] = 'Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles'
 manifest['placed_in_world'] = manifest.get('placed_in_world', False)
+manifest['eye_material'] = 'Original MPFB iris image directly connected to glTF base color; source shader retained in Blender'
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 print('BRITISH_RUNTIME_EXPORT', RANK, json.dumps(exports))

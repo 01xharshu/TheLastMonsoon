@@ -16,23 +16,33 @@ func _ready() -> void:
 	tile = material(Color(.48,.23,.14),true)
 	iron = material(Color(.12,.13,.12))
 	if police:
-		width = 26
-		depth = 24
-		stair_x = -9.5
+		width = 38
+		depth = 36
+		stair_x = -15.0
 	# Raised foundations are above the highest sampled terrain under the footprint.
 	var ground := -1000.0
 	for x in range(-int(width*.5)-2,int(width*.5)+3,2):
 		for z in range(-int(depth*.5)-2,int(depth*.5)+3,2):
 			ground = maxf(ground,layout.height(position.x+x,position.z+z))
 	position.y = ground+.45
-	piece(self,"Foundation",Vector3(0,-1,0),Vector3(width+1,2,depth+1),stone)
+	if police:
+		stone = preload("res://world/suryagarh/settlements/police_refinement.gd").masonry(position.y)
+		preload("res://world/suryagarh/settlements/police_interior.gd").foundation(self)
+	else:
+		piece(self,"Foundation",Vector3(0,-1,0),Vector3(width+1,2,depth+1),stone)
 	for level in 2:
 		var y: float = level*floor_y
 		facade(y,depth*.5,true)
 		facade(y,-depth*.5,false)
 		for side in [-1,1]:
 			piece(self,"SideSill",Vector3(side*width*.5,y+.65,0),Vector3(.5,1.3,depth),plaster)
-			piece(self,"SideLintel",Vector3(side*width*.5,y+4.3,0),Vector3(.5,2.2,depth),plaster)
+			if police:
+				piece(self,"VentLowerBand",Vector3(side*width*.5,y+3.35,0),Vector3(.5,.3,depth),plaster)
+				piece(self,"VentUpperBand",Vector3(side*width*.5,y+4.95,0),Vector3(.5,.9,depth),plaster)
+				for z in range(-int(depth*.5),int(depth*.5)+1,4):
+					piece(self,"HighVentPier",Vector3(side*width*.5,y+4.0,z),Vector3(.5,1.0,1.6),plaster)
+			else:
+				piece(self,"SideLintel",Vector3(side*width*.5,y+4.3,0),Vector3(.5,2.2,depth),plaster)
 			for z in range(-int(depth*.5),int(depth*.5)+1,4):
 				piece(self,"SidePier",Vector3(side*width*.5,y+2.3,z),Vector3(.5,2,1.6),plaster)
 		# Cornices and deep shaded colonnade.
@@ -87,6 +97,7 @@ func _ready() -> void:
 		approach.rotation.x = -atan2(b.y-a.y,b.z-a.z)
 	for level in 2:
 		for row in 3:
+			if police and (level != 1 or row != 2): continue
 			piece(self,"MeetingTable",Vector3(3,level*floor_y+.82,-6+row*5),Vector3(8,.18,1.5),wood)
 			for side in [-1,1]:
 				piece(self,"Bench",Vector3(3,level*floor_y+.45,-6+row*5+side*1.4),Vector3(8,.18,.45),wood)
@@ -97,10 +108,11 @@ func _ready() -> void:
 			piece(self,"RecordsDoorPier",Vector3(width*.5-3+offset*2.15,level*floor_y+2.5,-depth*.5+8),Vector3(1.7,5,.3),plaster)
 		piece(self,"RecordsLintel",Vector3(width*.5-3,level*floor_y+4,-depth*.5+8),Vector3(2.6,2,.3),plaster)
 		var light := OmniLight3D.new()
+		light.name = "StationAmbientFill" if police else "HallLight"
 		light.position = Vector3(0,level*floor_y+3,0)
 		light.light_color = Color(1,.82,.58)
-		light.light_energy = .7
-		light.omni_range = 24
+		light.light_energy = .16 if police else .7
+		light.omni_range = 15 if police else 24
 		add_child(light)
 	var sign := Label3D.new()
 	sign.text = "DISTRICT POLICE · THANA" if police else "SURYAGARH · TOWN HALL"
@@ -112,6 +124,10 @@ func _ready() -> void:
 	preload("res://world/suryagarh/settlements/civic_details.gd").furnish(self)
 	armoury()
 	sidearm_display()
+	if police:
+		preload("res://world/suryagarh/settlements/police_interior.gd").furnish(self)
+		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, self, Vector3(width * 0.5 - 3, 0, -depth * 0.5 + 7), "district_police/ammunition")
+		preload("res://world/suryagarh/settlements/police_refinement.gd").furnish(self)
 	merge_visuals(self)
 	if police:
 		var staff := Node3D.new()

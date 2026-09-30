@@ -1,0 +1,1 @@
+Original collection UI illustrations authored for TheLastMonsoon. Editable SVG sources; no downloaded artwork. Shaded ivory treatment for small HUD and interaction use. Bandage depicts rolled cloth; ammunition uses paper charges and loose balls. Visual approval remains with the owner.

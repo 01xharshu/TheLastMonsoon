@@ -234,21 +234,9 @@ func _animate_motion(speed: float, delta: float) -> void:
 func _play_cart_hoof() -> void:
 	if hoof_players.is_empty(): return
 	var p: AudioStreamPlayer3D = hoof_players[hoof_events % hoof_players.size()]
-	var query := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.5, global_position - Vector3.UP * 1.5)
-	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
-	var node: Node = hit.get("collider") as Node
-	var surface := "earth"
-	while node != null:
-		if node.name == "TimberBridge":
-			surface = "timber"
-			break
-		node = node.get_parent()
-	if surface == "timber":
-		p.stream = HoofTimber
-		p.volume_db = -10.0
-	else:
-		p.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
-		p.volume_db = -8.0
+	# Same recorded hoofbeat pair on every surface, per owner preference.
+	p.stream = HoofRoadRecordedA if hoof_events % 2 == 0 else HoofRoadRecordedB
+	p.volume_db = -8.0
 	p.pitch_scale = 1.0 + (float(hoof_events % 5) - 2.0) * 0.025
 	p.play()
 	hoof_events += 1

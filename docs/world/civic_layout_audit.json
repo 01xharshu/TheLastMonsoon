@@ -17,10 +17,10 @@
 	"layout_size_m": 1728.0,
 	"plots": {
 		"Bhairavpur": {
-			"center": "(-310.0, 230.0)",
+			"center": "(-332.0, 232.0)",
 			"grade_m": 7.2,
 			"grade_spread_m": 0.0,
-			"half_extent": "(45.0, 32.0)"
+			"half_extent": "(104.0, 88.0)"
 		},
 		"CompanyCompound": {
 			"center": "(345.0, 300.0)",
@@ -143,6 +143,66 @@
 				5.36291203274442,
 				3.80516040107361,
 				3.66499906398249
+			]
+		},
+		"village_market_lane": {
+			"length_m": 195.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2,
+				7.2,
+				7.2
+			]
+		},
+		"village_north_lane": {
+			"length_m": 161.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2,
+				7.2
+			]
+		},
+		"village_south_lane": {
+			"length_m": 160.880613327026,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2,
+				7.2,
+				7.2,
+				7.2
+			]
+		},
+		"village_spine": {
+			"length_m": 232.529703617096,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2,
+				7.2,
+				7.2,
+				7.2,
+				7.2,
+				7.2,
+				7.2
+			]
+		},
+		"village_west_lane": {
+			"length_m": 150.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2
+			]
+		},
+		"village_west_link": {
+			"length_m": 40.0,
+			"maximum_terrain_slope": 0.0,
+			"waypoint_elevations_m": [
+				7.2,
+				7.2
 			]
 		}
 	},

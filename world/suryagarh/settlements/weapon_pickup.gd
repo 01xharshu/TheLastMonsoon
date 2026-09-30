@@ -7,7 +7,7 @@ func persistence_id() -> String:
 	return store_id if not store_id.is_empty() else "%s/%s/%s" % [get_parent().name,weapon_id,position]
 func _ready() -> void:
 	interaction_text = "Take and equip " + {"enfield":"Enfield rifle","talwar":"talwar","bow":"bow and quiver","pistol":"Adams pistol","double_gun":"double-barrel gun"}.get(weapon_id,weapon_id)
-	interaction_icon = "weapon"
+	interaction_icon = preload("res://interaction/item_catalog.gd").icon(weapon_id)
 	hold_duration = .9
 	interaction_max_distance = 3.0
 	marker_height = 0.0
@@ -20,9 +20,7 @@ func interact(actor: CharacterBody3D) -> void:
 		actor.inventory.message_requested.emit("Equipped " + weapon_id.capitalize())
 		return
 	if not actor.inventory.add_item(weapon_id,1): return
-	if weapon_id == "bow": actor.inventory.add_item("arrow",12)
-	if weapon_id == "pistol": actor.inventory.add_item("pistol_ball",15)
-	if weapon_id == "double_gun": actor.inventory.add_item("shot_charge",8)
+	preload("res://player/ammunition_loadout.gd").grant_for_weapon(actor, weapon_id)
 	taken = true
 	_equip(actor)
 	actor.set_meta("stolen_weapons",int(actor.get_meta("stolen_weapons",0))+1)

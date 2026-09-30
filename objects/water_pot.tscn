@@ -1,22 +1,17 @@
 [gd_scene format=3 uid="uid://dtgijpuvdirim"]
 
-[ext_resource type="Script" uid="uid://b3fl0bqdhfeil" path="res://objects/water_pot.gd" id="1_omui8"]
+[ext_resource type="Script" path="res://objects/water_pot.gd" id="1"]
+[ext_resource type="PackedScene" path="res://objects/household/water_pot_visual.tscn" id="2"]
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_6xif0"]
-top_radius = 0.45
-bottom_radius = 0.3
-height = 0.8
-
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_6xif0"]
-height = 0.8
-radius = 0.45
+[sub_resource type="ConvexPolygonShape3D" id="shape"]
+points = PackedVector3Array(-0.13, -0.4, -0.13, 0.13, -0.4, -0.13, 0.13, -0.4, 0.13, -0.13, -0.4, 0.13, -0.31, -0.02, 0, 0.31, -0.02, 0, 0, -0.02, -0.31, 0, -0.02, 0.31, -0.219, -0.02, -0.219, 0.219, -0.02, -0.219, 0.219, -0.02, 0.219, -0.219, -0.02, 0.219, -0.19, 0.4, 0, 0.19, 0.4, 0, 0, 0.4, -0.19, 0, 0.4, 0.19)
 
 [node name="WaterPot" type="StaticBody3D" unique_id=770139238]
-script = ExtResource("1_omui8")
+script = ExtResource("1")
 interaction_text = "Fill Water Bag"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=96572679]
-mesh = SubResource("CylinderMesh_6xif0")
+[node name="MeshInstance3D" parent="." instance=ExtResource("2")]
+position = Vector3(0, -0.4, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=537158689]
-shape = SubResource("CylinderShape3D_6xif0")
+shape = SubResource("shape")

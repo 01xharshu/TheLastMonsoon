@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "sergeant",
   "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
-  "source_sha256": "c1d82211b090723883d926fc0a6398610b2b635c63e7e502cda252339416fcdf",
+  "source_sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
   "reference": "docs/characters/british/references/sergeant_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -16,16 +16,18 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/sergeant_man.glb",
-      "sha256": "016e0eda62cd92cb0b61609f3f24f6aeac425cb536ff1f9d4c8473437e6ab923",
-      "bytes": 1477208
+      "sha256": "13b3906641f4f2e21ca66ebd0ada64f22b71b93bea6995c883303d78bacae269",
+      "bytes": 1496580
     },
     "woman": {
       "path": "characters/npcs/british/sergeant_woman.glb",
-      "sha256": "e0a31f3e197bbd16ca43e1047494456eede40a453ce1a8f42fdb128ad6f6b706",
-      "bytes": 1860740
+      "sha256": "39cc4b14b80fb1b27e3774f942ff8e36ec7c388c41856d6563b3f6944de7e2a1",
+      "bytes": 1836268
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true,
-  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
+  "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
+  "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
 }

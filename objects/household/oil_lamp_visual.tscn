@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/props/household/oil_lamp.res" id="1_gtrdt"]
+[ext_resource type="Shader" path="res://assets/props/household/aged_brass_surface.gdshader" id="2_1olnw"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/lamp_oil.res" id="3_gpqo6"]
+[ext_resource type="ArrayMesh" path="res://assets/props/household/lamp_flame.res" id="4_lrvqh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6v7nx"]
+render_priority = 0
+shader = ExtResource("2_1olnw")
+
+[sub_resource type="BoxMesh" id="BoxMesh_iggvx"]
+material = SubResource("ShaderMaterial_6v7nx")
+size = Vector3(0.038, 0.017, 0.11)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1fhsa"]
+albedo_color = Color(0.13, 0.075, 0.02, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_mate3"]
+material = SubResource("StandardMaterial3D_1fhsa")
+top_radius = 0.004
+bottom_radius = 0.004
+height = 0.07034913
+radial_segments = 6
+rings = 0
+
+[node name="OilLampVisual" type="Node3D" unique_id=1619981711]
+
+[node name="Reservoir" type="MeshInstance3D" parent="." unique_id=1572372995]
+mesh = ExtResource("1_gtrdt")
+
+[node name="WickSpout" type="MeshInstance3D" parent="." unique_id=1761316623]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.056, 0.135)
+mesh = SubResource("BoxMesh_iggvx")
+
+[node name="Oil" type="MeshInstance3D" parent="." unique_id=682485699]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.055, 0)
+mesh = ExtResource("3_gpqo6")
+
+[node name="Wick" type="MeshInstance3D" parent="." unique_id=791928918]
+transform = Transform3D(1, 0, 0, 0, 0.099503756, -0.9950372, 0, 0.9950372, 0.099503756, 0, 0.0685, 0.15)
+mesh = SubResource("CylinderMesh_mate3")
+
+[node name="Flame" type="MeshInstance3D" parent="." unique_id=712793897]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.072, 0.18)
+mesh = ExtResource("4_lrvqh")
+
+[node name="WickContact" type="Marker3D" parent="." unique_id=1370246093]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.073, 0.18)
+
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=569944670]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.105, 0.04, 0)
+
+[node name="RightGrip" type="Marker3D" parent="." unique_id=1365948285]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.105, 0.04, 0)

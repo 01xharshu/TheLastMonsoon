@@ -22,6 +22,7 @@ static func furnish(b: Node3D) -> void:
 		for z in range(-int(b.depth*.5)+2,int(b.depth*.5),4):
 			b.piece(b,"CeilingBeam",Vector3(0,y+5.02,z),Vector3(b.width-.5,.32,.22),b.wood,false)
 		for row in 3:
+			if b.police and (level != 1 or row != 2): continue
 			var z: float = -6+row*5
 			for x in [-.4,6.4]:
 				b.piece(b,"TableTrestle",Vector3(x,y+.4,z),Vector3(.16,.75,1.3),b.wood)
@@ -33,6 +34,7 @@ static func furnish(b: Node3D) -> void:
 			b.piece(b,"PaperStack",Vector3(2.2,y+.93,z+.1),Vector3(.26,.025,.34),b.plaster,false)
 		# Keep the central route open while giving waiting visitors a defined side bay.
 		for z in [-5.0,5.0]:
+			if b.police: continue
 			b.piece(b,"VisitorBenchSeat",Vector3(-6.5,y+.53,z),Vector3(2.6,.16,.68),b.wood)
 			b.piece(b,"VisitorBenchBack",Vector3(-6.5,y+1.0,z-.34),Vector3(2.6,.9,.12),b.wood,false)
 			for dx in [-1.0,1.0]:

@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://dka16rcbjrkcd" path="res://world/suryagarh/settlements/settlement_builder.gd" id="settlement"]
 [ext_resource type="Script" uid="uid://dltrral1cec8c" path="res://horses/village_stable.gd" id="stable"]
 [ext_resource type="Script" path="res://world/suryagarh/live_carts.gd" id="live_carts"]
+[ext_resource type="Script" path="res://world/suryagarh/settlements/wealthy_households.gd" id="households"]
 
 [ext_resource type="PackedScene" path="res://world/ruined_fort/fort_world_piece.tscn" id="fort"]
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="forest_generator"]
@@ -67,6 +68,16 @@ position = Vector3(520, 120, -350)
 
 [node name="ForestShrine" type="Node3D" parent="." unique_id=236108893]
 script = ExtResource("forest_shrine")
+
+[node name="WorldForestPatch" type="Node3D" parent="."]
+position = Vector3(370, 0, -105)
+script = ExtResource("forest_generator")
+config = ExtResource("forest_config")
+terrain_source = NodePath("TerrainAdapter")
+path_points = PackedVector2Array(-27, 0, -10, 2, 7, 3, 27, 5)
+
+[node name="TerrainAdapter" type="Node" parent="WorldForestPatch"]
+script = ExtResource("forest_adapter")
 
 [node name="GameTimeSystem" type="Node" parent="." unique_id=2072554750]
 script = ExtResource("4_time")
@@ -161,3 +172,6 @@ script = ExtResource("forage")
 
 [node name="GameMenu" type="CanvasLayer" parent="." unique_id=21963651]
 script = ExtResource("game_menu")
+
+[node name="WealthyHouseholds" type="Node3D" parent="."]
+script = ExtResource("households")

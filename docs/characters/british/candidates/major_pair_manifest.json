@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "major",
   "source": "WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend",
-  "source_sha256": "fcfaa4c2707f8a92be01ac0d41cae74018937a55c899c4ef63da332eedd64a39",
+  "source_sha256": "351dc2d3535c402a6f70d40cdd06ba42c118d040c3b5dad500f25a5e12cf5ca2",
   "reference": "docs/characters/british/references/major_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -16,16 +16,18 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/major_man.glb",
-      "sha256": "f99fb73f337cb0f959c355b53fa196feabade6c4de0dc2a99183700dd45bd8f9",
-      "bytes": 1463800
+      "sha256": "17a653a713f2648058d68c464043f5881ded977b21e7d60af803d983623cd5f2",
+      "bytes": 1483376
     },
     "woman": {
       "path": "characters/npcs/british/major_woman.glb",
-      "sha256": "933e7f19342261403499e516f9e4a5647fed31afd9d150ff3fd49d53ff5f8da6",
-      "bytes": 1793768
+      "sha256": "758e4b4c5922b7ee2752b7eb539010f853df1b05b05c971d9dae02e0bad1a72c",
+      "bytes": 1769292
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true,
-  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
+  "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
+  "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
 }

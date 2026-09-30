@@ -1,7 +1,7 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
-  "source_sha256": "55268342e03e1d8a1c505966bbd3dbb6c272f563618f0c77cc4ed16da67a47aa",
+  "source_sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
   "reference": "docs/characters/british/references/private_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -15,15 +15,17 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/private_man.glb",
-      "sha256": "9947c7b70d6dccc3f169d8100d28b6ab3723675247970183eb5fa5128440e837",
-      "bytes": 1473444
+      "sha256": "57541372f4e81041eaedfe7229af8d811e05a5a665c468309a0d02d243cca634",
+      "bytes": 1492816
     },
     "woman": {
       "path": "characters/npcs/british/private_woman.glb",
-      "sha256": "1176f612c8fa6a7c00fe0f9833e1a3826932a037709bfd06645dc2768d8d8d29",
-      "bytes": 1903444
+      "sha256": "43ee7da98c16e432c98921844e09123786b8a23481050a199c7a6069fd50b617",
+      "bytes": 1834628
     }
   },
   "placed_in_world": true,
-  "waist_transition": "editable skinned fitted waist transition matches gathered skirt upper-edge vertices"
+  "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
+  "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
 }

@@ -2,6 +2,7 @@ extends AnimationTree
 ## Runtime locomotion blend for the imported Arjun clips. Combat and special poses
 ## remain procedural layers on the same skeleton.
 
+var air_blend := 0.0
 var ground_blend := 0.0
 var water_blend := 0.0
 var swim_blend := 0.0
@@ -50,8 +51,10 @@ func configure(model: Node3D) -> bool:
 		library.add_animation(name, clip)
 	library.add_animation("longgun_ready", _longgun_pose_clip(skeleton, source.get_animation("idle"), false))
 	library.add_animation("longgun_aim", _longgun_pose_clip(skeleton, source.get_animation("idle"), true))
-	for beat in ["reach", "pull_left", "pull_right", "mantle", "recover"]:
+	for beat in ["reach", "pull_left", "pull_right", "mantle", "mantle_step", "recover"]:
 		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
+	for beat in ["jump_rise", "jump_fall"]:
+		library.add_animation(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
@@ -69,6 +72,13 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("ground", ground)
 	graph.add_node("water", water)
 	graph.add_node("swim", AnimationNodeBlend2.new())
+	var air := AnimationNodeBlendSpace1D.new()
+	air.min_space = -1.0
+	air.max_space = 1.0
+	air.add_blend_point(_clip("motion/jump_fall"), -1.0, -1, "fall")
+	air.add_blend_point(_clip("motion/jump_rise"), 1.0, -1, "rise")
+	graph.add_node("air_pose", air)
+	graph.add_node("air", AnimationNodeBlend2.new())
 	var longgun_ready := AnimationNodeBlend2.new()
 	var longgun_aim := AnimationNodeBlend2.new()
 	for layer in [longgun_ready, longgun_aim]:
@@ -87,14 +97,18 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("sit_idle", _clip("motion/sit_idle"))
 	graph.add_node("sit", AnimationNodeBlend2.new())
 	graph.add_node("rest", AnimationNodeBlend2.new())
+	graph.add_node("sleep_pose", _clip("motion/idle"))
+	graph.add_node("sleep", AnimationNodeBlend2.new())
 	var climb := AnimationNodeBlendSpace1D.new()
 	climb.min_space = 0.0
 	climb.max_space = 1.0
-	for beat in [{"name":"reach","at":0.0},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.82},{"name":"recover","at":1.0}]:
+	for beat in [{"name":"reach","at":0.0},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.78},{"name":"mantle_step","at":0.90},{"name":"recover","at":1.0}]:
 		climb.add_blend_point(_clip("motion/climb_" + beat.name), beat.at, -1, beat.name)
 	graph.add_node("climb_pose", climb)
 	graph.add_node("climb", AnimationNodeBlend2.new())
-	graph.connect_node("swim", 0, "ground")
+	graph.connect_node("air", 0, "ground")
+	graph.connect_node("air", 1, "air_pose")
+	graph.connect_node("swim", 0, "air")
 	graph.connect_node("swim", 1, "water")
 	graph.connect_node("longgun_ready", 0, "swim")
 	graph.connect_node("longgun_ready", 1, "longgun_ready_pose")
@@ -108,7 +122,9 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("sit", 0, "sit_transition")
 	graph.connect_node("sit", 1, "sit_idle")
 	graph.connect_node("rest", 1, "sit")
-	graph.connect_node("climb", 0, "rest")
+	graph.connect_node("sleep", 0, "rest")
+	graph.connect_node("sleep", 1, "sleep_pose")
+	graph.connect_node("climb", 0, "sleep")
 	graph.connect_node("climb", 1, "climb_pose")
 	graph.connect_node("output", 0, "climb")
 	tree_root = graph
@@ -130,6 +146,9 @@ func _climb_pose_clip(rig: Skeleton3D, idle: Animation, beat: String) -> Animati
 		"pull_left": {"pelvis":Vector3(-.08,.04,-.035), "spine_01":Vector3(-.24,-.04,0), "spine_02":Vector3(-.16,-.03,0), "head":Vector3(.10,.03,0), "upperarm_l":Vector3(-1.72,-.08,-.22), "upperarm_r":Vector3(-1.60,-.08,.22), "lowerarm_l":Vector3(-.68,0,0), "lowerarm_r":Vector3(-.42,0,0), "thigh_l":Vector3(-1.0,0,0), "thigh_r":Vector3(-.45,0,0), "calf_l":Vector3(1.35,0,0), "calf_r":Vector3(.55,0,0)},
 		"pull_right": {"pelvis":Vector3(-.08,-.04,.035), "spine_01":Vector3(-.24,.04,0), "spine_02":Vector3(-.16,.03,0), "head":Vector3(.10,-.03,0), "upperarm_l":Vector3(-1.60,-.08,-.22), "upperarm_r":Vector3(-1.72,-.08,.22), "lowerarm_l":Vector3(-.42,0,0), "lowerarm_r":Vector3(-.68,0,0), "thigh_l":Vector3(-.45,0,0), "thigh_r":Vector3(-1.0,0,0), "calf_l":Vector3(.55,0,0), "calf_r":Vector3(1.35,0,0)},
 		"mantle": {"pelvis":Vector3(.10,0,0), "spine_01":Vector3(.35,0,0), "spine_02":Vector3(.23,0,0), "head":Vector3(-.15,0,0), "upperarm_l":Vector3(-.75,0,-.13), "upperarm_r":Vector3(-.75,0,.13), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0), "thigh_l":Vector3(-1.05,0,0), "thigh_r":Vector3(-.75,0,0), "calf_l":Vector3(.7,0,0), "calf_r":Vector3(.6,0,0)},
+		"mantle_step": {"pelvis":Vector3(.08,0,-.04), "spine_01":Vector3(.27,0,0), "spine_02":Vector3(.12,0,0), "head":Vector3(-.12,0,0), "upperarm_l":Vector3(-.55,0,-.13), "upperarm_r":Vector3(-.55,0,.13), "lowerarm_l":Vector3(-.35,0,0), "lowerarm_r":Vector3(-.35,0,0), "thigh_l":Vector3(-1.15,0,0), "thigh_r":Vector3(-.35,0,0), "calf_l":Vector3(1.25,0,0), "calf_r":Vector3(.45,0,0)},
+		"jump_rise": {"spine_01":Vector3(.12,0,0), "thigh_l":Vector3(-.60,0,0), "thigh_r":Vector3(-.35,0,0), "calf_l":Vector3(.95,0,0), "calf_r":Vector3(.70,0,0), "foot_l":Vector3(-.15,0,0), "foot_r":Vector3(-.12,0,0), "upperarm_l":Vector3(-.45,0,-.15), "upperarm_r":Vector3(-.45,0,.15), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0)},
+		"jump_fall": {"spine_01":Vector3(.08,0,0), "thigh_l":Vector3(-.18,0,0), "thigh_r":Vector3(-.12,0,0), "calf_l":Vector3(.30,0,0), "calf_r":Vector3(.25,0,0), "upperarm_l":Vector3(-.18,0,-.25), "upperarm_r":Vector3(-.18,0,.25), "lowerarm_l":Vector3(-.35,0,0), "lowerarm_r":Vector3(-.35,0,0)},
 		"recover": {}
 	}
 	var angles: Dictionary = poses[beat]
@@ -208,7 +227,7 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 		var right := -left
 		var stride := 0.80 if running else 0.52
 		var knee := 1.05 if running else 0.72
-		var arm_swing := 0.72 if running else 0.12
+		var arm_swing := 0.72 if running else 0.30
 		var angles := {
 			"pelvis": Vector3(0.0, sin(cycle) * (0.085 if running else 0.06), sin(cycle) * 0.025),
 			"spine_01": Vector3(0.17 if running else 0.07, -sin(cycle) * 0.045, 0.0),
@@ -230,7 +249,7 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 			if bone.contains("_01_") or bone.contains("_02_"):
 				var idle_finger_track := idle.find_track(NodePath("Arjun_Rig/Skeleton3D:" + bone), Animation.TYPE_ROTATION_3D)
 				var finger_base: Quaternion = idle.track_get_key_value(idle_finger_track, 0) if idle_finger_track >= 0 else skeleton.get_bone_pose_rotation(index)
-				var bend := 0.20 if bone.contains("_01_") else 0.16
+				var bend := 0.50 if bone.contains("_01_") else 0.40
 				clip.rotation_track_insert_key(tracks[bone], clip.length * float(frame) / 24.0, finger_base * Quaternion(Vector3.RIGHT, bend))
 				continue
 			var axes := skeleton.get_bone_global_rest(index).basis.orthonormalized().inverse()
@@ -241,11 +260,15 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 			clip.rotation_track_insert_key(tracks[bone], clip.length * float(frame) / 24.0, rotation)
 	return clip
 
-func update_motion(delta: float, ground_speed: float, water_speed: float, in_water: bool) -> void:
+func update_motion(delta: float, ground_speed: float, water_speed: float, in_water: bool, grounded: bool = true, vertical_speed: float = 0.0) -> void:
+	set("parameters/sleep/blend_amount", 0.0)
 	set("parameters/rest/blend_amount", rest_blend)
 	var weight := 1.0 - exp(-8.0 * delta)
 	ground_blend = lerpf(ground_blend, clampf(ground_speed, 0.0, 1.75), weight)
 	water_blend = lerpf(water_blend, clampf(water_speed, 0.0, 1.0), weight)
+	air_blend = lerpf(air_blend, 1.0 if not grounded and not in_water else 0.0, 1.0 - exp(-16.0 * delta))
+	set("parameters/air/blend_amount", air_blend)
+	set("parameters/air_pose/blend_position", clampf(vertical_speed / 3.0, -1.0, 1.0))
 	swim_blend = lerpf(swim_blend, 1.0 if in_water else 0.0, weight)
 	set("parameters/ground/blend_position", ground_blend)
 	set("parameters/water/blend_position", water_blend)
@@ -254,14 +277,15 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	# in-place gait cadence to that travel so planted feet slide less.
 	var run_mix := clampf((ground_speed - 1.0) / 0.75, 0.0, 1.0)
 	var ground_rate := lerpf(clampf(ground_speed * 1.7, 0.7, 1.7), 1.4, run_mix)
-	playback_rate = lerpf(playback_rate, lerpf(ground_rate, 1.0, swim_blend), weight)
+	playback_rate = lerpf(playback_rate, lerpf(ground_rate, lerpf(0.75, 1.25, water_blend), swim_blend), weight)
 	advance(delta * playback_rate)
 	# The source boots rise as the thighs swing. Move only the visual rig down
 	# toward the lowest boot while leaving collision and travel untouched.
 	var correction := clampf((_lowest_foot_y() - idle_foot_y) + ground_blend * 0.04, 0.0, 0.20)
-	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend), weight)
+	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend) * (1.0 - air_blend), weight)
 
 func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false) -> void:
+	set("parameters/sleep/blend_amount", smoothstep(0.38, 0.9, progress))
 	rest_blend = clampf(seated_weight, 0.0, 1.0)
 	longgun_ready_blend = 0.0
 	longgun_aim_blend = 0.0

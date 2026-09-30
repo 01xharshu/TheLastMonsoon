@@ -1,0 +1,17 @@
+{
+  "rank": "official",
+  "fits": [
+    {
+      "actor": "Official",
+      "parts": [
+        "Official dark top hat"
+      ],
+      "scalp_top_m": 1.7683906555175781,
+      "crown_width_m": 0.15808871126174928,
+      "crown_depth_m": 0.2067777674496174,
+      "base_m": 1.7133906555175782,
+      "head_weight": 1.0
+    }
+  ],
+  "visual_approved": false
+}

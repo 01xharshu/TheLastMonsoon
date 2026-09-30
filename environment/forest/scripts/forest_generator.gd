@@ -45,6 +45,8 @@ func regenerate() -> void:
 	_noise.seed = config.seed
 	_noise.frequency = config.biome_noise_scale
 	_noise.fractal_octaves = 3
+	if _terrain != null and _terrain.has_method("prepare_forest_area"):
+		_terrain.call("prepare_forest_area")
 	_tree_positions.clear()
 	if _terrain != null and _terrain.has_method("sample_forest_existing_tree_points"):
 		for point in _terrain.call("sample_forest_existing_tree_points"):
@@ -66,7 +68,7 @@ func regenerate() -> void:
 				var height := _height(p)
 				if height < config.min_height or height > config.max_height: continue
 				if _slope(p) > config.max_slope: continue
-				var density := _density(p) * _layer_density(layer)
+				var density := _density(p, layer) * _layer_density(layer)
 				if rng.randf() >= minf(1.0, BASE_RATE[layer] * density): continue
 				if layer in TREE_LAYERS:
 					var separated := true
@@ -99,13 +101,14 @@ func _cell_rng(gx: int, gz: int, layer_index: int) -> RandomNumberGenerator:
 	rng.seed = hash(Vector3i(gx, gz, layer_index)) ^ config.seed
 	return rng
 
-func _density(p: Vector2) -> float:
+func _density(p: Vector2, layer: String = "") -> float:
 	var noise_value := _noise.get_noise_2d(p.x, p.y)
 	var cluster := 0.28 + 0.72 * smoothstep(config.biome_threshold - 0.2, config.biome_threshold + 0.35, noise_value)
 	var mask := 1.0
 	if _terrain != null and _terrain.has_method("sample_forest_biome_mask"):
 		mask = clampf(_terrain.call("sample_forest_biome_mask", p.x, p.y), 0.0, 1.0)
-	return cluster * mask * _corridor_density(p) * config.overall_density
+	var clearance := config.tree_path_clearance if layer in TREE_LAYERS else (1.2 if layer == "fallen_log" else 0.0)
+	return cluster * mask * _corridor_density(p, clearance) * config.overall_density
 
 func _layer_density(layer: String) -> float:
 	match layer:
@@ -124,7 +127,7 @@ func _layer_density(layer: String) -> float:
 		"debris": return config.debris_density
 	return 0.0
 
-func _corridor_density(p: Vector2) -> float:
+func _corridor_density(p: Vector2, extra_clearance: float = 0.0) -> float:
 	if path_points.size() < 2: return 1.0
 	var nearest := INF
 	for i in range(path_points.size() - 1):
@@ -132,7 +135,7 @@ func _corridor_density(p: Vector2) -> float:
 		var ab := path_points[i + 1] - a
 		var t := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
 		nearest = minf(nearest, p.distance_to(a + ab * t))
-	return smoothstep(config.path_exclusion_radius, config.path_exclusion_radius + maxf(config.path_feather, 0.001), nearest)
+	return smoothstep(config.path_exclusion_radius + extra_clearance, config.path_exclusion_radius + extra_clearance + maxf(config.path_feather, 0.001), nearest)
 
 func _height(p: Vector2) -> float:
 	if _terrain != null and _terrain.has_method("sample_forest_height"):

@@ -10,6 +10,8 @@ func _run() -> void:
 	add_child(world)
 	for i in 5: await get_tree().physics_frame
 	var actor: CharacterBody3D = world.get_node("Player")
+	get_window().mode = Window.MODE_WINDOWED
+	DisplayServer.window_set_size(Vector2i(960,540))
 	if actor.get_script() == null:
 		push_error("TALL CLIMB CAPTURE: Player script did not load")
 		get_tree().quit(1)
@@ -31,7 +33,8 @@ func _run() -> void:
 		push_error("TALL CLIMB CAPTURE: start failed")
 		get_tree().quit(1)
 		return
-	for beat in [{"name":"reach","at":.12},{"name":"pull_left","at":.30},{"name":"pull_right","at":.56},{"name":"mantle","at":.85},{"name":"recover","at":.95}]:
+	climb.set_physics_process(false)
+	for beat in [{"name":"reach","at":.12},{"name":"pull_left","at":.30},{"name":"pull_right","at":.56},{"name":"mantle","at":.80},{"name":"mantle_step","at":.87},{"name":"recover","at":.95}]:
 		climb.progress = beat.at
 		climb._physics_process(0.0)
 		camera.global_position = actor.global_position + Vector3(-4.0,1.5,3.4)

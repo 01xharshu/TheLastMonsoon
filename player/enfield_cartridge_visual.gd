@@ -1,9 +1,8 @@
-extends BoneAttachment3D
+extends Node3D
 ## Small paper cartridge carried by the left palm during the loading gesture.
 var hand_offset := Transform3D.IDENTITY
 
 func setup(palm_offset: Vector3, palm_basis: Basis) -> void:
-	bone_name = "hand_l"
 	var paper := StandardMaterial3D.new()
 	paper.albedo_color = Color(0.64, 0.55, 0.39)
 	paper.roughness = 0.96
@@ -35,9 +34,20 @@ func setup(palm_offset: Vector3, palm_basis: Basis) -> void:
 	set_as_top_level(true)
 	visible = false
 
-func update_loading(selected_weapon: int, stowed_weapon: bool, progress: float) -> void:
-	visible = selected_weapon == 1 and not stowed_weapon and progress >= 0.10 and progress <= 0.52
+func update_loading(selected_weapon: int, stowed_weapon: bool, progress: float, weapon: Node3D = null) -> void:
+	var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(progress)
+	visible = selected_weapon == 1 and not stowed_weapon and loading.cartridge_visible
 	if not visible: return
 	var rig := get_parent() as Skeleton3D
+	if weapon:
+		# Paper is physical size, independent of the imported gun's scale.
+		var pose: Transform3D = weapon.global_transform * loading.cartridge
+		pose.basis = pose.basis.orthonormalized()
+		global_transform = pose
+		return
 	var hand := rig.get_bone_global_pose(rig.find_bone("hand_l"))
-	global_transform = rig.global_transform * hand * hand_offset
+	var pose := hand * hand_offset
+	var index := rig.get_bone_global_pose(rig.find_bone("index_02_l")).origin
+	var thumb := rig.get_bone_global_pose(rig.find_bone("thumb_02_l")).origin
+	pose.origin = (index + thumb) * 0.5 + pose.basis.y * 0.022
+	global_transform = rig.global_transform * pose
