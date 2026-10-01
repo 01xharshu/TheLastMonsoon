@@ -3,6 +3,9 @@ extends "res://characters/npcs/british/british_npc_actor.gd"
 @export var household_job:String="resident"
 func _ready() -> void:
 	super._ready()
+	var vitality := preload("res://combat/npc_vitality.gd").new()
+	vitality.name = "Vitality"
+	add_child(vitality)
 	for node in find_children("*","MeshInstance3D",true,false):
 		if household_job=="Coachman" and "kurta loose lower panel" in node.name.to_lower():node.hide()
 		if household_job!="resident":continue
@@ -43,15 +46,17 @@ func _ready() -> void:
 	animation_tree.advance(0.0)
 
 func _process(delta:float) -> void:
+	if get_meta("dead",false): return
 	super._process(delta)
 	if household_job=="WaterBearer" and _skeleton!=null:
 		var pot:=get_node_or_null("CarriedWaterPot") as Node3D
 		if pot!=null:
 			# Keep the vessel at the torso and solve each hand to its side.
-			pot.position=Vector3(0,.92,.24)
+			pot.position=Vector3(0,.92,.36)
 			for side in ["l","r"]:
 				var contact:=pot.to_global(Vector3(.135 if side=="l" else -.135,.035,0))
 				solve_hand_contact(side,contact)
+				set_grip(side,.45)
 
 func palm_world(side:String) -> Vector3:
 	var pose:=_skeleton.get_bone_global_pose(_skeleton.find_bone("hand_"+side))
@@ -73,3 +78,15 @@ func solve_hand_contact(side:String,target_world:Vector3) -> void:
 			_skeleton.force_update_all_bone_transforms()
 		if palm_world(side).distance_to(target_world)<.001:break
 	set_meta("hand_contact_"+side,palm_world(side).distance_to(target_world))
+
+func set_grip(side:String,strength:float) -> void:
+	for index in _finger_rest:
+		var label:=_skeleton.get_bone_name(index)
+		if not label.ends_with("_"+side):continue
+		var curl:=strength if "_01_" in label else (strength*1.15 if "_02_" in label else strength*.5)
+		if label.begins_with("thumb"):curl*=.55
+		_skeleton.set_bone_pose_rotation(index,_finger_rest[index]*Quaternion(_finger_pitch[index],curl))
+
+func take_damage(amount: float) -> void:
+	var vitality := get_node_or_null("Vitality")
+	if vitality != null: vitality.take_damage(amount)

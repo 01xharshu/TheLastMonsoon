@@ -33,6 +33,13 @@ for row in range(3):
  for poly in band.data.polygons:poly.use_smooth=True
  group=band.vertex_groups.new(name='head');group.add(list(range(len(band.data.vertices))),1,'REPLACE')
  mod=band.modifiers.new('Skin','ARMATURE');mod.object=rig;band.parent=rig
+bpy.ops.mesh.primitive_uv_sphere_add(segments=48,ring_count=20,location=(0,-.030,1.632))
+crown=bpy.context.object;crown.name='Fitted turban crown';crown.scale=(.079,.095,.027)
+bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+crown.data.materials.append(cream)
+for poly in crown.data.polygons:poly.use_smooth=True
+group=crown.vertex_groups.new(name='head');group.add(list(range(len(crown.data.vertices))),1,'REPLACE')
+mod=crown.modifiers.new('Skin','ARMATURE');mod.object=rig;crown.parent=rig
 # The donor lower panel deforms into pointed tails in the relaxed-arm pose.
 bpy.data.objects.remove(bpy.data.objects['Kurta loose lower panel'],do_unlink=True)
 # The shoulder cloth follows the existing garment surface rather than a rigid box.
@@ -90,11 +97,11 @@ for v in body.data.vertices:
  jaw=math.exp(-((v.co.z-1.455)/.036)**2)
  v.co.x*=1+(.075 if role=='merchant' else -.055)*jaw
  if role=='landowner':v.co.y-=.005*math.exp(-((v.co.z-1.505)/.025)**2-(v.co.x/.025)**2)
-hairmat=material('Merchant black moustache' if role=='merchant' else 'Landowner salt and pepper moustache',(.022,.015,.012) if role=='merchant' else (.18,.16,.14))
+hairmat=material('Merchant black moustache' if role=='merchant' else 'Landowner salt and pepper moustache',(.022,.015,.012) if role=='merchant' else (.075,.070,.060))
 for sign in [-1,1]:
- bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=12,location=(sign*.020,-.154,1.474))
+ bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=12,location=(sign*.017,-.153,1.474))
  hair=bpy.context.object;hair.name='Tailored moustache '+str(sign)
- hair.scale=(.027,.006,.0055 if role=='merchant' else .009)
+ hair.scale=(.023,.0045,.0045 if role=='merchant' else .006)
  hair.rotation_euler.y=sign*(.12 if role=='merchant' else -.18)
  bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
  hair.data.materials.append(hairmat)

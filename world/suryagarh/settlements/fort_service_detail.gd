@@ -84,7 +84,57 @@ func prop(parent: Node3D,label: String,slug: String,at: Vector3,yaw := 0.0) -> N
 	parent.add_child(node)
 	node.add_to_group("fort_supported_prop")
 	node.set_meta("support_y",at.y)
+	# Fit this instance's physical envelope to its visible asset, including crate stacks.
+	var bounds := _bounds(node)
+	var collider := node.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collider != null:
+		if collider.shape is BoxShape3D:
+			var shape := BoxShape3D.new()
+			shape.size=bounds.size
+			collider.shape=shape
+		else:
+			var shape := CylinderShape3D.new()
+			shape.height=bounds.size.y
+			shape.radius=maxf(bounds.size.x,bounds.size.z)*.5
+			collider.shape=shape
+		collider.position=bounds.get_center()
 	return node
+
+func _bounds(node: Node3D) -> AABB:
+	var result := AABB()
+	var first := true
+	for mesh in node.find_children("*","MeshInstance3D",true,false):
+		var box: AABB=(node.global_transform.affine_inverse()*mesh.global_transform)*mesh.mesh.get_aabb()
+		result=box if first else result.merge(box)
+		first=false
+	return result
+
+func command_rooms(b) -> void:
+	var main: Node3D = b.get_node("MainHouse")
+	# Chair backs and seats already exist; give them sensible height and four real legs.
+	for seat in main.get_children():
+		if not str(seat.name).begins_with("ChairSeat"): continue
+		var level := roundf((seat.position.y-.52)/4.6)
+		var floor_y := level*4.6+(.34 if level == 0 else .26)
+		seat.position.y=floor_y+.46
+		for dx in [-.30,.30]:
+			for dz in [-.30,.30]: b.piece(main,"ChairLeg",Vector3(seat.position.x+dx,floor_y+.20,seat.position.z+dz),Vector3(.075,.40,.075),timber,false)
+		for back in main.get_children():
+			if not str(back.name).begins_with("ChairBack") or absf(back.position.x-seat.position.x)>.01 or absf(back.position.z-seat.position.z-.35)>.01: continue
+			if absf(back.position.y-(level*4.6+1.1))>.01: continue
+			back.position.y=floor_y+.82
+			back.get_child(0).mesh.size.y=.75
+	var y := 4.6
+	for x in [-3.0,3.0]:
+		for z in [-8.85,-7.15]: b.piece(main,"CouncilTableLeg",Vector3(x,y+.58,z),Vector3(.18,.64,.18),timber)
+	b.piece(main,"CouncilTableStretcher",Vector3(0,y+.45,-8),Vector3(6.0,.13,.16),timber,false)
+	b.piece(main,"DistrictMapPaper",Vector3(-1,y+1.108,-8),Vector3(1.25,.015,.80),lime,false)
+	for line in 5: b.piece(main,"MapInkLine",Vector3(-1.52+line*.26,y+1.118,-8),Vector3(.009,.003,.69),iron,false)
+	b.piece(main,"CommandLedger",Vector3(1.2,y+1.15,-8),Vector3(.48,.09,.35),b.carpet,false)
+	b.piece(main,"LedgerPageEdges",Vector3(1.2,y+1.153,-7.818),Vector3(.43,.056,.005),lime,false)
+	b.piece(main,"InkWell",Vector3(2.2,y+1.155,-8),Vector3(.08,.11,.08),iron,false)
+	b.piece(main,"DispatchBundle",Vector3(-2.4,y+1.145,-8),Vector3(.42,.07,.31),lime,false)
+	for side in [-1.0,1.0]: b.piece(main,"DispatchTie",Vector3(-2.4+side*.12,y+1.185,-8),Vector3(.012,.004,.31),timber,false)
 
 func _pot(b,room: Node3D,label: String,at: Vector3) -> void:
 	var model := preload("res://objects/household/water_pot_visual.tscn").instantiate()
@@ -134,13 +184,13 @@ func _kitchen(b,room: Node3D) -> void:
 		for z in [-3.4,-2.6]: b.piece(room,"TableLeg",Vector3(x,.565,z),Vector3(.12,.65,.12),timber)
 	b.piece(room,"TableLowerRail",Vector3(4,.40,-3),Vector3(3,.10,.12),timber,false)
 	b.piece(room,"ChoppingBoard",Vector3(3.25,1.015,-3),Vector3(.7,.045,.48),timber,false)
-	prop(room,"MixingVessel","brass_pot",Vector3(4,.99,-2.8))
+	prop(room,"MixingVessel","brass_pot",Vector3(4,.99,-2.58))
 	prop(room,"VegetableBasket","basket",Vector3(5.2,.99,-3))
 	for x in [2.4,2.8]: prop(room,"CookingVessel","brass_pot",Vector3(x,.99,-3.25))
 	for side in ["l","r"]:
 		var marker := Marker3D.new()
 		marker.name="CookContact"+side.to_upper()
-		marker.position=Vector3(4.14 if side=="l" else 3.93,1.28,-2.80)
+		marker.position=Vector3(4.14 if side=="l" else 3.93,1.28,-2.58)
 		room.add_child(marker)
 	b.piece(room,"WaterPotStand",Vector3(-7,.36,2.2),Vector3(1.8,.24,1),b.stone)
 	_pot(b,room,"KitchenWaterPot",Vector3(-7.45,.48,2.2))

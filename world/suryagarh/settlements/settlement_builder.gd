@@ -38,6 +38,7 @@ func _ready() -> void:
 	place_new_props()
 	place_period_props()
 	landing()
+	preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
 

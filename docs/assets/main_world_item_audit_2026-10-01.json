@@ -1,0 +1,348 @@
+{
+	"date": "2026-10-01",
+	"household_scenes": [
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/grain_sack.tscn"
+		},
+		{
+			"instances": 34,
+			"paths": [
+				"/root/Suryagarh/Settlement/BhairavpurHouse0/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse1/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse2/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse3/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse4/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse5/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse6/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse7/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse8/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse9/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse10/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse11/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse12/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse13/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse14/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse15/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse16/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse17/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse18/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse19/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse20/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse21/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse22/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse23/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse24/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse25/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse26/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse27/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse28/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse29/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse30/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse31/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurHouse32/HouseOilLamp/LampBody",
+				"/root/Suryagarh/Settlement/BhairavpurLandownerEstate/HouseOilLamp/LampBody"
+			],
+			"scene": "res://objects/household/oil_lamp_visual.tscn"
+		},
+		{
+			"instances": 3,
+			"paths": [
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/KitchenWaterPot",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/KitchenWaterReserve",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/QuartersWaterPot"
+			],
+			"scene": "res://objects/household/water_pot_visual.tscn"
+		},
+		{
+			"instances": 1,
+			"paths": [
+				"/root/Suryagarh/Player/VisualRoot/EquipmentVisuals/WaterBagVisual/PouchModel"
+			],
+			"scene": "res://objects/household/water_pouch_visual.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/woven_mat.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/sets/armoury_supply.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/sets/cooking_corner.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/sets/market_supply.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/sets/records_desk.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/sets/rest_corner.tscn"
+		},
+		{
+			"instances": 7,
+			"paths": [
+				"/root/Suryagarh/Settlement/CompanyStoresWineBarrel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/ProvisionBarrel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/SpareBarrel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29510",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29511",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29512",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29513"
+			],
+			"scene": "res://objects/household/storage/barrel.tscn"
+		},
+		{
+			"instances": 9,
+			"paths": [
+				"/root/Suryagarh/Settlement/BhairavpurWickerBasket",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/VegetableBasket",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/ShelfBasket",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29312",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29313",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/StorageBasket",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29536",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29538",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29540"
+			],
+			"scene": "res://objects/household/storage/basket.tscn"
+		},
+		{
+			"instances": 2,
+			"paths": [
+				"/root/Suryagarh/Settlement/CompanyGuardBench",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/StaffBench"
+			],
+			"scene": "res://objects/household/storage/bench.tscn"
+		},
+		{
+			"instances": 18,
+			"paths": [
+				"/root/Suryagarh/Settlement/BhairavpurBrassPot",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/HearthBrassPot",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29206",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/MixingVessel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/CookingVessel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29243",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/ShelfVessel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29308",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29309",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29310",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/@StaticBody3D@29311",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/StoreVessel",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29537",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29539",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29541",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/BedsideBrassPot",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/@StaticBody3D@29932",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/@StaticBody3D@30032"
+			],
+			"scene": "res://objects/household/storage/brass_pot.tscn"
+		},
+		{
+			"instances": 2,
+			"paths": [
+				"/root/Suryagarh/Settlement/BhairavpurWoodenBucket",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/WaterBucket"
+			],
+			"scene": "res://objects/household/storage/bucket.tscn"
+		},
+		{
+			"instances": 10,
+			"paths": [
+				"/root/Suryagarh/Settlement/CompanyStoresWoodenCrate",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/ProvisionCrate",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/StackedCrate",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29514",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29515",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29516",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/@StaticBody3D@29517",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/PersonalStorage",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/@StaticBody3D@29931",
+				"/root/Suryagarh/Settlement/GovernmentHouse/ServantQuarters/@StaticBody3D@30031"
+			],
+			"scene": "res://objects/household/storage/crate.tscn"
+		},
+		{
+			"instances": 3,
+			"paths": [
+				"/root/Suryagarh/Settlement/BhairavpurWoodenStool",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortKitchen/KitchenStool",
+				"/root/Suryagarh/Settlement/GovernmentHouse/FortStores/StoreStool"
+			],
+			"scene": "res://objects/household/storage/stool.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/supplies/bandage_roll.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/supplies/folded_letter.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/supplies/record_folio.tscn"
+		},
+		{
+			"instances": 0,
+			"paths": [],
+			"scene": "res://objects/household/supplies/supply_parcel.tscn"
+		}
+	],
+	"interactive_wrappers": {
+		"res://objects/oil_lamp.tscn": [
+			"/root/Suryagarh/Settlement/BhairavpurHouse0/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse1/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse2/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse3/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse4/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse5/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse6/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse7/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse8/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse9/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse10/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse11/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse12/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse13/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse14/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse15/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse16/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse17/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse18/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse19/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse20/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse21/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse22/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse23/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse24/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse25/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse26/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse27/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse28/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse29/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse30/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse31/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurHouse32/HouseOilLamp",
+			"/root/Suryagarh/Settlement/BhairavpurLandownerEstate/HouseOilLamp"
+		],
+		"res://objects/roti.tscn": [],
+		"res://objects/water_bag.tscn": [],
+		"res://objects/water_pot.tscn": []
+	},
+	"limits": "Scene instantiation audit, not art/contact/normal-speed approval. Procedural legacy equivalents are reported separately from new reusable prefabs.",
+	"script_instances": {
+		"": 1,
+		"res://characters/npcs/british/british_npc_actor.gd": 16,
+		"res://characters/npcs/households/fort_staff.gd": 2,
+		"res://characters/npcs/households/household_npc_actor.gd": 11,
+		"res://combat/damage_hit_body.gd": 40,
+		"res://combat/npc_vitality.gd": 15,
+		"res://environment/forest/adapters/suryagarh_terrain_adapter.gd": 1,
+		"res://environment/forest/scripts/forest_generator.gd": 1,
+		"res://environment/weapons/period_bow/bow_mechanism.gd": 2,
+		"res://horses/horse_vitality.gd": 10,
+		"res://horses/stable_horse.gd": 1,
+		"res://horses/village_stable.gd": 1,
+		"res://interaction/interaction_overlay.gd": 1,
+		"res://interaction/treasure_chest.gd": 1,
+		"res://interaction/wall_notice.gd": 2,
+		"res://objects/charpai.gd": 1,
+		"res://objects/hinged_door.gd": 56,
+		"res://objects/mango.gd": 10,
+		"res://objects/oil_lamp.gd": 34,
+		"res://objects/water_pot.gd": 1,
+		"res://player/arjun_clothing.gd": 1,
+		"res://player/arjun_equipment.gd": 1,
+		"res://player/arjun_motion_tree.gd": 1,
+		"res://player/arjun_visual.gd": 1,
+		"res://player/bow_combat.gd": 1,
+		"res://player/camera_clearance.gd": 1,
+		"res://player/circular_stat.gd": 4,
+		"res://player/climb_component.gd": 1,
+		"res://player/combat_input.gd": 1,
+		"res://player/consumable_component.gd": 1,
+		"res://player/detention_component.gd": 1,
+		"res://player/document_motion.gd": 1,
+		"res://player/energy_debug_label.gd": 1,
+		"res://player/enfield_cartridge_visual.gd": 1,
+		"res://player/equipment_visuals.gd": 1,
+		"res://player/fame_component.gd": 1,
+		"res://player/field_telescope.gd": 1,
+		"res://player/historical_hud.gd": 1,
+		"res://player/hydration_debug_label.gd": 1,
+		"res://player/identity_scroll.gd": 1,
+		"res://player/interaction_pose_component.gd": 1,
+		"res://player/inventory_component.gd": 1,
+		"res://player/inventory_ui.gd": 1,
+		"res://player/item_use_animation.gd": 1,
+		"res://player/knife_strike.gd": 1,
+		"res://player/pickup_message_label.gd": 1,
+		"res://player/pistol_combat.gd": 1,
+		"res://player/player_controller.gd": 1,
+		"res://player/ride_component.gd": 1,
+		"res://player/rifle_combat.gd": 2,
+		"res://player/river_water_component.gd": 1,
+		"res://player/satiety_debug_label.gd": 1,
+		"res://player/stamina_debug_label.gd": 1,
+		"res://player/stealth_stance.gd": 1,
+		"res://player/survival_component.gd": 1,
+		"res://player/survival_hud.gd": 1,
+		"res://player/talwar_slash.gd": 1,
+		"res://player/water_bag_visual.gd": 1,
+		"res://player/weapon_wheel.gd": 1,
+		"res://player/world_map.gd": 1,
+		"res://ui/game_menu.gd": 1,
+		"res://vehicles/carriage_glass.gd": 16,
+		"res://vehicles/cart_boarding_point.gd": 6,
+		"res://vehicles/cart_combat.gd": 6,
+		"res://vehicles/cart_rider.gd": 6,
+		"res://vehicles/family_carriage_candidate.gd": 4,
+		"res://vehicles/horse_cart_candidate.gd": 2,
+		"res://vehicles/river_boat.gd": 1,
+		"res://world/ruined_fort/ruined_fort.gd": 1,
+		"res://world/suryagarh/british_npc_roster.gd": 1,
+		"res://world/suryagarh/cuttable_flag.gd": 8,
+		"res://world/suryagarh/forage_grove.gd": 1,
+		"res://world/suryagarh/forest_shrine.gd": 1,
+		"res://world/suryagarh/hooghly_port.gd": 1,
+		"res://world/suryagarh/live_carts.gd": 1,
+		"res://world/suryagarh/river_fish.gd": 1,
+		"res://world/suryagarh/roadside_flags.gd": 1,
+		"res://world/suryagarh/settlements/ammunition_pickup.gd": 6,
+		"res://world/suryagarh/settlements/civic_building.gd": 2,
+		"res://world/suryagarh/settlements/compound_gate.gd": 1,
+		"res://world/suryagarh/settlements/government_house.gd": 1,
+		"res://world/suryagarh/settlements/household_coach_travel.gd": 3,
+		"res://world/suryagarh/settlements/household_resident_journey.gd": 4,
+		"res://world/suryagarh/settlements/medical_supply.gd": 2,
+		"res://world/suryagarh/settlements/settlement_builder.gd": 1,
+		"res://world/suryagarh/settlements/supply_pickup.gd": 6,
+		"res://world/suryagarh/settlements/thana_staff.gd": 1,
+		"res://world/suryagarh/settlements/village_night_life.gd": 1,
+		"res://world/suryagarh/settlements/wealthy_households.gd": 1,
+		"res://world/suryagarh/settlements/weapon_pickup.gd": 11,
+		"res://world/suryagarh/suryagarh_world.gd": 1,
+		"res://world/suryagarh/systems/game_time_system.gd": 1,
+		"res://world/suryagarh/systems/sun_controller.gd": 1,
+		"res://world/suryagarh/timber_bridge.gd": 1
+	},
+	"world": "res://world/suryagarh/suryagarh_world.tscn"
+}

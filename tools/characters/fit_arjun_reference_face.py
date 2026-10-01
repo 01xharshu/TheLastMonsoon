@@ -1,7 +1,7 @@
-"""Build and apply a reversible, reference-calibrated Leela facial shape key.
+"""Build and apply a reversible, reference-calibrated Arjun facial shape key.
 
 Calibration runs in Blender on the preserved pre-fit source. The measurements
-come from measure_leela_face.py. The build imports apply_reference_fit before
+come from measure_arjun_reference_face.py. The build imports apply_reference_fit before
 adding the rig and fitted face assets so those assets follow the shaped body.
 """
 import bpy
@@ -64,8 +64,8 @@ def apply_reference_fit(body):
             'reference':data['reference'],'reference_sha256':data['reference_sha256'],
             'calibration':str(FIT.relative_to(ROOT))}
 
-def calibrate():
-    data=json.loads((OUT/'face_landmarks.json').read_text())
+def calibrate(measurements="face_landmarks.json"):
+    data=json.loads((OUT/measurements).read_text())
     body=bpy.data.objects['Arjun_MakeHuman_Body']
     points=shaped_coordinates(body)
     bpy.context.view_layer.update()
@@ -75,8 +75,8 @@ def calibrate():
     eye_z=(min(v.z for v in eye_points)+max(v.z for v in eye_points))/2
     camera=bpy.context.scene.camera
     camera.data.type='ORTHO';camera.data.ortho_scale=.38
-    camera.location=(0,-2,eye_z)
-    camera.rotation_euler=(Vector((0,0,eye_z-.025))-camera.location).to_track_quat('-Z','Y').to_euler()
+    camera.location=(0,-2,1.592)
+    camera.rotation_euler=(Vector((0,0,1.567))-camera.location).to_track_quat('-Z','Y').to_euler()
     bpy.context.view_layer.update()
     inv=camera.matrix_world.inverted()
     body_matrix=body.matrix_world

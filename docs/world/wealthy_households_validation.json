@@ -2,72 +2,69 @@
   "clear_new_home_entrances": 2,
   "coaches": 3,
   "errors": [
-    "LandownerHouseholdCoachman: l palm contact exceeds 15 mm",
-    "LandownerHouseholdCoachman: r palm contact exceeds 15 mm",
-    "MerchantHouseholdCoachman: l palm contact exceeds 15 mm",
-    "MerchantHouseholdCoachman: r palm contact exceeds 15 mm",
-    "BritishHouseholdCoachman: l palm contact exceeds 15 mm",
-    "BritishHouseholdCoachman: r palm contact exceeds 15 mm"
+    "LandownerHouseholdCoach: no completed driveway round trip",
+    "MerchantHouseholdCoach: no completed driveway round trip",
+    "BritishHouseholdCoach: no completed driveway round trip"
   ],
   "hand_contacts": [
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.000874777208082378,
+      "error_m": 0.00154382758773863,
       "hand": "l"
     },
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.000846944923978299,
+      "error_m": 0.00154382758773863,
       "hand": "r"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00103279761970043,
+      "error_m": 0.00141871999949217,
       "hand": "l"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00103279761970043,
+      "error_m": 0.00142079452052712,
       "hand": "r"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.000848210591357201,
+      "error_m": 0.0019082638900727,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.000848210591357201,
+      "error_m": 0.0019082638900727,
       "hand": "r"
     },
     {
       "actor": "LandownerHouseholdCoachman",
-      "error_m": 0.10251597315073,
+      "error_m": 0.00145512074232101,
       "hand": "l"
     },
     {
       "actor": "LandownerHouseholdCoachman",
-      "error_m": 0.102524146437645,
+      "error_m": 0.00145460350904614,
       "hand": "r"
     },
     {
       "actor": "MerchantHouseholdCoachman",
-      "error_m": 0.102563053369522,
+      "error_m": 0.00143271498382092,
       "hand": "l"
     },
     {
       "actor": "MerchantHouseholdCoachman",
-      "error_m": 0.102563053369522,
+      "error_m": 0.00144516618456692,
       "hand": "r"
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.102549508213997,
+      "error_m": 0.00145512074232101,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.102549508213997,
+      "error_m": 0.00145512074232101,
       "hand": "r"
     }
   ],
@@ -75,29 +72,101 @@
   "independent_trees": 13,
   "journeys": [
     {
+      "actions": {
+        "departing": true,
+        "entering_office": true,
+        "leaving_home": true,
+        "office_arrival": true
+      },
       "blocked_frames": 0,
       "coach": "LandownerHouseholdCoach",
-      "distance_m": 244.790182176227,
-      "phase": "home",
-      "round_trips": 4
+      "distance_m": 30.5999999999999,
+      "phase": "entering_office",
+      "resident_actions": [
+        {
+          "actor": "LandownerHouseholdLandowner",
+          "blocked_frames": 3260,
+          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/LandownerHouseholdOffice/EntranceRamp/@StaticBody3D@31579\"]",
+          "position": "(-309.0, 7.278996, 319.6062)",
+          "state": "enter_office",
+          "visited": {
+            "climb_down": true,
+            "climb_step": true,
+            "enter_coach": true,
+            "enter_office": true,
+            "home": true,
+            "leave_home": true,
+            "outside_coach": true,
+            "seated": true,
+            "sit_down": true,
+            "stand_from_seat": true,
+            "step_to_ground": true
+          }
+        }
+      ],
+      "round_trips": 0
     },
     {
+      "actions": {
+        "leaving_home": true
+      },
       "blocked_frames": 0,
       "coach": "MerchantHouseholdCoach",
-      "distance_m": 248.435992391402,
-      "phase": "returning",
-      "round_trips": 3
+      "distance_m": 0.0,
+      "phase": "leaving_home",
+      "resident_actions": [
+        {
+          "actor": "MerchantHouseholdMerchant",
+          "blocked_frames": 3770,
+          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/MerchantHousehold/VerandaFloor/@StaticBody3D@30912\"]",
+          "position": "(-413.0, 7.420099, 292.799)",
+          "state": "leave_home",
+          "visited": {
+            "home": true,
+            "leave_home": true
+          }
+        }
+      ],
+      "round_trips": 0
     },
     {
+      "actions": {
+        "leaving_home": true
+      },
       "blocked_frames": 0,
       "coach": "BritishHouseholdCoach",
-      "distance_m": 276.999993896477,
-      "phase": "returning",
-      "round_trips": 2
+      "distance_m": 0.0,
+      "phase": "leaving_home",
+      "resident_actions": [
+        {
+          "actor": "OfficialMan",
+          "blocked_frames": 3790,
+          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/BritishHousehold/VerandaFloor/@StaticBody3D@31179\"]",
+          "position": "(-455.0, 8.720098, -173.201)",
+          "state": "leave_home",
+          "visited": {
+            "home": true,
+            "leave_home": true
+          }
+        },
+        {
+          "actor": "OfficialWoman",
+          "blocked_frames": 3785,
+          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/BritishHousehold/VerandaFloor/@StaticBody3D@31179\"]",
+          "position": "(-454.9999, 8.720261, -173.2207)",
+          "state": "leave_home",
+          "visited": {
+            "home": true,
+            "leave_home": true
+          }
+        }
+      ],
+      "round_trips": 0
     }
   ],
+  "max_sampled_contact_error_m": 0.00197003921493888,
   "passed": false,
   "residents": 4,
-  "scope": "world population, personal trees and bounded occupied driveway cycles; visual garment/seat contact and wider-road traffic remain review",
+  "scope": "household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate",
   "staff": 9
 }

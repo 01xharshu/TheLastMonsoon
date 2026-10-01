@@ -20,6 +20,11 @@ func _ready() -> void:
 	shape.shape = capsule
 	shape.position.y = 1.15
 	hit_body.add_child(shape)
+	var head_shape := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = .18
+	head_shape.shape = sphere
+	hit_body.add_child(head_shape)
 	# Existing body collision must also forward ground-level shots.
 	var body: AnimatableBody3D = actor.get_node("BodyCollider")
 	body.set_script(preload("res://combat/damage_hit_body.gd"))
@@ -52,3 +57,15 @@ func take_damage(amount: float) -> void:
 		create_tween().set_parallel(true).tween_property(actor,"rotation:x",PI*.5,1.0)
 		actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
 	died.emit()
+
+func _physics_process(_delta: float) -> void:
+	if not is_instance_valid(hit_body): return
+	var skeleton: Skeleton3D = actor.get("_skeleton")
+	if skeleton == null: return
+	var bone := skeleton.find_bone("spine_02")
+	if bone < 0: return
+	var centre := skeleton.to_global(skeleton.get_bone_global_pose(bone).origin)
+	hit_body.get_child(0).global_position = centre
+	var head := skeleton.find_bone("head")
+	if head >= 0: hit_body.get_child(1).global_position = skeleton.to_global(skeleton.get_bone_global_pose(head).origin)+Vector3.UP*.08
+	hit_body.force_update_transform()

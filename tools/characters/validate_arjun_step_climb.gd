@@ -14,6 +14,8 @@ var max_hold_travel := 0.0
 var max_palm_gap := 0.0
 var max_sole_gap := 0.0
 var max_wrist_angle := 0.0
+var collision_disabled := false
+var wall_overlaps := 0
 var previous_holds: Dictionary = {}
 var finished := false
 var started := false
@@ -125,6 +127,8 @@ func _record_sequence() -> void:
 				var wrist_index: int = visual.skeleton.find_bone("hand_"+side)
 				var wrist_rotation: Quaternion = visual.skeleton.get_bone_pose_rotation(wrist_index)
 				print("WRIST ",frame," ",side," rest_angle=",wrist_rotation.angle_to(visual.skeleton.get_bone_rest(wrist_index).basis.get_rotation_quaternion()))
+				var actual_palm: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(wrist_index)*visual.equipment.palm_offsets[side])
+				print("GRIP ",frame," ",side," gap=",actual_palm.distance_to(visual.climb_targets[side].global_position)," palm=",actual_palm," target=",visual.climb_targets[side].global_position," shoulder=",visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("upperarm_"+side)).origin))
 			close_camera = true
 			var saved_camera := camera.global_transform
 			var saved_fov := camera.fov
@@ -148,6 +152,14 @@ func _process(delta: float) -> void:
 	if not started or finished: return
 	# Sample the final pose, after the tree and contact solve for this frame.
 	if not capture_sequence: visual._process(delta)
+	collision_disabled = collision_disabled or actor.collision_mask != climb.saved_mask
+	var query := PhysicsShapeQueryParameters3D.new()
+	var collider: CollisionShape3D = actor.get_node("CollisionShape3D")
+	query.shape = collider.shape
+	query.transform = collider.global_transform
+	query.exclude = [actor.get_rid()]
+	query.collision_mask = actor.collision_mask
+	wall_overlaps += actor.get_world_3d().direct_space_state.intersect_shape(query,1).size()
 	if not close_camera:
 		camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
 		camera.look_at(actor.global_position+Vector3.UP*.15)
@@ -190,6 +202,8 @@ func _process(delta: float) -> void:
 		_check(max_sole_gap < .01,"boot soles retain holds during pushes")
 		_check(max_wrist_angle < .701,"wrists stay within bend limit")
 		_check(actor.collision_mask == climb.saved_mask,"collision restored")
+		_check(not collision_disabled,"world collision stays enabled throughout climb")
+		_check(wall_overlaps == 0,"body collision shape never overlaps masonry")
 		print("STEP CLIMB ","PASS" if failures == 0 else "FAIL", " wait_travel=",max_wait_travel," hold_travel=",max_hold_travel," max_palm_gap=",max_palm_gap," max_sole_gap=",max_sole_gap," max_wrist_angle=",max_wrist_angle)
 		if not capture_sequence: get_tree().quit(1 if failures else 0)
 

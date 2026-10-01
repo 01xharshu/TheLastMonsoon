@@ -1,0 +1,134 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://objects/household/supplies/record_folio.tscn" id="1_dorjh"]
+[ext_resource type="PackedScene" path="res://objects/household/supplies/folded_letter.tscn" id="2_pqul3"]
+[ext_resource type="PackedScene" path="res://objects/household/oil_lamp_visual.tscn" id="3_s0tgw"]
+[ext_resource type="PackedScene" path="res://objects/household/storage/stool.tscn" id="4_u0d2p"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_so206"]
+albedo_color = Color(0.24, 0.13, 0.065, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_g5qi3"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(1.35, 0.065, 0.72)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_osr77"]
+size = Vector3(1.35, 0.065, 0.72)
+
+[sub_resource type="BoxMesh" id="BoxMesh_t4vrx"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ltx3u"]
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lfr7l"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ij4hx"]
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_45ni2"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fpccn"]
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lpmgo"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2yavq"]
+size = Vector3(0.075, 0.7225, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bdtmk"]
+material = SubResource("StandardMaterial3D_so206")
+size = Vector3(1.18, 0.07, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4t527"]
+size = Vector3(1.18, 0.07, 0.055)
+
+[node name="RecordsDeskSet" type="Node3D" unique_id=654951421]
+
+[node name="TableTop" type="MeshInstance3D" parent="." unique_id=623050314]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.755, 0)
+mesh = SubResource("BoxMesh_g5qi3")
+
+[node name="TableTopBody" type="StaticBody3D" parent="." unique_id=573279465]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.755, 0)
+
+[node name="@CollisionShape3D@2" type="CollisionShape3D" parent="TableTopBody" unique_id=1333263385]
+shape = SubResource("BoxShape3D_osr77")
+
+[node name="Leg" type="MeshInstance3D" parent="." unique_id=514355221]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.36125, -0.26)
+mesh = SubResource("BoxMesh_t4vrx")
+
+[node name="LegBody" type="StaticBody3D" parent="." unique_id=1880198990]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.36125, -0.26)
+
+[node name="@CollisionShape3D@3" type="CollisionShape3D" parent="LegBody" unique_id=602797368]
+shape = SubResource("BoxShape3D_ltx3u")
+
+[node name="@MeshInstance3D@4" type="MeshInstance3D" parent="." unique_id=1131961608]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.36125, 0.26)
+mesh = SubResource("BoxMesh_lfr7l")
+
+[node name="@StaticBody3D@5" type="StaticBody3D" parent="." unique_id=1708366379]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.36125, 0.26)
+
+[node name="@CollisionShape3D@6" type="CollisionShape3D" parent="@StaticBody3D@5" unique_id=252015877]
+shape = SubResource("BoxShape3D_ij4hx")
+
+[node name="@MeshInstance3D@7" type="MeshInstance3D" parent="." unique_id=1162998023]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.57, 0.36125, -0.26)
+mesh = SubResource("BoxMesh_45ni2")
+
+[node name="@StaticBody3D@8" type="StaticBody3D" parent="." unique_id=207767222]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.57, 0.36125, -0.26)
+
+[node name="@CollisionShape3D@9" type="CollisionShape3D" parent="@StaticBody3D@8" unique_id=1593648097]
+shape = SubResource("BoxShape3D_fpccn")
+
+[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="." unique_id=1101612812]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.57, 0.36125, 0.26)
+mesh = SubResource("BoxMesh_lpmgo")
+
+[node name="@StaticBody3D@11" type="StaticBody3D" parent="." unique_id=1358308729]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.57, 0.36125, 0.26)
+
+[node name="@CollisionShape3D@12" type="CollisionShape3D" parent="@StaticBody3D@11" unique_id=1939576020]
+shape = SubResource("BoxShape3D_2yavq")
+
+[node name="BackBrace" type="MeshInstance3D" parent="." unique_id=1186682620]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26, -0.26)
+mesh = SubResource("BoxMesh_bdtmk")
+
+[node name="BackBraceBody" type="StaticBody3D" parent="." unique_id=1149005235]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26, -0.26)
+
+[node name="@CollisionShape3D@13" type="CollisionShape3D" parent="BackBraceBody" unique_id=137987282]
+shape = SubResource("BoxShape3D_4t527")
+
+[node name="Folio" type="Node3D" parent="." unique_id=1217304077 instance=ExtResource("1_dorjh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0.7875, 0)
+
+[node name="Letter" type="Node3D" parent="." unique_id=188378444 instance=ExtResource("2_pqul3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.7875, 0.12)
+
+[node name="Lamp" type="Node3D" parent="." unique_id=63737979 instance=ExtResource("3_s0tgw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.7875, -0.2)
+
+[node name="Stool" type="StaticBody3D" parent="." unique_id=1009060781 groups=["solid_period_prop"] instance=ExtResource("4_u0d2p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.87)
+metadata/asset_source = "res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="StandingApproach" type="Marker3D" parent="." unique_id=1261763893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.83, 0, 0.7)
+
+[node name="ReadingTarget" type="Marker3D" parent="." unique_id=316070185]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0.81, 0)

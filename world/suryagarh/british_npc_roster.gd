@@ -8,6 +8,9 @@ const MODEL_DIR := "res://characters/npcs/british/"
 func _ready() -> void:
 	var compound_y: float = Layout.PLOTS["CompanyCompound"].grade + 0.08
 	var residence_y: float = Layout.PLOTS["GovernmentHouse"].grade + 0.04
+	# GovernmentHouse.GardenWalk: centre +0.085, half-height 0.045.
+	# Use its paved surface rather than the render-only parterre planting beds.
+	var garden_walk_y: float = Layout.PLOTS["GovernmentHouse"].grade + 0.13
 	var placements := [
 		{"rank":"private", "position":Vector3(315, compound_y, 270)},
 		{"rank":"corporal", "position":Vector3(329, compound_y, 273)},
@@ -19,10 +22,10 @@ func _ready() -> void:
 		{"rank":"official", "position":Vector3(-390, residence_y, -85)},
 	]
 	var female_positions := [
-		Vector3(-420, residence_y, -55), Vector3(-408, residence_y, -45),
-		Vector3(-370, residence_y, -45), Vector3(-420, residence_y, -75),
-		Vector3(-370, residence_y, -75), Vector3(-410, residence_y, -95),
-		Vector3(-370, residence_y, -95), Vector3(-390, residence_y, -95),
+		Vector3(-442, garden_walk_y, -55), Vector3(-442, garden_walk_y, -45),
+		Vector3(-338, garden_walk_y, -45), Vector3(-442, garden_walk_y, -75),
+		Vector3(-338, garden_walk_y, -75), Vector3(-442, garden_walk_y, -95),
+		Vector3(-338, garden_walk_y, -95), Vector3(-390, residence_y, -95),
 	]
 	for i in range(placements.size()):
 		var record: Dictionary = placements[i]
@@ -42,7 +45,7 @@ func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance
 	actor.position = origin
 	actor.set("cycle_offset", offset)
 	actor.set("patrol_distance", distance)
-	actor.set("patrol_axis", Vector3(0, 0, -1) if kind == "man" else Vector3(1, 0, 0))
+	actor.set("patrol_axis", Vector3.RIGHT if kind == "woman" and rank == "official" else Vector3.FORWARD)
 	actor.set("movement_profile", &"male" if kind == "man" else &"female")
 	actor.set_meta("concept_rank_or_post", rank)
 	if rank == "official" and kind == "man":

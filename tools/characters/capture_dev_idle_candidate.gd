@@ -34,7 +34,14 @@ func _capture() -> void:
 	plane.size = Vector2(8, 8)
 	ground.mesh = plane
 	stage.add_child(ground)
-	var figure := load("res://characters/npcs/dev/dev_idle_candidate.glb").instantiate() as Node3D
+	var document := GLTFDocument.new()
+	var state := GLTFState.new()
+	var import_error := document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/dev/dev_idle_candidate.glb"), state)
+	if import_error != OK:
+		printerr("DEV CAPTURE cannot read current GLB: ", import_error)
+		quit(1)
+		return
+	var figure := document.generate_scene(state) as Node3D
 	stage.add_child(figure)
 	var walking := "--walk" in OS.get_cmdline_user_args()
 	var clip := "Dev_walk_study" if walking else "Dev_idle_study"

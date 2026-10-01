@@ -51,7 +51,7 @@ func configure(model: Node3D) -> bool:
 		library.add_animation(name, clip)
 	library.add_animation("longgun_ready", _longgun_pose_clip(skeleton, source.get_animation("idle"), false))
 	library.add_animation("longgun_aim", _longgun_pose_clip(skeleton, source.get_animation("idle"), true))
-	for beat in ["reach", "pull_left", "pull_right", "mantle", "mantle_step", "recover"]:
+	for beat in ["reach", "pull_left", "pull_right", "mantle", "mantle_press", "mantle_step", "recover"]:
 		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	for beat in ["jump_rise", "jump_fall"]:
 		library.add_animation(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
@@ -104,7 +104,7 @@ func configure(model: Node3D) -> bool:
 	var climb := AnimationNodeBlendSpace1D.new()
 	climb.min_space = 0.0
 	climb.max_space = 1.0
-	for beat in [{"name":"reach","at":0.0},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.78},{"name":"mantle_step","at":0.90},{"name":"recover","at":1.0}]:
+	for beat in [{"name":"reach","at":0.0},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.78},{"name":"mantle_press","at":0.86},{"name":"mantle_step","at":0.90},{"name":"recover","at":1.0}]:
 		climb.add_blend_point(_clip("motion/climb_" + beat.name), beat.at, -1, beat.name)
 	graph.add_node("climb_pose", climb)
 	graph.add_node("climb", AnimationNodeBlend2.new())
@@ -155,7 +155,8 @@ func _climb_pose_clip(rig: Skeleton3D, idle: Animation, beat: String) -> Animati
 		"reach": {"pelvis":Vector3(-.10,0,0), "spine_01":Vector3(-.20,0,0), "spine_02":Vector3(-.13,0,0), "head":Vector3(.13,0,0), "upperarm_l":Vector3(-1.55,-.08,-.22), "upperarm_r":Vector3(-1.35,-.08,.22), "lowerarm_l":Vector3(-.45,0,0), "lowerarm_r":Vector3(-.55,0,0), "thigh_l":Vector3(-.40,0,0), "thigh_r":Vector3(-.65,0,0), "calf_l":Vector3(.5,0,0), "calf_r":Vector3(.8,0,0)},
 		"pull_left": {"pelvis":Vector3(-.08,.04,-.035), "spine_01":Vector3(-.24,-.04,0), "spine_02":Vector3(-.16,-.03,0), "head":Vector3(.10,.03,0), "upperarm_l":Vector3(-1.72,-.08,-.22), "upperarm_r":Vector3(-1.60,-.08,.22), "lowerarm_l":Vector3(-.68,0,0), "lowerarm_r":Vector3(-.42,0,0), "thigh_l":Vector3(-1.0,0,0), "thigh_r":Vector3(-.45,0,0), "calf_l":Vector3(1.35,0,0), "calf_r":Vector3(.55,0,0)},
 		"pull_right": {"pelvis":Vector3(-.08,-.04,.035), "spine_01":Vector3(-.24,.04,0), "spine_02":Vector3(-.16,.03,0), "head":Vector3(.10,-.03,0), "upperarm_l":Vector3(-1.60,-.08,-.22), "upperarm_r":Vector3(-1.72,-.08,.22), "lowerarm_l":Vector3(-.42,0,0), "lowerarm_r":Vector3(-.68,0,0), "thigh_l":Vector3(-.45,0,0), "thigh_r":Vector3(-1.0,0,0), "calf_l":Vector3(.55,0,0), "calf_r":Vector3(1.35,0,0)},
-		"mantle": {"pelvis":Vector3(.10,0,0), "spine_01":Vector3(.35,0,0), "spine_02":Vector3(.23,0,0), "head":Vector3(-.15,0,0), "upperarm_l":Vector3(-.75,0,-.13), "upperarm_r":Vector3(-.75,0,.13), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0), "thigh_l":Vector3(-1.05,0,0), "thigh_r":Vector3(-.75,0,0), "calf_l":Vector3(.7,0,0), "calf_r":Vector3(.6,0,0)},
+		"mantle": {"pelvis":Vector3(.08,0,0), "spine_01":Vector3(.15,0,0), "spine_02":Vector3(.10,0,0), "head":Vector3(-.10,0,0), "upperarm_l":Vector3(-.75,0,-.13), "upperarm_r":Vector3(-.75,0,.13), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0), "thigh_l":Vector3(-1.05,0,0), "thigh_r":Vector3(-.75,0,0), "calf_l":Vector3(.7,0,0), "calf_r":Vector3(.6,0,0)},
+		"mantle_press": {"pelvis":Vector3(.15,0,0), "spine_01":Vector3(.65,0,0), "spine_02":Vector3(.40,0,0), "head":Vector3(-.20,0,0), "upperarm_l":Vector3(-.55,0,-.13), "upperarm_r":Vector3(-.55,0,.13), "lowerarm_l":Vector3(-.60,0,0), "lowerarm_r":Vector3(-.60,0,0), "thigh_l":Vector3(-.90,0,0), "thigh_r":Vector3(-.50,0,0), "calf_l":Vector3(1.10,0,0), "calf_r":Vector3(.70,0,0)},
 		"mantle_step": {"pelvis":Vector3(.08,0,-.04), "spine_01":Vector3(.27,0,0), "spine_02":Vector3(.12,0,0), "head":Vector3(-.12,0,0), "upperarm_l":Vector3(-.55,0,-.13), "upperarm_r":Vector3(-.55,0,.13), "lowerarm_l":Vector3(-.35,0,0), "lowerarm_r":Vector3(-.35,0,0), "thigh_l":Vector3(-1.15,0,0), "thigh_r":Vector3(-.35,0,0), "calf_l":Vector3(1.25,0,0), "calf_r":Vector3(.45,0,0)},
 		"jump_rise": {"spine_01":Vector3(.12,0,0), "thigh_l":Vector3(-.60,0,0), "thigh_r":Vector3(-.35,0,0), "calf_l":Vector3(.95,0,0), "calf_r":Vector3(.70,0,0), "foot_l":Vector3(-.15,0,0), "foot_r":Vector3(-.12,0,0), "upperarm_l":Vector3(-.45,0,-.15), "upperarm_r":Vector3(-.45,0,.15), "lowerarm_l":Vector3(-.65,0,0), "lowerarm_r":Vector3(-.65,0,0)},
 		"jump_fall": {"spine_01":Vector3(.08,0,0), "thigh_l":Vector3(-.18,0,0), "thigh_r":Vector3(-.12,0,0), "calf_l":Vector3(.30,0,0), "calf_r":Vector3(.25,0,0), "upperarm_l":Vector3(-.18,0,-.25), "upperarm_r":Vector3(-.18,0,.25), "lowerarm_l":Vector3(-.35,0,0), "lowerarm_r":Vector3(-.35,0,0)},

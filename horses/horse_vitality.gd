@@ -39,6 +39,7 @@ func take_damage(amount: float) -> void:
 	dead = true
 	set_meta("dead",true)
 	if animation != null: animation.pause()
+	_fold_legs()
 	died.emit()
 	# Pivot at the barrel, not at the hoof origin, to avoid a stiff vertical flip.
 	fall_pivot = Node3D.new()
@@ -62,3 +63,17 @@ func _finish_fall() -> void:
 	shape.shape = box
 	shape.position = host.to_local(fall_pivot.global_position)+Vector3(fall_side*.4,0,0)
 	hit_body.add_child(shape)
+
+func _fold_legs() -> void:
+	var found := model.find_children("*","Skeleton3D",true,false)
+	if found.is_empty(): return
+	var skeleton: Skeleton3D = found[0]
+	for side in ["L","R"]:
+		for entry in [["FrontUpperLeg.",-0.35],["FrontLowerLeg.",1.0],["BackUpperLeg.",0.5],["BackLowerLeg.",-0.85]]:
+			var index := skeleton.find_bone(entry[0]+side)
+			if index<0: continue
+			var start := skeleton.get_bone_pose_rotation(index)
+			var global_axis := skeleton.get_bone_global_pose(index).basis.inverse()*Vector3.RIGHT
+			var finish := start*Quaternion(global_axis.normalized(),entry[1])
+			var apply := func(rotation_value: Quaternion): skeleton.set_bone_pose_rotation(index,rotation_value)
+			create_tween().tween_method(apply,start,finish,.8)

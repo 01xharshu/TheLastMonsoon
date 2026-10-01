@@ -2,7 +2,8 @@ extends SceneTree
 func _initialize() -> void: _run.call_deferred()
 func capture(label: String) -> void:
  await create_timer(.3).timeout
- await RenderingServer.frame_post_draw
+ await process_frame
+ RenderingServer.force_draw(false)
  var image := root.get_texture().get_image()
  assert(image.save_png("res://docs/world/captures/cart_arjun_"+label+".png") == OK)
 func _run() -> void:
@@ -39,16 +40,21 @@ func _run() -> void:
  world.add_child(camera)
  camera.look_at(Vector3(0,1.9,1.1))
  camera.current = true
+ actor.get_node("CameraPivot/SpringArm3D/Camera3D").set_process(false)
+ actor.visual_root.show()
  await create_timer(.3).timeout
  assert(cart.board_at(actor,"CoachmanSeat","driver"))
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  await capture("driver")
  assert(cart.boarding.dismount())
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  actor.global_position = Vector3(2,1,2.2)
  assert(cart.board_at(actor,"RearPassengerRight","passenger"))
  cart.visual_root.get_node("Roof").visible = false
  cart.visual_root.get_node("InteriorCeilingLiner").visible = false
  camera.position = Vector3(.1,5.2,2.9)
  camera.look_at(Vector3(0,1.9,2.8))
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  await capture("passenger_cutaway")
  print("CART ARJUN METAL CAPTURE: PASS")
  quit()

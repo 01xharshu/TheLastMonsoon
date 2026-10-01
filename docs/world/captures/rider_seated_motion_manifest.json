@@ -1,0 +1,17 @@
+{
+  "renderer": "Metal Forward+",
+  "date": "2026-10-01 IST",
+  "duration_seconds": 6.866667,
+  "source_fixture": "tools/horses/validate_rider_seated_motion.gd",
+  "source_report": "docs/world/rider_seated_motion_metal.json",
+  "source_hashes": {
+    "horses/stable_horse.gd": "d5e45bc3f7d057059aaaf3ab49ab526109e9aee6e3db2df75bdc8d7a142ddb56",
+    "player/arjun_visual.gd": "c3b6e1f1a0efb338132fe93b5e309515b4afca3b64ab70c6756055c55250842b",
+    "tools/horses/validate_rider_seated_motion.gd": "2b947d478aa5aeb75e5c787005932ba2802ca2342d637772e8424c1cba61829c"
+  },
+  "capture_sha256": "1ab0fa77be7ea8b4bbbd6b08a7ceb0f32f8e8180557810e1d499a64d981a0cca",
+  "normal_speed_encoded_from_physics_ticks": true,
+  "synthetic": false,
+  "full_world_reviewed": false,
+  "final_cloth_approved": false
+}

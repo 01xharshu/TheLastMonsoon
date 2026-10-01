@@ -168,6 +168,14 @@ func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
 	var driver:=_staff(home,"Coachman",home.to_local(route[0]),"village_farmer",Vector3.FORWARD)
 	var travel:=Travel.new();travel.name="HouseholdTravel";travel.configure(coach,people,route,driver)
 	coach.add_child(travel)
+	var office_center:=route[-1]+Vector3(12,-.04,0)
+	var office:=_workplace(home,office_center)
+	var home_path:Array[Vector3]=[]
+	if str(home.name)=="LandownerHousehold":
+		home_path=[home.to_global(Vector3(-8,.24,1)),home.to_global(Vector3(0,.24,1))]
+	else:
+		home_path=[home.to_global(Vector3(0,.24,4)),home.to_global(Vector3(0,.24,10.6)),home.to_global(Vector3(0,.0,13))]
+	travel.configure_journeys(home_path,office)
 
 func _carried_pot_mesh() -> ArrayMesh:
 	# Rounded vessel with a recessed inner rim; radius at hand height is .135 m.
@@ -179,6 +187,29 @@ func _carried_pot_mesh() -> ArrayMesh:
 			for entry in [[row,segment],[row,(segment+1)%48],[row+1,segment],[row+1,(segment+1)%48]]:
 				var ring:Vector2=profile[entry[0]];var angle:=TAU*float(entry[1])/48.0
 				points.append(Vector3(cos(angle)*ring.x,ring.y,sin(angle)*ring.x))
-			for index in [0,2,1,1,2,3]:surface.add_vertex(points[index])
+			for index in [0,1,2,1,3,2]:surface.add_vertex(points[index])
 	surface.index();surface.generate_normals()
 	return surface.commit()
+
+func _workplace(home:Node3D,at:Vector3) -> Node3D:
+	var office:=Node3D.new();office.name=str(home.name)+"Office";office.position=at;add_child(office)
+	office.add_to_group("household_office")
+	piece(office,"Floor",Vector3(0,.12,0),Vector3(8,.24,6),stone)
+	piece(office,"RearWall",Vector3(0,1.7,-3),Vector3(8,3.4,.25),plaster)
+	for side in [-1.0,1.0]:
+		piece(office,"SideWall",Vector3(side*4,1.7,0),Vector3(.25,3.4,6),plaster)
+		piece(office,"DoorPier",Vector3(side*2.65,1.7,3),Vector3(2.7,3.4,.25),plaster)
+		piece(office,"Desk",Vector3(side*1.6,.99,-.65),Vector3(1.7,.14,.8),wood)
+		for x in [-.65,.65]:piece(office,"DeskLeg",Vector3(side*1.6+x,.59,-.65),Vector3(.12,.94,.65),wood)
+		piece(office,"Ledger",Vector3(side*1.6,1.09,-.65),Vector3(.4,.04,.3),ochre,false)
+		piece(office,"ChairSeat",Vector3(side*1.6,.69,.35),Vector3(.6,.12,.55),wood)
+		piece(office,"ChairBack",Vector3(side*1.6,1.1,.6),Vector3(.6,.8,.1),wood)
+		for dx in [-.23,.23]:
+			for z in [.12,.57]:piece(office,"ChairLeg",Vector3(side*1.6+dx,.46,z),Vector3(.07,.46,.07),wood)
+	piece(office,"DoorLintel",Vector3(0,3,3),Vector3(2.6,.8,.3),plaster)
+	piece(office,"Roof",Vector3(0,3.48,0),Vector3(8.6,.2,6.6),tile)
+	piece(office,"EntranceRamp",Vector3(0,.06,3.75),Vector3(2.6,.12,1.5),stone)
+	var sign:=Label3D.new();sign.name="OfficeSign";sign.text="ESTATE RENT OFFICE" if home.name=="LandownerHousehold" else ("COUNTING HOUSE" if home.name=="MerchantHousehold" else "ESTATE OFFICE")
+	sign.position=Vector3(0,2.65,3.18);sign.font_size=40;sign.pixel_size=.009;office.add_child(sign)
+	merge_visuals(office)
+	return office

@@ -21,16 +21,18 @@ func _run() -> void:
  world.add_child(actor)
  await create_timer(.3).timeout
  assert(cart.board_at(actor,"RearPassengerRight","passenger"))
- await create_timer(.2).timeout
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  assert(cart.rider == actor)
  assert(actor.get_meta("cart_role","") == "passenger")
  assert(cart.boarding.dismount())
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  assert(cart.rider == null)
  actor.global_position = Vector3(0,1,.1)
  assert(cart.board_at(actor,"CoachmanSeat","driver"))
- await create_timer(.2).timeout
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  assert(actor.get_meta("cart_role","") == "driver")
  assert(cart.boarding.dismount())
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  cart.queue_free()
  await process_frame
  for kind in 2:
@@ -39,9 +41,10 @@ func _run() -> void:
   world.add_child(trial)
   actor.global_position = Vector3(-1,1,1.7)
   assert(trial.board_at(actor,"DriverSeat","driver"))
-  await create_timer(.1).timeout
+  await create_timer(trial.boarding.TRANSITION_SECONDS+.2).timeout
   assert(trial.rider == actor)
   assert(trial.boarding.dismount())
+  await create_timer(trial.boarding.TRANSITION_SECONDS+.2).timeout
   trial.queue_free()
   await process_frame
  print("CART PLAYER BOARD/DISMOUNT/DRIVER: PASS | family, ekka, goods")

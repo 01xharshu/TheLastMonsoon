@@ -1,6 +1,8 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_never, cull_disabled, diffuse_burley;
 uniform sampler2D depth_texture : hint_depth_texture, filter_nearest;
+uniform bool exclude_moored_ship = false;
+uniform vec2 moored_ship_center = vec2(-85.0,680.0);
 varying vec3 world_position;
 varying float wave_crest;
 void vertex(){
@@ -14,6 +16,23 @@ void vertex(){
 }
 void fragment(){
  vec2 xz=world_position.xz;
+ // Dry, sealed hull: water continues around it instead of rendering through
+ // the below-water cargo deck. Matches the fixed merchant hull stations.
+ vec2 local_ship=xz-moored_ship_center;
+ float z=local_ship.y;
+ float ship_beam=0.0;
+ if(z>=-27.0 && z<=24.0){
+  if(z<-25.0) ship_beam=mix(.12,1.0,(z+27.0)/2.0);
+  else if(z<-22.0) ship_beam=mix(1.0,2.8,(z+25.0)/3.0);
+  else if(z<-18.0) ship_beam=mix(2.8,4.5,(z+22.0)/4.0);
+  else if(z<-13.0) ship_beam=mix(4.5,5.5,(z+18.0)/5.0);
+  else if(z<-6.0) ship_beam=mix(5.5,5.9,(z+13.0)/7.0);
+  else if(z<4.0) ship_beam=5.9;
+  else if(z<13.0) ship_beam=mix(5.9,5.3,(z-4.0)/9.0);
+  else if(z<20.0) ship_beam=mix(5.3,4.2,(z-13.0)/7.0);
+  else ship_beam=mix(4.2,3.4,(z-20.0)/4.0);
+ }
+ if(exclude_moored_ship && ship_beam>0.0 && abs(local_ship.x)<ship_beam*.955) discard;
  float u=sin(xz.x*.62+TIME*1.3+xz.y*.22+sin(xz.y*.14)*1.3);
  float v=sin(xz.y*.38-TIME*1.05-xz.x*.23+sin(xz.x*.12)*.8);
  float small=sin(xz.x*2.7+xz.y*1.8-TIME*2.7);

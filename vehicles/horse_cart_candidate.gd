@@ -17,6 +17,7 @@ const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav"
 const HoofRoadRecordedB = preload("res://audio/horses/hoof_road_recorded_02.wav")
 const HoofTimber = preload("res://audio/horses/hoof_timber.wav")
 const Snort = preload("res://audio/horses/horse_snort.wav")
+var combat: Node
 var visual_root: Node3D
 var wheels: Array[Node3D] = []
 var horse_animation: AnimationPlayer
@@ -36,6 +37,13 @@ func _ready() -> void:
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
 	add_child(boarding)
+	var flexible_reins := preload("res://vehicles/flexible_cart_reins.gd").new()
+	flexible_reins.name = "FlexibleReins"
+	flexible_reins.configure(self)
+	add_child(flexible_reins)
+	combat = preload("res://vehicles/cart_combat.gd").new()
+	combat.name = "CartCombat"
+	add_child(combat)
 	_add_boarding_point("DriverSeat", Vector3(-1.0, 1.5, 1.7))
 	if variant == 0: _add_boarding_point("PassengerSeat", Vector3(1.0, 1.5, 2.6))
 
@@ -60,6 +68,7 @@ func _add_boarding_point(seat: String, at: Vector3) -> void:
 	collision.shape = shape
 	point.add_child(collision)
 	add_child(point)
+	point.add_to_group("cart_boarding_handles")
 
 func board_at(actor: CharacterBody3D, seat: String, role: String) -> bool:
 	return boarding.board_at(actor, seat, role) if boarding != null else false
@@ -68,9 +77,14 @@ func rein_grip_world(side: String) -> Vector3:
 	return to_global(_rein_grip_local(side))
 
 func _rein_grip_local(side: String) -> Vector3:
-	return Vector3(-.30 if side == "l" else .30, 1.97 if variant == 1 else 1.64, 1.10 if variant == 1 else 1.80)
+	var lateral := -.18 if side == "l" else .18
+	return Vector3(lateral if variant == 1 else -.43+lateral, 1.97 if variant == 1 else 1.90, 1.28 if variant == 1 else 2.14)
+
+func can_move() -> bool:
+	return combat == null or combat.can_move()
 
 func set_forward_motion(speed: float, delta: float) -> void:
+	if not can_move(): speed = 0.0
 	_animate_motion(speed, delta)
 
 func _mat(color: Color, metal := 0.0) -> StandardMaterial3D:
@@ -94,6 +108,7 @@ func _box(label: String, pos: Vector3, size: Vector3, material: Material) -> Nod
 func _beam(label: String, start: Vector3, finish: Vector3, width: float, material: Material) -> void:
 	var middle := (start + finish) * .5
 	var part := _box(label,middle,Vector3(width,start.distance_to(finish),width),material)
+	part.set_meta("part_label",label)
 	part.quaternion = Quaternion(Vector3.UP,(finish-start).normalized())
 
 func _wheel(side: float, center_z: float, radius: float, wood: Material, iron: Material) -> void:
@@ -197,6 +212,9 @@ func _build() -> void:
 			_beam("FootboardBracket",Vector3(side*.62,.80,1.28),Vector3(side*.62,1.11,1.65),.055,worn_iron)
 		_seat("DriverSeat",Vector3(0,1.51,1.70))
 	if show_horse:
+		for side in [-1.0, 1.0]:
+			_box("BoardingStep",Vector3(side*1.12,.55,1.40),Vector3(.38,.09,.50),wood)
+			_beam("BoardingStepBracket",Vector3(side*.78,.99,1.60),Vector3(side*1.12,.55,1.40),.055,worn_iron)
 		var horse := HorseVisual.instantiate() as Node3D
 		horse.name = "DraftHorseVisual"
 		horse.scale = Vector3.ONE*.47
@@ -225,7 +243,7 @@ func _animate_motion(speed: float, delta: float) -> void:
 	var radius := .62 if variant == 0 else .68
 	for wheel in wheels:
 		wheel.rotation.x += speed * delta / radius
-	if horse_animation != null:
+	if horse_animation != null and (combat == null or not combat.animation_dead(horse_animation)):
 		var clip := "AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle"
 		if horse_animation.current_animation != clip:
 			horse_animation.play(clip,.15)

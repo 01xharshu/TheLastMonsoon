@@ -1,0 +1,129 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://objects/household/water_pot_visual.tscn" id="1_62pcg"]
+[ext_resource type="PackedScene" path="res://objects/household/grain_sack.tscn" id="2_lmdf0"]
+[ext_resource type="PackedScene" path="res://objects/household/storage/basket.tscn" id="3_aegmn"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m2c0o"]
+albedo_color = Color(0.38, 0.23, 0.14, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_lxmlt"]
+material = SubResource("StandardMaterial3D_m2c0o")
+size = Vector3(0.64, 0.09, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ccwqd"]
+size = Vector3(0.64, 0.09, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5yq32"]
+material = SubResource("StandardMaterial3D_m2c0o")
+size = Vector3(0.13, 0.21, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1h8ac"]
+size = Vector3(0.13, 0.21, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_2e35e"]
+material = SubResource("StandardMaterial3D_m2c0o")
+size = Vector3(0.13, 0.21, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_f7gd8"]
+size = Vector3(0.13, 0.21, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_gvhxs"]
+material = SubResource("StandardMaterial3D_m2c0o")
+size = Vector3(0.4, 0.21, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_txjqu"]
+size = Vector3(0.4, 0.21, 0.12)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6rrm5"]
+albedo_color = Color(0.07, 0.065, 0.055, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_kitek"]
+material = SubResource("StandardMaterial3D_6rrm5")
+top_radius = 0.24
+bottom_radius = 0.24
+height = 0.012
+radial_segments = 48
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_02fbw"]
+material = SubResource("StandardMaterial3D_6rrm5")
+top_radius = 0.013
+bottom_radius = 0.013
+height = 0.19
+radial_segments = 6
+rings = 0
+
+[node name="CookingCornerSet" type="Node3D" unique_id=107761061]
+
+[node name="ClayBase" type="MeshInstance3D" parent="." unique_id=1931029738]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.045, -0.2)
+mesh = SubResource("BoxMesh_lxmlt")
+
+[node name="ClayBaseBody" type="StaticBody3D" parent="." unique_id=1994323270]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.045, -0.2)
+
+[node name="@CollisionShape3D@14" type="CollisionShape3D" parent="ClayBaseBody" unique_id=2050840159]
+shape = SubResource("BoxShape3D_ccwqd")
+
+[node name="HearthCheek" type="MeshInstance3D" parent="." unique_id=1673583690]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, 0.195, -0.2)
+mesh = SubResource("BoxMesh_5yq32")
+
+[node name="HearthCheekBody" type="StaticBody3D" parent="." unique_id=850747713]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, 0.195, -0.2)
+
+[node name="@CollisionShape3D@15" type="CollisionShape3D" parent="HearthCheekBody" unique_id=682150876]
+shape = SubResource("BoxShape3D_1h8ac")
+
+[node name="@MeshInstance3D@16" type="MeshInstance3D" parent="." unique_id=447580069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.195, -0.2)
+mesh = SubResource("BoxMesh_2e35e")
+
+[node name="@StaticBody3D@17" type="StaticBody3D" parent="." unique_id=1074995307]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.195, -0.2)
+
+[node name="@CollisionShape3D@18" type="CollisionShape3D" parent="@StaticBody3D@17" unique_id=1003178551]
+shape = SubResource("BoxShape3D_f7gd8")
+
+[node name="HearthBack" type="MeshInstance3D" parent="." unique_id=440350893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.195, -0.39)
+mesh = SubResource("BoxMesh_gvhxs")
+
+[node name="HearthBackBody" type="StaticBody3D" parent="." unique_id=924193856]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.195, -0.39)
+
+[node name="@CollisionShape3D@19" type="CollisionShape3D" parent="HearthBackBody" unique_id=1094521538]
+shape = SubResource("BoxShape3D_txjqu")
+
+[node name="IronGriddle" type="MeshInstance3D" parent="." unique_id=1223593174]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.308, -0.2)
+mesh = SubResource("CylinderMesh_kitek")
+
+[node name="GriddleHandle" type="MeshInstance3D" parent="." unique_id=549412113]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -0.075, 0.308, -0.2)
+mesh = SubResource("CylinderMesh_02fbw")
+
+[node name="WaterPot" type="Node3D" parent="." unique_id=1305981328 instance=ExtResource("1_62pcg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 0, -0.36)
+
+[node name="GrainSack" type="StaticBody3D" parent="." unique_id=294828383 groups=["solid_period_prop"] instance=ExtResource("2_lmdf0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 0, -0.2)
+
+[node name="Basket" type="StaticBody3D" parent="." unique_id=389557273 groups=["solid_period_prop"] instance=ExtResource("3_aegmn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.47)
+metadata/asset_source = "res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="CookApproach" type="Marker3D" parent="." unique_id=947554388]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0, 0.62)
+
+[node name="GriddleGrip" type="Marker3D" parent="." unique_id=1824818520]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.02, 0.308, -0.2)
+
+[node name="CookingSurface" type="Marker3D" parent="." unique_id=877444780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.315, -0.2)
+
+[node name="PotApproach" type="Marker3D" parent="." unique_id=84259357]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 0, 0.7)

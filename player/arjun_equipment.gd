@@ -159,6 +159,15 @@ func set_swimming(value: bool) -> void:
 
 func _refresh() -> void:
 	if talwar_hand == null: return
+	if inventory != null:
+		for combat_name in ["RifleCombat","PistolCombat","DoubleGunCombat"]:
+			var combat: Node = inventory.get_parent().get_node_or_null(combat_name)
+			if combat != null and (stowed or int(selected) != combat.weapon_selection):
+				combat.cancel_reload()
+	if stowed or selected != Selection.ENFIELD:
+		reload_progress = -1.0
+		animate_ramrod()
+		if enfield_cartridge: enfield_cartridge.hide()
 	talwar_hand.visible = owns(Selection.TALWAR) and not stowed and selected == Selection.TALWAR
 	enfield_hand.visible = owns(Selection.ENFIELD) and not stowed and selected == Selection.ENFIELD
 	bow_hand.visible = owns(Selection.BOW) and not stowed and selected == Selection.BOW

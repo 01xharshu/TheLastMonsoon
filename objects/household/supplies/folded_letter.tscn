@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qdvej"]
+albedo_color = Color(0.78, 0.7, 0.51, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_41dqm"]
+material = SubResource("StandardMaterial3D_qdvej")
+size = Vector3(0.18, 0.004, 0.115)
+
+[sub_resource type="BoxMesh" id="BoxMesh_paq23"]
+material = SubResource("StandardMaterial3D_qdvej")
+size = Vector3(0.18, 0.002, 0.054)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6uvep"]
+albedo_color = Color(0.53, 0.43, 0.28, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_xt5gk"]
+material = SubResource("StandardMaterial3D_6uvep")
+size = Vector3(0.175, 0.0006, 0.0007)
+
+[node name="FoldedLetter" type="Node3D" unique_id=188378444]
+
+[node name="FoldedPaper" type="MeshInstance3D" parent="." unique_id=607851113]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.002, 0)
+mesh = SubResource("BoxMesh_41dqm")
+
+[node name="OpeningFlap" type="MeshInstance3D" parent="." unique_id=2046500015]
+transform = Transform3D(1, 0, 0, 0, 0.99938756, 0.034992855, 0, -0.034992855, 0.99938756, 0, 0.005, -0.029)
+mesh = SubResource("BoxMesh_paq23")
+
+[node name="FoldCrease" type="MeshInstance3D" parent="." unique_id=1204350632]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.006, -0.003)
+mesh = SubResource("BoxMesh_xt5gk")
+
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=908491918]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 0.004, 0)
+
+[node name="RightGrip" type="Marker3D" parent="." unique_id=520559500]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 0.004, 0)
+
+[node name="FlapGrip" type="Marker3D" parent="." unique_id=1490726546]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.006, -0.003)

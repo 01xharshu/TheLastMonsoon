@@ -63,6 +63,7 @@ func _run() -> void:
  actor.get_node("UI").hide()
  await create_timer(.3).timeout
  assert(cart.board_at(actor,"CoachmanSeat","driver"))
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  await capture("driver")
  Input.action_press("move_forward")
  Input.action_press("sprint")
@@ -71,6 +72,7 @@ func _run() -> void:
  Input.action_release("move_forward")
  Input.action_release("sprint")
  assert(cart.boarding.dismount())
+ await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
  cart.queue_free()
  await process_frame
  var horse: CharacterBody3D = load("res://horses/stable_horse.gd").new()

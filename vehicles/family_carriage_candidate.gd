@@ -7,11 +7,13 @@ const HoofB = preload("res://audio/horses/hoof_dirt_02.wav")
 const HoofRoadRecordedA = preload("res://audio/horses/hoof_road_recorded_01.wav")
 const HoofRoadRecordedB = preload("res://audio/horses/hoof_road_recorded_02.wav")
 const HoofTimber = preload("res://audio/horses/hoof_timber.wav")
+var combat: Node
 var visual_root: Node3D
 var wheels: Array[Node3D] = []
 var horse_animations: Array[AnimationPlayer] = []
 var seat_sockets: Dictionary = {}
 var boarding: Node
+var boarding_doors: Dictionary = {}
 var hoof_players: Array[AudioStreamPlayer3D] = []
 var sound_cycle := 0.0
 var hoof_events := 0
@@ -22,10 +24,18 @@ var rider: CharacterBody3D:
 func _ready() -> void:
 	_build()
 	if Engine.is_editor_hint(): return
+	_build_boarding_doors()
 	_build_audio()
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
 	add_child(boarding)
+	var flexible_reins := preload("res://vehicles/flexible_cart_reins.gd").new()
+	flexible_reins.name = "FlexibleReins"
+	flexible_reins.configure(self)
+	add_child(flexible_reins)
+	combat = preload("res://vehicles/cart_combat.gd").new()
+	combat.name = "CartCombat"
+	add_child(combat)
 	_add_boarding_point("CoachmanSeat", Vector3(0,1.7,.17), "driver")
 	_add_boarding_point("RearPassengerRight", Vector3(1.15,1.89,2.26), "passenger")
 	_add_boarding_point("RearPassengerLeft", Vector3(-1.15,1.89,2.26), "passenger")
@@ -51,20 +61,40 @@ func _add_boarding_point(seat: String, at: Vector3, role: String) -> void:
 	collision.shape = shape
 	point.add_child(collision)
 	add_child(point)
+	point.add_to_group("cart_boarding_handles")
 
 func board_at(actor: CharacterBody3D, seat: String, role: String) -> bool:
 	var boarded: bool = boarding.board_at(actor, seat, role) if boarding != null else false
 	if boarded and role == "driver":
 		for part in visual_root.get_children():
-			if part.name.begins_with("Coachman"): part.visible = false
+			if str(part.get_meta("part_label",part.name)).begins_with("Coachman"): part.visible = false
 	return boarded
 
 func show_coachman_blockout() -> void:
 	for part in visual_root.get_children():
-		if part.name.begins_with("Coachman"): part.visible = true
+		if str(part.get_meta("part_label",part.name)).begins_with("Coachman"): part.visible = true
 
 func rein_grip_world(side: String) -> Vector3:
-	return to_global(Vector3(-.20 if side == "l" else .20, 1.97, .43))
+	return to_global(Vector3(-.20 if side == "l" else .20, 1.97, .65))
+
+func _build_boarding_doors() -> void:
+	var leaf_parts := ["LowerDoorPanel", "DoorWaistRail", "DoorHandle", "DoorInsetPanel", "InteriorDoorLining", "InteriorDoorPull", "SideGlazing"]
+	for side in [-1.0, 1.0]:
+		var pivot := Node3D.new()
+		pivot.name = "PassengerDoorLeft" if side < 0.0 else "PassengerDoorRight"
+		pivot.position = Vector3(side * 1.04, 0, 2.12)
+		visual_root.add_child(pivot)
+		for part in visual_root.get_children():
+			if part is MeshInstance3D and signf(part.position.x) == side:
+				for prefix in leaf_parts:
+					if part.get_meta("cart_part", "") == prefix:
+						part.reparent(pivot)
+						break
+		boarding_doors[side] = pivot
+
+func set_boarding_door(side: float, openness: float) -> void:
+	var pivot: Node3D = boarding_doors.get(side)
+	if pivot != null: pivot.rotation.y = side * openness * PI * .5
 
 func _mat(color: Color, metal := 0.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -76,6 +106,8 @@ func _mat(color: Color, metal := 0.0) -> StandardMaterial3D:
 func _box(label: String, at: Vector3, size: Vector3, material: Material, parent: Node3D = null) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.name = label
+	node.set_meta("cart_part", label)
+	node.set_meta("part_label",label)
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	node.mesh = mesh
@@ -246,6 +278,9 @@ func _build() -> void:
 	_box("DriverCushion",Vector3(0,1.73,.94),Vector3(1.53,.16,.50),leather)
 	_box("DriverSeatBack",Vector3(0,2.02,1.25),Vector3(1.54,.56,.12),paint)
 	_box("DriverFootboard",Vector3(0,1.13,.30),Vector3(1.77,.08,.51),wood)
+	for side in [-1.0, 1.0]:
+		_box("DriverBoardingStep",Vector3(side*1.18,.62,.30),Vector3(.38,.09,.50),wood)
+		_beam("DriverStepBracket",Vector3(side*.85,1.13,.30),Vector3(side*1.18,.62,.30),.05,iron)
 	_seat_socket("CoachmanSeat",Vector3(0,1.83,.94))
 	for side in [-1.0,1.0]:
 		_beam("DriverSeatSupport",Vector3(side*.65,1.25,.98),Vector3(side*.65,1.65,.98),.08,wood)
@@ -265,8 +300,8 @@ func _build() -> void:
 	visual_root.add_child(head)
 	_box("CoachmanTurbanBlockout",Vector3(0,2.90,.87),Vector3(.38,.13,.34),cloth)
 	for side in [-1.0,1.0]:
-		_beam("CoachmanArm",Vector3(side*.26,2.39,.85),Vector3(side*.21,1.97,.45),.095,cloth)
-		_beam("Rein",Vector3(side*.20,1.97,.43),Vector3(side*.78,1.84,-2.99),.013,leather)
+		_beam("CoachmanArm",Vector3(side*.26,2.39,.85),Vector3(side*.21,1.97,.67),.095,cloth)
+		_beam("Rein",Vector3(side*.20,1.97,.65),Vector3(side*.78,1.84,-2.99),.013,leather)
 	# Pair harness: central pole, crossbar, breast straps, and traces to the frame.
 	_beam("CentralPole",Vector3(0,.97,1.48),Vector3(0,1.14,-2.57),.09,wood)
 	_beam("PoleCrossbar",Vector3(-1.03,1.12,-.60),Vector3(1.03,1.12,-.60),.075,wood)
@@ -288,11 +323,16 @@ func _build() -> void:
 		_beam("InsideTrace",Vector3(side*.47,1.55,-2.04),Vector3(side*.57,.98,1.24),.023,leather)
 		_beam("PoleStrap",Vector3(side*.54,1.25,-.60),Vector3(side*.53,1.63,-1.83),.025,leather)
 
+func can_move() -> bool:
+	return combat == null or combat.can_move()
+
 func set_forward_motion(speed: float, delta: float) -> void:
+	if not can_move(): speed = 0.0
 	for wheel in wheels:
 		var radius := .57 if wheel.name == "FrontWheel" else .76
 		wheel.rotation.x += speed*delta/radius
 	for anim in horse_animations:
+		if combat != null and combat.animation_dead(anim): continue
 		var clip := "AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle"
 		if anim.current_animation != clip: anim.play(clip,.15)
 		anim.speed_scale = clampf(absf(speed)/4.2,.65,1.4) if clip.ends_with("Walk") else 1.0
@@ -316,4 +356,3 @@ func _play_carriage_hoof() -> void:
 	p.pitch_scale = 1.0 + (float(hoof_events % 5) - 2.0) * 0.025
 	p.play()
 	hoof_events += 1
-

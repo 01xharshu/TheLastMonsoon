@@ -1,0 +1,28 @@
+{
+  "floor": "(-441.22, 8.63, -55.9)",
+  "floor_collider": "/root/Suryagarh/Settlement/GovernmentHouse/GardenWalk/@StaticBody3D@21289",
+  "foot_offset": 7.90578038560228e-07,
+  "layout_height": 8.5,
+  "model": "(-441.22, 8.630294, -55.9)",
+  "player": "(-441.22, 9.530294, -55.9)",
+  "poses": {
+    "foot_l": "(-441.1013, 8.700947, -55.74504)",
+    "foot_r": "(-441.3584, 8.700947, -56.03773)",
+    "pelvis": "(-441.2231, 9.54969, -55.89725)"
+  },
+  "visible_surfaces": [
+    {
+      "path": "/root/Suryagarh/Landscape/TerrainTiles/Terrain_02_05",
+      "height_m": 8.5
+    },
+    {
+      "path": "/root/Suryagarh/Settlement/GovernmentHouse/@MeshInstance3D@27941",
+      "height_m": 8.53999996185303
+    },
+    {
+      "path": "/root/Suryagarh/Settlement/GovernmentHouse/@MeshInstance3D@27943",
+      "height_m": 8.63000011444092
+    }
+  ],
+  "scope": "physics floor, foot-bone poses and CPU mesh triangle intersections; Metal image review separate"
+}

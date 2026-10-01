@@ -1,0 +1,11 @@
+{
+  "status": "REFERENCE_SURFACE_CANDIDATE_REVIEW_OPEN",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_multiview_surface_candidate.blend",
+  "source_sha256": "6abefc1e810dc34530a058e62c69e351f59a43af85b4138c136de47995da1e25",
+  "eye_centres": [
+    0.03002291356118858,
+    1.6072934865951538
+  ],
+  "hair_strands": 1250,
+  "runtime_replaced": false
+}

@@ -1,0 +1,56 @@
+{
+  "actors": [
+    {
+      "actor": "PrivateWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-442.0, 8.63, -55.0)"
+    },
+    {
+      "actor": "CorporalWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-442.0, 8.63, -45.0)"
+    },
+    {
+      "actor": "SergeantWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-338.0, 8.63, -45.0)"
+    },
+    {
+      "actor": "LieutenantWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-442.0, 8.63, -75.0)"
+    },
+    {
+      "actor": "CaptainWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-338.0, 8.63, -75.0)"
+    },
+    {
+      "actor": "MajorWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-442.0, 8.63, -95.0)"
+    },
+    {
+      "actor": "ColonelWoman",
+      "axis": "(0.0, 0.0, -1.0)",
+      "footprint_samples": 15,
+      "maximum_support_gap_m": 0.0,
+      "route_origin": "(-338.0, 8.63, -95.0)"
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "scope": "seven garden patrol footprints, 15 floor rays each; rendered sole/cloth contact requires separate review"
+}

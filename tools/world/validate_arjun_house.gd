@@ -43,7 +43,8 @@ func run() -> void:
 		if view.name != (OS.get_environment("TLM_HOUSE_VIEW") if not OS.get_environment("TLM_HOUSE_VIEW").is_empty() else "exterior"): continue
 		camera.global_position = home.to_global(view.at)
 		camera.look_at(home.to_global(view.look))
-		for i in 5: await process_frame
+		await create_timer(0.5).timeout
+		for i in 8: await process_frame
 		if DisplayServer.get_name() != "headless":
 			root.get_texture().get_image().save_png("res://docs/world/captures/arjun_house_"+view.name+".png")
 	var survival = player.get_node("SurvivalComponent")

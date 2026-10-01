@@ -168,6 +168,8 @@ func _process(delta: float) -> void:
 			if actor.get_meta("horse_transition", "") != "":
 				_pose_horse_transition(delta)
 			# The horse applies the riding pose after its final physics/back update.
+		elif actor.get_meta("cart_role", "") != "" and mount.transition != "":
+			_pose_cart_transition(delta, mount)
 		elif actor.get_meta("cart_role", "") == "driver":
 			_pose_cart_driver(delta)
 		else:
@@ -420,6 +422,37 @@ func _pose_seated(delta: float) -> void:
 				skeleton.force_update_all_bone_transforms()
 		for side in ["l","r"]: equipment._grasp(side)
 
+func _pose_cart_transition(delta: float, vehicle: Node) -> void:
+	for solver in climb_ik.values():
+		solver.influence = 0.0
+		if solver.is_running(): solver.stop()
+	var u: float = vehicle.transition_progress if vehicle.transition == "boarding" else 1.0 - vehicle.transition_progress
+	var sit: float = smoothstep(.55, 1.0, u)
+	var step: float = sin(PI * clampf(u / .55, 0.0, 1.0)) * (1.0 - sit)
+	model.rotation.x = 0.0
+	model.position = Vector3(0, -.9, 0)
+	pose("pelvis", Vector3.ZERO, 1.0)
+	pose("spine_01", Vector3(-.16 * step - .10 * sit, 0, 0), 1.0)
+	pose("spine_02", Vector3(-.06 * step, 0, 0), 1.0)
+	pose("head", Vector3(.08 * step, 0, 0), 1.0)
+	for side in ["l", "r"]:
+		var leading: bool = (side == "l") == (vehicle.transition_side < 0.0)
+		var lift: float = step * (1.0 if leading else .3)
+		var spread := 1.0 if side == "l" else -1.0
+		pose("thigh_" + side, Vector3(-.90 * lift - 1.22 * sit, spread * .08 * sit, 0), 1.0)
+		pose("calf_" + side, Vector3(1.35 * lift + 1.48 * sit, 0, 0), 1.0)
+		pose("foot_" + side, Vector3(-.20 * lift - .27 * sit, 0, 0), 1.0)
+		pose("upperarm_" + side, Vector3(-.45 * step, 0, spread * .12), 1.0)
+		pose("lowerarm_" + side, Vector3(-.55 * step - .35 * sit, 0, 0), 1.0)
+	vehicle._sync_rider()
+	var contact: float = smoothstep(.20, .45, u) * (1.0 - smoothstep(.65, .90, u))
+	var leading_side := "l" if vehicle.transition_side < 0.0 else "r"
+	_horse_foot_contact(leading_side, vehicle.transition_step_world(), contact)
+	if contact > 0.0:
+		var hand_target: Vector3 = skeleton.to_local(vehicle.transition_hand_world())
+		var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_" + leading_side))
+		equipment._solve_arm(leading_side, hand_target - hand.basis * equipment.palm_offsets[leading_side])
+
 func _pose_cart_driver(delta: float) -> void:
 	_pose_seated(delta)
 	var weight := 1.0-exp(-10.0*delta)
@@ -441,14 +474,8 @@ func _pose_cart_driver(delta: float) -> void:
 					skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, weight))
 	var cart: Node = actor.get_meta("mounted_vehicle")
 	if is_instance_valid(cart) and cart.has_method("rein_grip_world"):
-		skeleton.force_update_all_bone_transforms()
-		for pass_index in 4:
-			for side in ["l", "r"]:
-				var grip: Vector3 = skeleton.to_local(cart.rein_grip_world(side))
-				var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
-				equipment._solve_arm(side, grip-hand.basis*equipment.palm_offsets[side])
-		for side in ["l", "r"]:
-			equipment._grasp(side)
+		cart._sync_rider()
+		preload("res://player/arjun_rein_grip.gd").apply(self,cart.cart.global_basis,{"l":cart.rein_grip_world("l"),"r":cart.rein_grip_world("r")})
 	if is_instance_valid(cart) and cart.has_method("foot_support_world"):
 		cart._sync_rider()
 		for side in ["l", "r"]:
@@ -487,21 +514,8 @@ func _pose_horse_riding(delta: float) -> void:
 	# Seat alignment must use this frame's pelvis pose before solving limbs.
 	skeleton.force_update_all_bone_transforms()
 	mount._sync_rider()
-	# Keep both palms near the pommel while elbows absorb the upper-body motion.
-	skeleton.force_update_all_bone_transforms()
-	for pass_index in 4:
-		for side in ["l", "r"]:
-			var grip: Vector3 = skeleton.to_local(mount.riding_rein_world(side))
-			var palm_world := Basis(-mount.global_basis.x, -mount.global_basis.z, -mount.global_basis.y)
-			var hand_basis: Basis = skeleton.global_basis.inverse()*palm_world*(equipment.palm_axes[side] as Basis).inverse()
-			equipment._solve_arm(side, grip-hand_basis*equipment.palm_offsets[side])
-			var hand_index := skeleton.find_bone("hand_"+side)
-			var parent_index := skeleton.get_bone_parent(hand_index)
-			var local_basis := skeleton.get_bone_global_pose(parent_index).basis.inverse()*hand_basis
-			skeleton.set_bone_pose_rotation(hand_index, local_basis.orthonormalized().get_rotation_quaternion())
-			skeleton.force_update_all_bone_transforms()
+	preload("res://player/arjun_rein_grip.gd").apply(self,mount.global_basis,{"l":mount.riding_rein_world("l"),"r":mount.riding_rein_world("r")})
 	for side in ["l", "r"]:
-		equipment._grasp(side, .55)
 		_horse_foot_contact(side, mount.stirrup_world(side), 1.0)
 
 func _pose_horse_transition(delta: float) -> void:
@@ -575,6 +589,19 @@ func _horse_foot_contact(side: String, world_target: Vector3, weight: float, kne
 	skeleton.set_bone_pose_rotation(foot_index, foot_basis.orthonormalized().get_rotation_quaternion())
 	skeleton.force_update_all_bone_transforms()
 
+func keep_climb_body_outside(normal: Vector3, face: Vector3, top: float, lip_depth: float = .075) -> void:
+	skeleton.force_update_all_bone_transforms()
+	var outward_shift := 0.0
+	for sample in [{"bone":"pelvis","radius":.16},{"bone":"spine_02","radius":.18},{"bone":"head","radius":.13},{"bone":"upperarm_l","radius":.10},{"bone":"upperarm_r","radius":.10}]:
+		var point: Vector3 = skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone(sample.bone)).origin)
+		if point.y >= top+.18: continue
+		var surface: float = lip_depth if point.y > top-.12 else 0.0
+		var clearance: float = (point-face).dot(normal)
+		outward_shift = maxf(outward_shift,float(sample.radius)+surface+.02-clearance)
+	if outward_shift > 0.0:
+		model.global_position += normal*outward_shift
+		skeleton.force_update_all_bone_transforms()
+
 func _pose_climb(delta: float) -> void:
 	for solver in climb_ik.values():
 		# The AnimationTree is advanced manually; solve contact after that pose.
@@ -587,13 +614,16 @@ func _pose_climb(delta: float) -> void:
 	var t: float = clampf(component.progress,0.0,1.0)
 	if motion_tree != null: motion_tree.update_climb(delta, component.tree_pose_progress())
 	var weight := 1.0-exp(-15.0*delta)
-	var mantle_shift: float = smoothstep(.78,.88,t)*(1.0-smoothstep(.91,1.0,t))
-	model.rotation.x = lerpf(model.rotation.x,.36*mantle_shift,weight)
+	# The climb tree already bends the pelvis and spine for the mantle.
+	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
 	# Four beats: reach, alternating handholds, a two-handed mantle, then recovery.
 	var ledge_y: float = component.landing.y-.94
+	# Keep the animated torso and head outside the solid face until they clear
+	# the coping. The bent rig can reach beyond its collision capsule.
+	keep_climb_body_outside(component.wall_normal,component.wall_point,ledge_y)
 	var base_y: float = component.hold_base_y if component.has_holds else ledge_y-4.8+.42
-	var contact_blend: float = smoothstep(.04,.14,t)*(1.0-smoothstep(.78,.91,t))
+	var contact_blend: float = smoothstep(.04,.14,t)*(1.0-smoothstep(.87,.95,t))
 	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
 		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds else (-.42 if side=="l" else .42)
@@ -603,12 +633,14 @@ func _pose_climb(delta: float) -> void:
 		var face: Vector3 = component.wall_point+component.wall_normal*.18
 		face.y = hand_y
 		face += wall_tangent*(side_offset+(.08 if component.has_holds and row%2==1 else 0.0))
-		var top_target: Vector3=component.wall_point+component.wall_normal*.04
+		var top_target: Vector3=component.wall_point+component.wall_normal*.14
 		top_target.y=ledge_y+.08
 		top_target+=wall_tangent*side_offset
 		var hold: Vector3 = face.lerp(top_target,smoothstep(.68,.82,t))
 		if component.has_holds and t < .78:
 			hold = component.step_contact(side,false)
+		elif component.has_holds:
+			hold = component.step_contact(side,false).lerp(top_target,smoothstep(.78,.81,t))
 		climb_targets[side].global_position = hold if t >= .14 else climb_targets[side].global_position.lerp(hold,clampf(delta*13.0,0.0,1.0))
 	# Solve from the final blended rig pose. SkeletonIK's separate update order
 	# left the wrists more than a hand width away on this tall wall.
@@ -656,17 +688,19 @@ func _pose_climb(delta: float) -> void:
 			var wrist_rotation: Quaternion = local_hand.orthonormalized().get_rotation_quaternion()
 			var neutral: Quaternion = skeleton.get_bone_rest(hand_index).basis.orthonormalized().get_rotation_quaternion()
 			var wrist_angle: float = neutral.angle_to(wrist_rotation)
-			if wrist_angle > .70:
-				wrist_rotation = neutral.slerp(wrist_rotation,.70/wrist_angle)
+			var wrist_limit: float = lerpf(.70,1.20,smoothstep(.78,.84,t))
+			if wrist_angle > wrist_limit:
+				wrist_rotation = neutral.slerp(wrist_rotation,wrist_limit/wrist_angle)
 				hand_basis = skeleton.get_bone_global_pose(parent).basis*Basis(wrist_rotation)
 			skeleton.set_bone_pose_rotation(hand_index,wrist_rotation)
 			skeleton.force_update_all_bone_transforms()
 		# Keep the first phalanx above the lip; curl the outer joints over it.
-		equipment._grasp(side, contact_blend * .15)
+		var hook_weight: float = contact_blend*(1.0-smoothstep(.79,.85,t))
+		equipment._grasp(side, hook_weight * .15)
 		var curl_axis: Vector3 = (hand_basis*(equipment.palm_axes[side] as Basis)).x
 		for finger in ["index","middle","ring","pinky"]:
-			equipment._rotate_digit(finger+"_02_"+side,curl_axis,.60*contact_blend)
-			equipment._rotate_digit(finger+"_03_"+side,curl_axis,.40*contact_blend)
+			equipment._rotate_digit(finger+"_02_"+side,curl_axis,.60*hook_weight)
+			equipment._rotate_digit(finger+"_03_"+side,curl_axis,.40*hook_weight)
 	# A boot presses into the next stone while its opposite leg rises. The
 	# targets follow wall space, so this also works on rotated masonry.
 	var foot_contact: float = smoothstep(.12, .22, t) * (1.0 - smoothstep(.69, .86, t))

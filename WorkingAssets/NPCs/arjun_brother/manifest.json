@@ -1,10 +1,10 @@
 {
   "status": "VISUAL_CANDIDATE",
   "source": "WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend",
-  "source_sha256": "06d1f8b254a4874eb7af0680f95b1368bcecff5623a8211ba8f04226d8a9de5a",
-  "preview_sha256": "c2f2ba06289be7a2467f278e288ca58688728ab0c1b326a260f108c9271e096c",
+  "source_sha256": "344cb287e929b33552a9189f752f9013b12bfb319efe01d18a08c43baac2e9ae",
+  "preview_sha256": "8142cdf9b0ef347ec95fb3adaa0b4d1e60ce20216c1ae63f08af517123255d08",
   "body_origin": "Independent MPFB human",
   "bone_count": 53,
-  "age_years": 29,
+  "age_years": 36,
   "role": "Dev, Arjun's older brother and sepoy"
 }

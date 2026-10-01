@@ -12,6 +12,21 @@ func capture(name: String) -> void:
 	if DisplayServer.get_name() != "headless":
 		RenderingServer.force_draw(false)
 		root.get_texture().get_image().save_png("res://docs/world/captures/mango_reach_" + name + ".png")
+# Independent wrist/forearm clearance sample; rendered cloth remains the visual check.
+func arm_leg_clearance(rig: Skeleton3D) -> float:
+	var wrist := rig.get_bone_global_pose(rig.find_bone("hand_r")).origin
+	var elbow := rig.get_bone_global_pose(rig.find_bone("lowerarm_r")).origin
+	var minimum := INF
+	for fraction in [0.0,0.25,0.5,0.75,1.0]:
+		var point := wrist.lerp(elbow,fraction)
+		for side in ["r","l"]:
+			for pair in [["thigh_","calf_"],["calf_","foot_"]]:
+				var a := rig.get_bone_global_pose(rig.find_bone(pair[0]+side)).origin
+				var b := rig.get_bone_global_pose(rig.find_bone(pair[1]+side)).origin
+				var segment := b-a
+				var nearest := a + segment * clampf((point-a).dot(segment)/segment.length_squared(),0.0,1.0)
+				minimum = minf(minimum,point.distance_to(nearest))
+	return minimum
 func validate() -> void:
 	root.size = Vector2i(1280,720)
 	var world := Node3D.new()
@@ -86,6 +101,16 @@ func validate() -> void:
 			if frame > 0: max_step = maxf(max_step,palm.distance_to(initial_palm))
 			initial_palm = palm
 			if offset.z < 0.5 and frame in [0,5,11,29]: await capture(str(frame))
+			if offset.z < 0.5 and frame == 29:
+				var previous_camera := camera.global_transform
+				camera.position = Vector3(-0.95,0.72,1.1)
+				camera.look_at(Vector3(-0.15,0.32,0.3))
+				await capture("cloth_held")
+				camera.global_transform = previous_camera
+		var clearance := arm_leg_clearance(visual.skeleton)
+		print("ARM LEG CLEARANCE ",clearance)
+		check(clearance > 0.12,"Held pickup forearm entered the leg envelope")
+		samples.append({"mode":"held_arm_clearance","distance_m":clearance})
 		check(visual.equipment.stowed,"Pickup did not free the weapon hand")
 		var error: float = initial_palm.distance_to(fruit.global_position+Vector3.UP*0.025)
 		var foot_error := 0.0
@@ -229,6 +254,7 @@ func validate() -> void:
 		var stationary_feet: Dictionary = {}
 		var moving_error := 0.0
 		var recovery_foot_error := 0.0
+		var recovery_clearance := INF
 		for moving in [false,true]:
 			player.global_position = Vector3(0,0.9,0)
 			player.rotation = Vector3.ZERO
@@ -253,6 +279,8 @@ func validate() -> void:
 				visual._process(1.0/60.0)
 				component._process(1.0/60.0)
 				carried._process(1.0/60.0)
+				if mode == "store" and frame < 39:
+					recovery_clearance = minf(recovery_clearance,arm_leg_clearance(visual.skeleton))
 				if frame in [7,15,35,59]:
 					var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_r"))
 					var palm: Vector3 = visual.to_local(visual.skeleton.to_global(hand*visual.equipment.palm_offsets["r"]))
@@ -267,7 +295,17 @@ func validate() -> void:
 					camera.position = player.global_position + Vector3(-1.7,0.35,1.8)
 					camera.look_at(player.global_position+Vector3(0,-0.25,0.15))
 					await capture("moving_"+mode+"_"+str(frame))
+					if mode == "store" and frame == 7:
+						var previous_camera := camera.global_transform
+						camera.position = player.global_position + player.global_basis * Vector3(-0.85,-0.12,0.95)
+						camera.look_at(player.global_position + player.global_basis * Vector3(-0.15,-0.5,0.3))
+						await capture("cloth_store")
+						camera.global_transform = previous_camera
 			check(not component.ground_pickup and not component.carried_mango.visible,"Moving action did not release")
+		if mode == "store":
+			print("STORE ARM LEG CLEARANCE ",recovery_clearance)
+			check(recovery_clearance > 0.12,"Storing recovery forearm entered the leg envelope")
+			samples.append({"mode":"store_arm_clearance","distance_m":recovery_clearance})
 		check(moving_error < 0.015,"Held fruit hand lagged behind moving/turning body")
 		check(recovery_foot_error < 0.015,"Recovering foot stretched behind moving/turning body")
 		samples.append({"mode":"moving_"+mode,"local_hand_error_m":moving_error,"local_foot_error_m":recovery_foot_error})

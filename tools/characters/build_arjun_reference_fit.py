@@ -69,11 +69,12 @@ path=OUT/'arjun_multiview_fit_candidate.blend'
 bpy.ops.wm.save_as_mainfile(filepath=str(path))
 report.update({'status':'CANDIDATE_NOT_EXACT_OR_APPROVED','source':str(SOURCE.relative_to(ROOT)), 'source_sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(), 'candidate':str(path.relative_to(ROOT)), 'reference_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'WorkingAssets/Arjun/references').glob('*.png')},'changes':['measured frontal face shape key','moustache/brow face fit','fuller crown hair','broader diagonal trouser drape','shaped split hem'],'runtime_replaced':False})
 (REVIEW/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')
+if '--fit-only' in sys.argv: sys.exit(0)
 for name,position in [('front',(0,-4,.88)),('side',(4,0,.88)),('back',(0,4,.88)),('three_quarter',(3,-4,.88))]:
  camera.location=position;camera.rotation_euler=(Vector((0,0,.88))-camera.location).to_track_quat('-Z','Y').to_euler()
  scene.render.filepath=str(REVIEW/(name+'.png'))
  bpy.ops.render.render(write_still=True)
 scene.render.resolution_x=900;scene.render.resolution_y=900;camera.data.ortho_scale=.38
-camera.location=(0,-2,data['eye_z_local']);camera.rotation_euler=(Vector((0,0,data['eye_z_local']-.025))-camera.location).to_track_quat('-Z','Y').to_euler()
+camera.location=(0,-2,1.592);camera.rotation_euler=(Vector((0,0,1.567))-camera.location).to_track_quat('-Z','Y').to_euler()
 scene.render.filepath=str(OUT/'face_fitted.png');bpy.ops.render.render(write_still=True)
 print('ARJUN_MULTIVIEW_FIT_READY',flush=True)

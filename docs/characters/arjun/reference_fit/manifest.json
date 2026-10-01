@@ -1,7 +1,7 @@
 {
   "shape_key": "Arjun_multiview_face_fit",
   "control_count": 60,
-  "maximum_displacement_m": 0.007603583495625894,
+  "maximum_displacement_m": 0.009279421916318338,
   "reference": "WorkingAssets/Arjun/references/arjun_core_multiview.png",
   "reference_sha256": {
     "arjun_core_multiview.png": "2ea627fc0d0d65ae59dd7ef3cae57c49a684e988b2a1ec22197d70d14b4aae67",

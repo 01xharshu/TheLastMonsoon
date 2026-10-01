@@ -1,13 +1,21 @@
 {
 	"failures": [],
 	"passed": true,
-	"rendered": false,
+	"rendered": true,
 	"samples": [
+		{
+			"distance_m": 0.171130463480949,
+			"mode": "held_arm_clearance"
+		},
 		{
 			"foot_drift_m": 0.00000010536712125031,
 			"fruit": "(-0.15, 0.135, 0.45)",
 			"largest_frame_palm_step_m": 0.103600323200226,
 			"palm_error_m": 0.0336680002510548
+		},
+		{
+			"distance_m": 0.297425627708435,
+			"mode": "held_arm_clearance"
 		},
 		{
 			"foot_drift_m": 0.000000195994175555825,
@@ -31,6 +39,10 @@
 			"local_foot_error_m": 0.000000149754811218372,
 			"local_hand_error_m": 0.000000338489314799517,
 			"mode": "moving_eat"
+		},
+		{
+			"distance_m": 0.171688586473465,
+			"mode": "store_arm_clearance"
 		},
 		{
 			"local_foot_error_m": 0.000000187452812383526,

@@ -14,6 +14,10 @@ func build(builder: Node3D) -> void:
 	for i in 34:
 		var home: Node3D = builder.get_node("BhairavpurHouse%d"%i) if i<33 else builder.get_node("BhairavpurLandownerEstate")
 		var lamp_at := Vector3(1.72,1.40,1.3) if i<33 else Vector3(-12,1.03,-7)
+		if i == 0:
+			lamp_at = Vector3(0.37,1.40,1.3)
+			for z in [1.13,1.47]:
+				builder.piece(home,"HomeLampShelfBracket",Vector3(0.24,1.20,z),Vector3(0.32,0.30,0.08),builder.wood,false)
 		if i<33: builder.piece(home,"LampShelf",lamp_at-Vector3.UP*.05,Vector3(.52,.10,.48),builder.wood,false)
 		var lamp = OilLamp.instantiate()
 		lamp.name = "HouseOilLamp"

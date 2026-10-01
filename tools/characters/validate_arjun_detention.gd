@@ -8,7 +8,6 @@ var camera: Camera3D
 var capture := false
 var max_drift := 0.0
 var wrist_gap := 0.0
-var boot_floor_gap := 0.0
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	if not value: failures.append(message)
@@ -47,6 +46,12 @@ func run() -> void:
 		camera.look_at(actor.global_position+Vector3.UP*0.15)
 	await frames(12)
 	var anchor := actor.global_position
+	actor.inventory.items["paper_cartridges"] = 2
+	actor.inventory.items["pistol_ball"] = 7
+	actor.get_node("RifleCombat").pending_rounds = 1
+	actor.get_node("RifleCombat").reload_remaining = 5.0
+	actor.get_node("PistolCombat").rounds = 2
+	actor.get_node("PistolCombat").reload_remaining = 1.0
 	actor.get_node("CombatInput").punch_time = 0.0
 	actor.get_node("CombatInput").pending_single = true
 	check(detention.begin_detention("arrest"),"Arrest entry rejected")
@@ -56,6 +61,10 @@ func run() -> void:
 	for i in 90:
 		await physics_frame
 		max_drift = maxf(max_drift, actor.global_position.distance_to(anchor))
+	check(actor.get_node("RifleCombat").reload_remaining == 0.0 and actor.get_node("RifleCombat").pending_rounds == 0,"Rifle reload not cancelled")
+	check(actor.inventory.get_item_count("paper_cartridges") == 3,"Reserved rifle charge lost or duplicated")
+	check(actor.get_node("PistolCombat").reload_remaining == 0.0 and actor.get_node("PistolCombat").rounds == 2,"Pistol reload continued during arrest")
+	check(actor.inventory.get_item_count("pistol_ball") == 7,"Pistol reserve changed on arrest")
 	check(not actor.get_node("CombatInput").available(),"Melee allowed in detention")
 	check(actor.get_node("CombatInput").punch_time < 0 and not actor.get_node("CombatInput").pending_single,"Pending melee was not cancelled")
 	check(not actor.get_node("StealthStance").can_change(),"Low stance allowed in detention")

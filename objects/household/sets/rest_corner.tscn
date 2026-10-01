@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://objects/charpai.tscn" id="1_tigau"]
+[ext_resource type="Script" path="res://objects/charpai.gd" id="2_us7ni"]
+[ext_resource type="PackedScene" path="res://objects/household/woven_mat.tscn" id="3_0fiwt"]
+[ext_resource type="PackedScene" path="res://objects/household/storage/stool.tscn" id="4_1iv56"]
+[ext_resource type="PackedScene" path="res://objects/household/oil_lamp_visual.tscn" id="5_dcsgq"]
+
+[node name="RestCornerSet" type="Node3D" unique_id=144837566]
+
+[node name="Charpai" type="StaticBody3D" parent="." unique_id=291085808 instance=ExtResource("1_tigau")]
+script = ExtResource("2_us7ni")
+
+[node name="FootMat" type="StaticBody3D" parent="." unique_id=1192648679 instance=ExtResource("3_0fiwt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.35)
+
+[node name="LampStool" type="StaticBody3D" parent="." unique_id=1009060781 groups=["solid_period_prop"] instance=ExtResource("4_1iv56")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.45, 0, -0.1)
+metadata/asset_source = "res://assets/props/polyhaven/wooden_stool_01/wooden_stool_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Lamp" type="Node3D" parent="." unique_id=63737979 instance=ExtResource("5_dcsgq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.45, 0.44, -0.1)
+
+[node name="Approach" type="Marker3D" parent="." unique_id=452339803]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)
+
+[node name="ClearExit" type="Marker3D" parent="." unique_id=1836319924]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.45, 0, 0.85)

@@ -1,6 +1,7 @@
 extends Node
 ## Adams sidearm: RMB aligns the muzzle, LMB fires, R loads carried balls.
 const CAPACITY := 5
+const weapon_selection := 3
 const SHOT = preload("res://audio/weapons/adams_shot.wav")
 const RELOAD_CLICK = preload("res://audio/weapons/aim_click.wav")
 var shot_sound: AudioStreamPlayer3D
@@ -41,6 +42,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if reload_remaining > 0.0 and (visual.equipment.stowed or visual.equipment.selected != weapon_selection):
+		cancel_reload()
 	if actor.get_meta("detention_action", "") != "":
 		aiming = false
 		return
@@ -77,18 +80,24 @@ func fire() -> bool:
 	var target := camera.global_position-camera.global_basis.z*90.0
 	var camera_query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
 	camera_query.exclude = [actor.get_rid()]
-	var camera_hit := actor.get_world_3d().direct_space_state.intersect_ray(camera_query)
+	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(actor.get_world_3d().direct_space_state,get_tree(),camera_query.from,camera_query.to,[actor.get_rid()])
 	if not camera_hit.is_empty(): target = camera_hit.position
 	var shot_query := PhysicsRayQueryParameters3D.create(origin,target+(target-origin).normalized()*.05)
 	shot_query.exclude = [actor.get_rid()]
-	var hit := actor.get_world_3d().direct_space_state.intersect_ray(shot_query)
+	var hit := preload("res://combat/ballistic_trace.gd").shoot(actor.get_world_3d().direct_space_state,get_tree(),shot_query.from,shot_query.to,38.0,[actor.get_rid()])
 	if not hit.is_empty():
 		actor.get_node("RifleCombat").add_impact(hit)
-		if hit.collider.has_method("take_damage"): hit.collider.take_damage(38.0)
 	actor.get_node("RifleCombat").muzzle_effect(origin)
 	shot_sound.global_position = origin
 	shot_sound.play()
 	return true
+
+func cancel_reload() -> void:
+	if reload_remaining <= 0.0: return
+	# Balls are consumed only at completion, so there is no reservation to refund.
+	reload_remaining = 0.0
+	aiming = false
+	if reload_sound: reload_sound.stop()
 
 func start_reload() -> bool:
 	if actor.get_meta("item_use", "") != "": return false

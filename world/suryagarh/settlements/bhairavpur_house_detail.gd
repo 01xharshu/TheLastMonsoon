@@ -144,14 +144,45 @@ func _openings(house_node: Node3D,extent: Vector2,index: int) -> void:
 			# Continuous physical envelope prevents capsule squeezing between bars.
 			_window_barrier(house_node,Vector3(side*w*.5,1.915,0),Vector3(.12,1.15,2.2))
 		else:
-			_piece(house_node,"ClosedWoodWindow",Vector3(side*w*.5,1.915,0),Vector3(.12,1.15,2.2),settlement.wood)
+			pass # Framed paired shutters above provide matching moving collision.
+	_window_frame(house_node,Vector3(0,1.25,-d*.5),Vector2(1.4,.85),PI,accessible,not grille and not accessible)
 	if not accessible:
 		if grille:
 			for bar in 7:
 				_piece(house_node,"RearWindowIronBar",Vector3(-.60+bar*.2,1.675,-d*.5),Vector3(.055,.85,.07),settlement.iron,false)
 			_window_barrier(house_node,Vector3(0,1.675,-d*.5),Vector3(1.4,.85,.12))
 		else:
-			_piece(house_node,"RearWoodShutter",Vector3(0,1.675,-d*.5),Vector3(1.4,.85,.12),settlement.wood)
+			pass # Actual hinged rear shutters are installed in the window frame.
+
+func _window_frame(parent: Node3D,at: Vector3,size: Vector2,yaw: float,open_entry: bool,shuttered: bool) -> void:
+	var frame := Node3D.new()
+	frame.name="TimberWindowFrame"
+	frame.position=at
+	frame.rotation.y=yaw
+	parent.add_child(frame)
+	for side in [-1.0,1.0]:
+		_piece(frame,"WindowJamb",Vector3(side*(size.x*.5+.025),size.y*.5,.12),Vector3(.09,size.y+.16,.16),settlement.wood,false)
+	for y in [-.02,size.y+.02]:
+		_piece(frame,"WindowFrameRail",Vector3(0,y,.12),Vector3(size.x+.16,.09,.16),settlement.wood,false)
+	if shuttered:
+		var shutter := preload("res://objects/hinged_door.gd").new()
+		shutter.name="PairedWoodShutters"
+		shutter.width=size.x
+		shutter.height=size.y
+		shutter.position=Vector3(-size.x*.5,0,.14)
+		shutter.opened=false
+		shutter.inside_only=true
+		shutter.auto_open_at_dawn=false
+		shutter.label_name="shutters"
+		shutter.build(settlement.wood)
+		frame.add_child(shutter)
+	elif open_entry:
+		for side in [-1.0,1.0]:
+			var leaf := _piece(frame,"HeldOpenShutter",Vector3(side*(size.x*.5+.12),size.y*.5,size.x*.25+.14),Vector3(.09,size.y,size.x*.5),settlement.wood,false)
+			_piece(frame,"ShutterStay",Vector3(side*(size.x*.5+.10),.18,.30),Vector3(.18,.035,.40),settlement.iron,false)
+	else:
+		for y in [.08,size.y-.08]:
+			_piece(frame,"IronGrilleCrossRail",Vector3(0,y,.025),Vector3(size.x,.045,.045),settlement.iron,false)
 
 func _window_barrier(parent: Node3D,at: Vector3,size: Vector3) -> void:
 	var body := StaticBody3D.new()

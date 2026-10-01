@@ -1,0 +1,169 @@
+{
+	"failures": [
+		"forward hold route reaches destination"
+	],
+	"routes": [
+		{
+			"arrived": true,
+			"finish": "(-102.1151, 4.220191, 680.0)",
+			"label": "quay to supported jetty",
+			"start": "(-168.0, 3.780264, 680.0)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-102.0037, 4.220191, 683.8326)",
+			"label": "berth turn",
+			"start": "(-102.1151, 4.220191, 680.0)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-88.0994, 4.221009, 683.9989)",
+			"label": "gangway boards ship",
+			"start": "(-102.0037, 4.220191, 683.8326)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-88.00135, 4.221009, 691.5806)",
+			"label": "main deck to stern",
+			"start": "(-88.0994, 4.221009, 683.9989)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-86.66837, 4.220028, 691.6929)",
+			"label": "around mizzen approach",
+			"start": "(-88.00135, 4.221009, 691.5806)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-86.31793, 4.220872, 694.0226)",
+			"label": "pass mizzen mast",
+			"start": "(-86.66837, 4.220028, 691.6929)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-85.15151, 4.220872, 694.1916)",
+			"label": "align with cabin doorway",
+			"start": "(-86.31793, 4.220872, 694.0226)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-85.00586, 4.220872, 696.3571)",
+			"label": "captain cabin doorway",
+			"start": "(-85.15151, 4.220872, 694.1916)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-85.00018, 4.220872, 698.1902)",
+			"label": "captain cabin exploration",
+			"start": "(-85.00586, 4.220872, 696.3571)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-85.00001, 4.220872, 694.3576)",
+			"label": "captain cabin exit",
+			"start": "(-85.00018, 4.220872, 698.1902)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-82.4412, 4.220215, 691.6688)",
+			"label": "poop stair approach",
+			"start": "(-85.00001, 4.220872, 694.3576)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-82.30087, 6.991068, 696.0426)",
+			"label": "climb to poop",
+			"start": "(-82.4412, 4.220215, 691.6688)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-83.84982, 6.991068, 699.277)",
+			"label": "helm exploration",
+			"start": "(-82.30087, 6.991068, 696.0426)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-82.33827, 6.991068, 696.2891)",
+			"label": "return to poop stairs",
+			"start": "(-83.84982, 6.991068, 699.277)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-82.30064, 4.24708, 691.6982)",
+			"label": "descend poop stairs",
+			"start": "(-82.33827, 6.991068, 696.2891)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-81.06804, 4.220876, 691.5849)",
+			"label": "move around deck cargo",
+			"start": "(-82.30064, 4.24708, 691.6982)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-80.90406, 4.220897, 681.1003)",
+			"label": "main deck starboard aisle",
+			"start": "(-81.06804, 4.220876, 691.5849)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-84.82029, 4.220897, 681.0034)",
+			"label": "companionway approach",
+			"start": "(-80.90406, 4.220897, 681.1003)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-84.99749, -0.119282, 690.8457)",
+			"label": "descend into cargo hold",
+			"start": "(-84.82029, 4.220897, 681.0034)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-84.99992, -0.119282, 694.845)",
+			"label": "cargo hold aft exploration",
+			"start": "(-84.99749, -0.119282, 690.8457)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-84.99999, -0.119282, 691.179)",
+			"label": "return below stairs",
+			"start": "(-84.99992, -0.119282, 694.845)",
+			"swimming": false
+		},
+		{
+			"arrived": true,
+			"finish": "(-86.66571, -0.119282, 691.0073)",
+			"label": "hold side aisle",
+			"start": "(-84.99999, -0.119282, 691.179)",
+			"swimming": false
+		},
+		{
+			"arrived": false,
+			"finish": "(-86.67915, -0.119282, 689.9206)",
+			"label": "forward hold route",
+			"start": "(-86.66571, -0.119282, 691.0073)",
+			"swimming": false
+		}
+	],
+	"status": "FAIL"
+}

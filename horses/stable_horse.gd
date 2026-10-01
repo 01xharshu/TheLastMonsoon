@@ -13,6 +13,8 @@ const Tack = preload("res://audio/horses/leather_tack.wav")
 const Snort = preload("res://audio/horses/horse_snort.wav")
 const Neigh = preload("res://audio/horses/horse_neigh.ogg")
 var layout := Layout.new()
+var vitality: Node
+var death_exit_retry := 0.0
 var rider: CharacterBody3D
 var stolen := false
 var pace := 0.0
@@ -73,6 +75,13 @@ func _ready() -> void:
 	body_collision = collider
 	_build_horse()
 	_build_audio()
+	vitality = preload("res://horses/horse_vitality.gd").new()
+	vitality.name = "Vitality"
+	add_child(vitality)
+	vitality.configure(self,body_root,rigged_anim,Vector3.ZERO)
+	# The CharacterBody already forwards damage; avoid self-hits in hoof/stair rays.
+	vitality.hit_body.collision_layer = 0
+	vitality.died.connect(_on_death)
 
 func _audio_player(label: String, volume: float) -> AudioStreamPlayer3D:
 	var player := AudioStreamPlayer3D.new()
@@ -328,20 +337,20 @@ func _build_horse() -> void:
 		lower_legs.append(hock)
 		hoof_clearances.append(0.0)
 	_ellipsoid(body_root,"Mane",Vector3(0,2.02,-.72),Vector3(.12,.38,.18),dark)
-	_box(body_root,"SaddleCloth",Vector3(0,1.90,.01),Vector3(.80,.045,.70),cloth)
-	_ellipsoid(body_root,"LeatherSaddle",Vector3(0,1.95,.02),Vector3(.31,.085,.36),leather)
-	_ellipsoid(body_root,"Pommel",Vector3(0,2.03,-.25),Vector3(.24,.07,.065),leather)
-	_ellipsoid(body_root,"Cantle",Vector3(0,2.04,.29),Vector3(.24,.08,.07),leather)
+	preload("res://horses/fitted_saddle.gd").build(body_root,leather,cloth)
 	_cord(body_root,"GirthUnder",Vector3(-.43,1.12,.07),Vector3(.43,1.12,.07),.032,leather)
 	_box(neck_root,"Noseband",Vector3(0,.57,-.62),Vector3(.42,.035,.06),leather)
 	for part in body_root.get_children():
-		for tack_name in ["SaddleCloth","LeatherSaddle","Pommel","Cantle","StirrupLeather","StirrupTread","StirrupFront","StirrupBack","GirthSide","GirthUnder"]:
+		for tack_name in ["StirrupLeather","StirrupTread","StirrupFront","StirrupBack","GirthSide","GirthUnder"]:
 			if part.name.begins_with(tack_name):
 				part.position.y -= .15
 				break
 	for side in [-1.0, 1.0]:
 		_cord(body_root,"RiderStirrupLeather",Vector3(side*.30,1.85,.02),Vector3(side*.48,1.42,.02),.022,leather)
-		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.40,.02),Vector3(.18,.04,.14),dark)
+		_box(body_root,"RiderStirrupTread",Vector3(side*.48,1.40,.02),Vector3(.18,.035,.14),dark)
+		for edge in [-1.0,1.0]:
+			_cord(body_root,"RiderStirrupArch",Vector3(side*.48+edge*.085,1.42,.02),Vector3(side*.48+edge*.065,1.59,.02),.011,dark)
+		_cord(body_root,"RiderStirrupArchTop",Vector3(side*.48-.065,1.59,.02),Vector3(side*.48+.065,1.59,.02),.011,dark)
 	tack_root = Node3D.new()
 	tack_root.name = "AnimatedTack"
 	body_root.add_child(tack_root)
@@ -350,7 +359,7 @@ func _build_horse() -> void:
 			var label := str(part.get_meta("horse_piece",part.name))
 			if label.begins_with("Stirrup"):
 				part.hide() # Replaced by the fitted rider stirrups.
-			elif label.begins_with("RiderStirrup") or label.begins_with("Girth") or label in ["SaddleCloth","LeatherSaddle","Pommel","Cantle"]:
+			elif label.begins_with("RiderStirrup") or label.begins_with("Saddle") or label.begins_with("Girth") or label in ["SaddleCloth","LeatherSaddle","Pommel","Cantle"]:
 				part.reparent(tack_root,false)
 	process_priority = -20
 	_build_rein("l", leather)
@@ -387,6 +396,7 @@ func _animated_frame_delta(bone_name: String) -> Transform3D:
 	return animated * rest.affine_inverse()
 
 func _process(delta: float) -> void:
+	if vitality != null and vitality.dead: return
 	if tack_root == null: return
 	# Imported gait clips translate/pitch the skinned back independently of the
 	# physics capsule. Seat, stirrups and saddle must follow that same frame.
@@ -426,6 +436,7 @@ func stirrup_world(side: String) -> Vector3:
 	return tack_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.42, 0.02))
 
 func can_board(actor: CharacterBody3D) -> bool:
+	if vitality != null and vitality.dead: return false
 	return rider == null and not actor.get_meta("climbing",false) and actor.global_position.distance_to(global_position) < 3.0
 
 func board(actor: CharacterBody3D) -> bool:
@@ -495,6 +506,9 @@ func dismount() -> bool:
 	return false
 
 func _physics_process(delta: float) -> void:
+	if vitality != null and vitality.dead:
+		_death_step(delta)
+		return
 	rider_landing = move_toward(rider_landing, 0.0, delta * 3.0)
 	stair_activity = maxf(0.0, stair_activity - delta)
 	var throttle := 0.0
@@ -633,3 +647,45 @@ func _walk_stairs(horizontal: Vector3) -> void:
 			step_ground_grace = 0.15
 			stair_activity = 0.35
 			apply_floor_snap()
+
+func take_damage(amount: float) -> void:
+	if vitality != null: vitality.take_damage(amount)
+
+func _on_death() -> void:
+	pace = 0.0
+	velocity.x = 0.0
+	velocity.z = 0.0
+	for player in hoof_players: player.stop()
+	voice_player.stop()
+	# The physical corpse is low; the standing capsule must not remain upright.
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.6,.6,2.7)
+	body_collision.set_deferred("shape",box)
+	body_collision.set_deferred("position",Vector3(.35,.3,0))
+	if rider != null: transition = ""
+
+func _death_step(delta: float) -> void:
+	velocity.x = 0.0
+	velocity.z = 0.0
+	velocity.y -= float(ProjectSettings.get_setting("physics/3d/default_gravity"))*delta
+	move_and_slide()
+	if rider == null: return
+	if transition != "dismount":
+		death_exit_retry -= delta
+		if death_exit_retry <= 0.0:
+			death_exit_retry = .8
+			dismount()
+		return
+	transition_time += delta
+	var fraction := clampf(transition_time/.7,0,1)
+	rider.global_position = transition_from.lerp(transition_to,smoothstep(0,1,fraction))
+	rider.set_meta("horse_transition_progress",fraction)
+	if fraction >= 1:
+		var actor := rider
+		rider = null
+		actor.set_meta("mounted_vehicle",null)
+		actor.set_meta("horse_transition","")
+		actor.collision_layer = saved_layer
+		actor.collision_mask = saved_mask
+		actor.velocity = Vector3.ZERO
+		transition = ""

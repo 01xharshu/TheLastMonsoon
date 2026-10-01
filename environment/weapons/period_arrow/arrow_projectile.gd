@@ -29,6 +29,7 @@ func _physics_process(delta: float) -> void:
 	var travel := velocity*delta + Vector3.DOWN*GRAVITY*delta*delta*0.5
 	var query := PhysicsRayQueryParameters3D.create(global_position,global_position+travel)
 	if is_instance_valid(shooter): query.exclude = [shooter.get_rid()]
+	query.exclude = preload("res://combat/ballistic_trace.gd").exclusions(get_tree(),query.exclude)
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
 		global_position = hit.position

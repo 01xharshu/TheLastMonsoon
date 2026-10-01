@@ -4,11 +4,15 @@ static func exclusions(tree: SceneTree, initial: Array[RID]) -> Array[RID]:
 	var result: Array[RID] = initial.duplicate()
 	for body in tree.get_nodes_in_group("cart_clearance_bodies"):
 		if body is CollisionObject3D: result.append(body.get_rid())
+	for body in tree.get_nodes_in_group("cart_boarding_handles"):
+		if body is CollisionObject3D: result.append(body.get_rid())
 	return result
 
 static func sight(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vector3, to: Vector3, initial: Array[RID]) -> Dictionary:
 	var query := PhysicsRayQueryParameters3D.create(from,to)
 	query.exclude = exclusions(tree,initial)
+	for pane in tree.get_nodes_in_group("carriage_glass"):
+		query.exclude.append(pane.get_rid())
 	return space.intersect_ray(query)
 
 static func shoot(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vector3, to: Vector3, damage: float, initial: Array[RID]) -> Dictionary:

@@ -134,7 +134,7 @@ for row in range(37):
                    (side*section_width(zb,ya),ya+sheer(zb),zb),
                    (side*section_width(zb,yb),yb+sheer(zb),zb),
                    (side*section_width(za,yb),yb+sheer(za),za)]
-            face(mat, pts if side == 1 else list(reversed(pts)))
+            face(mat, list(reversed(pts)) if side == 1 else pts)
             # Fine seams do not project as chunky ribs.
             if row > 22:
                 rope((side*(section_width(za,yb)+.006),yb+sheer(za),za),
@@ -150,9 +150,10 @@ for za,zb in zip(zs,zs[1:]):
     # Open companionway to the hold. No hidden solid deck across the stairs.
     if za >= 1.5 and zb <= 10.1:
         for side in [-1,1]:
-            face("WeatherDeck",[(side*1.75,3.32,za),(side*wa,3.32,za),(side*wb,3.32,zb),(side*1.75,3.32,zb)])
+            pts=[(side*1.75,3.32,za),(side*wa,3.32,za),(side*wb,3.32,zb),(side*1.75,3.32,zb)]
+            face("WeatherDeck",list(reversed(pts)) if side == 1 else pts)
     else:
-        face("WeatherDeck",[(-wa,3.32,za),(wa,3.32,za),(wb,3.32,zb),(-wb,3.32,zb)])
+        face("WeatherDeck",[(-wb,3.32,zb),(wb,3.32,zb),(wa,3.32,za),(-wa,3.32,za)])
 for i in range(-25,26):
     x = i*.22
     valid = [z for z in zs if abs(x) < beam(z)*.955]
@@ -228,9 +229,9 @@ for z in [-6.5]:
 # Companionway coamings, handrails and a twenty-step descent to the dry hold.
 for side in [-1,1]:
     box("OakSpars",(side*1.8,3.5,5.8),(.12,.34,8.5))
-    rope((side*1.65,4.1,1.5),(side*1.65,-.1,9.5),.045,"OakSpars")
+    rope((side*1.4,4.1,1.5),(side*1.4,-.1,9.5),.045,"OakSpars")
 for i in range(20):
-    box("WeatherDeck",(0,3.26-i*.216,1.8+i*.4),(2.7,.12,.43))
+    box("WeatherDeck",(0,3.26-i*.216,1.8+i*.4),(2.4,.12,.43))
 box("WeatherDeck",(0,-1.10,0),(7.1,.16,36))
 for x in range(-15,16): rope((x*.22,-1.014,-18),(x*.22,-1.014,18),.005,"DeckCaulking")
 for z in range(-16,18,4):
@@ -242,10 +243,10 @@ for z in range(-16,18,4):
 # Hold cargo sits off the central walk route.
 for side in [-1,1]:
     for z in [-7,-5,-3,-1,11,13,15]:
-        x=side*2.25
-        box("CargoWood",(x,-.44,z),(1.35,1.12,1.45))
-        for y in [-.91,.02]: box("OakSpars",(x,y,z),(1.43,.10,1.53))
-        rope((x-.6,.16,z-.7),(x+.6,-1,z+.7),.026,"RunningRigging")
+        x=side*2.95
+        box("CargoWood",(x,-.44,z),(.8,1.12,1.45))
+        for y in [-.91,.02]: box("OakSpars",(x,y,z),(.88,.10,1.53))
+        rope((x-.4,.16,z-.7),(x+.4,-1,z+.7),.026,"RunningRigging")
     for z in [-15,-12]:
         box("OakSpars",(side*2.35,-.4,z),(1.5,.16,2.5))
         box("FurledCanvas",(side*2.35,-.20,z),(1.35,.22,2.35))

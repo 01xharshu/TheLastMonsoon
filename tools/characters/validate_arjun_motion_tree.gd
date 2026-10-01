@@ -29,6 +29,14 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: climb pull pose did not engage")
 		quit(1)
 		return
+	var spine := skeleton.find_bone("spine_01")
+	tree.update_climb(0.2,.78)
+	var hanging_spine := skeleton.get_bone_pose_rotation(spine)
+	tree.update_climb(0.2,.86)
+	if hanging_spine.angle_to(skeleton.get_bone_pose_rotation(spine)) < .30:
+		push_error("ARJUN MOTION TREE: mantle press did not transfer torso over the edge")
+		quit(1)
+		return
 	tree.release_climb(0.2)
 	tree.update_motion(0.1, 0.0, 0.0, false)
 	if walk_rotation.angle_to(idle_rotation) < 0.01:

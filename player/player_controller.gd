@@ -754,13 +754,14 @@ func _find_interactable() -> Interactable:
 			if view_camera.is_position_behind(candidate.interaction_anchor()): continue
 			screen_point = view_camera.unproject_position(candidate.interaction_anchor())
 			if not view_rect.has_point(screen_point): continue
-		var offset := candidate.global_position - global_position
+		var target_point := candidate.interaction_anchor() if candidate.is_in_group("house_doors") else candidate.global_position
+		var offset := target_point - global_position
 		var distance := offset.length()
 		if distance > candidate.interaction_max_distance: continue
 		var flat := Vector3(offset.x, 0, offset.z)
 		var alignment := forward.dot(flat.normalized()) if flat.length() > 0.1 else 1.0
 		if alignment < 0.65: continue
-		var query := PhysicsRayQueryParameters3D.create(origin, candidate.global_position)
+		var query := PhysicsRayQueryParameters3D.create(origin, target_point)
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider != candidate:

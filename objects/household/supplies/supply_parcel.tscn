@@ -1,0 +1,124 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qdvej"]
+albedo_color = Color(0.78, 0.7, 0.51, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_nkw3q"]
+material = SubResource("StandardMaterial3D_qdvej")
+size = Vector3(0.27, 0.085, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yr62b"]
+albedo_color = Color(0.3, 0.22, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gejmh"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.184
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_w11sp"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.088
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tfjcf"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.088
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_fm5dd"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.184
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lu1yd"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.088
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rqdgu"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.088
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_14hdv"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.0025
+bottom_radius = 0.0025
+height = 0.274
+radial_segments = 6
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_osmlg"]
+material = SubResource("StandardMaterial3D_yr62b")
+top_radius = 0.003
+bottom_radius = 0.003
+height = 0.040657107
+radial_segments = 6
+rings = 0
+
+[node name="TiedSupplyParcel" type="Node3D" unique_id=1709588684]
+
+[node name="WrappedContents" type="MeshInstance3D" parent="." unique_id=67631756]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0425, 0)
+mesh = SubResource("BoxMesh_nkw3q")
+
+[node name="Twine" type="MeshInstance3D" parent="." unique_id=41839807]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -0.06, 0.088, 0)
+mesh = SubResource("CylinderMesh_gejmh")
+
+[node name="@MeshInstance3D@36" type="MeshInstance3D" parent="." unique_id=2037247875]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.044, -0.092)
+mesh = SubResource("CylinderMesh_w11sp")
+
+[node name="@MeshInstance3D@37" type="MeshInstance3D" parent="." unique_id=140921388]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.044, 0.092)
+mesh = SubResource("CylinderMesh_tfjcf")
+
+[node name="@MeshInstance3D@38" type="MeshInstance3D" parent="." unique_id=1948845053]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.06, 0.088, 0)
+mesh = SubResource("CylinderMesh_fm5dd")
+
+[node name="@MeshInstance3D@39" type="MeshInstance3D" parent="." unique_id=271789768]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.044, -0.092)
+mesh = SubResource("CylinderMesh_lu1yd")
+
+[node name="@MeshInstance3D@40" type="MeshInstance3D" parent="." unique_id=68650992]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.044, 0.092)
+mesh = SubResource("CylinderMesh_rqdgu")
+
+[node name="CrossTie" type="MeshInstance3D" parent="." unique_id=2128180876]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.089, 0)
+mesh = SubResource("CylinderMesh_14hdv")
+
+[node name="KnotTail" type="MeshInstance3D" parent="." unique_id=2141698582]
+transform = Transform3D(0.639627, 0.61489874, -0.4612775, -0.61489874, 0.049191713, -0.7870704, -0.4612775, 0.7870704, 0.4095648, 0.0725, 0.092999995, 0.016)
+mesh = SubResource("CylinderMesh_osmlg")
+
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=1182765445]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.137, 0.043, 0)
+
+[node name="RightGrip" type="Marker3D" parent="." unique_id=1773483919]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.137, 0.043, 0)
+
+[node name="TieGrip" type="Marker3D" parent="." unique_id=601014707]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.094, 0)

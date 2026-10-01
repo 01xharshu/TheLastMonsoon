@@ -40,5 +40,17 @@ func _run() -> void:
  gun.start_reload()
  gun._process(5.0)
  check(gun.rounds==2 and actor.inventory.get_item_count("shot_charge")==0,"Reload did not consume the spare charges")
+ gun.rounds = 0
+ gun.loaded = false
+ actor.inventory.add_item("shot_charge",2)
+ gun.start_reload()
+ gear.toggle_stowed()
+ check(gun.reload_remaining==0 and gun.pending_rounds==0 and actor.inventory.get_item_count("shot_charge")==2,"Stowing double gun lost its two reserved charges")
+ gear._refresh()
+ check(actor.inventory.get_item_count("shot_charge")==2,"Repeated double-gun cancellation duplicated charges")
+ gear.toggle_stowed()
+ gun.start_reload()
+ gun._process(5.0)
+ check(gun.rounds==2 and actor.inventory.get_item_count("shot_charge")==0,"Double gun failed to reload after cancellation")
  print("DOUBLE GUN: ","FAIL" if failed else "PASS")
  quit(1 if failed else 0)

@@ -1,0 +1,116 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://objects/household/storage/basket.tscn" id="1_jiwxq"]
+[ext_resource type="PackedScene" path="res://objects/household/supplies/supply_parcel.tscn" id="2_bculo"]
+[ext_resource type="PackedScene" path="res://objects/household/grain_sack.tscn" id="3_iu8c0"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ixbn"]
+albedo_color = Color(0.26, 0.15, 0.075, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_lnilw"]
+material = SubResource("StandardMaterial3D_6ixbn")
+size = Vector3(1.6, 0.06, 0.75)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_st7m4"]
+size = Vector3(1.6, 0.06, 0.75)
+
+[sub_resource type="BoxMesh" id="BoxMesh_73jya"]
+material = SubResource("StandardMaterial3D_6ixbn")
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2agy5"]
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_omg7s"]
+material = SubResource("StandardMaterial3D_6ixbn")
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_j1hdv"]
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_b6obr"]
+material = SubResource("StandardMaterial3D_6ixbn")
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jcs6f"]
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_gmdu2"]
+material = SubResource("StandardMaterial3D_6ixbn")
+size = Vector3(0.08, 0.7, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s2gyi"]
+size = Vector3(0.08, 0.7, 0.08)
+
+[node name="MarketSupplySet" type="Node3D" unique_id=1268736707]
+
+[node name="Counter" type="MeshInstance3D" parent="." unique_id=1036495779]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.73, 0)
+mesh = SubResource("BoxMesh_lnilw")
+
+[node name="CounterBody" type="StaticBody3D" parent="." unique_id=1039747666]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.73, 0)
+
+[node name="@CollisionShape3D@2" type="CollisionShape3D" parent="CounterBody" unique_id=1349581118]
+shape = SubResource("BoxShape3D_st7m4")
+
+[node name="Leg" type="MeshInstance3D" parent="." unique_id=2100717429]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.68, 0.35, -0.28)
+mesh = SubResource("BoxMesh_73jya")
+
+[node name="LegBody" type="StaticBody3D" parent="." unique_id=1983172326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.68, 0.35, -0.28)
+
+[node name="@CollisionShape3D@3" type="CollisionShape3D" parent="LegBody" unique_id=1912575054]
+shape = SubResource("BoxShape3D_2agy5")
+
+[node name="@MeshInstance3D@4" type="MeshInstance3D" parent="." unique_id=905595500]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.68, 0.35, 0.28)
+mesh = SubResource("BoxMesh_omg7s")
+
+[node name="@StaticBody3D@5" type="StaticBody3D" parent="." unique_id=1050905028]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.68, 0.35, 0.28)
+
+[node name="@CollisionShape3D@6" type="CollisionShape3D" parent="@StaticBody3D@5" unique_id=2126503198]
+shape = SubResource("BoxShape3D_j1hdv")
+
+[node name="@MeshInstance3D@7" type="MeshInstance3D" parent="." unique_id=77422133]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.68, 0.35, -0.28)
+mesh = SubResource("BoxMesh_b6obr")
+
+[node name="@StaticBody3D@8" type="StaticBody3D" parent="." unique_id=1504246670]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.68, 0.35, -0.28)
+
+[node name="@CollisionShape3D@9" type="CollisionShape3D" parent="@StaticBody3D@8" unique_id=1283166551]
+shape = SubResource("BoxShape3D_jcs6f")
+
+[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="." unique_id=243978993]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.68, 0.35, 0.28)
+mesh = SubResource("BoxMesh_gmdu2")
+
+[node name="@StaticBody3D@11" type="StaticBody3D" parent="." unique_id=476571089]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.68, 0.35, 0.28)
+
+[node name="@CollisionShape3D@12" type="CollisionShape3D" parent="@StaticBody3D@11" unique_id=881096181]
+shape = SubResource("BoxShape3D_s2gyi")
+
+[node name="DisplayBasket" type="StaticBody3D" parent="." unique_id=389557273 groups=["solid_period_prop"] instance=ExtResource("1_jiwxq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 0.76, 0)
+metadata/asset_source = "res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf"
+metadata/interaction_status = "decorative; hero actions deferred"
+
+[node name="Parcel" type="Node3D" parent="." unique_id=1709588684 instance=ExtResource("2_bculo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.76, 0.05)
+
+[node name="StockSack" type="StaticBody3D" parent="." unique_id=294828383 groups=["solid_period_prop"] instance=ExtResource("3_iu8c0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0, -0.2)
+
+[node name="Approach" type="Marker3D" parent="." unique_id=214556744]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.95)
+
+[node name="VendorPosition" type="Marker3D" parent="." unique_id=1750603049]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.95)
+
+[node name="ExchangeTarget" type="Marker3D" parent="." unique_id=1274762591]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.86, 0.05)

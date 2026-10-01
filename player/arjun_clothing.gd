@@ -18,6 +18,7 @@ var tailored_meshes := 0
 func setup(model: Node3D, skeleton: Skeleton3D) -> void:
  rig = skeleton
  process_priority = 15
+ preload("res://player/arjun_trouser_fit.gd").apply(model)
  for node in model.find_children("*", "MeshInstance3D", true, false):
   for index in node.mesh.get_surface_count():
    var original = node.mesh.surface_get_material(index)
@@ -32,7 +33,6 @@ func setup(model: Node3D, skeleton: Skeleton3D) -> void:
    cloth.set_shader_parameter("garment_kind", kind)
    node.set_surface_override_material(index, cloth)
    materials.append(cloth)
- preload("res://player/arjun_trouser_fit.gd").apply(model)
  _tailor_hem(model)
  thread = StandardMaterial3D.new()
  thread.albedo_color = Color(.25,.16,.085)

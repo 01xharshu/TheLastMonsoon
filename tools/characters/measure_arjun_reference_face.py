@@ -69,7 +69,7 @@ data={
     'reference':str(REF.relative_to(ROOT)),
     'reference_sha256':hashlib.sha256(REF.read_bytes()).hexdigest(),
     'reference_crop':list(crop),
-    'render':str(Path(args.render).relative_to(ROOT)),
+    'render':str(Path(args.render).resolve().relative_to(ROOT)),
     'render_sha256':hashlib.sha256(Path(args.render).read_bytes()).hexdigest(),
     'method':'MediaPipe FaceLandmarker; profile glabella-chin alignment' if args.profile else
         'MediaPipe FaceLandmarker; iris-distance scale and roll alignment',

@@ -45,10 +45,12 @@ func capture() -> void:
 	visual.equipment.stowed = false
 	visual.equipment._refresh()
 	visual.set_process(false)
+	await process_frame
 	var maximum := 0.0
 	var fps := 30.0
 	var frame_count := int(combat.RELOAD_SECONDS*fps)
-	for frame in frame_count+1:
+	var capture_count := 0 if OS.get_cmdline_user_args().has("--interrupt-only") else frame_count+1
+	for frame in capture_count:
 		var progress := float(frame) / frame_count
 		combat.reload_remaining = combat.RELOAD_SECONDS*(1-progress) if frame < frame_count else 0.001
 		visual._process(1.0/fps)
@@ -67,5 +69,34 @@ func capture() -> void:
 			await process_frame
 			RenderingServer.force_draw()
 			root.get_texture().get_image().save_png("/tmp/tlm_loading_paced_%03d.png" % frame)
+	actor.inventory.add_item("paper_cartridges",1)
+	for stop_mode in ["stow","switch"]:
+		visual.equipment.selected = 1
+		visual.equipment.stowed = false
+		visual.equipment._refresh()
+		combat.rounds = 0
+		combat.loaded = false
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		actor.set_physics_process(true)
+		combat.start_reload()
+		actor.set_physics_process(false)
+		assert(combat.pending_rounds == 1)
+		combat.reload_remaining = combat.RELOAD_SECONDS*0.45
+		visual._process(1.0/fps)
+		if stop_mode == "stow": visual.equipment.toggle_stowed()
+		else: visual.equipment.select_weapon(3)
+		assert(combat.reload_remaining == 0 and combat.pending_rounds == 0)
+		assert(actor.inventory.get_item_count("paper_cartridges") == 1)
+		assert(not visual.equipment.enfield_cartridge.visible)
+		var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
+		assert(rod.transform.is_equal_approx(visual.equipment.ramrod_rest["enfield_ramrod"]))
+		visual._process(1.0/fps)
+		camera.global_position = visual.skeleton.to_global(Vector3(0.1,1.4,0.35)) + Vector3(0.8,0.15,1.4)
+		camera.look_at(visual.skeleton.to_global(Vector3(0.1,1.4,0.35)))
+		camera.make_current()
+		await process_frame
+		RenderingServer.force_draw()
+		root.get_texture().get_image().save_png("/tmp/tlm_reload_cancel_%s_2026-10-01.png" % stop_mode)
+	print("METAL RELOAD INTERRUPTION: PASS")
 	print("MAX LOADING PINCH ERROR ",maximum)
 	quit(0 if maximum < 0.015 else 1)

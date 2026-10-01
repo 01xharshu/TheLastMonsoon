@@ -1,6 +1,7 @@
 extends RefCounted
 ## Keep the gathered waist anchored while the legs bend independently.
 static func apply(model: Node3D) -> int:
+ _apply_source_folds(model)
  var adjusted := 0
  for candidate in model.find_children("*DrapedTrousers*", "MeshInstance3D", true, false):
   var node := candidate as MeshInstance3D
@@ -37,3 +38,40 @@ static func apply(model: Node3D) -> int:
   node.mesh = fitted
   adjusted += 1
  return adjusted
+
+static func _apply_source_folds(model: Node3D) -> void:
+ var source: Node3D = preload("res://characters/arjun/arjun_riding_cloth.glb").instantiate()
+ model.get_parent().add_child(source)
+ source.transform = model.transform
+ source.hide()
+ for node in model.find_children("*DrapedTrousers*","MeshInstance3D",true,false):
+  var replacement: MeshInstance3D = source.find_child(str(node.name),true,false)
+  if replacement == null: continue
+  var frame: Transform3D = node.global_transform.affine_inverse()*replacement.global_transform
+  var normal_frame := frame.basis.inverse().transposed()
+  var fitted := ArrayMesh.new()
+  for surface in replacement.mesh.get_surface_count():
+   var arrays := replacement.mesh.surface_get_arrays(surface)
+   var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+   var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+   for index in vertices.size():
+    vertices[index] = frame*vertices[index]
+    normals[index] = (normal_frame*normals[index]).normalized()
+   arrays[Mesh.ARRAY_VERTEX] = vertices
+   arrays[Mesh.ARRAY_NORMAL] = normals
+   arrays[Mesh.ARRAY_TANGENT] = null
+   # The existing fitting pass assigns the live skin's named bind indices.
+   arrays[Mesh.ARRAY_BONES] = PackedInt32Array()
+   arrays[Mesh.ARRAY_BONES].resize(vertices.size()*4)
+   arrays[Mesh.ARRAY_WEIGHTS] = PackedFloat32Array()
+   arrays[Mesh.ARRAY_WEIGHTS].resize(vertices.size()*4)
+   fitted.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+   var cotton := StandardMaterial3D.new()
+   cotton.resource_name = "Unbleached draped cotton"
+   cotton.albedo_color = Color(0.76,0.72,0.62)
+   cotton.roughness = 0.93
+   cotton.metallic_specular = 0.18
+   fitted.surface_set_material(surface,cotton)
+  node.mesh = fitted
+  node.set_meta("riding_cloth_source","arjun_riding_cloth.glb")
+ source.free()

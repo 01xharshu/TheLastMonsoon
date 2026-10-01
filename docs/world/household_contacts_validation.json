@@ -1,0 +1,7 @@
+{
+  "limit_m": 0.015,
+  "max_error_m": 0.0019459743052721,
+  "palm_target_samples": 570,
+  "passed": true,
+  "scope": "bone-derived palm targets; visible finger grip and cloth require separate rendered review"
+}

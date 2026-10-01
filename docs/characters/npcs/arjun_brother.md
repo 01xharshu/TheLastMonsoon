@@ -1,8 +1,8 @@
 # Dev — Arjun's elder brother and sepoy
 
-Status: **RIGGED IDLE/WALK STUDY; COSTUME AND TRAVEL CONTACT OPEN** (2026-09-30).
+Status: **RIGGED IDLE/WALK STUDY; COSTUME AND TRAVEL CONTACT OPEN** (2026-10-01).
 
-The root project vision names Arjun's elder brother **Dev**. He serves as a sepoy, later disappears, and Arjun's guiding goal is **“Find Dev.”** His age is provisionally 29 while Arjun's reference age is 22. The relationship should read through a similar warm complexion, dark hair and broadly related facial structure. His stronger build, older face, shorter hair, uniform and steadier bearing distinguish him from Arjun. His regiment, exact service timeline, allegiance arc, location and fate are not fixed here.
+The root project vision names Arjun's elder brother **Dev**. He serves as a sepoy, later disappears, and Arjun's guiding goal is **“Find Dev.”** His age is provisionally 36 while Arjun's reference age is 22. The relationship should read through a similar warm complexion, dark hair and broadly related facial structure. His stronger build, older face, shorter hair, uniform and steadier bearing distinguish him from Arjun. His regiment, exact service timeline, allegiance arc, location and fate are not fixed here.
 
 The editable 53-bone MakeHuman/MPFB source is [`WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend`](../../../WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend). The reproducible builder is [`tools/characters/build_arjun_brother.py`](../../../tools/characters/build_arjun_brother.py). `WorkingAssets/NPCs/arjun_brother/manifest.json` records source and static preview hashes. Front, profile and three-quarter PNGs and a baked static GLB are in the same asset folder. The body was created independently; the owner-rejected temporary Arjun gameplay mesh and appearance were not copied or treated as approved likeness.
 
@@ -25,3 +25,21 @@ The [British Museum's East India Company uniform plates](https://www.britishmuse
 The motion exporter now anchors the coat waist to the pelvis and blends up to 18% thigh influence into the hem. Knee flex is delayed into recovery. Metal frames 9 and 27 of the regenerated studio sequence were inspected: the hem follows the stride without visible trouser breakthrough in those samples. The updated video remains an in-place study; full-cycle tailoring, relaxed fingers and planted-foot drift are open.
 
 `characters/npcs/dev/dev_candidate.tscn` packages the rig with a physical capsule and a personal idle/walk AnimationTree. Its script records Dev’s story identity and exposes walking and speed for story scenes. An isolated Godot headless fixture passed floor support, 0.9 m/s travel, stopping at a wall (z=2.010 m), and idle recovery. This confirms actor behavior, not shoe contact or art quality. Dev is still not placed in the live world and has no navigation or dialogue. Next: inspect actual traveling footage and foot drift, refine hands/collar/shoes, then place him for the required story scene.
+
+## Realism pass — 2026-10-01
+
+The rounded shoe blocks are replaced by fitted MakeHuman `shoes03` footwear with its leather texture and rig weights. The asset’s `.mhclo` header explicitly identifies its September 2020 CC0 release. Trouser hems now reach the ankle and taper over the footwear. This improves proportion and mesh fit; the exact period shoe form and unit-specific uniform still need reference work.
+
+The coat has a leather waist belt, more sections and small folds in its lower panel, and a collar-band study over the continuous fitted neckline. The modern folded collar remains partly visible and needs a proper topology replacement. Narrowing the skirt initially caused trouser breakthrough in walking; clearance was restored across the side and rear panels. Final Metal frames 9 and 27 show no visible breakthrough in those samples. The strap, placket and buttons now sample the actual garment surface rather than floating ahead of it.
+
+Fingers have a conservative relaxed curl, fitted core eyebrows were added, hair was darkened and skin roughness reduced. Subtle procedural cloth bump is present in Blender; it is not claimed as a baked Godot texture. The source front and three-quarter images and updated Metal stride samples were inspected. The two-cycle video and four stride PNGs were regenerated from the final export. This remains a candidate: face likeness, collar construction, fabric drape, hand pose and planted-foot drift need further review. There is no live-world story placement.
+
+The capture tool now reads the current GLB directly with GLTFDocument and forces viewport draws. An earlier recording stalled during native draw waits; that attempt was terminated and the final recording completed. The source and motion manifests retain hashes of the current Blend and GLB.
+
+## Complexion match — 2026-10-01
+
+Dev now shares Arjun’s reference-fit skin color: `arjun_character_v2_young_lightskinned_male_diffuse.png` multiplied in linear RGB by (0.40, 0.27, 0.16), as verified in Arjun’s reference-fit Blender material. The result is baked to `WorkingAssets/NPCs/arjun_brother/dev_arjun_matched_skin.png` so Blender and glTF both receive the same tint without relying on an unsupported shader mix. This changes face, ears, neck and hands together; Dev’s independent shape remains intact. Arjun’s owner core board was inspected for context; his candidate material is the exact technical color target, not a claim of approved likeness. Source views and fresh Metal idle captures were regenerated. Lighting still changes perceived skin brightness.
+
+## Elder-brother face — 2026-10-01
+
+Following the owner’s request that Dev look elder, his MPFB age macro increased from 0.56 to 0.66, with provisional story age 36. Added a fitted CC0 Rehman Polanski moustache, shortened vertically to 45% of its original length. Face close-up `WorkingAssets/NPCs/arjun_brother/face.png` was inspected: moustache sits above the upper lip, and the mature cheek/jaw shaping retains the matched Arjun skin texture. Hair cards, eyebrow density and facial surface detail still need realism refinement; this is a candidate, not final likeness approval. Motion export and Metal captures are regenerated from this source.

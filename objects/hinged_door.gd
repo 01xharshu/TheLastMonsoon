@@ -4,6 +4,9 @@ var width := 2.6
 var height := 2.32
 var night_lock := true
 var always_open := false
+var inside_only := false
+var auto_open_at_dawn := true
+var label_name := "door"
 var opened := true
 var locked := false
 var moving := false
@@ -118,7 +121,7 @@ func _time_changed(_day: int,hour: int,_minute: int) -> void:
 	locked = night and night_lock and not always_open
 	if night != last_night or (locked and opened):
 		last_night = night
-		set_open(not locked)
+		if locked or auto_open_at_dawn: set_open(not locked)
 	_label()
 
 func _character_in_leaf(amount: float) -> bool:
@@ -130,7 +133,9 @@ func _character_in_leaf(amount: float) -> bool:
 	for index in 2:
 		query.transform = global_transform*_leaf_transform(index,amount)
 		for hit in get_world_3d().direct_space_state.intersect_shape(query,64):
-			if hit.collider is CharacterBody3D or hit.collider is AnimatableBody3D: return true
+			if hit.collider is CharacterBody3D or hit.collider is AnimatableBody3D:
+				if get_meta("debug_sweep",false): print("SWEEP OCCUPIED ",hit.collider.get_path()," amount ",amount," actor at ",hit.collider.global_position)
+				return true
 	return false
 
 func _physics_process(_delta: float) -> void:
@@ -147,7 +152,7 @@ func _physics_process(_delta: float) -> void:
 func interact(player: CharacterBody3D) -> void:
 	if moving: return
 	var inside: bool = get_parent().to_local(player.global_position).z < position.z
-	if locked and not inside: return
+	if (locked or inside_only) and not inside: return
 	set_open(not opened)
 
 func set_open(value: bool) -> void:
@@ -166,4 +171,4 @@ func set_open(value: bool) -> void:
 	_label()
 
 func _label() -> void:
-	interaction_text = "Latched for the night" if locked and not opened else ("Close door" if opened else "Open door")
+	interaction_text = "Latched for the night" if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))

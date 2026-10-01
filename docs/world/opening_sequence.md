@@ -1,12 +1,20 @@
 # Arjun's opening — first playable cinematic
 
-Updated: 2026-09-30 IST. Functional prototype; final animation, audio, historical prop detail and owner approval remain open.
+Updated: 2026-10-01 IST. Functional prototype; final animation, audio, historical prop detail and owner approval remain open.
 
 Play Game creates the live opening through `SaveManager.apply_pending` only for a new game. Continue/load and direct world review retain their existing routes. The scene reuses Arjun and Dev's surveyed house, existing character, AnimationTree and charpai. No video playback is involved.
 
 The approximately 32-second timeline starts dark, reveals a hand-held match and warm oil-wick lantern light, moves Arjun to the open sleeping-room window, displays “Still no word from Dev…”, then returns him to the charpai and fades through the night. The shared clock moves from 22:00 on day one to 06:00 on day two. Arjun remains seated until a fresh keyboard, mouse or controller button press triggers his stand-up transition; movement and interactions resume afterward. Space and Escape skip to that same morning seat, with an idempotent clock change and no automatic second action from the skip press.
 
 Normal gameplay CanvasLayers and gameplay input are hidden/locked throughout the opening. Black top and bottom bars occupy 12% of viewport height each; captions are vertically centered in the lower bar. There are no visible skip controls, buttons or permanent instructional prompts. The bars retract during the morning fade. The regular interface returns when Arjun stands.
+
+## Empty approach from the window — 2026-10-01
+
+The old side window faced the immediately adjacent house. Arjun now uses a real front-facing aperture in the sleeping room. The shot establishes him looking out, cuts to his eye-height view for 15.0–18.8 seconds while “Still no word from Dev…” is captioned, then returns to him before he walks around the lantern table to the charpai.
+
+A roughly 175 m, 2.1 m wide earth footpath follows the terrain from the front approach toward the open ground south of the village, crossing the existing south lane between surveyed homes. Irregular edges, a rough earth shader and a fading distant end avoid a perfectly straight slab appearance. No building is hidden for the shot and no terrain is flattened. The path's far end passes behind a low terrain rise; the visible approach is deliberately empty in the captured night shot. This is a visual story approach; AI road registration and continuous footpath traversal remain separate work.
+
+`tools/world/capture_opening_approach.gd` freezes cinematic timing and ignores live skip input during the capture at the reaction / exterior / return shots to capture precise views. It checks sightlines at 20, 40 and 80 m through the actual window. An attempted 120 m sightline encountered terrain at the rise; this is retained as a visibility limit, not reported as unobstructed. Final Forward+/Metal capture and 20/40/80 m sightline checks PASS (`/tmp/tlm_approach_locked.log`); report: `opening_approach_validation.json`. Fresh reaction and empty-road frames inspected. Evidence: `captures/opening_approach_14.png`, `opening_approach_16.png`, `opening_approach_19.png`. The full opening's prior skip/morning tests are recorded below; fresh approach checks do not replace continuous acting review.
 
 ## Historical basis
 

@@ -1,0 +1,9 @@
+{
+  "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
+  "source_sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
+  "output": "characters/arjun/arjun_riding_cloth.glb",
+  "output_sha256": "60faded0f7cf843a902a13f508bd63262926af31e0cc0844eadb6064ca9a9d30",
+  "body_changed": false,
+  "rig_changed": false,
+  "final_cloth_approved": false
+}

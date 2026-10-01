@@ -1,0 +1,13 @@
+# Object-dependent climbing — 2026-10-01
+
+Ordinary solid ledges now use measured surface height and support depth instead of the tall-wall step sequence. Below 1.05 m above the feet, Arjun uses a shorter supported step; higher ledges up to 2.15 m use a deeper crouched mantle. The duration varies from approximately 1.65 to 2.8 seconds with height. A low ray detects obstacles below chest level. The landing probe requires a horizontal surface far enough behind the edge to support the standing capsule; narrow unsupported lips are rejected.
+
+The shared traversal pose lowers the body during hand support, lifts each boot before crossing, and transfers the palms from the rim onto the top as the hips advance. Windows retain their sill grip and lintel crouch, while authored walls with holds retain the alternating reach/boot/push sequence. This covers registered windows and solid horizontal ledges; sloped rocks, ladders, moving objects and broken irregular edges require further work.
+
+Fresh Forward+/Metal fixture captures: [low lift](object_climb_2026-10-01/low_step_18.png), [low crossing](object_climb_2026-10-01/low_step_36.png), [higher mantle](object_climb_2026-10-01/high_mantle_36.png). The first renders exposed detached palms; the lowered support pose and palm transfer corrected the sampled gaps. The low fixture is 0.75 m high (1.765 s); the higher fixture is 1.65 m (2.412 s). These poses remain procedural and still look stiff in the crouched transfer. The stills do not approve normal-speed weight transfer, finger pressure, cloth contact or production appearance.
+
+Rendered motion previews: [low step](object_climb_2026-10-01/low_step.mp4) and [high mantle](object_climb_2026-10-01/high_mantle.mp4). The `--movie` fixture records 61 uniformly spaced simulation samples per route; the videos use 60/duration frames per second to preserve each route's gameplay timing. They are deterministic fixture playback, not live-world input footage.
+
+`tools/characters/validate_arjun_object_climb.tscn` passes profile selection, supported landing/collision restoration, rotated ledge entry, narrow lip rejection, and sampled supporting palms within 0.014 m. Existing window and tall-wall fixtures pass after routing changes. The tests measure selected bones and targets; mesh-level contact and full-world player-camera review remain open.
+
+Files: `player/climb_component.gd` performs surface detection and chooses the route; `player/window_climb.gd` provides window/low-step/high-mantle timing and contact poses. Existing concurrent hand/forearm and riding changes in `player/arjun_visual.gd` were preserved.

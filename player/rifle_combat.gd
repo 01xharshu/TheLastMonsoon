@@ -57,6 +57,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if reload_remaining > 0.0 and (visual.equipment.stowed or visual.equipment.selected != weapon_selection):
+		cancel_reload()
 	if not available():
 		aiming = false
 	else:
@@ -75,6 +77,18 @@ func _process(delta: float) -> void:
 	if aiming:
 		var local_direction: Vector3 = actor.global_basis.inverse()*(-camera.global_basis.z)
 		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
+
+func cancel_reload() -> void:
+	if reload_remaining <= 0.0 and pending_rounds <= 0: return
+	# Return the charge reserved at start; cancellation is not a new pickup.
+	var reserved := pending_rounds
+	pending_rounds = 0
+	reload_remaining = 0.0
+	aiming = false
+	if sound: sound.stop()
+	if reserved > 0:
+		actor.inventory.items[ammo_id()] = actor.inventory.get_item_count(ammo_id()) + reserved
+		actor.inventory.inventory_changed.emit()
 
 func start_reload() -> void:
 	if actor.get_meta("item_use", "") != "": return
@@ -106,7 +120,7 @@ func fire() -> void:
 	var space := actor.get_world_3d().direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
 	query.exclude = [actor.get_rid()]
-	var camera_hit := space.intersect_ray(query)
+	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(space,get_tree(),query.from,query.to,[actor.get_rid()])
 	if not camera_hit.is_empty(): target = camera_hit.position
 	query.from = origin
 	if double_gun():
@@ -118,16 +132,14 @@ func fire() -> void:
 			var angle := TAU*float(i)/8.0
 			var spread := .012 if i == 0 else .032
 			query.to = origin + (aim + right*cos(angle)*spread + up*sin(angle)*spread).normalized()*55.0
-			var pellet_hit := space.intersect_ray(query)
+			var pellet_hit := preload("res://combat/ballistic_trace.gd").shoot(space,get_tree(),query.from,query.to,11.0,[actor.get_rid()])
 			if not pellet_hit.is_empty():
 				if i < 3: add_impact(pellet_hit)
-				if pellet_hit.collider.has_method("take_damage"): pellet_hit.collider.take_damage(11.0)
 	else:
 		query.to = target+(target-origin).normalized()*0.05
-		var hit := space.intersect_ray(query)
+		var hit := preload("res://combat/ballistic_trace.gd").shoot(space,get_tree(),query.from,query.to,35.0 if pistol() else 60.0,[actor.get_rid()])
 		if not hit.is_empty():
 			add_impact(hit)
-			if hit.collider.has_method("take_damage"): hit.collider.take_damage(35.0 if pistol() else 60.0)
 	recoil = 0.065
 	sound.global_position = origin
 	sound.stream = PISTOL_SHOT if pistol() else SHOT

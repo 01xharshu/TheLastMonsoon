@@ -1,0 +1,46 @@
+{
+	"display": "macOS",
+	"results": [
+		{
+			"label": "courtyard",
+			"position": "(0.0, 1.050506, 4.573166)",
+			"reached": true
+		},
+		{
+			"label": "doorway",
+			"position": "(0.0, 1.140132, 3.000809)",
+			"reached": true
+		},
+		{
+			"label": "sleep room",
+			"position": "(-2.673431, 1.140132, 3.000046)",
+			"reached": true
+		},
+		{
+			"label": "bed approach",
+			"position": "(-2.363281, 1.140132, -0.51062)",
+			"reached": true
+		},
+		{
+			"label": "wake exit room",
+			"position": "(-2.350494, 1.140132, 3.009811)",
+			"reached": true
+		},
+		{
+			"label": "exit doorway",
+			"position": "(0.323059, 1.140132, 3.000488)",
+			"reached": true
+		},
+		{
+			"label": "exit courtyard",
+			"position": "(-0.041443, 0.900411, 5.270279)",
+			"reached": true
+		},
+		{
+			"label": "south lane",
+			"position": "(-0.000305, 0.900411, 24.34834)",
+			"reached": true
+		}
+	],
+	"status": "PASS"
+}

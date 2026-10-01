@@ -1,0 +1,34 @@
+{
+  "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
+  "source_sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
+  "candidate": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
+  "candidate_sha256": "3b76004982be7f4ee407ed5258810309db328e9ccea6aa8cc70ec344e9193774",
+  "body_coordinates_unchanged": true,
+  "morphs": {
+    "StrideLeft": {
+      "maximum_displacement_m": 0.03710795063055894,
+      "pinned_vertices": 1152
+    },
+    "StrideRight": {
+      "maximum_displacement_m": 0.03710795063055894,
+      "pinned_vertices": 1152
+    },
+    "LagLeft": {
+      "maximum_displacement_m": 0.03,
+      "pinned_vertices": 1152
+    },
+    "LagRight": {
+      "maximum_displacement_m": 0.03,
+      "pinned_vertices": 1152
+    }
+  },
+  "scope": "restrained secondary deformation study; no cloth simulation, seated corrective or contact approval",
+  "live_asset_replaced": false,
+  "candidate_exports": {
+    "woman": {
+      "path": "characters/npcs/british/candidates/private_woman_skirt_candidate.glb",
+      "sha256": "fdf08815780660872e310429e3fc098e0e13f34f7e20d1ec13152c201eba4f96",
+      "bytes": 2166288
+    }
+  }
+}

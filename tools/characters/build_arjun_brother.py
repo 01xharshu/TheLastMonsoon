@@ -15,12 +15,12 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 from bl_ext.blender_org.mpfb.services.humanservice import HumanService
 
 body = HumanService.create_human(macro_detail_dict=dict(
-    gender=1.0, age=.56, muscle=.59, weight=.48, proportions=.50, height=.48,
+    gender=1.0, age=.66, muscle=.59, weight=.48, proportions=.50, height=.48,
     cupsize=.5, firmness=.5, race=dict(asian=.55, caucasian=.20, african=.25)))
 body.name = "Arjun_brother_independent_MakeHuman_body"
 body["role"] = "Dev; Arjun's older brother; sepoy; story character candidate"
 body["source"] = "Independent MPFB basemesh; no Arjun mesh or rejected appearance reused"
-body["age_years"] = 29
+body["age_years"] = 36
 rig = HumanService.add_builtin_rig(body, "game_engine", import_weights=True)
 rig.name = "Brother_game_engine_rig"
 
@@ -47,10 +47,17 @@ def mat(name, color, texture=None):
         m.node_tree.links.new(tex.outputs["Color"], bs.inputs["Base Color"])
     return m
 
-skin = mat("Warm brown skin", (.48,.34,.24), DATA / "skins/middleage_african_male/middleage_darkskinned_male_diffuse.png")
+# Baked linear tint matches Arjun reference-fit skin; portable to glTF.
+skin = mat("Dev skin matched to Arjun", (.40,.27,.16), OUT / "dev_arjun_matched_skin.png")
+skin["complexion_reference"] = "Arjun reference-fit material: original young diffuse times linear RGB (0.40, 0.27, 0.16)"
+skin_bs = skin.node_tree.nodes.get('Principled BSDF')
+skin_bs.inputs['Roughness'].default_value = .62
+skin_bs.inputs['Specular IOR Level'].default_value = .22
+skin_bs.inputs['Subsurface Weight'].default_value = .035
 body.data.materials.clear(); body.data.materials.append(skin)
 for face in body.data.polygons: face.use_smooth = True
-dark = mat("Dark hair", (.025,.019,.016))
+dark = mat("Dark hair", (.009,.007,.005))
+dark.node_tree.nodes.get('Principled BSDF').inputs['Specular IOR Level'].default_value = .18
 coat = mat("Faded red sepoy coat candidate", (.18,.025,.022))
 trim = mat("Muted brass trim", (.56,.39,.15))
 cotton = mat("Off-white cotton trousers", (.65,.61,.49))
@@ -61,6 +68,15 @@ eyes.name = "Brother_eyes"
 hair = HumanService.add_mhclo_asset(str(DATA / "hair/short04/short04.mhclo"), body, asset_type="Hair", subdiv_levels=0)
 hair.name = "Brother_short_hair"
 hair.data.materials.clear(); hair.data.materials.append(dark)
+brows = HumanService.add_mhclo_asset(str(DATA / "eyebrows/eyebrow012/eyebrow012.mhclo"),
+    body,asset_type="Eyebrows",subdiv_levels=0)
+brows.name = "Dev_fitted_eyebrows"
+# Fitted CC0 moustache, shortened from the original long style.
+moustache = HumanService.add_mhclo_asset(str(DATA / "clothes/rehmanpolanski_moustache_viking/rehmanpolanski_moustache_viking.mhclo"),body,asset_type="Clothes",subdiv_levels=0)
+moustache.name = "Dev_mature_moustache"
+moustache.data.materials.clear(); moustache.data.materials.append(dark)
+top=max(v.co.z for v in moustache.data.vertices)
+for v in moustache.data.vertices: v.co.z=top+(v.co.z-top)*.45
 
 # MPFB's fitted upper has a continuous torso, shoulders and sleeves. Keep its
 # upper component and replace the modern trouser component with period layers.
@@ -120,8 +136,8 @@ def tube(name, start, end, radius_a, radius_b, material, bone, sides=12):
 
 # Costume is a readable first design study. Unit-specific tailoring and insignia
 # remain deliberately unresolved until the story fixes his regiment and year.
-skirt = rings("Coat lower skirts", [(.76,.245,.19,0,0),(.80,.24,.182,0,0),
-    (.84,.234,.175,0,0),(.90,.22,.166,0,0),(.96,.205,.16,0,0),(1.055,.155,.125,0,0)], coat, sides=40)
+skirt = rings("Coat lower skirts", [(.76,.27,.224,0,0),(.80,.267,.218,0,0),
+    (.84,.264,.207,0,0),(.90,.235,.184,0,0),(.96,.205,.16,0,0),(1.055,.155,.125,0,0)], coat, sides=40)
 for vertex in skirt.data.vertices:
     angle = math.atan2(vertex.co.y,vertex.co.x)
     fold = .0035*math.cos(angle*8)*(1.055-vertex.co.z)/.295
@@ -247,10 +263,15 @@ for name,loc in [("front",(0,-3,1.05)),("profile",(3,0,1.05)),("three_quarter",(
     cam.rotation_euler=(Vector((0,0,.9))-cam.location).to_track_quat('-Z','Y').to_euler()
     scene.render.filepath=str(OUT/(name+".png"))
     bpy.ops.render.render(write_still=True)
+camdata.ortho_scale=.44
+cam.location=(.18,-3,1.62)
+cam.rotation_euler=(Vector((0,0,1.62))-cam.location).to_track_quat('-Z','Y').to_euler()
+scene.render.filepath=str(OUT/"face.png")
+bpy.ops.render.render(write_still=True)
 manifest={"status":"VISUAL_CANDIDATE", "source":str(blend.relative_to(ROOT)),
           "source_sha256":hashlib.sha256(blend.read_bytes()).hexdigest(),
           "preview_sha256":hashlib.sha256((OUT/"arjun_brother_preview.glb").read_bytes()).hexdigest(),
           "body_origin":"Independent MPFB human", "bone_count":len(rig.data.bones),
-          "age_years":29,"role":"Dev, Arjun's older brother and sepoy"}
+          "age_years":36,"role":"Dev, Arjun's older brother and sepoy"}
 (OUT/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
 print("BROTHER_BUILD",json.dumps(manifest))

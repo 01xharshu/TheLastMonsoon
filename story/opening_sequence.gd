@@ -257,15 +257,21 @@ func _process(delta: float) -> void:
 		visual.pose("upperarm_r",Vector3(-1.0,0,0.4),reach)
 		visual.pose("lowerarm_r",Vector3(-1.3,0,0),reach)
 	elif t < 13:
-		_walk(Vector3(-2.6,1.14,1.5),Vector3(-3.9,1.14,0.0),(t-9)/4,delta)
-		_shot(Vector3(-1.6,1.8,1.45),Vector3(-3.8,1.5,0))
+		_walk(Vector3(-2.6,1.14,1.5),Vector3(-3.35,1.14,2.8),(t-9)/4,delta)
+		_shot(Vector3(-1.7,1.9,1.1),Vector3(-3.35,1.6,2.8))
 	elif t < 20:
-		_place(Vector3(-3.9,1.14,0),-PI/2)
+		_place(Vector3(-3.35,1.14,2.8),-0.08)
 		actor.velocity = Vector3.ZERO
 		visual.pose("head",Vector3(0.08*sin((t-13)*0.5),0,0),0.7)
-		_shot(Vector3(-2.25,1.8,1.45),Vector3(-3.9,1.5,0))
+		if t >= 15 and t < 18.8:
+			_approach_shot()
+		else:
+			_shot(Vector3(-1.75,1.95,1.2),Vector3(-3.35,1.65,3.3))
 	elif t < 24:
-		_walk(Vector3(-3.9,1.14,0),Vector3(-2.35,1.14,-0.6),(t-20)/4,delta)
+		if t < 23:
+			_walk(Vector3(-3.35,1.14,2.8),Vector3(-3.35,1.14,-0.6),(t-20)/3,delta)
+		else:
+			_walk(Vector3(-3.35,1.14,-0.6),Vector3(-2.35,1.14,-0.6),t-23,delta)
 		_shot(Vector3(-0.8,2.05,0.1),Vector3(-2.35,0.95,-1.4))
 	else:
 		actor.velocity = Vector3.ZERO
@@ -292,6 +298,7 @@ func _walk(from: Vector3, to: Vector3, fraction: float, delta: float) -> void:
 		visual.motion_tree.update_motion(delta,0.24,0,false,true,0)
 
 func _shot(at: Vector3, target: Vector3) -> void:
+	camera.fov = 48
 	camera.global_position = home.to_global(at)
 	camera.look_at(home.to_global(target))
 
@@ -342,3 +349,11 @@ func _release() -> void:
 	set_process(false)
 	# Keep the lamp/table in the home; discard transient cinematic overlays.
 	for child in get_children(): child.queue_free()
+
+func _approach_shot() -> void:
+	camera.fov = 35
+	# Inside the actual aperture, at eye height: the road itself is the subject.
+	camera.global_position = home.to_global(Vector3(-3.35,1.86,3.42))
+	var end: Vector2 = home.get_meta("brother_approach_end")
+	var target := Vector3(end.x,world.layout.height(end.x,end.y)+1.0,end.y)
+	camera.look_at(target)

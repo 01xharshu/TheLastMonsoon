@@ -18,6 +18,7 @@ const SPAWN: Vector2 = Vector2(-230.0, 180.0)
 ## Surveyed plot centres and footprint half-extents. Keep building placement, grading,
 ## nature clearance and the map tied to these coordinates as the world grows.
 const PLOTS: Dictionary = {
+	"BritishCantonment": {"center": Vector2(500,470), "half": Vector2(70,60), "grade": 8.5},
 	"Bhairavpur": {"center": Vector2(-332, 232), "half": Vector2(104, 88), "grade": 7.2},
 	"BhairavpurEstate": {"center": Vector2(-308,344), "half": Vector2(38,26), "grade": 7.2},
 	"TownHall": {"center": Vector2(-320, -470), "half": Vector2(27, 16), "grade": 8.0},
@@ -30,6 +31,7 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"cantonment_approach": [Vector2(320,150),Vector2(425,150),Vector2(425,380),Vector2(560,410),Vector2(560,470),Vector2(500,470)],
 	"village_spine": [Vector2(-422,230), Vector2(-301,230), Vector2(-297,225), Vector2(-281,225), Vector2(-276,230), Vector2(-250,230), Vector2(-250,210), Vector2(-230,180)],
 	"village_west_lane": [Vector2(-374,162), Vector2(-374,312)],
 	"village_market_lane": [Vector2(-355,230), Vector2(-355,275), Vector2(-250,275), Vector2(-250,230)],
@@ -49,6 +51,7 @@ const ROUTES: Dictionary = {
 	"port_approach": [Vector2(-185,500), Vector2(-200,560), Vector2(-194,623), Vector2(-194,650)],
 }
 const SITES: Dictionary = {
+	"British Cantonment": Vector2(500,470),
 	"Bhairavpur village": Vector2(-310, 230),
 	"Agricultural plains": Vector2(-540, -90),
 	"River approach": Vector2(0, 165),

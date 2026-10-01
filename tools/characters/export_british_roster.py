@@ -10,13 +10,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RANK = sys.argv[sys.argv.index('--') + 1] if '--' in sys.argv else 'private'
-SOURCE = ROOT / f'WorkingAssets/NPCs/british/{RANK}_pair/{RANK}_pair_mpfb_candidate.blend'
+CANDIDATE = '--skirt-candidate' in sys.argv
+SOURCE = ROOT / ('WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend' if CANDIDATE else f'WorkingAssets/NPCs/british/{RANK}_pair/{RANK}_pair_mpfb_candidate.blend')
 RUNTIME = ROOT / 'characters/npcs/british'
+if CANDIDATE:
+    assert RANK == 'private'
+    RUNTIME /= 'candidates'
 RUNTIME.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
 
 exports = {}
-for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
+for slug, suffix in ([('Companion', 'woman')] if CANDIDATE else [(RANK.capitalize(), 'man'), ('Companion', 'woman')]):
     rig = bpy.data.objects[f'{slug}_game_engine_rig']
     body = bpy.data.objects[f'{slug}_MPFB_body']
     outfit = bpy.data.objects[f'{slug}_fitted_cloth_base']
@@ -95,7 +99,7 @@ for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
                         safe_base.default_value = tuple(mat.diffuse_color)
                         slot.material = safe
     bpy.context.view_layer.objects.active = rig
-    target = RUNTIME / f'{RANK}_{suffix}.glb'
+    target = RUNTIME / (f'{RANK}_{suffix}_skirt_candidate.glb' if CANDIDATE else f'{RANK}_{suffix}.glb')
     bpy.ops.export_scene.gltf(
         filepath=str(target), export_format='GLB', use_selection=True,
         export_animations=False, export_skins=True, export_cameras=False,
@@ -107,6 +111,14 @@ for slug, suffix in ((RANK.capitalize(), 'man'), ('Companion', 'woman')):
                        'bytes': target.stat().st_size}
     bpy.data.objects.remove(cutouts[0], do_unlink=True)
     bpy.data.objects.remove(cutouts[1], do_unlink=True)
+
+if CANDIDATE:
+    manifest_path = ROOT / 'docs/characters/british/candidates/private_skirt_candidate.json'
+    manifest = json.loads(manifest_path.read_text())
+    manifest['candidate_exports'] = exports
+    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
+    print('BRITISH_SKIRT_EXPORT', json.dumps(exports))
+    sys.exit(0)
 
 manifest_path = ROOT / f'docs/characters/british/candidates/{RANK}_pair_manifest.json'
 manifest = json.loads(manifest_path.read_text())

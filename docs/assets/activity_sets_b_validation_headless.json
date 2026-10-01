@@ -1,0 +1,24 @@
+{
+	"assets": [
+		{
+			"bounds_and_approach": "PASS",
+			"name": "rest_corner",
+			"size_m": "(2.662678, 0.595, 2.602)",
+			"triangles": 18168
+		},
+		{
+			"bounds_and_approach": "PASS",
+			"name": "market_supply",
+			"size_m": "(2.167303, 0.877423, 0.777227)",
+			"triangles": 27324
+		},
+		{
+			"bounds_and_approach": "PASS",
+			"name": "armoury_supply",
+			"size_m": "(1.4, 1.084, 0.6)",
+			"triangles": 1332
+		}
+	],
+	"scope": "assembled candidates; support colliders checked; placement/gameplay and animation remain separate",
+	"support_colliders": "PASS: charpai, counter and shelf"
+}

@@ -123,6 +123,33 @@ func run() -> void:
 	check(rifle.loaded,"Reload did not chamber a round")
 	visual._process(1.0/60.0)
 	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x) < 0.001,"Enfield ramrod did not return")
+	# Each interrupted attempt must return its reservation once and reset props.
+	for stop_mode in ["switch","stow"]:
+		rifle.rounds = 0
+		rifle.loaded = false
+		visual.equipment.selected = 1
+		visual.equipment.stowed = false
+		visual.equipment._refresh()
+		var spare_before: int = actor.inventory.get_item_count("paper_cartridges")
+		rifle.start_reload()
+		check(rifle.pending_rounds == 1,"Interruption fixture failed to reserve a cartridge")
+		rifle.reload_remaining = rifle.RELOAD_SECONDS*0.45
+		visual._process(1.0/60.0)
+		if stop_mode == "switch": visual.equipment.selected = 0
+		else: visual.equipment.stowed = true
+		visual.equipment._refresh()
+		check(rifle.reload_remaining == 0 and rifle.pending_rounds == 0,"Interrupted reload remained pending")
+		check(actor.inventory.get_item_count("paper_cartridges") == spare_before,"Interrupted reload lost or duplicated ammunition")
+		check(not visual.equipment.enfield_cartridge.visible,"Interrupted reload left its paper prop visible")
+		check(rod.transform.is_equal_approx(visual.equipment.ramrod_rest["enfield_ramrod"]),"Interrupted reload did not restore ramrod")
+		visual.equipment._refresh()
+		rifle._process(0.1)
+		check(actor.inventory.get_item_count("paper_cartridges") == spare_before,"Repeated cancellation duplicated ammunition")
+	visual.equipment.selected = 1
+	visual.equipment.stowed = false
+	visual.equipment._refresh()
+	rifle.rounds = 1
+	rifle.loaded = true
 	actor.set_meta("map_open",true)
 	rifle.aiming = true
 	rifle.fire()
@@ -172,5 +199,17 @@ func run() -> void:
 	check(pistol_early.distance_to(pistol_loading) > 0.04,"Pistol loading hand did not move")
 	pistol._process(4.0)
 	check(pistol.rounds==5 and actor.inventory.get_item_count("pistol_ball")==0,"Pistol ammunition was not consumed")
+	# Sidearm consumes balls at completion, not at reload start.
+	pistol.rounds = 3
+	actor.inventory.add_item("pistol_ball",2)
+	check(pistol.start_reload(),"Pistol interruption fixture did not start")
+	visual.equipment.toggle_stowed()
+	check(pistol.reload_remaining == 0 and actor.inventory.get_item_count("pistol_ball") == 2 and pistol.rounds == 3,"Stowed pistol reload consumed ammunition")
+	pistol._process(5.0)
+	check(pistol.rounds == 3,"Cancelled sidearm reload completed in background")
+	visual.equipment.toggle_stowed()
+	check(pistol.start_reload(),"Pistol did not reload after cancellation")
+	pistol._process(4.0)
+	check(pistol.rounds == 5 and actor.inventory.get_item_count("pistol_ball") == 0,"Pistol restart lost ammunition")
 	print("FIREARMS TEST ","FAIL" if failed else "PASS")
 	quit(1 if failed else 0)

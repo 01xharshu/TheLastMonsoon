@@ -24,7 +24,7 @@ func run() -> void:
 		if door.night_lock and not door.always_open: locked_count += 1
 		if home.get_meta("window_access")=="open": clear_count += 1
 		door._time_changed(1,21,0)
-	await create_timer(1.0).timeout
+	await create_timer(1.4).timeout
 	check(locked_count==25,"25 homes latch at night")
 	check(clear_count==4,"four intentional window entry houses")
 	var home = homes[1]
@@ -39,11 +39,11 @@ func run() -> void:
 	check(not door.opened,"outside cannot release night latch")
 	player.global_position = z
 	door.interact(player)
-	await create_timer(1.0).timeout
+	await create_timer(1.4).timeout
 	check(door.opened,"inside can release latch and exit")
 	player.global_position = Vector3(0,30,0)
 	for h in homes: h.get_node("EntranceDoor")._time_changed(2,6,0)
-	await create_timer(1.0).timeout
+	await create_timer(1.4).timeout
 	check(not door.locked and door.opened,"dawn restores access")
 	check(get_nodes_in_group("occupied_command_fort").size()==1,"occupied fort estate loaded")
 	var fort = get_nodes_in_group("occupied_command_fort")[0]

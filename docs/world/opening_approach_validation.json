@@ -1,0 +1,23 @@
+{
+  "date_ist": "2026-10-01",
+  "renderer": "Forward+/Metal",
+  "route": "SaveManager.apply_pending(new game) -> OpeningSequence",
+  "window": "BrotherApproachWindow, home local (-3.35,1.86,3.6)",
+  "eye_clear_distances_m": [
+    20,
+    40,
+    80
+  ],
+  "terrain_occlusion_at_120m": true,
+  "approach_length_m": 174.534,
+  "captures": [
+    "opening_approach_14.png",
+    "opening_approach_16.png",
+    "opening_approach_19.png"
+  ],
+  "captured_empty_path": true,
+  "capture_timing": "staged beats, timeline and skip input disabled for exact framing",
+  "continuous_acting_approved": false,
+  "owner_approved": false,
+  "notes": "Fresh final frames inspected; existing buildings preserved; no terrain flattening; road registration and live traversal remain open."
+}

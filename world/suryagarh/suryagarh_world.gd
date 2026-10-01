@@ -1,8 +1,8 @@
 extends Node3D
 ## Base landscape runtime. Player, inventory and survival continue using their existing scene.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
-const REVIEW_POINTS: Array[Vector2] = [Vector2(-230,180), Vector2(12,155), Vector2(470,-250), Vector2(-440,-200), Vector2(520,-300), Vector2(344,-105)]
-const REVIEW_NAMES: Array[String] = ["Bhairavpur approach", "Riverbank", "Eastern wooded hills", "Agricultural plains", "Old fort approach", "Forest biome patch"]
+const REVIEW_POINTS: Array[Vector2] = [Vector2(-230,180), Vector2(12,155), Vector2(470,-250), Vector2(-440,-200), Vector2(520,-300), Vector2(344,-105), Vector2(-167,642)]
+const REVIEW_NAMES: Array[String] = ["Bhairavpur approach", "Riverbank", "Eastern wooded hills", "Agricultural plains", "Old fort approach", "Forest biome patch", "Hooghly Reach Port"]
 var layout = Layout.new()
 var review_index: int = 0
 var overview: bool = false
@@ -63,5 +63,6 @@ func _physics_process(_delta: float) -> void:
 		player.velocity.z = 0
 	# Use depth and body height so walking across the bridge never triggers swimming.
 	var deep_enough := layout.height(p.x, p.z) < Layout.WATER_LEVEL - 1.0
+	if $HooghlyPort.is_dry_ship_interior(p): deep_enough = false
 	var entry_height := 0.65 if player.is_swimming else 0.3
 	player.set_water_state(deep_enough and p.y < Layout.WATER_LEVEL + entry_height, Layout.WATER_LEVEL)

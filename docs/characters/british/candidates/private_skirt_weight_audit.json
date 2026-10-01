@@ -1,0 +1,44 @@
+{
+  "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
+  "source_sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
+  "garments": [
+    {
+      "object": "Companion gathered skirt",
+      "vertices": 4752,
+      "weight_patterns": 1,
+      "bone_weight_totals": {
+        "pelvis": 4752.0
+      },
+      "modifiers": [
+        "ARMATURE"
+      ],
+      "shape_keys": []
+    },
+    {
+      "object": "Companion fitted waist transition",
+      "vertices": 864,
+      "weight_patterns": 5,
+      "bone_weight_totals": {
+        "pelvis": 613.4400000000069,
+        "spine_01": 250.5599999999997
+      },
+      "modifiers": [
+        "ARMATURE"
+      ],
+      "shape_keys": []
+    }
+  ],
+  "companion_meshes": [
+    "Companion bonnet brim",
+    "Companion bonnet crown",
+    "Companion fitted waist transition",
+    "Companion gathered skirt",
+    "Companion gathered waistband",
+    "Companion_eyes",
+    "Companion_fitted_cloth_base",
+    "Companion_hair",
+    "Companion_MPFB_body",
+    "Companion_shoes"
+  ],
+  "scope": "read-only editable source weights and corrective inventory; no cloth or body approval"
+}

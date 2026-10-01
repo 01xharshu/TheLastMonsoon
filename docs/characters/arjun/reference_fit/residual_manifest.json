@@ -1,0 +1,15 @@
+{
+  "shape_key": "Arjun_multiview_face_fit.001",
+  "control_count": 60,
+  "maximum_displacement_m": 0.006618486821249261,
+  "reference": "WorkingAssets/Arjun/references/arjun_core_multiview.png",
+  "reference_sha256": "2ea627fc0d0d65ae59dd7ef3cae57c49a684e988b2a1ec22197d70d14b4aae67",
+  "calibration": "WorkingAssets/Arjun/reference_fit/reference_face_residual_fit.json",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend",
+  "source_sha256": "1699ebda45ab576543f39e6ea5d1a1c01e24ea8460ce1514876a48037707eeb2",
+  "runtime_replaced": false,
+  "status": "REFERENCE_LIKENESS_CANDIDATE_NOT_EXACT",
+  "visual_match": "FAILED_NOT_EXACT",
+  "frontal_landmark_rms": 0.07139517788292994,
+  "comparison": "docs/characters/arjun/reference_fit/reference_comparison.png"
+}

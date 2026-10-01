@@ -9,8 +9,26 @@ func build(b) -> void:
 			b.box("BastionCoping",Vector3(x,6.3,z),Vector3(14.5,.25,14.5),b.stone)
 			for offset in [-5.0,-2.5,0.0,2.5,5.0]:
 				for edge in [-1.0,1.0]:
-					b.box("BastionMerlon",Vector3(x+offset,6.9,z+edge*6.4),Vector3(1.4,1.2,1.1),b.brick)
+					if not (edge == -signf(z) and offset == 0):
+						b.box("BastionMerlon",Vector3(x+offset,6.9,z+edge*6.4),Vector3(1.4,1.2,1.1),b.brick)
 					b.box("BastionMerlon",Vector3(x+edge*6.4,6.9,z+offset),Vector3(1.1,1.2,1.4),b.brick)
+	# Solid masonry stair flights give each bastion a real route from the court.
+	for x in [-88.0,88.0]:
+		for direction in [-1.0,1.0]:
+			var route: Array[Vector3] = [Vector3(x,.18,direction*59.5)]
+			for step in 32:
+				var rise := .18+6.24*float(step+1)/32.0
+				b.box("BastionStair",Vector3(x,rise*.5,direction*(61.25+step*.5)),Vector3(2.8,rise,.53),b.stone)
+			for step in [0,8,16,24,31]: route.append(Vector3(x,.18+6.24*float(step+1)/32.0,direction*(61.25+step*.5)))
+			route.append(Vector3(x,6.425,direction*80.0))
+			b.set_meta("bastion_route_%d_%d"%[int(x+88),int(direction+1)],route)
+			for edge in [-1.0,1.0]:
+				for post in 9:
+					var t := float(post)/8.0
+					b.box("BastionStairRailPost",Vector3(x+edge*1.43,.18+6.24*t+.48,direction*(61+16*t)),Vector3(.07,.96,.07),b.iron,false)
+				var rail: Node3D = b.box("BastionStairHandrail",Vector3(x+edge*1.43,4.25,direction*69),Vector3(.065,.065,sqrt(16*16+6.24*6.24)),b.iron,false)
+				rail.rotation.x=-direction*atan2(6.24,16.0)
+			b.box("BastionEntryLanding",Vector3(x,6.32,direction*77.0),Vector3(2.8,.20,1.2),b.stone)
 	b.box("ServiceCourtFloor",Vector3(0,.09,-72),Vector3(130,.18,25),b.stone)
 	b.box("CommandNoticeBoard",Vector3(8,1.5,3),Vector3(2.4,1.8,.14),b.wood)
 	for x in [7.0,9.0]: b.box("NoticeBoardPost",Vector3(x,.75,3),Vector3(.14,1.5,.14),b.wood)
@@ -21,42 +39,35 @@ func build(b) -> void:
 		room.name = ["FortKitchen","FortStores","ServantQuarters"][i]
 		room.position = Vector3(-45+i*45,.18,-73)
 		b.add_child(room)
-		b.piece(room,"Floor",Vector3(0,.12,0),Vector3(18,.24,14),b.stone)
-		b.piece(room,"RearWall",Vector3(0,1.8,-7),Vector3(18,3.6,.4),b.plaster)
-		for side in [-1.0,1.0]:
-			b.piece(room,"SideWall",Vector3(side*9,1.8,0),Vector3(.4,3.6,14),b.plaster)
-			b.piece(room,"FrontPier",Vector3(side*5.15,1.8,7),Vector3(7.7,3.6,.4),b.plaster)
-		b.piece(room,"DoorHeader",Vector3(0,3.0,7),Vector3(2.6,1.2,.4),b.plaster)
-		b.piece(room,"Roof",Vector3(0,3.7,0),Vector3(19,.22,15),b.tile)
+		var details := preload("res://world/suryagarh/settlements/fort_service_detail.gd").new()
+		details.configure()
+		details.shell(b,room)
 		var door := preload("res://objects/hinged_door.gd").new()
 		door.name = "ServiceDoor"
 		door.position = Vector3(-1.3,.24,7.22)
 		door.night_lock = false
 		door.build(b.wood)
 		room.add_child(door)
-		if i == 0:
-			b.piece(room,"CookingHearth",Vector3(-6,.5,-4),Vector3(3,1,1.8),b.brick)
-			b.piece(room,"PreparationTable",Vector3(4,.9,-3),Vector3(4,.18,1.2),b.wood)
-			for x in [2.5,5.5]:
-				for z in [-3.4,-2.6]: b.piece(room,"TableLeg",Vector3(x,.45,z),Vector3(.12,.9,.12),b.wood)
-		elif i == 1:
-			for x in [-6.0,-3.0,3.0,6.0]:
-				b.piece(room,"ProvisionChest",Vector3(x,.65,-4),Vector3(2,1.3,1.6),b.wood)
-				b.piece(room,"ChestIronBand",Vector3(x,.65,-3.18),Vector3(.15,1.3,.04),b.iron,false)
-		else:
-			for x in [-5.0,0.0,5.0]:
-				b.piece(room,"StaffBed",Vector3(x,.45,-3),Vector3(2,.3,3.5),b.wood)
-				b.piece(room,"StaffBedding",Vector3(x,.65,-3),Vector3(1.8,.1,3.3),b.plaster,false)
-				for side in [-.7,.7]:
-					for z in [-4.3,-1.7]: b.piece(room,"BedLeg",Vector3(x+side,.2,z),Vector3(.12,.4,.12),b.wood)
+		details.furnish(b,room,i)
+	var main_details := preload("res://world/suryagarh/settlements/fort_service_detail.gd").new()
+	main_details.configure()
+	main_details.command_rooms(b)
 
 func staff(b) -> void:
 	for i in 2:
-		var actor := preload("res://characters/npcs/households/household_npc_actor.gd").new()
+		var actor := preload("res://characters/npcs/households/fort_staff.gd").new()
 		actor.name = "FortCook" if i == 0 else "FortSteward"
 		actor.household_job = "Cook" if i == 0 else "Steward"
 		actor.movement_enabled = false
-		actor.position = Vector3(-41,.42,-74) if i == 0 else Vector3(0,.42,-65)
+		actor.position = Vector3(-41,.42,-75.05) if i == 0 else Vector3(0,.18,-65)
+		actor.rotation.y = PI if i == 0 else 0.0
 		actor.set_meta("visual_status","candidate_unapproved")
-		actor.add_child(load("res://characters/npcs/village_farmer.glb").instantiate())
+		actor.add_to_group("fort_staff")
+		var document := GLTFDocument.new()
+		var state := GLTFState.new()
+		var path := "res://WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb"
+		if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
+			push_error("Cannot load fort staff rig: "+path)
+			continue
+		actor.add_child(document.generate_scene(state))
 		b.add_child(actor)

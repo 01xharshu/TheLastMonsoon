@@ -1,5 +1,15 @@
 # Enfield cartridge insertion and ramrod contact — 2026-09-30
 
+## Latest: 2026-10-01 — interrupted reloads
+
+Weapon selection and stowing now cancel an active reload immediately through the equipment refresh, with an additional process guard for direct state changes. The cartridge hides, both ramrod parts return to their exact stored transforms, and the old weapon cannot finish loading in the background.
+
+Enfield and double-gun ammunition is reserved at reload start. Cancellation clears that reservation before restoring it to inventory; repeated cancellation cannot refund it twice. Restoration emits the inventory update signal without a new-pickup notice. Existing loaded rounds are preserved. The Adams consumes ammunition only on completion, so cancellation stops its timer/click sound without a refund. A cancellation call with no active reload leaves shot playback alone.
+
+Verification: **FIREARMS TEST PASS**, including Enfield switch/stow reservation conservation and repeated cancellation; Adams cancellation/background tick/restart; the retained 721-pose pacing/contact checks. **DOUBLE GUN: PASS**, including return of both charges and restart consumption. **METAL RELOAD INTERRUPTION: PASS**, using actual equipment toggle/selection calls, with the stowed and pistol-switch frames inspected. Evidence: `/tmp/loading_interrupt_final.log`, `/tmp/loading_double_interrupt_final.log`, `/tmp/loading_interrupt_metal.log`, `/tmp/tlm_reload_cancel_{stow,switch}_2026-10-01.png`. These are prop/state checks on the rejected temporary diagnostic body, not accepted character fit or transition-motion approval.
+
+Model authority rechecked in `reference_fit_status.md`: the new multiview assets are separate candidates; no accepted playable replacement has been designated. Final palm/skin/sleeve/body fitting remains dependent on the accepted model. Existing twelve-second pacing remains in place.
+
 ## Latest: step 1 — reload pacing
 
 The Enfield reload now lasts **12 seconds**, previously 5. Gameplay and visual progress share `EnfieldLoadingSequence.RELOAD_SECONDS`, avoiding mismatched timers. Quintic gesture easing gives zero velocity and acceleration at each segment endpoint; the arm solver follows these eased contacts while retaining the prop connection. This changes the existing procedural loading gestures, not an authored complete historical drill or the ready-to-loading entry pose.

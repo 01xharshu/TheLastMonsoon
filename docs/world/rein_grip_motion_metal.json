@@ -1,0 +1,1451 @@
+{
+	"checks": {
+		"bent_knees": true,
+		"gallop_forward_response": true,
+		"jump_forward_response": true,
+		"landed": true,
+		"rein_grip": true,
+		"seat_follows_back": true,
+		"stirrups": true
+	},
+	"gallop_lean_deg": 23.450039593279,
+	"jump_lean_deg": 35.366130728177,
+	"max_knee_deg": 98.3678023913213,
+	"max_palm_error_m": 0.00000382225698558614,
+	"max_seat_error_m": 0.00000000186264514923096,
+	"max_sole_error_m": 0.000000505762159264123,
+	"physics_hz": 60,
+	"recorded_fps": 15,
+	"samples": [
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.1436648127296,
+			"knees_deg": [
+				93.2138649804271,
+				93.2143370059781
+			],
+			"palm_error_m": 0.0000000906402277678353,
+			"physics_tick": 94,
+			"seat_error_m": 0.00000000186264514923096,
+			"sole_error_m": 0.00000019436771481196,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.15676246797204,
+			"knees_deg": [
+				93.2152690860588,
+				93.2155461448892
+			],
+			"palm_error_m": 0.000000107453800524127,
+			"physics_tick": 98,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190909773323256,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.16091702123011,
+			"knees_deg": [
+				93.2166646424144,
+				93.2168151437041
+			],
+			"palm_error_m": 0.000000066640019724673,
+			"physics_tick": 102,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000228498805654453,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.1579258395927,
+			"knees_deg": [
+				93.2180499392155,
+				93.2181166387386
+			],
+			"palm_error_m": 0.0000000942432194506182,
+			"physics_tick": 106,
+			"seat_error_m": 0.00000000186264514923096,
+			"sole_error_m": 0.000000264003261918333,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.14886572216154,
+			"knees_deg": [
+				93.2194232661747,
+				93.2194745735689
+			],
+			"palm_error_m": 0.000000179433740754575,
+			"physics_tick": 110,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000252990815852172,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.13443039885321,
+			"knees_deg": [
+				93.2207264747896,
+				93.2207538387679
+			],
+			"palm_error_m": 0.000000155572692506212,
+			"physics_tick": 114,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000341108261636691,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.11511936958923,
+			"knees_deg": [
+				93.2220946746053,
+				93.2220929643544
+			],
+			"palm_error_m": 0.000000160490415623826,
+			"physics_tick": 118,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149116345937728,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.09138105331006,
+			"knees_deg": [
+				93.2234338019561,
+				93.2234355122093
+			],
+			"palm_error_m": 0.0000000954139878217575,
+			"physics_tick": 122,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000209810252727038,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.06366388193898,
+			"knees_deg": [
+				93.2248567335886,
+				93.2248584438442
+			],
+			"palm_error_m": 0.000000181280455535671,
+			"physics_tick": 126,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000264895390955644,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.03241368697717,
+			"knees_deg": [
+				93.2266661855839,
+				93.2266730266183
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"physics_tick": 130,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000261202359297386,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.99810121762512,
+			"knees_deg": [
+				93.2284859023706,
+				93.2285149768194
+			],
+			"palm_error_m": 0.0000000906402277678353,
+			"physics_tick": 134,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000241318588223294,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.96124622368328,
+			"knees_deg": [
+				93.2303056224173,
+				93.230295360829
+			],
+			"palm_error_m": 0.000000107453800524127,
+			"physics_tick": 138,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000239992260731015,
+			"stage": "seated",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.97671043741417,
+			"knees_deg": [
+				93.2322724287675,
+				93.2322997930567
+			],
+			"palm_error_m": 0.000000066640019724673,
+			"physics_tick": 142,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000197704338233962,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 6.99617843160211,
+			"knees_deg": [
+				93.2038875058712,
+				93.2653871810001
+			],
+			"palm_error_m": 0.0000000906402277678353,
+			"physics_tick": 146,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000033155083656311,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.02134313373297,
+			"knees_deg": [
+				93.1557202756631,
+				93.2900760144783
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"physics_tick": 150,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000173935561065264,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.03951767570367,
+			"knees_deg": [
+				93.0940510054349,
+				93.2754661718987
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 154,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000295404021244394,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.04773887434475,
+			"knees_deg": [
+				93.0351845008793,
+				93.2179695577447
+			],
+			"palm_error_m": 0.00000027028258386963,
+			"physics_tick": 158,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.04949936586282,
+			"knees_deg": [
+				93.0618069789339,
+				93.1805244508253
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"physics_tick": 162,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000399840104137184,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.05236761858094,
+			"knees_deg": [
+				93.1016709713193,
+				93.1525907231879
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"physics_tick": 166,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.06694120235009,
+			"knees_deg": [
+				93.14889341704,
+				93.1194932875101
+			],
+			"palm_error_m": 0.000000266560078898692,
+			"physics_tick": 170,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000171201307352931,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.10966549154028,
+			"knees_deg": [
+				93.199370823727,
+				93.0859676769028
+			],
+			"palm_error_m": 0.000000120137002568299,
+			"physics_tick": 174,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000378149081825541,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.20273113288574,
+			"knees_deg": [
+				93.2807374578271,
+				93.0881308632961
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 178,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000429815202096506,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.3691990880407,
+			"knees_deg": [
+				93.337209700222,
+				93.0880573319866
+			],
+			"palm_error_m": 0.000000342402614705861,
+			"physics_tick": 182,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.62397283064051,
+			"knees_deg": [
+				93.323751988716,
+				93.0852870863633
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 186,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.96155102979867,
+			"knees_deg": [
+				93.308339474175,
+				93.0830965453988
+			],
+			"palm_error_m": 0.000000242573321429518,
+			"physics_tick": 190,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.34064482188313,
+			"knees_deg": [
+				93.2304219204259,
+				93.1097578398842
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"physics_tick": 194,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.62930459103584,
+			"knees_deg": [
+				93.1022900104551,
+				93.12910227811
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 198,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000268220901489258,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.75966246579008,
+			"knees_deg": [
+				93.0369183875061,
+				93.2083238272351
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 202,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000358867481509151,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.71805735608456,
+			"knees_deg": [
+				93.0741993359669,
+				93.348221625138
+			],
+			"palm_error_m": 0.0,
+			"physics_tick": 206,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.52680993477477,
+			"knees_deg": [
+				93.1119826373903,
+				93.4254762286928
+			],
+			"palm_error_m": 0.000000482622851905035,
+			"physics_tick": 210,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.2428260711934,
+			"knees_deg": [
+				93.0749893600151,
+				93.3467643083101
+			],
+			"palm_error_m": 0.000000480548010273196,
+			"physics_tick": 214,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.94498846496362,
+			"knees_deg": [
+				93.0392387904345,
+				93.2093773281203
+			],
+			"palm_error_m": 0.000000482622851905035,
+			"physics_tick": 218,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000358867481509151,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.71545961618848,
+			"knees_deg": [
+				93.1155840489978,
+				93.1492645151678
+			],
+			"palm_error_m": 0.000000480548010273196,
+			"physics_tick": 222,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.61884276354286,
+			"knees_deg": [
+				93.1980727729809,
+				93.0917082531517
+			],
+			"palm_error_m": 0.000000477767571283039,
+			"physics_tick": 226,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.68618420485694,
+			"knees_deg": [
+				93.3112984667774,
+				93.0978507212442
+			],
+			"palm_error_m": 0.000000477767571283039,
+			"physics_tick": 230,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 7.9071539595797,
+			"knees_deg": [
+				93.3315755012077,
+				93.0879427599566
+			],
+			"palm_error_m": 0.000000480548010273196,
+			"physics_tick": 234,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000505762159264123,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.23255848008349,
+			"knees_deg": [
+				93.3141719478242,
+				93.0849792817398
+			],
+			"palm_error_m": 0.000000238883785641519,
+			"physics_tick": 238,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.58706483026043,
+			"knees_deg": [
+				93.2643917728329,
+				93.1112849294426
+			],
+			"palm_error_m": 0.000000119209289550781,
+			"physics_tick": 242,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.8883897121772,
+			"knees_deg": [
+				93.1225013247642,
+				93.11115325422
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 246,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000362560911071341,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.06820196498223,
+			"knees_deg": [
+				93.0522259572608,
+				93.1897663132051
+			],
+			"palm_error_m": 0.000000245756240246919,
+			"physics_tick": 250,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.09005566166193,
+			"knees_deg": [
+				93.0583408382439,
+				93.3127488895013
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"physics_tick": 254,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.95824220384465,
+			"knees_deg": [
+				93.1074013723172,
+				93.4193728147559
+			],
+			"palm_error_m": 0.000000954721485868504,
+			"physics_tick": 258,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "walk",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.77115340867985,
+			"knees_deg": [
+				93.0846663471306,
+				93.3655624937066
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 262,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 8.68785576441533,
+			"knees_deg": [
+				93.0410547614238,
+				93.2220262645709
+			],
+			"palm_error_m": 0.000000149011611938477,
+			"physics_tick": 266,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000293518837679585,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.13080006170552,
+			"knees_deg": [
+				93.2204579657916,
+				93.3443234785249
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 270,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.62864105213939,
+			"knees_deg": [
+				93.3773136817829,
+				93.5375752921008
+			],
+			"palm_error_m": 0.000000242573321429518,
+			"physics_tick": 274,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 10.2149696416599,
+			"knees_deg": [
+				93.1581897215358,
+				93.4133053618836
+			],
+			"palm_error_m": 0.000000957856059358164,
+			"physics_tick": 278,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 11.1530412164744,
+			"knees_deg": [
+				92.7275852911034,
+				93.0164624640742
+			],
+			"palm_error_m": 0.000000240274005136598,
+			"physics_tick": 282,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 12.7032792678268,
+			"knees_deg": [
+				92.3364441208521,
+				92.594955331756
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 286,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000358867481509151,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 14.9178849559567,
+			"knees_deg": [
+				92.331433435565,
+				92.5889967257183
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 290,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 17.4249189895149,
+			"knees_deg": [
+				93.2178977274996,
+				93.5381295937846
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 294,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.4400419926886,
+			"knees_deg": [
+				93.9108639774126,
+				94.2709338176657
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 298,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.1883764803986,
+			"knees_deg": [
+				94.1087477730233,
+				94.4788496423346
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 302,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.5818208922927,
+			"knees_deg": [
+				93.8023717341082,
+				94.1559578327535
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 306,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.5472441879352,
+			"knees_deg": [
+				93.1333792392419,
+				93.4467341352592
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 310,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.5028790478942,
+			"knees_deg": [
+				92.5503297084535,
+				92.8231441590648
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 314,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.1067555116536,
+			"knees_deg": [
+				92.2696147927126,
+				92.5197654357699
+			],
+			"palm_error_m": 0.00000190758146345615,
+			"physics_tick": 318,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.4032983165386,
+			"knees_deg": [
+				93.3833620925135,
+				93.7122483252364
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 322,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.4389343871099,
+			"knees_deg": [
+				94.0454202097047,
+				94.4114480776202
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 326,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000268220901489258,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.1770202827477,
+			"knees_deg": [
+				93.9659514804132,
+				94.3281251427866
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 330,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.977405385832,
+			"knees_deg": [
+				93.2295650780574,
+				93.5484903060858
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 334,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.2243613088791,
+			"knees_deg": [
+				92.5513979840601,
+				92.823985293502
+			],
+			"palm_error_m": 0.000000238883785641519,
+			"physics_tick": 338,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000281154541426076,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.7302958486788,
+			"knees_deg": [
+				92.3416667368252,
+				92.5974509123328
+			],
+			"palm_error_m": 0.00000190827972801344,
+			"physics_tick": 342,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.9122720750691,
+			"knees_deg": [
+				93.5271993047342,
+				93.8644536216161
+			],
+			"palm_error_m": 0.000000238883785641519,
+			"physics_tick": 346,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000214907601048253,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.450039593279,
+			"knees_deg": [
+				94.0759560958335,
+				94.4437899203509
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 350,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000316803038913349,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.7434815110409,
+			"knees_deg": [
+				93.8808065754777,
+				94.238258647214
+			],
+			"palm_error_m": 0.000000238883785641519,
+			"physics_tick": 354,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.5583182073173,
+			"knees_deg": [
+				93.0971786733063,
+				93.4083104759618
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"physics_tick": 358,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 19.1492460059799,
+			"knees_deg": [
+				92.4485791879843,
+				92.7134616170703
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 362,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000238418579101562,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 20.9021839740434,
+			"knees_deg": [
+				92.476525101608,
+				92.74307673509
+			],
+			"palm_error_m": 0.00000192271181731485,
+			"physics_tick": 366,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 22.9362838509461,
+			"knees_deg": [
+				93.6943671180498,
+				94.0412947523739
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 370,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.0637863932159,
+			"knees_deg": [
+				94.1054933679486,
+				94.4750061792159
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"physics_tick": 374,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.1084548277023,
+			"knees_deg": [
+				93.7595300394346,
+				94.1102354565665
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 378,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000254631146390238,
+			"stage": "gallop",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 25.3996291447966,
+			"knees_deg": [
+				94.1065855865833,
+				94.4728532320893
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"physics_tick": 383,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "jump",
+			"vertical_velocity": 4.8833327293396
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 29.5317665950408,
+			"knees_deg": [
+				93.6169002858706,
+				93.9560137227159
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 387,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000254631146390238,
+			"stage": "jump",
+			"vertical_velocity": 4.22999906539917
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 32.5264625268537,
+			"knees_deg": [
+				93.3722095092859,
+				93.6969679984783
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 391,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": 3.57666540145874
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 34.5955694431948,
+			"knees_deg": [
+				92.9473874364718,
+				93.2441708334395
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 396,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": 2.7599983215332
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.2627348061908,
+			"knees_deg": [
+				92.4137975851448,
+				92.6705924355146
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 400,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000281154541426076,
+			"stage": "jump",
+			"vertical_velocity": 2.10666465759277
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.366130728177,
+			"knees_deg": [
+				91.9955153229317,
+				92.2149399515186
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 404,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "jump",
+			"vertical_velocity": 1.4533314704895
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 35.1184444144808,
+			"knees_deg": [
+				91.8334690763322,
+				92.0355786790441
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 408,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000337174782316652,
+			"stage": "jump",
+			"vertical_velocity": 0.799998164176941
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 34.6609606999539,
+			"knees_deg": [
+				92.0525385852054,
+				92.2775320918321
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 412,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "jump",
+			"vertical_velocity": 0.146664828062057
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 34.1260179556986,
+			"knees_deg": [
+				91.710135417219,
+				91.8998185951488
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 416,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "jump",
+			"vertical_velocity": -0.506668508052826
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.6902143001794,
+			"knees_deg": [
+				92.2335389090333,
+				92.4762687300902
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 420,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "jump",
+			"vertical_velocity": -1.16000187397003
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.3925541259399,
+			"knees_deg": [
+				93.0007176671407,
+				93.3015150104531
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 424,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000281154541426076,
+			"stage": "jump",
+			"vertical_velocity": -1.8133350610733
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.20913342334,
+			"knees_deg": [
+				93.9877393116623,
+				94.347179600322
+			],
+			"palm_error_m": 0.0000000298023223876953,
+			"physics_tick": 428,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000119209289550781,
+			"stage": "jump",
+			"vertical_velocity": -2.46666860580444
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.1069334648105,
+			"knees_deg": [
+				95.4947288293694,
+				95.9235799592408
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"physics_tick": 432,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000596046447753906,
+			"stage": "jump",
+			"vertical_velocity": -3.12000226974487
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.0581345981688,
+			"knees_deg": [
+				97.154667194061,
+				97.6431328200932
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"physics_tick": 436,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000298023223876953,
+			"stage": "jump",
+			"vertical_velocity": -3.7733359336853
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.0438473622988,
+			"knees_deg": [
+				97.8587684594589,
+				98.3678023913213
+			],
+			"palm_error_m": 0.000000044703483581543,
+			"physics_tick": 440,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.0000000894069671630859,
+			"stage": "jump",
+			"vertical_velocity": -4.42666959762573
+		},
+		{
+			"airborne": true,
+			"forward_lean_deg": 33.0513286534231,
+			"knees_deg": [
+				96.9523729372672,
+				97.4336588926456
+			],
+			"palm_error_m": 0.0000000745058059692383,
+			"physics_tick": 444,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "jump",
+			"vertical_velocity": -5.08000326156616
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 33.0962924057666,
+			"knees_deg": [
+				95.1541021511997,
+				95.5710926682581
+			],
+			"palm_error_m": 0.00000382225698558614,
+			"physics_tick": 448,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 29.6976764372808,
+			"knees_deg": [
+				93.4514384113923,
+				93.7830837252768
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 452,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000190827975643515,
+			"stage": "jump",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 26.379135609527,
+			"knees_deg": [
+				92.6021002262878,
+				92.8765061209272
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 456,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 25.0194538364656,
+			"knees_deg": [
+				92.2806012745216,
+				92.5297113079844
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 460,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 24.90627937424,
+			"knees_deg": [
+				93.2996267460704,
+				93.6221546446333
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 464,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000149011611938477,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 23.794105800235,
+			"knees_deg": [
+				94.0817319900783,
+				94.4502673649175
+			],
+			"palm_error_m": 0.0000000149011611938477,
+			"physics_tick": 470,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 21.4903140044457,
+			"knees_deg": [
+				93.985158085121,
+				94.3483834704956
+			],
+			"palm_error_m": 0.000000254631146390238,
+			"physics_tick": 474,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 18.8035003360669,
+			"knees_deg": [
+				93.478295998599,
+				93.8132951229873
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 478,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000245756240246919,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 16.5643286721838,
+			"knees_deg": [
+				92.9499966081816,
+				93.2523049966051
+			],
+			"palm_error_m": 0.000000104308128356934,
+			"physics_tick": 482,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 14.9829904434682,
+			"knees_deg": [
+				92.5252331777163,
+				92.797635165087
+			],
+			"palm_error_m": 0.000000238418579101562,
+			"physics_tick": 486,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.00000012287812012346,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 13.8146954753896,
+			"knees_deg": [
+				92.2354989561829,
+				92.4847255980914
+			],
+			"palm_error_m": 0.0000000596046447753906,
+			"physics_tick": 490,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000168587391158326,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 12.7676012958042,
+			"knees_deg": [
+				92.4296817163364,
+				92.6961397424135
+			],
+			"palm_error_m": 0.000000242573321429518,
+			"physics_tick": 494,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000266560078898692,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 11.3079756659123,
+			"knees_deg": [
+				93.401557157731,
+				93.7239029604254
+			],
+			"palm_error_m": 0.0000000894069671630859,
+			"physics_tick": 498,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000240274005136598,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		},
+		{
+			"airborne": false,
+			"forward_lean_deg": 9.96966705096708,
+			"knees_deg": [
+				93.0503706381195,
+				93.2437569437935
+			],
+			"palm_error_m": 0.000000245756240246919,
+			"physics_tick": 502,
+			"seat_error_m": 0.0,
+			"sole_error_m": 0.000000133280039449346,
+			"stage": "recovery",
+			"vertical_velocity": 0.0
+		}
+	],
+	"seated_lean_deg": 6.96124622368328,
+	"status": "PASS"
+}

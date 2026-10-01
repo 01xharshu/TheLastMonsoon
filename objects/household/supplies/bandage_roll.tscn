@@ -1,0 +1,79 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5gusm"]
+albedo_color = Color(0.78, 0.73, 0.61, 1)
+roughness = 0.98
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_2u0nt"]
+top_radius = 0.055
+bottom_radius = 0.055
+height = 0.13
+radial_segments = 20
+
+[sub_resource type="TorusMesh" id="TorusMesh_jlff3"]
+inner_radius = 0.053
+outer_radius = 0.057
+rings = 12
+ring_segments = 8
+
+[sub_resource type="TorusMesh" id="TorusMesh_2gc8j"]
+inner_radius = 0.053
+outer_radius = 0.057
+rings = 12
+ring_segments = 8
+
+[sub_resource type="TorusMesh" id="TorusMesh_534fw"]
+inner_radius = 0.053
+outer_radius = 0.057
+rings = 12
+ring_segments = 8
+
+[sub_resource type="TorusMesh" id="TorusMesh_kwpit"]
+inner_radius = 0.053
+outer_radius = 0.057
+rings = 12
+ring_segments = 8
+
+[sub_resource type="BoxMesh" id="BoxMesh_ir71f"]
+size = Vector3(0.1, 0.004, 0.14)
+
+[node name="BandageRoll" type="Node3D" unique_id=67498986]
+
+[node name="@MeshInstance3D@43" type="MeshInstance3D" parent="." unique_id=1994536257]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.057, 0)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("CylinderMesh_2u0nt")
+
+[node name="@MeshInstance3D@44" type="MeshInstance3D" parent="." unique_id=711998225]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -0.045, 0.057, 0)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("TorusMesh_jlff3")
+
+[node name="@MeshInstance3D@45" type="MeshInstance3D" parent="." unique_id=506571464]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -0.015, 0.057, 0)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("TorusMesh_2gc8j")
+
+[node name="@MeshInstance3D@46" type="MeshInstance3D" parent="." unique_id=1292143802]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0.015, 0.057, 0)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("TorusMesh_534fw")
+
+[node name="@MeshInstance3D@47" type="MeshInstance3D" parent="." unique_id=647291379]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0.045, 0.057, 0)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("TorusMesh_kwpit")
+
+[node name="@MeshInstance3D@48" type="MeshInstance3D" parent="." unique_id=1639275289]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 0.005, 0.07)
+material_override = SubResource("StandardMaterial3D_5gusm")
+mesh = SubResource("BoxMesh_ir71f")
+
+[node name="LeftGrip" type="Marker3D" parent="." unique_id=897135748]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.055, 0)
+
+[node name="RightGrip" type="Marker3D" parent="." unique_id=943737329]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.055, 0)
+
+[node name="LooseStripGrip" type="Marker3D" parent="." unique_id=518895013]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.005, 0.13)

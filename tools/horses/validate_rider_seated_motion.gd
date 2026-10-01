@@ -35,10 +35,11 @@ func _sample(stage: String) -> void:
 func _stage(label: String, frames: int) -> void:
 	for index in frames:
 		for tick in 4: await physics_frame
-		camera.global_position = horse.global_position+Vector3(4.8,2.8,0.2)
+		camera.global_position = horse.global_position+(Vector3(3.2,2.55,0.35) if "--close" in OS.get_cmdline_user_args() else Vector3(4.8,2.8,0.2))
 		camera.look_at(horse.global_position+Vector3.UP*2.0)
 		if capture_frames:
-			await RenderingServer.frame_post_draw
+			await process_frame
+			RenderingServer.force_draw(false)
 			assert(root.get_texture().get_image().save_png("/tmp/tlm_rider_motion/frame_%04d.png"%frame_number)==OK)
 		else:
 			await process_frame
@@ -126,11 +127,14 @@ func _run() -> void:
 		if sample.stage == "seated": seated_lean = sample.forward_lean_deg
 		if sample.stage == "gallop": gallop_lean = maxf(gallop_lean,sample.forward_lean_deg)
 		if sample.stage == "jump" and sample.airborne: jump_lean = maxf(jump_lean,sample.forward_lean_deg)
-	var checks := {"bent_knees":max_knee<150.0,"seat_follows_back":seat_error<0.04,"stirrups":sole_error<0.04,"rein_grip":palm_error<0.08,"gallop_forward_response":gallop_lean>seated_lean+5.0,"jump_forward_response":jump_lean>gallop_lean+5.0,"landed":horse.landing_events>0}
+	var max_sample_gap := 0
+	for i in range(1,samples.size()):
+		max_sample_gap = maxi(max_sample_gap,int(samples[i].physics_tick)-int(samples[i-1].physics_tick))
+	var checks := {"continuous_sampling":max_sample_gap<=6,"bent_knees":max_knee<150.0,"seat_follows_back":seat_error<0.04,"stirrups":sole_error<0.04,"rein_grip":palm_error<0.08,"gallop_forward_response":gallop_lean>seated_lean+5.0,"jump_forward_response":jump_lean>gallop_lean+5.0,"landed":horse.landing_events>0}
 	var passed := true
 	for value in checks.values(): passed = passed and value
 	var suffix := "metal" if capture_frames else "headless"
-	var report := {"status":"PASS" if passed else "FAIL","checks":checks,"max_knee_deg":max_knee,"max_seat_error_m":seat_error,"max_sole_error_m":sole_error,"max_palm_error_m":palm_error,"seated_lean_deg":seated_lean,"gallop_lean_deg":gallop_lean,"jump_lean_deg":jump_lean,"samples":samples,"physics_hz":60,"recorded_fps":15}
+	var report := {"status":"PASS" if passed else "FAIL","checks":checks,"max_knee_deg":max_knee,"max_seat_error_m":seat_error,"max_sole_error_m":sole_error,"max_palm_error_m":palm_error,"seated_lean_deg":seated_lean,"gallop_lean_deg":gallop_lean,"jump_lean_deg":jump_lean,"samples":samples,"physics_hz":60,"max_sample_gap_ticks":max_sample_gap,"recording_timing":"derive frame durations from physics_tick / 60"}
 	FileAccess.open("res://docs/world/rider_seated_motion_"+suffix+".json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("RIDER SEATED MOTION ",report.status," ",checks)
 	world.queue_free()
