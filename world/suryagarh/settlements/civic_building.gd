@@ -25,6 +25,7 @@ func _ready() -> void:
 		for z in range(-int(depth*.5)-2,int(depth*.5)+3,2):
 			ground = maxf(ground,layout.height(position.x+x,position.z+z))
 	position.y = ground+.45
+	plaster = preload("res://world/suryagarh/settlements/building_realism.gd").finish(Color(.79,.75,.63),position.y)
 	if police:
 		stone = preload("res://world/suryagarh/settlements/police_refinement.gd").masonry(position.y)
 		preload("res://world/suryagarh/settlements/police_interior.gd").foundation(self)
@@ -122,6 +123,7 @@ func _ready() -> void:
 		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, self, Vector3(width * 0.5 - 3, 0, -depth * 0.5 + 7), "district_police/ammunition")
 		preload("res://world/suryagarh/settlements/medical_supply.gd").furnish(self, self, Vector3(width*0.5-4.7,0,-depth*0.5+7), "district_police/bandage")
 		preload("res://world/suryagarh/settlements/police_refinement.gd").furnish(self)
+	preload("res://world/suryagarh/settlements/building_realism.gd").civic(self)
 	merge_visuals(self)
 	if police:
 		var staff := Node3D.new()

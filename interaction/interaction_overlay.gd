@@ -727,6 +727,16 @@ func _draw() -> void:
 			_draw_action(Vector2(left+5,top+34),secondary_key,target.interaction_icon)
 		if target.hold_duration > 0.0:
 			draw_arc(Vector2(left+18,top+17),17.0,-PI*0.5,-PI*0.5+TAU*progress,32,HOLD_COLOR,2.0,true)
+	elif actor != null and actor.get_meta("climbing",false):
+		var climb: Node = actor.get_node_or_null("ClimbComponent")
+		if climb != null and climb.waiting_for_move and not climb.window.active:
+			var anchor := camera.unproject_position(actor.global_position+Vector3.UP*.6)
+			var at := Vector2(clampf(anchor.x+26,10,size.x-195),clampf(anchor.y,10,size.y-60))
+			draw_style_box(panel_style,Rect2(at,Vector2(185,50)))
+			var jump_key := "×" if SaveManager.active_input_device == "controller" else "Space"
+			var down_key := "Stick ↓" if SaveManager.active_input_device == "controller" else "S"
+			draw_string(FONT,at+Vector2(10,20),jump_key+"  Reach / pull up",HORIZONTAL_ALIGNMENT_LEFT,165,14,IVORY)
+			draw_string(FONT,at+Vector2(10,40),down_key+"  Let go",HORIZONTAL_ALIGNMENT_LEFT,165,14,IVORY)
 	elif ride_prompt != "":
 		var ride_top := size.y * 0.62
 		var ride_left := size.x * 0.5 - 34.5

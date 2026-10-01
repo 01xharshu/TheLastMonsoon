@@ -75,7 +75,7 @@ func run() -> void:
 	var door=fort.get_node("FortKitchen/ServiceDoor")
 	door.set_meta("debug_sweep",false)
 	door.set_open(false)
-	await create_timer(1.4).timeout
+	await create_timer(3.0).timeout
 	var origin: Vector3=fort.get_node("FortKitchen").to_global(Vector3(0,1.2,9.1))
 	var target: Vector3=fort.get_node("FortKitchen").to_global(Vector3(0,1.2,4.6))
 	player.global_position=origin
@@ -98,8 +98,8 @@ func run() -> void:
 	player.get_node("VisualRoot").global_rotation.y=0
 	print("OPEN SELECTED ",player._find_interactable())
 	player._try_primary_interaction()
-	check(door.moving,"normal player primary action starts the opening motion")
-	await create_timer(1.4).timeout
+	check(player.get_meta("door_latch_active",false),"normal player primary action starts latch gesture")
+	await create_timer(3.0).timeout
 	check(door.opened and is_equal_approx(door.swing,1.0),"paired leaves complete opening")
 	player.global_position=origin
 	await physics_frame
@@ -120,14 +120,14 @@ func run() -> void:
 	await physics_frame
 	player.get_node("VisualRoot").global_rotation.y=PI
 	player._try_primary_interaction()
-	await create_timer(1.4).timeout
+	await create_timer(3.0).timeout
 	check(not door.opened and is_zero_approx(door.swing),"normal action closes the open door")
 	# A body in the leaf sweep must postpone closure rather than get pushed or trapped.
 	player.global_position=Vector3(0,30,0)
 	await physics_frame
 	await physics_frame
 	door.set_open(true)
-	await create_timer(1.4).timeout
+	await create_timer(3.0).timeout
 	player.global_position=door.to_global(Vector3(-.65,1.2,.65))
 	await physics_frame
 	await physics_frame

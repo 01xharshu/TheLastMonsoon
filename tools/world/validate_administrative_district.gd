@@ -58,7 +58,25 @@ func _run() -> void:
 	for area in [district,world.get_node("Settlement/BritishCantonment")]:
 		assert(area.find_children("*","Label3D",true,false).is_empty(), "Building text remains")
 		assert(area.find_children("PublicNotice","Node",true,false).is_empty(), "Posted building notice remains")
-	var report := {"date":"2026-10-01","status":"prototype","buildings":entrances,"resident_terrain_samples":terrain_samples,"building_text_nodes":0,"renderer":RenderingServer.get_current_rendering_method(),"open":"staff, treasury controlled access, revenue/court operations, historical art, full approach route, performance"}
+	assert(get_nodes_in_group("administrative_chairs").size() == 7)
+	var chair_supports := 0
+	for chair in get_nodes_in_group("administrative_chairs"):
+		var probe := PhysicsRayQueryParameters3D.create(chair.global_position+Vector3.UP*.12,chair.global_position-Vector3.UP*.12)
+		probe.exclude = [actor.get_rid()]
+		var support := space.intersect_ray(probe)
+		assert(not support.is_empty() and absf(support.position.y-chair.global_position.y)<.015,"Unsupported office chair")
+		chair_supports += 1
+	var open_front_windows := 0
+	for building in get_nodes_in_group("administrative_buildings"):
+		var dimensions: Vector2 = building.get_meta("room_dimensions")
+		for side in [-1,1]:
+			for offset in [-2.1,2.1]:
+				var x: float = side*(dimensions.x/4+offset)+.13
+				var probe := PhysicsRayQueryParameters3D.create(building.to_global(Vector3(x,2.1,dimensions.y/2-.5)),building.to_global(Vector3(x,2.1,dimensions.y/2+.5)))
+				probe.exclude = [actor.get_rid()]
+				assert(space.intersect_ray(probe).is_empty(),"Front window has a solid wall behind its frame")
+				open_front_windows += 1
+	var report := {"date":"2026-10-01","status":"prototype","buildings":entrances,"resident_terrain_samples":terrain_samples,"building_text_nodes":0,"supported_chairs":chair_supports,"open_front_windows":open_front_windows,"renderer":RenderingServer.get_current_rendering_method(),"open":"staff, treasury controlled access, revenue/court operations, historical art, full approach route, performance"}
 	var file := FileAccess.open("res://docs/world/administrative_district_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
 	if DisplayServer.get_name() != "headless":
@@ -73,6 +91,10 @@ func _run() -> void:
 		assert(root.get_texture().get_image().save_png("res://docs/world/captures/administrative_district_overview.png") == OK)
 		actor.get_node("VisualRoot").hide()
 		for view in [
+			["collectorate_exterior",Vector3(534,13.2,114),Vector3(520,12,99)],
+			["treasury_exterior",Vector3(493,13.2,153),Vector3(477,12,137)],
+			["courthouse_exterior",Vector3(579,13.2,154),Vector3(559,12,139)],
+			["collectorate_workstation",Vector3(533,11.8,97),Vector3(530,11.25,92)],
 			["collectorate_interior",Vector3(520,12.8,99),Vector3(520,11.8,91)],
 			["treasury_interior",Vector3(477,12.8,138),Vector3(477,11.6,126)],
 			["courthouse_interior",Vector3(559,12.8,137),Vector3(559,11.8,122)]
@@ -82,6 +104,14 @@ func _run() -> void:
 			for frame in 8: await process_frame
 			await RenderingServer.frame_post_draw
 			assert(root.get_texture().get_image().save_png("res://docs/world/captures/"+view[0]+".png") == OK)
+
+		var clock: Node = world.get_node("GameTimeSystem")
+		clock.call("advance_minutes",22.0*60.0-fmod(float(clock.get("total_game_minutes")),1440.0))
+		camera.global_position = Vector3(533,11.8,97)
+		camera.look_at(Vector3(530,11.25,92))
+		for frame in 12: await process_frame
+		await RenderingServer.frame_post_draw
+		assert(root.get_texture().get_image().save_png("res://docs/world/captures/collectorate_night.png") == OK)
 
 	print("ADMINISTRATIVE WORLD: PASS | three entrances/player walks, no building text, 35 terrain samples")
 	quit()

@@ -17,3 +17,5 @@ Focused native Forward+/Metal validation PASS: all three entrance walks, 35 resi
 Validation tool: `tools/world/validate_administrative_district.gd`. Evidence: `administrative_district_validation.json`, `captures/administrative_district_overview.png`, `captures/collectorate_interior.png`, `captures/treasury_interior.png`, `captures/courthouse_interior.png`. Mechanical entry checks use Arjun's collider and step helper. They do not certify normal-speed animation, NPC contact, office gameplay, historical appearance or target-hardware performance.
 
 Outstanding: close visual refinement, period window/door detail, guards and staff, office/revenue and hearing interactions, secure Treasury access, approach route/map, normal-speed player review and performance. See [all 40 locations](location_integration_40.md). Next construction candidates: telegraph office and post/dak station.
+
+Exterior/interior continuation: [administrative realism pass](administrative_realism_2026-10-01.md), including joinery, shutters, timber roof structure, lamps and furnished workstations.

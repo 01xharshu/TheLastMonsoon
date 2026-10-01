@@ -19,7 +19,9 @@
 	},
 	"date": "2026-10-01",
 	"open": "staff, treasury controlled access, revenue/court operations, historical art, full approach route, performance",
+	"open_front_windows": 12,
 	"renderer": "forward_plus",
 	"resident_terrain_samples": 35,
-	"status": "prototype"
+	"status": "prototype",
+	"supported_chairs": 7
 }

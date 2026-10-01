@@ -2,6 +2,7 @@ extends Interactable
 var locked := false
 var opened := true
 var leaf: Node3D
+var swing: Tween
 func _ready() -> void:
 	add_to_group("police_cell_gates")
 	interaction_text = "Close cell gate"
@@ -37,7 +38,9 @@ func set_locked(value: bool) -> void:
 	set_open(not value)
 func set_open(value: bool) -> void:
 	opened = value
-	create_tween().tween_property(leaf,"rotation:y",-PI*.5 if value else 0.0,.65)
+	if swing != null and swing.is_running(): swing.kill()
+	swing=create_tween()
+	swing.tween_property(leaf,"rotation:y",-PI*.5 if value else 0.0,.65)
 	interaction_text = "Open cell gate" if not value else "Close cell gate"
 func interact(_actor: CharacterBody3D) -> void:
 	if not locked: set_open(not opened)

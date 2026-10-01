@@ -619,7 +619,9 @@ func _update_stamina(
 	var previous_stamina := stamina
 
 
-	if (
+	if get_parent().get_meta("climbing",false):
+		stamina -= 2.5 * delta
+	elif (
 		is_sprinting
 		and not is_exhausted
 	):

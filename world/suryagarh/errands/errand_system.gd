@@ -4,11 +4,18 @@ const Target = preload("res://world/suryagarh/errands/errand_target.gd")
 const Actor = preload("res://characters/npcs/households/household_npc_actor.gd")
 const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const JOBS := {
+	"port_delivery": {"title":"A consignment from the ship port", "offer":"office", "pickup":"port_cargo", "goal":"office", "kind":"delivery", "pay":18, "description":"Dispatch clerk: Our ship consignment is waiting at the port warehouse. Collect the sealed goods and bring them back to this counting house. Eighteen rupees after handover."},
+	"urgent_medicine": {"title":"Medicine for a sick neighbour", "offer":"medicine_request", "pickup":"medicine_supply", "goal":"medicine_request", "kind":"delivery", "pay":10, "description":"Neighbour: Please fetch the prepared medicine packet from the market dispenser and bring it to me. My family is waiting. Ten rupees on delivery."},
+	"emergency_money": {"title":"Emergency money for a family", "offer":"money_sender", "pickup":"money_sender", "goal":"money_receiver", "kind":"delivery", "pay":12, "description":"Traveller: Carry this sealed purse to my brother by the port. It belongs to his family and cannot be spent. Your twelve-rupee wage is separate."},
+	"family_cart": {"title":"Bring my brother home by cart", "offer":"office", "pickup":"passenger", "goal":"family_home", "kind":"escort", "pay":20, "description":"Dispatch clerk: My brother is waiting by the village cart stand. Bring him to our home by passenger cart. You may borrow the cart waiting beside him, or use another passenger cart. Stop beside him to board, then stop at the home to let him out. Twenty rupees on arrival."},
 	"road_meal": {"title":"A meal for a stranded traveller", "offer":"road", "goal":"road", "kind":"aid", "pay":2, "description":"Traveller: I have walked all morning without food. Could you spare one roti? The market relief fund pays two rupees for a meal delivered here."},
 	"merchant_parcel": {"title":"Cloth parcel for the market", "offer":"office", "goal":"market", "kind":"delivery", "pay":8, "description":"Counting-house clerk: Collect our sealed cloth parcel from the dispatch table, then deliver it to the market receiver. Eight rupees on delivery; no deposit."},
 	"market_sort": {"title":"Sort the market stores", "offer":"market", "goal":"work", "kind":"work", "pay":5, "description":"Market receiver: Put the sacks at the sorting table in order. Hold the work interaction for three seconds, then return to me for five rupees."},
 }
+var expanded: Node
 var stages: Dictionary = {}
+# Last paid day remains even when a new shift is accepted or cancelled.
+var completed_days: Dictionary = {}
 var active := ""
 var targets: Dictionary = {}
 var player: CharacterBody3D
@@ -63,6 +70,8 @@ func _build_world() -> void:
 		if target.person != null: target.person.global_position.y = ground
 		else: target.global_position.y = ground + (1.25 if id == "board" else .65)
 	floor_levels.office = 7.44; floor_levels.parcel = 7.44
+	expanded = preload("res://world/suryagarh/errands/expanded_jobs.gd").new()
+	expanded.name = "ExpandedJobs"; add_child(expanded); expanded.configure(self)
 	for id in ["board","work"]:
 		var post := MeshInstance3D.new()
 		var mesh := BoxMesh.new(); mesh.size = Vector3(.12,1.4,.12)
@@ -104,12 +113,13 @@ func _near(id: String) -> bool:
 
 func use_endpoint(id: String, actor: CharacterBody3D) -> void:
 	if actor != player or not _near(id): return
+	if expanded != null and expanded.use_endpoint(id): return
 	if not active.is_empty():
 		var job: Dictionary = JOBS[active]
 		var stage: String = stages.get(active, "")
-		if id == "parcel" and job.kind == "delivery" and stage == "accepted":
+		if id == str(job.get("pickup","parcel")) and job.kind == "delivery" and stage == "accepted":
 			_clear_job_waypoint()
-			stages[active] = "carrying"; _message("Sealed cloth parcel collected. Deliver to the market receiver."); return
+			stages[active] = "carrying"; _message("Collected: " + job.title + ". " + objective(active)); return
 		if id == "work" and job.kind == "work" and stage == "accepted":
 			_clear_job_waypoint()
 			stages[active] = "worked"; _message("Stores sorted. Return to the market receiver for your wage."); return
@@ -125,8 +135,20 @@ func use_endpoint(id: String, actor: CharacterBody3D) -> void:
 		_message("Speak to the clerk or receiver and accept the job first."); return
 	open_panel(id)
 
+func current_job_day() -> int:
+	return int(floor(get_parent().get_node("GameTimeSystem").total_game_minutes/1440.0))+1
+
+func repeatable(id: String) -> bool:
+	return id in ["merchant_parcel","market_sort","port_delivery"]
+
+func job_available(id: String) -> bool:
+	if not JOBS.has(id): return false
+	if completed_days.has(id):
+		return repeatable(id) and current_job_day() > int(completed_days[id])
+	return stages.get(id, "") != "completed"
+
 func accept(id: String) -> bool:
-	if not JOBS.has(id) or not active.is_empty() or stages.get(id, "") == "completed": return false
+	if not active.is_empty() or not job_available(id): return false
 	var job: Dictionary = JOBS[id]
 	if source != "board" and source != job.offer: return false
 	if not _near(source): return false
@@ -136,7 +158,9 @@ func accept(id: String) -> bool:
 
 func _finish(id: String) -> void:
 	# The caller verifies real progress, receiver and range before payment.
+	if active != id or not job_available(id): return
 	_clear_job_waypoint()
+	completed_days[id] = current_job_day()
 	stages[id] = "completed"; active = ""
 	player.get_node("InventoryComponent").add_item("rupees",int(JOBS[id].pay))
 	if JOBS[id].kind == "aid": player.get_node("FameComponent").award_help()
@@ -145,29 +169,42 @@ func _finish(id: String) -> void:
 func cancel() -> void:
 	if active.is_empty(): return
 	_clear_job_waypoint()
+	if expanded != null: expanded.release_passenger()
 	stages.erase(active); active = ""
-	close_panel(); _message("Job cancelled. Employer's parcel returned; no wage paid.")
+	close_panel(); _message("Job cancelled. Entrusted goods returned; no wage paid.")
 
 func objective(id: String) -> String:
 	var job: Dictionary = JOBS[id]
+	if job.has("pickup"):
+		if job.kind == "escort": return "Stop a passenger cart beside the waiting brother." if stages.get(id,"") == "accepted" else "Drive the passenger home and stop to let him out."
+		return "Collect: " + str(job.title) if stages.get(id,"") == "accepted" else "Deliver: " + str(job.title)
 	if job.kind == "aid": return "Bring one roti to the traveller on the village road."
 	if job.kind == "delivery": return "Deliver the parcel to the market receiver." if stages.get(id, "") == "carrying" else "Collect the sealed cloth parcel inside the counting house."
 	return "Return to the market receiver for payment." if stages.get(id, "") == "worked" else "Hold the interaction at the sorting table for three seconds."
 
 func export_state() -> Dictionary:
-	return {"active":active, "stages":stages.duplicate(true)}
+	return {"active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true)}
 
 func restore_state(data: Dictionary) -> void:
-	stages.clear(); active = ""
+	if expanded != null: expanded.release_passenger()
+	toast_seconds = 0.0
+	if is_instance_valid(toast): toast.hide()
+	stages.clear(); completed_days.clear(); active = ""
 	var saved: Dictionary = data.get("stages",{}) if data.get("stages",{}) is Dictionary else {}
+	var paid: Dictionary = data.get("completed_days",{}) if data.get("completed_days",{}) is Dictionary else {}
 	for id in JOBS:
+		if paid.has(id) and (paid[id] is int or paid[id] is float) and is_finite(float(paid[id])) and float(paid[id]) >= 1:
+			completed_days[id] = int(paid[id])
 		var stage: String = str(saved.get(id,""))
-		if stage == "completed": stages[id] = stage
+		if stage == "completed":
+			stages[id] = stage
+			# Old saves lack dates: preserve their reward and unlock paid work tomorrow.
+			if not completed_days.has(id): completed_days[id] = current_job_day()
 	var requested: String = str(data.get("active",""))
-	if JOBS.has(requested) and not stages.has(requested):
+	if JOBS.has(requested) and not stages.has(requested) and job_available(requested):
 		var stage: String = str(saved.get(requested,""))
 		var kind: String = JOBS[requested].kind
-		if stage == "accepted" or (stage == "carrying" and kind == "delivery") or (stage == "worked" and kind == "work"):
+		if stage == "accepted" or (stage == "carrying" and kind in ["delivery","escort"]) or (stage == "worked" and kind == "work"):
 			active = requested; stages[active] = stage
 
 func _message(value: String) -> void:
@@ -233,6 +270,7 @@ func open_panel(id: String = "journal") -> void:
 	paper_body.text = "Paid errands and assistance\n\nSpeak to the counting house, market receiver or road traveller.\n\nAgreed wages are paid after the work is finished." if active.is_empty() else objective(active) + "\n\nAgreed wage: %d rupees" % int(JOBS[active].pay)
 	_line("WORK NOTICES" if id == "board" else ("ARJUN'S ERRANDS" if id == "journal" else "A REQUEST FOR HELP"))
 	_line("One errand at a time · Payment on completion")
+	_line("Merchant delivery and market work are available once each game day.")
 	if not active.is_empty():
 		_line(JOBS[active].description)
 		_line(JOBS[active].title + " — " + str(JOBS[active].pay) + " rupees")
@@ -243,8 +281,8 @@ func open_panel(id: String = "journal") -> void:
 		for job_id in JOBS:
 			var job: Dictionary = JOBS[job_id]
 			if id not in ["journal","board",job.offer]: continue
-			if stages.get(job_id, "") == "completed":
-				_line(job.title + " — Completed"); continue
+			if not job_available(job_id):
+				_line(job.title + (" — Paid today · Return tomorrow" if repeatable(job_id) else " — Completed")); continue
 			_line(job.description)
 			if id != "journal": _button("Accept · %d rupees" % int(job.pay), accept.bind(job_id))
 		if id == "journal": _line("Find work at the road traveller, counting house, market receiver or work notices near the market. J opens this journal.")
@@ -258,12 +296,14 @@ func open_panel(id: String = "journal") -> void:
 func next_endpoint() -> String:
 	if active.is_empty(): return ""
 	var job: Dictionary = JOBS[active]
+	if job.has("pickup") and stages[active] == "accepted": return str(job.pickup)
 	if job.kind == "delivery" and stages[active] == "accepted": return "parcel"
 	if job.kind == "work" and stages[active] == "worked": return "market"
 	return job.goal
 
 func tracked_objective() -> String:
 	if active.is_empty(): return ""
+	if JOBS[active].has("pickup"): return objective(active)
 	match next_endpoint():
 		"parcel": return "Collect the cloth parcel at the counting house"
 		"market": return "Deliver the cloth parcel to the market receiver" if JOBS[active].kind == "delivery" else "Collect your wage from the market receiver"
@@ -277,7 +317,8 @@ func destination() -> Dictionary:
 		var target: Interactable = targets[next]
 		if not target.interaction_available(): return {}
 		var labels := {"parcel":"Counting house · Cloth parcel", "market":"Market receiver", "work":"Market sorting table", "road":"Roadside traveller"}
-		return {"position":target.interaction_anchor()+Vector3.UP*.35, "label":labels.get(next,"Errand destination"), "endpoint":next}
+		var extra_height := 1.0 if target.get("person") != null else .35
+		return {"position":target.interaction_anchor()+Vector3.UP*extra_height, "label":labels.get(next,"Errand destination"), "endpoint":next}
 	if not active.is_empty(): return {}
 	var waypoint: Vector2 = player.get_node("UI/WorldMap").waypoint
 	if not waypoint.is_finite(): return {}

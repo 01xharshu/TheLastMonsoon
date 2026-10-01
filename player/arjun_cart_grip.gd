@@ -28,6 +28,6 @@ static func apply(visual: Node3D, vehicle: Node, side: String, contact: float) -
 		equipment._rotate_digit(finger + "_01_" + side, palm_frame.x, 1.05 * contact)
 		equipment._rotate_digit(finger + "_02_" + side, palm_frame.x, .95 * contact)
 		equipment._rotate_digit(finger + "_03_" + side, palm_frame.x, .58 * contact)
-	equipment._rotate_digit("thumb_01_" + side, palm_frame.y, (.55 if side == "l" else -.55) * contact)
-	equipment._rotate_digit("thumb_02_" + side, palm_frame.x, .65 * contact)
+	equipment._rotate_digit("thumb_01_" + side, palm_frame.y, (-.55 if side == "l" else .55) * contact)
+	equipment._rotate_digit("thumb_02_" + side, palm_frame.x, .85 * contact)
 	equipment._rotate_digit("thumb_03_" + side, palm_frame.x, .35 * contact)

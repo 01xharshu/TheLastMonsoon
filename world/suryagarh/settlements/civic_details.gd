@@ -20,13 +20,21 @@ static func furnish(b: Node3D) -> void:
 						b.piece(b,"ShutterLouvre",Vector3(side*(b.width*.5+.37),y+1.48+slat*.18,z+edge*.95),Vector3(.12,.09,.44),b.wood,false).rotation.z = side*.25
 		# Timber ceiling structure, joinery and board seams.
 		for z in range(-int(b.depth*.5)+2,int(b.depth*.5),4):
-			b.piece(b,"CeilingBeam",Vector3(0,y+5.02,z),Vector3(b.width-.5,.32,.22),b.wood,false)
+			# Ground-floor beams stop at the actual stair opening.
+			if level == 0 and absf(z) < 9.2:
+				var right: float = b.stair_x+2.0
+				var left: float = b.stair_x-2.0
+				b.piece(b,"CeilingBeam",Vector3((right+b.width*.5-.25)*.5,y+5.02,z),Vector3(b.width*.5-.25-right,.32,.22),b.wood,false)
+				b.piece(b,"CeilingBeam",Vector3((-b.width*.5+.25+left)*.5,y+5.02,z),Vector3(left+b.width*.5-.25,.32,.22),b.wood,false)
+			else:
+				b.piece(b,"CeilingBeam",Vector3(0,y+5.02,z),Vector3(b.width-.5,.32,.22),b.wood,false)
 		for row in 3:
 			if b.police and (level != 1 or row != 2): continue
 			var z: float = -6+row*5
 			for x in [-.4,6.4]:
 				b.piece(b,"TableTrestle",Vector3(x,y+.4,z),Vector3(.16,.75,1.3),b.wood)
 			for side in [-1,1]:
+				b.piece(b,"BenchStretcher",Vector3(3,y+.20,z+side*1.4),Vector3(6.8,.08,.08),b.wood,false)
 				for x in [-.4,6.4]:
 					b.piece(b,"BenchLeg",Vector3(x,y+.2,z+side*1.4),Vector3(.12,.4,.42),b.wood,false)
 			# Ledgers and folded paper on desks (no modern objects).
@@ -41,22 +49,38 @@ static func furnish(b: Node3D) -> void:
 				b.piece(b,"VisitorBenchLeg",Vector3(-6.5+dx,y+.27,z),Vector3(.12,.5,.55),b.wood,false)
 		b.piece(b,"HallRunner",Vector3(-1.8,y+.015,0),Vector3(2.0,.018,b.depth-6),b.ochre,false)
 		# Record shelves in the accessible rear office.
+		for end in [-1,1]:
+			b.piece(b,"RecordsShelfUpright",Vector3(b.width*.5-1,y+1.47,-b.depth*.5+3+end*2.14),Vector3(.8,2.94,.12),b.wood,false)
+		b.piece(b,"RecordsShelfBack",Vector3(b.width*.5-.62,y+1.47,-b.depth*.5+3),Vector3(.055,2.94,4.4),b.wood,false)
 		for shelf in 5:
 			b.piece(b,"RecordsShelf",Vector3(b.width*.5-1,y+.4+shelf*.52,-b.depth*.5+3),Vector3(.8,.07,4.4),b.wood)
 			for book in 8:
 				b.piece(b,"BoundRegister",Vector3(b.width*.5-1,y+.6+shelf*.52,-b.depth*.5+1.2+book*.45),Vector3(.52,.32,.17),b.wood,false)
 		for z in [-b.depth*.5+1,b.depth*.5-1]:
 			b.piece(b,"Skirting",Vector3(0,y+.14,z),Vector3(b.width-.8,.28,.12),b.wood,false)
-		# Hanging oil lamp: brass-like frame, glass chamber and warm local glow.
-		for x in [-5.0,8.0]:
-			b.piece(b,"LampChain",Vector3(x,y+4.5,0),Vector3(.025,.85,.025),b.iron,false)
-			b.piece(b,"LanternCap",Vector3(x,y+4.05,0),Vector3(.38,.10,.38),b.iron,false)
-			b.piece(b,"LanternBase",Vector3(x,y+3.62,0),Vector3(.32,.08,.32),b.iron,false)
-			for side in [-1,1]:
-				for end in [-1,1]:
-					b.piece(b,"LanternFrame",Vector3(x+side*.13,y+3.84,end*.13),Vector3(.035,.38,.035),b.iron,false)
 	# Balustrade ends and roof drains make the large silhouette legible.
+	# Boarding and rafters follow the existing roof pitch, below the tile skin.
 	for side in [-1,1]:
+		var lining: Node3D = b.piece(b,"RoofBoarding",Vector3(side*b.width*.25,11.04,0),Vector3(b.width*.5+1,.055,b.depth+2),b.wood,false)
+		lining.rotation.z = -side*.04
+		b.piece(b,"RoofWallPlate",Vector3(side*(b.width*.5-.25),10.64,0),Vector3(.18,.18,b.depth-.3),b.wood,false)
+		for z in range(-int(b.depth*.5)+2,int(b.depth*.5),4):
+			var rafter: Node3D = b.piece(b,"RoofRafter",Vector3(side*b.width*.25,10.95,z),Vector3(b.width*.5+.5,.13,.16),b.wood,false)
+			rafter.rotation.z = -side*.04
+	for side in [-1,1]:
+		# Separate coping stones leave narrow joints along the parapet crown.
+		var coping_count: int = int(ceil((b.depth+2)/2.0))
+		var coping_length: float = (b.depth+2)/coping_count
+		for block in coping_count:
+			b.piece(b,"ParapetCopingStone",Vector3(side*b.width*.5,11.72,-(b.depth+2)*.5+(block+.5)*coping_length),Vector3(.65,.14,coping_length-.018),b.stone,false)
+		# The rain pipe ends above a stone splash block, away from the entry.
+		var drain_x: float = side*(b.width*.5+.88)
+		var drain_z: float = -b.depth*.5+.5
+		var drain_grade: float = b.layout.height(b.position.x+drain_x,b.position.z+drain_z)-b.position.y
+		b.piece(b,"DrainSplashBlock",Vector3(drain_x,drain_grade+.035,drain_z),Vector3(.78,.07,.58),b.stone,false)
+		b.piece(b,"DrainOutlet",Vector3(side*(b.width*.5+.65),drain_grade+.16,drain_z),Vector3(.69,.15,.15),b.iron,false)
+		if drain_grade+.16 < 0:
+			b.piece(b,"DrainPipeExtension",Vector3(side*(b.width*.5+.38),(drain_grade+.16)*.5,drain_z),Vector3(.15,-drain_grade-.16,.15),b.iron,false)
 		b.piece(b,"BalconyEndRail",Vector3(side*b.width*.5,b.floor_y+.6,b.depth*.5+1.6),Vector3(.3,1.2,3.5),b.plaster)
 		b.piece(b,"Downpipe",Vector3(side*(b.width*.5+.38),5.2,-b.depth*.5+.5),Vector3(.15,10.4,.15),b.iron,false)
 		for y in [1.0,4.0,7.0,10.0]:

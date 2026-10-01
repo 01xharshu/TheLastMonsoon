@@ -6,6 +6,7 @@ func check(value: bool,message: String) -> void:
 		failed = true
 		push_error(message)
 func run() -> void:
+	if DisplayServer.get_name() != "headless": root.size = Vector2i(1280,720)
 	var world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
@@ -67,6 +68,11 @@ func run() -> void:
 			for i in 4: await process_frame
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://docs/world/captures/realism_"+building.name+"_interior.png")
+			camera.position = building.to_global(Vector3(-5,building.floor_y+2.1,9))
+			camera.look_at(building.to_global(Vector3(4,building.floor_y+3.8,-5)))
+			for i in 4: await process_frame
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png("res://docs/world/captures/realism_"+building.name+"_upper.png")
 			camera.queue_free()
 	var gear = player.get_node("VisualRoot/CharacterVisual").equipment
 	check(gear.owns(3) and gear.owns(4),"Revolver and knife were not unlocked by pickups")

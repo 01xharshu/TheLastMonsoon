@@ -68,6 +68,13 @@ func _run() -> void:
 		if not reached:
 			for index in actor.get_slide_collision_count(): print("GUIDANCE ROUTE BLOCKER ",actor.get_slide_collision(index).get_collider().get_path())
 		if not _expect(reached,"Normal-speed controller route to " + str(stop) + " stopped at " + str(actor.global_position)): return
+	# Look toward the person and approach, as the player would after following the pin.
+	for frame in 32:
+		var toward := Vector2(road.x,road.z)-Vector2(actor.global_position.x,actor.global_position.z)
+		actor.get_node("CameraPivot").global_rotation.y = atan2(-toward.x,-toward.y)
+		Input.action_press("move_forward")
+		await physics_frame
+	Input.action_release("move_forward")
 	for frame in 12: await physics_frame
 	marker.refresh()
 	if not _expect(marker.arrived and marker.distance_m <= 2.6,"Walked into destination interaction range"): return

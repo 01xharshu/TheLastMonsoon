@@ -9,6 +9,7 @@ var failures := 0
 var previous_position := Vector3.ZERO
 var previous_step := -1
 var previous_phase := 0.0
+var sampled_progress := 0.0
 var max_wait_travel := 0.0
 var max_hold_travel := 0.0
 var max_palm_gap := 0.0
@@ -23,6 +24,11 @@ var ticks := 0
 var reported_steps: Array[int] = []
 var capture_sequence := false
 var close_camera := false
+var hang_seconds := 0.0
+var checked_hang := false
+var hang_position := Vector3.ZERO
+var recorded_frames := 0
+var captured_controls := false
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -95,9 +101,92 @@ func _run() -> void:
 		get_window().mode = Window.MODE_WINDOWED
 		DisplayServer.window_set_size(Vector2i(960,540))
 	get_viewport().scaling_3d_scale = .65
-	if not climb.try_start():
+	_check(not climb.try_start(),"standing jump press cannot start tall ascent")
+	wall.set_meta("climb_blocked",true)
+	climb.arm_jump()
+	actor.global_position.y += .4
+	_check(not climb.try_start(),"protected wall rejects jump catch")
+	wall.set_meta("climb_blocked",false)
+	wall.set_meta("climb_hold_base_y",3.4)
+	_check(not climb.try_start(),"first hold above reach rejects catch")
+	wall.set_meta("climb_hold_base_y",.42)
+	wall.remove_meta("climb_hold_base_y")
+	_check(not climb.try_start(),"smooth tall wall rejects catch")
+	wall.set_meta("climb_hold_base_y",.42)
+	actor.global_position.z = 1.0
+	_check(not climb.try_start(),"blank wall beside hold strip rejects catch")
+	actor.global_position.z = 0.0
+	actor.global_position.x = -1.10
+	_check(not climb.try_start(),"wall outside jump catch distance rejects catch")
+	actor.global_position = Vector3(-.85,.95,0)
+	capture_sequence = OS.get_cmdline_user_args().has("--capture-sequence")
+	if capture_sequence:
+		climb.set_physics_process(false)
+		DirAccess.make_dir_recursive_absolute("/tmp/tlm_step_climb_frames")
+	climb.arm_jump()
+	# The body follows a real ballistic jump before the wall catch is queried.
+	for tick in 15:
+		actor.velocity = Vector3(0,-1,0)
+		actor.move_and_slide()
+		await get_tree().physics_frame
+		if actor.is_on_floor(): break
+	await get_tree().process_frame
+	Input.action_press("jump")
+	print("JUMP INPUT floor=",actor.is_on_floor()," pressed=",Input.is_action_just_pressed("jump")," swimming=",actor.is_swimming," y=",actor.global_position.y)
+	actor._handle_jump()
+	Input.action_release("jump")
+	_check(actor.velocity.y == actor.jump_velocity,"jump input produces physical takeoff")
+	var jump_delta: float = 1.0/30.0 if capture_sequence else 1.0/60.0
+	for tick in 30:
+		actor.velocity.y -= actor.gravity*jump_delta
+		var jump_destination := actor.global_position+actor.velocity*jump_delta
+		# Refresh floor state, then reconcile travel to the render fixture timestep.
+		actor.move_and_slide()
+		actor.move_and_collide(jump_destination-actor.global_position)
+		if capture_sequence:
+			climb._physics_process(jump_delta)
+			visual._process(jump_delta)
+			camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
+			camera.look_at(actor.global_position+Vector3.UP*.15)
+			await get_tree().process_frame
+			RenderingServer.force_draw(false)
+			var pixels := get_viewport().get_texture().get_image()
+			pixels.resize(960,540)
+			pixels.save_png("/tmp/tlm_step_climb_frames/frame_%04d.png"%recorded_frames)
+			recorded_frames += 1
+		else:
+			await get_tree().physics_frame
+		if climb.active: break
+	if not climb.active:
 		push_error("STEP CLIMB: could not start")
 		get_tree().quit(1)
+		return
+	if OS.get_cmdline_user_args().has("--release-check") or OS.get_cmdline_user_args().has("--exhaustion-check"):
+		climb.set_physics_process(false)
+		for tick in 60: climb._physics_process(1.0/60.0)
+		var original_shape: Shape3D = climb.solid.original_shape
+		await get_tree().process_frame
+		Input.action_press("jump")
+		climb._physics_process(1.0/60.0)
+		Input.action_release("jump")
+		_check(not climb.waiting_for_move and climb.move_limit == .20,"second jump press requests supported pull")
+		for tick in 60: climb._physics_process(1.0/60.0)
+		var exhausted := OS.get_cmdline_user_args().has("--exhaustion-check")
+		if exhausted:
+			actor.survival.stamina = 0.0
+		else:
+			Input.action_press("move_backward")
+		climb._physics_process(1.0/60.0)
+		Input.action_release("move_backward")
+		for tick in 60:
+			climb._physics_process(1.0/60.0)
+			if not climb.active: break
+		_check(not climb.active,"exhaustion releases wall grip" if exhausted else "backward input releases wall grip")
+		_check(actor.get_node("CollisionShape3D").shape == original_shape,"release restores full body collision")
+		_check(actor.collision_mask == climb.saved_mask,"release keeps wall collision enabled")
+		_check(actor.velocity.y < 0.0,"release returns to falling")
+		print("JUMP RELEASE ","PASS" if failures == 0 else "FAIL")
+		get_tree().quit(1 if failures else 0)
 		return
 	previous_position = actor.global_position
 	started = true
@@ -111,8 +200,9 @@ func _run() -> void:
 func _record_sequence() -> void:
 	var folder := "/tmp/tlm_step_climb_frames"
 	DirAccess.make_dir_recursive_absolute(folder)
-	var frame := 0
-	while climb.active and frame < 600:
+	var frame := recorded_frames
+	while climb.active and frame < 950:
+		_drive_moves(1.0/30.0)
 		climb._physics_process(1.0/30.0)
 		visual._process(1.0/30.0)
 		camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
@@ -122,6 +212,14 @@ func _record_sequence() -> void:
 		var pixels := get_viewport().get_texture().get_image()
 		pixels.resize(960,540)
 		pixels.save_png(folder+"/frame_%04d.png"%frame)
+		if climb.waiting_for_move and not captured_controls:
+			captured_controls = true
+			actor.get_node("UI").show()
+			await get_tree().process_frame
+			await get_tree().process_frame
+			RenderingServer.force_draw(false)
+			get_viewport().get_texture().get_image().save_png("/tmp/tlm_jump_controls.png")
+			actor.get_node("UI").hide()
 		if frame in [120,240,360]:
 			for side in ["l","r"]:
 				var wrist_index: int = visual.skeleton.find_bone("hand_"+side)
@@ -151,7 +249,9 @@ func _record_sequence() -> void:
 func _process(delta: float) -> void:
 	if not started or finished: return
 	# Sample the final pose, after the tree and contact solve for this frame.
-	if not capture_sequence: visual._process(delta)
+	if not capture_sequence:
+		_drive_moves(delta)
+		visual._process(delta)
 	collision_disabled = collision_disabled or actor.collision_mask != climb.saved_mask
 	var query := PhysicsShapeQueryParameters3D.new()
 	var collider: CollisionShape3D = actor.get_node("CollisionShape3D")
@@ -164,8 +264,8 @@ func _process(delta: float) -> void:
 		camera.global_position = actor.global_position+Vector3(-3.5,1.1,3.2)
 		camera.look_at(actor.global_position+Vector3.UP*.15)
 	ticks += 1
-	if climb.progress >= .14 and climb.progress < .78:
-		if previous_step == climb.step_index:
+	if climb.progress >= .20 and climb.progress < .78:
+		if previous_step == climb.step_index and sampled_progress >= .20:
 			if climb.step_phase < .48 and previous_phase < .48:
 				max_wait_travel = maxf(max_wait_travel,actor.global_position.distance_to(previous_position))
 			if climb.step_phase > .53 and previous_phase > .53:
@@ -193,6 +293,7 @@ func _process(delta: float) -> void:
 	previous_position = actor.global_position
 	previous_step = climb.step_index
 	previous_phase = climb.step_phase
+	sampled_progress = climb.progress
 	if not climb.active or (not capture_sequence and ticks > 3000):
 		finished = true
 		_check(not climb.active,"completed and restored movement")
@@ -210,3 +311,19 @@ func _process(delta: float) -> void:
 func _check(ok: bool, label: String) -> void:
 	print("PASS " if ok else "FAIL ",label)
 	if not ok: failures += 1
+
+func _drive_moves(delta: float) -> void:
+	if not climb.waiting_for_move:
+		hang_seconds = 0.0
+		hang_position = actor.global_position
+		return
+	if hang_seconds == 0.0: hang_position = actor.global_position
+	hang_seconds += delta
+	if not checked_hang and hang_seconds >= .35:
+		_check(actor.global_position.distance_to(hang_position)<.002,"catch hangs without automatic ascent")
+		var saved_rows: Array = climb.route_missing_rows
+		climb.route_missing_rows = [climb.first_hand_row+1]
+		_check(not climb.request_move(),"missing next hold blocks advance")
+		climb.route_missing_rows = saved_rows
+		checked_hang = true
+	if hang_seconds >= .40: climb.request_move()

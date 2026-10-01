@@ -15,6 +15,7 @@ var clock: GameTimeSystem
 var motion: Tween
 var leaf_pivots: Array[Node3D] = []
 var leaf_shapes: Array[CollisionShape3D] = []
+var swing_direction := 1.0
 var swing := 1.0:
 	set(value):
 		swing = value
@@ -56,7 +57,7 @@ func build(material: Material) -> void:
 				_visual(pivot,"StrapRivet",Vector3(-side*(.08+rivet*leaf_width*.17),y,.08),Vector3(.024,.024,.016),iron)
 		var brace := _visual(pivot,"InnerDiagonalBrace",Vector3(-side*leaf_width*.5,height*.47,-.084),Vector3(sqrt(pow(leaf_width*.80,2)+pow(height*.52,2)),.10,.045),timber)
 		brace.rotation.z = side*atan2(height*.52,leaf_width*.80)
-		_visual(pivot,"LatchPlate",Vector3(-side*(leaf_width-.12),height*.52,.075),Vector3(.13,.24,.025),iron)
+		_visual(pivot,"LatchPlate",Vector3(-side*(leaf_width-.12),minf(height*.52,1.25),.075),Vector3(.13,.24,.025),iron)
 		# A rounded iron pull, rather than a painted mark on the leaf.
 		var pull := MeshInstance3D.new()
 		pull.name = "IronPullRing"
@@ -68,8 +69,12 @@ func build(material: Material) -> void:
 		pull.mesh = ring
 		pull.material_override = iron
 		pull.rotation.x = PI*.5
-		pull.position = Vector3(-side*(leaf_width-.12),height*.50,.115)
+		pull.position = Vector3(-side*(leaf_width-.12),minf(height*.50,1.22),.115)
 		pivot.add_child(pull)
+		var inner_pull := pull.duplicate() as MeshInstance3D
+		inner_pull.name="InteriorPullRing"
+		inner_pull.position.z=-.145
+		pivot.add_child(inner_pull)
 		var collision := CollisionShape3D.new()
 		collision.name = "LeftLeafCollision" if side < 0 else "RightLeafCollision"
 		var shape := BoxShape3D.new()
@@ -77,7 +82,7 @@ func build(material: Material) -> void:
 		collision.shape = shape
 		add_child(collision)
 		leaf_shapes.append(collision)
-		_visual(pivot,"InteriorLatchBar",Vector3(-side*(leaf_width-.18),height*.52,-.11),Vector3(.34,.07,.05),iron)
+		_visual(pivot,"InteriorLatchBar",Vector3(-side*(leaf_width-.18),minf(height*.52,1.25),-.11),Vector3(.34,.07,.05),iron)
 	rotation.y = 0
 	swing = 1.0 if opened else 0.0
 	last_safe_swing = swing
@@ -96,14 +101,14 @@ func _visual(parent: Node3D,label: String,at: Vector3,size: Vector3,material: Ma
 
 func _leaf_transform(index: int,amount: float) -> Transform3D:
 	var side := -1.0 if index == 0 else 1.0
-	var basis := Basis(Vector3.UP,side*amount*PI*.5)
+	var basis := Basis(Vector3.UP,side*amount*PI*.5*swing_direction)
 	var hinge := Vector3(side*width*.5,0,0)
 	return Transform3D(basis,hinge+basis*Vector3(-side*width*.25,height*.5,0))
 
 func _apply_swing() -> void:
 	for i in leaf_pivots.size():
 		var side := -1.0 if i == 0 else 1.0
-		leaf_pivots[i].rotation.y = side*swing*PI*.5
+		leaf_pivots[i].rotation.y = side*swing*PI*.5*swing_direction
 		leaf_shapes[i].transform = _leaf_transform(i,swing)
 
 func _ready() -> void:
@@ -153,7 +158,22 @@ func interact(player: CharacterBody3D) -> void:
 	if moving: return
 	var inside: bool = get_parent().to_local(player.global_position).z < position.z
 	if (locked or inside_only) and not inside: return
-	set_open(not opened)
+	var action = player.get_node_or_null("DoorLatchAction")
+	if action == null:
+		action=preload("res://player/door_latch_action.gd").new()
+		action.name="DoorLatchAction"
+		player.add_child(action)
+	action.begin(self)
+
+func nearest_pull(at: Vector3) -> Node3D:
+	var nearest: Node3D
+	var distance := INF
+	for pivot in leaf_pivots:
+		for label in ["IronPullRing","InteriorPullRing"]:
+			var pull = pivot.get_node(label)
+			var gap: float = pull.global_position.distance_to(at)
+			if gap < distance: nearest=pull; distance=gap
+	return nearest
 
 func set_open(value: bool) -> void:
 	if moving or (value == opened and is_equal_approx(swing,1.0 if value else 0.0)): return

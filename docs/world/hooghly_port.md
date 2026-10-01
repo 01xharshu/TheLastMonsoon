@@ -42,3 +42,13 @@ The requested playable port and explorable moored ship are implemented and propo
 Full-world startup still reports unrelated `arjun_house.gd:23` child access and FortCook/FortSteward missing skeleton diagnostics, plus some household journey warnings. They did not prevent port validation/capture completion and were not edited by this task. Preserve concurrent character/village/horse changes.
 
 Next action: owner normal-speed playthrough at Hooghly Reach Port (reachable downstream or through the F4 review point), reviewing third-person camera clearance and desired art detail. The earlier river fish/AAA realism art review remains independently open in the river refinement work.
+
+## Interior and exterior realism pass — IN_PROGRESS
+
+Updated 2026-10-01 IST/root. Objective: replace flat ship/port surfaces with textured and weathered materials; add construction and lived-in interior detail while retaining verified passages. Files: `world/suryagarh/hooghly_port.gd`, new ship surface shader. Next: implement, inspect native exterior/deck/hold/cabin views and rerun actual-controller routes.
+
+Material/detail milestone: live ship meshes now use UV-independent timber grain, varied surface roughness, mottled aged copper, painted timber wear and canvas texture. Quay/warehouse surfaces use the same material family. Cabin panel rails/stiles, berth drawers/blanket, shelf books, table drawer/inkstand, hold ribs/knees/straps and framed glowing lanterns added in `hooghly_port.gd`. Added details are decorative and stay outside verified aisles. Native captures running: `/tmp/tlm_port_realism_{ship,deck,hold,cabin}.log`. Next: inspect pixels, correct any material issues and rerun controller validation.
+
+First renderer review: timber texture was overly red and micro-normal mapping caused distant sparkle. Corrected to luminance-driven grain using per-surface timber tint, aligned deck grain lengthwise and removed incorrectly oriented tangent normal sampling. Actual-controller full rerun PASS (40 routes, 105 channel samples, swim containment and shore return). Next: refresh final Metal views with corrected shader.
+
+Hold renderer correction: the replacement shader initially culled inside faces of the authored hull. Enabled two-sided rendering to retain the sealed visible interior. Final capture rerun required for this correction.

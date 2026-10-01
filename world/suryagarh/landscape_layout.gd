@@ -18,6 +18,8 @@ const SPAWN: Vector2 = Vector2(-230.0, 180.0)
 ## Surveyed plot centres and footprint half-extents. Keep building placement, grading,
 ## nature clearance and the map tied to these coordinates as the world grows.
 const PLOTS: Dictionary = {
+	"CivilLines": {"center": Vector2(680,245), "half": Vector2(95,65), "grade": 10.0},
+	"CantonmentBazaar": {"center": Vector2(640,470), "half": Vector2(45,48), "grade": 8.5},
 	"AdministrativeDistrict": {"center": Vector2(520,120), "half": Vector2(75,60), "grade": 10.0},
 	"BritishCantonment": {"center": Vector2(500,470), "half": Vector2(70,60), "grade": 8.5},
 	"Bhairavpur": {"center": Vector2(-332, 232), "half": Vector2(104, 88), "grade": 7.2},
@@ -32,6 +34,10 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"civil_lines_avenue": [Vector2(520,175),Vector2(580,175),Vector2(580,285),Vector2(680,285),Vector2(755,285)],
+	"collector_bungalow_drive": [Vector2(640,285),Vector2(640,248)],
+	"officer_bungalow_drive": [Vector2(720,285),Vector2(720,246)],
+	"cantonment_bazaar_lane": [Vector2(560,470),Vector2(640,470),Vector2(680,470),Vector2(680,506)],
 	"administrative_approach": [Vector2(425,150),Vector2(425,175),Vector2(520,175),Vector2(520,160)],
 	"cantonment_approach": [Vector2(320,150),Vector2(425,150),Vector2(425,380),Vector2(560,410),Vector2(560,470),Vector2(500,470)],
 	"village_spine": [Vector2(-422,230), Vector2(-301,230), Vector2(-297,225), Vector2(-281,225), Vector2(-276,230), Vector2(-250,230), Vector2(-250,210), Vector2(-230,180)],
@@ -57,6 +63,10 @@ const SITES: Dictionary = {
 	"District Treasury": Vector2(477,132),
 	"British Courthouse": Vector2(559,130),
 	"British Cantonment": Vector2(500,470),
+	"Civil Lines": Vector2(680,245),
+	"Collector Bungalow": Vector2(640,235),
+	"Officer Bungalow": Vector2(720,235),
+	"Cantonment Bazaar": Vector2(640,470),
 	"Bhairavpur village": Vector2(-310, 230),
 	"Agricultural plains": Vector2(-540, -90),
 	"River approach": Vector2(0, 165),
@@ -148,6 +158,13 @@ func height(x: float, z: float) -> float:
 				nearest = d
 				target = lerpf(base_height(a.x,a.y),base_height(b.x,b.y),t)
 		h = lerpf(h,target,1.0-smoothstep(3.0,9.0,nearest))
+	# Surveyed residential avenue cuts through the ridge at the office grade.
+	# Market access meets the military terrace without a step in the saved terrain.
+	for id in ["civil_lines_avenue","collector_bungalow_drive","officer_bungalow_drive","cantonment_bazaar_lane"]:
+		var lane: Array = ROUTES[id]
+		var lane_distance := INF
+		for i in range(lane.size()-1): lane_distance = minf(lane_distance,segment_distance(Vector2(x,z),lane[i],lane[i+1]))
+		h = lerpf(h,8.5 if id == "cantonment_bazaar_lane" else 10.0,1.0-smoothstep(3.0,9.0,lane_distance))
 	return h
 
 func base_height(x: float, z: float) -> float:

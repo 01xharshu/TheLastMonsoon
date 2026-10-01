@@ -1,6 +1,7 @@
 extends RefCounted
 ## Fictional fortified district command residence on the existing surveyed estate.
 func build(b) -> void:
+	b.brick = preload("res://world/suryagarh/settlements/military_detail.gd").surface(Color(.42,.27,.20),1)
 	b.add_to_group("occupied_command_fort")
 	b.set_meta("story_role","British district commander residence and rule-making court")
 	for x in [-88.0,88.0]:
@@ -49,6 +50,45 @@ func build(b) -> void:
 		door.build(b.wood)
 		room.add_child(door)
 		details.furnish(b,room,i)
+	var armoury := Node3D.new()
+	armoury.name = "FortArmoury"
+	armoury.position = Vector3(69,.18,-40)
+	b.add_child(armoury)
+	armoury.add_to_group("fort_armoury")
+	var armoury_details := preload("res://world/suryagarh/settlements/fort_service_detail.gd").new()
+	armoury_details.configure()
+	armoury_details.shell(b,armoury)
+	preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(b,armoury,Vector3(0,0,-4),"fort_armoury/ammunition")
+	for x in [-6.0,6.0]:
+		b.piece(armoury,"WeaponRackBase",Vector3(x,.5,-4),Vector3(2.8,.18,.8),b.wood)
+		b.piece(armoury,"WeaponRackRail",Vector3(x,1.55,-4),Vector3(2.8,.12,.12),b.wood)
+		for offset in [-1.2,1.2]:
+			b.piece(armoury,"RackPost",Vector3(x+offset,1,-4),Vector3(.12,1.5,.12),b.wood)
+		for offset in [-.8,0.0,.8]:
+			var musket: Node3D = preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate()
+			armoury.add_child(musket)
+			musket.basis = Basis(Vector3.FORWARD,-PI/2)*Basis(Vector3.RIGHT,PI/2)
+			musket.scale = Vector3.ONE * b.stored_weapon_scale("enfield")
+			var bounds: AABB = b.weapon_bounds(musket,armoury)
+			musket.position += Vector3(x+offset-bounds.get_center().x,.6-bounds.position.y,-3.95-bounds.get_center().z)
+	for x in [-25.0,25.0]:
+		var cannon := StaticBody3D.new()
+		cannon.name = "FortCannonWest" if x < 0 else "FortCannonEast"
+		cannon.position = Vector3(signf(x)*69,.08,45)
+		cannon.rotation.y = -signf(x)*PI/2
+		b.box("GunEmplacement",Vector3(signf(x)*69,.02,45),Vector3(7,.04,7),b.stone)
+		b.add_child(cannon)
+		cannon.add_to_group("fort_cannons")
+		cannon.add_child(preload("res://environment/props/new_assets/wooden_gun_carriage_v1.glb").instantiate())
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(4.5,1.45,4.7)
+		var collision := CollisionShape3D.new()
+		collision.shape = shape
+		collision.position.y = .73
+		cannon.add_child(collision)
+	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/storage/crate.tscn",Vector3(-7,.24,3))
+	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/storage/barrel.tscn",Vector3(7,.24,3))
+	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/supplies/record_folio.tscn",Vector3(.6,.85,-4))
 	var main_details := preload("res://world/suryagarh/settlements/fort_service_detail.gd").new()
 	main_details.configure()
 	main_details.command_rooms(b)
@@ -82,3 +122,13 @@ func staff(b) -> void:
 	commander.add_to_group("fort_staff")
 	commander.add_child(preload("res://characters/npcs/british/official_man.glb").instantiate())
 	b.add_child(commander)
+
+	for x in [-8.0,8.0]:
+		var guard := preload("res://characters/npcs/british/british_npc_actor.gd").new()
+		guard.name = "FortGateGuardWest" if x < 0 else "FortGateGuardEast"
+		guard.position = Vector3(x,.04,87)
+		guard.movement_enabled = false
+		guard.set_meta("visual_status","candidate_unapproved")
+		guard.add_to_group("fort_guards")
+		guard.add_child(preload("res://characters/npcs/british/private_man.glb").instantiate())
+		b.add_child(guard)

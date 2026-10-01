@@ -46,3 +46,6 @@ Normal-speed evidence: `tools/horses/capture_cart_death.tscn` / `.gd`, `captures
 
 ## Village environment continuation — 2026-10-01
 Nine terrain-following earth road/approach strips and two scheduled home–market residents are now integrated. Full corridor clearance (645 samples), market/home cycles and night return PASS in the native renderer. Fresh market/walker pixels inspected. These are initial candidate residents, not a finished populated village. Original cow source/rig imported and reviewed; hoof gaps corrected, overall anatomy/art still inadequate and placement remains open. Details, evidence and exact next work: [village streets and cow candidate](village_streets_2026-10-01.md).
+
+## Household cattle and walker refinement continuation
+Private street resident wraps/shoes now replace the earlier fit; fixed-step native motion inspected and all corridor/daily-route checks still PASS. Original cow anatomy refined and household-linked shelter integrated; usable fodder/water care and save-file restoration PASS. Cow/caretaker/feeding/contact art remains open. [Household cattle evidence and next work](household_cattle_2026-10-01.md). Prior statements that the cow is unplaced describe the earlier milestone.

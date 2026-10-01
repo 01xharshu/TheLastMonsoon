@@ -15,8 +15,9 @@ func _ready() -> void:
 		_lane(label,Layout.ROUTES[label],width,1.0)
 	_lane("HomeMarketFootApproach",[HOME_MARKET[0],HOME_MARKET[1],HOME_MARKET[2]],1.6,.0)
 	_lane("NorthernHouseFootApproach",[HOME_GRAIN[0],HOME_GRAIN[1]],1.6,.0)
-	_resident("ClothMarketVisitor","res://characters/npcs/households/merchant.glb",HOME_MARKET,0.0)
-	_resident("GrainStoreBuyer","res://characters/npcs/households/landowner.glb",HOME_GRAIN,3.0)
+	_resident("ClothMarketVisitor","res://characters/npcs/street_residents/merchant.glb",HOME_MARKET,0.0)
+	_resident("GrainStoreBuyer","res://characters/npcs/street_residents/landowner.glb",HOME_GRAIN,3.0)
+	add_child(preload("res://world/suryagarh/settlements/household_cattle.gd").new())
 
 func _resident(label:String,path:String,route:Array[Vector2],delay:float) -> void:
 	var actor:=Actor.new();actor.name=label

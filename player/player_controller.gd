@@ -295,6 +295,9 @@ func _unhandled_input(
 func _physics_process(
 	delta: float
 ) -> void:
+	if get_meta("door_latch_active",false):
+		survival.set_sprinting(false)
+		return
 	if get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
@@ -729,6 +732,7 @@ func _handle_jump() -> void:
 		velocity.y = (
 			jump_velocity
 		)
+		$ClimbComponent.arm_jump()
 		ControllerFeedback.pulse("jump")
 
 

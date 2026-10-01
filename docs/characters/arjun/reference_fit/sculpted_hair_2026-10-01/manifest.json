@@ -1,0 +1,9 @@
+{
+  "status": "VISUAL_MATCH_FAILED",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend",
+  "locks": 480,
+  "exact_match": false,
+  "runtime_replaced": false,
+  "review": "All four views inspected; loose loops removed, crown fuller, but solid helmet form and repeated ridges remain unlike owner tousled waves."
+}

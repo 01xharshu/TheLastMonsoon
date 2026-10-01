@@ -9,19 +9,19 @@ const DECK_Y := 3.32
 var ship: Node3D
 var boundary: StaticBody3D
 var hint_cooldown := 0.0
-var wood: StandardMaterial3D
-var stone: StandardMaterial3D
-var plaster: StandardMaterial3D
-var roof_tile: StandardMaterial3D
+var wood: Material
+var stone: Material
+var plaster: Material
+var roof_tile: Material
 var iron: StandardMaterial3D
 var rope_material: StandardMaterial3D
 
 func _ready() -> void:
 	add_to_group("hooghly_port")
-	wood = material(Color(0.30,0.23,0.14))
-	stone = material(Color(0.40,0.37,0.30))
-	plaster = material(Color(0.66,0.59,0.44))
-	roof_tile = material(Color(0.38,0.23,0.14))
+	wood = aged_surface(Color(0.43,0.34,0.23),0.0)
+	stone = aged_surface(Color(0.40,0.37,0.30),4.0)
+	plaster = aged_surface(Color(0.66,0.59,0.44),4.0)
+	roof_tile = aged_surface(Color(0.38,0.23,0.14),4.0)
 	iron = material(Color(0.09,0.10,0.09))
 	rope_material = material(Color(0.25,0.22,0.15))
 	build_quay()
@@ -212,6 +212,8 @@ func build_ship() -> void:
 	var visual: Node3D = SHIP.instantiate()
 	visual.name = "ShipVisual"
 	ship.add_child(visual)
+	refine_ship_surfaces(visual)
+	build_ship_detail()
 	# Use the real authored deck/stairs/walls, with the companionway opening intact.
 	for child in visual.find_children("*","MeshInstance3D",true,false):
 		var mesh: MeshInstance3D = child
@@ -244,6 +246,15 @@ func build_ship() -> void:
 func interior_lamp(parent: Node3D, at: Vector3, reach: float) -> void:
 	piece(parent,"LanternTop",at+Vector3(0,0.16,0),Vector3(0.24,0.06,0.24),iron,false)
 	piece(parent,"LanternBase",at-Vector3(0,0.16,0),Vector3(0.24,0.06,0.24),iron,false)
+	for x in [-0.095,0.095]:
+		for z in [-0.095,0.095]:
+			piece(parent,"LanternFrame",at+Vector3(x,0,z),Vector3(0.018,0.30,0.018),iron,false)
+	beam(parent,"LanternHanger",at+Vector3(0,0.18,0),at+Vector3(0,0.45,0),0.015,iron)
+	var flame := material(Color(1.0,0.60,0.18))
+	flame.emission_enabled = true
+	flame.emission = Color(1.0,0.40,0.08)
+	flame.emission_energy_multiplier = 1.8
+	piece(parent,"LanternWickGlow",at,Vector3(0.045,0.10,0.045),flame,false)
 	var glow := OmniLight3D.new()
 	glow.position = at
 	glow.light_color = Color(1.0,0.69,0.35)
@@ -280,3 +291,62 @@ func _physics_process(delta: float) -> void:
 	if hint_cooldown<=0.0 and player.is_swimming and player.position.z>Layout.SEA_LIMIT_Z-2.0 and Input.is_action_pressed("move_forward"):
 		player.inventory.request_message("The open sea lies beyond this reach")
 		hint_cooldown = 5.0
+
+func aged_surface(color: Color, kind: float) -> ShaderMaterial:
+	var value := ShaderMaterial.new()
+	value.shader = preload("res://world/suryagarh/shaders/merchant_surface.gdshader")
+	value.set_shader_parameter("timber",preload("res://assets/architecture/materials/dark_wood_Diffuse.jpg"))
+	value.set_shader_parameter("tint",color)
+	value.set_shader_parameter("surface_kind",kind)
+	return value
+
+func refine_ship_surfaces(visual: Node3D) -> void:
+	var palette := {
+		"WeatherDeck":[Color(0.53,0.43,0.29),0.0],
+		"OakSpars":[Color(0.40,0.28,0.15),0.0],
+		"CargoWood":[Color(0.38,0.28,0.17),0.0],
+		"TarredHull":[Color(0.055,0.061,0.055),0.0],
+		"CopperSheathing":[Color(0.34,0.22,0.11),1.0],
+		"IvoryRail":[Color(0.73,0.68,0.54),3.0],
+		"SternOchre":[Color(0.46,0.31,0.12),3.0],
+		"FurledCanvas":[Color(0.66,0.60,0.46),2.0]}
+	for child in visual.find_children("*","MeshInstance3D",true,false):
+		for key in palette:
+			if key in child.name:
+				child.material_override = aged_surface(palette[key][0],palette[key][1])
+				break
+
+func build_ship_detail() -> void:
+	var dark_oak := aged_surface(Color(0.26,0.16,0.08),0.0)
+	var cloth := aged_surface(Color(0.24,0.28,0.25),2.0)
+	var brass := material(Color(0.49,0.35,0.13))
+	brass.metallic = 0.7
+	brass.roughness = 0.38
+	# Panelling and mouldings sit against existing walls, clear of the doorway.
+	for side in [-1,1]:
+		for z in range(16,24):
+			piece(ship,"CabinPanelStile",Vector3(side*3.65,4.05,z),Vector3(0.05,1.35,0.055),dark_oak,false)
+		for y in [3.45,4.65,5.72]:
+			piece(ship,"CabinPanelRail",Vector3(side*3.64,y,19.4),Vector3(0.065,0.07,8.5),dark_oak,false)
+		for z in range(-17,18,2):
+			# Side ribs end at the ceiling and do not enter the walking aisles.
+			piece(ship,"HoldFrameRib",Vector3(side*3.48,0.95,z),Vector3(0.12,3.85,0.14),dark_oak,false)
+	# Berth blanket and foot rail give the bed a fabric/wood construction.
+	piece(ship,"CaptainBlanket",Vector3(-2.7,4.215,20.2),Vector3(1.42,0.035,1.0),cloth,false)
+	piece(ship,"BerthFootboard",Vector3(-2.7,4.02,19.67),Vector3(1.55,0.65,0.08),dark_oak,false)
+	for z in [20.1,20.8,21.5]:
+		piece(ship,"BerthDrawer",Vector3(-1.91,3.70,z),Vector3(0.025,0.38,0.59),dark_oak,false)
+		piece(ship,"DrawerPull",Vector3(-1.88,3.76,z),Vector3(0.025,0.035,0.14),brass,false)
+	# Leather-bound books on the existing starboard shelves.
+	for i in 9:
+		var binding := material(Color(0.15+float(i%3)*0.045,0.09,0.055))
+		piece(ship,"CabinBook",Vector3(3.15,4.34,16.55+float(i)*0.06),Vector3(0.25,0.30,0.048),binding,false)
+	# Table edge, drawer and brass inkstand remain within its existing bounds.
+	piece(ship,"ChartTableDrawer",Vector3(0,4.02,19.60),Vector3(1.45,0.16,0.06),dark_oak,false)
+	piece(ship,"ChartDrawerPull",Vector3(0,4.02,19.55),Vector3(0.15,0.035,0.035),brass,false)
+	piece(ship,"Inkstand",Vector3(0.68,4.24,20.45),Vector3(0.16,0.07,0.12),brass,false)
+	# Knees below deck beams and iron straps express load-bearing joins.
+	for z in range(-16,18,4):
+		for side in [-1,1]:
+			beam(ship,"HoldBeamKnee",Vector3(side*3.0,2.6,z),Vector3(side*2.55,2.94,z),0.09,dark_oak)
+			piece(ship,"FrameIronStrap",Vector3(side*3.12,1.9,z),Vector3(0.025,0.32,0.22),iron,false)

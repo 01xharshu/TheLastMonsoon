@@ -1,0 +1,13 @@
+{
+  "status": "VISUAL_REVIEW_OPEN",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_eye_moustache_candidate.blend",
+  "strands": 1400,
+  "old_moustache_bounds": [
+    -0.02665938064455986,
+    0.02780245430767536,
+    1.5381901264190674,
+    1.5515636205673218
+  ],
+  "exact_match": false,
+  "runtime_replaced": false
+}

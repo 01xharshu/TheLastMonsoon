@@ -32,6 +32,8 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	if phase!="idle" or cooldown>0 or offence not in ["theft","assault"]: return false
 	var local := station.to_local(player.global_position)
 	if absf(local.y-.9)>.5 or absf(local.x)>18 or absf(local.z)>18: return false
+	var offence_local := station.to_local(location)
+	if absf(offence_local.x)>18 or absf(offence_local.z)>18 or absf(offence_local.y)>2: return false
 	var best := 31.0
 	var chosen: Node3D
 	for candidate in get_parent().get_children():

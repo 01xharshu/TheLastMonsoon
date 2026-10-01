@@ -1,5 +1,5 @@
 extends RefCounted
-## Fictional district offices; construction candidate, staffing and service loops pending.
+## Fictional district offices; construction candidate, staffed service and physical door prototype.
 var b: Node3D
 var district: Node3D
 var shell_builder = preload("res://world/suryagarh/settlements/cantonment.gd").new()
@@ -32,12 +32,15 @@ func build(builder: Node3D) -> void:
 	for x in [-7.0,7.0]:
 		for z in [-2.0,2.0,6.0]: bench(court,Vector3(x,0.24,z))
 	desk(court,Vector3(11,0.24,-7))
+	preload("res://world/suryagarh/settlements/administrative_finish.gd").new().build(b,district)
+	preload("res://world/suryagarh/settlements/administrative_operations.gd").new().build(b,district)
 	for node in district.get_children():
 		if node is Node3D: b.merge_visuals(node)
 func room(id: String, at: Vector3, size: Vector2, title: String) -> Node3D:
 	var node: Node3D = shell_builder.shell(id,at,size,title)
 	node.remove_from_group("cantonment_buildings")
 	node.add_to_group("administrative_buildings")
+	node.set_meta("room_dimensions",size)
 	# Raise the roof eaves above the masonry and close both triangular gables.
 	for part in node.get_children():
 		if part.get_child_count() == 0 or not part.get_child(0) is MeshInstance3D: continue

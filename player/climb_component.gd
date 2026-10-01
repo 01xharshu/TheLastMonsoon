@@ -1,5 +1,5 @@
 extends Node
-## Authored climbable masonry: physical wall check, clear landing, timed ascent and mantle.
+## Jump catch and deliberate hold transfers on authored masonry; solid mantles.
 @onready var actor: CharacterBody3D = get_parent()
 var active := false
 var progress := 0.0
@@ -7,6 +7,7 @@ var duration := 2.4
 var start := Vector3.ZERO
 var crest := Vector3.ZERO
 var grip := Vector3.ZERO
+var hang_grip := Vector3.ZERO
 var landing := Vector3.ZERO
 var saved_mask: int
 var wall_normal := Vector3.ZERO
@@ -22,6 +23,46 @@ var first_foot_row := 0
 var hold_spacing := .40
 var hold_rows := 11
 var solid := preload("res://player/climb_collision.gd").new()
+var catch_seconds := 0.0
+var launch_y := 0.0
+var waiting_for_move := false
+var move_limit := .14
+var route_missing_rows: Array = []
+var releasing := false
+var release_velocity := Vector3.ZERO
+
+func arm_jump() -> void:
+	catch_seconds = 1.2
+	launch_y = actor.global_position.y
+
+func request_move() -> bool:
+	if not active or window.active or not waiting_for_move: return false
+	var next_limit: float
+	if progress < .15:
+		next_limit = .20
+	elif progress < .78-.0001:
+		next_limit = minf(.78, move_limit + .58 / ascent_steps)
+	else:
+		next_limit = 1.0
+	# Never animate a grip on a missing stone or above the final row.
+	if progress < .78-.0001:
+		var next_step := mini(ascent_steps-1, roundi(maxf(0.0,progress-.20)/.58*ascent_steps))
+		var next_row := first_hand_row + next_step/2 + 1
+		var next_foot_row := first_foot_row + next_step/2 + 1
+		if next_row in route_missing_rows or next_foot_row in route_missing_rows: return false
+		if next_row >= hold_rows and landing.y-.94 > hold_base_y+(hold_rows-1)*hold_spacing+hold_spacing+.12: return false
+	move_limit = next_limit
+	waiting_for_move = false
+	return true
+
+func release_grip() -> void:
+	if not active or window.active: return
+	releasing = true
+	waiting_for_move = false
+	release_velocity = wall_normal * 1.8
+	actor.velocity = release_velocity
+	catch_seconds = 0.0
+
 var window := preload("res://player/window_climb.gd").new()
 
 func try_start() -> bool:
@@ -42,6 +83,7 @@ func try_start() -> bool:
 		low_ray.exclude = [actor.get_rid()]
 		hit = space.intersect_ray(low_ray)
 	if hit.is_empty() or absf(hit.normal.y) > 0.65: return false
+	if bool(hit.collider.get_meta("climb_blocked",false)): return false
 	var authored: bool = hit.collider.is_in_group("climbable_walls")
 	if not authored:
 		if not hit.collider is StaticBody3D: return false
@@ -52,7 +94,12 @@ func try_start() -> bool:
 		active = true
 		return true
 	has_holds = hit.collider.has_meta("climb_hold_base_y")
-	if authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>2.3: return false
+	if has_holds:
+		# Only a real, newly launched jump can catch the tall wall route.
+		if catch_seconds <= 0.0 or actor.is_on_floor() or actor.global_position.y-launch_y < .35: return false
+		if actor.global_position.distance_to(hit.position) > .90: return false
+		route_missing_rows = hit.collider.get_meta("climb_hold_missing_rows",[])
+	if authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>float(hit.collider.get_meta("climb_lane_half_width",.45)): return false
 	wall_normal = hit.normal
 	wall_point = hit.position
 	hold_base_y = float(hit.collider.get_meta("climb_hold_base_y",hit.position.y))
@@ -92,21 +139,31 @@ func try_start() -> bool:
 		return true
 	start = actor.global_position
 	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.36
-	grip.y -= .15
+	var reachable_row := floori((actor.global_position.y+.95-hold_base_y-.07)/hold_spacing)
+	if reachable_row < int(hit.collider.get_meta("climb_min_hand_row",3)) or reachable_row >= hold_rows or reachable_row in route_missing_rows: return false
+	var catch_height := hold_base_y+reachable_row*hold_spacing+.07
+	if catch_height-actor.global_position.y < .25: return false
+	grip.y = catch_height-.90
+	hang_grip = grip
+	grip.y += .35
 	# Stop the vertical pull with the boots below the coping. The last phase
 	# must carry the hips and trailing feet over the lip before landing.
 	crest = Vector3(hit.position.x,top-0.65,hit.position.z)+wall_normal*.36
 	var clearance := Vector3(crest.x,landing.y-.39,crest.z)
-	if not solid.can_move(actor,start,grip,1.6) or not solid.can_move(actor,grip,crest,1.6): return false
+	if not solid.can_move(actor,start,hang_grip,1.6) or not solid.can_move(actor,hang_grip,grip,1.6) or not solid.can_move(actor,grip,crest,1.6): return false
 	if not solid.can_move(actor,crest,clearance,.9) or not solid.can_move(actor,clearance,landing,.9): return false
 	# Each ascent step has time for a reach, boot placement and upward push.
 	ascent_steps = maxi(1, roundi((crest.y - grip.y) / (hold_spacing*.5)))
-	duration = maxf(2.8, (ascent_steps * .55) / .64)
-	first_hand_row = clampi(floori((grip.y+.45-hold_base_y)/hold_spacing),0,hold_rows-1)
+	duration = maxf(2.8, (ascent_steps * .55) / .58)
+	first_hand_row = reachable_row
 	first_foot_row = floori((grip.y-.65-hold_base_y)/hold_spacing)
 	step_index = 0
 	step_phase = 0.0
 	progress = 0
+	move_limit = .14
+	waiting_for_move = false
+	releasing = false
+	catch_seconds = 0.0
 	active = true
 	saved_mask = actor.collision_mask
 	solid.begin(actor)
@@ -120,21 +177,44 @@ func try_start() -> bool:
 	return true
 
 func _physics_process(delta: float) -> void:
-	if not active: return
+	if not active:
+		if catch_seconds > 0.0:
+			catch_seconds = maxf(0.0,catch_seconds-delta)
+			if not actor.is_on_floor(): try_start()
+		return
 	if window.active:
 		window.advance(actor,delta)
 		active = window.active
 		return
+	if releasing:
+		release_velocity.y -= actor.gravity*delta
+		actor.velocity = release_velocity
+		actor.move_and_collide(release_velocity*delta)
+		if solid.finish(actor):
+			active = false
+			actor.set_meta("climbing",false)
+		return
+	if actor.survival.stamina <= 0.0 or Input.is_action_just_pressed("move_backward"):
+		release_grip()
+		return
+	if waiting_for_move:
+		if Input.is_action_just_pressed("jump"): request_move()
+		return
 	var previous_progress := progress
-	progress += delta/duration
+	var previous_step := step_index
+	var previous_phase := step_phase
+	progress = minf(move_limit,progress+delta*(.14/.32 if progress < .14 else 1.0/duration))
 	var t: float = clampf(progress,0,1)
 	var destination := actor.global_position
 	if t < 0.14:
-		destination = start.lerp(grip,smoothstep(0,0.14,t))
+		destination = start.lerp(hang_grip,smoothstep(0,0.14,t))
+	elif t < .20:
+		destination = hang_grip.lerp(grip,smoothstep(.14,.20,t))
 	elif t < 0.78:
-		var ascent: float = (t - .14) / .64
-		step_index = mini(ascent_steps-1, floori(ascent * ascent_steps))
-		step_phase = fposmod(ascent * ascent_steps, 1.0)
+		var ascent: float = (t - .20) / .58
+		var cycle := ascent * ascent_steps
+		step_index = mini(ascent_steps-1, floori(maxf(0.0,cycle-.00001)))
+		step_phase = clampf(cycle-step_index,0.0,1.0)
 		# Reach, place the opposite boot, then push. Root travel occurs only
 		# after the next pair of contacts is established.
 		var stepped: float = (step_index + smoothstep(.50,.94,step_phase)) / ascent_steps
@@ -149,7 +229,11 @@ func _physics_process(delta: float) -> void:
 	var height: float = lerpf(1.6,.9,smoothstep(.78,.88,t))
 	if not solid.move_to(actor,destination,height):
 		progress = previous_progress
+		step_index = previous_step
+		step_phase = previous_phase
 		return
+	if progress >= move_limit and move_limit < 1.0:
+		waiting_for_move = true
 	if t >= 1 and solid.finish(actor):
 		active = false
 		actor.set_meta("climbing",false)
@@ -157,7 +241,9 @@ func _physics_process(delta: float) -> void:
 		actor.velocity = Vector3.ZERO
 
 func tree_pose_progress() -> float:
+	if waiting_for_move and progress <= .14001: return .14
 	if progress < .14 or progress >= .78: return progress
+	if progress < .20: return lerpf(.14,.28,smoothstep(.14,.20,progress))
 	var transfer := smoothstep(.28,.70,step_phase)
 	return lerpf(.28,.56,transfer) if step_index%2 == 0 else lerpf(.56,.28,transfer)
 

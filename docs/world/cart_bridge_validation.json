@@ -1,0 +1,79 @@
+{
+	"failures": [],
+	"results": [
+		{
+			"can_move": true,
+			"cart": 0,
+			"crossed": true,
+			"direction": -1.0,
+			"lateral_error_m": 0.0,
+			"speed": 5.2,
+			"ticks": 545,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": -136.165608406067
+		},
+		{
+			"can_move": true,
+			"cart": 0,
+			"crossed": true,
+			"direction": 1.0,
+			"lateral_error_m": 0.0,
+			"speed": 5.2,
+			"ticks": 545,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": 136.165420532227
+		},
+		{
+			"can_move": true,
+			"cart": 1,
+			"crossed": true,
+			"direction": -1.0,
+			"lateral_error_m": 0.0,
+			"speed": 2.25,
+			"ticks": 2292,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": -136.158715009689
+		},
+		{
+			"can_move": true,
+			"cart": 1,
+			"crossed": true,
+			"direction": 1.0,
+			"lateral_error_m": 0.0,
+			"speed": 2.25,
+			"ticks": 2292,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": 136.158584594727
+		},
+		{
+			"can_move": true,
+			"cart": 2,
+			"crossed": true,
+			"direction": -1.0,
+			"lateral_error_m": 0.0,
+			"speed": 2.25,
+			"ticks": 2292,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": -136.158715009689
+		},
+		{
+			"can_move": true,
+			"cart": 2,
+			"crossed": true,
+			"direction": 1.0,
+			"lateral_error_m": 0.0,
+			"speed": 2.25,
+			"ticks": 2292,
+			"transition": "",
+			"width_m": 6.0,
+			"x_offset": 136.158584594727
+		}
+	],
+	"scope": "actual bridge/carts in isolated physics fixture; terrain approaches and owner route review open",
+	"status": "PASS"
+}

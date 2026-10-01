@@ -1,0 +1,56 @@
+{
+	"checks": [
+		{
+			"check": "normal interaction selects gate",
+			"pass": true
+		},
+		{
+			"check": "daytime E opens both leaves",
+			"pass": true
+		},
+		{
+			"check": "outside gate to portico on foot",
+			"pass": true
+		},
+		{
+			"check": "portico to outside gate on foot",
+			"pass": true
+		},
+		{
+			"check": "21:00 closes and latches gate",
+			"pass": true
+		},
+		{
+			"check": "normal interaction selects gate",
+			"pass": true
+		},
+		{
+			"check": "outside E cannot release night latch",
+			"pass": true
+		},
+		{
+			"check": "closed gate physically stops outside player",
+			"pass": true
+		},
+		{
+			"check": "normal interaction selects gate",
+			"pass": true
+		},
+		{
+			"check": "inside E releases gate for night exit",
+			"pass": true
+		},
+		{
+			"check": "night exit through opened gate",
+			"pass": true
+		},
+		{
+			"check": "06:00 restores gate access",
+			"pass": true
+		}
+	],
+	"display_server": "macOS",
+	"failures": [],
+	"renderer": "forward_plus",
+	"status": "PASS"
+}

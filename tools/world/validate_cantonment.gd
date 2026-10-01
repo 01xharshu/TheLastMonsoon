@@ -10,7 +10,12 @@ func _run() -> void:
 	var actor: CharacterBody3D = world.get_node("Player")
 	actor.set_physics_process(false)
 	assert(get_nodes_in_group("sepoy_barracks").size() == 4)
-	assert(get_nodes_in_group("cantonment_buildings").size() == 9)
+	assert(get_nodes_in_group("cantonment_buildings").size() == 12)
+	assert(get_nodes_in_group("british_barracks").size() == 1)
+	assert(get_nodes_in_group("officers_quarters").size() == 1)
+	assert(get_nodes_in_group("fort_guards").size() == 2)
+	assert(get_nodes_in_group("fort_cannons").size() == 2)
+	assert(get_nodes_in_group("fort_armoury").size() == 1)
 	var space := world.get_world_3d().direct_space_state
 	var entrances: Dictionary = {}
 	for building in get_nodes_in_group("cantonment_buildings"):
@@ -42,10 +47,29 @@ func _run() -> void:
 			quit(1)
 			return
 		entrances[str(building.name)] = {"entry":str(entry),"floor":hit.position.y,"player_walk":walked}
+	var cemetery: Node3D = district.get_node("MilitaryCemetery")
+	actor.global_position = cemetery.to_global(Vector3(0,1.0,12))
+	actor.velocity = Vector3.ZERO
+	var cemetery_walk := false
+	for frame in 360:
+		var target: Vector3 = cemetery.to_global(Vector3(0,0,0))-actor.global_position
+		target.y = 0
+		if target.length() < .35:
+			cemetery_walk = true
+			break
+		actor.velocity = target.normalized()*2.5+Vector3(0,-2,0)
+		actor.move_and_slide()
+		await physics_frame
+	assert(cemetery_walk,"Cemetery gate/central path blocked")
 	# Actual resident collider must match new survey grade, rather than a second ground sheet.
 	var terrain_excludes: Array[RID] = [actor.get_rid()]
 	for body in world.find_children("*", "StaticBody3D", true, false):
 		if body.name != "GroundCollision": terrain_excludes.append(body.get_rid())
+	var fort: Node3D = get_nodes_in_group("occupied_command_fort")[0]
+	var armoury: Node3D = fort.get_node("FortArmoury")
+	var armoury_ray := PhysicsRayQueryParameters3D.create(armoury.to_global(Vector3(0,1.2,9)),armoury.to_global(Vector3(0,1.2,0)))
+	armoury_ray.exclude = [actor.get_rid()]
+	assert(space.intersect_ray(armoury_ray).is_empty(),"Fort armoury entrance obstructed")
 	var terrain_samples := 0
 	for x in [440,460,480,500,520,540,560]:
 		for z in [415,430,470,505,525]:
@@ -60,7 +84,7 @@ func _run() -> void:
 		var vent := PhysicsRayQueryParameters3D.create(magazine.to_global(Vector3(x,3.1,-4.5)),magazine.to_global(Vector3(x,3.1,-5.6)))
 		vent.exclude = [actor.get_rid()]
 		assert(space.intersect_ray(vent).is_empty(), "Magazine vent is blocked")
-	var report := {"date":"2026-10-01","status":"prototype","buildings":entrances,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
+	var report := {"date":"2026-10-01","status":"prototype","buildings":entrances,"cemetery_gate_walk":cemetery_walk,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"fort_guards":2,"fort_cannons":2,"armoury_entrance_clear":true,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
 	var file := FileAccess.open("res://docs/world/cantonment_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
 	if DisplayServer.get_name() != "headless":
@@ -73,5 +97,28 @@ func _run() -> void:
 		for frame in 8: await process_frame
 		await RenderingServer.frame_post_draw
 		assert(root.get_texture().get_image().save_png("res://docs/world/captures/cantonment_overview.png") == OK)
-	print("CANTONMENT WORLD: PASS | nine room entrances/player walks, four barrack lines, 35 terrain samples")
+		for spec in [
+			["GrainFodderWarehouse","warehouse_interior",Vector3(0,2.1,4.4),Vector3(0,1.2,-2)],
+			["GrainFodderWarehouse","warehouse_exterior",Vector3(13,6,17),Vector3(0,1.5,0)],
+			["CavalryStables","stables_interior",Vector3(12,2.1,3.8),Vector3(-7,1.1,-1.5)],
+			["CavalryStables","stables_exterior",Vector3(22,7,19),Vector3(0,1.5,0)],
+			["MilitaryHospital","hospital_interior",Vector3(0,2.1,4.3),Vector3(-3,1,-2)],
+			["MilitaryHospital","hospital_exterior",Vector3(18,6,17),Vector3(0,1.5,0)],
+			["CantonmentChurch","church_interior",Vector3(0,2.1,6.3),Vector3(0,1.3,-5)],
+			["CantonmentChurch","church_exterior",Vector3(12,6,16),Vector3(0,2,0)],
+			["MilitaryCemetery","cemetery_gate",Vector3(8,3,16),Vector3(0,1,0)],
+			["MilitaryCemetery","cemetery_inside",Vector3(0,1.8,8),Vector3(-3,1,-5)]
+		]:
+			var site: Node3D = district.get_node(spec[0])
+			camera.global_position = site.to_global(spec[2])
+			camera.look_at(site.to_global(spec[3]))
+			for frame in 8: await process_frame
+			await RenderingServer.frame_post_draw
+			assert(root.get_texture().get_image().save_png("res://docs/world/captures/service_"+spec[1]+".png") == OK)
+		camera.global_position = fort.to_global(Vector3(105,60,115))
+		camera.look_at(fort.to_global(Vector3(30,0,0)))
+		for frame in 8: await process_frame
+		await RenderingServer.frame_post_draw
+		assert(root.get_texture().get_image().save_png("res://docs/world/captures/military_fort_overview.png") == OK)
+	print("CANTONMENT WORLD: PASS | twelve room entrances/player walks, four barrack lines, 35 terrain samples")
 	quit()

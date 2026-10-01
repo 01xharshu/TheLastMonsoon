@@ -186,10 +186,12 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"remaining_household_ids": _remaining_household_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 		"door_states": _door_states(world),
+		"household_cattle": _cattle_states(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
 	if world.has_node("ErrandSystem"):
 		data["errands"] = world.get_node("ErrandSystem").export_state()
+	data["administrative_services"] = _administrative_service_states(world)
 	var fame := actor.get_node_or_null("FameComponent")
 	if fame != null: data["fame"] = {"points":fame.points,"witnessed_deeds":fame.witnessed_deeds}
 	var map: Control = actor.get_node("UI/WorldMap")
@@ -302,6 +304,10 @@ func apply_pending(world: Node3D) -> void:
 		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
 			chest.restore_opened()
 	_restore_door_states(world,data.get("door_states",{}))
+	for service in world.get_tree().get_nodes_in_group("administrative_services"):
+		var key := str(world.get_path_to(service))
+		service.restore_state(data.get("administrative_services",{}).get(key,{}))
+	_restore_cattle_states(world,data.get("household_cattle",{}))
 	# Absent in older version-1 saves: preserve their available fruit.
 	if data.get("collected_forage_ids") is Array:
 		for grove in world.get_tree().get_nodes_in_group("forage_groves"):
@@ -420,3 +426,20 @@ func restore_household_pickups(world: Node3D, data: Dictionary) -> void:
 	for pickup in world.get_tree().get_nodes_in_group("household_pickups"):
 		if world.is_ancestor_of(pickup) and not str(pickup.get_meta("pickup_id")) in data.remaining_household_ids:
 			pickup.queue_free()
+
+func _cattle_states(world:Node3D)->Dictionary:
+	var states:Dictionary={}
+	for yard in world.get_tree().get_nodes_in_group("household_cattle"):
+		if world.is_ancestor_of(yard):states[str(world.get_path_to(yard))]=yard.export_state()
+	return states
+func _restore_cattle_states(world:Node3D,states:Variant)->void:
+	if not states is Dictionary:return
+	for path in states:
+		var yard:=world.get_node_or_null(NodePath(str(path)))
+		if yard!=null and yard.is_in_group("household_cattle") and states[path] is Dictionary:yard.restore_state(states[path])
+
+func _administrative_service_states(world: Node3D) -> Dictionary:
+	var states := {}
+	for service in world.get_tree().get_nodes_in_group("administrative_services"):
+		if world.is_ancestor_of(service): states[str(world.get_path_to(service))] = service.export_state()
+	return states

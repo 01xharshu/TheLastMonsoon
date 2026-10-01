@@ -1,6 +1,9 @@
 extends RefCounted
 ## Shared collection names and filled-symbol keys. Unknown future items remain readable.
 const ITEMS := {
+	"petition_receipt": ["Petition Receipt", "item"],
+	"court_receipt": ["Court Registration", "item"],
+	"revenue_receipt": ["Revenue Receipt", "item"],
 	"paper_cartridges": ["Paper Cartridges", "ammo"],
 	"pistol_ball": ["Pistol Balls", "pistol_ammo"],
 	"shot_charge": ["Shot Charges", "shot_ammo"],

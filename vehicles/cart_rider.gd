@@ -1,5 +1,6 @@
 extends Node
 ## Shared seat, collision and input contract for live horse carts.
+var travel: Node
 var cart: Node3D
 var rider: CharacterBody3D
 var seat_name := ""
@@ -24,6 +25,9 @@ func configure(owner_cart: Node3D) -> void:
 
 func _ready() -> void:
 	_build_collision()
+	travel = preload("res://vehicles/paid_coach_travel.gd").new()
+	travel.configure(self)
+	add_child(travel)
 
 func _build_collision() -> void:
 	collision_body = AnimatableBody3D.new()
@@ -102,6 +106,14 @@ func transition_step_world() -> Vector3:
 	if cart.has_method("show_coachman_blockout"):
 		return cart.to_global(Vector3(transition_side * (1.27 if role == "passenger" else 1.18), .875 if role == "passenger" else .665, 2.79 if role == "passenger" else .30))
 	return cart.to_global(Vector3(transition_side * 1.12, .595, 1.40))
+
+func cabin_transfer_foot_world(side: String, progress: float) -> Vector3:
+	var leading: bool = (side == "l") == (transition_side < 0.0)
+	var plant: Vector3 = cart.to_global(Vector3(transition_side * (.76 if leading else .46), 1.369, 2.80 if leading else 3.02))
+	if leading and progress < .62:
+		var transfer := smoothstep(.43, .62, progress)
+		return transition_step_world().lerp(plant, transfer) + Vector3.UP * sin(transfer * PI) * .14
+	return plant.lerp(foot_support_world(side), smoothstep(.82, 1.0, progress))
 
 func transition_hand_world() -> Vector3:
 	if role == "passenger" and cart.has_method("show_coachman_blockout"):
@@ -185,9 +197,17 @@ func _physics_process(delta: float) -> void:
 				if cart.has_method("show_coachman_blockout"): cart.show_coachman_blockout()
 			transition = ""
 		return
-	if role == "driver" and (not cart.has_method("can_move") or cart.can_move()) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
+	if (role == "driver" or travel.payer != null) and (not cart.has_method("can_move") or cart.can_move()) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
 		var throttle := Input.get_axis("move_backward", "move_forward")
 		var steer := Input.get_axis("move_right", "move_left")
+		if travel.payer != null:
+			var control: Vector2 = travel.controls()
+			throttle = control.x
+			steer = control.y
+			if throttle == 0.0 and steer != 0.0:
+				var previous_heading := cart.rotation.y
+				cart.rotation.y += steer*delta*.35
+				if not _clearance_at(cart.global_position): cart.rotation.y = previous_heading
 		var previous_speed := speed
 		var target_speed := 5.2 if Input.is_action_pressed("sprint") and throttle > 0.0 else 3.4
 		speed = move_toward(speed, throttle * target_speed, delta * 1.5)
@@ -227,14 +247,25 @@ func _sync_rider() -> void:
 	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
 	var pelvis: int = visual.skeleton.find_bone("pelvis")
 	if pelvis < 0: return
-	rider.visual_root.global_rotation.y = socket.global_rotation.y + PI
+	var seated_yaw := socket.global_rotation.y + PI
+	var cabin_transfer: bool = role == "passenger" and cart.has_method("show_coachman_blockout") and transition != ""
+	var u: float = transition_progress if transition == "boarding" else 1.0 - transition_progress
+	rider.visual_root.global_rotation.y = lerp_angle(cart.global_rotation.y - transition_side * PI * .5, seated_yaw, smoothstep(.55, .86, u)) if cabin_transfer else seated_yaw
 	var hip_world: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin)
 	var target: Vector3 = socket.global_position
 	if transition != "":
 		var boarding_progress := transition_progress if transition == "boarding" else 1.0 - transition_progress
 		var outside: Vector3 = transition_start if transition == "boarding" else transition_ground
 		var step: Vector3 = transition_step_world() + Vector3.UP * .90
-		if boarding_progress < .55:
+		if cabin_transfer:
+			var inside: Vector3 = cart.to_global(Vector3(transition_side * .68, 2.23, 2.88))
+			if u < .40:
+				target = outside.lerp(step, smoothstep(0.0, .40, u))
+			elif u < .72:
+				target = step.lerp(inside, smoothstep(.40, .72, u))
+			else:
+				target = inside.lerp(socket.global_position, smoothstep(.72, 1.0, u))
+		elif boarding_progress < .55:
 			target = outside.lerp(step, smoothstep(0.0, .55, boarding_progress))
 		else:
 			target = step.lerp(socket.global_position, smoothstep(.55, 1.0, boarding_progress))

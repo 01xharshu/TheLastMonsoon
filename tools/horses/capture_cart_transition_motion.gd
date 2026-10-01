@@ -57,15 +57,29 @@ func _run() -> void:
 
 func _transition(cart: Node3D, actor: CharacterBody3D, label: String) -> void:
 	var saved := false
+	var checked_floor := false
 	while cart.boarding.transition != "":
 		await RenderingServer.frame_post_draw
 		var u: float = cart.boarding.transition_progress if label == "entry" else 1.0 - cart.boarding.transition_progress
-		if not saved and u > .48 and u < .62:
+		if not checked_floor and u > .74 and u < .80:
+			var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+			for side in ["l", "r"]:
+				var index: int = visual.skeleton.find_bone("foot_" + side)
+				var rest: Transform3D = visual.skeleton.get_bone_global_rest(index)
+				var offset: Vector3 = rest.basis.inverse() * Vector3(0, -.085, .06)
+				var sole: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(index) * offset)
+				var gap := sole.distance_to(cart.boarding.cabin_transfer_foot_world(side, u))
+				assert(gap < .035, "Cabin transfer foot missed floor")
+				print("CART TRANSFER SOLE ", side, " ", label, " gap=", gap)
+			checked_floor = true
+		if not saved and u > .48 and u < .52:
 			var path := "res://docs/world/captures/cart_grip_%s_%s.png" % ["left" if cart.boarding.transition_side < 0 else "right", label]
 			get_viewport().get_texture().get_image().save_png(ProjectSettings.globalize_path(path))
 			var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 			var side := "l" if cart.boarding.transition_side < 0 else "r"
 			var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_" + side))
 			var palm: Vector3 = visual.skeleton.to_global(hand * visual.equipment.palm_offsets[side])
-			print("CART GRIP ", side, " ", label, " palm-to-rail=", palm.distance_to(cart.boarding.transition_hand_world()))
+			var gap := palm.distance_to(cart.boarding.transition_hand_world())
+			assert(gap < .06, "Boarding palm outside grip reach")
+			print("CART GRIP ", side, " ", label, " palm-to-rail=", gap)
 			saved = true

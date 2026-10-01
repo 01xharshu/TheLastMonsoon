@@ -1,7 +1,18 @@
 {
+	"armoury_entrance_clear": true,
 	"buildings": {
+		"BritishBarracks": {
+			"entry": "(457.0, 8.75, 430.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"CantonmentChurch": {
+			"entry": "(500.0, 8.75, 445.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
 		"CavalryStables": {
-			"entry": "(500.0, 8.75, 429.5)",
+			"entry": "(500.0, 8.75, 427.5)",
 			"floor": 8.73999977111816,
 			"player_walk": true
 		},
@@ -22,6 +33,11 @@
 		},
 		"MilitarySupplyDepot": {
 			"entry": "(490.0, 8.75, 521.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"OfficersQuarters": {
+			"entry": "(543.0, 8.75, 430.5)",
 			"floor": 8.73999977111816,
 			"player_walk": true
 		},
@@ -46,7 +62,10 @@
 			"player_walk": true
 		}
 	},
+	"cemetery_gate_walk": true,
 	"date": "2026-10-01",
+	"fort_cannons": 2,
+	"fort_guards": 2,
 	"magazine_open_vents": 3,
 	"open": "sepoy population, horse population, working hospital/depot, historical art, full approach route, performance",
 	"renderer": "forward_plus",

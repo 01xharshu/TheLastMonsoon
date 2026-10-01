@@ -1,6 +1,10 @@
 # Arjun locomotion AnimationTree — 2026-09-25
 
-## Current solid climbing and wrist rework — 2026-10-01
+## Current wall jump and catch — 2026-10-01
+
+Tall wall climbing now requires a physical jump, reachable catch, hanging pause and separate presses for pull/hold transfers/mantle. Backward input lets go; stamina runs down while hanging. See [controls, security constraints and Metal evidence](jump_grab_2026-10-01.md).
+
+## Earlier solid climbing and wrist rework — 2026-10-01
 
 The previous pass below was rejected by the owner. Current changes and evidence are in [solid climbing and grip rework](solid_climbing_2026-10-01.md): 17 shorter steps, fixed boot soles, forearm pronation and limited wrist bend, an explicit mantle press, collision-checked body travel and animated torso/head clearance. Fresh Forward+/Metal motion and collision/contact checks pass; owner motion and mesh/finger-pressure review remain open.
 

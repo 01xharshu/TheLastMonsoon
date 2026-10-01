@@ -4,6 +4,11 @@ func _run()->void:
 	root.size=Vector2i(1280,720);root.content_scale_size=root.size
 	var world:=Node3D.new();root.add_child(world)
 	var cow:Node3D=load("res://assets/animals/cow/household_cow.glb").instantiate();world.add_child(cow)
+	preload("res://animals/cow_visual.gd").apply(cow)
+	for mesh in cow.find_children("*","MeshInstance3D",true,false):
+		for index in mesh.mesh.get_surface_count():
+			var material=mesh.get_active_material(index)
+			if material is StandardMaterial3D and "grey coat" in material.resource_name:print("COW COAT ",mesh.name," ",material.albedo_color," vertex ",material.vertex_color_use_as_albedo," shading ",material.shading_mode)
 	var anim:=cow.find_child("AnimationPlayer",true,false) as AnimationPlayer
 	print("COW CLIPS ",anim.get_animation_list())
 	for clip in anim.get_animation_list():

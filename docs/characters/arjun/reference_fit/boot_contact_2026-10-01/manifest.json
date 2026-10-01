@@ -1,0 +1,8 @@
+{
+  "status": "VISUAL_REVIEW_OPEN",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend",
+  "projected_vertices": 2610,
+  "misses": 46,
+  "exact_match": false,
+  "runtime_replaced": false
+}

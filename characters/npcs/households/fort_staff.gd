@@ -7,6 +7,7 @@ var spoon: Node3D
 
 func _ready() -> void:
 	super._ready()
+	preload("res://characters/npcs/households/fort_staff_clothing.gd").new().dress(self)
 	if household_job != "Cook": return
 	left_contact = get_parent().get_node("FortKitchen/CookContactL")
 	right_contact = get_parent().get_node("FortKitchen/CookContactR")

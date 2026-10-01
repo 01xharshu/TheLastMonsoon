@@ -12,10 +12,10 @@ Updated 2026-10-01. This is the user’s 40-location scope, separate from the ho
 | 6 | British Courthouse | New hearing hall, judge bench and clerk desk construction candidate; staff/hearings pending |
 | 7 | District Jail | Present building; detailed game role remains separate |
 | 8 | Police Thana + Chowkis | Partial: thana exists; chowkis missing |
-| 9 | Civil Lines | Missing developed district |
-| 10 | British Officer / Collector Bungalows | Partial: British household bungalow; identity missing |
+| 9 | Civil Lines | New separated residential terrace, avenue and garden compounds; landscape/art refinement open |
+| 10 | British Officer / Collector Bungalows | New separate furnished Collector and officer bungalows with service quarters; existing British household retained; resident routines pending |
 | 11 | Residency / Government Residence | Present Government House |
-| 12 | Cantonment Bazaar | Missing |
+| 12 | Cantonment Bazaar | Six roofed service stalls, canvas awnings, trade cues and clear lane/cart standing; traders and transactions pending |
 | 13 | Dak Bungalow | Missing |
 | 14 | Grand Trunk / Major Metalled Road | Partial: roads exist; surfacing and convoy/mail systems missing |
 | 15 | British Bridges / Controlled Crossings | Partial: timber bridge; British identity and crossing control missing |

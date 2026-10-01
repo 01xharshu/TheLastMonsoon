@@ -85,13 +85,24 @@ func validate() -> void:
 		await capture("15b_arjun_boat_seat_close")
 	check(boat.dismount(),"F dismount contract")
 	check(not actor.has_meta("mounted_vehicle"),"mounted state clears")
-	actor.global_position=Vector3(291.3,12.95,300)
+	actor.global_position=Vector3(291.5,12.95,300)
 	actor.visual_root.global_rotation.y=PI/2
 	for i in 3: await physics_frame
 	camera.global_position=Vector3(287,15.5,304.0)
 	camera.look_at(Vector3(293,15.0,300))
 	var climb: Node=actor.get_node("ClimbComponent")
-	check(climb.try_start(),"wall climb begins on authored masonry")
+	check(not climb.try_start(),"wall ascent cannot start from standing")
+	climb.arm_jump()
+	actor.velocity.y = actor.jump_velocity
+	for tick in 30:
+		actor.velocity.y -= actor.gravity/60.0
+		actor.move_and_collide(actor.velocity/60.0)
+		await physics_frame
+		if climb.active: break
+	check(climb.active,"jump catches reachable authored masonry")
+	physics_frame.connect(func():
+		if climb.waiting_for_move: climb.request_move()
+	)
 	if climb.active:
 		print("CLIMB WALL point=",climb.wall_point," normal=",climb.wall_normal," top=",climb.landing)
 		check(climb.duration>4.0,"tall wall climb uses height-based ascent time")

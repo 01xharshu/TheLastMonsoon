@@ -11,8 +11,8 @@ func _ready()->void:
 	var a:Array[Vector2]=[Vector2(-344,275),Vector2(-333,275)]
 	var b:Array[Vector2]=[Vector2(-344,276.1),Vector2(-333,276.1)]
 	_lane("ReviewEarthLane",a,4,1)
-	_resident("ClothVisitor","res://characters/npcs/households/merchant.glb",a,0)
-	_resident("GrainBuyer","res://characters/npcs/households/landowner.glb",b,0)
+	_resident("ClothVisitor","res://characters/npcs/street_residents/merchant.glb",a,0)
+	_resident("GrainBuyer","res://characters/npcs/street_residents/landowner.glb",b,0)
 	var camera:=Camera3D.new();camera.position=Vector3(-337,9,280);camera.fov=48;add_child(camera);camera.look_at(Vector3(-341,8.1,275));camera.make_current()
 func _physics_process(delta:float)->void:
 	for journey in journeys:

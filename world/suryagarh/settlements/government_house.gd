@@ -16,9 +16,9 @@ func _ready() -> void:
 	name = "GovernmentHouse"
 	var plot: Dictionary = Layout.PLOTS["GovernmentHouse"]
 	position = Vector3(plot.center.x, plot.grade, plot.center.y)
-	plaster = textured("clay_plaster",Color(.88,.85,.76),.38)
+	plaster = preload("res://world/suryagarh/settlements/building_realism.gd").finish(Color(.82,.80,.72),position.y)
 	ochre = material(Color(.65,.55,.40))
-	brick = material(Color(.51,.30,.21),true)
+	brick = preload("res://world/suryagarh/settlements/military_detail.gd").surface(Color(.42,.27,.20),1)
 	wood = textured("dark_wood",Color(.68,.55,.42),.72)
 	tile = material(Color(.42,.25,.18),true)
 	stone = material(Color(.53,.49,.41),true)
@@ -27,9 +27,7 @@ func _ready() -> void:
 	brass = material(Color(.57,.43,.19))
 	hedge = material(Color(.22,.31,.19))
 	lawn = material(Color(.32,.38,.23))
-	marble = StandardMaterial3D.new()
-	marble.albedo_color = Color(.77,.73,.65)
-	marble.roughness = .36
+	marble = preload("res://world/suryagarh/settlements/building_realism.gd").finish(Color(.65,.63,.55),position.y,true)
 	carpet = material(Color(.37,.16,.12))
 	flower_red = material(Color(.54,.15,.12))
 	flower_gold = material(Color(.71,.48,.16))
@@ -287,8 +285,9 @@ func interior(h: Node3D,level: int) -> void:
 			piece(h,"RoomTable",Vector3(x,y+1.0,z),Vector3(3.2,.15,1.6),table_mat)
 			for dx in [-1.0,1.0]:
 				piece(h,"TableLeg",Vector3(x+dx*1.3,y+.53,z),Vector3(.12,.95,1.2),wood,false)
-			piece(h,"ChairSeat",Vector3(x,y+.52,z+2.2),Vector3(.8,.12,.8),wood)
-			piece(h,"ChairBack",Vector3(x,y+1.1,z+2.55),Vector3(.8,1.2,.12),wood,false)
+			var seat_base: float = .34 if level==0 else 0.0
+			piece(h,"ChairSeat",Vector3(x,y+seat_base+.52,z+2.2),Vector3(.8,.12,.8),wood)
+			piece(h,"ChairBack",Vector3(x,y+seat_base+1.1,z+2.55),Vector3(.8,1.2,.12),wood,false)
 			piece(h,"WallPanel",Vector3(x,y+2.7,-18.95),Vector3(3.4,2.2,.08),ochre,false)
 			piece(h,"PanelFrameTop",Vector3(x,y+3.85,-18.86),Vector3(3.7,.12,.13),brass,false)
 	for x in [-13.0,0.0,13.0]:
@@ -316,7 +315,7 @@ func interior(h: Node3D,level: int) -> void:
 				piece(h,"CabinetShelf",Vector3(side*29,y+shelf,-6.55),Vector3(3.5,.08,.58),brass,false)
 	if level==1:
 		piece(h,"CouncilTable",Vector3(0,y+1.0,-8),Vector3(8,.2,2.4),wood)
-		for x in [-5.0,5.0]: piece(h,"DrawingSofa",Vector3(x,y+.65,9),Vector3(3,1.1,1.4),wood)
+		for x in [-5.0,5.0]: piece(h,"DrawingSofa",Vector3(x,y+.43,9),Vector3(3,.22,1.4),wood)
 		for side in [-1.0]:
 			piece(h,"Bookcase",Vector3(side*29,y+1.9,-7),Vector3(4.4,3.7,.65),wood)
 			for shelf in [1.0,1.85,2.7]:
@@ -327,6 +326,7 @@ func interior(h: Node3D,level: int) -> void:
 		for x in [-23.0,23.0]:
 			piece(h,"Bedframe",Vector3(x,y+.65,-11),Vector3(3,.7,5.2),wood)
 			piece(h,"Bedding",Vector3(x,y+1.07,-11),Vector3(2.8,.2,4.8),plaster,false)
+	preload("res://world/suryagarh/settlements/building_realism.gd").residence(self,h,level)
 
 func staircase(h: Node3D,level: int,x: float,up_toward_back: bool) -> void:
 	var y := level*STOREY

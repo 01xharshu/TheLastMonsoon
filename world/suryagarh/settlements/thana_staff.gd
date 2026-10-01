@@ -5,7 +5,7 @@ extends Node3D
 const ROLES := [
 	{"id":"daroga", "position":Vector3(9.0, 0, 6.8), "facing":-1.9},
 	{"id":"mohurrir", "position":Vector3(9.5, 0, -5.7), "facing":2.5},
-	{"id":"burkundaz", "position":Vector3(-5.5, 0, 7.5), "facing":-2.5},
+	{"id":"burkundaz", "position":Vector3(-5.5, 0, 7.5), "facing":.8},
 ]
 
 func _ready() -> void:

@@ -12,10 +12,10 @@
 		},
 		{
 			"direction": "up",
-			"finish": "(-9.5, 6.300436, -11.34808)",
+			"finish": "(-15.0, 6.300433, -17.34829)",
 			"jump_used": false,
 			"stair": "Police stairs",
-			"start": "(-9.5, 0.900781, 10.2)"
+			"start": "(-15.0, 0.900781, 10.2)"
 		},
 		{
 			"direction": "up",
@@ -39,7 +39,7 @@
 		},
 		{
 			"direction": "down",
-			"finish": "(-9.5, 0.900615, 11.34903)",
+			"finish": "(-15.0, 0.900614, 17.34886)",
 			"max_fall_speed": 0.0,
 			"stair": "Police stairs"
 		},

@@ -41,6 +41,7 @@ func _ready() -> void:
 	landing()
 	preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
 	preload("res://world/suryagarh/settlements/administrative_district.gd").new().build(self)
+	preload("res://world/suryagarh/settlements/civil_lines.gd").new().build(self)
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
 

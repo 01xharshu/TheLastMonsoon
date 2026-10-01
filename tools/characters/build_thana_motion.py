@@ -23,6 +23,10 @@ for role,color in [('daroga',(.36,.32,.23)),('mohurrir',(.42,.38,.29)),('burkund
      base.default_value=(*color,1)
     for i,m in enumerate(obj.data.materials):
      if m==mat:obj.data.materials[i]=copy
+ body=next(o for o in bpy.data.objects if o.type=='MESH' and 'MakeHuman_body' in o.name)
+ raw=body.copy();raw.data=body.data.copy();raw.name='Uniform unmasked template';bpy.context.collection.objects.link(raw)
+ for m in list(raw.modifiers):
+  if m.type=='MASK' and m.name!='Hide helpers':raw.modifiers.remove(m)
  # Bake morphs/cloth masks while preserving deform weights and the armature.
  deps=bpy.context.evaluated_depsgraph_get()
  for obj in list(bpy.context.scene.objects):
@@ -39,6 +43,7 @@ for role,color in [('daroga',(.36,.32,.23)),('mohurrir',(.42,.38,.29)),('burkund
    if modifier.type!='ARMATURE':obj.modifiers.remove(modifier)
    else:modifier.show_viewport=True;modifier.show_render=True
  uniform=fit_uniform(rig,role)
+ bpy.data.objects.remove(raw,do_unlink=True)
  rig.animation_data_clear()
  dest=ROOT/'WorkingAssets/NPCs/thana_motion'/role
  dest.mkdir(parents=True,exist_ok=True)

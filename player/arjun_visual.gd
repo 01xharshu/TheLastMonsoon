@@ -300,6 +300,10 @@ func _process(delta: float) -> void:
 	equipment.apply_rifle_grip(armed and slash_phase >= 0.0)
 	var interaction: Node = actor.get_node_or_null("InteractionPoseComponent")
 	var reaching: bool = actor.get_meta("interaction_reach", false) or (interaction != null and (interaction.amount > 0.0 or interaction.ground_pickup))
+	var door_action = actor.get_node_or_null("DoorLatchAction")
+	if door_action != null and door_action.phase != "":
+		door_action.apply_pose()
+		reaching=true
 	if equipment.stowed and not reaching and not actor.is_swimming and not special_pose:
 		equipment.keep_relaxed_hands_clear()
 
@@ -430,7 +434,8 @@ func _pose_cart_transition(delta: float, vehicle: Node) -> void:
 		solver.influence = 0.0
 		if solver.is_running(): solver.stop()
 	var u: float = vehicle.transition_progress if vehicle.transition == "boarding" else 1.0 - vehicle.transition_progress
-	var sit: float = smoothstep(.55, 1.0, u)
+	var cabin_transfer: bool = vehicle.role == "passenger" and vehicle.cart.has_method("show_coachman_blockout")
+	var sit: float = smoothstep(.72 if cabin_transfer else .55, 1.0, u)
 	var step: float = sin(PI * clampf(u / .55, 0.0, 1.0)) * (1.0 - sit)
 	model.rotation.x = 0.0
 	model.position = Vector3(0, -.9, 0)
@@ -448,9 +453,23 @@ func _pose_cart_transition(delta: float, vehicle: Node) -> void:
 		pose("upperarm_" + side, Vector3(-.45 * step, 0, spread * .12), 1.0)
 		pose("lowerarm_" + side, Vector3(-.55 * step - .35 * sit, 0, 0), 1.0)
 	vehicle._sync_rider()
-	var contact: float = smoothstep(.20, .45, u) * (1.0 - smoothstep(.65, .90, u))
+	var contact: float = smoothstep(.20, .36 if cabin_transfer else .45, u) * (1.0 - smoothstep(.50 if cabin_transfer else .65, .64 if cabin_transfer else .90, u))
 	var leading_side := "l" if vehicle.transition_side < 0.0 else "r"
-	_horse_foot_contact(leading_side, vehicle.transition_step_world(), contact)
+	if cabin_transfer:
+		for side in ["l", "r"]:
+			var leading: bool = side == leading_side
+			var foot_contact := smoothstep(.20 if leading else .48, .36 if leading else .66, u)
+			_horse_foot_contact(side, vehicle.cabin_transfer_foot_world(side, u), foot_contact)
+	else:
+		_horse_foot_contact(leading_side, vehicle.transition_step_world(), contact)
+	if cabin_transfer:
+		var hip: Vector3 = skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("pelvis")).origin)
+		for side in ["l", "r"]:
+			var relaxed: Vector3 = hip + actor.visual_root.global_basis * Vector3(-.28 if side == "l" else .28, .05, .08)
+			var target: Vector3 = skeleton.to_local(relaxed.lerp(vehicle.passenger_hand_world(side), sit))
+			for iteration in 4:
+				var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_" + side))
+				equipment._solve_arm(side, target - hand.basis * equipment.palm_offsets[side])
 	if contact > 0.0:
 		if vehicle.role == "passenger" and vehicle.cart.has_method("show_coachman_blockout"):
 			preload("res://player/arjun_cart_grip.gd").apply(self, vehicle, leading_side, contact)
@@ -618,6 +637,9 @@ func _pose_climb(delta: float) -> void:
 		solver.influence = 0.0
 		if solver.is_running(): solver.stop()
 	var component: Node = actor.get_node("ClimbComponent")
+	if component.releasing:
+		if motion_tree != null: motion_tree.release_climb(delta)
+		return
 	if component.window.active:
 		component.window.pose(self,delta)
 		return
@@ -788,12 +810,21 @@ func _pose_cell_seated(delta: float) -> void:
 		var foot: Vector3 = component.floor_world+actor.global_basis*Vector3(sign_side*.20,.025,0)
 		_horse_foot_contact(side,foot,seated)
 		var knee := skeleton.get_bone_global_pose(bones["calf_"+side]).origin
-		var target := knee+Vector3(0,.055,-.05)
+		var target := knee+Vector3(0,.095,-.06)
 		var hand_index: int=bones["hand_"+side]
+		var arm_before: Dictionary={}
+		for bone in ["upperarm_"+side,"lowerarm_"+side,"hand_"+side]: arm_before[bone]=skeleton.get_bone_pose_rotation(bones[bone])
 		for pass_index in 3:
+			var desired_hand: Basis=Basis(Vector3.RIGHT,Vector3.BACK,Vector3.DOWN)*(equipment.palm_axes[side] as Basis).inverse()
+			var parent_index: int=skeleton.get_bone_parent(hand_index)
+			skeleton.set_bone_pose_rotation(hand_index,(skeleton.get_bone_global_pose(parent_index).basis.inverse()*desired_hand).get_rotation_quaternion())
+			skeleton.force_update_all_bone_transforms()
 			var hand_pose:=skeleton.get_bone_global_pose(hand_index)
 			var wrist: Vector3 = target-hand_pose.basis*equipment.palm_offsets[side]
 			equipment._solve_arm(side,wrist)
 			skeleton.force_update_all_bone_transforms()
-		equipment._grasp(side,.13)
+		for bone in arm_before:
+			var index: int=bones[bone]
+			skeleton.set_bone_pose_rotation(index,arm_before[bone].slerp(skeleton.get_bone_pose_rotation(index),seated))
+		equipment._grasp(side,.13*seated)
 	pose("head",Vector3(.08,0,0),seated)

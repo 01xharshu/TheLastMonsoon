@@ -1,0 +1,15 @@
+{
+  "status": "VISUAL_MATCH_FAILED",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_material_realism_candidate.blend",
+  "exact_match": false,
+  "runtime_replaced": false,
+  "changes": [
+    "cotton warp/weft microbump",
+    "subtle directional cloth crumpling",
+    "reduced mottled cloth contrast",
+    "skin pore bump",
+    "fine leather grain",
+    "hair roots recessed 2mm"
+  ],
+  "face_review": "Close-up reveals molded hair strips, distorted iris mapping and flat moustache; pore shader does not establish realism."
+}

@@ -4,7 +4,7 @@ const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const CROSSING_Z := 165.0
 const HALF_SPAN := 104.0
 const RAMP := 36.0
-const WIDTH := 4.8
+const WIDTH := 6.0
 var deck_height: float
 var layout := Layout.new()
 var timber: StandardMaterial3D
@@ -32,7 +32,7 @@ func _ready() -> void:
 				beam(Vector3(x,deck_height+0.2,side*(WIDTH/2-0.15)),Vector3(x+4,deck_height+1.08,side*(WIDTH/2-0.15)),0.12)
 		piece("Handrail",Vector3(0,deck_height+1.15,side*(WIDTH/2-0.15)),Vector3(HALF_SPAN*2,0.16,0.2),timber)
 		piece("RailCollision",Vector3(0,deck_height+0.6,side*(WIDTH/2-0.06)),Vector3(HALF_SPAN*2,1.3,0.15),dark,true,false)
-		piece("Stringer",Vector3(0,deck_height-0.42,side*1.5),Vector3(HALF_SPAN*2,0.5,0.28),dark)
+		piece("Stringer",Vector3(0,deck_height-0.42,side*WIDTH*.31),Vector3(HALF_SPAN*2,0.5,0.28),dark)
 	# Ramps follow a smooth bank-to-deck profile and overlap the ground at their ends.
 	for side in [-1.0,1.0]:
 		for i in 48:

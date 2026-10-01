@@ -2,7 +2,7 @@
   "errors": [],
   "escort_distance_m": 17.0101706311107,
   "max_player_step_m": 0.0191969722509384,
-  "officer_palm_error_m": 0.0155857559293509,
+  "officer_palm_error_m": 0.0113500710576773,
   "passed": true,
   "phases": [
     "approach",
@@ -13,6 +13,10 @@
     "stand",
     "leave_cell",
     "return",
+    "idle",
+    "approach",
+    "idle",
+    "approach",
     "idle"
   ],
   "renderer": "forward_plus"

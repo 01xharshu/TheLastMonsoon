@@ -295,6 +295,15 @@ func _batch(parent: Node3D,label: String,mesh: Mesh,material: Material,transform
 func _merge_static_geometry(node: Node3D) -> void:
 	var surfaces: Dictionary = {}
 	for mesh: MeshInstance3D in node.find_children("*","MeshInstance3D",true,false):
+		# Hinged doors/shutters must retain their moving visual hierarchy.
+		var ancestor: Node = mesh.get_parent()
+		var dynamic := false
+		while ancestor != node and ancestor != null:
+			if ancestor is Interactable:
+				dynamic = true
+				break
+			ancestor = ancestor.get_parent()
+		if dynamic: continue
 		# Imported meshes keep their source materials and editable hierarchy.
 		if mesh.material_override == null or mesh.name == "OilFlame": continue
 		var mat: Material = mesh.material_override
