@@ -25,6 +25,7 @@ var axes: Dictionary = {}
 var climb_ik: Dictionary = {}
 var climb_targets: Dictionary = {}
 var climb_foot_targets: Dictionary = {}
+var detention_contacts = preload("res://player/detention_contacts.gd").new()
 var motion_tree: AnimationTree
 @onready var actor: CharacterBody3D = get_parent().get_parent()
 
@@ -90,6 +91,7 @@ func _ready() -> void:
 	actor.get_node("UI").add_child.call_deferred(wheel)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if actor.get_meta("detention_action","")!="": return
 	if equipment == null or not actor.is_physics_processing(): return
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
 	if event.is_action_pressed("stow_weapon"):
@@ -136,6 +138,7 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
+	if actor.get_meta("detention_action","")=="": detention_contacts.update(self)
 	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
 	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("river_action", "") != "" or mounted or actor.get_meta("stealth_stance", "") != ""
 	if motion_tree != null:
@@ -449,9 +452,14 @@ func _pose_cart_transition(delta: float, vehicle: Node) -> void:
 	var leading_side := "l" if vehicle.transition_side < 0.0 else "r"
 	_horse_foot_contact(leading_side, vehicle.transition_step_world(), contact)
 	if contact > 0.0:
-		var hand_target: Vector3 = skeleton.to_local(vehicle.transition_hand_world())
-		var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_" + leading_side))
-		equipment._solve_arm(leading_side, hand_target - hand.basis * equipment.palm_offsets[leading_side])
+		if vehicle.role == "passenger" and vehicle.cart.has_method("show_coachman_blockout"):
+			preload("res://player/arjun_cart_grip.gd").apply(self, vehicle, leading_side, contact)
+		else:
+			var target: Vector3 = skeleton.to_local(vehicle.transition_hand_world())
+			for iteration in 4:
+				var hand: Transform3D = skeleton.get_bone_global_pose(skeleton.find_bone("hand_" + leading_side))
+				var palm: Vector3 = hand * equipment.palm_offsets[leading_side]
+				equipment._solve_arm(leading_side, palm.lerp(target, contact) - hand.basis * equipment.palm_offsets[leading_side])
 
 func _pose_cart_driver(delta: float) -> void:
 	_pose_seated(delta)
@@ -562,15 +570,17 @@ func _pose_horse_transition(delta: float) -> void:
 		var foot_contact := smoothstep(0.1, 0.3, u) if side != crossing_side else seated
 		_horse_foot_contact(side, mount.stirrup_world(side), foot_contact)
 
-func _horse_foot_contact(side: String, world_target: Vector3, weight: float, knee_pole: Vector3 = Vector3(0, 0, 1)) -> void:
+func _horse_foot_contact(side: String, world_target: Vector3, weight: float, knee_pole: Vector3 = Vector3(0, 0, 1), sole_normal: Vector3 = Vector3.UP) -> void:
 	if weight <= 0.0: return
 	var thigh := "thigh_" + side
 	var calf := "calf_" + side
 	var foot := "foot_" + side
 	var foot_index := skeleton.find_bone(foot)
 	var rest := skeleton.get_bone_global_rest(foot_index)
+	var surface_up: Vector3 = (skeleton.global_basis.inverse()*sole_normal).normalized()
+	var sole_basis: Basis = Basis(Quaternion(Vector3.UP,surface_up))*rest.basis
 	var sole_offset: Vector3 = rest.basis.inverse() * Vector3(0, -0.085, 0.06)
-	var target: Vector3 = skeleton.to_local(world_target) - rest.basis * sole_offset
+	var target: Vector3 = skeleton.to_local(world_target) - sole_basis * sole_offset
 	var current := skeleton.get_bone_global_pose(foot_index)
 	target = current.origin.lerp(target, weight)
 	var origin := skeleton.get_bone_global_pose(skeleton.find_bone(thigh)).origin
@@ -585,7 +595,7 @@ func _horse_foot_contact(side: String, world_target: Vector3, weight: float, kne
 		equipment._aim_bone(thigh, origin+direction*along+pole*sqrt(maxf(0.0,a*a-along*along)), calf)
 		equipment._aim_bone(calf, origin+direction*distance, foot)
 	var parent := skeleton.get_bone_parent(foot_index)
-	var foot_basis := skeleton.get_bone_global_pose(parent).basis.inverse() * rest.basis
+	var foot_basis := skeleton.get_bone_global_pose(parent).basis.inverse() * sole_basis
 	skeleton.set_bone_pose_rotation(foot_index, foot_basis.orthonormalized().get_rotation_quaternion())
 	skeleton.force_update_all_bone_transforms()
 
@@ -735,7 +745,11 @@ func _pose_detention(delta: float) -> void:
 	motion_tree.active = true
 	var amount: float = actor.get_meta("detention_blend", 0.0)
 	var arrested: bool = actor.get_meta("detention_action", "") == "arrest"
-	motion_tree.update_detention(delta, amount, arrested)
+	if actor.get_meta("detention_action", "")=="seated":
+		_pose_cell_seated(delta)
+		detention_contacts.update(self)
+		return
+	motion_tree.update_detention(delta, amount, arrested or actor.get_meta("detention_action","")=="escort",float(actor.get_meta("detention_speed",0.0)))
 	model.position = Vector3(0, -0.9, 0)
 	model.quaternion = Quaternion.IDENTITY
 	for solver in climb_ik.values(): solver.influence = 0.0
@@ -754,3 +768,32 @@ func _pose_detention(delta: float) -> void:
 		pose("hand_"+side, Vector3(0,0,0), restraint)
 		equipment._grasp(side, restraint*0.28)
 		skeleton.force_update_all_bone_transforms()
+	detention_contacts.update(self)
+
+func _pose_cell_seated(delta: float) -> void:
+	var component: Node = actor.get_node("DetentionComponent")
+	var seated: float = actor.get_meta("detention_seat_blend",0.0)
+	motion_tree.set("parameters/detention/blend_amount",0.0)
+	motion_tree.update_rest(delta,seated,seated*.38,component.seat_rising)
+	model.position=Vector3(0,-.9,0)
+	model.quaternion=Quaternion.IDENTITY
+	skeleton.force_update_all_bone_transforms()
+	var hip_index: int = bones["pelvis"]
+	var hip := skeleton.to_global(skeleton.get_bone_global_pose(hip_index).origin)
+	var desired: Vector3 = hip.lerp(component.seat_world,seated)
+	model.global_position += desired-hip
+	skeleton.force_update_all_bone_transforms()
+	for side in ["l","r"]:
+		var sign_side := 1.0 if side=="l" else -1.0
+		var foot: Vector3 = component.floor_world+actor.global_basis*Vector3(sign_side*.20,.025,0)
+		_horse_foot_contact(side,foot,seated)
+		var knee := skeleton.get_bone_global_pose(bones["calf_"+side]).origin
+		var target := knee+Vector3(0,.055,-.05)
+		var hand_index: int=bones["hand_"+side]
+		for pass_index in 3:
+			var hand_pose:=skeleton.get_bone_global_pose(hand_index)
+			var wrist: Vector3 = target-hand_pose.basis*equipment.palm_offsets[side]
+			equipment._solve_arm(side,wrist)
+			skeleton.force_update_all_bone_transforms()
+		equipment._grasp(side,.13)
+	pose("head",Vector3(.08,0,0),seated)

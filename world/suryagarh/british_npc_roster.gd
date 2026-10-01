@@ -2,6 +2,7 @@ extends Node3D
 ## Independent male and female preview residents; placement assigns no relationship.
 
 const ACTOR = preload("res://characters/npcs/british/british_npc_actor.gd")
+const PRIVATE_SKIRT_ACTOR = preload("res://characters/npcs/british/candidates/private_skirt_actor.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const MODEL_DIR := "res://characters/npcs/british/"
 
@@ -40,7 +41,7 @@ func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance
 	if scene == null:
 		push_error("Missing British NPC model: " + path)
 		return
-	var actor := ACTOR.new() as Node3D
+	var actor := (PRIVATE_SKIRT_ACTOR.new() if rank in ["private", "corporal", "sergeant"] and kind == "woman" else ACTOR.new()) as Node3D
 	actor.name = rank.capitalize() + ("Man" if kind == "man" else "Woman")
 	actor.position = origin
 	actor.set("cycle_offset", offset)

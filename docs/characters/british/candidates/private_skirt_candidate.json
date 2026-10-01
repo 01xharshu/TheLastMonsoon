@@ -2,7 +2,7 @@
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
   "source_sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
   "candidate": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
-  "candidate_sha256": "3b76004982be7f4ee407ed5258810309db328e9ccea6aa8cc70ec344e9193774",
+  "candidate_sha256": "c45087424f4fee375ade37b167f7dba20a1524a2f8a644ba7281110594493225",
   "body_coordinates_unchanged": true,
   "morphs": {
     "StrideLeft": {
@@ -20,15 +20,21 @@
     "LagRight": {
       "maximum_displacement_m": 0.03,
       "pinned_vertices": 1152
+    },
+    "waistband": {
+      "fit": "interpolated existing skirt and bridge rings plus 2.5 mm clearance",
+      "body_changed": false
     }
   },
   "scope": "restrained secondary deformation study; no cloth simulation, seated corrective or contact approval",
-  "live_asset_replaced": false,
+  "live_asset_replaced": true,
   "candidate_exports": {
     "woman": {
       "path": "characters/npcs/british/candidates/private_woman_skirt_candidate.glb",
-      "sha256": "fdf08815780660872e310429e3fc098e0e13f34f7e20d1ec13152c201eba4f96",
+      "sha256": "fda13000dab9d28c0f2c20f1a4943615d0435fdd046110440fe24a1cbd0728bb",
       "bytes": 2166288
     }
-  }
+  },
+  "live_asset_path": "characters/npcs/british/private_woman.glb",
+  "owner_decision": "Apply current candidate for now; defer remaining tailoring and seated gates"
 }

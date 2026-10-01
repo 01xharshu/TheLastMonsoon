@@ -31,6 +31,9 @@ func run() -> void:
 		camera.fov=60
 		world.add_child(camera)
 		camera.current=true
+		root.content_scale_size=Vector2i(1280,720)
+		root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
+		root.get_viewport().scaling_3d_scale=1.0
 		await capture("fort_kitchen_realism",Vector3(-42,2.1,-67.5),Vector3(-44,1.6,-76))
 		await capture("fort_cook_contact",Vector3(-38.8,1.95,-76.8),Vector3(-41,1.25,-75.1))
 		await capture("fort_stores_realism",Vector3(5,2.2,-67.3),Vector3(0,1.8,-77))
@@ -39,6 +42,11 @@ func run() -> void:
 		await capture("fort_bastion_access",Vector3(74,11,61),Vector3(88,4.5,77))
 		await capture("fort_council_detail",Vector3(6,6.8,-36),Vector3(0,5.7,-43))
 		await capture("fort_gate_realism",Vector3(8,2.2,98),Vector3(0,2.3,92))
+		if "--captures-only" in OS.get_cmdline_user_args():
+			world.queue_free()
+			await process_frame
+			quit(0)
+			return
 	# Pause unrelated patrol/contact studies; this fixture measures the fort and actual Player.
 	for node in world.find_children("*","Node3D",true,false):
 		if node.has_method("_make_clip") and not node.is_in_group("fort_staff"): node.set_process(false)
@@ -46,8 +54,9 @@ func run() -> void:
 	var steward=fort.get_node("FortSteward")
 	check(cook.animation_tree != null and steward.animation_tree != null,"staff have live independent rigged trees")
 	check(cook.animation_tree != steward.animation_tree,"staff trees are independent")
+	check(fort.get_node("FortCommander").animation_tree != null,"resident commandant has a live personal tree")
 	var worst_contact := 0.0
-	for sample in 24:
+	for sample in 180:
 		await physics_frame
 		worst_contact=maxf(worst_contact,maxf(cook.get_meta("hand_contact_l",INF),cook.get_meta("hand_contact_r",INF)))
 	check(worst_contact < .018,"cook palms remain on vessel and mixing target")
@@ -64,7 +73,7 @@ func run() -> void:
 	check(count >= 35 and worst_gap < .012,"reviewed props sit on their authored supports")
 	samples.append({"supported_props":count,"max_mesh_base_gap_m":worst_gap})
 	var door=fort.get_node("FortKitchen/ServiceDoor")
-	door.set_meta("debug_sweep",true)
+	door.set_meta("debug_sweep",false)
 	door.set_open(false)
 	await create_timer(1.4).timeout
 	var origin: Vector3=fort.get_node("FortKitchen").to_global(Vector3(0,1.2,9.1))

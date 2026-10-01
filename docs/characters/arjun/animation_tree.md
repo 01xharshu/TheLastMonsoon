@@ -1,6 +1,10 @@
 # Arjun locomotion AnimationTree — 2026-09-25
 
-## Step climbing — 2026-09-30
+## Current solid climbing and wrist rework — 2026-10-01
+
+The previous pass below was rejected by the owner. Current changes and evidence are in [solid climbing and grip rework](solid_climbing_2026-10-01.md): 17 shorter steps, fixed boot soles, forearm pronation and limited wrist bend, an explicit mantle press, collision-checked body travel and animated torso/head clearance. Fresh Forward+/Metal motion and collision/contact checks pass; owner motion and mesh/finger-pressure review remain open.
+
+## Previous step pass — 2026-09-30, owner rejected
 
 Tall authored masonry now uses repeated hand reach → opposite boot placement → upward push. Each ascent cycle lasts 0.70 seconds; body travel starts only halfway through the cycle, after both new contacts are placed. Targets stay anchored to the stones during each push. The AnimationTree alternates left/right pull poses for every step rather than once over the entire wall. A separate mantle-step pose and a crouched transfer carry Arjun onto the coping before he stands. Palm solving remains after the tree, knees bend toward the wall, and each moving boot lifts away from the stone during placement.
 

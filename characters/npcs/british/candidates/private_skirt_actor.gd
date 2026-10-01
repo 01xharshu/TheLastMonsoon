@@ -1,5 +1,5 @@
 extends "res://characters/npcs/british/british_npc_actor.gd"
-## Isolated garment study. Only the candidate fixture instantiates this actor.
+## Current Private/Corporal/Sergeant woman garment driver, applied to the live roster by owner request.
 var skirt_mesh: MeshInstance3D
 var cloth_values := Vector4.ZERO
 

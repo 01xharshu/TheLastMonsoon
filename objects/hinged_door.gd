@@ -172,3 +172,11 @@ func set_open(value: bool) -> void:
 
 func _label() -> void:
 	interaction_text = "Latched for the night" if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))
+
+func restore_state(value: bool) -> void:
+	if motion != null and motion.is_valid(): motion.kill()
+	moving=false
+	opened=value
+	swing=1.0 if value else 0.0
+	last_safe_swing=swing
+	_label()

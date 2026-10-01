@@ -205,11 +205,29 @@ func _tailor_hem(model: Node3D) -> void:
  var node := model.find_child("Arjun_Kurta_SplitHem",true,false) as MeshInstance3D
  if node == null: return
  var result := ArrayMesh.new()
+ var binds := {}
+ for bind in node.skin.get_bind_count():
+  binds[str(node.skin.get_bind_name(bind))] = bind
  for index in node.mesh.get_surface_count():
   var arrays := node.mesh.surface_get_arrays(index)
   var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+  var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+  var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+  var influences: int = weights.size()/vertices.size()
   for i in vertices.size():
    var point := vertices[i]
+   # Shared hip transition keeps the split hem over the trouser opening.
+   var waist := smoothstep(.96,1.04,point.y)
+   var left := clampf(.5+point.x/.10,0.0,1.0)
+   for slot in influences:
+    bones[i*influences+slot] = 0
+    weights[i*influences+slot] = 0.0
+   bones[i*influences] = binds["pelvis"]
+   bones[i*influences+1] = binds["thigh_l"]
+   bones[i*influences+2] = binds["thigh_r"]
+   weights[i*influences] = waist
+   weights[i*influences+1] = (1.0-waist)*left
+   weights[i*influences+2] = (1.0-waist)*(1.0-left)
    var loose := 1.0-smoothstep(.74,1.025,point.y)
    var angle := atan2(point.z-.02,point.x)
    # Unequal hanging folds with the gathered waist pinned; preserve side splits.
@@ -219,8 +237,10 @@ func _tailor_hem(model: Node3D) -> void:
    point.y += .002*sin(angle*5.0)*loose
    vertices[i] = point
   arrays[Mesh.ARRAY_VERTEX] = vertices
+  arrays[Mesh.ARRAY_BONES] = bones
+  arrays[Mesh.ARRAY_WEIGHTS] = weights
   var mesh := ArrayMesh.new()
-  mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+  mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},node.mesh.surface_get_format(index)&Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS)
   var surface := SurfaceTool.new()
   surface.create_from(mesh,0)
   surface.generate_normals()

@@ -73,7 +73,7 @@ func _run() -> void:
                     var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets[side])
                     var target: Vector3 = climb.window.sill+climb.window.normal*(.08-.55*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32)+Vector3.UP*.03
                     if climb.window.surface != null:
-                        var support: Dictionary = climb.window.surface.contact(climb.window.sill-climb.window.normal*(.22+.55*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32))
+                        var support: Dictionary = climb.window.surface.contact(climb.window.sill-climb.window.normal*(.22+.48*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32))
                         if not support.is_empty(): target = support.position+support.normal*.03
                     var gap: float = palm.distance_to(target)
                     print("OBJECT PALM ",scenario.name," ",frame," ",side," gap=",gap)

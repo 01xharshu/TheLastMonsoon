@@ -51,6 +51,11 @@ void fragment(){
  float glint=pow(max(0.0,small*.55+detail*.3+current*.15),6.0);
  ALBEDO=mix(shallow_color,deep_color,shallow)+vec3(.12,.14,.11)*foam+vec3(.025)*max(small,0.0)+vec3(.035,.045,.04)*glint;
  ALPHA=mix(.26,.71,shallow)+foam*.25;
+ // The fresh river stays translucent. Deep tidal water gradually becomes
+ // opaque toward the scenic sea, avoiding a visible tiled bed at the horizon.
+ float sea_weight=smoothstep(560.0,850.0,xz.y);
+ ALPHA=mix(ALPHA,mix(.42,.98,shallow),sea_weight);
+ ALBEDO=mix(ALBEDO,vec3(.035,.105,.125)+vec3(.02)*glint,sea_weight*shallow);
  ROUGHNESS=.19;
  SPECULAR=.8;
  METALLIC=0.0;

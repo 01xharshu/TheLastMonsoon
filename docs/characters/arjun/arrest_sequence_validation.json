@@ -1,0 +1,19 @@
+{
+  "errors": [],
+  "escort_distance_m": 17.0101706311107,
+  "max_player_step_m": 0.0191969722509384,
+  "officer_palm_error_m": 0.0155857559293509,
+  "passed": true,
+  "phases": [
+    "approach",
+    "restraint",
+    "escort",
+    "enter_cell",
+    "custody",
+    "stand",
+    "leave_cell",
+    "return",
+    "idle"
+  ],
+  "renderer": "forward_plus"
+}

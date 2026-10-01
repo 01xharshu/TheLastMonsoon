@@ -29,6 +29,7 @@ func _ready() -> void:
 	stone = material(Color(.42,.40,.33),true)
 	iron = material(Color(.13,.14,.13))
 	preload("res://world/suryagarh/settlements/bhairavpur_village.gd").new().build(self)
+	add_child(preload("res://world/suryagarh/settlements/village_street_life.gd").new())
 	add_civic("TownHall",Layout.PLOTS["TownHall"].center,false)
 	add_civic("DistrictPolice",Layout.PLOTS["DistrictPolice"].center,true)
 	var compound_center: Vector2 = Layout.PLOTS["CompanyCompound"].center
@@ -39,6 +40,7 @@ func _ready() -> void:
 	place_period_props()
 	landing()
 	preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
+	preload("res://world/suryagarh/settlements/administrative_district.gd").new().build(self)
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
 
@@ -229,14 +231,6 @@ func make_building(label: String, p: Vector2, extent: Vector2, civic: bool, nort
 	if label == "CompanyArmoury":
 		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, b, Vector3(5, 0, -3), "company_armoury/ammunition")
 		preload("res://world/suryagarh/settlements/medical_supply.gd").furnish(self, b, Vector3(3.3,0,-3), "company_armoury/bandage")
-	var sign := Label3D.new()
-	sign.text = {"SuryagarhTownHall":"SURYAGARH · TOWN HALL","PoliceThana":"POLICE THANA","DistrictJail":"DISTRICT JAIL","CompanyArmoury":"COMPANY STORES"}.get(label,"")
-	sign.font = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-	sign.font_size = 48
-	sign.pixel_size = .007
-	sign.modulate = Color(.20,.13,.07)
-	sign.position = Vector3(0,3.5,d*.5+.205)
-	b.add_child(sign)
 	if not defer_visual_merge: merge_visuals(b)
 	return b
 
@@ -431,9 +425,3 @@ func add_civic(label: String,p: Vector2,police: bool) -> void:
 	building.set("police",police)
 	building.position = Vector3(p.x,0,p.y)
 	add_child(building)
-	var notice := preload("res://interaction/wall_notice.gd").new()
-	notice.name = "PostedDistrictNotice"
-	notice.headline = "ROAD WATCH" if police else "MARKET NEWS"
-	notice.message = "Report unsafe roads and disturbances to the district office." if police else "Grain sellers and travellers: keep the entrance and water steps clear. Market enquiries are received here."
-	notice.position = Vector3(7,1.50,18.27 if police else 14.27)
-	building.add_child(notice)

@@ -37,7 +37,12 @@ func _run() -> void:
 			camera.look_at(owner.global_position+Vector3.UP*1.48)
 			await _save(name.to_snake_case()+"_face")
 	var coach:=manager.get_node("BritishHouseholdCoach") as Node3D
-	coach.get_node("HouseholdTravel").step(12.1)
+	for frame in 1200:
+		coach.get_node("HouseholdTravel").step(.1)
+		await physics_frame
+		if coach.get_node("HouseholdTravel").phase=="departing":break
+	if coach.get_node("HouseholdTravel").phase!="departing":
+		push_error("Household boarding did not finish");quit(1);return
 	camera.global_position=coach.global_position+Vector3(6,4,-6)
 	camera.look_at(coach.global_position+Vector3(0,1.5,1))
 	await _save("household_occupied_coach")

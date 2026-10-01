@@ -1,0 +1,40 @@
+{
+  "source": "WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend",
+  "source_sha256": "e07d589143a5c8d088b22aec22c3a2209ca4efc8a6e4e6d5036d18e7c15ca314",
+  "candidate": "WorkingAssets/NPCs/british/corporal_skirt_candidate/corporal_woman_skirt_candidate.blend",
+  "candidate_sha256": "c7572caec7a7c3b2700497db19767e747c59959f6b4d75aa6635844271767903",
+  "body_coordinates_unchanged": true,
+  "morphs": {
+    "StrideLeft": {
+      "maximum_displacement_m": 0.0355994014719936,
+      "pinned_vertices": 432
+    },
+    "StrideRight": {
+      "maximum_displacement_m": 0.0355994014719936,
+      "pinned_vertices": 432
+    },
+    "LagLeft": {
+      "maximum_displacement_m": 0.028780410289764403,
+      "pinned_vertices": 432
+    },
+    "LagRight": {
+      "maximum_displacement_m": 0.028780410289764403,
+      "pinned_vertices": 432
+    },
+    "waistband": {
+      "fit": "no separate waistband in source; existing transition retained",
+      "body_changed": false
+    }
+  },
+  "scope": "restrained secondary deformation study; no cloth simulation, seated corrective or contact approval",
+  "live_asset_replaced": true,
+  "candidate_exports": {
+    "woman": {
+      "path": "characters/npcs/british/candidates/corporal_woman_skirt_candidate.glb",
+      "sha256": "2574dfecb9e517fe50515cc3f625da3ae1d7734c07344150f009ee1715c34a7b",
+      "bytes": 1923216
+    }
+  },
+  "live_asset_path": "characters/npcs/british/corporal_woman.glb",
+  "application_scope": "Continue accepted apply-for-now method to Corporal, retaining deferred fit/run/seated gates"
+}

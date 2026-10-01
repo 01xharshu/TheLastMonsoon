@@ -11,16 +11,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RANK = sys.argv[sys.argv.index('--') + 1] if '--' in sys.argv else 'private'
 CANDIDATE = '--skirt-candidate' in sys.argv
-SOURCE = ROOT / ('WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend' if CANDIDATE else f'WorkingAssets/NPCs/british/{RANK}_pair/{RANK}_pair_mpfb_candidate.blend')
+UNIFORM = '--uniform-candidate' in sys.argv
+assert not (CANDIDATE and UNIFORM)
+SOURCE = ROOT / (f'WorkingAssets/NPCs/british/{RANK}_skirt_candidate/{RANK}_woman_skirt_candidate.blend' if CANDIDATE else f'WorkingAssets/NPCs/british/{RANK}_pair/{RANK}_pair_mpfb_candidate.blend')
+if UNIFORM:
+    assert RANK == 'sergeant'
+    SOURCE = ROOT / 'WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend'
 RUNTIME = ROOT / 'characters/npcs/british'
-if CANDIDATE:
-    assert RANK == 'private'
+if CANDIDATE or UNIFORM:
+    assert RANK in ('private', 'corporal', 'sergeant')
     RUNTIME /= 'candidates'
 RUNTIME.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
 
 exports = {}
-for slug, suffix in ([('Companion', 'woman')] if CANDIDATE else [(RANK.capitalize(), 'man'), ('Companion', 'woman')]):
+for slug, suffix in ([(RANK.capitalize(), 'man')] if UNIFORM else [('Companion', 'woman')] if CANDIDATE else [(RANK.capitalize(), 'man'), ('Companion', 'woman')]):
+    if not CANDIDATE and not UNIFORM and RANK == 'sergeant' and suffix == 'man':
+        uniform_manifest = ROOT / 'docs/characters/british/candidates/sergeant_uniform_manifest.json'
+        if uniform_manifest.exists() and json.loads(uniform_manifest.read_text()).get('live_applied', False):
+            bpy.ops.wm.open_mainfile(filepath=str(ROOT / 'WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend'))
+    if not CANDIDATE and RANK in ('private', 'corporal', 'sergeant') and suffix == 'woman':
+        applied_manifest = ROOT / f'docs/characters/british/candidates/{RANK}_skirt_candidate.json'
+        if applied_manifest.exists() and json.loads(applied_manifest.read_text()).get('live_asset_replaced', False):
+            bpy.ops.wm.open_mainfile(filepath=str(ROOT / f'WorkingAssets/NPCs/british/{RANK}_skirt_candidate/{RANK}_woman_skirt_candidate.blend'))
     rig = bpy.data.objects[f'{slug}_game_engine_rig']
     body = bpy.data.objects[f'{slug}_MPFB_body']
     outfit = bpy.data.objects[f'{slug}_fitted_cloth_base']
@@ -75,7 +88,7 @@ for slug, suffix in ([('Companion', 'woman')] if CANDIDATE else [(RANK.capitaliz
                     obj.data.materials.append(eye_mat)
                 # Torso straps must not inherit nearby arm/leg weights from
                 # the donor body's nearest-surface lookup.
-                if 'crossbelt' in obj.name.lower():
+                if 'crossbelt' in obj.name.lower() and not obj.get('fitted_uniform_weights', False):
                     obj.vertex_groups.clear()
                     obj.vertex_groups.new(name='spine_02').add(
                         list(range(len(obj.data.vertices))), 1.0, 'REPLACE')
@@ -99,7 +112,7 @@ for slug, suffix in ([('Companion', 'woman')] if CANDIDATE else [(RANK.capitaliz
                         safe_base.default_value = tuple(mat.diffuse_color)
                         slot.material = safe
     bpy.context.view_layer.objects.active = rig
-    target = RUNTIME / (f'{RANK}_{suffix}_skirt_candidate.glb' if CANDIDATE else f'{RANK}_{suffix}.glb')
+    target = RUNTIME / (f'{RANK}_{suffix}_uniform_candidate.glb' if UNIFORM else f'{RANK}_{suffix}_skirt_candidate.glb' if CANDIDATE else f'{RANK}_{suffix}.glb')
     bpy.ops.export_scene.gltf(
         filepath=str(target), export_format='GLB', use_selection=True,
         export_animations=False, export_skins=True, export_cameras=False,
@@ -112,8 +125,16 @@ for slug, suffix in ([('Companion', 'woman')] if CANDIDATE else [(RANK.capitaliz
     bpy.data.objects.remove(cutouts[0], do_unlink=True)
     bpy.data.objects.remove(cutouts[1], do_unlink=True)
 
+if UNIFORM:
+    manifest_path = ROOT / 'docs/characters/british/candidates/sergeant_uniform_manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    manifest['exports'] = exports
+    manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
+    print('SERGEANT_UNIFORM_EXPORT', json.dumps(exports))
+    sys.exit(0)
+
 if CANDIDATE:
-    manifest_path = ROOT / 'docs/characters/british/candidates/private_skirt_candidate.json'
+    manifest_path = ROOT / f'docs/characters/british/candidates/{RANK}_skirt_candidate.json'
     manifest = json.loads(manifest_path.read_text())
     manifest['candidate_exports'] = exports
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')

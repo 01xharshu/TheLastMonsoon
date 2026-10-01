@@ -48,6 +48,8 @@ func shell(b,room: Node3D) -> void:
 		b.piece(room,"FrontPier",Vector3(side*5.15,1.8,7),Vector3(7.7,3.6,.4),lime)
 		b.piece(room,"DoorStoneJamb",Vector3(side*1.33,1.5,7.15),Vector3(.17,2.5,.55),b.stone)
 	b.piece(room,"DoorHeader",Vector3(0,3.0,7),Vector3(2.6,1.2,.4),lime)
+	for z in [-7.0,7.0]: b.piece(room,"SealedEaveCourse",Vector3(0,3.67,z),Vector3(18,.22,.42),lime)
+	for x in [-9.0,9.0]: b.piece(room,"SealedGableBase",Vector3(x,3.67,0),Vector3(.42,.22,14),lime)
 	b.piece(room,"DoorStep",Vector3(0,.08,7.8),Vector3(2.8,.16,1.2),b.stone)
 	# Visible supported gable roof; ridge runs across the width of each room.
 	var rise := 1.45
@@ -184,13 +186,13 @@ func _kitchen(b,room: Node3D) -> void:
 		for z in [-3.4,-2.6]: b.piece(room,"TableLeg",Vector3(x,.565,z),Vector3(.12,.65,.12),timber)
 	b.piece(room,"TableLowerRail",Vector3(4,.40,-3),Vector3(3,.10,.12),timber,false)
 	b.piece(room,"ChoppingBoard",Vector3(3.25,1.015,-3),Vector3(.7,.045,.48),timber,false)
-	prop(room,"MixingVessel","brass_pot",Vector3(4,.99,-2.58))
+	_mixing_bowl(room,Vector3(4,.99,-2.58))
 	prop(room,"VegetableBasket","basket",Vector3(5.2,.99,-3))
 	for x in [2.4,2.8]: prop(room,"CookingVessel","brass_pot",Vector3(x,.99,-3.25))
 	for side in ["l","r"]:
 		var marker := Marker3D.new()
 		marker.name="CookContact"+side.to_upper()
-		marker.position=Vector3(4.14 if side=="l" else 3.93,1.28,-2.58)
+		marker.position=Vector3(4.08 if side=="l" else 3.94,1.25 if side=="l" else 1.30,-2.44 if side=="l" else -2.49)
 		room.add_child(marker)
 	b.piece(room,"WaterPotStand",Vector3(-7,.36,2.2),Vector3(1.8,.24,1),b.stone)
 	_pot(b,room,"KitchenWaterPot",Vector3(-7.45,.48,2.2))
@@ -215,6 +217,46 @@ func _kitchen(b,room: Node3D) -> void:
 		scoop.material_override=iron
 		scoop.position=Vector3(x,1.5,-6.6)
 		room.add_child(scoop)
+
+func _mixing_bowl(room: Node3D,at: Vector3) -> void:
+	var bowl := Node3D.new()
+	bowl.name="OpenMixingBowl"
+	bowl.position=at
+	room.add_child(bowl)
+	var profile: Array[Vector2] = [Vector2(0,0),Vector2(.08,0),Vector2(.14,.06),Vector2(.16,.24),Vector2(.144,.24),Vector2(.124,.06),Vector2(.065,.025),Vector2(0,.025)]
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for section in range(profile.size()-1):
+		var slope: Vector2=profile[section+1]-profile[section]
+		for segment in 40:
+			var points: Array[Vector3] = []
+			var normals: Array[Vector3] = []
+			for p in [profile[section],profile[section+1]]:
+				for angle in [segment*TAU/40.0,(segment+1)*TAU/40.0]:
+					points.append(Vector3(p.x*cos(angle),p.y,p.x*sin(angle)))
+					normals.append(Vector3(slope.y*cos(angle),-slope.x,slope.y*sin(angle)).normalized())
+			for vertex in [0,2,1,1,2,3]:
+				surface.set_normal(normals[vertex])
+				surface.set_uv(Vector2(points[vertex].x,points[vertex].y))
+				surface.add_vertex(points[vertex])
+	var mesh := MeshInstance3D.new()
+	mesh.name="HollowEarthenBowl"
+	mesh.mesh=surface.commit()
+	var bowl_clay := clay.duplicate() as StandardMaterial3D
+	bowl_clay.cull_mode=BaseMaterial3D.CULL_DISABLED
+	mesh.material_override=bowl_clay
+	bowl.add_child(mesh)
+	var food := MeshInstance3D.new()
+	food.name="MixingContents"
+	var contents := CylinderMesh.new()
+	contents.top_radius=.126
+	contents.bottom_radius=.116
+	contents.height=.045
+	contents.radial_segments=32
+	food.mesh=contents
+	food.material_override=_plain(Color(.58,.49,.28))
+	food.position.y=.08
+	bowl.add_child(food)
 
 func _shelf(b,room: Node3D,at: Vector3,w: float) -> void:
 	for y in [1.06,1.85,2.55]: b.piece(room,"StorageShelf",at+Vector3(0,y,0),Vector3(w,.12,.65),timber)

@@ -82,12 +82,11 @@ static func cell(b: Node3D, center: Vector3, label: String) -> void:
 		b.piece(b, label+"IronBar", center+Vector3(x, 1.45, 0), Vector3(0.045, 2.9, 0.045), b.iron, false)
 	for side in [-1, 1]:
 		b.piece(b, label+"BarCollision", center+Vector3(side*1.6, 1.5, 0), Vector3(1.6, 3, 0.12), b.iron, true).get_child(0).hide()
-	var gate: Node3D = b.piece(b, label+"OpenGateCollision", center+Vector3(0.82, 1.35, -0.7), Vector3(0.08, 2.7, 1.4), b.iron)
-	gate.get_child(0).hide()
-	for z in [-1.3,-1.05,-0.8,-0.55,-0.3,-0.05]:
-		b.piece(b,label+"OpenGateBar",center+Vector3(0.82,1.35,z),Vector3(0.045,2.7,0.045),b.iron,false)
-	for y in [0.10,1.3,2.6]:
-		b.piece(b,label+"OpenGateRail",center+Vector3(0.82,y,-0.7),Vector3(0.06,0.07,1.4),b.iron,false)
+	var gate := preload("res://world/suryagarh/settlements/detention_gate.gd").new()
+	gate.name = label+"Gate"
+	gate.position = center+Vector3(.82,0,0)
+	gate.set_meta("cell_label",label)
+	b.add_child(gate)
 	b.piece(b, label+"SleepingPlatform", center+Vector3(-0.8, 0.18, -2.5), Vector3(2.4, 0.36, 1.1), b.stone)
 	b.piece(b, label+"SleepingMat", center+Vector3(-0.8, 0.375, -2.5), Vector3(2.2, 0.03, 1), b.ochre, false)
 

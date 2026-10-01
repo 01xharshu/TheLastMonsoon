@@ -178,13 +178,6 @@ func build_main_house() -> void:
 	piece(h,"EntranceHeadTrim",Vector3(0,4.18,20.55),Vector3(11.2,.25,.75),stone,false)
 	for step in 4:
 		piece(h,"EntranceStep",Vector3(0,.05+step*.105,29.8-step*.85),Vector3(17,.21,1.0),stone)
-	var sign := Label3D.new()
-	sign.text="GOVERNMENT HOUSE"
-	sign.font=preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-	sign.font_size=72
-	sign.pixel_size=.009
-	sign.position=Vector3(0,6.4,20.6)
-	h.add_child(sign)
 
 func main_floor(h: Node3D) -> void:
 	piece(h,"GroundFloor",Vector3(0,.17,0),Vector3(68,.34,40),stone)

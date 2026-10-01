@@ -1,0 +1,18 @@
+{
+  "status": "CANDIDATE_VISUAL_REVIEW_OPEN",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend",
+  "source_sha256": "1699ebda45ab576543f39e6ea5d1a1c01e24ea8460ce1514876a48037707eeb2",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend",
+  "candidate_sha256": "39815c418da99e96b8f3fe23da055aa09977dc43718cdd92949916e53665bee6",
+  "changes": [
+    "removed fine cylindrical trouser corrugation",
+    "dense hanging ridges and ankle gathers",
+    "shaft and vamp strips projected onto evaluated boot mesh"
+  ],
+  "body_changed": false,
+  "face_changed": false,
+  "runtime_replaced": false,
+  "exact_match": false,
+  "projected_strap_vertices": 2656,
+  "max_projection_offset_error_m": 1.5630937356091168e-08
+}

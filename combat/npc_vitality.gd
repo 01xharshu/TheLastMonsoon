@@ -32,6 +32,7 @@ func _ready() -> void:
 
 func take_damage(amount: float) -> void:
 	if dead or not is_finite(amount) or amount <= 0: return
+	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",actor)
 	health = maxf(0.0,health-amount)
 	if health > 0: return
 	dead = true

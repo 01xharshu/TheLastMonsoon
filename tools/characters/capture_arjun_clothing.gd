@@ -3,6 +3,9 @@ extends SceneTree
 func _initialize() -> void:
  _run.call_deferred()
 func _run() -> void:
+ root.size = Vector2i(1280,720)
+ root.content_scale_size = Vector2i(1280,720)
+ root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
  var stage := Node3D.new()
  root.add_child(stage)
  current_scene = stage
@@ -43,15 +46,15 @@ func _run() -> void:
  camera.make_current()
  var label := "dry"
  if not OS.get_cmdline_user_args().is_empty(): label = OS.get_cmdline_user_args()[0]
- clothing.shoulder.visible = label in ["strap", "run"]
+ clothing.shoulder.visible = label == "strap" or label.ends_with("run")
  clothing.shoulder_stitches.visible = clothing.shoulder.visible
  for material in clothing.materials: material.set_shader_parameter("wetness", 1.0 if label == "wet" else 0.0)
- for frame in 30: tree.update_motion(1.0/30.0, 1.75 if label == "run" else 0.0, 0.0, false)
+ for frame in 30: tree.update_motion(1.0/30.0, 1.75 if label.ends_with("run") else 0.0, 0.0, false)
  model.position.y = -tree.foot_contact_offset
- camera.position = Vector3(1.6,1.05,0) if label == "run" else Vector3(0,1.05,1.55)
+ camera.position = Vector3(1.6,1.05,0) if label.ends_with("run") else Vector3(0,1.05,1.55)
  camera.look_at(Vector3(0,.75,0))
  for frame in 3: await process_frame
- await RenderingServer.frame_post_draw
+ RenderingServer.force_draw(false)
  var path := "res://docs/characters/arjun/clothing_2026-09-30/" + label + ".png"
  print("CLOTHING CAPTURE ", label, " ", root.get_texture().get_image().save_png(path))
  quit()

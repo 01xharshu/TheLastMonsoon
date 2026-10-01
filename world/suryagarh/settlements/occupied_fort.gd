@@ -71,3 +71,14 @@ func staff(b) -> void:
 			continue
 		actor.add_child(document.generate_scene(state))
 		b.add_child(actor)
+
+	var commander := preload("res://characters/npcs/british/british_npc_actor.gd").new()
+	commander.name="FortCommander"
+	commander.position=Vector3(-1.8,4.86,-40.9)
+	commander.rotation.y=PI
+	commander.movement_enabled=false
+	commander.set_meta("story_role","resident district commandant issuing village orders")
+	commander.set_meta("visual_status","candidate_unapproved")
+	commander.add_to_group("fort_staff")
+	commander.add_child(preload("res://characters/npcs/british/official_man.glb").instantiate())
+	b.add_child(commander)

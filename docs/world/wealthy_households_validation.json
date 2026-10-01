@@ -1,70 +1,66 @@
 {
   "clear_new_home_entrances": 2,
   "coaches": 3,
-  "errors": [
-    "LandownerHouseholdCoach: no completed driveway round trip",
-    "MerchantHouseholdCoach: no completed driveway round trip",
-    "BritishHouseholdCoach: no completed driveway round trip"
-  ],
+  "errors": [],
   "hand_contacts": [
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.00154382758773863,
+      "error_m": 0.00150876096449792,
       "hand": "l"
     },
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.00154382758773863,
+      "error_m": 0.00150475185364485,
       "hand": "r"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00141871999949217,
+      "error_m": 0.00144791789352894,
       "hand": "l"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00142079452052712,
+      "error_m": 0.00145141617394984,
       "hand": "r"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.0019082638900727,
+      "error_m": 0.00192515284288675,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.0019082638900727,
+      "error_m": 0.00192515284288675,
       "hand": "r"
     },
     {
       "actor": "LandownerHouseholdCoachman",
-      "error_m": 0.00145512074232101,
+      "error_m": 0.000817241030745208,
       "hand": "l"
     },
     {
       "actor": "LandownerHouseholdCoachman",
-      "error_m": 0.00145460350904614,
+      "error_m": 0.000817241030745208,
       "hand": "r"
     },
     {
       "actor": "MerchantHouseholdCoachman",
-      "error_m": 0.00143271498382092,
+      "error_m": 0.000817241030745208,
       "hand": "l"
     },
     {
       "actor": "MerchantHouseholdCoachman",
-      "error_m": 0.00144516618456692,
+      "error_m": 0.000817241030745208,
       "hand": "r"
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.00145512074232101,
+      "error_m": 0.000814882223494351,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.00145512074232101,
+      "error_m": 0.000814882223494351,
       "hand": "r"
     }
   ],
@@ -73,99 +69,174 @@
   "journeys": [
     {
       "actions": {
+        "boarding_return": true,
         "departing": true,
+        "entering_home": true,
         "entering_office": true,
+        "home": true,
+        "home_arrival": true,
         "leaving_home": true,
-        "office_arrival": true
+        "office_arrival": true,
+        "returning": true,
+        "turning": true,
+        "working": true
       },
       "blocked_frames": 0,
       "coach": "LandownerHouseholdCoach",
-      "distance_m": 30.5999999999999,
-      "phase": "entering_office",
+      "distance_m": 133.795529979468,
+      "phase": "departing",
       "resident_actions": [
         {
           "actor": "LandownerHouseholdLandowner",
-          "blocked_frames": 3260,
-          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/LandownerHouseholdOffice/EntranceRamp/@StaticBody3D@31579\"]",
-          "position": "(-309.0, 7.278996, 319.6062)",
-          "state": "enter_office",
+          "blocked_frames": 0,
+          "obstacle": "",
+          "position": "(-321.48, 8.075469, 337.6002)",
+          "state": "seated",
           "visited": {
             "climb_down": true,
             "climb_step": true,
             "enter_coach": true,
+            "enter_home": true,
             "enter_office": true,
             "home": true,
             "leave_home": true,
+            "leave_office": true,
             "outside_coach": true,
             "seated": true,
+            "sit_at_desk": true,
             "sit_down": true,
+            "stand_from_desk": true,
             "stand_from_seat": true,
-            "step_to_ground": true
+            "step_to_ground": true,
+            "work": true
           }
         }
       ],
-      "round_trips": 0
+      "round_trips": 2
     },
     {
       "actions": {
-        "leaving_home": true
+        "boarding_return": true,
+        "departing": true,
+        "entering_home": true,
+        "entering_office": true,
+        "home": true,
+        "home_arrival": true,
+        "leaving_home": true,
+        "office_arrival": true,
+        "returning": true,
+        "turning": true,
+        "working": true
       },
       "blocked_frames": 0,
       "coach": "MerchantHouseholdCoach",
-      "distance_m": 0.0,
-      "phase": "leaving_home",
+      "distance_m": 173.989453124999,
+      "phase": "boarding_return",
       "resident_actions": [
         {
           "actor": "MerchantHouseholdMerchant",
-          "blocked_frames": 3770,
-          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/MerchantHousehold/VerandaFloor/@StaticBody3D@30912\"]",
-          "position": "(-413.0, 7.420099, 292.799)",
-          "state": "leave_home",
+          "blocked_frames": 0,
+          "obstacle": "",
+          "position": "(-381.4009, 7.212001, 317.0971)",
+          "state": "leave_office",
           "visited": {
+            "climb_down": true,
+            "climb_step": true,
+            "enter_coach": true,
+            "enter_home": true,
+            "enter_office": true,
             "home": true,
-            "leave_home": true
+            "leave_home": true,
+            "leave_office": true,
+            "outside_coach": true,
+            "seated": true,
+            "sit_at_desk": true,
+            "sit_down": true,
+            "stand_from_desk": true,
+            "stand_from_seat": true,
+            "step_to_ground": true,
+            "work": true
           }
         }
       ],
-      "round_trips": 0
+      "round_trips": 1
     },
     {
       "actions": {
-        "leaving_home": true
+        "backing_out": true,
+        "boarding_return": true,
+        "departing": true,
+        "entering_home": true,
+        "entering_office": true,
+        "home": true,
+        "home_arrival": true,
+        "leaving_home": true,
+        "office_arrival": true,
+        "returning": true,
+        "turning": true,
+        "working": true
       },
       "blocked_frames": 0,
       "coach": "BritishHouseholdCoach",
-      "distance_m": 0.0,
-      "phase": "leaving_home",
+      "distance_m": 146.99914855957,
+      "phase": "working",
       "resident_actions": [
         {
           "actor": "OfficialMan",
-          "blocked_frames": 3790,
-          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/BritishHousehold/VerandaFloor/@StaticBody3D@31179\"]",
-          "position": "(-455.0, 8.720098, -173.201)",
-          "state": "leave_home",
+          "blocked_frames": 0,
+          "obstacle": "",
+          "position": "(-464.6, 8.393846, -123.6429)",
+          "state": "work",
           "visited": {
+            "climb_down": true,
+            "climb_step": true,
+            "enter_coach": true,
+            "enter_home": true,
+            "enter_office": true,
             "home": true,
-            "leave_home": true
+            "leave_home": true,
+            "leave_office": true,
+            "outside_coach": true,
+            "seated": true,
+            "sit_at_desk": true,
+            "sit_down": true,
+            "stand_from_desk": true,
+            "stand_from_seat": true,
+            "step_to_ground": true,
+            "work": true
           }
         },
         {
           "actor": "OfficialWoman",
-          "blocked_frames": 3785,
-          "obstacle": "[\"/root/Suryagarh/WealthyHouseholds/BritishHousehold/VerandaFloor/@StaticBody3D@31179\"]",
-          "position": "(-454.9999, 8.720261, -173.2207)",
-          "state": "leave_home",
+          "blocked_frames": 0,
+          "obstacle": "",
+          "position": "(-461.4, 8.530326, -123.6262)",
+          "state": "work",
           "visited": {
+            "climb_down": true,
+            "climb_step": true,
+            "enter_coach": true,
+            "enter_home": true,
+            "enter_office": true,
             "home": true,
-            "leave_home": true
+            "leave_home": true,
+            "leave_office": true,
+            "outside_coach": true,
+            "seated": true,
+            "sit_at_desk": true,
+            "sit_down": true,
+            "stand_from_desk": true,
+            "stand_from_seat": true,
+            "step_to_ground": true,
+            "work": true
           }
         }
       ],
-      "round_trips": 0
+      "round_trips": 1
     }
   ],
-  "max_sampled_contact_error_m": 0.00197003921493888,
-  "passed": false,
+  "max_sampled_contact_error_m": 0.00197133887559175,
+  "passed": true,
   "residents": 4,
   "scope": "household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate",
   "staff": 9

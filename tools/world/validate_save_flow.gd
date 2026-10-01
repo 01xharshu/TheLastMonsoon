@@ -36,7 +36,13 @@ func validate() -> void:
 	equipment.selected = 1
 	equipment.stowed = false
 	equipment._refresh()
+	var door = world.get_node("Settlement/BhairavpurHouse1/EntranceDoor")
+	door.restore_state(false)
+	var shutters = world.get_node("Settlement/BhairavpurHouse1/TimberWindowFrameEast/PairedWoodShutters")
+	shutters.restore_state(true)
 	check(saves.save_game(world,2),"Could not save slot 2")
+	door.restore_state(true)
+	shutters.restore_state(false)
 	check(saves.newest_slot()==2,"Continue did not choose newest slot")
 	var saved_position := player.global_position
 	player.global_position = Vector3.ZERO
@@ -47,6 +53,8 @@ func validate() -> void:
 	saves.pending_slot = 2
 	saves.apply_pending(world)
 	check(player.global_position.distance_to(saved_position)<0.01,"Player position did not restore")
+	check(not door.opened and is_zero_approx(door.swing),"Manual door state did not restore from slot")
+	check(shutters.opened and is_equal_approx(shutters.swing,1.0),"Manual shutter state did not restore from slot")
 	check(absf(world.get_node("GameTimeSystem").total_game_minutes-2200.0)<0.01,"Game time did not restore")
 	check(inventory.get_item_count("roti")==3 and inventory.has_water_bag(),"Inventory did not restore")
 	check(absf(inventory.stored_water_liters-1.25)<0.01,"Pouch water did not restore")
@@ -60,7 +68,7 @@ func validate() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.slot_path(2)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.save_root))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.settings_path))
-	var report := {"status":"PASS" if failures.is_empty() else "FAIL","slot":2,"restored_position":player.global_position,"restored_water_liters":inventory.stored_water_liters,"failures":failures}
+	var report := {"status":"PASS" if failures.is_empty() else "FAIL","slot":2,"restored_position":player.global_position,"restored_water_liters":inventory.stored_water_liters,"door_closed_restored":not door.opened,"shutters_open_restored":shutters.opened,"failures":failures}
 	var file := FileAccess.open("res://docs/world/save_flow_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("SAVE FLOW VALIDATION ",JSON.stringify(report))

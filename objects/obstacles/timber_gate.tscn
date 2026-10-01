@@ -1,0 +1,252 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lodk4"]
+albedo_color = Color(0.32, 0.22, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_elj1m"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.16, 1.55, 0.16)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hwfyj"]
+size = Vector3(0.16, 1.55, 0.16)
+
+[sub_resource type="BoxMesh" id="BoxMesh_mfrv5"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.16, 1.55, 0.16)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0wbr8"]
+size = Vector3(0.16, 1.55, 0.16)
+
+[sub_resource type="BoxMesh" id="BoxMesh_3wmxh"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rewlt"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_7qsu3"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_awkek"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_v76j6"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yg4m7"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fqqog"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_coue0"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_j0rav"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ydxwl"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_n4s5y"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2cwdg"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8la5q"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bg687"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_v08fs"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fkrqc"]
+size = Vector3(0.185, 1.15, 0.055)
+
+[sub_resource type="BoxMesh" id="BoxMesh_c0sth"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(1.59, 0.1, 0.07)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ohivl"]
+size = Vector3(1.59, 0.1, 0.07)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_txma6"]
+albedo_color = Color(0.1, 0.11, 0.105, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_c4kmw"]
+material = SubResource("StandardMaterial3D_txma6")
+size = Vector3(0.36, 0.055, 0.014)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4p5q1"]
+material = SubResource("StandardMaterial3D_lodk4")
+size = Vector3(1.59, 0.1, 0.07)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8h7te"]
+size = Vector3(1.59, 0.1, 0.07)
+
+[sub_resource type="BoxMesh" id="BoxMesh_83xgr"]
+material = SubResource("StandardMaterial3D_txma6")
+size = Vector3(0.36, 0.055, 0.014)
+
+[sub_resource type="BoxMesh" id="BoxMesh_m4qqx"]
+material = SubResource("StandardMaterial3D_txma6")
+size = Vector3(0.2, 0.035, 0.035)
+
+[node name="TimberGateComponent" type="Node3D" unique_id=60923401]
+metadata/swing_range_degrees = Vector2(0, -95)
+metadata/interaction_status = "hinge component; controller and hero animation deferred"
+
+[node name="GatePost" type="MeshInstance3D" parent="." unique_id=448363983]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 0.775, 0)
+mesh = SubResource("BoxMesh_elj1m")
+
+[node name="GatePostBody" type="StaticBody3D" parent="." unique_id=1376902247]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 0.775, 0)
+
+[node name="@CollisionShape3D@108" type="CollisionShape3D" parent="GatePostBody" unique_id=1002139441]
+shape = SubResource("BoxShape3D_hwfyj")
+
+[node name="@MeshInstance3D@109" type="MeshInstance3D" parent="." unique_id=1567227199]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.775, 0)
+mesh = SubResource("BoxMesh_mfrv5")
+
+[node name="@StaticBody3D@110" type="StaticBody3D" parent="." unique_id=520162769]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.775, 0)
+
+[node name="@CollisionShape3D@111" type="CollisionShape3D" parent="@StaticBody3D@110" unique_id=1534520631]
+shape = SubResource("BoxShape3D_0wbr8")
+
+[node name="HingePivot" type="Node3D" parent="." unique_id=293294132]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0, 0)
+
+[node name="LeafBoard" type="MeshInstance3D" parent="HingePivot" unique_id=628992374]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.7, 0)
+mesh = SubResource("BoxMesh_3wmxh")
+
+[node name="LeafBoardBody" type="StaticBody3D" parent="HingePivot" unique_id=1017937526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.7, 0)
+
+[node name="@CollisionShape3D@112" type="CollisionShape3D" parent="HingePivot/LeafBoardBody" unique_id=400817201]
+shape = SubResource("BoxShape3D_rewlt")
+
+[node name="@MeshInstance3D@113" type="MeshInstance3D" parent="HingePivot" unique_id=56413420]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0.7, 0)
+mesh = SubResource("BoxMesh_7qsu3")
+
+[node name="@StaticBody3D@114" type="StaticBody3D" parent="HingePivot" unique_id=845146032]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0.7, 0)
+
+[node name="@CollisionShape3D@115" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@114" unique_id=33192787]
+shape = SubResource("BoxShape3D_awkek")
+
+[node name="@MeshInstance3D@116" type="MeshInstance3D" parent="HingePivot" unique_id=652671657]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.7, 0)
+mesh = SubResource("BoxMesh_v76j6")
+
+[node name="@StaticBody3D@117" type="StaticBody3D" parent="HingePivot" unique_id=499637814]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.7, 0)
+
+[node name="@CollisionShape3D@118" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@117" unique_id=775441896]
+shape = SubResource("BoxShape3D_yg4m7")
+
+[node name="@MeshInstance3D@119" type="MeshInstance3D" parent="HingePivot" unique_id=1179101385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.7, 0)
+mesh = SubResource("BoxMesh_fqqog")
+
+[node name="@StaticBody3D@120" type="StaticBody3D" parent="HingePivot" unique_id=125235737]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.7, 0)
+
+[node name="@CollisionShape3D@121" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@120" unique_id=1804460214]
+shape = SubResource("BoxShape3D_coue0")
+
+[node name="@MeshInstance3D@122" type="MeshInstance3D" parent="HingePivot" unique_id=1065096844]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.7, 0)
+mesh = SubResource("BoxMesh_j0rav")
+
+[node name="@StaticBody3D@123" type="StaticBody3D" parent="HingePivot" unique_id=1427383434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.7, 0)
+
+[node name="@CollisionShape3D@124" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@123" unique_id=604654870]
+shape = SubResource("BoxShape3D_ydxwl")
+
+[node name="@MeshInstance3D@125" type="MeshInstance3D" parent="HingePivot" unique_id=669146407]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.7, 0)
+mesh = SubResource("BoxMesh_n4s5y")
+
+[node name="@StaticBody3D@126" type="StaticBody3D" parent="HingePivot" unique_id=32065404]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.7, 0)
+
+[node name="@CollisionShape3D@127" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@126" unique_id=1172814612]
+shape = SubResource("BoxShape3D_2cwdg")
+
+[node name="@MeshInstance3D@128" type="MeshInstance3D" parent="HingePivot" unique_id=2055914220]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3, 0.7, 0)
+mesh = SubResource("BoxMesh_8la5q")
+
+[node name="@StaticBody3D@129" type="StaticBody3D" parent="HingePivot" unique_id=1221286689]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3, 0.7, 0)
+
+[node name="@CollisionShape3D@130" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@129" unique_id=622787639]
+shape = SubResource("BoxShape3D_bg687")
+
+[node name="@MeshInstance3D@131" type="MeshInstance3D" parent="HingePivot" unique_id=1265982232]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.7, 0)
+mesh = SubResource("BoxMesh_v08fs")
+
+[node name="@StaticBody3D@132" type="StaticBody3D" parent="HingePivot" unique_id=1254791116]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.7, 0)
+
+[node name="@CollisionShape3D@133" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@132" unique_id=1480098231]
+shape = SubResource("BoxShape3D_fkrqc")
+
+[node name="BackRail" type="MeshInstance3D" parent="HingePivot" unique_id=1046390789]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0.32, -0.055)
+mesh = SubResource("BoxMesh_c0sth")
+
+[node name="BackRailBody" type="StaticBody3D" parent="HingePivot" unique_id=582622400]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0.32, -0.055)
+
+[node name="@CollisionShape3D@134" type="CollisionShape3D" parent="HingePivot/BackRailBody" unique_id=69304217]
+shape = SubResource("BoxShape3D_ohivl")
+
+[node name="HingeStrap" type="MeshInstance3D" parent="HingePivot" unique_id=1176195525]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.32, 0.037)
+mesh = SubResource("BoxMesh_c4kmw")
+
+[node name="@MeshInstance3D@135" type="MeshInstance3D" parent="HingePivot" unique_id=437349499]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 1.08, -0.055)
+mesh = SubResource("BoxMesh_4p5q1")
+
+[node name="@StaticBody3D@136" type="StaticBody3D" parent="HingePivot" unique_id=1379902108]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 1.08, -0.055)
+
+[node name="@CollisionShape3D@137" type="CollisionShape3D" parent="HingePivot/@StaticBody3D@136" unique_id=213222126]
+shape = SubResource("BoxShape3D_8h7te")
+
+[node name="@MeshInstance3D@138" type="MeshInstance3D" parent="HingePivot" unique_id=29246122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 1.08, 0.037)
+mesh = SubResource("BoxMesh_83xgr")
+
+[node name="Latch" type="MeshInstance3D" parent="HingePivot" unique_id=2120185789]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.77, 0.055)
+mesh = SubResource("BoxMesh_m4qqx")
+
+[node name="HandleContact" type="Marker3D" parent="HingePivot" unique_id=1095004616]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.77, 0.08)
+
+[node name="OpeningCenter" type="Marker3D" parent="." unique_id=962527898]
+
+[node name="Approach" type="Marker3D" parent="." unique_id=1413457978]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)

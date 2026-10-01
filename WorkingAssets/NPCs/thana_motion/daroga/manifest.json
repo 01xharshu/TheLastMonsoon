@@ -1,0 +1,12 @@
+{
+  "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+  "body": "existing MPFB village male",
+  "license": "same CC0 source; original project clothing",
+  "rigged": true,
+  "role": "daroga",
+  "uniform": {
+    "uniform": "drab tunic/trousers, indigo facing, leather belt/shoes",
+    "identity": "cloth cap",
+    "historical_status": "fictional 1857 candidate; local pattern unverified"
+  }
+}

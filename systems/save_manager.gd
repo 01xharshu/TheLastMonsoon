@@ -183,9 +183,15 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"remaining_weapon_ids": _remaining_weapon_pickup_ids(world),
 		"remaining_ammunition_ids": _remaining_ammunition_ids(world),
 		"remaining_medical_ids": _remaining_medical_ids(world),
+		"remaining_household_ids": _remaining_household_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
+		"door_states": _door_states(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
+	if world.has_node("ErrandSystem"):
+		data["errands"] = world.get_node("ErrandSystem").export_state()
+	var fame := actor.get_node_or_null("FameComponent")
+	if fame != null: data["fame"] = {"points":fame.points,"witnessed_deeds":fame.witnessed_deeds}
 	var map: Control = actor.get_node("UI/WorldMap")
 	if is_finite(map.waypoint.x): data["waypoint"] = [map.waypoint.x,map.waypoint.y]
 	var temp := slot_path(slot)+".tmp"
@@ -238,6 +244,13 @@ func apply_pending(world: Node3D) -> void:
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	actor.health = clampf(float(data.get("health",actor.MAX_HEALTH)),0.0,actor.MAX_HEALTH)
 	inventory.items = data.get("items",{}).duplicate(true)
+	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
+		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
+	var fame := actor.get_node_or_null("FameComponent")
+	var saved_fame: Dictionary = data.get("fame",{})
+	if fame != null:
+		fame.points = maxi(0,int(saved_fame.get("points",0)))
+		fame.witnessed_deeds = maxi(0,int(saved_fame.get("witnessed_deeds",0)))
 	if not inventory.has_water_bag(): inventory.items["water_bag"] = 1
 	inventory.stored_water_liters = clampf(float(data.get("water_liters",0.0)),0.0,inventory.get_total_water_capacity_liters())
 	inventory.inventory_changed.emit()
@@ -266,6 +279,7 @@ func apply_pending(world: Node3D) -> void:
 		firearm.reload_remaining = clampf(float(weapon.get(entry[1]+"_reload",0.0)),0.0,entry[2])
 		firearm.pending_rounds = clampi(int(weapon.get(entry[1]+"_pending",0)),0,entry[3]-firearm.rounds) if firearm.reload_remaining > 0.0 else 0
 	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
+	restore_household_pickups(world,data)
 	if data.get("remaining_medical_ids") is Array:
 		for pickup in world.get_tree().get_nodes_in_group("medical_supplies"):
 			if world.is_ancestor_of(pickup) and not pickup.persistence_id() in data.remaining_medical_ids:
@@ -287,6 +301,7 @@ func apply_pending(world: Node3D) -> void:
 	for chest in world.get_tree().get_nodes_in_group("treasure_chests"):
 		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
 			chest.restore_opened()
+	_restore_door_states(world,data.get("door_states",{}))
 	# Absent in older version-1 saves: preserve their available fruit.
 	if data.get("collected_forage_ids") is Array:
 		for grove in world.get_tree().get_nodes_in_group("forage_groves"):
@@ -378,3 +393,30 @@ func _remaining_medical_ids(world: Node3D) -> Array[String]:
 		if world.is_ancestor_of(pickup) and not pickup.is_queued_for_deletion():
 			remaining.append(pickup.persistence_id())
 	return remaining
+
+func _door_states(world: Node3D) -> Dictionary:
+	var states := {}
+	for door in world.get_tree().get_nodes_in_group("house_doors"):
+		if world.is_ancestor_of(door): states[String(world.get_path_to(door))]=door.opened
+	return states
+
+func _restore_door_states(world: Node3D,states: Dictionary) -> void:
+	for path in states:
+		if not states[path] is bool: continue
+		var node := world.get_node_or_null(NodePath(path))
+		if node != null and node.is_in_group("house_doors") and node.has_method("restore_state"):
+			node.restore_state(states[path])
+
+func _remaining_household_ids(world: Node3D) -> Array[String]:
+	var remaining: Array[String] = []
+	for pickup in world.get_tree().get_nodes_in_group("household_pickups"):
+		if world.is_ancestor_of(pickup) and not pickup.is_queued_for_deletion():
+			remaining.append(str(pickup.get_meta("pickup_id")))
+	return remaining
+
+func restore_household_pickups(world: Node3D, data: Dictionary) -> void:
+	# Old saves omit this field and retain the new placements.
+	if not data.get("remaining_household_ids") is Array: return
+	for pickup in world.get_tree().get_nodes_in_group("household_pickups"):
+		if world.is_ancestor_of(pickup) and not str(pickup.get_meta("pickup_id")) in data.remaining_household_ids:
+			pickup.queue_free()

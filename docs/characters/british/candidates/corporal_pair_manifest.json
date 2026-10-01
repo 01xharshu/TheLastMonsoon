@@ -21,13 +21,15 @@
     },
     "woman": {
       "path": "characters/npcs/british/corporal_woman.glb",
-      "sha256": "d7a4d353f8a3c0879431b0b2781e1e3c071e73602fc103a327d2c912d5d70c2e",
-      "bytes": 1794820
+      "sha256": "2574dfecb9e517fe50515cc3f625da3ae1d7734c07344150f009ee1715c34a7b",
+      "bytes": 1923216
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "woman_runtime_source": "WorkingAssets/NPCs/british/corporal_skirt_candidate/corporal_woman_skirt_candidate.blend",
+  "skirt_applied_for_now": true
 }

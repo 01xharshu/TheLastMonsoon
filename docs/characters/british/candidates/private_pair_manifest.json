@@ -20,12 +20,14 @@
     },
     "woman": {
       "path": "characters/npcs/british/private_woman.glb",
-      "sha256": "43ee7da98c16e432c98921844e09123786b8a23481050a199c7a6069fd50b617",
-      "bytes": 1834628
+      "sha256": "fda13000dab9d28c0f2c20f1a4943615d0435fdd046110440fe24a1cbd0728bb",
+      "bytes": 2166288
     }
   },
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "woman_runtime_source": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
+  "skirt_applied_by_owner_request": true
 }

@@ -35,6 +35,8 @@ func interact(
 	player: CharacterBody3D
 ) -> void:
 
+	if is_queued_for_deletion(): return
+
 	# Find Arjun's InventoryComponent.
 
 	var inventory := (

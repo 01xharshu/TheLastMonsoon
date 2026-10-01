@@ -1,0 +1,12 @@
+{
+  "status": "original anatomical candidate; native/Godot visual review required",
+  "source": "tools/animals/build_household_cow.py; original geometry and rig, no external imagery",
+  "morphology_reference": "https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed",
+  "glb_sha256": "77dabf3497a8e4179a6af4f8184f01b0ed723824755e7b84ad1da6175e658d86",
+  "vertices": 21611,
+  "bones": 13,
+  "clips": [
+    "idle",
+    "head_lower"
+  ]
+}

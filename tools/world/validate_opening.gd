@@ -20,12 +20,18 @@ func run() -> void:
 	check(opening.hint.text == "","Visible skip UI")
 	check(not world.player.get_node("UI").visible,"Gameplay HUD visible")
 	check(opening.home.get_meta("sleeping_window", "") == "open outward","Window remains closed")
+	check(opening.expression.entries.size() >= 2,"Sadness/murmur shapes did not attach")
+	check(opening.murmur.stream != null,"Murmur audio missing")
 	check(opening.home != null,"Missing story home")
 	check(not world.player.is_physics_processing(),"Player movement leaked")
 	check(world.player.get_meta("opening_active",false),"Opening ownership missing")
 	for t in [0.0,3.0,6.0,11.0,16.0,22.0,27.0]:
 		if OS.get_environment("TLM_OPENING_REALTIME") == "1":
-			while opening.elapsed < t: await process_frame
+			while opening.elapsed < t:
+				await process_frame
+				if opening.elapsed >= 13.0 and opening.elapsed < 24.0:
+					var camera_local: Vector3 = opening.home.to_local(opening.camera.global_position)
+					check(camera_local.z < 3.41 and absf(camera_local.x) < 4.56,"Window camera left the room")
 		else:
 			opening.elapsed = t
 		await create_timer(0.15).timeout
@@ -39,6 +45,8 @@ func run() -> void:
 		opening.elapsed = 31.95
 	await create_timer(0.2).timeout
 	check(opening.state == "seated","Natural completion did not seat Arjun")
+	check(opening.expression.entries.is_empty(),"Face mesh did not restore after cinematic")
+	check(not opening.murmur.playing,"Voice continued into morning")
 	check(opening.clock.current_hour == 6 and opening.clock.current_day == 2,"Wrong morning clock")
 	var event := InputEventKey.new()
 	event.keycode = KEY_W

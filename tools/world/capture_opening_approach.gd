@@ -12,23 +12,16 @@ func run() -> void:
 	var opening = world.get_node("OpeningSequence")
 	opening.set_process(false)
 	opening.set_process_input(false)
-	for t in [14.0,16.0,19.0]:
+	for t in [14.0,16.0,19.0,21.5,23.5]:
 		opening.elapsed = t
 		opening._process(0.0)
 		await create_timer(0.3).timeout
-		if t == 16.0:
-			for distance in [20.0,40.0,80.0]:
-				var start: Vector2 = opening.home.get_meta("brother_approach_start")
-				var end: Vector2 = opening.home.get_meta("brother_approach_end")
-				var p := start.move_toward(end,distance)
-				var target := Vector3(p.x,world.layout.height(p.x,p.y)+1.0,p.y)
-				var query := PhysicsRayQueryParameters3D.create(opening.camera.global_position,target)
-				query.exclude = [world.player.get_rid()]
-				var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(query)
-				assert(hit.is_empty(),"Blocked approach sightline at %s metres: %s" % [distance,hit])
-			print("APPROACH SIGHTLINES: PASS | 20/40/80 m")
+		var local_camera: Vector3 = opening.home.to_local(opening.camera.global_position)
+		assert(local_camera.z < 3.41 and absf(local_camera.x) < 4.56,"Camera crossed the room wall")
+		print("INTERIOR CAMERA PASS at ", t, " | ", local_camera)
+		opening._process(0.0)
 		assert(opening.state == "night", "Capture unexpectedly left the night sequence")
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://docs/world/captures/opening_approach_%02d.png" % int(t))
+		root.get_texture().get_image().save_png("res://docs/world/captures/opening_interior_%02d.png" % int(t))
 	print("OPENING APPROACH CAPTURE COMPLETE")
 	quit()

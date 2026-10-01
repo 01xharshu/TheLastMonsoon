@@ -22,6 +22,9 @@ func interact(actor: CharacterBody3D) -> void:
 	if not actor.inventory.add_item(weapon_id,1): return
 	preload("res://player/ammunition_loadout.gd").grant_for_weapon(actor, weapon_id)
 	taken = true
+	var owner: Node = get_parent()
+	while owner != null and owner.name != "DistrictPolice": owner=owner.get_parent()
+	if owner != null: get_tree().call_group("police_crime_observers","report_crime",actor,"theft",global_position)
 	_equip(actor)
 	actor.set_meta("stolen_weapons",int(actor.get_meta("stolen_weapons",0))+1)
 	queue_free()

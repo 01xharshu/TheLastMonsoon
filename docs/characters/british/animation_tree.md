@@ -135,3 +135,13 @@ All eight men and the three bonnet-wearing women now have headwear fitted from e
 The waist bridge now gathers fullness close to the skirt edge and uses smooth shading, reducing the broad band in the Private rear view. The skirt join still has a visible seam and requires tailoring. The [updated 11-second Metal patrol](candidates/private_pair_patrol_2026-09-30.mp4) includes the fitted Private headwear and both stationary turns; [mid-turn frame](candidates/private_pair_turn_review.png) inspected. This is a rendered flat-ground studio recording with fixed 30 fps playback, not final world or sole-contact approval.
 
 Tools: `tools/characters/fit_british_headwear.py`, `tools/characters/validate_british_headwear.py`, `tools/characters/bridge_british_waists.py`, `tools/characters/capture_british_motion.gd`. Next: hair clearance under hats, skirt join and mesh sole contact in moving world approaches.
+
+## Isolated skirt deformation study — 1 October
+
+The [Private woman skirt candidate](skirt_candidate_2026-10-01.md) retains the MakeHuman body and adds four pinned-waist lower-skirt morphs driven by the existing gait phase. The 750-frame Metal import/morph/settling fixture passes. Rear waist shape, body clearance, run and seated fitting remain open; the live wardrobe is unchanged.
+
+Corporal now uses the same restrained skirt gait driver with its own editable source/body and four morphs. Live-roster motion/settling and 16-tree checks pass; sampled Metal side/walk views reviewed. Continuous Metal playback stalled and final waist/run/seated fitting remains deferred. Next Sergeant. See the skirt report above.
+
+Sergeant woman now uses the four-morph skirt gait driver; live-roster 750-step/settling and all 16 trees pass. Sampled Metal views include both Sergeant actors. Waist transition and male crossbelt clearance remain deferred art issues. Next Lieutenant.
+
+[Sergeant uniform surface/accoutrement refinement](sergeant_uniform_realism.md) is applied: torso-fitted crossbelts, upper-sleeve chevrons, persistent wool maps and material response. Final cut/history/folds/contact remain open.

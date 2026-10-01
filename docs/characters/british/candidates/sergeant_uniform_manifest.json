@@ -1,0 +1,80 @@
+{
+  "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
+  "candidate": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend",
+  "body_coordinates_unchanged": true,
+  "accessory_refits": [
+    {
+      "object": "sergeant back crossbelt -1",
+      "vertices": 565,
+      "maximum_rest_refit_m": 0.09152829752075577,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant back crossbelt 1",
+      "vertices": 565,
+      "maximum_rest_refit_m": 0.09042650613382523,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant front crossbelt -1",
+      "vertices": 565,
+      "maximum_rest_refit_m": 0.11665977115628316,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant front crossbelt 1",
+      "vertices": 565,
+      "maximum_rest_refit_m": 0.11432891281086763,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron -1 1",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.0378058231779938,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron -1 2",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.041434895549642484,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron -1 3",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.052271569360165714,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron 1 1",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.04149330280697745,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron 1 2",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.03790111142398016,
+      "rest_clearance_m": 0.006
+    },
+    {
+      "object": "sergeant sleeve chevron 1 3",
+      "vertices": 45,
+      "maximum_rest_refit_m": 0.04746383140124188,
+      "rest_clearance_m": 0.006
+    }
+  ],
+  "source_sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
+  "candidate_sha256": "7ff728130afbb0f1905824d874c4db43c724606dfbfa87619bc9cda6acc6df52",
+  "scope": "surface fit/material refinement; precise regimental pattern, dynamic penetration and full tailoring unapproved",
+  "live_applied": true,
+  "exports": {
+    "man": {
+      "path": "characters/npcs/british/candidates/sergeant_man_uniform_candidate.glb",
+      "sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969",
+      "bytes": 1620668
+    }
+  },
+  "live_asset": "characters/npcs/british/sergeant_man.glb",
+  "live_sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969"
+}

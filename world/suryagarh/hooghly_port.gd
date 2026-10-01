@@ -116,7 +116,23 @@ func build_quay() -> void:
 	# A supported tidal landing gives swimmers a return route onto the quay.
 	for i in 23:
 		var top := 2.8-float(i)*0.18
-		piece(quay,"TidalLandingStep",Vector3(-150.5+float(i)*0.48,top-0.12,712),Vector3(0.52,0.24,3.2),stone)
+		piece(quay,"TidalLandingStep",Vector3(-150.5+float(i)*0.48,top-0.12,712),Vector3(0.52,0.24,3.2),stone,false)
+	# Buoyant movement cannot step up a vertical riser. A continuous collision
+	# grade beneath the stair treads allows the swimmer to walk out naturally.
+	var tidal_body := StaticBody3D.new()
+	tidal_body.name = "TidalLandingGrade"
+	quay.add_child(tidal_body)
+	var tidal_shape := ConvexPolygonShape3D.new()
+	var points := PackedVector3Array()
+	for z in [710.4,713.6]:
+		points.append(Vector3(-150.8,2.86,z))
+		points.append(Vector3(-139.25,-1.36,z))
+		points.append(Vector3(-139.25,-1.65,z))
+		points.append(Vector3(-150.8,2.57,z))
+	tidal_shape.points = points
+	var tidal_collision := CollisionShape3D.new()
+	tidal_collision.shape = tidal_shape
+	tidal_body.add_child(tidal_collision)
 	build_warehouse(quay)
 	for i in 12:
 		cargo(quay,CRATE,"LandingCrate",Vector3(-176+(i%3)*1.55,2.89,657+floori(i/3.0)*1.65))
@@ -209,7 +225,7 @@ func build_ship() -> void:
 		body.add_child(collision)
 	for z in [-13.0,-3.0,13.0]: interior_lamp(ship,Vector3(0.8,1.7,z),6.0)
 	interior_lamp(ship,Vector3(1.6,5.1,20),5.0)
-	for pair in [[Vector3(-5.0,4.0,-19),Vector3(-15.0,3.8,-27)], [Vector3(-4.8,4.0,20),Vector3(-15.0,3.8,27)]]:
+	for pair in [[Vector3(-4.2,4.4,-19),Vector3(-15.0,3.8,-27)], [Vector3(-4.05,4.4,20),Vector3(-15.0,3.8,27)]]:
 		var a: Vector3 = pair[0]
 		var b: Vector3 = pair[1]
 		for i in 12:

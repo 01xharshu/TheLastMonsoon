@@ -131,7 +131,11 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("detention_pose", AnimationNodeBlend2.new())
 	graph.add_node("detention_arrest", _clip("motion/detention_arrest"))
 	graph.add_node("detention_wait", _clip("motion/detention_wait"))
-	graph.add_node("detention", AnimationNodeBlend2.new())
+	var detention_layer := AnimationNodeBlend2.new()
+	detention_layer.filter_enabled = true
+	for bone in ["spine_01","spine_02","head","upperarm_l","upperarm_r","lowerarm_l","lowerarm_r","hand_l","hand_r"]:
+		detention_layer.set_filter_path(NodePath("Arjun_Rig/Skeleton3D:"+bone),true)
+	graph.add_node("detention", detention_layer)
 	graph.connect_node("detention_pose", 0, "detention_wait")
 	graph.connect_node("detention_pose", 1, "detention_arrest")
 	graph.connect_node("detention", 0, "climb")
@@ -376,8 +380,8 @@ func _detention_clip(idle: Animation, restrained: bool) -> Animation:
 			clip.rotation_track_insert_key(track, t*clip.length, rotation)
 	return clip
 
-func update_detention(delta: float, amount: float, arrested: bool) -> void:
-	set("parameters/ground/blend_position", 0.0)
+func update_detention(delta: float, amount: float, arrested: bool, speed: float = 0.0) -> void:
+	set("parameters/ground/blend_position", clampf(speed/4.0,0,1))
 	set("parameters/air/blend_amount", 0.0)
 	set("parameters/swim/blend_amount", 0.0)
 	set("parameters/rest/blend_amount", 0.0)

@@ -52,7 +52,8 @@ func build(builder: Node3D) -> void:
 		b.piece(magazine,"BlastWall",Vector3(side*10,1.35,0),Vector3(0.55,2.7,15),b.brick)
 		b.piece(magazine,"BlastReturn",Vector3(side*5.5,1.35,-7.5),Vector3(9.5,2.7,0.55),b.brick)
 	for x in [-4.0,0.0,4.0]:
-		b.piece(magazine,"VentGrille",Vector3(x,3.1,-5.22),Vector3(0.8,0.4,0.03),b.iron,false)
+		for offset in [-0.3,0.0,0.3]:
+			b.piece(magazine,"VentBar",Vector3(x+offset,3.1,-5.22),Vector3(0.035,0.4,0.035),b.iron,false)
 	# Delineated drill yard and clear east-side approach; no closed checkpoint gameplay.
 	for z in [-59.0,59.0]:
 		for x in range(-68,69,8):
@@ -71,7 +72,13 @@ func shell(label: String, center: Vector3, size: Vector2, caption: String) -> No
 	var w := size.x
 	var d := size.y
 	b.piece(room,"Floor",Vector3(0,0.12,0),Vector3(w+0.6,0.24,d+0.6),b.stone)
-	b.piece(room,"RearWall",Vector3(0,1.9,-d/2),Vector3(w,3.35,0.4),b.plaster)
+	if label == "GunpowderMagazine":
+		b.piece(room,"VentSillWall",Vector3(0,1.5625,-d/2),Vector3(w,2.675,0.4),b.plaster)
+		b.piece(room,"VentHeader",Vector3(0,3.4375,-d/2),Vector3(w,0.275,0.4),b.plaster)
+		for span in [Vector2(-7,-4.4),Vector2(-3.6,-0.4),Vector2(0.4,3.6),Vector2(4.4,7)]:
+			b.piece(room,"VentPier",Vector3((span.x+span.y)/2,3.1,-d/2),Vector3(span.y-span.x,0.4,0.4),b.plaster)
+	else:
+		b.piece(room,"RearWall",Vector3(0,1.9,-d/2),Vector3(w,3.35,0.4),b.plaster)
 	for side in [-1,1]:
 		b.piece(room,"SideWall",Vector3(side*w/2,1.9,0),Vector3(0.4,3.35,d),b.plaster)
 		b.piece(room,"DoorPier",Vector3(side*(w/4+0.75),1.9,d/2),Vector3(w/2-1.5,3.35,0.4),b.plaster)
@@ -83,13 +90,6 @@ func shell(label: String, center: Vector3, size: Vector2, caption: String) -> No
 	marker.name = "Entrance"
 	marker.position = Vector3(0,0.25,d/2+1.5)
 	room.add_child(marker)
-	var sign := Label3D.new()
-	sign.name = "LocationSign"
-	sign.text = caption
-	sign.font_size = 36
-	sign.pixel_size = 0.013
-	sign.position = Vector3(0,3.12,d/2+0.24)
-	room.add_child(sign)
 	room.add_to_group("cantonment_buildings")
 	return room
 

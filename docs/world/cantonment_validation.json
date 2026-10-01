@@ -1,0 +1,55 @@
+{
+	"buildings": {
+		"CavalryStables": {
+			"entry": "(500.0, 8.75, 429.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"GrainFodderWarehouse": {
+			"entry": "(515.0, 8.75, 521.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"GunpowderMagazine": {
+			"entry": "(548.0, 8.75, 521.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"MilitaryHospital": {
+			"entry": "(457.0, 8.75, 521.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"MilitarySupplyDepot": {
+			"entry": "(490.0, 8.75, 521.5)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"SepoyLines_-1_-16": {
+			"entry": "(462.5, 8.75, 454.0)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"SepoyLines_-1_16": {
+			"entry": "(462.5, 8.75, 486.0)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"SepoyLines_1_-16": {
+			"entry": "(537.5, 8.75, 454.0)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		},
+		"SepoyLines_1_16": {
+			"entry": "(537.5, 8.75, 486.0)",
+			"floor": 8.73999977111816,
+			"player_walk": true
+		}
+	},
+	"date": "2026-10-01",
+	"magazine_open_vents": 3,
+	"open": "sepoy population, horse population, working hospital/depot, historical art, full approach route, performance",
+	"renderer": "forward_plus",
+	"resident_terrain_samples": 35,
+	"status": "prototype"
+}

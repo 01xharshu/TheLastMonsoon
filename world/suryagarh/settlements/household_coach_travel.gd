@@ -42,9 +42,12 @@ func configure_journeys(points:Array[Vector3],workplace:Node3D) -> void:
 	home_path=points;office=workplace
 	for i in residents.size():
 		var journey:=preload("res://world/suryagarh/settlements/household_resident_journey.gd").new()
-		journey.name="ResidentJourney"+str(i);add_child(journey);journey.configure(residents[i],self,i);journeys.append(journey)
+		journey.name="ResidentJourney"+str(i);add_child(journey);journey.configure(residents[i],self,i)
+		if coach.name=="BritishHouseholdCoach":journey.side=-1.0
+		journeys.append(journey)
 
 func _all(state:String) -> bool:
+	if journeys.is_empty():return false
 	for journey in journeys:
 		if journey.state!=state:return false
 	return true
@@ -52,14 +55,18 @@ func _all(state:String) -> bool:
 func _home_walk(journey:Node,returning:bool) -> Array[Vector3]:
 	var points:Array[Vector3]=home_path.duplicate()
 	var rear:=coach.to_global(Vector3(journey.side*2.1,0,5.1))
+	if coach.name=="BritishHouseholdCoach":points.append(Vector3(rear.x,points[-1].y,points[-1].z))
 	points.append(rear);points.append(journey.door_ground())
 	if returning:
 		points.reverse();points.append(home_positions[journey.actor])
 	return points
 
 func _office_walk(journey:Node,returning:bool) -> Array[Vector3]:
-	var x:float=-1.6 if journey.side<0 else 1.6
-	var points:Array[Vector3]=[coach.to_global(Vector3(journey.side*2.1,0,5.1)),office.to_global(Vector3(0,0,5.1)),office.to_global(Vector3(0,.24,3.6)),office.to_global(Vector3(0,.24,1.6)),office.to_global(Vector3(x+(-.75 if x<0 else .75),.24,.35))]
+	var x:float=-1.6 if journey.office_side<0 else 1.6
+	var rear:=coach.to_global(Vector3(journey.side*2.1,0,5.1))
+	var approach:=office.to_global(Vector3(0,0,5.1))
+	var stage_x:float=x+(-.75 if x<0 else .75)
+	var points:Array[Vector3]=[rear,Vector3(rear.x,approach.y,approach.z),approach,office.to_global(Vector3(0,.24,3.6)),office.to_global(Vector3(0,.24,1.6)),office.to_global(Vector3(stage_x,.24,1.6)),office.to_global(Vector3(stage_x,.24,.35))]
 	if returning:points.reverse();points.append(journey.door_ground())
 	return points
 
@@ -79,7 +86,11 @@ func step(delta:float) -> void:
 			for journey in journeys:journey.walk(_home_walk(journey,false),"leave_home")
 	elif phase=="leaving_home" or phase=="boarding_return":
 		if _all("seated"):
-			if phase=="leaving_home":direction=1;target_index=1;_phase("departing")
+			if phase=="leaving_home":
+				direction=1;target_index=1
+				var desired:Vector3=route[1]-coach.global_position
+				if coach.name=="BritishHouseholdCoach" and absf(angle_difference(coach.rotation.y,atan2(-desired.x,-desired.z)))>.2:_phase("backing_out")
+				else:_phase("departing")
 			else:direction=-1;target_index=route.size()-2;_phase("turning")
 	elif phase=="office_arrival" or phase=="home_arrival":
 		if _all("outside_coach"):
@@ -96,6 +107,13 @@ func step(delta:float) -> void:
 			_phase("boarding_return")
 	elif phase=="entering_home":
 		if _all("home"):completed_trips+=1;_phase("home")
+	elif phase=="backing_out":
+		# Back clear of the narrow home/stair frontage before turning the team.
+		var amount:=minf(delta,absf(coach.global_position.z+159))
+		var next_at:=coach.global_position+Vector3(0,0,amount)
+		if _clear(next_at,coach.global_basis):coach.global_position=next_at;distance_travelled+=amount;coach.set_forward_motion(-1,delta)
+		else:blocked_frames+=1;coach.set_forward_motion(0,delta)
+		if coach.global_position.z>=-159.02:_phase("departing")
 	elif phase=="turning":
 		dwell+=delta
 		var facing:Vector3=(route[target_index]-coach.global_position).normalized()
@@ -106,20 +124,27 @@ func step(delta:float) -> void:
 	elif phase in ["departing","returning"]:
 		var target:Vector3=route[target_index];var offset:=target-coach.global_position
 		var amount:=minf(offset.length(),delta*2)
-		var heading:=atan2(-offset.x,-offset.z);var next_basis:=Basis(Vector3.UP,heading)
+		var desired_heading:=atan2(-offset.x,-offset.z)
+		var heading:=rotate_toward(coach.rotation.y,desired_heading,delta*1.2)
+		if absf(angle_difference(coach.rotation.y,desired_heading))>.03:amount=0
+		var next_basis:=Basis(Vector3.UP,heading)
 		var next_at:=coach.global_position+offset.normalized()*amount
 		if _clear(next_at,next_basis):
-			coach.global_position=next_at;coach.rotation.y=heading;distance_travelled+=amount;coach.set_forward_motion(2,delta)
+			coach.global_position=next_at;coach.rotation.y=heading;distance_travelled+=amount;coach.set_forward_motion(2 if amount>0 else 0,delta)
 		else:blocked_frames+=1;coach.set_forward_motion(0,delta)
 		if coach.global_position.distance_to(target)<.03:
 			if direction==1 and target_index==route.size()-1:
 				_phase("office_arrival")
-				for journey in journeys:journey.disembark()
+				for journey in journeys:
+					if coach.name=="BritishHouseholdCoach":journey.side=-1.0 if coach.global_basis.x.x<0 else 1.0
+					journey.disembark()
 			elif direction==-1 and target_index==0:
 				_phase("home_arrival")
-				for journey in journeys:journey.disembark()
+				for journey in journeys:
+					if coach.name=="BritishHouseholdCoach":journey.side=-1.0 if coach.global_basis.x.x<0 else 1.0
+					journey.disembark()
 			else:target_index+=direction
-	if phase not in ["departing","returning"]:coach.set_forward_motion(0,delta)
+	if phase not in ["departing","returning","backing_out"]:coach.set_forward_motion(0,delta)
 	for journey in journeys:
 		if journey.state=="seated":_seat(journey.actor,journey.seat_name,0)
 	_seat(driver,"CoachmanSeat",delta)
@@ -163,7 +188,10 @@ func _clear(at:Vector3,basis:Basis) -> bool:
 		query.shape=collision.shape
 		query.transform=Transform3D(basis,at+basis*collision.position)
 		query.exclude=exclusions;query.collision_mask=1
-		if not space.intersect_shape(query,1).is_empty():return false
+		var hits:=space.intersect_shape(query,1)
+		if not hits.is_empty():
+			if blocked_frames==0:print("COACH_BLOCKED ",coach.name," ",phase," ",hits[0].collider.get_path())
+			return false
 	return true
 
 func _passenger_cloth(actor:Node3D,seated:bool) -> void:

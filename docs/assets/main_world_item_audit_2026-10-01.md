@@ -1,5 +1,7 @@
 # Main-world item integration audit — 2026-10-01 IST
 
+**Placement follow-up:** the previously absent props are now integrated; see [locations, behavior and checks](world_placement_batch_08.md). The JSON inventory has been refreshed. The missing-instance tables below describe the earlier snapshot, not current absence.
+
 Scope: current asset-first checklist and household batches 01–06, compared with a fresh instantiated `world/suryagarh/suryagarh_world.tscn`. Runtime report: [instance inventory](main_world_item_audit_2026-10-01.json). Audit tool: `tools/world/audit_main_world_item_integration.gd`; explicit MAIN WORLD ITEM AUDIT PASS in `/tmp/tlm_item_audit.log`. This checks scene/script presence, not appearance, contact, player reachability, source authenticity or final performance. Existing procedural equivalents are distinct from new prefab integration.
 
 ## Built but absent as main-world instances

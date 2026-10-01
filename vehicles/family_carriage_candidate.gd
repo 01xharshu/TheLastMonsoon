@@ -254,7 +254,11 @@ func _build() -> void:
 		for z in [2.09,3.43]:
 			_box("WindowPost",Vector3(side*1.05,2.36,z),Vector3(.09,.72,.065),wood)
 		_box("WindowLintel",Vector3(side*1.05,2.76,2.77),Vector3(.11,.09,2.48),wood)
-		_box("WindowSill",Vector3(side*1.05,2.04,2.77),Vector3(.12,.075,2.48),wood)
+		# Keep the doorway clear; its waist rail travels with the door leaf.
+		for z in [1.82,3.66]:
+			_box("WindowSill",Vector3(side*1.05,2.04,z),Vector3(.12,.075,.54),wood)
+		_beam("BoardingGrabBracket",Vector3(side*1.05,2.20,2.09),Vector3(side*1.13,2.20,2.40),.035,brass)
+		_beam("BoardingGrabRail",Vector3(side*1.13,1.65,2.40),Vector3(side*1.13,2.20,2.40),.035,brass)
 		_box("SideGlazing",Vector3(side*1.054,2.39,2.75),Vector3(.012,.66,1.32),glass)
 		_box("UpperPaintMoulding",Vector3(side*1.115,2.77,2.75),Vector3(.035,.034,2.36),brass)
 		_box("LowerPaintMoulding",Vector3(side*1.113,1.30,2.75),Vector3(.036,.035,2.40),brass)

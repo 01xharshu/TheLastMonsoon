@@ -1,16 +1,14 @@
 {
-	"failures": [
-		"cook palms remain on vessel and mixing target"
-	],
-	"passed": false,
-	"renderer": "macOS",
+	"failures": [],
+	"passed": true,
+	"renderer": "headless",
 	"samples": [
 		{
-			"cook_hand_gap_max_m": 0.0630975738167763
+			"cook_hand_gap_max_m": 0.00371162197552621
 		},
 		{
 			"max_mesh_base_gap_m": 0.000000395881215808913,
-			"supported_props": 44
+			"supported_props": 43
 		},
 		{
 			"finish": "(-478.0, 15.82537, -189.7751)",

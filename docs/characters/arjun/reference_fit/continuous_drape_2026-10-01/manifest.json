@@ -1,0 +1,21 @@
+{
+  "status": "VISUAL_MATCH_FAILED",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend",
+  "source_sha256": "1699ebda45ab576543f39e6ea5d1a1c01e24ea8460ce1514876a48037707eeb2",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_continuous_drape_candidate.blend",
+  "candidate_sha256": "1ea229dbb5a57553377333f75b131ff20b4231d2df159a8d1b3a1c870e569f54",
+  "changes": [
+    "removed fine cylindrical trouser corrugation",
+    "continuous diagonal garment folds; patch overlays hidden",
+    "flat layered shaft/vamp straps, welt and buckles"
+  ],
+  "body_changed": false,
+  "face_changed": false,
+  "runtime_replaced": false,
+  "exact_match": false,
+  "failures": [
+    "trouser folds read as lumps rather than reference drape",
+    "boot straps partially buried in shaft",
+    "body face hair remain visibly different"
+  ]
+}

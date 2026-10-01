@@ -16,18 +16,21 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/sergeant_man.glb",
-      "sha256": "13b3906641f4f2e21ca66ebd0ada64f22b71b93bea6995c883303d78bacae269",
-      "bytes": 1496580
+      "sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969",
+      "bytes": 1620668
     },
     "woman": {
       "path": "characters/npcs/british/sergeant_woman.glb",
-      "sha256": "39cc4b14b80fb1b27e3774f942ff8e36ec7c388c41856d6563b3f6944de7e2a1",
-      "bytes": 1836268
+      "sha256": "74505950b04fbfe245a96eda95172cd0ddf7071767ba3ee6c1475d76d378c584",
+      "bytes": 1964692
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "woman_runtime_source": "WorkingAssets/NPCs/british/sergeant_skirt_candidate/sergeant_woman_skirt_candidate.blend",
+  "skirt_applied_for_now": true,
+  "man_runtime_source": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend"
 }

@@ -25,6 +25,10 @@ func _ready() -> void:
 	$LandscapeUI/ReviewHelp.visible = false
 	move_to_review_point(0)
 	last_safe_position = player.position
+	var errands := preload("res://world/suryagarh/errands/errand_system.gd").new()
+	errands.name = "ErrandSystem"
+	add_child(errands)
+	preload("res://world/suryagarh/settlements/asset_first_placement.gd").new().integrate(self)
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 

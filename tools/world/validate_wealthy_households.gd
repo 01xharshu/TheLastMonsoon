@@ -43,7 +43,13 @@ func _run() -> void:
 	var journeys:Array=[]
 	for coach in coaches:
 		var travel:=coach.get_node("HouseholdTravel")
+		if travel.journeys.size()!=travel.residents.size():errors.append(str(coach.name)+": resident controllers missing")
 		if travel.completed_trips<1:errors.append(str(coach.name)+": no completed driveway round trip")
+		for journey in travel.journeys:
+			for required in ["leave_home","climb_step","enter_coach","sit_down","seated","stand_from_seat","climb_down","step_to_ground","enter_office","sit_at_desk","work","stand_from_desk","leave_office","enter_home"]:
+				if not journey.visited.has(required):errors.append(str(journey.actor.name)+": missing "+required)
+			if journey.blocked_frames>0:errors.append(str(journey.actor.name)+": blocked walking route")
+		if travel.blocked_frames>0:errors.append(str(coach.name)+": blocked coach route")
 		journeys.append({"coach":str(coach.name),"round_trips":travel.completed_trips,"distance_m":travel.distance_travelled,"blocked_frames":travel.blocked_frames,"phase":travel.phase,"actions":travel.actions,"resident_actions":travel.journeys.map(func(j):return {"actor":str(j.actor.name),"visited":j.visited,"state":j.state,"blocked_frames":j.blocked_frames,"position":str(j.actor.global_position),"obstacle":j.last_obstacle})})
 	var contacts:Array=[]
 	for actor in staff:

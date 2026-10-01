@@ -26,6 +26,14 @@ func _ready() -> void:
 	handle.material_override=material
 	handle.position=Vector3(0,-.10,0)
 	spoon.add_child(handle)
+	var scoop := MeshInstance3D.new()
+	var scoop_mesh := SphereMesh.new()
+	scoop_mesh.radius=.023
+	scoop_mesh.height=.012
+	scoop.mesh=scoop_mesh
+	scoop.material_override=material
+	scoop.position.y=-.22
+	spoon.add_child(scoop)
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -46,5 +54,10 @@ func _process(delta: float) -> void:
 	var target := right_contact.global_position+Vector3(sin(work_time*2.2)*.025,0,cos(work_time*2.2)*.025)
 	solve_hand_contact("l",left_contact.global_position)
 	solve_hand_contact("r",target)
+	for index in _finger_rest:
+		var name := _skeleton.get_bone_name(index)
+		var curl := .65 if name.ends_with("_r") else .28
+		if name.begins_with("thumb"): curl *= .45
+		_skeleton.set_bone_pose_rotation(index,_finger_rest[index]*Quaternion(_finger_pitch[index],curl))
 	spoon.global_position=target
 	spoon.global_rotation=Vector3(.15,0,.08)

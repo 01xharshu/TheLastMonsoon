@@ -40,6 +40,8 @@ func interact(
 	player: CharacterBody3D
 ) -> void:
 
+	if is_queued_for_deletion(): return
+
 	var inventory := (
 		player.get_node_or_null(
 			"InventoryComponent"

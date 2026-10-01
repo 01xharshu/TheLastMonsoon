@@ -40,6 +40,15 @@ func house(house_node: Node3D,extent: Vector2,index: int) -> void:
 		for side in [-1.0,1.0]:
 			_piece(house_node,"CourtyardGatePost",Vector3(side*1.34,1.05,z),Vector3(.14,2.1,.14),settlement.wood)
 		_piece(house_node,"CourtyardGateBeam",Vector3(0,2.1,z),Vector3(2.9,.13,.18),settlement.wood)
+		var gate := preload("res://objects/hinged_door.gd").new()
+		gate.name="CourtyardGate"
+		gate.width=2.5
+		gate.height=1.85
+		gate.position=Vector3(-1.25,.03,z)
+		gate.night_lock=index%5 != 0
+		gate.always_open=WORKSHOPS.has(index)
+		gate.build(settlement.wood)
+		house_node.add_child(gate)
 	if WORKSHOPS.has(index):
 		house_node.add_to_group("bhairavpur_workshop")
 		house_node.set_meta("craft",WORKSHOPS[index])
@@ -131,6 +140,7 @@ func _openings(house_node: Node3D,extent: Vector2,index: int) -> void:
 	var grille := index%3 == 2
 	house_node.set_meta("window_access", "open" if accessible else ("iron grille" if grille else "wood shutter"))
 	for side in [-1.0,1.0]:
+		_window_frame(house_node,Vector3(side*w*.5,1.34,0),Vector2(2.2,1.15),side*PI*.5,accessible,not grille and not accessible)
 		if accessible:
 			var portal := Node3D.new()
 			portal.name = "OpenWindowTraversal"
@@ -156,7 +166,8 @@ func _openings(house_node: Node3D,extent: Vector2,index: int) -> void:
 
 func _window_frame(parent: Node3D,at: Vector3,size: Vector2,yaw: float,open_entry: bool,shuttered: bool) -> void:
 	var frame := Node3D.new()
-	frame.name="TimberWindowFrame"
+	frame.name="TimberWindowFrameEast" if at.x > 0 else ("TimberWindowFrameWest" if at.x < 0 else "TimberWindowFrameRear")
+	if at.x != 0 and at.z != 0: frame.name += "North" if at.z < 0 else "South"
 	frame.position=at
 	frame.rotation.y=yaw
 	parent.add_child(frame)

@@ -1,0 +1,16 @@
+{
+  "status": "CANDIDATE_VISUAL_REVIEW_OPEN",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend",
+  "source_sha256": "1699ebda45ab576543f39e6ea5d1a1c01e24ea8460ce1514876a48037707eeb2",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_drape_boot_candidate.blend",
+  "candidate_sha256": "3597e915ceda304213d5af53e208d7c5aac4be6ca496ca00918f0b30cbb6bf7c",
+  "changes": [
+    "removed fine cylindrical trouser corrugation",
+    "broad diagonal gathers and separate front wrap layers",
+    "flat layered shaft/vamp straps, welt and buckles"
+  ],
+  "body_changed": false,
+  "face_changed": false,
+  "runtime_replaced": false,
+  "exact_match": false
+}

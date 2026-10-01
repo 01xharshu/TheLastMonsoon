@@ -1,0 +1,39 @@
+{
+  "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
+  "source_sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
+  "candidate": "WorkingAssets/NPCs/british/sergeant_skirt_candidate/sergeant_woman_skirt_candidate.blend",
+  "candidate_sha256": "47f45012ff529910c572cba13c1dd5c02ee1c4710a18f61f5fc7487bdb3d54a9",
+  "body_coordinates_unchanged": true,
+  "morphs": {
+    "StrideLeft": {
+      "maximum_displacement_m": 0.03830939270788372,
+      "pinned_vertices": 432
+    },
+    "StrideRight": {
+      "maximum_displacement_m": 0.03830939270788372,
+      "pinned_vertices": 432
+    },
+    "LagLeft": {
+      "maximum_displacement_m": 0.030971308350563047,
+      "pinned_vertices": 432
+    },
+    "LagRight": {
+      "maximum_displacement_m": 0.030971308350563047,
+      "pinned_vertices": 432
+    },
+    "waistband": {
+      "fit": "no separate waistband in source; existing transition retained",
+      "body_changed": false
+    }
+  },
+  "scope": "restrained secondary deformation study; no cloth simulation, seated corrective or contact approval",
+  "live_asset_replaced": true,
+  "candidate_exports": {
+    "woman": {
+      "path": "characters/npcs/british/candidates/sergeant_woman_skirt_candidate.glb",
+      "sha256": "74505950b04fbfe245a96eda95172cd0ddf7071767ba3ee6c1475d76d378c584",
+      "bytes": 1964692
+    }
+  },
+  "live_asset_path": "characters/npcs/british/sergeant_woman.glb"
+}

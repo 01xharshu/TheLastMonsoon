@@ -41,8 +41,20 @@ func _estate() -> void:
 	for side in [-1.0,1.0]:
 		piece(estate,"GateWall",Vector3(side*5.5,1.6,-14),Vector3(7,3.2,.5),lime)
 		piece(estate,"GatePier",Vector3(side*2.15,2,-14),Vector3(.5,4,.65),trim)
-		piece(estate,"OpenGateLeaf",Vector3(side*2.4,1.45,-12.8),Vector3(.15,2.9,2.2),builder.wood)
+
 	piece(estate,"GateLintel",Vector3(0,3.9,-14),Vector3(4.8,.4,.8),trim)
+	var gate_frame := Node3D.new()
+	gate_frame.name="EstateGateFrame"
+	gate_frame.position=Vector3(0,.12,-14.35)
+	gate_frame.rotation.y=PI
+	estate.add_child(gate_frame)
+	var gate := preload("res://objects/hinged_door.gd").new()
+	gate.name="EntranceGate"
+	gate.width=3.8
+	gate.height=2.9
+	gate.position.x=-1.9
+	gate.build(builder.wood)
+	gate_frame.add_child(gate)
 	piece(estate,"GateApron",Vector3(0,.035,-16.0),Vector3(4.4,.07,4),builder.stone,false)
 	# Rent office and stored grain signal estate function without asserting slavery.
 	piece(estate,"RentDesk",Vector3(-12,.95,-7),Vector3(2.6,.14,1.1),builder.wood)

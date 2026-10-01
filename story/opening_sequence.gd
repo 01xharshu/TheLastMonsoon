@@ -28,6 +28,9 @@ var rise_time := 0.0
 var previous_position := Vector3.ZERO
 var environment: Environment
 var ambient_energy := 0.0
+var murmur: AudioStreamPlayer3D
+var murmur_played := false
+var expression = preload("res://story/opening_expression.gd").new()
 
 func start(target_world: Node3D) -> void:
 	world = target_world
@@ -42,6 +45,7 @@ func start(target_world: Node3D) -> void:
 		return
 	process_priority = 100
 	visual = actor.get_node("VisualRoot/CharacterVisual")
+	expression.configure(visual.model)
 	previous_physics = actor.is_physics_processing()
 	actor.set_physics_process(false)
 	actor.set_meta("opening_active", true)
@@ -74,6 +78,12 @@ func start(target_world: Node3D) -> void:
 	camera.make_current()
 	_build_lamp()
 	_build_overlay()
+	murmur = AudioStreamPlayer3D.new()
+	murmur.stream = load("res://assets/audio/opening/arjun_murmur_draft.wav")
+	murmur.volume_db = -12.0
+	murmur.max_distance = 8.0
+	actor.add_child(murmur)
+	murmur.position = Vector3(0,0.70,0)
 	_place(Vector3(-2.6, 1.14, 1.50), PI)
 	previous_position = actor.global_position
 
@@ -242,6 +252,10 @@ func _process(delta: float) -> void:
 		return
 	elapsed += delta
 	var t := elapsed
+	expression.update(t)
+	if t >= 15.0 and t < 18.4 and not murmur_played:
+		murmur_played = true
+		murmur.play()
 	shade.color = Color(0,0,0,1.0-smoothstep(1.5,3.5,t))
 	hint.modulate.a = 1.0-smoothstep(6,8,t)
 	match_prop.visible = t < 7
@@ -258,21 +272,26 @@ func _process(delta: float) -> void:
 		visual.pose("lowerarm_r",Vector3(-1.3,0,0),reach)
 	elif t < 13:
 		_walk(Vector3(-2.6,1.14,1.5),Vector3(-3.35,1.14,2.8),(t-9)/4,delta)
-		_shot(Vector3(-1.7,1.9,1.1),Vector3(-3.35,1.6,2.8))
-	elif t < 20:
-		_place(Vector3(-3.35,1.14,2.8),-0.08)
+		_interior_window_shot(t)
+	elif t < 20.8:
+		# Face remains the subject. Only Arjun turns; camera stays in the room.
+		var turn := smoothstep(19.5,20.8,t)
+		_place(Vector3(-3.35,1.14,2.8),lerpf(-0.08,-PI,turn))
 		actor.velocity = Vector3.ZERO
-		visual.pose("head",Vector3(0.08*sin((t-13)*0.5),0,0),0.7)
-		if t >= 15 and t < 18.8:
-			_approach_shot()
-		else:
-			_shot(Vector3(-1.75,1.95,1.2),Vector3(-3.35,1.65,3.3))
+		var lowered := smoothstep(18.1,19.4,t)
+		var sigh := sin(clampf((t-18.3)/1.2,0,1)*PI)
+		visual.pose("head",Vector3(0.03+0.15*lowered,lerpf(-0.1,-0.85,smoothstep(14.7,16.0,t)),0.035*lowered),0.9)
+		visual.pose("spine_02",Vector3(0.025+0.035*sigh,0,0),0.75)
+		visual.pose("upperarm_l",Vector3(0.015,0,-0.04*sigh),0.45)
+		visual.pose("upperarm_r",Vector3(0.015,0,0.04*sigh),0.45)
+		_interior_window_shot(t)
 	elif t < 24:
-		if t < 23:
-			_walk(Vector3(-3.35,1.14,2.8),Vector3(-3.35,1.14,-0.6),(t-20)/3,delta)
+		if t < 23.1:
+			_walk(Vector3(-3.35,1.14,2.8),Vector3(-3.35,1.14,-0.6),(t-20.8)/2.3,delta)
 		else:
-			_walk(Vector3(-3.35,1.14,-0.6),Vector3(-2.35,1.14,-0.6),t-23,delta)
-		_shot(Vector3(-0.8,2.05,0.1),Vector3(-2.35,0.95,-1.4))
+			_walk(Vector3(-3.35,1.14,-0.6),Vector3(-2.35,1.14,-0.6),(t-23.1)/0.9,delta)
+		var follow := smoothstep(20.8,24,t)
+		_shot(Vector3(-4.20,1.88,2.70).lerp(Vector3(-1.1,1.95,0.5),follow), Vector3(-3.30,1.56,2.8).lerp(Vector3(-2.35,1.0,-1.4),follow))
 	else:
 		actor.velocity = Vector3.ZERO
 		actor.global_position = bed.to_global(Vector3(0,0.83,0))
@@ -305,6 +324,8 @@ func _shot(at: Vector3, target: Vector3) -> void:
 func morning() -> void:
 	if state != "night": return
 	state = "seated"
+	expression.restore()
+	if murmur != null: murmur.stop()
 	elapsed = DURATION
 	shade.color = Color.BLACK
 	clock.advance_minutes(8*60)
@@ -350,10 +371,8 @@ func _release() -> void:
 	# Keep the lamp/table in the home; discard transient cinematic overlays.
 	for child in get_children(): child.queue_free()
 
-func _approach_shot() -> void:
-	camera.fov = 35
-	# Inside the actual aperture, at eye height: the road itself is the subject.
-	camera.global_position = home.to_global(Vector3(-3.35,1.86,3.42))
-	var end: Vector2 = home.get_meta("brother_approach_end")
-	var target := Vector3(end.x,world.layout.height(end.x,end.y)+1.0,end.y)
-	camera.look_at(target)
+func _interior_window_shot(t: float) -> void:
+	# On the room side of the front wall (z < 3.41); see his face in profile.
+	var push := smoothstep(13.0,18.0,t)
+	_shot(Vector3(-4.30,1.88,2.65).lerp(Vector3(-4.20,1.88,2.70),push),Vector3(-3.35,1.80,2.90))
+	camera.fov = 52.0

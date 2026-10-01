@@ -1,0 +1,21 @@
+{
+  "errors": [
+    "Escort teleported instead of walking"
+  ],
+  "escort_distance_m": 17.0101706311107,
+  "max_player_step_m": 0.210488304495811,
+  "officer_palm_error_m": 0.0155862485989928,
+  "passed": false,
+  "phases": [
+    "approach",
+    "restraint",
+    "escort",
+    "enter_cell",
+    "custody",
+    "stand",
+    "leave_cell",
+    "return",
+    "idle"
+  ],
+  "renderer": "forward_plus"
+}

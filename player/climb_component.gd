@@ -47,7 +47,7 @@ func try_start() -> bool:
 		if not hit.collider is StaticBody3D: return false
 		var surface := preload("res://player/climb_surface.gd").new()
 		if not surface.survey(actor,hit): return false
-		window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9))
+		if not window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9)): return false
 		window.surface = surface
 		active = true
 		return true

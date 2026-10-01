@@ -43,3 +43,7 @@ Dev now shares Arjun’s reference-fit skin color: `arjun_character_v2_young_lig
 ## Elder-brother face — 2026-10-01
 
 Following the owner’s request that Dev look elder, his MPFB age macro increased from 0.56 to 0.66, with provisional story age 36. Added a fitted CC0 Rehman Polanski moustache, shortened vertically to 45% of its original length. Face close-up `WorkingAssets/NPCs/arjun_brother/face.png` was inspected: moustache sits above the upper lip, and the mature cheek/jaw shaping retains the matched Arjun skin texture. Hair cards, eyebrow density and facial surface detail still need realism refinement; this is a candidate, not final likeness approval. Motion export and Metal captures are regenerated from this source.
+
+Hair-card opacity repair: restored the original short04 and moustache texture alpha, with baked dark RGB that preserves transparency. Previously the plain dark material filled the card outlines; both assets now use double-sided dithered transparency in Blender, exported with their alpha texture. The texture sources retain their CC0 provenance.
+
+Final source close-up and Metal idle/stride captures inspected after the hair-alpha repair; the 72-frame walk video is refreshed. Age shaping refits body/clothes, so the quarter-stride coverage was reviewed again. Face surface detail and hair silhouette remain refinement work.

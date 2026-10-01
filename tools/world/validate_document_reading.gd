@@ -23,7 +23,11 @@ func run() -> void:
 	for i in 12: await process_frame
 	var scroll: Control = actor.get_node("UI/IdentityScroll")
 	var motion: Node3D = actor.get_node("DocumentMotion")
-	var notice: Node3D = world.get_node("Settlement/TownHall/PostedDistrictNotice")
+	# Document-motion fixture only; no notice is attached to a runtime building.
+	var notice: Node3D = preload("res://interaction/wall_notice.gd").new()
+	notice.name = "DocumentTestFixture"
+	notice.position = Vector3(-320,9.5,-430)
+	world.add_child(notice)
 	var camera := Camera3D.new()
 	world.add_child(camera)
 	camera.make_current()

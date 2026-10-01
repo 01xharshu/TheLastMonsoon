@@ -11,13 +11,14 @@ func check() -> void:
 	var staff := building.get_node("ThanaStaff")
 	var expected := ["Daroga", "Mohurrir", "Burkundaz"]
 	for role in expected:
-		var actor := staff.get_node(role) as StaticBody3D
+		var actor := staff.get_node(role) as Node3D
 		assert(actor != null)
 		assert(actor.get_meta("station_bound", false))
 		assert(absf(actor.position.x) < 12.0 and absf(actor.position.z) < 11.0)
-		assert(actor.get_child_count() == 2)
+		assert(actor.animation_tree != null)
+		assert(actor._skeleton != null)
 		assert(actor.get_child(0).get_child_count() > 0)
-		assert(actor.get_child(1) is CollisionShape3D)
+		assert(actor.body_collider is AnimatableBody3D)
 		print("THANA_STAFF_PASS ", role, " ", actor.global_position)
 	world.queue_free()
 	await process_frame

@@ -81,10 +81,10 @@ func _run() -> void:
                     var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets[side])
                     var target: Vector3 = climb.window.sill+climb.window.normal*(.08-.55*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32)+Vector3.UP*.03
                     if climb.window.surface != null:
-                        var support: Dictionary = climb.window.surface.contact(climb.window.sill-climb.window.normal*(.22+.55*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32))
+                        var support: Dictionary = climb.window.surface.contact(climb.window.sill-climb.window.normal*(.22+.48*smoothstep(.42,.75,climb.window.progress))+climb.window.tangent*(-.32 if side=="l" else .32))
                         if not support.is_empty(): target = support.position+support.normal*.03
                     var gap: float = palm.distance_to(target)
-                    print("OBJECT PALM ",scenario.name," ",frame," ",side," gap=",gap," palm=",palm," target=",target)
+                    print("OBJECT PALM ",scenario.name," ",frame," ",side," gap=",gap)
                     if gap>.04:
                         failures += 1
                         print("FAIL supporting palm gap")
@@ -118,5 +118,20 @@ func _run() -> void:
     if climb.try_start():
         failures += 1
         print("FAIL unsupported narrow lip accepted")
-    print("ROCK CLIMB: ","PASS" if failures==0 else "FAIL"," | sloped rock, separate broken stones, supporting palms, rotated ledge, supported landing, narrow lip rejection")
+    _box("BrokenRimOnly",Vector3(.2,.7,15),Vector3(.4,1.4,3),Color(.46,.43,.37))
+    _box("LeftSupport",Vector3(1.1,.7,14),Vector3(1.8,1.4,.6),Color(.46,.43,.37))
+    _box("RightSupport",Vector3(1.1,.7,16),Vector3(1.8,1.4,.6),Color(.46,.43,.37))
+    actor.global_position = Vector3(-.85,.94,15.1)
+    for i in 3: await get_tree().physics_frame
+    var survey := preload("res://player/climb_surface.gd").new()
+    if survey.survey(actor,{"position":Vector3(0,1,15.1),"normal":Vector3.LEFT}):
+        failures += 1
+        print("FAIL broken landing hole accepted")
+    var steep := _box("SteepRock",Vector3(1,1,20),Vector3(2,.3,3),Color(.40,.43,.42))
+    steep.rotation.z = 1.0
+    for i in 3: await get_tree().physics_frame
+    if not survey.probe(Vector3(1,1,20),1).is_empty():
+        failures += 1
+        print("FAIL steep support accepted")
+    print("ROCK CLIMB: ","PASS" if failures==0 else "FAIL"," | sloped rock, separate broken stones, supporting palms, rotated ledge, supported landing, narrow lip, landing hole and steep support rejection")
     get_tree().quit(0 if failures==0 else 1)

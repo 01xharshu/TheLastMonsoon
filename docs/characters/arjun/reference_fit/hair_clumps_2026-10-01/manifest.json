@@ -1,0 +1,9 @@
+{
+  "status": "VISUAL_MATCH_FAILED",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_hair_clump_candidate.blend",
+  "clumps": 180,
+  "exact_match": false,
+  "runtime_replaced": false,
+  "review": "All four views inspected: reduced gloss, but sparse loop-like waves over a cap; face, drape and boot detail still differ."
+}

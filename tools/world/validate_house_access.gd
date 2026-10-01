@@ -49,6 +49,37 @@ func run() -> void:
 	var fort = get_nodes_in_group("occupied_command_fort")[0]
 	check(fort.has_node("FortKitchen") and fort.has_node("FortStores") and fort.has_node("ServantQuarters"),"fort service interiors exist")
 	check(fort.has_node("FortCook") and fort.has_node("FortSteward"),"two independent staff candidates loaded")
+	var private_gates := 0
+	for rich_home in get_nodes_in_group("wealthy_household"):
+		if rich_home.has_node("EntranceDoor"):
+			var entrance = rich_home.get_node("EntranceDoor")
+			entrance._time_changed(1,21,0)
+			private_gates += 1
+	var estate_gate = world.get_node("Settlement/BhairavpurLandownerEstate/EstateGateFrame/EntranceGate")
+	estate_gate._time_changed(1,21,0)
+	await create_timer(1.4).timeout
+	check(private_gates==2 and estate_gate.locked and not estate_gate.opened,"wealthy homes and landowner gate latch at night")
+	var shutter = homes[1].get_node("TimberWindowFrameEast/PairedWoodShutters")
+	shutter.restore_state(false)
+	player.global_position=shutter.get_parent().to_global(Vector3(0,.4,1.8))
+	await physics_frame
+	await physics_frame
+	shutter.interact(player)
+	check(not shutter.opened,"outside cannot unlatch wooden window")
+	player.global_position=shutter.get_parent().to_global(Vector3(0,.4,-1.8))
+	await physics_frame
+	await physics_frame
+	shutter.interact(player)
+	await create_timer(1.4).timeout
+	check(shutter.opened,"inside can animate wooden shutters open")
+	player.global_position=Vector3(0,30,0)
+	await physics_frame
+	await physics_frame
+	var fort_gate = fort.get_node("FortEntranceGate")
+	fort_gate._time_changed(1,21,0)
+	await create_timer(2.6).timeout
+	check(fort_gate.locked and not fort_gate.opened and is_zero_approx(fort_gate.swing),"paired fort entrance closes at night")
+
 	if DisplayServer.get_name() != "headless":
 		root.size=Vector2i(1280,720)
 		var camera := Camera3D.new()
@@ -69,7 +100,30 @@ func run() -> void:
 		for i in 12: await process_frame
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://docs/world/captures/fort_kitchen_candidate.png")
+		for layer in world.find_children("*","CanvasLayer",true,false): layer.hide()
+		root.content_scale_size=Vector2i(1280,720)
+		root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
+		home.get_node("EntranceDoor").restore_state(false)
+		shutter.restore_state(false)
+		camera.fov=55
+		camera.global_position=home.to_global(Vector3(7,2.8,9))
+		camera.look_at(home.to_global(Vector3(0,1.4,4)))
+		for i in 8: await process_frame
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://docs/world/captures/house_door_realism.png")
+		var frame = shutter.get_parent()
+		camera.global_position=frame.to_global(Vector3(2.5,2.0,3.8))
+		camera.look_at(frame.to_global(Vector3(0,.55,0)))
+		for i in 8: await process_frame
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://docs/world/captures/wood_shutter_closed.png")
+		shutter.restore_state(true)
+		for i in 8: await process_frame
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://docs/world/captures/wood_shutter_open.png")
 	var report := {"failures":failures,"night_latched_homes":locked_count,"entry_window_homes":clear_count,"visual_approval":"open"}
 	var file := FileAccess.open("res://docs/world/house_access_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
+	world.queue_free()
+	await process_frame
 	quit(0 if failures.is_empty() else 1)

@@ -64,7 +64,7 @@ func run() -> void:
 	var samples := 0
 	for z in range(400,820,4):
 		var x: float = layout.river_x(z)
-		check(layout.height(x,z)<-3.0,"channel depth at "+str(z))
+		if layout.height(x,z)>=-3.0: failures.append("channel too shallow "+str(z))
 		var ray := PhysicsRayQueryParameters3D.create(Vector3(x,2,z),Vector3(x,-20,z))
 		ray.exclude = [player.get_rid()]
 		var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(ray)
@@ -72,6 +72,7 @@ func run() -> void:
 			failures.append("baked channel mismatch "+str(z))
 		samples += 1
 	check(layout.river_width(810)>layout.river_width(450)*5,"river opens into estuary")
+	check(failures.is_empty(),"105 channel samples match navigable baked terrain")
 	check(port.boundary.find_children("*","GeometryInstance3D",true,false).is_empty(),"sea boundary has no visible wall mesh")
 	await settle(Vector3(-168,3.8,680))
 	await walk_to(Vector3(-102,4.22,680),"quay to supported jetty",3.32)
@@ -89,8 +90,19 @@ func run() -> void:
 	await walk_to(ship_point(1.1,19.4,7),"helm exploration",6.09)
 	await walk_to(ship_point(2.7,16.2,7),"return to poop stairs",6.09)
 	await walk_to(ship_point(2.7,11.6),"descend poop stairs",3.32)
-	await walk_to(ship_point(4.1,11.6),"move around deck cargo",3.32)
-	await walk_to(ship_point(4.1,1.0),"main deck starboard aisle",3.32)
+	await walk_to(ship_point(3.65,11.6),"move around deck cargo",3.32)
+	await walk_to(ship_point(3.65,1.0),"main deck starboard aisle",3.32)
+	await walk_to(ship_point(-3.3,1.0),"cross forward of companionway",3.32)
+	await walk_to(ship_point(-3.3,-12.7),"forward deck port aisle",3.32)
+	await walk_to(ship_point(2,-12.7),"cross behind foremast",3.32)
+	await walk_to(ship_point(2,-14.7),"forecastle stair approach",3.32)
+	await walk_to(ship_point(2,-19,5.24),"forecastle ascent",4.34)
+	await walk_to(ship_point(0,-20.5,5.24),"forecastle exploration",4.34)
+	await walk_to(ship_point(2,-19,5.24),"forecastle return",4.34)
+	await walk_to(ship_point(2,-14.7),"forecastle descent",3.32)
+	await walk_to(ship_point(2,-12.7),"clear foremast on return",3.32)
+	await walk_to(ship_point(-3.3,-12.7),"return to port aisle",3.32)
+	await walk_to(ship_point(-3.3,1.0),"forward deck return",3.32)
 	await walk_to(ship_point(0,1.0),"companionway approach",3.32)
 	await walk_to(ship_point(0,11,-0.12),"descend into cargo hold",-1.02)
 	await walk_to(ship_point(0,15,-0.12),"cargo hold aft exploration",-1.02)
@@ -110,16 +122,18 @@ func run() -> void:
 	Input.action_press("move_forward")
 	for i in 180: await physics_frame
 	Input.action_release("move_forward")
+	var sea_stop_position := player.global_position
 	check(player.global_position.z>818 and player.global_position.z<819.2,"actual swimmer is stopped by invisible boundary")
 	check(player.is_swimming,"boundary leaves swimmer buoyant")
 	for y in [-12.0,0.0,20.0]:
 		var ray := PhysicsRayQueryParameters3D.create(Vector3(40,y,815),Vector3(40,y,825))
+		ray.exclude = [player.get_rid()]
 		var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(ray)
 		check(not hit.is_empty() and hit.collider==port.boundary,"boundary seals height "+str(y))
 	# Return from water onto the tidal landing using the same controller.
 	await settle(Vector3(-138,-0.25,712))
 	await walk_to(Vector3(-153,3.7,712),"swimmer returns by tidal steps",2.8,true)
-	var report := {"status":"PASS" if failures.is_empty() else "FAIL","renderer":RenderingServer.get_current_rendering_method(),"channel_samples":samples,"routes":routes,"failures":failures}
+	var report := {"status":"PASS" if failures.is_empty() else "FAIL","renderer":RenderingServer.get_current_rendering_method(),"channel_samples":samples,"routes":routes,"sea_stop_position":str(sea_stop_position),"sea_boundary_z":Layout.SEA_LIMIT_Z,"failures":failures}
 	FileAccess.open("res://docs/world/hooghly_port_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t")+"\n")
 	print("HOOGHLY PORT VALIDATION ",report.status," ",failures)
 	quit(0 if failures.is_empty() else 1)

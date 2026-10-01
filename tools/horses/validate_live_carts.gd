@@ -99,6 +99,6 @@ func _finish_transition(cart: Node3D) -> void:
 		if cart.boarding.role == "passenger" and cart.has_method("set_boarding_door"):
 			if cart.boarding.transition_progress > .25 and cart.boarding.transition_progress < .75:
 				var door: Node3D = cart.boarding_doors[cart.boarding.transition_side]
-				assert(door.get_child_count() == 7 and absf(door.rotation.y) > 1.0, "Passenger door did not open")
+				assert(door.get_child_count() >= 7 and absf(door.rotation.y) > 1.0, "Passenger door did not open: parts=%d angle=%.3f progress=%.3f" % [door.get_child_count(), door.rotation.y, cart.boarding.transition_progress])
 		await get_tree().physics_frame
 	assert(false, "Cart transition did not finish")

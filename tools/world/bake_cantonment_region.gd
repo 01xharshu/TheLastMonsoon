@@ -14,7 +14,7 @@ func bake() -> void:
 	for tz in [8,9]:
 		for tx in [8,9,10]:
 			var tile: Node3D = terrain.get_node("Terrain_%02d_%02d" % [tx,tz])
-			old_shapes[Vector2i(tx,tz)] = tile.get_node("GroundCollision/CollisionShape3D").shape
+			old_shapes[Vector2i(tx,tz)] = tile.get_node("GroundCollision").get_child(0).shape
 			terrain.remove_child(tile)
 			tile.free()
 			bake_tile(Vector2(-Layout.HALF+tx*Layout.TILE,-Layout.HALF+tz*Layout.TILE),tx,tz,terrain)

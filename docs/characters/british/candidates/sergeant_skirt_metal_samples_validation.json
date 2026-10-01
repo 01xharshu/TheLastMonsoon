@@ -1,0 +1,17 @@
+{
+  "errors": [],
+  "frames_at_60_hz": 750,
+  "maximum_morph_values": [
+    0.778980255126953,
+    0.779505133628845,
+    0.350446313619614,
+    0.350776314735413
+  ],
+  "pair_rendered": true,
+  "passed": true,
+  "rank": "sergeant",
+  "sampled_render_review": true,
+  "scope": "isolated actual AnimationTree idle/walk/turn morph import and settling; body penetration, run, seated and live-world approval remain open",
+  "settled_values_length": 0.00000293918219540501,
+  "spawned_from_live_roster": false
+}

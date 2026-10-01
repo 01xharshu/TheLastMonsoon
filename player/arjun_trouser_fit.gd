@@ -19,7 +19,9 @@ static func apply(model: Node3D) -> int:
    var influences: int = weights.size()/vertices.size()
    for vertex in vertices.size():
     var height := vertices[vertex].y
-    var waist := smoothstep(.82, .98, height)
+    # Match the overlying kurta's hip transition. The upper trouser
+    # opening sits below the actual waist and must follow the bent thigh.
+    var waist := smoothstep(.96, 1.04, height)
     var upper_leg := smoothstep(.43, .59, height)
     var offset := vertex*influences
     for slot in influences:
@@ -44,7 +46,8 @@ static func _apply_source_folds(model: Node3D) -> void:
  model.get_parent().add_child(source)
  source.transform = model.transform
  source.hide()
- for node in model.find_children("*DrapedTrousers*","MeshInstance3D",true,false):
+ for node in model.find_children("*","MeshInstance3D",true,false):
+  if not ("DrapedTrousers" in str(node.name) or node.name == "Arjun_Kurta_SplitHem"): continue
   var replacement: MeshInstance3D = source.find_child(str(node.name),true,false)
   if replacement == null: continue
   var frame: Transform3D = node.global_transform.affine_inverse()*replacement.global_transform
@@ -71,7 +74,7 @@ static func _apply_source_folds(model: Node3D) -> void:
    cotton.albedo_color = Color(0.76,0.72,0.62)
    cotton.roughness = 0.93
    cotton.metallic_specular = 0.18
-   fitted.surface_set_material(surface,cotton)
+   fitted.surface_set_material(surface,node.mesh.surface_get_material(mini(surface,node.mesh.get_surface_count()-1)) if node.name == "Arjun_Kurta_SplitHem" else cotton)
   node.mesh = fitted
   node.set_meta("riding_cloth_source","arjun_riding_cloth.glb")
  source.free()

@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-01 IST",
+  "renderer": "Metal Forward+",
+  "source_hashes": {
+    "tools/characters/refine_arjun_riding_cloth.py": "37a2713d731a37773ded364e09ebb5c55641b80fdda0f6de56b3547013c2abb6",
+    "characters/arjun/arjun_riding_cloth.glb": "8a2099231929464101d6835e5126f27aa2c3cbb368839a653787705368b5591c",
+    "player/arjun_trouser_fit.gd": "fd040d4547a51c6abc2da8ef6894a0adce09587aaed02c053d03152753a3e1b9",
+    "player/arjun_clothing.gd": "b7e427f992ac07c271dad6f1daab5391c8eb17969aa271ea62883ccdbc412de6",
+    "horses/fitted_saddle.gd": "928a934adf9d863e52f99809b110e54b3bfccc4b1339f5470516f4925237489c",
+    "horses/stable_horse.gd": "cffc7fa13f2bd16c72a56ca9ff24601a5fcbbb8afb3b681854de23bdbc098a1f",
+    "tools/horses/validate_rider_seated_motion.gd": "1b6a31d19db35b2ad72cc9ac2f80da72f2e55064fa9341e03eb104b5137e06e0"
+  },
+  "report": "docs/world/riding_cloth_saddle_metal.json",
+  "final_cloth_approved": false,
+  "exact_historical_pattern_approved": false,
+  "body_replaced": false,
+  "seam_revision": "matched hip blend; broad split hem gathers; upper slit stitched, lower opening retained"
+}

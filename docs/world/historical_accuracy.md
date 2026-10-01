@@ -46,3 +46,7 @@ The HUD, combat status and civic pickup now say **Adams revolver**, without assi
 The [Webber specimen](https://collection.nam.ac.uk/detail.php?acc=1993-02-351-1) establishes use at Jhansi in March–April 1858 and explicitly dates its Kerr rammer to after 1857. It does not establish this model's presence in Suryagarh in 1857. The Greenwich record's 1857 date also means a rammer alone cannot be used as a universal exclusion rule. Exact silhouette, mechanism, dimensions and dated Indian ownership require reconciliation before the sidearm receives approval. The prototype remains a research candidate; removing its date label does not satisfy that acceptance gate.
 
 Verification: `tools/weapons/validate_rifle.gd` passed after the label change (`/tmp/tlm_period_labels.log`). Exact identification remains unresolved.
+
+## Building presentation rule
+
+User direction, reaffirmed 2026-10-01: do not put visible text on buildings. This includes exterior building names, interior room labels and wall-posted text. Identify these locations through architecture and furnishings. Internal scene names are development identifiers and must not be rendered as labels. This is the project presentation rule, not a claim that all historical buildings universally lacked inscriptions.

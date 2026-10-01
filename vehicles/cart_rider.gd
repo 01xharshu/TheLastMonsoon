@@ -104,6 +104,8 @@ func transition_step_world() -> Vector3:
 	return cart.to_global(Vector3(transition_side * 1.12, .595, 1.40))
 
 func transition_hand_world() -> Vector3:
+	if role == "passenger" and cart.has_method("show_coachman_blockout"):
+		return cart.to_global(Vector3(transition_side * 1.13, 1.95, 2.40))
 	var step := cart.to_local(transition_step_world())
 	return cart.to_global(Vector3(transition_side * .85, step.y + 1.0, step.z + .30))
 
@@ -139,7 +141,7 @@ func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 func dismount() -> bool:
 	if rider == null or transition != "": return false
 	var shape: CollisionShape3D = rider.get_node("CollisionShape3D")
-	for side in [-1.0, 1.0]:
+	for side in [transition_side, -transition_side]:
 		var exit_at: Vector3 = cart.global_position + cart.global_basis.x * side * 2.35 + cart.global_basis.z * 2.2
 		var ground_query := PhysicsRayQueryParameters3D.create(exit_at + Vector3.UP * 3.0, exit_at - Vector3.UP * 4.0)
 		ground_query.exclude = _vehicle_exclusions()

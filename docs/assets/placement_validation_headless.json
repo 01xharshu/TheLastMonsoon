@@ -1,0 +1,67 @@
+{
+	"failures": [],
+	"limits": "Support and final 0.8 m capsule approach strip; not full walking routes, animation or final art approval",
+	"placements": [
+		{
+			"name": "ArjunRestDressing",
+			"position": "(-340.65, 7.44, 215.4)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "IndoorWaterSource",
+			"position": "(-345.6, 7.84, 213.25)",
+			"support_gap_m": 0.0000000953674312853536
+		},
+		{
+			"name": "CourtyardCooking",
+			"position": "(-323.2, 7.2, 207.7)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "CookingWaterSource",
+			"position": "(-323.85, 7.6, 208.06)",
+			"support_gap_m": 0.0000000953674312853536
+		},
+		{
+			"name": "GrainStoreCounter",
+			"position": "(-280.0, 7.36, 285.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "StoreFenceWest",
+			"position": "(-282.0, 7.2, 281.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "StoreFenceEast",
+			"position": "(-278.0, 7.2, 281.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "StoreOpenGate",
+			"position": "(-280.0, 7.2, 281.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "TownRecordsDesk",
+			"position": "(-324.0, 8.45, -468.6)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "ArmourySupplyShelf",
+			"position": "(381.0, 12.24, 311.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "StoresBarricade",
+			"position": "(368.0, 12.08, 322.0)",
+			"support_gap_m": 0.0
+		},
+		{
+			"name": "StoresLowCover",
+			"position": "(371.0, 12.08, 322.0)",
+			"support_gap_m": 0.0
+		}
+	],
+	"transactions": "PASS: two pickups once; persistence list excludes queued pickups; legacy field accepted; indoor water fills"
+}

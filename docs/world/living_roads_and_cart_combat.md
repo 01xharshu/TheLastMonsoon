@@ -1,10 +1,10 @@
 # Living roads, transport combat and field telescope
-Updated: 2026-09-30. Status: IN_PROGRESS; first telescope functionality verified.
+Updated: 2026-10-01. Status: IN_PROGRESS; telescope/cart functionality and first village street journeys verified.
 
 ## Owner scope
 Period roads with connected markets, houses and trees; walking residents; cattle owned by households; wider river; killable cart horses, driver and enclosed passengers; breakable glazing; Arjun carrying a handheld telescope with adjustable zoom. All remain authorized work. Preserve concurrent character, household, river/port and mounted-contact edits.
 
-## This pass
+## Initial telescope pass
 Read handoff/status and inspected live village, carriage, travel, weapons and player contracts. Bhairavpur already builds 33 homes, eight stalls, twelve garden plots and shade trees. Those counts do not prove a convincing populated settlement. No roads, villagers, cattle or river geometry were added this pass.
 
 Added `player/field_telescope.gd`, attached to the player scene. T toggles a dedicated optical camera; wheel changes 2–12x magnification using angular FOV. Circular eyepiece mask/hint appears only while raised. Prior camera is restored on lowering; map/inventory/dialogue-like document/rest/water/detention states close or block it. Combat dispatcher and rifle/pistol/bow/talwar availability reject telescope use. This is an optical gameplay prototype, not a carried physical asset or hand-to-eye animation.
@@ -43,3 +43,6 @@ Visual limits: horse fall is a generated leg-fold/side-roll transition; seated N
 Next: inspect normal-speed cart death clip and improve collapse/harness/ground contact, then saved death states and corpse interactions. Continue the environment work by surveying home/market entrances and walking corridors before placing household cattle or residents. No full-world frame-time or 8 GB hardware result claimed.
 
 Normal-speed evidence: `tools/horses/capture_cart_death.tscn` / `.gd`, `captures/cart_death_motion_20261001.mp4` (136 frames, 30 fps, 4.533 s). Mid-fall and settled frames inspected. Isolated preview uses the original temporary coachman volumes, not the live British household actors. It confirms the leg fold, side fall, retained corpse and stopped cart; natural balance loss, head/hoof contact and harness geometry remain art/motion gates. First movie had stale repeated pixels; rejected and replaced by explicit-draw retry (`/tmp/tlm_cart_death_video_retry.log`).
+
+## Village environment continuation — 2026-10-01
+Nine terrain-following earth road/approach strips and two scheduled home–market residents are now integrated. Full corridor clearance (645 samples), market/home cycles and night return PASS in the native renderer. Fresh market/walker pixels inspected. These are initial candidate residents, not a finished populated village. Original cow source/rig imported and reviewed; hoof gaps corrected, overall anatomy/art still inadequate and placement remains open. Details, evidence and exact next work: [village streets and cow candidate](village_streets_2026-10-01.md).

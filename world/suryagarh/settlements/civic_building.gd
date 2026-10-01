@@ -114,13 +114,6 @@ func _ready() -> void:
 		light.light_energy = .16 if police else .7
 		light.omni_range = 15 if police else 24
 		add_child(light)
-	var sign := Label3D.new()
-	sign.text = "DISTRICT POLICE · THANA" if police else "SURYAGARH · TOWN HALL"
-	sign.position = Vector3(0,4.1,depth*.5+.28)
-	sign.font = preload("res://assets/ui/fonts/CormorantGaramond.ttf")
-	sign.font_size = 64
-	sign.pixel_size = .012
-	add_child(sign)
 	preload("res://world/suryagarh/settlements/civic_details.gd").furnish(self)
 	armoury()
 	sidearm_display()

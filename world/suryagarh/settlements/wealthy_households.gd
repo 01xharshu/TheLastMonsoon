@@ -60,7 +60,7 @@ func _build_households() -> void:
 		actor.set("_home",actor.position); actor.set("movement_enabled",false)
 		actor.set_meta("household","BritishHousehold"); couple.append(actor)
 	_coach(landlord,[landowner],[Vector3(-316,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
-	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-395,7.24,312),Vector3(-379,7.24,312)])
+	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-410,7.24,330),Vector3(-379,7.24,330)])
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
 	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 3 household coaches")
 
@@ -75,13 +75,24 @@ func _house(home:Node3D,british:bool) -> void:
 		for z in [-5.0,0.0,5.0]:
 			piece(home,"WindowPier",Vector3(side*10,1.9,z),Vector3(.35,1.6,2),wall)
 		for z in [-2.5,2.5]:
-			var shutter:=piece(home,"OpenTimberShutter",Vector3(side*10.2,1.9,z+.95),Vector3(.12,1.6,1.8),wood,false)
-			shutter.rotation.y=side*.7
+			var openings := preload("res://world/suryagarh/settlements/bhairavpur_house_detail.gd").new()
+			openings.settlement=self
+			openings._window_frame(home,Vector3(side*10,1.1,z),Vector2(3.0,1.6),side*PI*.5,false,not british)
+			if british:
+				for bar in 12: piece(home,"IronWindowBar",Vector3(side*10,1.9,z-1.375+bar*.25),Vector3(.055,1.6,.04),iron,false)
+				openings._window_barrier(home,Vector3(side*10,1.9,z),Vector3(.10,1.6,3.0))
 		piece(home,"EntranceWall",Vector3(side*5.7,1.85,6),Vector3(8.6,3.7,.35),wall)
 		piece(home,"PrivateRoomPartition",Vector3(side*5.8,1.65,-1),Vector3(8.4,2.8,.18),wall)
 		piece(home,"RoofSlope",Vector3(side*5,4.35,0),Vector3(10.8,.22,14),tile).rotation.z=-side*.16
 		_furniture(home,Vector3(side*5,.24,-3.5),side>0)
 	piece(home,"DoorHeader",Vector3(0,3.25,6),Vector3(3,1,.4),wall)
+	var entrance := preload("res://objects/hinged_door.gd").new()
+	entrance.name="EntranceDoor"
+	entrance.width=2.8
+	entrance.height=2.6
+	entrance.position=Vector3(-1.4,.24,6.22)
+	entrance.build(wood)
+	home.add_child(entrance)
 	piece(home,"VerandaFloor",Vector3(0,.12,8.5),Vector3(23,.24,5),stone)
 	piece(home,"VerandaRoof",Vector3(0,3.6,8.5),Vector3(24,.25,6),tile)
 	for x in [-10.0,-5.0,5.0,10.0]: column(home,Vector3(x,1.95,10.5),3.5)
@@ -168,13 +179,13 @@ func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
 	var driver:=_staff(home,"Coachman",home.to_local(route[0]),"village_farmer",Vector3.FORWARD)
 	var travel:=Travel.new();travel.name="HouseholdTravel";travel.configure(coach,people,route,driver)
 	coach.add_child(travel)
-	var office_center:=route[-1]+Vector3(12,-.04,0)
+	var office_center:=route[-1]+Vector3(12,-.04,-18 if home.name=="MerchantHousehold" else 0)
 	var office:=_workplace(home,office_center)
 	var home_path:Array[Vector3]=[]
 	if str(home.name)=="LandownerHousehold":
 		home_path=[home.to_global(Vector3(-8,.24,1)),home.to_global(Vector3(0,.24,1))]
 	else:
-		home_path=[home.to_global(Vector3(0,.24,4)),home.to_global(Vector3(0,.24,10.6)),home.to_global(Vector3(0,.0,13))]
+		home_path=[home.to_global(Vector3(0,.24,4)),home.to_global(Vector3(0,.24,10.6)),home.to_global(Vector3(0,.0,15))]
 	travel.configure_journeys(home_path,office)
 
 func _carried_pot_mesh() -> ArrayMesh:
@@ -199,9 +210,9 @@ func _workplace(home:Node3D,at:Vector3) -> Node3D:
 	for side in [-1.0,1.0]:
 		piece(office,"SideWall",Vector3(side*4,1.7,0),Vector3(.25,3.4,6),plaster)
 		piece(office,"DoorPier",Vector3(side*2.65,1.7,3),Vector3(2.7,3.4,.25),plaster)
-		piece(office,"Desk",Vector3(side*1.6,.99,-.65),Vector3(1.7,.14,.8),wood)
-		for x in [-.65,.65]:piece(office,"DeskLeg",Vector3(side*1.6+x,.59,-.65),Vector3(.12,.94,.65),wood)
-		piece(office,"Ledger",Vector3(side*1.6,1.09,-.65),Vector3(.4,.04,.3),ochre,false)
+		piece(office,"Desk",Vector3(side*1.6,.99,-.45),Vector3(1.7,.14,.8),wood)
+		for x in [-.65,.65]:piece(office,"DeskLeg",Vector3(side*1.6+x,.59,-.45),Vector3(.12,.94,.65),wood)
+		piece(office,"Ledger",Vector3(side*1.6,1.09,-.10),Vector3(.4,.04,.3),ochre,false)
 		piece(office,"ChairSeat",Vector3(side*1.6,.69,.35),Vector3(.6,.12,.55),wood)
 		piece(office,"ChairBack",Vector3(side*1.6,1.1,.6),Vector3(.6,.8,.1),wood)
 		for dx in [-.23,.23]:
@@ -209,7 +220,5 @@ func _workplace(home:Node3D,at:Vector3) -> Node3D:
 	piece(office,"DoorLintel",Vector3(0,3,3),Vector3(2.6,.8,.3),plaster)
 	piece(office,"Roof",Vector3(0,3.48,0),Vector3(8.6,.2,6.6),tile)
 	piece(office,"EntranceRamp",Vector3(0,.06,3.75),Vector3(2.6,.12,1.5),stone)
-	var sign:=Label3D.new();sign.name="OfficeSign";sign.text="ESTATE RENT OFFICE" if home.name=="LandownerHousehold" else ("COUNTING HOUSE" if home.name=="MerchantHousehold" else "ESTATE OFFICE")
-	sign.position=Vector3(0,2.65,3.18);sign.font_size=40;sign.pixel_size=.009;office.add_child(sign)
 	merge_visuals(office)
 	return office

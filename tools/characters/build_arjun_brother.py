@@ -56,7 +56,16 @@ skin_bs.inputs['Specular IOR Level'].default_value = .22
 skin_bs.inputs['Subsurface Weight'].default_value = .035
 body.data.materials.clear(); body.data.materials.append(skin)
 for face in body.data.polygons: face.use_smooth = True
-dark = mat("Dark hair", (.009,.007,.005))
+def hair_material(name, texture):
+    m=mat(name,(.009,.007,.005),texture)
+    tex=next(n for n in m.node_tree.nodes if n.type=='TEX_IMAGE')
+    m.node_tree.links.new(tex.outputs['Alpha'],m.node_tree.nodes['Principled BSDF'].inputs['Alpha'])
+    m.surface_render_method='DITHERED'
+    m.use_backface_culling=False
+    return m
+
+dark = hair_material("Dark hair", OUT / "dev_dark_hair.png")
+facial_hair = hair_material("Dev dark moustache strands",OUT / "dev_dark_moustache.png")
 dark.node_tree.nodes.get('Principled BSDF').inputs['Specular IOR Level'].default_value = .18
 coat = mat("Faded red sepoy coat candidate", (.18,.025,.022))
 trim = mat("Muted brass trim", (.56,.39,.15))
@@ -74,7 +83,7 @@ brows.name = "Dev_fitted_eyebrows"
 # Fitted CC0 moustache, shortened from the original long style.
 moustache = HumanService.add_mhclo_asset(str(DATA / "clothes/rehmanpolanski_moustache_viking/rehmanpolanski_moustache_viking.mhclo"),body,asset_type="Clothes",subdiv_levels=0)
 moustache.name = "Dev_mature_moustache"
-moustache.data.materials.clear(); moustache.data.materials.append(dark)
+moustache.data.materials.clear(); moustache.data.materials.append(facial_hair)
 top=max(v.co.z for v in moustache.data.vertices)
 for v in moustache.data.vertices: v.co.z=top+(v.co.z-top)*.45
 
