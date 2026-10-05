@@ -10,7 +10,7 @@
   "calibration": "WorkingAssets/Arjun/reference_fit/reference_face_fit.json",
   "status": "CANDIDATE_NOT_EXACT_OR_APPROVED",
   "source": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend",
-  "source_sha256": "85302e915a67ee9a426743e83b66d2a65c4e18cfe6506722087cf724e1c7f075",
+  "source_sha256": "0284cce412ae6aac88deb7cc1bfe78a0273adf39c1d9b8e516c308cb5731ab27",
   "candidate": "WorkingAssets/Arjun/reference_fit/arjun_multiview_fit_candidate.blend",
   "changes": [
     "measured frontal face shape key",
@@ -19,5 +19,6 @@
     "broader diagonal trouser drape",
     "shaped split hem"
   ],
-  "runtime_replaced": false
+  "runtime_replaced": false,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

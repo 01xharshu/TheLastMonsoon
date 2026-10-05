@@ -5,7 +5,7 @@ func _run() -> void:
 	var actor := preload("res://characters/npcs/households/household_npc_actor.gd").new()
 	actor.movement_enabled = false
 	var doc := GLTFDocument.new(); var state := GLTFState.new()
-	assert(doc.append_from_file(ProjectSettings.globalize_path("res://WorkingAssets/NPCs/errand_passenger/errand_passenger.glb"),state)==OK)
+	assert(doc.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/motion/errand_passenger/errand_passenger.glb"),state)==OK)
 	actor.add_child(doc.generate_scene(state)); world.add_child(actor)
 	actor.set_process(false); actor.animation_tree.active = false
 	var cart := preload("res://vehicles/horse_cart_candidate.gd").new(); world.add_child(cart)

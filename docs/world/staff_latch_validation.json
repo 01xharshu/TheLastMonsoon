@@ -1,9 +1,12 @@
 {
-	"cook_hand_gap_max_m": 0.0110269086435437,
+	"cook_clothing_build_us": 409262,
+	"cook_hand_gap_max_m": 0.0110249854624271,
 	"failures": [],
-	"latch_contact_gap_m": 0.000000124894484088145,
-	"minimum_cook_palm_separation_m": 0.241760402917862,
+	"latch_contact_gap_m": 0.0000000805903539458086,
+	"max_physics_steps_per_frame": 1,
+	"minimum_cook_palm_separation_m": 0.241616800427437,
 	"passed": true,
-	"renderer": "headless",
+	"physics_ticks_per_second": 30,
+	"renderer": "macOS",
 	"scope": "normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"
 }

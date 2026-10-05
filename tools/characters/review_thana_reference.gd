@@ -27,6 +27,28 @@ func run() -> void:
 			for frame in 2:await process_frame
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://docs/characters/npcs/thana_reference_%s_%s.png"%[role,view])
+		# Real-time walking followed by a bent reaching pose on the runtime skeleton.
+		camera.position=Vector3(1.7,1.1,2.3);camera.look_at(Vector3(0,.95,0))
+		actor.travel_speed=1.2
+		var started:=Time.get_ticks_msec()
+		var captured:=false
+		while Time.get_ticks_msec()-started<3000:
+			await process_frame
+			if not captured and Time.get_ticks_msec()-started>1700:
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png("res://docs/characters/npcs/thana_reference_%s_walk.png"%role)
+				captured=true
+		actor.travel_speed=0.0
+		started=Time.get_ticks_msec()
+		while Time.get_ticks_msec()-started<2000:
+			await process_frame
+			actor._skeleton.set_bone_pose_rotation(actor._bones["spine_02"],actor._base_rotations["spine_02"]*Quaternion(actor._pitch_axes["spine_02"],.74))
+			actor._skeleton.force_update_all_bone_transforms()
+			actor.solve_hand_contact("r",actor.to_global(Vector3(-.1,.90,.48)))
+			actor.set_grip("r",.25)
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://docs/characters/npcs/thana_reference_%s_reach.png"%role)
+		print("THANA REFERENCE WALK AND BENT REACH REVIEW ",role)
 		actor.queue_free();await process_frame
 	print("THANA REFERENCE ISOLATED METAL REVIEW COMPLETE")
 	stage.queue_free();await process_frame;quit()

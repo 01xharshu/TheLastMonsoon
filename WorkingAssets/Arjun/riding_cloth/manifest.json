@@ -1,9 +1,10 @@
 {
   "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
-  "source_sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
+  "source_sha256": "1c6983ff43366832f34344c1783f7c35c88f941cc2f4f94f9cc6f1462249efe9",
   "output": "characters/arjun/arjun_riding_cloth.glb",
   "output_sha256": "8a2099231929464101d6835e5126f27aa2c3cbb368839a653787705368b5591c",
   "body_changed": false,
   "rig_changed": false,
-  "final_cloth_approved": false
+  "final_cloth_approved": false,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

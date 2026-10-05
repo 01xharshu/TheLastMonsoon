@@ -63,7 +63,8 @@ bpy.ops.object.select_all(action='DESELECT'); rig.select_set(True)
 for obj in bpy.data.objects:
     if obj.type == 'MESH' and obj not in masked: obj.select_set(True)
 bpy.context.view_layer.objects.active = rig
-runtime = OUT / 'fort_staff_rigged_candidate.glb'
+runtime = ROOT / 'characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb'
+runtime.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(runtime), export_format='GLB', use_selection=True,
     export_animations=True, export_animation_mode='ACTIONS', export_force_sampling=True,
     export_frame_range=False, export_cameras=False, export_lights=False,

@@ -7,6 +7,9 @@ func check(ok: bool,label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 	if not ok: failures.append(label)
 func run() -> void:
+	if "--motion-evidence" in OS.get_cmdline_user_args() or "--frames-evidence" in OS.get_cmdline_user_args():
+		Engine.physics_ticks_per_second=30
+		Engine.max_physics_steps_per_frame=1
 	root.mode=Window.MODE_WINDOWED
 	root.size=Vector2i(1280,720)
 	root.content_scale_size=Vector2i(1280,720)
@@ -42,6 +45,8 @@ func run() -> void:
 	for layer in player.find_children("*","CanvasLayer",true,false):layer.hide()
 	camera=Camera3D.new();stage.add_child(camera);camera.current=true;camera.fov=48
 	camera.position=Vector3(3,2.15,3.5);camera.look_at(Vector3(0,1.1,.3))
+	if "--frames-evidence" in OS.get_cmdline_user_args():
+		stage.add_child(preload("res://tools/world/staff_latch_frame_recorder.gd").new())
 	for i in 4:await physics_frame
 	check(player._find_interactable()==door,"normal E selects latch from approach distance")
 	player._try_primary_interaction()
@@ -95,14 +100,15 @@ func run() -> void:
 		var marker:=Marker3D.new();marker.name="CookContact"+side
 		marker.position=Vector3(3.84,.86,.61) if side=="L" else Vector3(4.10,.88,.56)
 		kitchen.add_child(marker)
+	var staff_doc:=GLTFDocument.new();var staff_state:=GLTFState.new()
+	staff_doc.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb"),staff_state)
+	var staff_template:=staff_doc.generate_scene(staff_state)
 	for index in 2:
 		var actor=preload("res://characters/npcs/households/fort_staff.gd").new()
 		actor.name="Cook" if index==0 else "Steward"
 		actor.household_job=actor.name
 		actor.movement_enabled=false;actor.position=Vector3(4+index*1.5,0,1);actor.rotation.y=PI
-		var doc:=GLTFDocument.new();var state:=GLTFState.new()
-		doc.append_from_file(ProjectSettings.globalize_path("res://WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb"),state)
-		actor.add_child(doc.generate_scene(state));stage.add_child(actor)
+		actor.add_child(staff_template.duplicate());stage.add_child(actor)
 		var bodies=actor.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)
 		var foundations=actor.find_children("Opaque fitted underwear foundation","MeshInstance3D",true,false)
 		check(bodies.size()==1 and bodies[0].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()>=13380,"complete MPFB body retained: "+actor.name)
@@ -111,9 +117,13 @@ func run() -> void:
 		if index==0:
 			var aprons=actor.find_children("CookSkinnedWorkApron","MeshInstance3D",true,false)
 			check(aprons.size()==1 and aprons[0].skin != null,"cook apron uses original skeleton skin")
+	staff_template.free()
 	# Let the actor evaluate its first live pose before measuring contact.
 	for i in 3: await process_frame
 	var cook=stage.get_node("Cook")
+	var steward=stage.get_node("Steward")
+	check(cook.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)[0].mesh==steward.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)[0].mesh,"staff share complete body mesh resource")
+	check(cook._skeleton != steward._skeleton and steward._skeleton.find_bone("spine_02")>=0,"staff retain independent, correctly named skeletons")
 	var worst_cook_gap := 0.0
 	var minimum_palm_separation := INF
 	for i in 180:
@@ -122,9 +132,17 @@ func run() -> void:
 		minimum_palm_separation=minf(minimum_palm_separation,cook.palm_world("l").distance_to(cook.palm_world("r")))
 	check(worst_cook_gap<.018,"cook keeps vessel and spoon contact across full stir cycle")
 	check(minimum_palm_separation>.12,"cook work targets keep hands uncrossed")
+	var pose_count: int=cook.get_meta("staff_pose_updates",0)
+	camera.position=Vector3(180,2,0)
+	await create_timer(.4).timeout
+	pose_count=cook.get_meta("staff_pose_updates",0)
+	await create_timer(.4).timeout
+	check(not cook.get_meta("staff_detail_active",true) and cook.get_meta("staff_pose_updates",0)==pose_count,"distant staff suspend detailed skeleton/contact updates")
 	camera.position=Vector3(4.8,1.6,-2.3);camera.look_at(Vector3(4.6,.85,1))
+	await create_timer(.4).timeout
+	check(cook.get_meta("staff_detail_active",false) and cook.get_meta("staff_pose_updates",0)>pose_count,"near staff resume work pose without recreation")
 	await capture("fort_staff_clothing_detail")
-	var report={"failures":failures,"passed":failures.is_empty(),"latch_contact_gap_m":gap,"cook_hand_gap_max_m":worst_cook_gap,"minimum_cook_palm_separation_m":minimum_palm_separation,"renderer":DisplayServer.get_name(),"scope":"normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"}
+	var report={"failures":failures,"passed":failures.is_empty(),"latch_contact_gap_m":gap,"cook_hand_gap_max_m":worst_cook_gap,"minimum_cook_palm_separation_m":minimum_palm_separation,"renderer":DisplayServer.get_name(),"cook_clothing_build_us":cook.get_meta("staff_clothing_build_us",0),"physics_ticks_per_second":Engine.physics_ticks_per_second,"max_physics_steps_per_frame":Engine.max_physics_steps_per_frame,"scope":"normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"}
 	var file=FileAccess.open("res://docs/world/staff_latch_validation.json",FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	stage.queue_free();await process_frame
 	quit(0 if failures.is_empty() else 1)

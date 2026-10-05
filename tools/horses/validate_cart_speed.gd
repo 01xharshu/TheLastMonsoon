@@ -40,8 +40,35 @@ func _run() -> void:
   for i in 60: await physics_frame
   var fast: float = cart.global_position.distance_to(start)
   assert(fast > actor.sprint_speed * 2.0, "Fast cart must exceed twice running speed")
+  var previous_rate := 0.0
+  var maximum_step := 0.0
+  Input.action_press("move_left")
+  for frame in 120:
+   var heading: float = cart.rotation.y
+   await physics_frame
+   var step := absf(angle_difference(heading, cart.rotation.y))
+   maximum_step = maxf(maximum_step, step)
+   if step >= .008: print("TURN SAMPLE step=",step," speed=",cart.boarding.speed," rate=",cart.boarding.turning_rate," physics=",Engine.physics_ticks_per_second)
+   assert(step < .008, "Fast steering exceeded continuous turn limit")
+   assert(absf(cart.boarding.turning_rate - previous_rate) < .021, "Steering acceleration snapped")
+   previous_rate = cart.boarding.turning_rate
+  assert(cart.boarding.turning_rate > .40, "Sustained left input did not turn")
+  Input.action_release("move_left")
+  Input.action_press("move_right")
+  for frame in 120:
+   await physics_frame
+   assert(absf(cart.boarding.turning_rate - previous_rate) < .021, "Reversal snapped")
+   previous_rate = cart.boarding.turning_rate
+  assert(cart.boarding.turning_rate < -.40, "Sustained right input did not reverse turn")
+  Input.action_release("move_right")
+  for frame in 60: await physics_frame
+  assert(absf(cart.boarding.turning_rate) < .001, "Released steering did not settle")
+  print("CART TURN PASS kind=",kind," maximum fast heading step=",maximum_step)
   Input.action_release("sprint")
   Input.action_release("move_forward")
+  for frame in 180: await physics_frame
+  assert(cart.boarding.speed == 0.0 and cart.boarding.turning_rate == 0.0, "Stopped cart retained turning")
+  cart.rotation.y = 0.0
   var blocker := StaticBody3D.new()
   var blocker_shape := CollisionShape3D.new()
   var blocker_box := BoxShape3D.new()

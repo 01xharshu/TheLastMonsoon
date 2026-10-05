@@ -1,13 +1,14 @@
 # Current handoff — Updated: 2026-10-05
-- **LIVING WORLD — IMPLEMENTATION OPEN**. Owner messages delivered. Next: integrated implementation/render/profile review. `docs/world/living_world_requirements_2026-10-05.md`
+- **OWNER CONTINUATION POLICY**: User's completion/no-unnecessary-interruption instruction delivered once to all 21 listed project chats on 10-05. Persistent rules: `AGENTS.md`, Assignment completion and coordination. Owners continue their scope through usable baseline, applicable AnimationTree/motion and realism batches; no routine acknowledgements/status broadcasts. Delivery is verified; assignment completion remains evidence-based.
+- **LIVING WORLD — INTEGRATION OPEN**. Main crop-cover contract PASS; authored grass remains in terrain worktree, main still Bermuda-based. Integration dependency sent to terrain owner. Next: main grass/render/profile acceptance. `docs/world/living_world_requirements_2026-10-05.md`
 Details preserved: `docs/agent/history/2026-10-05-handoff-before-cattle-surface-compaction.md`. Preserve concurrent edits.
 - **BRITISH MILITARY SITES — ART_OPEN**. Services: 12 walks/cemetery/terrain + 11 Metal fixture views PASS; world Metal fences open. `docs/world/cantonment_service_realism.md`; fort: `docs/world/military_site_contact.md`. Next: wear/mangers/night.
 - **CIVIL LINES — IN_PROGRESS**. Next: ridge refinement. `docs/world/civil_lines.md`
 - **WEALTHY HOUSEHOLDS — ART_OPEN**. Gown/cycles + near/far scheduler PASS. Next: cloth/body audit, live distance review. `docs/world/household_daily_journeys.md`
-- **HOUSE ACCESS — FULL BODY/LATCH PASS / CLOTH_OPEN**. Next: apron fit, player-camera pacing. `docs/world/staff_clothing_and_latch_motion.md`
+- **HOUSE ACCESS — BODY/LATCH/NEAR-FAR PASS; ART_OPEN**. Next: pacing/routines. `docs/world/staff_clothing_and_latch_motion.md`
 - **BUILDING REALISM — ART_OPEN**. House outward + 12-stage return/descents Metal PASS; timed videos. Next: stair framing, seating/bed contact. `docs/world/building_realism_2026-10-01.md`.
 - **ARJUN / DEV HOUSE — IN_PROGRESS**. Next: ageing/sweep. `docs/world/arjun_dev_home.md` `docs/world/opening_sequence.md`
-- **ASSET-FIRST HOUSEHOLD BATCH — IN_PROGRESS**. Ledges/rubble support + Metal PASS; placement/art open. Next: craft tools; animations last. `docs/assets/ledge_rubble_batch_09.md`
+- **ASSET-FIRST — IN_PROGRESS**. Craft tools/tables: checks/Metal PASS; world/art open. Next weapon racks; animations last. `docs/assets/craft_batch_10.md`
 - **MOUNTED RIDER REALISM — IN_PROGRESS**. Paid/disk + dhoti fit/44 m bridge Metal PASS. Next: hem/waist tailoring, sole/rein clearance, remaining stops/cold load. `docs/world/paid_coach_travel_2026-10-02.md`
 - **TITLE MENU — ROUTE_BLOCKED**. Next: rerun after arjun_visual.gd parse error. `docs/world/title_menu_design.md`
 - **BHAIRAVPUR — IN_PROGRESS**. Next: tack/gait. `docs/world/village_period_life.md`
@@ -22,7 +23,7 @@ Details preserved: `docs/agent/history/2026-10-05-handoff-before-cattle-surface-
 - **ARJUN ANIMATIONTREE — IN_PROGRESS**. Next: see focused detail/archive. `docs/characters/arjun/animation_tree.md`
 - **ARJUN MULTI-VIEW — NOT_EXACT**. Complete body/trouser fit + separate export checked; hair/face/drape next. `docs/characters/arjun/reference_fit_status.md`
 - Errand transfer/save PASS; contact/route next: `docs/world/errands_and_paid_work.md`
-- **ALL HUMAN BODIES — IN_PROGRESS**. 10-05 IST/root: auditing runtime families; require complete MPFB body, no clothing skin cuts. Next: repair exports/audit. `docs/characters/npcs/whole_body_standard.md`
+- **ALL HUMAN BODIES — IN_PROGRESS**. 10-05 IST/root: 44 runtime human assets full-body audit PASS; sources/import + native review running. Cloth fit open. Files/tests/next: `docs/characters/npcs/whole_body_standard.md`
 - **PURPOSE NPC BATCH — IN_PROGRESS**. 2026-10-05 13:09 IST /root: full bodies (14,517 vertices) + foundations/export/tree/gait PASS; Metal cloth edges/wrap FAIL. Next: continuous garment seams, 1.0x review. Files/evidence: `docs/characters/npcs/purpose_npcs.md`
 - **INDIAN NPCS — VISUAL_REVIEW_FAILED**. Next: cloth. `docs/characters/npcs/other_indian_npcs.md` `docs/characters/npcs/indian_peasant_pair.md`
 - **BRITISH NPC — IN_PROGRESS**. Next: collar/folds/contact:. `docs/characters/british/sergeant_uniform_realism.md`
@@ -32,11 +33,13 @@ Details preserved: `docs/agent/history/2026-10-05-handoff-before-cattle-surface-
 - **ANIMAL TOOLS — IN_PROGRESS**. Next: see focused detail/archive. `docs/world/animal_tools_and_controller.md`
 - **CATTLE — ART OPEN**. Cow surfaces/idle refined; contact PASS. Next balance: `docs/world/cow_and_resident_motion_2026-10-05.md`.
 - **RESUME — IN_PROGRESS**. Next: art/save/global wanted. `docs/characters/arjun/police_arrest_sequence.md` `docs/world/police_refinement_2026-09-30.md`
-- **ARJUN COMBAT — IN_PROGRESS**, 10-05 IST/root. Checks PASS. Next: 1.0x contact review; realism open. Scope/files/tests/failures: `docs/characters/arjun/combat_rescue_2026-10-05.md`.
+- **ARJUN COMBAT — IN_PROGRESS**, 10-05 22:10 IST/root. Next: full-body peasant/contact review; realism open. Scope/files/tests/failures: `docs/characters/arjun/combat_rescue_2026-10-05.md`.
 - **WOMEN RIVER — IN_PROGRESS** (2026-10-05 12:56 IST/root). 13-stage/75s targets + Metal PASS; 73s 1.0x MP4: `docs/characters/npcs/women_river_routine.md`. Next: cloth correctives/real bank; visual approval open.
 - **RUNTIME OPTIMISATION — IN_PROGRESS**. 10-05 12:47 IST/root: CPU/native PASS; next stable source + render budget profile. Files/evidence: `docs/world/runtime_optimisation.md`.
 - **ESCAPE MAP — COMPLETE**. Native PASS; next owner/controller play: `docs/world/escape_map.md`.
 
 - **WORKSPACE / HOURS / CART PARKING — BEHAVIOUR PASS / PERFORMANCE OPEN**. Details: `docs/world/workspace_optimisation.md`. Next uncontended Metal profile + parking/night routes; fence timeout, cleanup/grip errors open.
 
-- **HORSE SPEED / MAP — VERIFIED / ART_OPEN**. Cart confirmed; visual-cost work: `docs/world/horse_vehicle_speed_and_map.md`
+- **HORSE SPEED / MAP — VERIFIED / ART_OPEN**. Cart/rein LOD/profile/Metal PASS. `docs/world/horse_vehicle_speed_and_map.md`
+
+- **DAY / STAMINA / FORAGE — MOTION PASS / FIT + INTEGRATION OPEN**. 10-05: pickup→walk fixture PASS; upper-trouser skin visible. Current whole-world reruns hit shared stealth/camera/stair errors. Evidence, sizes and exact next action: `docs/world/day_survival_forage.md`.

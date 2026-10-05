@@ -8,17 +8,17 @@
     {
       "garment": "Kurta loose lower panel",
       "changed_vertices": 742,
-      "max_corrective_m": 0.2667597567278241
+      "max_corrective_m": 0.3064099402911524
     },
     {
       "garment": "Knee length wrapped dhoti",
       "changed_vertices": 710,
-      "max_corrective_m": 0.5229145647636156
+      "max_corrective_m": 0.5620330699024142
     },
     {
       "garment": "Dhoti woven border",
       "changed_vertices": 219,
-      "max_corrective_m": 0.5236707032668754
+      "max_corrective_m": 0.5619228473474638
     }
   ],
   "status": "CONTACT_CLOTH_CANDIDATE"

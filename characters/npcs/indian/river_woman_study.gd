@@ -248,7 +248,7 @@ func _rotate_bone(label: String, axis: Vector3, angle: float) -> void:
 func _load_river_motion() -> void:
 	var document := GLTFDocument.new()
 	var state := GLTFState.new()
-	var path := "res://WorkingAssets/NPCs/river_woman/river_woman_rigged_candidate.glb"
+	var path := "res://characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb"
 	if document.append_from_file(ProjectSettings.globalize_path(path), state) != OK:
 		push_error("Cannot load Indian motion candidate: " + path)
 		return

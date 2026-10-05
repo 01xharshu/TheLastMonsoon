@@ -31,8 +31,10 @@ class ReviewBuilder extends Node3D:
 	func merge_visuals(_parent: Node3D) -> void: pass
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
+	print("SERVICE FIXTURE START")
 	root.size = Vector2i(1280,720)
 	var world := Node3D.new()
+	world.set_meta("service_geometry_fixture",true)
 	root.add_child(world)
 	current_scene = world
 	var builder := ReviewBuilder.new()
@@ -60,6 +62,7 @@ func run() -> void:
 	sun.rotation_degrees = Vector3(-48,-30,0)
 	sun.shadow_enabled = true
 	world.add_child(sun)
+	print("SERVICE GEOMETRY BUILT")
 	for frame in 8: await physics_frame
 	var district: Node3D = builder.get_node("BritishCantonment")
 	var manager: Node3D = district.get_node("ServiceWorkplaces")
@@ -100,6 +103,7 @@ func run() -> void:
 		manager.update_activity(Vector3(500+i,9,515))
 		scheduling_usec += manager.update_usec
 	manager.set_process(false)
+	print("WORKER CHECKS PASS")
 	var samples := 0
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = .35
@@ -144,6 +148,7 @@ func run() -> void:
 		["GrainFodderWarehouse","warehouse_fodder",Vector3(1,2.0,0),Vector3(6,.7,2)],
 		["GrainFodderWarehouse","warehouse_exterior",Vector3(13,6,17),Vector3(0,1.5,0)],
 		["CavalryStables","stables_interior",Vector3(12,2.1,3.8),Vector3(-7,1.1,-1.5)],
+		["CavalryStables","manger",Vector3(12,1.8,-2.2),Vector3(13.8,.85,-3.5)],
 		["CavalryStables","stables_exterior",Vector3(22,7,19),Vector3(0,1.5,0)],
 		["MilitaryHospital","hospital_interior",Vector3(0,2.1,4.3),Vector3(-3,1,-2)],
 		["MilitaryHospital","hospital_exterior",Vector3(18,6,17),Vector3(0,1.5,0)],
@@ -156,10 +161,11 @@ func run() -> void:
 		camera.global_position = site.to_global(spec[2])
 		camera.look_at(site.to_global(spec[3]))
 		for frame in 4: await process_frame
-		await RenderingServer.frame_post_draw
+		if DisplayServer.get_name() == "headless": continue
+		RenderingServer.force_draw(false)
 		root.get_texture().get_image().save_png("res://docs/world/captures/service_fixture_"+spec[1]+".png")
 	var report := {"date":"2026-10-05","room_door_samples":room_door_samples,"workers":5,"complete_body_vertices":body_vertices,"foundation_vertices":foundation_vertices,"worker_clearances":worker_clearances,"worker_build_usec":manager.get_meta("build_usec"),"mean_schedule_usec":scheduling_usec/100.0,"max_active_workers":3,"fixture_capsule_samples":samples,"renderer":RenderingServer.get_current_rendering_method(),"scope":"production service geometry and full-body workers in isolated fixture; workplace collision and scheduler measured; full-world routes checked separately"}
 	var file := FileAccess.open("res://docs/world/cantonment_service_fixture_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
-	print("SERVICE FIXTURE PASS: ",samples," aisle + ",room_door_samples," room door capsule samples; five workers; fourteen native captures")
+	print("SERVICE FIXTURE PASS: ",samples," aisle + ",room_door_samples," room door capsule samples; five workers; fifteen native captures")
 	quit()

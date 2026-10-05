@@ -344,6 +344,7 @@ func staircase(h: Node3D,level: int,x: float,up_toward_back: bool) -> void:
 		var t := (step+.5)/24.0
 		var z := 12.0-24.0*t if up_toward_back else -12.0+24.0*t
 		piece(h,"StairTread",Vector3(x,y+STOREY*t,z),Vector3(3.6,.13,1.0),wood,false)
+	preload("res://world/suryagarh/settlements/stair_contact_surface.gd").add_flight(h,x,y,24.0,STOREY,3.6,24,up_toward_back,.5,.065,wood)
 	stair_guard(h,x,y,24.0,STOREY,up_toward_back,3.44)
 
 func build_wing(side: float) -> void:

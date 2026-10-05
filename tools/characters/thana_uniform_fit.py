@@ -99,6 +99,8 @@ def fit_uniform(rig,role):
   offset=len(surface_points);surface_points.extend(panel.matrix_world@v.co for v in panel.data.vertices)
   surface_faces.extend([offset+i for i in face.vertices] for face in panel.data.polygons)
   source_weights.extend({panel.vertex_groups[g.group].name:g.weight for g in v.groups} for v in panel.data.vertices)
+ # Sleeves overlap the waist in the rest pose; they are not a belt support surface.
+ surface_faces=[face for face in surface_faces if not (sum(surface_points[i].z for i in face)/len(face)<1.02 and sum(sum(w for name,w in source_weights[i].items() if "arm" in name or "hand" in name) for i in face)/len(face)>.25)]
  surface=BVHTree.FromPolygons(surface_points,surface_faces)
  nearest=KDTree(len(points))
  for i,point in enumerate(points):nearest.insert(point,i)

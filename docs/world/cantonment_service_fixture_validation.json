@@ -1,6 +1,14 @@
 {
+	"complete_body_vertices": 72585,
 	"date": "2026-10-05",
 	"fixture_capsule_samples": 100,
+	"foundation_vertices": 10040,
+	"max_active_workers": 3,
+	"mean_schedule_usec": 51.44,
 	"renderer": "forward_plus",
-	"scope": "isolated production cantonment geometry; isolated material review; full-world routes validated separately; no Arjun movement acceptance"
+	"room_door_samples": 72,
+	"scope": "production service geometry and full-body workers in isolated fixture; workplace collision and scheduler measured; full-world routes checked separately",
+	"worker_build_usec": 340609,
+	"worker_clearances": 5,
+	"workers": 5
 }

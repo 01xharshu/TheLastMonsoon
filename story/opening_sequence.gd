@@ -30,6 +30,9 @@ var environment: Environment
 var ambient_energy := 0.0
 var murmur: AudioStreamPlayer3D
 var murmur_played := false
+var sigh_audio: AudioStreamPlayer3D
+var sigh_played := false
+var contact = preload("res://story/opening_contact.gd").new()
 var expression = preload("res://story/opening_expression.gd").new()
 
 func start(target_world: Node3D) -> void:
@@ -84,6 +87,12 @@ func start(target_world: Node3D) -> void:
 	murmur.max_distance = 8.0
 	actor.add_child(murmur)
 	murmur.position = Vector3(0,0.70,0)
+	sigh_audio = AudioStreamPlayer3D.new()
+	sigh_audio.stream = load("res://assets/audio/opening/arjun_sigh_draft.wav")
+	sigh_audio.volume_db = -6.0
+	sigh_audio.max_distance = 8.0
+	actor.add_child(sigh_audio)
+	sigh_audio.position = Vector3(0,.70,0)
 	_place(Vector3(-2.6, 1.14, 1.50), PI)
 	previous_position = actor.global_position
 
@@ -171,6 +180,17 @@ func _build_lamp() -> void:
 	cap.material_override = metal
 	lamp.add_child(cap)
 	cap.position = Vector3(0,0.45,0.10)
+	var handle := MeshInstance3D.new()
+	var handle_mesh := TorusMesh.new()
+	handle_mesh.inner_radius = .085
+	handle_mesh.outer_radius = .098
+	handle_mesh.rings = 12
+	handle_mesh.ring_segments = 6
+	handle.mesh = handle_mesh
+	handle.material_override = metal
+	lamp.add_child(handle)
+	handle.rotation.x = PI/2
+	handle.position = Vector3(-.15,.50,.10)
 	var glass := StandardMaterial3D.new()
 	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	glass.albedo_color = Color(0.8,0.75,0.65,0.08)
@@ -207,8 +227,15 @@ func _build_lamp() -> void:
 	stick.top_radius = 0.002
 	stick.bottom_radius = 0.002
 	stick.height = 0.055
+	stick.radial_segments = 6
+	stick.rings = 0
 	match_prop.mesh = stick
-	attachment.add_child(match_prop)
+	var match_wood := StandardMaterial3D.new()
+	match_wood.albedo_color = Color(.55,.36,.16)
+	match_wood.roughness = .95
+	match_prop.material_override = match_wood
+	add_child(match_prop)
+	attachment.queue_free()
 	match_prop.position = Vector3(0,0.035,0)
 	var match_flame := MeshInstance3D.new()
 	var flame_mesh := SphereMesh.new()
@@ -256,6 +283,9 @@ func _process(delta: float) -> void:
 	if t >= 15.0 and t < 18.4 and not murmur_played:
 		murmur_played = true
 		murmur.play()
+	if t >= 18.3 and t < 19.6 and not sigh_played:
+		sigh_played = true
+		sigh_audio.play()
 	shade.color = Color(0,0,0,1.0-smoothstep(1.5,3.5,t))
 	hint.modulate.a = 1.0-smoothstep(6,8,t)
 	match_prop.visible = t < 7
@@ -267,9 +297,7 @@ func _process(delta: float) -> void:
 	subtitle.text = "Still no word from Dev…" if t >= 15 and t < 19 else ""
 	if t < 9:
 		_shot(Vector3(-1.2,1.7,2.65),Vector3(-2.6,1.22,0.95))
-		var reach := smoothstep(2,5,t)*(1-smoothstep(6,8,t))
-		visual.pose("upperarm_r",Vector3(-1.0,0,0.4),reach)
-		visual.pose("lowerarm_r",Vector3(-1.3,0,0),reach)
+		contact.update(self,t)
 	elif t < 13:
 		_walk(Vector3(-2.6,1.14,1.5),Vector3(-3.35,1.14,2.8),(t-9)/4,delta)
 		_interior_window_shot(t)
@@ -291,7 +319,7 @@ func _process(delta: float) -> void:
 		else:
 			_walk(Vector3(-3.35,1.14,-0.6),Vector3(-2.35,1.14,-0.6),(t-23.1)/0.9,delta)
 		var follow := smoothstep(20.8,24,t)
-		_shot(Vector3(-4.20,1.88,2.70).lerp(Vector3(-1.1,1.95,0.5),follow), Vector3(-3.30,1.56,2.8).lerp(Vector3(-2.35,1.0,-1.4),follow))
+		_shot(Vector3(-3.95,1.88,2.00).lerp(Vector3(-1.1,1.95,0.5),follow), Vector3(-3.30,1.56,2.8).lerp(Vector3(-2.35,1.0,-1.4),follow))
 	else:
 		actor.velocity = Vector3.ZERO
 		actor.global_position = bed.to_global(Vector3(0,0.83,0))
@@ -326,6 +354,8 @@ func morning() -> void:
 	state = "seated"
 	expression.restore()
 	if murmur != null: murmur.stop()
+	if sigh_audio != null: sigh_audio.stop()
+	lamp.position = Vector3(-2.6,.96,.70)
 	elapsed = DURATION
 	shade.color = Color.BLACK
 	clock.advance_minutes(8*60)
@@ -374,5 +404,5 @@ func _release() -> void:
 func _interior_window_shot(t: float) -> void:
 	# On the room side of the front wall (z < 3.41); see his face in profile.
 	var push := smoothstep(13.0,18.0,t)
-	_shot(Vector3(-4.30,1.88,2.65).lerp(Vector3(-4.20,1.88,2.70),push),Vector3(-3.35,1.80,2.90))
+	_shot(Vector3(-4.05,1.88,1.92).lerp(Vector3(-3.95,1.88,2.00),push),Vector3(-3.23,1.78,4.25))
 	camera.fov = 52.0

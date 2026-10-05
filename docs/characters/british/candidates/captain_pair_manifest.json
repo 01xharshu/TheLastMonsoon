@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "captain",
   "source": "WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend",
-  "source_sha256": "d3cd128380ffaa35526b47c6556c09c17c7efb8294b255431009d0417b14fd8c",
+  "source_sha256": "a84b70107a395e435f9dc4f26011b62df80524c7b2c43d46e85e126b8f767835",
   "reference": "docs/characters/british/references/captain_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -29,5 +29,6 @@
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

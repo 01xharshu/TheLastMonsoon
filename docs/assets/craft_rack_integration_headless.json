@@ -1,0 +1,24 @@
+{
+	"limits": "support, short approach capsule checks and native render; no crafting action or final hero contact approval",
+	"weapon_ids": [
+		"company_armoury/enfield",
+		"company_armoury/talwar",
+		"company_armoury/double_gun",
+		"company_armoury/bow",
+		"company_armoury/pistol"
+	],
+	"workshops": [
+		{
+			"approach_m": 1.05,
+			"meshes": 0,
+			"node": "/root/Suryagarh/Settlement/BhairavpurHouse25/CarpenterWorkSurface",
+			"support_gap_m": 0.0
+		},
+		{
+			"approach_m": 1.05,
+			"meshes": 0,
+			"node": "/root/Suryagarh/Settlement/BhairavpurHouse27/WeaverWorkSurface",
+			"support_gap_m": -0.00000095367431640625
+		}
+	]
+}

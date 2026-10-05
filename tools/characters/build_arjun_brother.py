@@ -115,7 +115,16 @@ upper_group.add([v.index for v in outfit.data.vertices if find(v.index)==upper_c
     ], 1, 'REPLACE')
 outfit_mask = outfit.modifiers.new("Keep fitted upper", 'MASK')
 outfit_mask.vertex_group = upper_group.name
-# Preserve the original shoulder connectivity beneath the tailored overlay.
+# Fit the legacy collar surface onto the native neck/upper chest, retaining
+# shoulder connectivity and deform weights. No body geometry is cut.
+body_tree=BVHTree.FromPolygons([v.co for v in body.data.vertices],
+    [list(p.vertices) for p in body.data.polygons if all(any(g.group==body.vertex_groups['body'].index for g in body.data.vertices[i].groups) for i in p.vertices)])
+for vertex in outfit.data.vertices:
+    if abs(vertex.co.x)<.17 and vertex.co.z>1.365:
+        side=-1 if vertex.co.y<0 else 1
+        hit,_,_,_=body_tree.ray_cast(Vector((vertex.co.x,side,vertex.co.z)),Vector((0,-side,0)),2)
+        if hit is not None: vertex.co.y=hit.y+side*.009
+outfit['collar_fit']='Native neck/chest nearest-surface fit; original connected topology' 
 
 def attach(name, vertices, faces, material, bone):
     mesh = bpy.data.meshes.new(name)
@@ -158,8 +167,8 @@ for vertex in skirt.data.vertices:
     vertex.co.y += math.sin(angle)*fold
 waist_leather = mat("Dark leather waist belt",(.045,.022,.012))
 rings("Coat waist seam", [(.96,.212,.166,0,0),(.988,.212,.166,0,0)], waist_leather, sides=40)
-rings("Uniform standing collar",[(1.395,.102,.080,0,0),(1.435,.095,.074,0,0),
-    (1.470,.086,.064,0,0)],coat,"spine03",sides=40)
+rings("Uniform standing collar",[(1.402,.090,.067,0,-.005),(1.438,.087,.065,0,-.005),
+    (1.466,.084,.062,0,-.005)],coat,"spine03",sides=40)
 for side,sign in [("left",1),("right",-1)]:
     suffix = "l" if sign == 1 else "r"
     thigh = rig.data.bones["thigh_" + suffix]
@@ -207,19 +216,6 @@ def front_y(x,z):
     hits = [tree.ray_cast(Vector((x,-1,z)),Vector((0,1,0)),2)[0] for tree in garment_trees]
     values = [hit.y for hit in hits if hit is not None]
     return min(values)-.005 if values else -.15
-# Continuous tapered front panel covers the old folded collar and joins the band.
-neck_vertices=[]
-for row in range(10):
-    t=row/9; z=1.32+.145*t; width=.225-.12*t
-    for col in range(17):
-        u=col/8-1; x=width*u
-        top_y=-.084*math.sqrt(max(.12,1-(x/.105)**2))
-        y=(1-t)*front_y(x,1.32)+t*top_y-.007
-        # Keep this layer ahead of the legacy collar where the folds protrude.
-        if t<.8: y=min(y,front_y(x,z)-.009)
-        neck_vertices.append((x,y,z))
-attach("Dev tailored front neckline",neck_vertices,
-    [(r*17+c,r*17+c+1,(r+1)*17+c+1,(r+1)*17+c) for r in range(9) for c in range(16)],coat,"spine03")
 def fitted_strip(name,start,end,width,material):
     vertices=[]
     for i in range(18):

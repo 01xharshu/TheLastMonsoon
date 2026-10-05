@@ -75,11 +75,19 @@ func apron(source: MeshInstance3D) -> void:
 		for row in 9:
 			var v := float(row)/8.0
 			var y := lerpf(1.25,1.41,v)
+			var anchor:=Vector3(side*lerpf(.105,.16,v),y,lerpf(.23,.145,v))
+			var nearest:=0
+			var distance:=INF
+			for i in points.size():
+				var candidate:=points[i].distance_squared_to(anchor)
+				if candidate<distance:distance=candidate;nearest=i
+			var normal: Vector3=original[Mesh.ARRAY_NORMAL][nearest]
 			for column in 2:
-				vertices.append(Vector3(side*lerpf(.105,.16,v)+(float(column)-.5)*.025,y,lerpf(.23,.145,v)))
-				normals.append(Vector3(0,0,1));uv.append(Vector2(float(column),v))
-				bones.append_array(PackedInt32Array(torso_binds))
-				skin_weights.append_array(nearest_torso_weights(vertices[-1],points,joints,weights,torso_binds))
+				vertices.append(points[nearest]+normal*.008+Vector3((float(column)-.5)*.025,0,0))
+				normals.append(normal);uv.append(Vector2(float(column),v))
+				for influence in 4:
+					bones.append(joints[nearest*4+influence])
+					skin_weights.append(weights[nearest*4+influence])
 		for row in 8:
 			var a := offset+row*2
 			indices.append_array(PackedInt32Array([a,a+1,a+2,a+1,a+3,a+2]))
@@ -153,24 +161,6 @@ func tailored_hem(upper: MeshInstance3D,lower: MeshInstance3D) -> void:
 	arrays[Mesh.ARRAY_BONES]=bones;arrays[Mesh.ARRAY_WEIGHTS]=weights;arrays[Mesh.ARRAY_INDEX]=indices
 	var mesh:=ArrayMesh.new();mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	lower.mesh=mesh
-
-func nearest_torso_weights(position: Vector3,points: PackedVector3Array,joints: PackedInt32Array,weights: PackedFloat32Array,binds: Array[int]) -> PackedFloat32Array:
-	var best:=INF
-	var result:=PackedFloat32Array([0,0,1,0])
-	for vertex in points.size():
-		var distance:=points[vertex].distance_squared_to(position)
-		if distance>=best:continue
-		var torso:=PackedFloat32Array([0,0,0,0])
-		var total:=0.0
-		for influence in 4:
-			var index:=binds.find(joints[vertex*4+influence])
-			if index>=0:
-				torso[index]+=weights[vertex*4+influence];total+=weights[vertex*4+influence]
-		if total<.85:continue
-		best=distance
-		for i in 4:torso[i]/=total
-		result=torso
-	return result
 
 func fit_dhoti_depth(node: MeshInstance3D) -> void:
 	# Fit the outer wrap rather than remove any covered MPFB body surface.

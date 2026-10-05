@@ -17,11 +17,19 @@ var leather_material: ShaderMaterial
 var stitches: MeshInstance3D
 var pitch := 0.0
 var outward := 0.0
+var held := false
+var cloth_support := 0.0
+var cloth_samples: Array[Dictionary] = []
+var cloth_rig: Skeleton3D
+var contact_materials: Array[ShaderMaterial] = []
+var contact_usec := 0
+var mesh_rebuilds := 0
+var contact_ready := false
 @onready var inventory: InventoryComponent = $"../../../InventoryComponent"
 @onready var pouch: Node3D = $PouchModel
 
 func _ready() -> void:
-	process_priority = 12
+	process_priority = 16
 	body = pouch.get_node("LeatherBody")
 	leather_material = ShaderMaterial.new()
 	leather_material.shader = preload("res://player/water_bag_leather.gdshader")
@@ -33,7 +41,7 @@ func _ready() -> void:
 	var thread := StandardMaterial3D.new()
 	thread.albedo_color = Color(0.43, 0.29, 0.16)
 	thread.roughness = 0.95
-	stitches.material_override = thread
+	stitches.material_override = _contact_material(thread.albedo_color)
 	for node in [body, cord, stopper]:
 		var source_transform: Transform3D = pouch.global_transform.affine_inverse() * node.global_transform
 		var surfaces: Array = []
@@ -66,6 +74,7 @@ func _on_water_changed(liters: float, capacity: float) -> void:
 	target_fullness = clampf(liters / maxf(capacity, 0.001), 0.0, 1.0)
 
 func _process(delta: float) -> void:
+	_update_cloth_contact(delta)
 	fullness = move_toward(fullness, target_fullness, delta * 3.5)
 	if absf(fullness - built_fullness) >= 0.025 or (fullness == target_fullness and fullness != built_fullness):
 		_rebuild()
@@ -117,6 +126,7 @@ func _deform(point: Vector3, is_stopper: bool = false) -> Vector3:
 	return result
 
 func _rebuild() -> void:
+	mesh_rebuilds += 1
 	built_fullness = fullness
 	leather_material.set_shader_parameter("fill_level", fullness)
 	for source in sources:
@@ -125,7 +135,7 @@ func _rebuild() -> void:
 			body.mesh = _smooth_body(leather_material)
 			continue
 		if node == cord:
-			_rebuild_bindings(source.surfaces[0].material)
+			_rebuild_bindings(_binding_material())
 			continue
 		var source_transform: Transform3D = source.transform
 		var result := ArrayMesh.new()
@@ -140,7 +150,7 @@ func _rebuild() -> void:
 				surface.add_vertex(_deform(point, node == stopper))
 			for index in indices: surface.add_index(index)
 			surface.generate_normals()
-			surface.set_material(entry.material)
+			surface.set_material(_stopper_material())
 			surface.commit(result)
 		node.mesh = result
 	for marker in marker_sources:
@@ -221,3 +231,75 @@ func _tubes(paths: Array, material: Material) -> ArrayMesh:
 		start += points.size() * SIDES
 	surface.set_material(material)
 	return surface.commit()
+
+func _contact_material(color: Color) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://player/water_bag_binding.gdshader")
+	material.set_shader_parameter("base_color", color)
+	contact_materials.append(material)
+	return material
+
+var binding_material: ShaderMaterial
+var stopper_material: ShaderMaterial
+func _binding_material() -> Material:
+	if binding_material == null: binding_material = _contact_material(Color(.24,.115,.055))
+	return binding_material
+func _stopper_material() -> Material:
+	if stopper_material == null: stopper_material = _contact_material(Color(.22,.11,.045))
+	return stopper_material
+
+func _prepare_cloth_contact() -> void:
+	var visual: Node3D = get_parent().get_parent().get_node("CharacterVisual")
+	cloth_rig = visual.skeleton
+	var cloth := visual.model.find_child("Arjun_Kurta_SplitHem", true, false) as MeshInstance3D
+	if cloth == null: return
+	var inverse := pouch.global_transform.affine_inverse()
+	for surface_index in cloth.mesh.get_surface_count():
+		var arrays := cloth.mesh.surface_get_arrays(surface_index)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+		var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+		var count: int = weights.size() / vertices.size()
+		for index in vertices.size():
+			var rest_point: Vector3 = inverse * cloth.to_global(vertices[index])
+			if absf(rest_point.x) > .24 or rest_point.y < -.12 or rest_point.y > .39: continue
+			var binds: Array[Transform3D] = []
+			var indices: Array[int] = []
+			var amounts: Array[float] = []
+			for slot in count:
+				var weight := weights[index*count+slot]
+				if weight < .001: continue
+				var bind := bones[index*count+slot]
+				var bone_index := cloth_rig.find_bone(cloth.skin.get_bind_name(bind))
+				if bone_index < 0: bone_index = cloth.skin.get_bind_bone(bind)
+				indices.append(bone_index)
+				binds.append(cloth.skin.get_bind_pose(bind))
+				amounts.append(weight)
+			cloth_samples.append({"point":vertices[index],"bones":indices,"binds":binds,"weights":amounts})
+	contact_ready = true
+
+func _update_cloth_contact(delta: float) -> void:
+	if not contact_ready: _prepare_cloth_contact()
+	if cloth_rig == null or not visible: return
+	var begin := Time.get_ticks_usec()
+	var required := 0.0
+	if not held:
+		var inverse := pouch.global_transform.affine_inverse() * cloth_rig.global_transform
+		var poses := {}
+		for sample in cloth_samples:
+			var vertex := Vector3.ZERO
+			for slot in sample.bones.size():
+				var index: int = sample.bones[slot]
+				if not poses.has(index): poses[index] = cloth_rig.get_bone_global_pose(index)
+				vertex += (poses[index] * sample.binds[slot] * sample.point) * sample.weights[slot]
+			var point: Vector3 = inverse * vertex
+			if point.y < .005 or point.y > .285 or absf(point.x) > _radius_at(point.y)*.84+.018: continue
+			var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
+			required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
+	# Immediate outward response prevents one-frame penetration; slow recovery
+	# lets the leather settle against the cloth. No mesh allocations in motion.
+	cloth_support = required if required > cloth_support else move_toward(cloth_support,required,delta*.15)
+	cloth_support = clampf(cloth_support,0.0,.30)
+	leather_material.set_shader_parameter("cloth_support", cloth_support)
+	for material in contact_materials: material.set_shader_parameter("cloth_support", cloth_support)
+	contact_usec = Time.get_ticks_usec()-begin

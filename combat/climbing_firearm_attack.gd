@@ -31,7 +31,7 @@ func _process(delta: float) -> void:
 	if owner_actor.get_meta("dead",false) or owner_actor.get_meta("knocked_out",false) or owner_actor.get_meta("grappled",false) or owner_actor.get_meta("combat_action","") == "hit":
 		aim_age = 0.0
 		return
-	var aiming := hostile and is_instance_valid(target) and target.get_meta("climbing",false) and owner_actor.global_position.distance_to(target.global_position) <= 45.0
+	var aiming: bool = hostile and is_instance_valid(target) and target.get_meta("climbing",false) and owner_actor.global_position.distance_to(target.global_position) <= 45.0
 	if aiming:
 		var toward := target.global_position-owner_actor.global_position
 		owner_actor.global_rotation.y = atan2(toward.x,toward.z)

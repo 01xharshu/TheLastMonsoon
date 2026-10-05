@@ -1,11 +1,12 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend",
-  "source_sha256": "405107b1c97937d80e3d4167026bae2fa3f22deaa6c79248c5d129248ba326d9",
+  "source_sha256": "c9e3a6ff0606e1f7e29051df39316304c927fa13729711e5bac0bfe8c6cb4a11",
   "runtime": "characters/npcs/village_fruit_seller.glb",
-  "runtime_sha256": "30103b8dec71bbd1c3692069c92115c306bea15619a7aa3f66cecebfa7d174e9",
+  "runtime_sha256": "c6f00ed98093581cede7f4e3b98c34423d4e9ff1d8c01c86300b641dc373a688",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 8,
-  "body_vertices": 19158
+  "body_vertices": 19158,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

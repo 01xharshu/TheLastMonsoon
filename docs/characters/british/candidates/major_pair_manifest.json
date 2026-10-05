@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "major",
   "source": "WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend",
-  "source_sha256": "351dc2d3535c402a6f70d40cdd06ba42c118d040c3b5dad500f25a5e12cf5ca2",
+  "source_sha256": "d9c921b4f0df701c5fedd1b0799eaba965135b7fce30ca25001334af985f7f64",
   "reference": "docs/characters/british/references/major_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -29,5 +29,6 @@
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

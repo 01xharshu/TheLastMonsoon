@@ -1,0 +1,13 @@
+{
+  "source": "WorkingAssets/NPCs/households/staff_farmer/staff_farmer.blend",
+  "source_sha256": "ecc34aabd001d4eec0d757254d227c21c6356a9cfa9bd61e945224a1d3614bb2",
+  "bodies": [
+    {
+      "body": "village_farmer_MakeHuman_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 785,
+      "foundation_faces": 736
+    }
+  ],
+  "scope": "source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review"
+}

@@ -19,6 +19,7 @@ func _process(delta: float) -> void:
 		bag_offset = standing.affine_inverse() * water_bag_visual.global_transform
 	bag_rig.force_update_all_bone_transforms()
 	var attachment := bag_rig.global_transform * bag_rig.get_bone_global_pose(bag_bone) * bag_offset
+	if water_bag_visual.held: return
 	water_bag_visual.global_transform = attachment
 	var actor: CharacterBody3D = get_parent().get_parent()
 	var local_velocity: Vector3 = attachment.basis.orthonormalized().inverse() * actor.velocity

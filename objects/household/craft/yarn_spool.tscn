@@ -1,0 +1,69 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlywb"]
+albedo_color = Color(0.4, 0.25, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_08c2o"]
+material = SubResource("StandardMaterial3D_qlywb")
+top_radius = 0.065
+bottom_radius = 0.065
+height = 0.008
+radial_segments = 24
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_jq3ry"]
+material = SubResource("StandardMaterial3D_qlywb")
+top_radius = 0.065
+bottom_radius = 0.065
+height = 0.007999994
+radial_segments = 24
+rings = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u052a"]
+albedo_color = Color(0.22, 0.13, 0.06, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_isucl"]
+material = SubResource("StandardMaterial3D_u052a")
+top_radius = 0.018
+bottom_radius = 0.018
+height = 0.104
+radial_segments = 24
+rings = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qd2mi"]
+albedo_color = Color(0.72, 0.64, 0.47, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_7171o"]
+material = SubResource("StandardMaterial3D_qd2mi")
+top_radius = 0.05
+bottom_radius = 0.05
+height = 0.102
+radial_segments = 24
+rings = 0
+
+[node name="YarnSpool" type="Node3D" unique_id=181864671]
+
+[node name="Flange" type="MeshInstance3D" parent="." unique_id=313296628]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.004, 0)
+mesh = SubResource("CylinderMesh_08c2o")
+
+[node name="@MeshInstance3D@7" type="MeshInstance3D" parent="." unique_id=946622835]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.116, 0)
+mesh = SubResource("CylinderMesh_jq3ry")
+
+[node name="Core" type="MeshInstance3D" parent="." unique_id=220312943]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.060000002, 0)
+mesh = SubResource("CylinderMesh_isucl")
+
+[node name="Yarn" type="MeshInstance3D" parent="." unique_id=2057595404]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.060000002, 0)
+mesh = SubResource("CylinderMesh_7171o")
+
+[node name="Grip" type="Marker3D" parent="." unique_id=1803641344]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.052, 0.06, 0)
+
+[node name="ThreadExit" type="Marker3D" parent="." unique_id=1971838434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0.075, 0)

@@ -31,8 +31,8 @@
   "candidate_exports": {
     "woman": {
       "path": "characters/npcs/british/candidates/sergeant_woman_skirt_candidate.glb",
-      "sha256": "74505950b04fbfe245a96eda95172cd0ddf7071767ba3ee6c1475d76d378c584",
-      "bytes": 1964692
+      "sha256": "4570bdd3b50aacee0c1424390e8358020c6374de5f9084d205fe260345e31726",
+      "bytes": 2287648
     }
   },
   "live_asset_path": "characters/npcs/british/sergeant_woman.glb"

@@ -1,0 +1,19 @@
+{
+  "source": "WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend",
+  "source_sha256": "fb6f3168af36c807c15567419fbcc4a8b6a29e224de9eecac422b85337ff8431",
+  "bodies": [
+    {
+      "body": "Companion_MPFB_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 692,
+      "foundation_faces": 642
+    },
+    {
+      "body": "Official_MPFB_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 718,
+      "foundation_faces": 670
+    }
+  ],
+  "scope": "source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review"
+}

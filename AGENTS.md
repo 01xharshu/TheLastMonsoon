@@ -6,6 +6,13 @@
 4. Keep `CODEX_HANDOFF.md` brief and current. Move finished detail to a focused document or dated history file; retain evidence paths and unresolved failures.
 5. Do not equate structural checks with rendered appearance, motion/contact, or final asset approval.
 
+## Assignment completion and coordination
+
+- Continue the chat's existing assigned responsibility through implementation, integration and verification. Establish a usable in-game baseline, then complete the remaining scope; realism may be delivered in focused batches. Include applicable AnimationTree wiring, transitions, motion, clothing fit and contact in that responsibility.
+- Do not stop at an inventory of missing work, a plan, structural checks, or an intermediate candidate when actionable assigned work remains. Continue fixing and reviewing. Report completion only with evidence; retain honest unresolved defects and identify any genuine blocker that cannot be resolved autonomously.
+- Do not pause another chat, interrupt its work, or repeatedly request status. Send a message only to the specific owner when an actionable dependency, shared-file conflict, required decision or integration handoff makes it necessary. Do not request acknowledgements or routine replies to coordination messages.
+- Preserve existing ownership and concurrent changes. Status/coordination chats must not take over another owner's files merely to make progress; resolve their own assigned scope and contact an owner only when needed.
+
 ## Evidence and source retention
 
 - Keep the latest screenshots needed to demonstrate current work and unresolved defects. Replace superseded captures for the same view; retain distinct evidence that is still needed. Update evidence links when removing a capture.

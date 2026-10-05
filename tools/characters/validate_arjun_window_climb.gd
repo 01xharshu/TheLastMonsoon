@@ -45,6 +45,7 @@ func _run() -> void:
     var actor: CharacterBody3D = preload("res://player/player.tscn").instantiate()
     add_child(actor)
     actor.set_physics_process(false)
+    actor.set_process(false)
     actor.get_node("UI").hide()
     actor.global_position = Vector3(-.9,.94,0)
     actor.visual_root.global_rotation.y = PI/2
@@ -56,7 +57,7 @@ func _run() -> void:
     camera.look_at(Vector3(0,1.4,0))
     camera.make_current()
     for i in 3: await get_tree().physics_frame
-    if not climb.try_start() or not climb.window.active:
+    if not _start_after_takeoff(actor,climb) or not climb.window.active:
         push_error("WINDOW CLIMB: failed to start")
         get_tree().quit(1)
         return
@@ -68,6 +69,7 @@ func _run() -> void:
     var movie := OS.get_cmdline_user_args().has("--movie")
     if movie: DirAccess.make_dir_recursive_absolute("/tmp/tlm_window_frames")
     for frame in 97:
+        climb.request_move()
         climb._physics_process(1.0/30.0)
         visual._process(1.0/30.0)
         for side in ["l","r"]:
@@ -120,3 +122,8 @@ func _run() -> void:
         return
     print("WINDOW CLIMB: ","PASS" if failures==0 else "FAIL", " | both directions, boot/head clearance, restored collision, landing, blocked landing, closed shutter")
     get_tree().quit(1 if failures else 0)
+
+func _start_after_takeoff(actor: CharacterBody3D, climb: Node) -> bool:
+    climb.arm_jump()
+    actor.global_position.y += .10
+    return climb.try_start()

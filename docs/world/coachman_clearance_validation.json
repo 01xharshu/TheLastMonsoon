@@ -5,10 +5,10 @@
 	"results": [
 		{
 			"body_triangles": 14448,
-			"cloth_vertices": 4352,
-			"minimum_signed_skin_m": -0.0485616102814674,
-			"rein_surface_m": 0.0548267289996147,
-			"seat_vertices": 4,
+			"cloth_vertices": 1152,
+			"minimum_signed_skin_m": -0.0355848483741283,
+			"rein_surface_m": 0.0345264077186584,
+			"seat_vertices": 0,
 			"state": "idle"
 		}
 	],

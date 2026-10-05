@@ -1,11 +1,12 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend",
-  "source_sha256": "2aacb78c160a4b1c1bcbdfd8c6a8cc406554a16edd01f64c78ecd3ac67b234c5",
+  "source_sha256": "1024953325d5ce68b59d3dd1b16fb9c27f2fc314e9a7a582d71f0879955f42ee",
   "runtime": "characters/npcs/village_weaver_assistant.glb",
-  "runtime_sha256": "b3b6d53f90dcb701e8607d5252df16c9fd53418a60dced3d270d0897987159a3",
+  "runtime_sha256": "b1217e588cca4abddb2658411f8bf2cfab9b318daf4cc4ca1eff29cf55efe53b",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 10,
-  "body_vertices": 19158
+  "body_vertices": 19158,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

@@ -113,7 +113,10 @@ func stand() -> bool:
 	standing_shape.radius = .4
 	standing_shape.height = 1.8
 	query.shape = standing_shape
-	query.transform = Transform3D(Basis.IDENTITY,actor.global_position+Vector3.UP*.015)
+	query.margin = .001
+	# Crawl capsule rests 2 cm lower than the standing capsule; lift the
+	# clearance probe enough to avoid treating its supporting floor as a roof.
+	query.transform = Transform3D(Basis.IDENTITY,actor.global_position+Vector3.UP*.035)
 	query.exclude = [actor.get_rid()]
 	query.collision_mask = actor.collision_mask
 	if not actor.get_world_3d().direct_space_state.intersect_shape(query,8).is_empty(): return false
@@ -173,6 +176,18 @@ func _pose_cover(weight: float) -> void:
 	visual.pose("calf_r",Vector3(-.9 if aiming else -1.3,0,0),weight)
 	visual.pose("upperarm_l",Vector3(-.65 if aiming else -.42,0,-.35),weight*.65)
 	visual.pose("upperarm_r",Vector3(-.85 if aiming else -.46,0,.35),weight*.65)
+	# Lower the posed rig until its lowest boot reaches the support plane.
+	# Collision travel remains on the CharacterBody; this corrects visual height.
+	var lowest := INF
+	for side in ["l","r"]:
+		var bone: int = visual.skeleton.find_bone("foot_"+side)
+		if bone >= 0:
+			var foot: Vector3 = visual.skeleton.global_transform*visual.skeleton.get_bone_global_pose(bone).origin
+			lowest = minf(lowest,foot.y)
+	if lowest < INF:
+		var support := actor.global_position.y-.9+.10
+		visual.model.position.y += clampf(support-lowest,-.4,.2)*weight
+
 
 func _pose_prone(weight: float,_delta: float) -> void:
 	visual.model.position.y = lerpf(visual.model.position.y,-1.08,weight)

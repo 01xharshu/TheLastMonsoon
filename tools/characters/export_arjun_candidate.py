@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0,str(ROOT/'tools/characters'))
 from whole_body_contract import retain_complete_body
 for body in bpy.data.objects:
-    if body.type == 'MESH' and (body.name == 'Human' or 'MakeHuman_body' in body.name or body.get('is_human',False)):
+    if body.type == 'MESH' and (body.name == 'Human' or 'makehuman_body' in body.name.lower() or body.get('is_human',False)):
         retain_complete_body(body)
 scene=bpy.context.scene
 rig=bpy.data.objects['Arjun_Rig']

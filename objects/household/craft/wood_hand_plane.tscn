@@ -1,0 +1,92 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlywb"]
+albedo_color = Color(0.4, 0.25, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_gncpt"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.065, 0.045, 0.09)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yjlr8"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.01, 0.045, 0.06)
+
+[sub_resource type="BoxMesh" id="BoxMesh_6blg6"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.065, 0.045, 0.09)
+
+[sub_resource type="BoxMesh" id="BoxMesh_efruk"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.01, 0.045, 0.06)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u052a"]
+albedo_color = Color(0.22, 0.13, 0.06, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_vkf8i"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.066, 0.004, 0.107)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fytyp"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.066, 0.004, 0.107)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hisw"]
+albedo_color = Color(0.16, 0.17, 0.17, 1)
+metallic = 0.65
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="BoxMesh_in4wl"]
+material = SubResource("StandardMaterial3D_3hisw")
+size = Vector3(0.044, 0.006, 0.11)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4vnw3"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.035, 0.014, 0.055)
+
+[node name="WoodenHandPlane" type="Node3D" unique_id=1301417612]
+
+[node name="BodyEnd" type="MeshInstance3D" parent="." unique_id=1423818529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0225, -0.075)
+mesh = SubResource("BoxMesh_gncpt")
+
+[node name="ThroatCheek" type="MeshInstance3D" parent="." unique_id=1642747549]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0275, 0.0225, 0)
+mesh = SubResource("BoxMesh_yjlr8")
+
+[node name="@MeshInstance3D@2" type="MeshInstance3D" parent="." unique_id=1124743990]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0225, 0.075)
+mesh = SubResource("BoxMesh_6blg6")
+
+[node name="@MeshInstance3D@3" type="MeshInstance3D" parent="." unique_id=1689258431]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0275, 0.0225, 0)
+mesh = SubResource("BoxMesh_efruk")
+
+[node name="SoleEnd" type="MeshInstance3D" parent="." unique_id=208291]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.002, -0.0675)
+mesh = SubResource("BoxMesh_vkf8i")
+
+[node name="@MeshInstance3D@4" type="MeshInstance3D" parent="." unique_id=587327722]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.002, 0.0675)
+mesh = SubResource("BoxMesh_fytyp")
+
+[node name="Iron" type="MeshInstance3D" parent="." unique_id=1010616681]
+transform = Transform3D(1, 0, 0, 0, 0.7960838, 0.6051864, 0, -0.6051864, 0.7960838, 0, 0.0357, 0.01)
+mesh = SubResource("BoxMesh_in4wl")
+
+[node name="Wedge" type="MeshInstance3D" parent="." unique_id=1477673801]
+transform = Transform3D(1, 0, 0, 0, 0.7960838, 0.6051864, 0, -0.6051864, 0.7960838, 0, 0.055, 0.029)
+mesh = SubResource("BoxMesh_4vnw3")
+
+[node name="FrontGrip" type="Marker3D" parent="." unique_id=549877074]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.045, -0.09)
+
+[node name="RearGrip" type="Marker3D" parent="." unique_id=5281105]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.045, 0.09)
+
+[node name="Grip" type="Marker3D" parent="." unique_id=1760753297]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.045, 0.09)
+
+[node name="CuttingContact" type="Marker3D" parent="." unique_id=1068877977]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.015)

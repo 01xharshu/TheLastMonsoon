@@ -14,10 +14,6 @@ retain_complete_body(body)
 for name in ['Fitted cotton upper base', 'Kurta loose lower panel', 'Soft cotton head wrap', 'Head wrap fold']:
     obj = bpy.data.objects.get(name)
     if obj: bpy.data.objects.remove(obj, do_unlink=True)
-visible = body.vertex_groups['Visible period skin']
-visible.remove([v.index for v in body.data.vertices])
-# Restore torso and arms from the same complete MPFB body; dhoti masks pelvis.
-visible.add([v.index for v in body.data.vertices if v.co.z > .88 or v.co.z < .43 or abs(v.co.x) > .29], 1.0, 'REPLACE')
 body['combat_role'] = 'Clearly adult Indian peasant; shirtless; opaque dhoti'
 body['source_provenance'] = 'Existing MakeHuman/MPFB farmer; underlying body retained'
 # Foundation follows this same MPFB body and keeps the complete editable surface.
@@ -28,7 +24,12 @@ bpy.context.scene.collection.objects.link(foundation)
 for modifier in list(foundation.modifiers):
     if modifier.type == 'MASK' and modifier.vertex_group == 'Visible period skin': foundation.modifiers.remove(modifier)
 group = foundation.vertex_groups.new(name='Opaque foundation surface')
-group.add([v.index for v in foundation.data.vertices if .70 < v.co.z < .91], 1.0, 'REPLACE')
+foundation_bones = {g.index for g in foundation.vertex_groups if g.name.startswith(('pelvis', 'thigh_'))}
+arm_bones = {g.index for g in foundation.vertex_groups if g.name.startswith(('upperarm_', 'lowerarm_', 'hand_'))}
+foundation_vertices = [v.index for v in foundation.data.vertices if .70 < v.co.z < .91
+    and sum(g.weight for g in v.groups if g.group in foundation_bones) > .25
+    and sum(g.weight for g in v.groups if g.group in arm_bones) < .01]
+group.add(foundation_vertices, 1.0, 'REPLACE')
 mask = foundation.modifiers.new('Foundation cut', 'MASK'); mask.vertex_group = group.name
 for vertex in foundation.data.vertices: vertex.co += vertex.normal * .004
 material = bpy.data.materials.new('Opaque cotton foundation'); material.diffuse_color=(.18,.14,.11,1)
@@ -36,12 +37,16 @@ material.use_nodes=True
 material.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(.18,.14,.11,1)
 foundation.data.materials.clear(); foundation.data.materials.append(material)
 foundation['presentation'] = 'Opaque fitted adult underwear beneath opaque dhoti'
-# Retain source skin and modifiers; bake the visible cutout only for runtime.
+# Complete body is retained; only helper removal and foundation garment cut are baked.
 source = OUT / 'rescue_peasant.blend'
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
 rig.data.pose_position = 'REST'
 bpy.context.view_layer.update()
 dg = bpy.context.evaluated_depsgraph_get()
+body_vertex_count = len(body.evaluated_get(dg).data.vertices)
+print('RESCUE_BODY_VERTICES', body_vertex_count, 'source', len(body.data.vertices))
+assert body_vertex_count > 10000, 'Complete MPFB human surfaces required'
+assert all(not m.show_render for m in body.modifiers if m.type == 'MASK' and m.name != 'Hide helpers')
 for original, label in [(body, 'RescuePeasantSkin'), (foundation, 'OpaqueFoundation')]:
     mesh = bpy.data.meshes.new_from_object(original.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
     cut = bpy.data.objects.new(label, mesh)
@@ -64,4 +69,5 @@ bpy.ops.export_scene.gltf(filepath=str(runtime), export_format='GLB', use_select
 (OUT / 'manifest.json').write_text(json.dumps(dict(source=str(source.relative_to(ROOT)),
     runtime=str(runtime.relative_to(ROOT)), source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
     runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(), provenance='Retained MPFB adult farmer',
-    visual_approved=False, motion_approved=False), indent=2)+'\n')
+    complete_runtime_body=True, full_body_vertex_count=body_vertex_count, foundation_body_vertices=len(foundation_vertices),
+    clothing_body_masks_enabled=False, visual_approved=False, motion_approved=False), indent=2)+'\n')

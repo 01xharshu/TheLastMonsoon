@@ -1,38 +1,38 @@
 {
 	"motion": [
 		{
-			"max_pin_error_m": 0.000000119209289550781,
-			"max_relaxed_wrist_radians": 0.498334020376205,
-			"max_sway_radians": 0.0153542490032822,
-			"min_palm_envelope_margin_m": 0.00264697195962071,
-			"position": "(0.0, 0.901, -1.900001)",
+			"max_pin_error_m": 0.00000011944189282076,
+			"max_relaxed_wrist_radians": 0.498378902673721,
+			"max_sway_radians": 0.013034686849034,
+			"min_palm_envelope_margin_m": 0.00265565933659673,
+			"position": "(0.0, 0.901, -1.633334)",
 			"segment": "walk",
 			"speed_m_s": 4.0
 		},
 		{
-			"max_pin_error_m": 0.00000011944189282076,
-			"max_relaxed_wrist_radians": 0.53402191400528,
-			"max_sway_radians": 0.0245024448354246,
-			"min_palm_envelope_margin_m": 0.015636820346117,
-			"position": "(0.0, 0.901, -5.983336)",
+			"max_pin_error_m": 0.000000119209289550781,
+			"max_relaxed_wrist_radians": 0.535160660743713,
+			"max_sway_radians": 0.013558064393396,
+			"min_palm_envelope_margin_m": 0.0170323140919209,
+			"position": "(0.0, 0.901, -5.366669)",
 			"segment": "run",
 			"speed_m_s": 7.0
 		},
 		{
-			"max_pin_error_m": 0.000000119209289550781,
-			"max_relaxed_wrist_radians": 0.532300591468811,
-			"max_sway_radians": 0.030032328072979,
-			"min_palm_envelope_margin_m": 0.0107970871031284,
-			"position": "(-3.500002, 0.901, -7.966671)",
+			"max_pin_error_m": 0.0000000596046447753906,
+			"max_relaxed_wrist_radians": 0.51651006937027,
+			"max_sway_radians": 0.0257653886858084,
+			"min_palm_envelope_margin_m": 0.0116799362003803,
+			"position": "(-2.1, 0.901, -7.350004)",
 			"segment": "turn",
-			"speed_m_s": 7.0
+			"speed_m_s": 6.99999761581421
 		},
 		{
-			"max_pin_error_m": 0.0000000596046447753906,
-			"max_relaxed_wrist_radians": 0.49218288064003,
-			"max_sway_radians": 0.0220696778161238,
-			"min_palm_envelope_margin_m": 0.0117590762674809,
-			"position": "(-4.973334, 0.901, -7.966671)",
+			"max_pin_error_m": 0.000000119209289550781,
+			"max_relaxed_wrist_radians": 0.489916771650314,
+			"max_sway_radians": 0.0154453703117143,
+			"min_palm_envelope_margin_m": 0.0107454992830753,
+			"position": "(-3.573332, 0.901, -7.350004)",
 			"segment": "stop",
 			"speed_m_s": 0.0
 		}

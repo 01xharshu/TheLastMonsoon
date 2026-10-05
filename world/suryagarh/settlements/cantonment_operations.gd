@@ -36,7 +36,7 @@ func configure(site: Node3D) -> void:
 		station(entry[0],district.get_node("CavalryStables"),entry[1],workers.workers[1])
 	station("bell",district.get_node("CantonmentChurch"),Vector3(0,.24,5.7),workers.workers[3])
 	station("worship",district.get_node("CantonmentChurch"),Vector3(-3.8,.44,-3.8),workers.workers[3])
-	bell = district.get_node("CantonmentChurch/ChurchFittings/CastBell")
+	bell = district.get_node("ServiceWorkplaces/ChapelBell")
 	bell_rest = bell.transform
 	bell_sound = AudioStreamPlayer3D.new()
 	bell_sound.name = "ChapelBellAudio"
@@ -68,7 +68,7 @@ func request(id: String,actor: CharacterBody3D) -> bool:
 	if not pending.is_empty():
 		inv.message_requested.emit("Finish the current service first")
 		return false
-	if actor.health <= 0 or actor.get_meta("mounted_vehicle",null) != null: return false
+	if actor.health <= 0 or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	if id != "bell" and id != "worship" and (clock.current_hour < 6 or clock.current_hour >= 20):
 		inv.message_requested.emit("Services reopen at six in the morning")
 		return false
@@ -116,7 +116,7 @@ func _process(delta: float) -> void:
 		bell.rotation.z += sin(bell_elapsed*9)*.22*bell_elapsed/3
 		if bell_elapsed == 0: bell.transform = bell_rest
 	if pending.is_empty(): return
-	if not is_instance_valid(patient) or patient.health <= 0 or patient.global_position.distance_to(pending.start) > 2.5 or patient.get_meta("mounted_vehicle",null) != null:
+	if not is_instance_valid(patient) or patient.health <= 0 or patient.global_position.distance_to(pending.start) > 2.5 or (patient.has_meta("mounted_vehicle") and patient.get_meta("mounted_vehicle") != null):
 		cancel()
 		return
 	var id: String = pending.id

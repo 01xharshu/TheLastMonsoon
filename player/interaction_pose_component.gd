@@ -156,6 +156,12 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		_finish_ground_pickup()
 		return
 	var weight := smoothstep(0.0, 1.0, amount)
+	# Sample the locomotion feet before lowering the model for the crouch.
+	var locomotion_feet: Dictionary = {}
+	if not active:
+		for side in ["l", "r"]:
+			var foot: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_" + side))
+			locomotion_feet[side] = visual.skeleton.global_transform * foot
 	visual.model.position.y -= 0.55 * weight
 	var local_target := visual.to_local(pickup_target) if active else pickup_target_local
 	visual.model.position.x += clampf(local_target.x * 0.8, -0.15, 0.15) * weight
@@ -173,12 +179,18 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		# Keep the feet planted during the held reach. Once controls resume,
 		# carry the recovering crouch with the body instead of stretching back.
 		var follow := Transform3D.IDENTITY if active else visual.global_transform * pickup_anchor_transform.affine_inverse()
-		var target: Vector3 = visual.skeleton.to_local(follow * foot_anchors[side])
+		var foot_world: Vector3 = follow * foot_anchors[side]
+		var foot_basis: Basis = follow.basis * foot_bases[side]
+		if not active:
+			var locomotion_foot: Transform3D = locomotion_feet[side]
+			foot_world = locomotion_foot.origin.lerp(foot_world, weight)
+			foot_basis = locomotion_foot.basis.orthonormalized().slerp(foot_basis.orthonormalized(), weight)
+		var target: Vector3 = visual.skeleton.to_local(foot_world)
 		var right_axis: Vector3 = (visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_r")).origin - visual.skeleton.get_bone_global_rest(visual.skeleton.find_bone("upperarm_l")).origin).normalized()
 		var forward_axis: Vector3 = (visual.skeleton.global_basis.inverse() * visual.global_basis.z).normalized()
 		var knee_pole: Vector3 = right_axis * (0.60 if side == "r" else -0.60) + forward_axis * 1.0
 		_solve_limb("thigh_" + side, "calf_" + side, "foot_" + side, target, knee_pole)
-		_set_world_basis("foot_" + side, follow.basis * foot_bases[side])
+		_set_world_basis("foot_" + side, foot_basis)
 	var hand_index: int = visual.skeleton.find_bone("hand_r")
 	var palm_offset: Vector3 = visual.equipment.palm_offsets["r"]
 	var hand: Transform3D = visual.skeleton.get_bone_global_pose(hand_index)

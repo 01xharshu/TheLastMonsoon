@@ -13,9 +13,34 @@ static func install(b, district: Node3D) -> void:
 	manager.name = "ServiceWorkplaces"
 	district.add_child(manager)
 	manager.configure(b,district)
+	manager.call_deferred("install_operations",district)
+
+func install_operations(district: Node3D) -> void:
+	if get_tree().current_scene.get_meta("service_geometry_fixture",false): return
+	var operations = preload("res://world/suryagarh/settlements/cantonment_operations.gd").new()
+	operations.name = "Operations"
+	district.add_child(operations)
+	operations.configure(district)
+	var duties = preload("res://world/suryagarh/settlements/cantonment_duties.gd").new()
+	duties.name = "SepoyDuties"
+	district.add_child(duties)
+	duties.configure(district)
+	var logistics = preload("res://world/suryagarh/settlements/logistics_operations.gd").new()
+	logistics.name = "LogisticsOperations"
+	get_tree().current_scene.add_child(logistics)
+	logistics.configure(get_tree().current_scene)
 
 func configure(b, district: Node3D) -> void:
 	var started := Time.get_ticks_usec()
+	# Keep the moving bell out of static material merging.
+	var chapel_bell: Node3D = district.get_node("CantonmentChurch/ChurchFittings/CastBell")
+	chapel_bell.reparent(self,true)
+	chapel_bell.name = "ChapelBell"
+	# merge_visuals also visits this manager itself. A mesh material (rather than
+	# an override) preserves the bell as independent moving geometry there too.
+	chapel_bell.mesh = chapel_bell.mesh.duplicate()
+	chapel_bell.mesh.surface_set_material(0,chapel_bell.material_override)
+	chapel_bell.material_override = null
 	var specs := [
 		["GrainFodderWarehouse","Storekeeper",Vector3(-6,.24,4.25),PI],
 		["CavalryStables","Groom",Vector3(-12.5,.24,3.8),PI],
@@ -33,7 +58,7 @@ func configure(b, district: Node3D) -> void:
 		if shared_staff == null:
 			var document := GLTFDocument.new()
 			var state := GLTFState.new()
-			assert(document.append_from_file(ProjectSettings.globalize_path("res://WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb"),state)==OK)
+			assert(document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb"),state)==OK)
 			var imported := document.generate_scene(state)
 			shared_staff = PackedScene.new()
 			assert(shared_staff.pack(imported)==OK)
@@ -64,7 +89,7 @@ func configure(b, district: Node3D) -> void:
 		workers.append(actor)
 	set_meta("build_usec",Time.get_ticks_usec()-started)
 	set_meta("maximum_active_workers",3)
-	set_meta("shared_runtime_source","WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb")
+	set_meta("shared_runtime_source","characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb")
 
 func update_activity(observer: Vector3) -> void:
 	var started := Time.get_ticks_usec()

@@ -1,7 +1,7 @@
 {
 	"failures": [],
 	"passed": true,
-	"rendered": true,
+	"rendered": false,
 	"samples": [
 		{
 			"distance_m": 0.171130463480949,
@@ -45,9 +45,13 @@
 			"mode": "store_arm_clearance"
 		},
 		{
-			"local_foot_error_m": 0.000000187452812383526,
-			"local_hand_error_m": 0.000000245756240246919,
+			"local_foot_error_m": 0.000000298116333397047,
+			"local_hand_error_m": 0.000000266560078898692,
 			"mode": "moving_store"
+		},
+		{
+			"final_foot_error_m": 0.0,
+			"mode": "walking_tree_recovery"
 		}
 	]
 }

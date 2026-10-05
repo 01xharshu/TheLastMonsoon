@@ -43,7 +43,13 @@ func build(builder: Node3D) -> void:
 	for i in 8:
 		var x := -16.0+i*4.0
 		b.piece(stable,"StallDivider",Vector3(x,1.15,-1.5),Vector3(0.12,1.8,4.4),b.wood)
-		b.piece(stable,"Manger",Vector3(x+1.8,0.8,-3.5),Vector3(2.8,0.6,0.8),b.wood)
+		b.piece(stable,"MangerBottom",Vector3(x+1.8,.75,-3.5),Vector3(2.8,.10,.8),b.wood)
+		for z in [-3.86,-3.14]:
+			b.piece(stable,"MangerSide",Vector3(x+1.8,.96,z),Vector3(2.8,.4,.08),b.wood)
+		for dx in [.44,3.16]:
+			b.piece(stable,"MangerEnd",Vector3(x+dx,.96,-3.5),Vector3(.08,.4,.64),b.wood)
+		for dx in [.65,2.95]:
+			b.piece(stable,"MangerLeg",Vector3(x+dx,.47,-3.5),Vector3(.13,.46,.6),b.wood)
 		b.piece(stable,"TetherRail",Vector3(x+1.8,1.35,0.7),Vector3(2.8,0.12,0.12),b.wood)
 	stable.add_to_group("cavalry_stables")
 	var hospital := shell("MilitaryHospital",Vector3(-43,0,45),Vector2(24,10),"MILITARY HOSPITAL")

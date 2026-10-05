@@ -1,7 +1,7 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
-  "source_sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
+  "source_sha256": "b7174e849f8e1008e20f89c0c52e9944fe2293b538b20c29a9ca9d33453ec24b",
   "reference": "docs/characters/british/references/private_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -29,5 +29,6 @@
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
   "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
   "woman_runtime_source": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
-  "skirt_applied_by_owner_request": true
+  "skirt_applied_by_owner_request": true,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

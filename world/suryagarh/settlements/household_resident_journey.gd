@@ -125,6 +125,7 @@ func tick(delta:float) -> void:
   _solve_work_hand(paper+Vector3(sin(elapsed*2)*.025,0,0))
   travel._passenger_cloth(actor,true)
  else:actor.call("_set_animation",&"idle",delta)
+ travel._passenger_cloth(actor,state in ["work","seated"])
  actor.get_node("BodyCollider").force_update_transform()
 
 func _move_transition(duration:float,seated:float,delta:float) -> void:

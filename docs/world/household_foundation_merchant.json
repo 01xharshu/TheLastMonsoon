@@ -1,0 +1,13 @@
+{
+  "source": "WorkingAssets/NPCs/households/merchant/merchant.blend",
+  "source_sha256": "670d531c444eff7c026693af32d007fb98f976d738f0135b2427c839d8539959",
+  "bodies": [
+    {
+      "body": "village_farmer_MakeHuman_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 785,
+      "foundation_faces": 736
+    }
+  ],
+  "scope": "source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review"
+}

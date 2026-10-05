@@ -1,0 +1,25 @@
+{
+  "actors": [
+    {
+      "max_rebuild_us": 24453,
+      "name": "@Node3D@6",
+      "rebuilds": 383
+    },
+    {
+      "max_rebuild_us": 2127,
+      "name": "@Node3D@17",
+      "rebuilds": 383
+    },
+    {
+      "max_rebuild_us": 2225,
+      "name": "@Node3D@28",
+      "rebuilds": 383
+    }
+  ],
+  "duration_seconds": 24,
+  "errors": [],
+  "fps": 30,
+  "frames": 720,
+  "passed": true,
+  "scope": "isolated native cloth walking/climb/sit/stand fixture; no full-world motion or historical approval"
+}

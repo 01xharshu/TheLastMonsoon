@@ -52,7 +52,7 @@ static func furnish(b, district: Node3D) -> void:
 			b.piece(stable,"RailPost",Vector3(x-1.7,1.05,z),Vector3(.16,1.62,.16),wood)
 		Detail.prop(stable,"res://objects/household/storage/bucket.tscn",Vector3(x+1.0,.24,-.1))
 		# Open trough rather than a solid feed box.
-		b.piece(stable,"MangerFeed",Vector3(x,1.115,-3.5),Vector3(2.4,.03,.5),straw,false)
+		b.piece(stable,"MangerFeed",Vector3(x,.82,-3.5),Vector3(2.4,.04,.5),straw,false)
 	for z in [1.1,1.5]: b.piece(stable,"DrainLip",Vector3(0,.28,z),Vector3(30,.08,.10),stone,false)
 	b.piece(stable,"DrainChannel",Vector3(0,.247,1.3),Vector3(30,.012,.28),wood,false)
 	var ward: Node3D = district.get_node("MilitaryHospital")

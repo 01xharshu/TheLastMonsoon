@@ -31,8 +31,8 @@
   "candidate_exports": {
     "woman": {
       "path": "characters/npcs/british/candidates/corporal_woman_skirt_candidate.glb",
-      "sha256": "2574dfecb9e517fe50515cc3f625da3ae1d7734c07344150f009ee1715c34a7b",
-      "bytes": 1923216
+      "sha256": "2f94848a8b8c7b9d07028fdc70dcef84f9a184fa7cbd7390db21a456044b51b7",
+      "bytes": 2246176
     }
   },
   "live_asset_path": "characters/npcs/british/corporal_woman.glb",

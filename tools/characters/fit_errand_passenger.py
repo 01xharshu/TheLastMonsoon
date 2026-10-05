@@ -69,6 +69,10 @@ for name in ['Kurta loose lower panel','Knee length wrapped dhoti','Dhoti woven 
   if near is not None and (p-near).dot(normal)<.014:target=near+normal*.014
   # Cloth on the bench stays on top of it, rather than passing through its plank.
   if target.y>-.20 and abs(target.x)<.75 and target.z<pelvis.z+.025:target.z=pelvis.z+.025
+  for correction in range(16):
+   near,normal,_,_=bvh.find_nearest(target)
+   if near is None or (target-near).dot(normal)>=.014:break
+   target=near+normal*.015
   transform=Matrix(((0,0,0,0),)*4)
   total=0
   for g in v.groups:
@@ -90,6 +94,8 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
 for obj in bpy.data.objects:
  if obj.type=='MESH':obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
-bpy.ops.export_scene.gltf(filepath=str(out/'errand_passenger.glb'),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_cameras=False,export_lights=False,export_skins=True,export_morph=True,export_apply=False)
+runtime=ROOT/'characters/npcs/motion/errand_passenger/errand_passenger.glb'
+runtime.parent.mkdir(parents=True,exist_ok=True)
+bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_cameras=False,export_lights=False,export_skins=True,export_morph=True,export_apply=False)
 (out/'manifest.json').write_text(json.dumps({'source_donor':str(src.relative_to(ROOT)),'source':str(source.relative_to(ROOT)),'complete_body_vertices':body_count,'body_masks_disabled':True,'opaque_foundation':foundation.name,'correctives':report,'status':'CONTACT_CLOTH_CANDIDATE'},indent=2)+'\n')
 print('PASSENGER_CLOTH',json.dumps(report))

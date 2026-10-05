@@ -1,5 +1,7 @@
 {
   "source": "WorkingAssets/NPCs/households/landowner/landowner.blend",
   "changes": "original articulated lower wraps and shaped shoes",
-  "status": "motion/contact candidate; visual and period approval open"
+  "status": "complete MPFB body retained with separate opaque foundation; garment contact and period approval separate",
+  "complete_body_vertices": 13380,
+  "foundation_vertices": 4035
 }

@@ -1,0 +1,447 @@
+[
+  {
+    "source": "WorkingAssets/NPCs/fort_staff/fort_staff_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/errand_passenger/errand_passenger_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_fruit_seller_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_motion_candidate.blend",
+    "bodies": [
+      {
+        "name": "village_fruit_seller_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_motion_candidate.blend",
+    "bodies": [
+      {
+        "name": "village_weaver_assistant_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_weaver_assistant_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend",
+    "bodies": [
+      {
+        "name": "village_woman_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend",
+    "bodies": [
+      {
+        "name": "village_woman_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/river_woman/river_woman_motion.blend",
+    "bodies": [
+      {
+        "name": "village_woman_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/rescue_peasant/rescue_peasant.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/households/landowner/landowner.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/households/merchant/merchant.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/street_residents/landowner/landowner.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/street_residents/merchant/merchant.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/thana_motion/burkundaz/burkundaz_motion.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/thana_motion/mohurrir/mohurrir_motion.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/thana_motion/daroga/daroga_motion.blend",
+    "bodies": [
+      {
+        "name": "village_farmer_MakeHuman_body",
+        "vertices": 13380,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend",
+    "bodies": [
+      {
+        "name": "Arjun_brother_independent_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/arjun_brother/dev_idle_candidate.blend",
+    "bodies": [
+      {
+        "name": "Arjun_brother_independent_MakeHuman_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Major_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Captain_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/colonel_pair/colonel_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Colonel_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Corporal_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Private_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Official_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Lieutenant_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Sergeant_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/sergeant_skirt_candidate/sergeant_woman_skirt_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Sergeant_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/corporal_skirt_candidate/corporal_woman_skirt_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Corporal_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Private_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend",
+    "bodies": [
+      {
+        "name": "Companion_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      },
+      {
+        "name": "Sergeant_MPFB_body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
+    "bodies": [
+      {
+        "name": "Arjun_MakeHuman_Body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  },
+  {
+    "source": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend",
+    "bodies": [
+      {
+        "name": "Arjun_MakeHuman_Body",
+        "vertices": 19158,
+        "covered_body_masks_enabled": false
+      }
+    ],
+    "mask_state_repaired": false
+  }
+]

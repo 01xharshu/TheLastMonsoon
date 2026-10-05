@@ -197,6 +197,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 	if world.has_node("ErrandSystem"):
 		data["errands"] = world.get_node("ErrandSystem").export_state()
 	data["administrative_services"] = _administrative_service_states(world)
+	data["institution_operations"] = _institution_states(world)
 	var fame := actor.get_node_or_null("FameComponent")
 	if fame != null: data["fame"] = {"points":fame.points,"witnessed_deeds":fame.witnessed_deeds}
 	var map: Control = actor.get_node("UI/WorldMap")
@@ -316,6 +317,10 @@ func apply_pending(world: Node3D) -> void:
 		var key := str(world.get_path_to(service))
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
 	_restore_cattle_states(world,data.get("household_cattle",{}))
+	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
+		if not world.is_ancestor_of(operations): continue
+		var key := str(world.get_path_to(operations))
+		operations.restore_state(data.get("institution_operations",{}).get(key,{}))
 	# Absent in older version-1 saves: preserve their available fruit.
 	if data.get("collected_forage_ids") is Array:
 		for grove in world.get_tree().get_nodes_in_group("forage_groves"):
@@ -459,6 +464,12 @@ func _restore_cattle_states(world:Node3D,states:Variant)->void:
 	for path in states:
 		var yard:=world.get_node_or_null(NodePath(str(path)))
 		if yard!=null and yard.is_in_group("household_cattle") and states[path] is Dictionary:yard.restore_state(states[path])
+
+func _institution_states(world: Node3D) -> Dictionary:
+	var states: Dictionary = {}
+	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
+		if world.is_ancestor_of(operations): states[str(world.get_path_to(operations))] = operations.export_state()
+	return states
 
 func _administrative_service_states(world: Node3D) -> Dictionary:
 	var states := {}

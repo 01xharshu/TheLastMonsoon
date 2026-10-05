@@ -44,7 +44,7 @@ def rotate(name, axis, amount):
         local_axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector(axis)
         bone.rotation_quaternion = base[name] @ Quaternion(local_axis, amount)
 
-for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
+for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37),("Dev_turn_fit_study",61),("Dev_combat_fit_study",61)]:
     action = bpy.data.actions.new(clip)
     action.use_fake_user = True
     rig.animation_data.action = action
@@ -59,6 +59,19 @@ for clip, frames in [("Dev_idle_study",61),("Dev_walk_study",37)]:
             rotate("neck_01",(0,0,1),.006*wave)
             rotate("upperarm_l",(1,0,0),.004*wave)
             rotate("upperarm_r",(1,0,0),-.004*wave)
+        elif clip == "Dev_turn_fit_study":
+            rotate("pelvis",(0,0,1),.16*wave)
+            rotate("spine01",(0,0,1),.13*wave)
+            rotate("neck_01",(0,0,1),-.12*wave)
+            rotate("thigh_l",(1,0,0),.08*wave)
+            rotate("thigh_r",(1,0,0),-.08*wave)
+        elif clip == "Dev_combat_fit_study":
+            reach=.5-.5*math.cos(phase*math.tau)
+            rotate("upperarm_l",(1,0,0),-.70*reach)
+            rotate("upperarm_r",(1,0,0),-.95*reach)
+            rotate("lowerarm_l",(1,0,0),-.70*reach)
+            rotate("lowerarm_r",(1,0,0),-.55*reach)
+            rotate("spine01",(0,0,1),.10*wave)
         else:
             rotate("thigh_l",(1,0,0),.33*wave)
             rotate("thigh_r",(1,0,0),-.33*wave)
@@ -132,6 +145,6 @@ report={"status":"RIGGED_MOTION_STUDY_NOT_APPROVED",
         "source_sha256":hashlib.sha256(source.read_bytes()).hexdigest(),
         "runtime":str(runtime.relative_to(ROOT)),
         "runtime_sha256":hashlib.sha256(runtime.read_bytes()).hexdigest(),
-        "actions":["Dev_idle_study","Dev_walk_study"],"in_world":False,"motion_approved":False}
+        "actions":["Dev_idle_study","Dev_walk_study","Dev_turn_fit_study","Dev_combat_fit_study"],"in_world":False,"motion_approved":False}
 (OUT/"idle_manifest.json").write_text(json.dumps(report,indent=2)+"\n")
 print("DEV_IDLE",json.dumps(report))

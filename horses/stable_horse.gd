@@ -18,6 +18,8 @@ var death_exit_retry := 0.0
 var rider: CharacterBody3D
 var stolen := false
 var pace := 0.0
+var steering := 0.0
+var turning_rate := 0.0
 var rider_landing := 0.0
 var gait := 0.0
 const WALK_SPEED := 6.0
@@ -530,7 +532,12 @@ func _physics_process(delta: float) -> void:
 	if stair_activity > 0.0:
 		target = clampf(target, -2.8, 2.8)
 	pace = move_toward(pace,target,delta * (6.5 if throttle != 0.0 else 9.0))
-	rotation.y += steer * delta * 1.35 * clampf(absf(pace)/2.0,0.0,1.0)
+	steering = move_toward(steering, steer, delta * 4.0)
+	var turn_limit := lerpf(1.35, .55, clampf(absf(pace) / GALLOP_SPEED, 0.0, 1.0))
+	var target_turn := steering * turn_limit * clampf(absf(pace) / 2.0, 0.0, 1.0) * (-1.0 if pace < 0.0 else 1.0)
+	turning_rate = move_toward(turning_rate, target_turn, delta * 2.4)
+	if absf(pace) < .05: turning_rate = 0.0
+	rotation.y += turning_rate * delta
 	var forward := -global_basis.z
 	velocity.x = forward.x * pace
 	velocity.z = forward.z * pace

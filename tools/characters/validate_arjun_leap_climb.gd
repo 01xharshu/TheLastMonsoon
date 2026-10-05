@@ -28,6 +28,8 @@ func _run() -> void:
 	actor = preload("res://player/player.tscn").instantiate()
 	add_child(actor)
 	actor.set_physics_process(false)
+	actor.set_process(false)
+	actor.get_node("StairFootContact").set_process(false)
 	actor.get_node("UI").hide()
 	visual = actor.get_node("VisualRoot/CharacterVisual")
 	visual.set_process(false)

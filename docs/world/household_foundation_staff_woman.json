@@ -1,0 +1,13 @@
+{
+  "source": "WorkingAssets/NPCs/households/staff_woman/staff_woman.blend",
+  "source_sha256": "9f65b522595f3a8e975548029ac28b4d20b18d69d22d1151a8e80ca342bd6488",
+  "bodies": [
+    {
+      "body": "village_woman_MakeHuman_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 747,
+      "foundation_faces": 698
+    }
+  ],
+  "scope": "source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review"
+}

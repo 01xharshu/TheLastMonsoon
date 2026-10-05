@@ -48,12 +48,13 @@ func survey(actor: CharacterBody3D, hit: Dictionary) -> Dictionary:
 			if existing.distance_to(grip)<.15: duplicate = true; break
 		if not duplicate: layers.append(grip)
 	layers.sort_custom(func(a: Vector3,b: Vector3): return a.y < b.y)
+	if OS.get_cmdline_user_args().has("--debug-opportunities"): print("OPPORTUNITIES meshes=",cached_meshes.size()," layers=",layers)
 	# Find a real supported platform rather than assuming the highest decoration is a roof.
 	var space := actor.get_world_3d().direct_space_state
 	for index in range(layers.size()-1,-1,-1):
 		var lip := layers[index]
 		for depth in [.65,.90,1.20]:
-			var landing := lip-normal*depth
+			var landing: Vector3 = lip-normal*depth
 			var ray := PhysicsRayQueryParameters3D.create(landing+Vector3.UP*.20,landing-Vector3.UP*.35)
 			ray.exclude = [actor.get_rid()]
 			var support := space.intersect_ray(ray)

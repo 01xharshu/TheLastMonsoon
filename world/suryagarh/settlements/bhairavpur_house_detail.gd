@@ -221,13 +221,18 @@ func _interior(house_node: Node3D,extent: Vector2,index: int) -> void:
 func _workshop(house_node: Node3D,extent: Vector2,craft: String) -> void:
 	var centre := Vector3(2.25,0,extent.y*.5+1.0)
 	if craft == "carpenter":
-		_piece(house_node,"CarpenterBench",centre+Vector3(0,.85,0),Vector3(1.65,.14,.75),settlement.wood)
-		for x in [-.62,.62]:
-			for z in [-.25,.25]:
-				_piece(house_node,"BenchLeg",centre+Vector3(x,.39,z),Vector3(.13,.78,.13),settlement.wood)
-		_piece(house_node,"BenchWorkpiece",centre+Vector3(0,.96,0),Vector3(1.4,.08,.28),roof_earth,false)
+		var work_surface: Node3D = load("res://objects/household/sets/carpenter_work_surface.tscn").instantiate()
+		work_surface.name = "CarpenterWorkSurface"
+		work_surface.position = centre
+		work_surface.add_to_group("asset_first_craft")
+		house_node.add_child(work_surface)
 		_piece(house_node,"TimberStock",Vector3(extent.x*.5-.25,.32,-extent.y*.5-1.0),Vector3(.6,.64,2.2),settlement.wood)
 	elif craft == "weaver":
+		var work_surface: Node3D = load("res://objects/household/sets/weaver_work_surface.tscn").instantiate()
+		work_surface.name = "WeaverWorkSurface"
+		work_surface.position = Vector3(-2.25,0,centre.z)
+		work_surface.add_to_group("asset_first_craft")
+		house_node.add_child(work_surface)
 		var envelope := StaticBody3D.new()
 		envelope.name = "LoomEnvelope"
 		envelope.position = centre+Vector3(0,.75,0)

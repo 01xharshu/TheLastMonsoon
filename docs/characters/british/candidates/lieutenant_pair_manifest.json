@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "lieutenant",
   "source": "WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend",
-  "source_sha256": "4cc2116cfcfccc6d59ede2f9a9136123fb1f7b2a97afff2fdeb88f71acaa67f7",
+  "source_sha256": "8b09d54e084ca1a0436e724e064d3ddbfd18b0f6fd167cb573acbab95654bcdc",
   "reference": "docs/characters/british/references/lieutenant_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -29,5 +29,6 @@
   "placed_in_world": true,
   "waist_transition": "smooth-shaded fitted waist transition gathers fullness near skirt upper edge",
   "headwear_fit": "scalp-fitted crown, forward/rear centering from evaluated body, all headwear vertices fully weighted to head",
-  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender"
+  "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

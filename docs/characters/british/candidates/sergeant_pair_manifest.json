@@ -2,7 +2,7 @@
   "status": "CANDIDATE_NOT_APPROVED",
   "pair": "sergeant",
   "source": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
-  "source_sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
+  "source_sha256": "a05c2784e494840192a8be889da48cbba348ab430f87f4212068c43b50e18f76",
   "reference": "docs/characters/british/references/sergeant_and_companion_multiview.png",
   "male_body_vertices": 19158,
   "female_body_vertices": 19158,
@@ -32,5 +32,6 @@
   "eye_material": "Original MPFB iris image directly connected to glTF base color; source shader retained in Blender",
   "woman_runtime_source": "WorkingAssets/NPCs/british/sergeant_skirt_candidate/sergeant_woman_skirt_candidate.blend",
   "skirt_applied_for_now": true,
-  "man_runtime_source": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend"
+  "man_runtime_source": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

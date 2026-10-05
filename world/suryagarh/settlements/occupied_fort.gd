@@ -96,6 +96,13 @@ func build(b) -> void:
 	main_details.command_rooms(b)
 
 func staff(b) -> void:
+	# Parse one staff asset; duplicate nodes so skeleton names and poses remain independent.
+	var document := GLTFDocument.new()
+	var state := GLTFState.new()
+	var path := "res://characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb"
+	var staff_loaded := document.append_from_file(ProjectSettings.globalize_path(path),state)==OK
+	if not staff_loaded:push_error("Cannot load fort staff rig: "+path)
+	var template: Node3D=document.generate_scene(state) if staff_loaded else null
 	for i in 2:
 		var actor := preload("res://characters/npcs/households/fort_staff.gd").new()
 		actor.name = "FortCook" if i == 0 else "FortSteward"
@@ -105,14 +112,11 @@ func staff(b) -> void:
 		actor.rotation.y = PI if i == 0 else 0.0
 		actor.set_meta("visual_status","candidate_unapproved")
 		actor.add_to_group("fort_staff")
-		var document := GLTFDocument.new()
-		var state := GLTFState.new()
-		var path := "res://WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb"
-		if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
-			push_error("Cannot load fort staff rig: "+path)
-			continue
-		actor.add_child(document.generate_scene(state))
+		if not staff_loaded:continue
+		actor.add_child(template.duplicate())
 		b.add_child(actor)
+
+	if template != null:template.free()
 
 	var commander := preload("res://characters/npcs/british/british_npc_actor.gd").new()
 	commander.name="FortCommander"

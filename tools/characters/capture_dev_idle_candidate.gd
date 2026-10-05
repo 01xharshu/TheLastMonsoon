@@ -44,7 +44,11 @@ func _capture() -> void:
 	var figure := document.generate_scene(state) as Node3D
 	stage.add_child(figure)
 	var walking := "--walk" in OS.get_cmdline_user_args()
-	var clip := "Dev_walk_study" if walking else "Dev_idle_study"
+	var label := "walk" if walking else "idle"
+	if "--turn" in OS.get_cmdline_user_args(): label = "turn"
+	if "--combat" in OS.get_cmdline_user_args(): label = "combat"
+	var clip := "Dev_%s_study" % label
+	if label in ["turn", "combat"]: clip = "Dev_%s_fit_study" % label
 	var player := figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if player == null or not player.has_animation(clip):
 		printerr("DEV CAPTURE missing imported animation: ", clip)
@@ -63,7 +67,7 @@ func _capture() -> void:
 	player.pause()
 	var duration := player.get_animation(clip).length
 	if "--record" in OS.get_cmdline_user_args():
-		var folder := "/tmp/tlm_dev_walk_frames"
+		var folder := "/tmp/tlm_dev_%s_frames" % label
 		DirAccess.make_dir_recursive_absolute(folder)
 		for frame in 72:
 			player.seek(fmod(float(frame) / 30.0, duration), true)
@@ -73,7 +77,7 @@ func _capture() -> void:
 			if error != OK:
 				quit(1)
 				return
-		print("DEV_WALK_RECORD 72 frames at fixed 30 Hz; in-place studio study")
+		print("DEV_RECORD ", label, " 72 frames at fixed 30 Hz; in-place fitting study")
 		quit(0)
 		return
 	if "--face" in OS.get_cmdline_user_args():
@@ -90,7 +94,6 @@ func _capture() -> void:
 		for frame in 4:
 			await process_frame
 		RenderingServer.force_draw(false)
-		var label := "walk" if walking else "idle"
 		var path := "res://docs/characters/npcs/dev_%s_%02d.png" % [label, roundi(phase * 100)]
 		var error := viewport.get_texture().get_image().save_png(path)
 		print("DEV_CAPTURE ", path, " ", error)

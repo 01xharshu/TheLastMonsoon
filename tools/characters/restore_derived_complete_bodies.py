@@ -12,8 +12,9 @@ verts=[tuple(v.co) for v in mesh.vertices];faces=[tuple(p.vertices) for p in mes
 weights=[[(donor.vertex_groups[g.group].name,g.weight) for g in v.groups] for v in mesh.vertices]
 uvs=[tuple(l.uv) for l in mesh.uv_layers.active.data]
 report=[]
-for family in ['households','street_residents']:
- for role in ['landowner','merchant']:
+families=[sys.argv[sys.argv.index('--')+1]] if '--' in sys.argv else ['households','street_residents']
+for family in families:
+ for role in ([sys.argv[sys.argv.index('--')+2]] if '--' in sys.argv else ['landowner','merchant']):
   path=ROOT/f'WorkingAssets/NPCs/{family}/{role}/{role}.blend';bpy.ops.wm.open_mainfile(filepath=str(path))
   body=bpy.data.objects['village_farmer_MakeHuman_body'];old=body.data
   table={}
@@ -40,4 +41,7 @@ for family in ['households','street_residents']:
   bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(path))
   bpy.ops.export_scene.gltf(filepath=str(ROOT/f'characters/npcs/{family}/{role}.glb'),export_format='GLB',export_skins=True,export_animations=False,export_cameras=False,export_lights=False)
   report.append({'source':str(path.relative_to(ROOT)),'preserved_original_vertices':len(matched),'previous_vertices':len(old.vertices),'complete_vertices':len(new.vertices)})
-(ROOT/'docs/characters/npcs/whole_body_derived_restoration.json').write_text(json.dumps(report,indent=2)+'\n')
+report_path=ROOT/'docs/characters/npcs/whole_body_derived_restoration.json'
+previous=json.loads(report_path.read_text()) if report_path.exists() else []
+updated={r['source']:r for r in previous+report}
+report_path.write_text(json.dumps(list(updated.values()),indent=2)+'\n')

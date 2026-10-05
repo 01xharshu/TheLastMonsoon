@@ -1,7 +1,7 @@
 {
   "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
   "editable": "WorkingAssets/NPCs/fort_staff/fort_staff_mpfb.blend",
-  "runtime": "WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb",
+  "runtime": "characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb",
   "complete_body_vertices": 13380,
   "runtime_body_vertices": 14517,
   "missing_body_positions": 0,

@@ -1,11 +1,14 @@
 extends SceneTree
 var review_actor: CharacterBody3D
+var review_camera: Camera3D
 var review_cart: Node3D
 var failures: Array[String] = []
 func _initialize() -> void: _run.call_deferred()
 func capture(label: String) -> void:
  await create_timer(.3).timeout
  await process_frame
+ review_camera.make_current()
+ review_actor.get_node("UI").hide()
  RenderingServer.force_draw(false)
  var flexible: Node3D = review_cart.get_node("FlexibleReins")
  if flexible.reins.size() != 2: failures.append(label+" two flexible reins")
@@ -64,6 +67,7 @@ func _run() -> void:
  world.add_child(actor)
  review_actor = actor
  var camera := Camera3D.new()
+ review_camera = camera
  camera.position = Vector3(5,3.1,-.8)
  world.add_child(camera)
  camera.look_at(Vector3(0,1.9,1.1))
@@ -73,13 +77,13 @@ func _run() -> void:
  await create_timer(.3).timeout
  assert(cart.board_at(actor,"CoachmanSeat","driver"))
  await create_timer(cart.boarding.TRANSITION_SECONDS+.2).timeout
- camera.position = Vector3(.85,2.3,-.05)
+ camera.position = Vector3(2.6,2.8,-.8)
  camera.look_at(Vector3(0,1.97,.65))
  await capture("rein_grip_idle")
  Input.action_press("move_forward")
  Input.action_press("move_left")
  await create_timer(.8).timeout
- camera.global_position = cart.to_global(Vector3(.85,2.3,-.05))
+ camera.global_position = cart.to_global(Vector3(2.6,2.8,-.8))
  camera.look_at(cart.to_global(Vector3(0,1.97,.65)))
  await capture("rein_grip_turn")
  Input.action_release("move_forward")
@@ -97,7 +101,7 @@ func _run() -> void:
   assert(trial.board_at(actor,"DriverSeat","driver"))
   await create_timer(trial.boarding.TRANSITION_SECONDS+.2).timeout
   var grip: Vector3 = (trial.rein_grip_world("l")+trial.rein_grip_world("r"))*.5
-  camera.global_position = grip+Vector3(.85,.35,-.1)
+  camera.global_position = grip+Vector3(1.8,.65,-1.0)
   camera.look_at(grip)
   await capture("rein_grip_variant_"+str(kind))
   assert(trial.boarding.dismount())

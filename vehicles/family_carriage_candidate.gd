@@ -47,7 +47,7 @@ func _create_coachman() -> void:
 	if is_in_group("household_coach"): return
 	var document := GLTFDocument.new()
 	var state := GLTFState.new()
-	var path := "res://WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb"
+	var path := "res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb"
 	if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
 		push_error("MakeHuman coachman source failed to load: "+path)
 		return

@@ -2,7 +2,7 @@
   "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
   "source_sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
   "output": "characters/arjun/arjun.glb",
-  "output_sha256": "6c101dc3f254008357ab2a611b36f3b0d3e9a9dc86a64804a0eb6e7e750fa768",
+  "output_sha256": "0bd3301a1b06c49d56a204f679ab45463e83e62f0696f71035988f9323d3dd0f",
   "meshes": 23,
   "bones": 56,
   "actions": [

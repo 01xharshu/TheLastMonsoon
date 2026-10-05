@@ -35,6 +35,7 @@ func integrate(target: Node3D) -> void:
 	replace_lamp(records)
 	place(settlement.get_node("BhairavpurGrainStore"),"res://objects/household/sets/market_supply.tscn","GrainStoreCounter",Vector3(0,.16,0))
 	var armoury: Node3D = settlement.get_node("CompanyArmoury")
+	place(armoury,"res://objects/household/sets/weapon_rack_dressing.tscn","WeaponRackDressing",Vector3(0,0,-5.35))
 	var shelf := place(armoury,"res://objects/household/sets/armoury_supply.tscn","ArmourySupplyShelf",Vector3(-5,.24,-3))
 	# Reuse the existing medical pickup; move its visual onto the new shelf.
 	shelf.get_node("Bandage").free()

@@ -1,0 +1,140 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://objects/household/craft/wood_hand_plane.tscn" id="1_cejpi"]
+[ext_resource type="PackedScene" path="res://objects/household/craft/wood_chisel.tscn" id="2_cdhaf"]
+[ext_resource type="PackedScene" path="res://objects/household/craft/wooden_mallet.tscn" id="3_2rv8p"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlywb"]
+albedo_color = Color(0.4, 0.25, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_0pn2j"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(1.3, 0.055, 0.65)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ru42c"]
+size = Vector3(1.3, 0.055, 0.65)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u052a"]
+albedo_color = Color(0.22, 0.13, 0.06, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="BoxMesh_6kkn1"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8g0yy"]
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_aeaam"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_x7wtv"]
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_q5bc3"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rko0d"]
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_3bva8"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w3dei"]
+size = Vector3(0.075, 0.725, 0.075)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wn3s2"]
+material = SubResource("StandardMaterial3D_u052a")
+size = Vector3(1.12, 0.07, 0.06)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0ftbl"]
+size = Vector3(1.12, 0.07, 0.06)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pc2po"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.46, 0.045, 0.16)
+
+[node name="CarpenterWorkSurface" type="Node3D" unique_id=23373049]
+
+[node name="Top" type="MeshInstance3D" parent="." unique_id=2013734124]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7525, 0)
+mesh = SubResource("BoxMesh_0pn2j")
+
+[node name="TopBody" type="StaticBody3D" parent="." unique_id=892438937]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7525, 0)
+
+[node name="@CollisionShape3D@8" type="CollisionShape3D" parent="TopBody" unique_id=843445821]
+shape = SubResource("BoxShape3D_ru42c")
+
+[node name="Leg" type="MeshInstance3D" parent="." unique_id=2089998802]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.3625, -0.24)
+mesh = SubResource("BoxMesh_6kkn1")
+
+[node name="LegBody" type="StaticBody3D" parent="." unique_id=826431953]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.3625, -0.24)
+
+[node name="@CollisionShape3D@9" type="CollisionShape3D" parent="LegBody" unique_id=1184788704]
+shape = SubResource("BoxShape3D_8g0yy")
+
+[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="." unique_id=470362728]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.3625, 0.24)
+mesh = SubResource("BoxMesh_aeaam")
+
+[node name="@StaticBody3D@11" type="StaticBody3D" parent="." unique_id=186432259]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.3625, 0.24)
+
+[node name="@CollisionShape3D@12" type="CollisionShape3D" parent="@StaticBody3D@11" unique_id=1169795374]
+shape = SubResource("BoxShape3D_x7wtv")
+
+[node name="@MeshInstance3D@13" type="MeshInstance3D" parent="." unique_id=1790122651]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.3625, -0.24)
+mesh = SubResource("BoxMesh_q5bc3")
+
+[node name="@StaticBody3D@14" type="StaticBody3D" parent="." unique_id=644688005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.3625, -0.24)
+
+[node name="@CollisionShape3D@15" type="CollisionShape3D" parent="@StaticBody3D@14" unique_id=707160300]
+shape = SubResource("BoxShape3D_rko0d")
+
+[node name="@MeshInstance3D@16" type="MeshInstance3D" parent="." unique_id=1269965661]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.3625, 0.24)
+mesh = SubResource("BoxMesh_3bva8")
+
+[node name="@StaticBody3D@17" type="StaticBody3D" parent="." unique_id=1956887099]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.3625, 0.24)
+
+[node name="@CollisionShape3D@18" type="CollisionShape3D" parent="@StaticBody3D@17" unique_id=69691829]
+shape = SubResource("BoxShape3D_w3dei")
+
+[node name="RearBrace" type="MeshInstance3D" parent="." unique_id=1643891618]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, -0.24)
+mesh = SubResource("BoxMesh_wn3s2")
+
+[node name="RearBraceBody" type="StaticBody3D" parent="." unique_id=1319827990]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, -0.24)
+
+[node name="@CollisionShape3D@19" type="CollisionShape3D" parent="RearBraceBody" unique_id=752465317]
+shape = SubResource("BoxShape3D_0ftbl")
+
+[node name="Workpiece" type="MeshInstance3D" parent="." unique_id=151699052]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.8025, -0.1)
+mesh = SubResource("BoxMesh_pc2po")
+
+[node name="Plane" type="Node3D" parent="." unique_id=1301417612 instance=ExtResource("1_cejpi")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -0.3, 0.825, -0.1)
+
+[node name="Chisel" type="Node3D" parent="." unique_id=1079914225 instance=ExtResource("2_cdhaf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11, 0.78, 0.03)
+
+[node name="Mallet" type="Node3D" parent="." unique_id=1707018227 instance=ExtResource("3_2rv8p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.78, 0)
+
+[node name="Approach" type="Marker3D" parent="." unique_id=1683797749]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)
+
+[node name="WorkContact" type="Marker3D" parent="." unique_id=333091898]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.825, -0.1)

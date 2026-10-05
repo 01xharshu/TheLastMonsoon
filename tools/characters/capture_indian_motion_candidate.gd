@@ -4,7 +4,7 @@ func _initialize() -> void:
 	call_deferred("capture")
 
 func _load_candidate(slug: String) -> Node3D:
-	var path := ProjectSettings.globalize_path("res://WorkingAssets/NPCs/%s/%s_rigged_candidate.glb" % [slug, slug])
+	var path := ProjectSettings.globalize_path("res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [slug, slug])
 	var document := GLTFDocument.new()
 	var state := GLTFState.new()
 	var err := document.append_from_file(path, state)

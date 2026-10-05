@@ -1,0 +1,323 @@
+{
+  "status": "APPLIED_TEMP_DUPLICATES",
+  "before_bytes": {
+    ".git": 12145276604,
+    ".godot": 1982070480,
+    "docs": 801081161,
+    "WorkingAssets": 886925469,
+    "assets": 59934523,
+    "checkout_total": 16434303314
+  },
+  "after_bytes": {
+    ".git": 12145276168,
+    ".godot": 1983986235,
+    "docs": 801084151,
+    "WorkingAssets": 886925469,
+    "assets": 59934523
+  },
+  "count_objects_before": "count: 7475\nsize: 3684376\nin-pack: 15872\npacks: 9\nsize-pack: 7938569\nprune-packable: 0\ngarbage: 59\nsize-garbage: 251340\n",
+  "removed": [
+    {
+      "path": ".git/objects/47/tmp_obj_9VesrZ",
+      "bytes": 354,
+      "object_id": "477a524ca745af99e06bafedf58e0bd2adbbce79",
+      "compressed_sha256": "2c0b09168b9a111abbd5d496a2e6b025d8930bebe6c3f5ebdb3cae994aa6aabf",
+      "retained_replacement": "Git object 477a524ca745af99e06bafedf58e0bd2adbbce79",
+      "reason": "Valid temporary object duplicates retained Git object content"
+    }
+  ],
+  "retained": [
+    {
+      "path": ".git/objects/02/tmp_obj_8496OE",
+      "bytes": 2830336,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/02/tmp_obj_RITMQV",
+      "bytes": 1576960,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/05/tmp_obj_1tWuuM",
+      "bytes": 0,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/07/tmp_obj_jmbyEO",
+      "bytes": 13598720,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/08/tmp_obj_CHmWrf",
+      "bytes": 4059136,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/0f/tmp_obj_cT3keg",
+      "bytes": 1794048,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/10/tmp_obj_GEMDoC",
+      "bytes": 2502656,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/24/tmp_obj_uolBP2",
+      "bytes": 364544,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/2b/tmp_obj_yBIuaz",
+      "bytes": 106496,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/35/tmp_obj_cqsQas",
+      "bytes": 32768,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/3a/tmp_obj_14fttE",
+      "bytes": 9297920,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/3a/tmp_obj_2opARi",
+      "bytes": 12738560,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/3c/tmp_obj_IZKPCm",
+      "bytes": 2985984,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/40/tmp_obj_qkMwNA",
+      "bytes": 462848,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/48/tmp_obj_Ne8dT3",
+      "bytes": 561152,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/4c/tmp_obj_7oQqJB",
+      "bytes": 618496,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/50/tmp_obj_eledzR",
+      "bytes": 192512,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/61/tmp_obj_EeXZu9",
+      "bytes": 888832,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/61/tmp_obj_gx0GGn",
+      "bytes": 4644864,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/65/tmp_obj_TFQ0bX",
+      "bytes": 4329472,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/65/tmp_obj_ZemY2D",
+      "bytes": 17154048,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/65/tmp_obj_hPn0fW",
+      "bytes": 315392,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/6c/tmp_obj_jT9wBL",
+      "bytes": 5545984,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/6e/tmp_obj_Ez6SLd",
+      "bytes": 32768,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/73/tmp_obj_jPLfti",
+      "bytes": 122880,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/77/tmp_obj_19n7y1",
+      "bytes": 10932224,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/77/tmp_obj_j8IugQ",
+      "bytes": 2179072,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/7e/tmp_obj_3aynZs",
+      "bytes": 376832,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/7f/tmp_obj_jEmlZt",
+      "bytes": 700416,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/85/tmp_obj_him42H",
+      "bytes": 3219456,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/89/tmp_obj_lLwEoV",
+      "bytes": 7094272,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/8d/tmp_obj_RKreSA",
+      "bytes": 0,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/9c/tmp_obj_149JV8",
+      "bytes": 6950912,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/9d/tmp_obj_l3zTO1",
+      "bytes": 3395584,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/9f/tmp_obj_ayRA2u",
+      "bytes": 2318336,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/a3/tmp_obj_gnEAnp",
+      "bytes": 3895296,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/a8/tmp_obj_qxDx72",
+      "bytes": 2699264,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/ab/tmp_obj_lPNOAV",
+      "bytes": 17121280,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/ab/tmp_obj_u1NkdC",
+      "bytes": 22261760,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/b6/tmp_obj_uTnaSf",
+      "bytes": 7213056,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/bb/tmp_obj_z84o9p",
+      "bytes": 4042752,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/bc/tmp_obj_fUh4G8",
+      "bytes": 12746752,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/c2/tmp_obj_OzqAdv",
+      "bytes": 835584,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/c2/tmp_obj_uk5ta0",
+      "bytes": 512000,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/cc/tmp_obj_wWFK0M",
+      "bytes": 3579904,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d1/tmp_obj_AVhzbc",
+      "bytes": 3362816,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d1/tmp_obj_PCNkPY",
+      "bytes": 4231168,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d3/tmp_obj_gaIkbD",
+      "bytes": 991232,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d3/tmp_obj_n8t98a",
+      "bytes": 114688,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d5/tmp_obj_dk6FnI",
+      "bytes": 3137536,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/d8/tmp_obj_G6RhKo",
+      "bytes": 11685888,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/dc/tmp_obj_sIvyyi",
+      "bytes": 14905344,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/dd/tmp_obj_E4aIW1",
+      "bytes": 12685312,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/dd/tmp_obj_cKdeBB",
+      "bytes": 425984,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/e7/tmp_obj_bY51HD",
+      "bytes": 2297856,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/e8/tmp_obj_O9d9Hq",
+      "bytes": 487424,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/f6/tmp_obj_p5CXtk",
+      "bytes": 2723840,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    },
+    {
+      "path": ".git/objects/f8/tmp_obj_tG4BNu",
+      "bytes": 1490944,
+      "reason": "Not established redundant: Error -5 while decompressing data: incomplete or truncated stream"
+    }
+  ],
+  "reclaimed_bytes": 354,
+  "policy": "Only byte-proven redundant closed Git temporary objects; no history rewrite, prune or import cache deletion"
+}

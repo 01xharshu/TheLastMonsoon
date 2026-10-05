@@ -36,6 +36,7 @@ func _run() -> void:
     var actor: CharacterBody3D = preload("res://player/player.tscn").instantiate()
     add_child(actor)
     actor.set_physics_process(false)
+    actor.set_process(false)
     actor.get_node("UI").hide()
     var climb: Node = actor.get_node("ClimbComponent")
     climb.set_physics_process(false)
@@ -55,7 +56,7 @@ func _run() -> void:
         actor.global_position = Vector3(-.85,.94,scenario.z)
         actor.visual_root.global_rotation.y = PI/2
         for i in 3: await get_tree().physics_frame
-        if not climb.try_start() or climb.window.profile!=scenario.name:
+        if not _start_after_takeoff(actor,climb) or climb.window.profile!=scenario.name:
             failures += 1
             print("FAIL object selection ",scenario.name)
             continue
@@ -65,6 +66,7 @@ func _run() -> void:
         var movie_folder: String = "/tmp/tlm_object_"+scenario.name
         if movie: DirAccess.make_dir_recursive_absolute(movie_folder)
         for frame in 61:
+            climb.request_move()
             climb._physics_process(climb.window.duration/60.0)
             visual._process(1.0/30.0)
             if frame in [18,36]:
@@ -95,11 +97,13 @@ func _run() -> void:
     actor.global_position = Vector3(5,.94,8.15)
     actor.visual_root.global_rotation.y = 0.0
     for i in 3: await get_tree().physics_frame
-    if not climb.try_start():
+    if not _start_after_takeoff(actor,climb):
         failures += 1
         print("FAIL rotated ledge selection")
     else:
-        for i in 61: climb._physics_process(climb.window.duration/60.0)
+        for i in 61:
+            climb.request_move()
+            climb._physics_process(climb.window.duration/60.0)
         if actor.global_position.z<9.5:
             failures += 1
             print("FAIL rotated ledge landing")
@@ -107,8 +111,13 @@ func _run() -> void:
     actor.global_position = Vector3(-.85,.94,10)
     actor.visual_root.global_rotation.y = PI/2
     for i in 3: await get_tree().physics_frame
-    if climb.try_start():
+    if _start_after_takeoff(actor,climb):
         failures += 1
         print("FAIL unsupported narrow lip accepted")
     print("OBJECT CLIMB: ","PASS" if failures==0 else "FAIL"," | low step, high mantle, supporting palms, rotated ledge, supported landing, narrow lip rejection")
     get_tree().quit(0 if failures==0 else 1)
+
+func _start_after_takeoff(actor: CharacterBody3D, climb: Node) -> bool:
+    climb.arm_jump()
+    actor.global_position.y += .10
+    return climb.try_start()

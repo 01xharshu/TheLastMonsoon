@@ -10,6 +10,8 @@ var saved_mask := 0
 var speed := 0.0
 var rider_acceleration := 0.0
 var rider_turn := 0.0
+var steering := 0.0
+var turning_rate := 0.0
 var cart_handle_rids: Array[RID] = []
 var collision_body: AnimatableBody3D
 var clearance_shapes: Array[CollisionShape3D] = []
@@ -213,30 +215,28 @@ func _physics_process(delta: float) -> void:
 			var control: Vector2 = travel.controls(delta)
 			throttle = control.x
 			steer = control.y
-			# Road-following turns and final docking stop before rotating.
-			if throttle == 0.0: speed = 0.0
-			if throttle == 0.0 and steer != 0.0:
-				var previous_heading := cart.rotation.y
-				cart.rotation.y += steer*delta*.35
-				if not _clearance_at(cart.global_position): cart.rotation.y = previous_heading
 		if cart.get_meta("errand_transfer",false):
 			throttle = 0; steer = 0; speed = 0
 		var previous_speed := speed
 		var target_speed := REVERSE_SPEED if throttle < 0.0 else (FAST_SPEED if travel.payer != null or (role == "driver" and Input.is_action_pressed("sprint")) else CRUISE_SPEED)
 		speed = move_toward(speed, throttle * target_speed, delta * ACCELERATION)
 		rider_acceleration = lerpf(rider_acceleration, (speed - previous_speed) / maxf(delta, 0.001), 1.0 - exp(-6.0 * delta))
-		rider_turn = lerpf(rider_turn, steer * clampf(absf(speed) / FAST_SPEED, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
+		var yaw_step := steering_step(steer, delta, travel.payer != null and throttle == 0.0)
+		rider_turn = lerpf(rider_turn, turning_rate / .42 * clampf(absf(speed) / FAST_SPEED, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
 		var old_heading: float = cart.rotation.y
-		cart.rotation.y += steer * delta * 0.42 * clampf(absf(speed), 0.0, 1.0)
+		cart.rotation.y += yaw_step
 		if not _clearance_at(cart.global_position):
 			cart.rotation.y = old_heading
 			speed = 0.0
+			turning_rate = 0.0
 		var next_at: Vector3 = cart.global_position - cart.global_basis.z * speed * delta
 		var nose: Vector3 = cart.global_position - cart.global_basis.z * 3.5
 		var obstacle := PhysicsRayQueryParameters3D.create(nose + Vector3.UP * 1.0, nose - cart.global_basis.z * signf(speed) * (1.0 + absf(speed) * delta) + Vector3.UP * 1.0)
 		obstacle.exclude = _vehicle_exclusions()
 		if not cart.get_world_3d().direct_space_state.intersect_ray(obstacle).is_empty():
 			speed = 0.0
+			turning_rate = 0.0
+			cart.set_forward_motion(0.0, delta)
 			_sync_rider()
 			return
 		var road := PhysicsRayQueryParameters3D.create(next_at + Vector3.UP * 2.0, next_at - Vector3.UP * 3.0)
@@ -247,11 +247,24 @@ func _physics_process(delta: float) -> void:
 		else:
 			speed = 0.0
 	else:
+		steering_step(0.0, delta)
 		speed = 0.0 if cart.has_method("can_move") and not cart.can_move() else move_toward(speed, 0.0, delta * 2.0)
 		rider_acceleration = move_toward(rider_acceleration, 0.0, delta * 6.0)
 		rider_turn = move_toward(rider_turn, 0.0, delta * 4.0)
 	cart.set_forward_motion(speed, delta)
 	_sync_rider()
+
+func steering_step(input: float, delta: float, docking: bool = false) -> float:
+	# Filter input and yaw acceleration independently, including direction reversals.
+	steering = move_toward(steering, clampf(input, -1.0, 1.0), delta * 3.0)
+	var pace := absf(speed)
+	var limit := lerpf(.60, .42, clampf(pace / FAST_SPEED, 0.0, 1.0))
+	var target := steering * limit * clampf(pace, 0.0, 1.0) * (-1.0 if speed < 0.0 else 1.0)
+	# A coach may align at rest only after braking; no instantaneous pivot at speed.
+	if docking and pace < .05: target = steering * .35
+	turning_rate = move_toward(turning_rate, target, delta * 1.2)
+	if pace < .05 and not docking: turning_rate = 0.0
+	return turning_rate * delta
 
 func _sync_rider() -> void:
 	if rider == null: return

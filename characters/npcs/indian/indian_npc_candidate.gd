@@ -10,7 +10,7 @@ var playback_rate := 1.0
 func _ready() -> void:
 	var document := GLTFDocument.new()
 	var state := GLTFState.new()
-	var path := "res://WorkingAssets/NPCs/%s/%s_rigged_candidate.glb" % [candidate_slug, candidate_slug]
+	var path := "res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [candidate_slug, candidate_slug]
 	if document.append_from_file(ProjectSettings.globalize_path(path), state) != OK:
 		push_error("Cannot load Indian motion candidate: " + path)
 		return

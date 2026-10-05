@@ -159,7 +159,7 @@ func _staff(home:Node3D,job:String,at:Vector3,slug:String,axis:Vector3) -> Node3
 	actor.set_meta("household",str(home.name));actor.set_meta("job",job)
 	actor.add_to_group("household_staff")
 	var document:=GLTFDocument.new();var state:=GLTFState.new()
-	var path:="res://WorkingAssets/NPCs/%s/%s_rigged_candidate.glb"%[slug,slug]
+	var path:="res://characters/npcs/households/%s.glb"%("staff_woman" if slug=="village_woman" else "staff_farmer")
 	if document.append_from_file(ProjectSettings.globalize_path(path),state)!=OK:return null
 	actor.add_child(document.generate_scene(state));add_child(actor)
 	if job=="WaterBearer":

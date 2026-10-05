@@ -1,0 +1,91 @@
+[gd_scene format=4]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlywb"]
+albedo_color = Color(0.4, 0.25, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_2w3m2"]
+_surfaces = [{
+"aabb": AABB(-0.026, 0, -0.13, 0.052, 0.022, 0.059999995),
+"attribute_data": PackedByteArray("////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////"),
+"format": 34359738383,
+"material": SubResource("StandardMaterial3D_qlywb"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("9P3UvAAAAAApXI+99P3UPAAAAAApXI+9AAAAAAAAAAC4HgW+9P3UvFg5tDwpXI+9AAAAAFg5tDy4HgW+9P3UPFg5tDwpXI+99P3UvAAAAAApXI+99P3UPFg5tDwpXI+99P3UPAAAAAApXI+99P3UvAAAAAApXI+99P3UvFg5tDwpXI+99P3UPFg5tDwpXI+99P3UPAAAAAApXI+9AAAAAFg5tDy4HgW+AAAAAAAAAAC4HgW+9P3UPAAAAAApXI+99P3UPFg5tDwpXI+9AAAAAFg5tDy4HgW+AAAAAAAAAAC4HgW+9P3UvFg5tDwpXI+99P3UvAAAAAApXI+9AAAAAAAAAAC4HgW+AAAAAFg5tDy4HgW+9P3UvFg5tDwpXI+9oV6iW662copEzeRVjGRFrSYpwiUmRgW5ujIaqtdyN6zY1jza97tbhl2hXKTVT+mvoV6iW662copdoVyk1U/pr0TN5FWMZEWtoV6iW662coq6Mhqq13I3rF2hXKTVT+mvRM3kVYxkRa3Y1jza97tbhiYpwiUmRgW5RM3kVYxkRa1doVyk1U/pr9jWPNr3u1uGJinCJSZGBbm6Mhqq13I3rKFeoluutnKKJinCJSZGBbnY1jza97tbhroyGqrXcjes")
+}]
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_vj7wj"]
+_surfaces = [{
+"aabb": AABB(-0.026, 0, 0.07, 0.052, 0.022, 0.059999995),
+"attribute_data": PackedByteArray("////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////"),
+"format": 34359738383,
+"material": SubResource("StandardMaterial3D_qlywb"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("9P3UvAAAAAApXI89AAAAAAAAAAC4HgU+9P3UPAAAAAApXI899P3UvFg5tDwpXI899P3UPFg5tDwpXI89AAAAAFg5tDy4HgU+9P3UvAAAAAApXI899P3UPAAAAAApXI899P3UPFg5tDwpXI899P3UvAAAAAApXI899P3UPFg5tDwpXI899P3UvFg5tDwpXI899P3UPAAAAAApXI89AAAAAAAAAAC4HgU+AAAAAFg5tDy4HgU+9P3UPAAAAAApXI89AAAAAFg5tDy4HgU+9P3UPFg5tDwpXI89AAAAAAAAAAC4HgU+9P3UvAAAAAApXI899P3UvFg5tDwpXI89AAAAAAAAAAC4HgU+9P3UvFg5tDwpXI89AAAAAFg5tDy4HgU+XSRdIdVP6a89WthW97tbhuPVRE3XcjesGyq6soxkRa2h26HerrZyisGlJqkmRgW5XSRdIdVP6a/j1URN13I3rKHbod6utnKKXSRdIdVP6a+h26HerrZyihsqurKMZEWt49VETddyN6w9WthW97tbhsGlJqkmRgW549VETddyN6zBpSapJkYFuaHbod6utnKKPVrYVve7W4ZdJF0h1U/prxsqurKMZEWtPVrYVve7W4YbKrqyjGRFrcGlJqkmRgW5")
+}]
+
+[sub_resource type="BoxMesh" id="BoxMesh_hlmgn"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.007, 0.022, 0.14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_65hx3"]
+material = SubResource("StandardMaterial3D_qlywb")
+size = Vector3(0.007, 0.022, 0.14)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u052a"]
+albedo_color = Color(0.22, 0.13, 0.06, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pxqic"]
+material = SubResource("StandardMaterial3D_u052a")
+top_radius = 0.004
+bottom_radius = 0.004
+height = 0.14
+radial_segments = 24
+rings = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qd2mi"]
+albedo_color = Color(0.72, 0.64, 0.47, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_e4hxe"]
+material = SubResource("StandardMaterial3D_qd2mi")
+top_radius = 0.01
+bottom_radius = 0.01
+height = 0.1
+radial_segments = 24
+rings = 0
+
+[node name="WeavingShuttle" type="Node3D" unique_id=94835104]
+
+[node name="TaperedTip" type="MeshInstance3D" parent="." unique_id=1550040503]
+mesh = SubResource("ArrayMesh_2w3m2")
+
+[node name="@MeshInstance3D@5" type="MeshInstance3D" parent="." unique_id=1405677533]
+mesh = SubResource("ArrayMesh_vj7wj")
+
+[node name="SideRail" type="MeshInstance3D" parent="." unique_id=1099431322]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.023, 0.011, 0)
+mesh = SubResource("BoxMesh_hlmgn")
+
+[node name="@MeshInstance3D@6" type="MeshInstance3D" parent="." unique_id=466868627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.023, 0.011, 0)
+mesh = SubResource("BoxMesh_65hx3")
+
+[node name="Spindle" type="MeshInstance3D" parent="." unique_id=323242941]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.012, 0)
+mesh = SubResource("CylinderMesh_pxqic")
+
+[node name="WoundYarn" type="MeshInstance3D" parent="." unique_id=1970005563]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.012, 0)
+mesh = SubResource("CylinderMesh_e4hxe")
+
+[node name="Grip" type="Marker3D" parent="." unique_id=1452972164]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.023, 0.014, 0)
+
+[node name="ThreadExit" type="Marker3D" parent="." unique_id=1262327803]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.027, 0.012, 0.035)

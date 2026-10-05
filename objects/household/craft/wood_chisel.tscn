@@ -1,0 +1,58 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hisw"]
+albedo_color = Color(0.16, 0.17, 0.17, 1)
+metallic = 0.65
+roughness = 0.55
+
+[sub_resource type="BoxMesh" id="BoxMesh_jedgx"]
+material = SubResource("StandardMaterial3D_3hisw")
+size = Vector3(0.023, 0.006, 0.17)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ud6kl"]
+material = SubResource("StandardMaterial3D_3hisw")
+size = Vector3(0.023, 0.002, 0.018)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hlq87"]
+material = SubResource("StandardMaterial3D_3hisw")
+top_radius = 0.008
+bottom_radius = 0.008
+height = 0.08
+radial_segments = 24
+rings = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlywb"]
+albedo_color = Color(0.4, 0.25, 0.12, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_fnnwb"]
+material = SubResource("StandardMaterial3D_qlywb")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.16499999
+radial_segments = 24
+rings = 0
+
+[node name="WoodChisel" type="Node3D" unique_id=1079914225]
+
+[node name="Blade" type="MeshInstance3D" parent="." unique_id=763727277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.007, -0.095)
+mesh = SubResource("BoxMesh_jedgx")
+
+[node name="CuttingBevel" type="MeshInstance3D" parent="." unique_id=817189224]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.004, -0.171)
+mesh = SubResource("BoxMesh_ud6kl")
+
+[node name="Tang" type="MeshInstance3D" parent="." unique_id=790369920]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.019, 0.02)
+mesh = SubResource("CylinderMesh_hlq87")
+
+[node name="Handle" type="MeshInstance3D" parent="." unique_id=1080115348]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.022, 0.1075)
+mesh = SubResource("CylinderMesh_fnnwb")
+
+[node name="Grip" type="Marker3D" parent="." unique_id=67518164]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022, 0.11)
+
+[node name="CuttingEdge" type="Marker3D" parent="." unique_id=1953730335]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.005, -0.18)

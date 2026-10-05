@@ -95,8 +95,8 @@ func advance(actor: CharacterBody3D, delta: float) -> void:
 	var raised: Vector3 = sill+normal*.38+Vector3.UP*body_clearance
 	var crossed: Vector3 = sill-normal*.52+Vector3.UP*body_clearance
 	var destination := actor.global_position
-	if progress<.28: destination = start.lerp(raised,smoothstep(0.0,.28,progress))
-	elif progress<.80: destination = raised.lerp(crossed,smoothstep(.42,.80,progress))
+	if progress<.32: destination = start.lerp(raised,smoothstep(0.0,.32,progress))
+	elif progress<.80: destination = raised.lerp(crossed,smoothstep(.32,.80,progress))
 	else: destination = crossed.lerp(landing,smoothstep(.80,1.0,progress))
 	if not solid.move_to(actor,destination,.9):
 		progress = previous_progress
@@ -116,8 +116,9 @@ func pose(visual: Node, delta: float) -> void:
 	visual.model.position = Vector3(0,-.9,0)
 	visual.model.rotation.x = .30*crouch*bend_amount
 	visual.model.rotation.z = 0.0
-	visual.pose("spine_01",Vector3(.55*crouch*bend_amount,0,0),weight)
-	visual.pose("spine_02",Vector3(.25*crouch*bend_amount,0,0),weight)
+	var press := crouch*(1.0-.30*smoothstep(.42,.68,u))
+	visual.pose("spine_01",Vector3(.55*press*bend_amount,0,0),weight)
+	visual.pose("spine_02",Vector3(.25*press*bend_amount,0,0),weight)
 	if profile!="window": visual.keep_climb_body_outside(normal,sill,sill.y,0.0)
 	visual.model.force_update_transform()
 	visual.skeleton.force_update_transform()
@@ -172,6 +173,10 @@ func pose(visual: Node, delta: float) -> void:
 		var foot: Vector3 = sill+normal*lerpf(.65,-.65,foot_transfer)+tangent*(-.22 if lead else .22)
 		foot.y = lerpf(start.y-.86,sill.y+.13,foot_lift)
 		foot.y = lerpf(foot.y,landing.y-.86,smoothstep(.82,.98,u))
+		# The second foot steps inward as the body stands, rather than leaving
+		# both boots tucked at the rim until locomotion suddenly resumes.
+		var settle := smoothstep(.72 if lead else .79,.94 if lead else .98,u)
+		foot = foot.lerp(landing+tangent*(-.18 if lead else .18)-Vector3.UP*.86,settle)
 		var sole_normal := Vector3.UP
 		if surface != null and foot_transfer>.55:
 			var foot_hit: Dictionary = surface.contact(foot)

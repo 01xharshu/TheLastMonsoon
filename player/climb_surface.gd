@@ -35,11 +35,11 @@ func survey(body: CharacterBody3D, face: Dictionary) -> bool:
 	for depth in [.65,.9,1.2]:
 		var center: Vector3 = edge-normal*depth
 		var heights: Array[float] = []
-		for offset in [Vector3.ZERO,tangent*.32,-tangent*.32,normal*.32,-normal*.32]:
+		for offset in [Vector3.ZERO,tangent*.32,-tangent*.32,normal*.32,-normal*.32,(tangent+normal)*.23,(tangent-normal)*.23,(-tangent+normal)*.23,(-tangent-normal)*.23]:
 			var support := probe(center+offset,highest)
 			if support.is_empty(): break
 			heights.append(support.position.y)
-		if heights.size()!=5: continue
+		if heights.size()!=9: continue
 		var upper: float = heights.max()
 		var lower: float = heights.min()
 		if upper-lower>.48 or absf(upper-highest)>.70: continue

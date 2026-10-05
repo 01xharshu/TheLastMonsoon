@@ -1,11 +1,12 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend",
-  "source_sha256": "7b0ae0f00d3de3191b97dd1fbd09ec6b02fadc74e76d48297fd4d476fce1adb0",
+  "source_sha256": "a05b9e112d89e55da89e24902f98c7065f292bcdee8924c67de6899e2976c121",
   "runtime": "characters/npcs/village_farmer.glb",
-  "runtime_sha256": "40a453c7c3b0a42e6f8c8f5968668fe369b70f051176cb862c54dd38e2a5ca09",
+  "runtime_sha256": "a29377ff250c8322638868c9ace772980b0ca18e5dc086e9f6d316e0fe670e85",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 9,
-  "body_vertices": 19158
+  "body_vertices": 19158,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

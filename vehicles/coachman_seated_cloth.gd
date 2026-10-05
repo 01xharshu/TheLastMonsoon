@@ -55,7 +55,7 @@ func update() -> void:
    tool.generate_normals()
    tool.set_material(surface.material)
    tool.commit(result)
-  node.mesh = _refine_contact(_relax(result,node),node)
+  node.mesh = _relax(result,node)
  updates += 1
 
 func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Array,level: int,hip: Vector3,knee: Vector3) -> void:
@@ -81,7 +81,9 @@ func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Ar
   var center := (hip+Vector3.UP*.025).lerp(knee+Vector3(0,-.035,-.04),smoothstep(0,1,t))
   var angle := t*PI*.45
   var depth := Vector3(0,sin(angle),-cos(angle))
-  var at := center+Vector3.RIGHT*point.x*lerpf(.82,1.0,t)+depth*point.z*lerpf(.74,.63,t)
+  var wrapped_depth := lerpf(point.z,absf(point.z),smoothstep(.12,.45,t))
+  var at := center+Vector3.RIGHT*point.x*lerpf(.82,1.0,t)+depth*wrapped_depth*lerpf(.74,.63,t)
+  if point.z < 0: at += depth*.007*smoothstep(.12,.45,t)
   # Keep the rear cloth above the existing cushion; never cut the body beneath it.
   if absf(at.x) < .79 and at.z > .68 and at.z < 1.22:
    at.y = maxf(at.y,1.825)

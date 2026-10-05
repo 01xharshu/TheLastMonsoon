@@ -4,10 +4,18 @@ var work_time := 0.0
 var left_contact: Marker3D
 var right_contact: Marker3D
 var spoon: Node3D
+var detail_clock:=0.0
+var detail_active:=true
+var pose_updates:=0
 
 func _ready() -> void:
 	super._ready()
+	var started:=Time.get_ticks_usec()
 	preload("res://characters/npcs/households/fort_staff_clothing.gd").new().dress(self)
+	set_meta("staff_clothing_build_us",Time.get_ticks_usec()-started)
+	for mesh: MeshInstance3D in find_children("*","MeshInstance3D",true,false):
+		mesh.visibility_range_end=85.0
+		mesh.visibility_range_end_margin=5.0
 	if household_job != "Cook": return
 	left_contact = get_parent().get_node("FortKitchen/CookContactL")
 	right_contact = get_parent().get_node("FortKitchen/CookContactR")
@@ -37,9 +45,19 @@ func _ready() -> void:
 	spoon.add_child(scoop)
 
 func _process(delta: float) -> void:
+	if get_meta("dead",false) or get_meta("knocked_out",false): return
+	work_time=fmod(work_time+delta,TAU/2.2)
+	detail_clock-=delta
+	if detail_clock<=0.0:
+		detail_clock=.25
+		var camera:=get_viewport().get_camera_3d()
+		detail_active=camera==null or camera.global_position.distance_squared_to(global_position)<3600.0
+		set_meta("staff_detail_active",detail_active)
+	if not detail_active:return
+	pose_updates+=1
+	set_meta("staff_pose_updates",pose_updates)
 	super._process(delta)
 	if _skeleton == null or left_contact == null: return
-	work_time += delta
 	# Express the lean in world space so an imported rig's bone roll cannot reverse it.
 	var spine: int = _skeleton.find_bone("spine_02")
 	var pose := _skeleton.get_bone_global_pose(spine)

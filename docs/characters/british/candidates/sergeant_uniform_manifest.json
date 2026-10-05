@@ -64,17 +64,18 @@
       "rest_clearance_m": 0.006
     }
   ],
-  "source_sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
+  "source_sha256": "a05c2784e494840192a8be889da48cbba348ab430f87f4212068c43b50e18f76",
   "candidate_sha256": "7ff728130afbb0f1905824d874c4db43c724606dfbfa87619bc9cda6acc6df52",
   "scope": "surface fit/material refinement; precise regimental pattern, dynamic penetration and full tailoring unapproved",
   "live_applied": true,
   "exports": {
     "man": {
       "path": "characters/npcs/british/candidates/sergeant_man_uniform_candidate.glb",
-      "sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969",
-      "bytes": 1620668
+      "sha256": "933c4d15f3c86eaed752a86d4d0dc70ed4e66eff37da5329ccb595680fa26e13",
+      "bytes": 1990888
     }
   },
   "live_asset": "characters/npcs/british/sergeant_man.glb",
-  "live_sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969"
+  "live_sha256": "efaac5bf060c8b991c8bf01a474aab1a2cca7018403b77f4381ee549f4579969",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

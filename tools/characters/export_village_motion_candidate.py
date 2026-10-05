@@ -131,7 +131,8 @@ rig.animation_data.action = bpy.data.actions['idle']
 scene.frame_set(1)
 source = OUT / (SLUG + "_motion_candidate.blend")
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
-runtime = OUT / (SLUG + "_rigged_candidate.glb")
+runtime = ROOT / "characters/npcs/motion" / SLUG / (SLUG + "_rigged_candidate.glb")
+runtime.parent.mkdir(parents=True, exist_ok=True)
 # Godot's glTF importer does not apply MPFB's body MASK modifiers to a skinned
 # mesh. Bake only the covered-body cutout in rest pose, retaining deform weights
 # and the original morphable body in the saved Blender source.

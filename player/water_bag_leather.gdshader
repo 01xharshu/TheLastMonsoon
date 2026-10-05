@@ -1,5 +1,6 @@
 shader_type spatial;
 uniform float fill_level : hint_range(0.0, 1.0) = 0.0;
+uniform float cloth_support = 0.0;
 varying vec3 skin_point;
 
 float hash(vec2 p) {
@@ -15,6 +16,7 @@ float noise(vec2 p) {
 
 void vertex() {
 	skin_point = VERTEX;
+	VERTEX.z += cloth_support * smoothstep(0.0, 1.0, clamp((0.41 - VERTEX.y) / 0.29, 0.0, 1.0));
 }
 
 void fragment() {

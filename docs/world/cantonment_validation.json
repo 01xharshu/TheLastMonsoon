@@ -70,5 +70,13 @@
 	"open": "sepoy population, horse population, working hospital/depot, historical art, full approach route, performance",
 	"renderer": "forward_plus",
 	"resident_terrain_samples": 35,
+	"service_room_walks": {
+		"convalescent": true,
+		"dressing": true,
+		"isolation": true,
+		"issue_office": true,
+		"tack_room": true,
+		"vestry": true
+	},
 	"status": "prototype"
 }

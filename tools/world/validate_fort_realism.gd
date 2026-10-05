@@ -37,9 +37,15 @@ func run() -> void:
 		await capture("fort_kitchen_realism",Vector3(-42,2.1,-67.5),Vector3(-44,1.6,-76))
 		await capture("fort_cook_contact",Vector3(-38.8,1.95,-76.8),Vector3(-41,1.25,-75.1))
 		if "--staff-only" in OS.get_cmdline_user_args():
+			var cook=fort.get_node("FortCook")
+			var steward=fort.get_node("FortSteward")
+			var cook_body=cook.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)[0]
+			var steward_body=steward.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)[0]
+			check(cook_body.mesh==steward_body.mesh,"staff instances share complete body mesh resource")
+			check(cook._skeleton != steward._skeleton,"staff retain independent skeleton poses")
 			world.queue_free()
 			await process_frame
-			quit(0)
+			quit(0 if failures.is_empty() else 1)
 			return
 		await capture("fort_stores_realism",Vector3(5,2.2,-67.3),Vector3(0,1.8,-77))
 		await capture("fort_staff_quarters",Vector3(48,2.1,-67),Vector3(44,1.0,-76))
@@ -190,6 +196,7 @@ func walk_route(label: String,points: Array) -> void:
 func capture(label: String,at: Vector3,target: Vector3) -> void:
 	camera.global_position=fort.to_global(at)
 	camera.look_at(fort.to_global(target))
+	await create_timer(.35).timeout
 	for i in 10: await process_frame
 	RenderingServer.force_draw(true)
 	root.get_texture().get_image().save_png("res://docs/world/captures/"+label+".png")

@@ -1,11 +1,12 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend",
-  "source_sha256": "401fe62bcae2852e388b357b0dbc9f584aee61a5b6fce3873bc14b7bc763689e",
+  "source_sha256": "4182043f134ddac660f3dc0815876b1905174168e432983cf06455bccb292104",
   "runtime": "characters/npcs/village_woman.glb",
-  "runtime_sha256": "3d32714807c8023c6442385a983a734808245d352b6110223bd739d255ce129a",
+  "runtime_sha256": "b1214eedd4b22a677e2ff679f712fc77129f89ac29ca50676f1fa83bd03de9ab",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 7,
-  "body_vertices": 19158
+  "body_vertices": 19158,
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

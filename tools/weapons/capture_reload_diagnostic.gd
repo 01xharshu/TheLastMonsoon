@@ -1,5 +1,5 @@
 extends SceneTree
-## Internal motion diagnostic only: current Arjun appearance is owner-rejected.
+## Internal motion diagnostic only: current playable complete-body candidate; likeness approval remains open.
 func _initialize() -> void:
 	call_deferred("capture")
 
@@ -29,6 +29,8 @@ func capture() -> void:
 	var actor: CharacterBody3D = load("res://player/player.tscn").instantiate()
 	world.add_child(actor)
 	actor.set_physics_process(false)
+	actor.set_process(false)
+	actor.get_node("StairFootContact").set_process(false)
 	actor.get_node("UI").hide()
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	var camera := Camera3D.new()
@@ -47,13 +49,18 @@ func capture() -> void:
 	visual.set_process(false)
 	await process_frame
 	var maximum := 0.0
+	var visual_costs: Array[float] = []
+	var peak_draws := 0
+	var peak_triangles := 0
 	var fps := 30.0
 	var frame_count := int(combat.RELOAD_SECONDS*fps)
 	var capture_count := 0 if OS.get_cmdline_user_args().has("--interrupt-only") else frame_count+1
 	for frame in capture_count:
 		var progress := float(frame) / frame_count
 		combat.reload_remaining = combat.RELOAD_SECONDS*(1-progress) if frame < frame_count else 0.001
+		var begin := Time.get_ticks_usec()
 		visual._process(1.0/fps)
+		visual_costs.append((Time.get_ticks_usec()-begin)/1000.0)
 		var rig: Skeleton3D = visual.skeleton
 		var pinch := rig.to_global((rig.get_bone_global_pose(rig.find_bone("index_03_l")).origin+rig.get_bone_global_pose(rig.find_bone("thumb_03_l")).origin)*0.5)
 		var loading: Dictionary = preload("res://player/enfield_loading_sequence.gd").state(visual.equipment.reload_progress)
@@ -62,13 +69,15 @@ func capture() -> void:
 			maximum = error
 			print("CONTACT MAX ",progress," ",error)
 		if frame >= 0:
-			var center := rig.to_global(Vector3(0.10,1.40,0.35))
-			camera.global_position = center + Vector3(0.8,0.15,1.4)
+			var center := rig.to_global(Vector3(0.10,1.30,0.35))
+			camera.global_position = center + Vector3(0.6,0.10,1.0)
 			camera.look_at(center)
 			camera.make_current()
 			await process_frame
 			RenderingServer.force_draw()
-			root.get_texture().get_image().save_png("/tmp/tlm_loading_paced_%03d.png" % frame)
+			root.get_texture().get_image().save_png("/tmp/tlm_reload_current_%03d.png" % frame)
+			peak_draws = maxi(peak_draws,int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
+			peak_triangles = maxi(peak_triangles,int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
 	actor.inventory.add_item("paper_cartridges",1)
 	for stop_mode in ["stow","switch"]:
 		visual.equipment.selected = 1
@@ -91,12 +100,18 @@ func capture() -> void:
 		var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
 		assert(rod.transform.is_equal_approx(visual.equipment.ramrod_rest["enfield_ramrod"]))
 		visual._process(1.0/fps)
-		camera.global_position = visual.skeleton.to_global(Vector3(0.1,1.4,0.35)) + Vector3(0.8,0.15,1.4)
+		camera.global_position = visual.skeleton.to_global(Vector3(0.1,1.4,0.35)) + Vector3(0.6,0.10,1.0)
 		camera.look_at(visual.skeleton.to_global(Vector3(0.1,1.4,0.35)))
 		camera.make_current()
 		await process_frame
 		RenderingServer.force_draw()
 		root.get_texture().get_image().save_png("/tmp/tlm_reload_cancel_%s_2026-10-01.png" % stop_mode)
+	visual_costs.sort()
+	if not visual_costs.is_empty():
+		var report := {"renderer":"Metal Forward+","frames":visual_costs.size(),"visual_process_p50_ms":visual_costs[visual_costs.size()/2],"visual_process_p95_ms":visual_costs[int(visual_costs.size()*0.95)],"peak_draw_calls":peak_draws,"peak_primitives":peak_triangles,"pinch_midpoint_error_m":maximum,"capture_fps":fps,"playback_seconds":combat.RELOAD_SECONDS,"source":"characters/arjun/arjun.glb","appearance_approved":false}
+		var output := FileAccess.open("/tmp/tlm_reload_current_metrics.json",FileAccess.WRITE)
+		output.store_string(JSON.stringify(report,"\t"))
+		print("RELOAD RESOURCE REPORT ",JSON.stringify(report))
 	print("METAL RELOAD INTERRUPTION: PASS")
 	print("MAX LOADING PINCH ERROR ",maximum)
 	quit(0 if maximum < 0.015 else 1)

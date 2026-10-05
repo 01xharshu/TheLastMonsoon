@@ -2,7 +2,7 @@
   "status": "MOTION_CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_motion_candidate.blend",
   "source_sha256": "c9a81b7357fa8ef3a74f0a2efaeacb022512bf4eb5aa58bb9d49fb9c3f5f60cf",
-  "runtime": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_rigged_candidate.glb",
+  "runtime": "characters/npcs/motion/village_fruit_seller/village_fruit_seller_rigged_candidate.glb",
   "runtime_sha256": "7243631470f6ece2e46713d8c51790ea100389a7e62a2151cfc88b764ffbd591",
   "actions": [
     "idle",
@@ -15,5 +15,6 @@
   "gait_scope": null,
   "motion_approved": false,
   "in_world": false,
-  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation"
+  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation",
+  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
 }

@@ -215,6 +215,34 @@ func _solve_arm(side: String, target: Vector3, elbow_pole: Vector3 = Vector3.ZER
 	_aim_bone(upper, elbow, lower)
 	_aim_bone(lower, origin + direction * distance, hand)
 
+func _solve_loading_digit(digit: String, target: Vector3, pole: Vector3) -> void:
+	var first := digit+"_01_l"
+	var middle := digit+"_02_l"
+	var end := digit+"_03_l"
+	var origin := skeleton.get_bone_global_pose(skeleton.find_bone(first)).origin
+	var a := skeleton.get_bone_global_rest(skeleton.find_bone(first)).origin.distance_to(skeleton.get_bone_global_rest(skeleton.find_bone(middle)).origin)
+	var b := skeleton.get_bone_global_rest(skeleton.find_bone(middle)).origin.distance_to(skeleton.get_bone_global_rest(skeleton.find_bone(end)).origin)
+	var direction := (target-origin).normalized()
+	var distance := clampf(origin.distance_to(target),absf(a-b)+0.0001,a+b-0.0001)
+	var bend := (pole-direction*pole.dot(direction)).normalized()
+	var along := (a*a-b*b+distance*distance)/(2.0*distance)
+	var joint := origin+direction*along+bend*sqrt(maxf(0.0,a*a-along*along))
+	_aim_bone(first,joint,middle)
+	_aim_bone(middle,origin+direction*distance,end)
+
+func _loading_pinch(contact: Vector3, axis: Vector3, amount: float) -> void:
+	if amount < 0.70: return # Open fingers can slide freely during a regrip.
+	var index := skeleton.get_bone_global_pose(skeleton.find_bone("index_03_l")).origin
+	var thumb := skeleton.get_bone_global_pose(skeleton.find_bone("thumb_03_l")).origin
+	var across := index-thumb
+	across = (across-axis*across.dot(axis)).normalized()
+	var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_l"))
+	var palm: Basis = hand.basis*palm_axes["l"]
+	# Joint centres remain outside the prop; the visible finger pads meet its surface.
+	var pad := 0.014 if reload_progress < 0.34 else 0.009
+	_solve_loading_digit("index",contact+across*pad,-palm.z)
+	_solve_loading_digit("thumb",contact-across*pad,-palm.z)
+
 func apply_rifle_grip(sword_striking := false) -> void:
 	animate_ramrod()
 	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress, enfield_hand)
@@ -256,7 +284,9 @@ func apply_rifle_grip(sword_striking := false) -> void:
 	# Compute contacts from the weapon transform, so both hands follow torso motion.
 	skeleton.force_update_all_bone_transforms()
 	var gun_transform := skeleton.global_transform.affine_inverse() * longgun.global_transform
-	for pass_index in 10:
+	var loading_enfield := selected == Selection.ENFIELD and reload_progress >= 0.0
+	if loading_enfield: _grasp("l",LoadingSequence.state(reload_progress).curl)
+	for pass_index in (4 if loading_enfield else 10):
 		for side in ["r", "l"]:
 			var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
 			var support := rifle_support
@@ -286,8 +316,8 @@ func apply_rifle_grip(sword_striking := false) -> void:
 				var wrist := skeleton.find_bone("hand_l")
 				var parent := skeleton.get_bone_parent(wrist)
 				skeleton.set_bone_pose_rotation(wrist,(skeleton.get_bone_global_pose(parent).basis.inverse()*desired).orthonormalized().get_rotation_quaternion())
-				_grasp("l",loading.curl)
 				hand = skeleton.get_bone_global_pose(wrist)
+				_loading_pinch(gun_transform * loading.contact,axis,loading.curl)
 				var pinch := (skeleton.get_bone_global_pose(skeleton.find_bone("index_03_l")).origin + skeleton.get_bone_global_pose(skeleton.find_bone("thumb_03_l")).origin)*0.5
 				var destination: Vector3 = gun_transform * loading.contact
 				_solve_arm("l",destination-(pinch-hand.origin))
@@ -295,7 +325,7 @@ func apply_rifle_grip(sword_striking := false) -> void:
 			var contact: Vector3 = gun_transform * (held_contact if side=="r" else support)
 			_solve_arm(side,contact-hand.basis*palm_offsets[side])
 	_grasp("r")
-	_grasp("l", LoadingSequence.state(reload_progress).curl if selected == Selection.ENFIELD and reload_progress >= 0 else 1.0)
+	if selected != Selection.ENFIELD or reload_progress < 0: _grasp("l")
 	if enfield_cartridge: enfield_cartridge.call("update_loading", int(selected), stowed, reload_progress, enfield_hand)
 
 func animate_ramrod() -> void:

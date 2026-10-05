@@ -31,8 +31,8 @@
   "candidate_exports": {
     "woman": {
       "path": "characters/npcs/british/candidates/private_woman_skirt_candidate.glb",
-      "sha256": "fda13000dab9d28c0f2c20f1a4943615d0435fdd046110440fe24a1cbd0728bb",
-      "bytes": 2166288
+      "sha256": "e66debc58cad79922fa5e49ad4d41d3a7df2fff020abb16f2dd58a12a19adad4",
+      "bytes": 2489240
     }
   },
   "live_asset_path": "characters/npcs/british/private_woman.glb",

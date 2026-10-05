@@ -69,6 +69,7 @@ func _ready() -> void:
 	var ramp := piece(self,"StairRamp",Vector3(stair_x,floor_y*.5-.14,0),Vector3(3.5,.28,sqrt(18*18+floor_y*floor_y)),stone,true)
 	ramp.rotation.x = atan2(floor_y,18.0)
 	ramp.get_child(0).hide()
+	preload("res://world/suryagarh/settlements/stair_contact_surface.gd").add_flight(self,stair_x,0,18.0,floor_y,3.5,36,true,1.0,0.0,wood)
 	stair_guard(self,stair_x,0,18.0,floor_y,true,3.4)
 	piece(self,"GalleryGuard",Vector3(cut_right,floor_y+.55,0),Vector3(.14,1.1,17.5),wood)
 	# Low clay-tile pitch sheds monsoon rain behind a plain masonry parapet.

@@ -1,0 +1,13 @@
+{
+  "source": "WorkingAssets/NPCs/households/landowner/landowner.blend",
+  "source_sha256": "a3e10371a781f30fb39d11259cd12f759f33fa5cfbf74cc1a8e999995dc9c941",
+  "bodies": [
+    {
+      "body": "village_farmer_MakeHuman_body",
+      "body_evaluated_vertices": 13380,
+      "foundation_vertices": 785,
+      "foundation_faces": 736
+    }
+  ],
+  "scope": "source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review"
+}

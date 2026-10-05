@@ -43,6 +43,8 @@
 
 [ext_resource type="Script" path="res://player/field_telescope.gd" id="field_telescope"]
 
+[ext_resource type="Script" path="res://player/stair_foot_contact.gd" id="stair_contact"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -448,3 +450,6 @@ script = ExtResource("detention")
 
 [node name="FieldTelescope" type="Node" parent="."]
 script = ExtResource("field_telescope")
+
+[node name="StairFootContact" type="Node" parent="."]
+script = ExtResource("stair_contact")

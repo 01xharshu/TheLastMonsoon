@@ -19,6 +19,7 @@ func run() -> void:
  var bridge: Node3D = load("res://world/suryagarh/timber_bridge.gd").new()
  world.add_child(bridge)
  var actor: CharacterBody3D = load("res://player/player.tscn").instantiate()
+ actor.set_meta("mounted_vehicle",null)
  world.add_child(actor)
  actor.set_process_unhandled_input(false)
  await frames(10)

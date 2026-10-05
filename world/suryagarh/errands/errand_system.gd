@@ -87,8 +87,8 @@ func _person(id: String, label: String, at: Vector3, model: String) -> void:
 	actor.process_mode = Node.PROCESS_MODE_PAUSABLE
 	actor.movement_profile = &"female" if model == "village_woman" else &"male"
 	var document := GLTFDocument.new(); var state := GLTFState.new()
-	var path := "res://WorkingAssets/NPCs/%s/%s_rigged_candidate.glb" % [model,model]
-	if model == "errand_passenger": path = "res://WorkingAssets/NPCs/errand_passenger/errand_passenger.glb"
+	var path := "res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [model,model]
+	if model == "errand_passenger": path = "res://characters/npcs/motion/errand_passenger/errand_passenger.glb"
 	if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
 		actor.free(); push_error("Errand actor could not load: " + path); return
 	actor.add_child(document.generate_scene(state))

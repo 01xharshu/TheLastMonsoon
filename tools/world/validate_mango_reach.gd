@@ -309,6 +309,36 @@ func validate() -> void:
 		check(moving_error < 0.015,"Held fruit hand lagged behind moving/turning body")
 		check(recovery_foot_error < 0.015,"Recovering foot stretched behind moving/turning body")
 		samples.append({"mode":"moving_"+mode,"local_hand_error_m":moving_error,"local_foot_error_m":recovery_foot_error})
+	# Verify actual walking clips regain the feet as the pickup crouch fades.
+	player.global_position = Vector3(0,0.9,0)
+	player.rotation = Vector3.ZERO
+	player.velocity = Vector3.ZERO
+	var walking_fruit = load("res://objects/mango.gd").new()
+	world.add_child(walking_fruit)
+	walking_fruit.position = Vector3(-0.15,0.135,0.45)
+	player._begin_interaction_hold(walking_fruit,"interact")
+	for frame in 30:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+	player._hide_interaction_labels()
+	walking_fruit.interact(player)
+	var final_gait_error := 0.0
+	for frame in 45:
+		player.velocity = Vector3(0,0,player.walk_speed)
+		visual._process(1.0/60.0)
+		visual.motion_tree.update_motion(1.0/60.0,1.0,0.0,false,true,0.0)
+		var gait_foot: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_l")).origin)
+		component._process(1.0/60.0)
+		carried._process(1.0/60.0)
+		if frame > 35:
+			final_gait_error = maxf(final_gait_error,gait_foot.distance_to(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_l")).origin)))
+		if frame in [7,18,36]:
+			camera.position = Vector3(-1.7,1.25,1.8)
+			camera.look_at(Vector3(0,0.65,0.15))
+			await capture("walk_recovery_"+str(frame))
+	check(final_gait_error < 0.015,"Recovered pickup still overrides AnimationTree walking feet")
+	samples.append({"mode":"walking_tree_recovery","final_foot_error_m":final_gait_error})
+	player.velocity = Vector3.ZERO
 	# A second held pickup should replace the cosmetic eating action immediately.
 	player.global_position = Vector3(0,0.9,0)
 	player.rotation = Vector3.ZERO

@@ -30,6 +30,10 @@ func build(builder: Node3D,district: Node3D) -> void:
 	station(district.get_node("BritishCourthouse"),"CourtClerk",Vector3(12.8,.24,-7),"court","res://characters/npcs/households/merchant.glb")
 	station(treasury,"RevenueClerk",Vector3(-4.2,.24,2),"revenue","res://characters/npcs/households/merchant.glb")
 	staff(district.get_node("BritishCourthouse"),"PresidingOfficer",Vector3(-3,.42,-8),"res://characters/npcs/british/official_man.glb")
+	var missions = preload("res://world/suryagarh/settlements/civic_missions.gd").new()
+	missions.name = "CivicMissions"
+	district.add_child(missions)
+	missions.call_deferred("configure",district)
 func staff(room: Node3D,label: String,at: Vector3,path: String) -> Node3D:
 	var actor = Actor.new()
 	actor.name = label

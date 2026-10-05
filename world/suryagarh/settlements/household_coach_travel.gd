@@ -222,47 +222,12 @@ func _clear(at:Vector3,basis:Basis) -> bool:
 			return false
 	return true
 
-func _passenger_cloth(actor:Node3D,seated:bool) -> void:
-	if actor.get("movement_profile")!=&"female":return
-	# The rig and its garment meshes are stable after spawning. Cache once;
-	# seated passengers call this every physics frame to follow their pelvis.
-	if not actor.has_meta("coach_cloth_meshes"):
-		var garment_meshes: Array[MeshInstance3D] = []
-		for node in actor.find_children("*","MeshInstance3D",true,false):
-			var label := node.name.to_lower()
-			if "gathered skirt" in label or "fitted waist transition" in label:
-				garment_meshes.append(node)
-		actor.set_meta("coach_cloth_meshes",garment_meshes)
-	var skirt: MeshInstance3D
-	var change_visibility: bool = not actor.has_meta("coach_cloth_seated") or actor.get_meta("coach_cloth_seated") != seated
-	for node in actor.get_meta("coach_cloth_meshes"):
-		if not is_instance_valid(node): continue
-		if "gathered skirt" in node.name.to_lower(): skirt = node
-		if change_visibility: node.visible = not seated
-	actor.set_meta("coach_cloth_seated",seated)
-	if not actor.has_meta("coach_dress") and skirt!=null:
-		var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var rings:=[Vector3(0,.1,0),Vector3(0,-.07,-.26),Vector3(0,-.28,-.52),Vector3(0,-.42,-.56)]
-		var radii:=[Vector2(.20,.17),Vector2(.25,.28),Vector2(.23,.18),Vector2(.25,.17)]
-		var points:Array[Vector3]=[]
-		for row in rings.size():
-			for index in 32:
-				var angle:=TAU*index/32.0
-				points.append(rings[row]+Vector3(cos(angle)*radii[row].x,0,sin(angle)*radii[row].y))
-		for row in 3:
-			for index in 32:
-				var a:=row*32+index;var b:=row*32+(index+1)%32
-				for vertex in [a,b,a+32,b,b+32,a+32]:surface.add_vertex(points[vertex])
-		surface.index();surface.generate_normals()
-		var dress:=MeshInstance3D.new();dress.name="SeatedDressCandidate";dress.mesh=surface.commit()
-		dress.material_override=skirt.get_active_material(0)
-		actor.add_child(dress)
-		actor.set_meta("coach_dress",dress)
-	if actor.has_meta("coach_dress"):
-		var dress:MeshInstance3D=actor.get_meta("coach_dress")
-		dress.visible=seated
-		if seated:
-			# Garment follows this resident at either chair, independently of the vehicle.
-			var rig:Skeleton3D=actor.get("_skeleton")
-			var hip:Vector3=rig.to_global(rig.get_bone_global_pose(rig.find_bone("pelvis")).origin)
-			dress.global_transform=Transform3D(actor.global_basis*Basis(Vector3.UP,PI),hip)
+func _passenger_cloth(actor:Node3D,_seated:bool) -> void:
+	if not actor.has_meta("household_drape"):
+		var drape:=preload("res://characters/npcs/households/household_drape.gd").new()
+		actor.add_child(drape)
+		if not drape.configure(actor):
+			drape.queue_free();actor.set_meta("household_drape",null);return
+		actor.set_meta("household_drape",drape)
+	var drape:Node=actor.get_meta("household_drape")
+	if is_instance_valid(drape):drape.update_pose()

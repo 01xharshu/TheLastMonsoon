@@ -32,10 +32,11 @@ func _run() -> void:
     light.rotation_degrees = Vector3(-35,-25,0)
     light.light_energy = 2.0
     add_child(light)
-    _box("Floor",Vector3(0,-.1,5),Vector3(12,.2,20),Color(.32,.35,.27))
+    _box("Floor",Vector3(0,-.1,5),Vector3(20,.2,30),Color(.32,.35,.27))
     var actor: CharacterBody3D = preload("res://player/player.tscn").instantiate()
     add_child(actor)
     actor.set_physics_process(false)
+    actor.set_process(false)
     actor.get_node("UI").hide()
     var climb: Node = actor.get_node("ClimbComponent")
     climb.set_physics_process(false)
@@ -49,21 +50,44 @@ func _run() -> void:
     var folder := "res://docs/characters/arjun/rock_climb_2026-10-01"
     DirAccess.make_dir_recursive_absolute(folder)
     var movie := OS.get_cmdline_user_args().has("--movie")
-    for scenario in [{"name":"sloped_rock","profile":"high_mantle","height":1.4,"z":0.0},{"name":"broken_edge","profile":"high_mantle","height":1.45,"z":5.0}]:
+    for scenario in [{"name":"sloped_rock","profile":"high_mantle","height":1.4,"z":0.0},{"name":"broken_edge","profile":"high_mantle","height":1.45,"z":5.0},{"name":"world_boulder","profile":"","height":1.4,"z":-5.0}]:
         var height: float = scenario.height
         if scenario.name=="sloped_rock":
             var rock := _box("SlopedRock",Vector3(1,height*.5,scenario.z),Vector3(2,height,3),Color(.40,.43,.42))
             rock.rotation.z = .18
-        else:
+        elif scenario.name=="broken_edge":
             _box("BrokenLeft",Vector3(.2,.60,scenario.z-.75),Vector3(.4,1.2,1.5),Color(.46,.43,.37))
             _box("BrokenRight",Vector3(.2,.725,scenario.z+.75),Vector3(.4,1.45,1.5),Color(.46,.43,.37))
             _box("RearPlatform",Vector3(1.2,.70,scenario.z),Vector3(1.6,1.4,3),Color(.46,.43,.37))
+        else:
+            var source: Node3D = preload("res://assets/nature/models/boulder_01.glb").instantiate()
+            var meshes := source.find_children("*","MeshInstance3D",true,false)
+            var mesh: Mesh = meshes[0].mesh
+            var body := StaticBody3D.new()
+            body.name = "WorldBoulder"
+            body.position = Vector3(1,-.60,scenario.z)
+            body.scale = Vector3(1.5,1.2,1.5)
+            add_child(body)
+            var view := MeshInstance3D.new()
+            view.mesh = mesh
+            body.add_child(view)
+            var collider := CollisionShape3D.new()
+            collider.shape = mesh.create_convex_shape(true,true)
+            body.add_child(collider)
+            source.free()
         actor.global_position = Vector3(-.85,.94,scenario.z+.1)
         actor.visual_root.global_rotation.y = PI/2
         for i in 3: await get_tree().physics_frame
-        var accepted: bool = climb.try_start()
+        var accepted: bool = _start_after_takeoff(actor,climb)
+        if scenario.name=="world_boulder":
+            for bearing in 16:
+                if accepted: break
+                var direction := Vector3(cos(bearing*TAU/16),0,sin(bearing*TAU/16))
+                actor.global_position = Vector3(1,.94,scenario.z)-direction*2.0
+                actor.visual_root.global_rotation.y = atan2(direction.x,direction.z)
+                accepted = _start_after_takeoff(actor,climb)
         print("ROCK START ",scenario.name," accepted=",accepted," profile=",climb.window.profile," active=",climb.active)
-        if not accepted or climb.window.profile!=scenario.profile:
+        if not accepted or (scenario.profile!="" and climb.window.profile!=scenario.profile):
             failures += 1
             print("FAIL object selection ",scenario.name)
             continue
@@ -73,6 +97,7 @@ func _run() -> void:
         var movie_folder: String = "/tmp/tlm_object_"+scenario.name
         if movie: DirAccess.make_dir_recursive_absolute(movie_folder)
         for frame in 61:
+            climb.request_move()
             climb._physics_process(climb.window.duration/60.0)
             visual._process(1.0/30.0)
             if frame in [18,36]:
@@ -103,11 +128,13 @@ func _run() -> void:
     actor.global_position = Vector3(5,.94,8.15)
     actor.visual_root.global_rotation.y = 0.0
     for i in 3: await get_tree().physics_frame
-    if not climb.try_start():
+    if not _start_after_takeoff(actor,climb):
         failures += 1
         print("FAIL rotated ledge selection")
     else:
-        for i in 61: climb._physics_process(climb.window.duration/60.0)
+        for i in 61:
+            climb.request_move()
+            climb._physics_process(climb.window.duration/60.0)
         if actor.global_position.z<9.5:
             failures += 1
             print("FAIL rotated ledge landing")
@@ -115,7 +142,7 @@ func _run() -> void:
     actor.global_position = Vector3(-.85,.94,10)
     actor.visual_root.global_rotation.y = PI/2
     for i in 3: await get_tree().physics_frame
-    if climb.try_start():
+    if _start_after_takeoff(actor,climb):
         failures += 1
         print("FAIL unsupported narrow lip accepted")
     _box("BrokenRimOnly",Vector3(.2,.7,15),Vector3(.4,1.4,3),Color(.46,.43,.37))
@@ -135,3 +162,8 @@ func _run() -> void:
         print("FAIL steep support accepted")
     print("ROCK CLIMB: ","PASS" if failures==0 else "FAIL"," | sloped rock, separate broken stones, supporting palms, rotated ledge, supported landing, narrow lip, landing hole and steep support rejection")
     get_tree().quit(0 if failures==0 else 1)
+
+func _start_after_takeoff(actor: CharacterBody3D, climb: Node) -> bool:
+    climb.arm_jump()
+    actor.global_position.y += .10
+    return climb.try_start()
