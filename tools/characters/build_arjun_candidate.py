@@ -399,17 +399,9 @@ for side in (-1,1):
         curve('Moustache strand',pts,.00045*(1-.45*t),hair_mat,'head')
 
 sub=body.modifiers.new('Body surface smoothing','SUBSURF');sub.levels=1;sub.render_levels=1
-# Conservative render-only masks beneath opaque garments; full base remains editable.
-covered=body.vertex_groups.new(name='CoveredByCoreOutfit')
-mask_ids=[]
-for i in body_ids:
-    p=source.vertices[i].co
-    if (p.z<1.11 and abs(p.x)<.24) or (1.11<p.z<1.33 and abs(p.x)<.17):mask_ids.append(i)
-covered.add(mask_ids,1,'REPLACE')
-mask=body.modifiers.new('Conservative clothing occlusion','MASK');mask.vertex_group=covered.name;mask.invert_vertex_group=True
-mask.show_viewport=False;mask.show_render=False
-foundation.hide_render=True
-foundation.hide_set(True)
+# Preserve complete MPFB anatomy beneath all clothing; helpers remain excluded.
+foundation.hide_render=False
+foundation.hide_set(False)
 
 # Merge strand/stitch/hardware pieces by material while retaining skin weights.
 groups = {}

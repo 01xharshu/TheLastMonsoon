@@ -22,6 +22,15 @@ func _run() -> void:
 		push_error("STANCE BLOCKED: cannot recover standing")
 		quit(1)
 		return
+	stance.enter_crouch()
+	if stance.stance != "crouch" or stance.camera_height() >= 1.2 or stance.sight_target().y >= actor.global_position.y+.4:
+		push_error("STANCE BLOCKED: free crouch shape/camera/sight failed")
+		quit(1)
+		return
+	if not stance.stand():
+		push_error("STANCE BLOCKED: free crouch recovery failed")
+		quit(1)
+		return
 	if not stance.try_cover() or stance.stance != "cover":
 		push_error("STANCE BLOCKED: chest cover not detected")
 		quit(1)
@@ -80,5 +89,5 @@ func _run() -> void:
 			quit(1)
 			return
 		stance.stand()
-	print("STEALTH STANCE: PASS | prone, stand clearance, crate/tree/cart cover, cover release")
+	print("STEALTH STANCE: PASS | prone, free crouch/camera/sight, stand clearance, crate/tree/cart cover, cover release")
 	quit()

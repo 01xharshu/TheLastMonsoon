@@ -33,6 +33,8 @@ func run() -> void:
 	var before := stats(door)
 	if DisplayServer.get_name() != "headless":
 		root.size = Vector2i(960,720)
+		root.content_scale_size = root.size
+		root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 		DisplayServer.window_set_size(root.size)
 		var sun := DirectionalLight3D.new()
 		sun.rotation_degrees = Vector3(-35,-35,0)

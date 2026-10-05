@@ -6,6 +6,10 @@ from mathutils.bvhtree import BVHTree
 ROOT=Path(__file__).resolve().parents[2];SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend'
 OUT=ROOT/'docs/characters/arjun/reference_fit/boot_panels_2026-10-02';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE));bpy.context.preferences.filepaths.save_version=0
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 rig=bpy.data.objects['Arjun_Rig'];leather=bpy.data.materials['Worn dark-brown leather'];soles=bpy.data.materials['Dark boot soles']
 rows=[(.015,.071,.153,-.073),(.025,.073,.156,-.073),(.04,.071,.150,-.071),(.066,.069,.143,-.070),(.092,.063,.121,-.052),(.118,.056,.086,-.025),(.145,.053,.059,-.006),(.18,.056,.060,-.006),(.23,.061,.062,-.006),(.285,.065,.065,-.006),(.30,.065,.065,-.006)]
 def weights(o):

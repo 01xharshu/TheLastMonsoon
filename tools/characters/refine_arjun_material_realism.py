@@ -5,6 +5,10 @@ from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[2];SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend'
 OUT=ROOT/'docs/characters/arjun/reference_fit/material_realism_2026-10-01';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 def noise(nt,coord,scale,detail=2):
  n=nt.nodes.new('ShaderNodeTexNoise');n.inputs['Scale'].default_value=scale;n.inputs['Detail'].default_value=detail;nt.links.new(coord,n.inputs['Vector']);return n
 for name,color in [('Weathered charcoal cotton',(.008,.008,.008)),('Unbleached draped cotton',(.62,.56,.45)),('Faded madder-red sash',(.12,.017,.013))]:

@@ -6,6 +6,10 @@ from mathutils.bvhtree import BVHTree
 ROOT=Path(__file__).resolve().parents[2];SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_material_realism_candidate.blend'
 OUT=ROOT/'docs/characters/arjun/reference_fit/eyes_moustache_2026-10-01';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 mat=bpy.data.materials.new('Arjun procedural brown iris and sclera');mat.use_nodes=True;nt=mat.node_tree;bs=nt.nodes['Principled BSDF'];tc=nt.nodes.new('ShaderNodeTexCoord');split=nt.nodes.new('ShaderNodeSeparateXYZ');nt.links.new(tc.outputs['Object'],split.inputs[0])
 def mathnode(op,value=None):
  n=nt.nodes.new('ShaderNodeMath');n.operation=op

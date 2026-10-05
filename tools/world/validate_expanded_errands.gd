@@ -109,12 +109,15 @@ func _run() -> void:
 
 func _transfer_review(cart: Node3D, kind: String) -> void:
 	var previous: Vector3 = jobs.expanded.passenger.global_position
+	var max_palm_error := 0.0
 	for frame in 150:
 		await physics_frame
 		var at: Vector3 = jobs.expanded.passenger.global_position
 		if at.distance_to(previous) >= .25: print("TRANSFER_JUMP ",kind," frame ",frame," delta ",at.distance_to(previous)," from ",previous," to ",at)
 		assert(at.distance_to(previous) < .25) # Reject a root teleport during transfer.
 		previous = at
+		if not jobs.expanded.transfer.is_empty() and jobs.expanded.passenger.get_meta("passenger_grip_weight",0.0) > .999:
+			max_palm_error = maxf(max_palm_error,jobs.expanded.passenger.get_meta("passenger_palm_error_m",0.0))
 		if frame == 45 and DisplayServer.get_name() != "headless":
 			var old_camera := root.get_camera_3d()
 			var review := Camera3D.new(); world.add_child(review)
@@ -130,3 +133,5 @@ func _transfer_review(cart: Node3D, kind: String) -> void:
 			root.get_texture().get_image().save_png("res://docs/world/captures/errand_"+kind+"_step.png")
 			old_camera.current = true; review.queue_free()
 			previous = jobs.expanded.passenger.global_position
+
+	print("PALM_CONTACT ",kind," max_error_m ",max_palm_error)

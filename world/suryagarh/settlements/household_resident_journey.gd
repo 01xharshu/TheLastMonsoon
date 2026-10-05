@@ -112,7 +112,8 @@ func tick(delta:float) -> void:
    travel.coach.set_boarding_door(side,0);change("outside_coach")
  elif state=="sit_at_desk":
   _desk_transition(delta,clampf(elapsed/1.4,0,1))
-  if elapsed>=1.4:change("work")
+  if elapsed>=1.4:
+   travel._passenger_cloth(actor,true);change("work")
  elif state=="stand_from_desk":
   _desk_transition(delta,1-clampf(elapsed/1.4,0,1))
   if elapsed>=1.4:walk(pending_path,"leave_office")

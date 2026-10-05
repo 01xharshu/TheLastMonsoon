@@ -19,3 +19,5 @@ Commands:
 `git diff --check` PASS. Native run exited 0, no script errors; existing animation graph deprecation warnings remain. Shared handoff size check exceeded 6000 characters; preserve other task entries.
 
 Exact next action: establish a stable source snapshot and explicit render-pixel budget, run the three cameras plus a normal gameplay route without concurrent rendering, then attribute rendering/physics/animation cost. Prioritise remaining static draw submission and distant simulation according to those measurements. Do not label the game fully optimised without agreed target hardware and frame/memory budgets.
+
+Door/standing continuation: rigid door leaves now batch by material with retained UV2 grain and pull markers; fixed-resolution native door pixels are identical. Six standings and world-terrain paid return pass. Geometry workload and noisy final profile are documented in `workspace_optimisation.md` and `runtime_profile_door_batch.json`; the original baseline report is retained. Final scene captures use explicit 1280 × 720 viewport scaling. Complete human bodies/rigs were preserved.

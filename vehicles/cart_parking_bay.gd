@@ -30,7 +30,7 @@ func _build_standing() -> void:
 	for z in 6:
 		for x in 3:
 			var a := Vector3(-size.x*.5+x*2.0,0,-size.y*.5+z*2.0)
-			for offset in [Vector3.ZERO,Vector3(0,0,2),Vector3(2,0,0),Vector3(2,0,0),Vector3(0,0,2),Vector3(2,0,2)]:
+			for offset in [Vector3.ZERO,Vector3(2,0,0),Vector3(0,0,2),Vector3(2,0,0),Vector3(2,0,2),Vector3(0,0,2)]:
 				var at: Vector3 = to_global(a+offset)
 				var ray := PhysicsRayQueryParameters3D.create(at+Vector3.UP*2,at-Vector3.UP*3)
 				if is_instance_valid(owner_cart): ray.exclude = owner_cart.boarding._vehicle_exclusions()
@@ -41,9 +41,8 @@ func _build_standing() -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = "CompactedStanding"
 	mesh.mesh = surface.commit()
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(.32,.26,.16)
-	material.roughness = 1.0
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://vehicles/cart_standing_ground.gdshader")
 	mesh.material_override = material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh.visibility_range_end = 100
@@ -60,14 +59,31 @@ func refresh_occupancy() -> void:
 	occupant = null
 	docked = false
 	for cart in get_tree().get_nodes_in_group("cart_parking_vehicles"):
-		var local: Vector3 = to_local(cart.global_position)
-		if absf(local.x) < size.x*.5 and absf(local.z) < size.y*.5 and absf(local.y) < 2:
-			occupant = cart
-			break
+		if _overlaps_vehicle(cart):
+			# A second vehicle takes precedence over the owner so docking cannot
+			# accept a bay merely because its own centre also lies inside it.
+			if occupant == null or cart != owner_cart: occupant = cart
+			if cart != owner_cart: break
 	if occupant == owner_cart:
 		docked = Vector2(owner_cart.global_position.x-global_position.x,owner_cart.global_position.z-global_position.z).length() < .6 and absf(angle_difference(owner_cart.global_rotation.y,standing_heading)) < .15
 	set_meta("parking_occupied",occupant != null)
 	set_meta("parking_docked",docked)
+
+func _overlaps_vehicle(cart: Node3D) -> bool:
+	var local: Vector3 = to_local(cart.global_position)
+	if absf(local.y) >= 2: return false
+	if not "boarding" in cart:
+		return absf(local.x) < size.x*.5 and absf(local.z) < size.y*.5
+	var polygon := PackedVector2Array([Vector2(-size.x*.5,-size.y*.5),Vector2(size.x*.5,-size.y*.5),Vector2(size.x*.5,size.y*.5),Vector2(-size.x*.5,size.y*.5)])
+	for collision in cart.boarding.clearance_shapes:
+		if not collision.shape is BoxShape3D: continue
+		var half: Vector3 = collision.shape.size*.5
+		var footprint := PackedVector2Array()
+		for corner in [Vector3(-half.x,0,-half.z),Vector3(half.x,0,-half.z),Vector3(half.x,0,half.z),Vector3(-half.x,0,half.z)]:
+			var at: Vector3 = to_local(collision.to_global(corner))
+			footprint.append(Vector2(at.x,at.z))
+		if not Geometry2D.intersect_polygons(polygon,footprint).is_empty(): return true
+	return false
 
 func try_dock(cart: Node3D) -> bool:
 	refresh_occupancy()

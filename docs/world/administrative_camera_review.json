@@ -1,8 +1,10 @@
 {
 	"actual_player_input": true,
+	"buildings": 3,
 	"camera_sphere_overlaps": 0,
+	"entry_and_exit": true,
 	"pivot_segment_obstructions": 0,
 	"renderer": "forward_plus",
-	"routes": 3,
-	"samples": 72
+	"routes": 6,
+	"samples": 183
 }

@@ -101,8 +101,12 @@ func run() -> void:
 		actor.household_job=actor.name
 		actor.movement_enabled=false;actor.position=Vector3(4+index*1.5,0,1);actor.rotation.y=PI
 		var doc:=GLTFDocument.new();var state:=GLTFState.new()
-		doc.append_from_file(ProjectSettings.globalize_path("res://WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb"),state)
+		doc.append_from_file(ProjectSettings.globalize_path("res://WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb"),state)
 		actor.add_child(doc.generate_scene(state));stage.add_child(actor)
+		var bodies=actor.find_children("fort_staff_export_full_body","MeshInstance3D",true,false)
+		var foundations=actor.find_children("Opaque fitted underwear foundation","MeshInstance3D",true,false)
+		check(bodies.size()==1 and bodies[0].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()>=13380,"complete MPFB body retained: "+actor.name)
+		check(foundations.size()==1 and foundations[0].skin != null,"separate opaque foundation retained: "+actor.name)
 		check(actor.get_meta("staff_cloth_surfaces",0)>=6,"role fabric overrides retain garment surfaces: "+actor.name)
 		if index==0:
 			var aprons=actor.find_children("CookSkinnedWorkApron","MeshInstance3D",true,false)

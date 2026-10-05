@@ -30,8 +30,35 @@ func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachma
 		person.add_to_group("household_resident")
 	coach.rotation.y=atan2(-(route[1]-route[0]).x,-(route[1]-route[0]).z)
 
+# Far routines retain state/time at the same 0.1 s step used by sequence validation.
+const FAR_INTERVAL:=.1
+const NEAR_RADIUS:=150.0
+const FAR_RADIUS:=180.0
+var budget_far:=false
+var budget_pending:=0.0
+var budget_steps:=0
+var budget_skipped:=0
+
 func _physics_process(delta:float) -> void:
-	step(delta)
+	var camera:=get_viewport().get_camera_3d()
+	if camera==null:
+		step(delta);return
+	advance_budget(delta,camera.global_position)
+
+func advance_budget(delta:float,observer:Vector3) -> void:
+	var nearest:=coach.global_position.distance_squared_to(observer)
+	for person in residents:nearest=minf(nearest,person.global_position.distance_squared_to(observer))
+	if budget_far:
+		if nearest<=NEAR_RADIUS*NEAR_RADIUS:budget_far=false
+	elif nearest>FAR_RADIUS*FAR_RADIUS:budget_far=true
+	# Bound work and motion after a stall; no unbounded catch-up loop.
+	budget_pending+=clampf(delta,0,FAR_INTERVAL)
+	if budget_far and budget_pending+0.000001<FAR_INTERVAL:
+		budget_skipped+=1;return
+	var amount:=minf(budget_pending,FAR_INTERVAL)
+	budget_pending=maxf(0,budget_pending-amount)
+	budget_steps+=1
+	step(amount)
 
 var journeys:Array[Node]=[]
 var home_path:Array[Vector3]=[]

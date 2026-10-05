@@ -1,0 +1,17 @@
+{
+	"failures": [
+		"idle"
+	],
+	"results": [
+		{
+			"body_triangles": 14448,
+			"cloth_vertices": 4352,
+			"minimum_signed_skin_m": -0.0485616102814674,
+			"rein_surface_m": 0.0548267289996147,
+			"seat_vertices": 4,
+			"state": "idle"
+		}
+	],
+	"scope": "posed body triangles; garment vertices; cushion box; sampled rein segments; four isolated driving poses",
+	"status": "FAIL"
+}

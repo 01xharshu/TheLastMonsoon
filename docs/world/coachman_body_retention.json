@@ -1,0 +1,21 @@
+{
+  "runtime": "WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb",
+  "sha256": "e639774f6bd9027d8e4453d8e1f5736642b3b04f155f437997f632e6a7480fd2",
+  "meshes": [
+    {
+      "mesh": "short04",
+      "vertices": 983,
+      "alpha_modes": [
+        "OPAQUE"
+      ]
+    },
+    {
+      "mesh": "base.001",
+      "vertices": 14517,
+      "alpha_modes": [
+        "OPAQUE"
+      ]
+    }
+  ],
+  "scope": "complete runtime base topology and separate opaque MPFB short04 foundation; editable source governed by whole_body_contract"
+}

@@ -2,8 +2,8 @@
   "status": "blended withers, muscular limbs, continuous curved horns and eye/muzzle refinement; art approval open",
   "source": "tools/animals/build_household_cow.py; original geometry and rig, no external imagery",
   "morphology_reference": "https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed",
-  "glb_sha256": "49ac2c05a80851a89ca5ff7f80b79d01135074d5a9cc47d27ddcfdd259b665f6",
-  "vertices": 27986,
+  "glb_sha256": "a601966ce57ca26adfb009be7322705c2daed4f1f3203941cee1df4ec624baed",
+  "vertices": 28406,
   "bones": 19,
   "clips": [
     "idle",

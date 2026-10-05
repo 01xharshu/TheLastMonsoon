@@ -7,6 +7,10 @@ SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.b
 OUT=ROOT/'docs/characters/arjun/reference_fit/hair_clumps_2026-10-01'
 OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 rig=bpy.data.objects['Arjun_Rig']
 mat=bpy.data.materials['Arjun black wavy locks']
 bs=mat.node_tree.nodes.get('Principled BSDF');bs.inputs['Roughness'].default_value=.78;bs.inputs['Specular IOR Level'].default_value=.16

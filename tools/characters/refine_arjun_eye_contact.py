@@ -7,6 +7,10 @@ from fit_arjun_reference_face import shaped_coordinates
 SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_boot_panels_candidate.blend'
 OUT=ROOT/'docs/characters/arjun/reference_fit/eye_contact_2026-10-05';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE));bpy.context.preferences.filepaths.save_version=0
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 body=bpy.data.objects['Arjun_MakeHuman_Body'];points=shaped_coordinates(body);basis=body.data.shape_keys.key_blocks[0];key=body.shape_key_add(name='Arjun_eyelid_contact_candidate');moved=0;maximum=0
 for index,(x,y,z) in enumerate(points):
  w=math.exp(-((abs(x)-.030)/.014)**2-((z-1.6073)/.010)**2)

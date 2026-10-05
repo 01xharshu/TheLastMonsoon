@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "far_steps_before_wake": 60,
+  "near_steps": 360,
+  "passed": true,
+  "scope": "production distance scheduler with instrumented step; full-world route/contact checks remain separate",
+  "simulation_seconds": 5.99999999999998
+}

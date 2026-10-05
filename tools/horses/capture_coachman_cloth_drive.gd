@@ -59,5 +59,8 @@ func run() -> void:
   assert(driver.palm_world(side).distance_to(cart.rein_grip_world(side)) < .02)
   var ankle: Vector3 = driver._skeleton.to_global(driver._skeleton.get_bone_global_pose(driver._skeleton.find_bone("foot_"+side)).origin)
   assert(ankle.distance_to(driver.foot_target_world(side)) < .02)
+ var clearance: Dictionary = preload("res://vehicles/coachman_clearance.gd").new().audit_garment(driver,cart)
+ assert(clearance.minimum_signed_skin_m >= .008 and clearance.seat_vertices == 0 and clearance.rein_surface_m >= .015)
+ FileAccess.open("res://docs/world/coachman_moving_clearance.json",FileAccess.WRITE).store_string(JSON.stringify(clearance,"\t"))
  print("COACHMAN CLOTH MOVING BRIDGE METAL PASS | distance=",cart.global_position.distance_to(initial)," cloth_updates=",driver.seated_cloth.updates)
  quit()

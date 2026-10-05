@@ -1,0 +1,24 @@
+{
+  "disabled_clothing_masks": [
+    "Conservative clothing occlusion"
+  ],
+  "body_vertices": 19158,
+  "body_coordinate_sha256": "968ba4d4cdf7b506a5c950034a9dba7e2274f5c16697e48868ecdb3c2fa815fc",
+  "foundation": "Arjun_Foundation_FittedShorts",
+  "foundation_visible": true,
+  "helpers_only_mask": "Hide helpers",
+  "enabled_body_masks": [
+    "Hide helpers"
+  ],
+  "export_bytes": 35653488,
+  "export_triangles": 929032,
+  "mesh_count": 66,
+  "export": "WorkingAssets/Arjun/reference_fit/arjun_complete_body_preview.glb",
+  "export_position_counts": {
+    "Arjun_MakeHuman_Body": 70149,
+    "Arjun_Foundation_FittedShorts": 2318
+  },
+  "foundation_exported_opaque": true,
+  "status": "SOURCE_EXPORT_STRUCTURE_PASS_VISUAL_OPEN",
+  "runtime_replaced": false
+}

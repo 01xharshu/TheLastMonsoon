@@ -24,6 +24,7 @@ var rider: CharacterBody3D:
 func _ready() -> void:
 	_build()
 	if Engine.is_editor_hint(): return
+	add_to_group("cart_parking_vehicles")
 	_build_boarding_doors()
 	_build_audio()
 	_create_coachman.call_deferred()
@@ -298,6 +299,9 @@ func _build() -> void:
 	_box("DriverCushion",Vector3(0,1.73,.94),Vector3(1.53,.16,.50),leather)
 	_box("DriverSeatBack",Vector3(0,2.02,1.25),Vector3(1.54,.56,.12),paint)
 	_box("DriverFootboard",Vector3(0,1.13,.30),Vector3(1.77,.08,.51),wood)
+	_box("CoachmanFootRest",Vector3(0,1.34,.43),Vector3(.80,.08,.37),wood)
+	for side in [-1.0,1.0]:
+		_beam("CoachmanRestBracket",Vector3(side*.32,1.17,.35),Vector3(side*.32,1.30,.43),.045,iron)
 	for side in [-1.0, 1.0]:
 		_box("DriverBoardingStep",Vector3(side*1.18,.62,.30),Vector3(.38,.09,.50),wood)
 		_beam("DriverStepBracket",Vector3(side*.85,1.13,.30),Vector3(side*1.18,.62,.30),.05,iron)

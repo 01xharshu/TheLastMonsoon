@@ -55,6 +55,11 @@ func build() -> void:
 		for p in Layout.ROUTES[record.route]:points.append(ground(Vector3(p.x,0,p.y)))
 		var start_index: int=2 if record.id=="CantonmentPatrol" else 0
 		var actor:=spawn(record.id,"res://characters/npcs/thana/%s_motion.glb"%record.model,points[start_index],"police")
+		if record.id == "CantonmentPatrol":
+			var firearm := preload("res://combat/climbing_firearm_attack.gd").new()
+			firearm.name = "ClimbingFirearm"
+			firearm.target = player
+			actor.add_child(firearm)
 		var marker:=Label3D.new();marker.name="AlertMarker";marker.text="!";marker.font_size=48
 		marker.position.y=2.05;marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED;marker.modulate=Color(1,.55,.15);marker.visible=false
 		actor.add_child(marker)
@@ -80,10 +85,12 @@ func rescue() -> void:
 
 func visible_to(actor: Node3D) -> bool:
 	var toward:=player.global_position-actor.global_position
-	if toward.length()>28:return false
+	var stance: Node = player.get_node("StealthStance")
+	var observer := actor.global_position+Vector3.UP*1.4
+	if toward.length()>stance.visible_range(observer,28.0):return false
 	if toward.normalized().dot(actor.global_basis.z)<.2 and toward.length()>3:return false
 	sense_ray_count+=1
-	var sight:=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*1.4,player.global_position+Vector3.UP*.35,1)
+	var sight:=PhysicsRayQueryParameters3D.create(observer,stance.sight_target(),1)
 	sight.exclude=[player.get_rid(),actor.body_collider.get_rid()]
 	return get_world_3d().direct_space_state.intersect_ray(sight).is_empty()
 
@@ -154,6 +161,8 @@ func _tick(delta: float) -> void:
 	var seen:=false
 	for patrol in patrols:
 		var actor: Node3D=patrol.actor
+		var firearm := actor.get_node_or_null("ClimbingFirearm")
+		if firearm != null: firearm.hostile = wanted and patrol.state == "pursue"
 		if player.get_meta("detention_action","")!="" and (escort.is_empty() or escort.actor!=actor):
 			actor.travel_speed=0
 			continue
@@ -179,6 +188,9 @@ func _tick(delta: float) -> void:
 				patrol.index+=patrol.step
 		else:
 			seen=seen or patrol.seen
+			if firearm != null and player.get_meta("climbing",false):
+				actor.travel_speed = 0
+				continue
 			var offset:=player.global_position-actor.global_position;offset.y=0
 			if offset.length()>1.15:move_actor(actor,player.global_position,2.8,delta)
 			else:

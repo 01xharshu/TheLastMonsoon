@@ -1,0 +1,25 @@
+{
+  "source_donor": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+  "source": "WorkingAssets/NPCs/errand_passenger/errand_passenger_mpfb.blend",
+  "complete_body_vertices": 13380,
+  "body_masks_disabled": true,
+  "opaque_foundation": "Opaque adult foundation shorts",
+  "correctives": [
+    {
+      "garment": "Kurta loose lower panel",
+      "changed_vertices": 742,
+      "max_corrective_m": 0.2667597567278241
+    },
+    {
+      "garment": "Knee length wrapped dhoti",
+      "changed_vertices": 710,
+      "max_corrective_m": 0.5229145647636156
+    },
+    {
+      "garment": "Dhoti woven border",
+      "changed_vertices": 219,
+      "max_corrective_m": 0.5236707032668754
+    }
+  ],
+  "status": "CONTACT_CLOTH_CANDIDATE"
+}

@@ -28,8 +28,8 @@ func run() -> void:
 	camera.global_position = bay.global_position+Vector3(10,6,12)
 	camera.look_at(bay.global_position+Vector3(0,1,0))
 	await capture("cart_standing_current")
-	camera.global_position = Vector3(-329,9.2,246)
-	camera.look_at(Vector3(-321,8.3,239))
+	camera.global_position = Vector3(-329,13,256)
+	camera.look_at(Vector3(-321,8.3,244))
 	actor.global_position = camera.global_position
 	await capture("village_batch_current")
 	var map: Control = actor.get_node("UI/WorldMap")

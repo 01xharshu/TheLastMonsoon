@@ -107,7 +107,7 @@ func staff(b) -> void:
 		actor.add_to_group("fort_staff")
 		var document := GLTFDocument.new()
 		var state := GLTFState.new()
-		var path := "res://WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb"
+		var path := "res://WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb"
 		if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
 			push_error("Cannot load fort staff rig: "+path)
 			continue

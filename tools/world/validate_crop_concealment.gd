@@ -1,0 +1,22 @@
+extends SceneTree
+const Cover = preload("res://player/crop_concealment.gd")
+func _initialize() -> void:
+	_run.call_deferred()
+func _run() -> void:
+	var field := Node3D.new()
+	root.add_child(field)
+	field.set_meta("crop_cover",{"bounds":Rect2(-5,-5,10,10),"height":1.4,"density":.85})
+	var observer := Vector3(0,1.6,20)
+	var standing := Cover.cover_sample(field,Vector3.ZERO,1.6,observer)
+	var crouching := Cover.cover_sample(field,Vector3.ZERO,1.02,observer)
+	var prone := Cover.cover_sample(field,Vector3.ZERO,.38,observer)
+	assert(standing == 0 and crouching > 0 and prone > crouching)
+	assert(Cover.cover_sample(field,Vector3(6,0,0),.38,observer)==0)
+	assert(Cover.cover_sample(field,Vector3.ZERO,.38,Vector3(0,1.6,2))==0)
+	assert(Cover.cover_sample(field,Vector3.ZERO,.38,Vector3(0,10,7))<prone)
+	assert(Cover.cover_sample(field,Vector3(4.9,0,0),.38,observer)<prone)
+	field.set_meta("crop_cover",{"bounds":Rect2(-5,-5,10,10),"height":.55,"density":.10})
+	assert(Cover.cover_sample(field,Vector3.ZERO,1.02,observer)==0)
+	assert(Cover.cover_sample(field,Vector3.ZERO,.38,observer)<.04)
+	print("CROP CONCEALMENT PASS | posture, bounds, close sight, elevation, edge and sparse low plants")
+	quit()

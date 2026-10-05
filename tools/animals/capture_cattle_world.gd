@@ -7,6 +7,11 @@ func _run()->void:
 	for frame in 8:await physics_frame
 	world.process_mode=Node.PROCESS_MODE_DISABLED
 	var yard:Node3D=get_nodes_in_group("household_cattle")[0]
+	# Local review keeps the real world/colliders but avoids distant shadow work.
+	for mesh:MeshInstance3D in world.find_children("*","MeshInstance3D",true,false):
+		var bounds:AABB=mesh.global_transform*mesh.get_aabb()
+		if not bounds.grow(35).has_point(yard.global_position):mesh.hide()
+	for light:DirectionalLight3D in world.find_children("*","DirectionalLight3D",true,false):light.directional_shadow_max_distance=40
 	var camera:=Camera3D.new();world.add_child(camera);camera.make_current();camera.fov=48
 	camera.global_position=yard.global_position+Vector3(4,2.6,-6);camera.look_at(yard.global_position+Vector3(0,1,0))
 	DirAccess.make_dir_recursive_absolute("/tmp/tlm_cattle_world_frames")

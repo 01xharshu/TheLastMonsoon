@@ -5,6 +5,10 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/characters/arjun/reference_fit/boot_contact_2026-10-01';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(ROOT/'WorkingAssets/Arjun/reference_fit/arjun_eye_moustache_candidate.blend'))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 disabled=[]
 for o in bpy.data.objects:
  if o.name.startswith('Arjun_Boot_'):

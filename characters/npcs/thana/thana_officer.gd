@@ -12,6 +12,12 @@ func _ready() -> void:
 		for surface in mesh.mesh.get_surface_count():
 			var original:=mesh.get_active_material(surface) as StandardMaterial3D
 			if original==null:continue
+			if "police puttee cloth" in original.resource_name.to_lower():
+				var wraps:=ShaderMaterial.new()
+				wraps.shader=preload("res://characters/npcs/thana/thana_puttee.gdshader")
+				wraps.set_shader_parameter("cloth_color",original.albedo_color)
+				mesh.set_surface_override_material(surface,wraps)
+				continue
 			if "sikh uncut beard" in original.resource_name.to_lower():
 				var hair:=ShaderMaterial.new()
 				hair.shader=preload("res://characters/npcs/thana/thana_beard.gdshader")

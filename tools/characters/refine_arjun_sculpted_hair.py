@@ -6,6 +6,10 @@ ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/'WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend'
 OUT=ROOT/'docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 rig=bpy.data.objects['Arjun_Rig'];mat=bpy.data.materials['Arjun black wavy locks']
 bs=mat.node_tree.nodes['Principled BSDF'];bs.inputs['Roughness'].default_value=.84;bs.inputs['Specular IOR Level'].default_value=.12
 for name in ['Arjun_Reference_WavyCrown','Arjun_Reference_WavyLocks']:

@@ -48,7 +48,8 @@ func station(room: Node3D,label: String,at: Vector3,role: String,path: String) -
 	var actor := staff(room,label,at,path)
 	var service = Service.new()
 	service.name = label+"Service"
-	service.position = at
+	service.position = at+Vector3(0,.75,.65)
+	# Public-side conversation point stays clear of the staff body and desk.
 	service.role = role
 	service.staff = actor
 	room.add_child(service)

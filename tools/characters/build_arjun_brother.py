@@ -181,6 +181,15 @@ for side,sign in [("left",1),("right",-1)]:
 boots = HumanService.add_mhclo_asset(str(DATA / "clothes/shoes03/shoes03.mhclo"),
     body,asset_type="Clothes",subdiv_levels=0)
 boots.name = "Dev_fitted_boots"
+# Fit shoe envelopes around the retained feet rather than hiding foot skin.
+for vertex in boots.data.vertices:
+    side=1 if vertex.co.x>0 else -1
+    center=rig.data.bones['foot_l' if side==1 else 'foot_r'].head_local
+    vertex.co.x=center.x+(vertex.co.x-center.x)*1.18
+    vertex.co.y=center.y+(vertex.co.y-center.y)*1.12
+    vertex.co.z=.04+(vertex.co.z-.04)*1.18
+    vertex.co.z+=.022*max(0,min(1,(vertex.co.z-.02)/.025))
+boots['fit']='Expanded envelope for complete feet; contact review open' 
 boot_leather = mat("Worn dark boot leather",(.055,.035,.022),DATA / "clothes/shoes03/shoes03_diffuse.png")
 boots.data.materials.clear();boots.data.materials.append(boot_leather)
 for polygon in boots.data.polygons: polygon.use_smooth = True
@@ -234,15 +243,22 @@ for i in range(6):
     button.modifiers.new("Rig",'ARMATURE').object=rig
 # The short hair keeps the face visible in this first family-likeness study.
 
-# Hide the basemesh under cloth while retaining editable source geometry.
-visible=body.vertex_groups.new(name="Visible skin")
-indices=[v.index for v in body.data.vertices if v.co.z>1.37 or
-         (abs(v.co.x)>.36 and .86<v.co.z<1.37)]
-visible.add(indices,1,'REPLACE')
-mask=body.modifiers.new("Hide clothed skin",'MASK'); mask.vertex_group=visible.name
-mask.show_viewport=False;mask.show_render=False
-for mod in body.modifiers:
-    if mod.name.startswith("Delete."): mod.show_viewport=False; mod.show_render=False
+# Retain all human skin; only MPFB non-human helpers may be hidden.
+for mod in list(body.modifiers):
+    if mod.type=='MASK' and mod.name!='Hide helpers': body.modifiers.remove(mod)
+body['body_retention']='Complete MPFB anatomy; helper-only exclusion'
+# Separate opaque foundation shorts derived from the same body surface.
+foundation=body.copy();foundation.data=body.data.copy()
+foundation.name='Dev_opaque_foundation_shorts'
+bpy.context.scene.collection.objects.link(foundation)
+foundation.data.materials.clear()
+foundation.data.materials.append(mat('Dev opaque foundation cotton',(.18,.14,.10)))
+foundation_group=foundation.vertex_groups.new(name='Foundation shorts surface')
+foundation_group.add([v.index for v in foundation.data.vertices if .70<v.co.z<1.02 and abs(v.co.x)<.28],1,'REPLACE')
+foundation_mask=foundation.modifiers.new('Foundation garment cut','MASK')
+foundation_mask.vertex_group=foundation_group.name
+for vertex in foundation.data.vertices: vertex.co+=vertex.normal*.003
+foundation['construction']='Opaque adult shorts over complete MPFB body'
 
 # Relax the imported A-pose for the review source and the idle's base pose.
 # Retain the underlying game-engine rig and weighted garment for later clips.

@@ -1,9 +1,7 @@
 {
   "clear_new_home_entrances": 2,
   "coaches": 3,
-  "errors": [
-    "office seated garment missing"
-  ],
+  "errors": [],
   "hand_contacts": [
     {
       "actor": "LandownerHouseholdWaterBearer",
@@ -239,8 +237,8 @@
   ],
   "max_office_cloth_anchor_error_m": 0.0,
   "max_sampled_contact_error_m": 0.00197263760492206,
-  "office_cloth_samples": 360,
-  "passed": false,
+  "office_cloth_samples": 362,
+  "passed": true,
   "residents": 4,
   "scope": "household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate",
   "staff": 9

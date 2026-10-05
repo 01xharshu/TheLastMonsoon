@@ -33,6 +33,7 @@ var rider: CharacterBody3D:
 func _ready() -> void:
 	_build()
 	if Engine.is_editor_hint(): return
+	add_to_group("cart_parking_vehicles")
 	_build_audio()
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)

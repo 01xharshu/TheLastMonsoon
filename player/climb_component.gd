@@ -30,13 +30,23 @@ var move_limit := .14
 var route_missing_rows: Array = []
 var releasing := false
 var release_velocity := Vector3.ZERO
+var leap := preload("res://player/climb_leap.gd").new()
+var leap_active := false
+var window_committed := false
+var layers: Array[Vector3] = []
+var opportunities := preload("res://player/climb_opportunities.gd").new()
 
 func arm_jump() -> void:
 	catch_seconds = 1.2
 	launch_y = actor.global_position.y
 
 func request_move() -> bool:
-	if not active or window.active or not waiting_for_move: return false
+	if not active or not waiting_for_move: return false
+	if window.active:
+		window_committed = true
+		waiting_for_move = false
+		return true
+	if leap_active: return leap.request()
 	var next_limit: float
 	if progress < .15:
 		next_limit = .20
@@ -56,7 +66,12 @@ func request_move() -> bool:
 	return true
 
 func release_grip() -> void:
-	if not active or window.active: return
+	if not active: return
+	if window.active:
+		wall_normal = window.normal
+		solid = window.solid
+		saved_mask = actor.collision_mask
+		window.active = false
 	releasing = true
 	waiting_for_move = false
 	release_velocity = wall_normal * 1.8
@@ -67,6 +82,13 @@ var window := preload("res://player/window_climb.gd").new()
 
 func try_start() -> bool:
 	if active or actor.is_swimming or actor.has_meta("mounted_vehicle"): return false
+	# All entry profiles require actual takeoff, including low walls and windows.
+	if actor.is_on_floor() or catch_seconds <= 0.0 or actor.global_position.y-launch_y < .06: return false
+	leap_active = false
+	layers.clear()
+	window_committed = false
+	waiting_for_move = false
+	releasing = false
 	if window.try_start(actor):
 		active = true
 		return true
@@ -85,31 +107,41 @@ func try_start() -> bool:
 	if hit.is_empty() or absf(hit.normal.y) > 0.65: return false
 	if bool(hit.collider.get_meta("climb_blocked",false)): return false
 	var authored: bool = hit.collider.is_in_group("climbable_walls")
+	var discovered: Dictionary = {}
 	if not authored:
 		if not hit.collider is StaticBody3D: return false
 		var surface := preload("res://player/climb_surface.gd").new()
-		if not surface.survey(actor,hit): return false
-		if not window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9)): return false
-		window.surface = surface
-		active = true
-		return true
-	has_holds = hit.collider.has_meta("climb_hold_base_y")
+		if surface.survey(actor,hit):
+			if not window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9)): return false
+			window.surface = surface
+			active = true
+			return true
+		discovered = opportunities.survey(actor,hit)
+		if discovered.is_empty(): return false
+		layers = discovered.layers
+		authored = true
+	has_holds = not layers.is_empty() or hit.collider.has_meta("climb_hold_base_y")
 	if has_holds:
 		# Only a real, newly launched jump can catch the tall wall route.
 		if catch_seconds <= 0.0 or actor.is_on_floor() or actor.global_position.y-launch_y < .35: return false
 		if actor.global_position.distance_to(hit.position) > .90: return false
 		route_missing_rows = hit.collider.get_meta("climb_hold_missing_rows",[])
-	if authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>float(hit.collider.get_meta("climb_lane_half_width",.45)): return false
+	if layers.is_empty() and authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>float(hit.collider.get_meta("climb_lane_half_width",.45)): return false
 	wall_normal = hit.normal
 	wall_point = hit.position
 	hold_base_y = float(hit.collider.get_meta("climb_hold_base_y",hit.position.y))
 	hold_center_z = float(hit.collider.get_meta("climb_hold_center_z",hit.position.z))
 	hold_spacing = float(hit.collider.get_meta("climb_hold_spacing",.40))
 	hold_rows = int(hit.collider.get_meta("climb_hold_rows",11))
+	if not layers.is_empty():
+		hold_base_y = layers[0].y
+		hold_rows = layers.size()
 	var top: float
-	if authored:
+	if not discovered.is_empty():
+		top = discovered.top
+	elif authored:
 		top = hit.collider.get_meta("top_y")
-		if top-actor.global_position.y > 5.6 or top-actor.global_position.y < 0.5: return false
+		if top-actor.global_position.y < 0.5: return false
 	else:
 		if not hit.collider is StaticBody3D: return false
 		var probe: Vector3 = hit.position - wall_normal * 0.18
@@ -120,7 +152,7 @@ func try_start() -> bool:
 		top = lip.position.y
 		var height_above_feet := top - (actor.global_position.y - 0.9)
 		if height_above_feet < 0.55 or height_above_feet > 2.15: return false
-	landing = Vector3(hit.position.x,top+0.94,hit.position.z)-wall_normal*(0.8 if authored else 0.65)
+	landing = discovered.landing if not discovered.is_empty() else Vector3(hit.position.x,top+0.94,hit.position.z)-wall_normal*(0.8 if authored else 0.65)
 	# A lip alone does not establish a place to stand: verify surface depth.
 	var support_query := PhysicsRayQueryParameters3D.create(landing+Vector3.UP*.15,landing-Vector3.UP*1.20)
 	support_query.exclude = [actor.get_rid()]
@@ -140,8 +172,15 @@ func try_start() -> bool:
 	start = actor.global_position
 	grip = Vector3(hit.position.x,actor.global_position.y,hit.position.z)+wall_normal*.36
 	var reachable_row := floori((actor.global_position.y+.95-hold_base_y-.07)/hold_spacing)
-	if reachable_row < int(hit.collider.get_meta("climb_min_hand_row",3)) or reachable_row >= hold_rows or reachable_row in route_missing_rows: return false
-	var catch_height := hold_base_y+reachable_row*hold_spacing+.07
+	if not layers.is_empty():
+		reachable_row = -1
+		for index in layers.size():
+			var height: float = layers[index].y-actor.global_position.y
+			if height >= .25 and height <= .95 and Vector2(layers[index].x-actor.global_position.x,layers[index].z-actor.global_position.z).length() < .95:
+				reachable_row = index
+	if reachable_row < (0 if not layers.is_empty() else int(hit.collider.get_meta("climb_min_hand_row",3))) or reachable_row >= hold_rows or reachable_row in route_missing_rows: return false
+	var catch_height: float = layers[reachable_row].y if not layers.is_empty() else hold_base_y+reachable_row*hold_spacing+.07
+	if not layers.is_empty(): grip = layers[reachable_row]+wall_normal*.18
 	if catch_height-actor.global_position.y < .25: return false
 	grip.y = catch_height-.90
 	hang_grip = grip
@@ -150,7 +189,7 @@ func try_start() -> bool:
 	# must carry the hips and trailing feet over the lip before landing.
 	crest = Vector3(hit.position.x,top-0.65,hit.position.z)+wall_normal*.36
 	var clearance := Vector3(crest.x,landing.y-.39,crest.z)
-	if not solid.can_move(actor,start,hang_grip,1.6) or not solid.can_move(actor,hang_grip,grip,1.6) or not solid.can_move(actor,grip,crest,1.6): return false
+	if not solid.can_move(actor,start,hang_grip,1.6): return false
 	if not solid.can_move(actor,crest,clearance,.9) or not solid.can_move(actor,clearance,landing,.9): return false
 	# Each ascent step has time for a reach, boot placement and upward push.
 	ascent_steps = maxi(1, roundi((crest.y - grip.y) / (hold_spacing*.5)))
@@ -174,6 +213,8 @@ func try_start() -> bool:
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
 	actor.visual_root.global_rotation.y = atan2(-wall_normal.x,-wall_normal.z)
+	leap.begin(self)
+	leap_active = true
 	return true
 
 func _physics_process(delta: float) -> void:
@@ -183,7 +224,17 @@ func _physics_process(delta: float) -> void:
 			if not actor.is_on_floor(): try_start()
 		return
 	if window.active:
-		window.advance(actor,delta)
+		if actor.survival.stamina <= 0.0 or Input.is_action_just_pressed("move_backward"):
+			release_grip()
+			return
+		if waiting_for_move:
+			if Input.is_action_just_pressed("jump") or (Input.is_action_pressed("jump") and Input.is_action_pressed("move_forward")): request_move()
+			return
+		var step_delta := delta
+		if not window_committed:
+			step_delta = minf(delta,maxf(0.0,.28-window.progress)*window.duration)
+		window.advance(actor,step_delta)
+		if window.active and not window_committed and window.progress >= .27999: waiting_for_move = true
 		active = window.active
 		return
 	if releasing:
@@ -198,7 +249,10 @@ func _physics_process(delta: float) -> void:
 		release_grip()
 		return
 	if waiting_for_move:
-		if Input.is_action_just_pressed("jump"): request_move()
+		if Input.is_action_just_pressed("jump") or (Input.is_action_pressed("jump") and Input.is_action_pressed("move_forward")): request_move()
+		return
+	if leap_active and leap.phase != "mantle":
+		leap.advance(delta)
 		return
 	var previous_progress := progress
 	var previous_step := step_index
@@ -241,6 +295,7 @@ func _physics_process(delta: float) -> void:
 		actor.velocity = Vector3.ZERO
 
 func tree_pose_progress() -> float:
+	if leap_active and leap.phase != "mantle": return leap.pose()
 	if waiting_for_move and progress <= .14001: return .14
 	if progress < .14 or progress >= .78: return progress
 	if progress < .20: return lerpf(.14,.28,smoothstep(.14,.20,progress))
@@ -248,6 +303,7 @@ func tree_pose_progress() -> float:
 	return lerpf(.28,.56,transfer) if step_index%2 == 0 else lerpf(.56,.28,transfer)
 
 func step_contact(side: String, foot: bool) -> Vector3:
+	if leap_active: return leap.contact(side,foot)
 	var tangent := Vector3.UP.cross(wall_normal).normalized()
 	var moving_left: bool = step_index%2 == 0
 	if foot: moving_left = not moving_left
@@ -264,6 +320,9 @@ func step_contact(side: String, foot: bool) -> Vector3:
 	return point
 
 func _hold(row: int, side: String, foot: bool, tangent: Vector3) -> Vector3:
+	if not layers.is_empty():
+		var point := layers[clampi(row,0,layers.size()-1)]
+		return point+tangent*(-.24 if side == "l" else .24)-wall_normal*(.05 if foot else 0.0)
 	var point := wall_point+wall_normal*(.13 if foot else .18)
 	point += tangent*((-.24 if side == "l" else .24)+(.08 if posmod(row,2)==1 else 0.0))
 	point.y = hold_base_y+row*hold_spacing+(.08 if foot else .07)

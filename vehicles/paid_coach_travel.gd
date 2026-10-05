@@ -154,6 +154,7 @@ func controls(delta_seconds: float = 1.0/60.0) -> Vector2:
   throttle = clampf(sqrt(2.0*boarding.ACCELERATION*maxf(delta.length()-.25,0))/boarding.FAST_SPEED,.04,.75)
  return Vector2(0.0 if absf(turn) > .55 else throttle,clampf(turn*3.0,-1.0,1.0))
 func show_skip() -> void:
+ if destination == STANDING: return
  skip_ui = CanvasLayer.new()
  add_child(skip_ui)
  var button := Button.new()

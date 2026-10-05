@@ -20,7 +20,7 @@ func survey(body: CharacterBody3D, face: Dictionary) -> bool:
 	if normal.length_squared()<.5: return false
 	tangent = Vector3.UP.cross(normal).normalized()
 	var feet_y: float = actor.global_position.y-.9
-	var reference_y: float = feet_y+1.5
+	var reference_y: float = minf(feet_y+1.5,face.position.y+.65)
 	var lip_hits: Array[Vector3] = []
 	for side in [-1.0,1.0]:
 		var hit := probe(face.position-normal*.22+tangent*side*.32,reference_y)

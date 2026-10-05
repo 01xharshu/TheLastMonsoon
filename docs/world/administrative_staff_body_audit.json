@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "scope": "runtime complete-body topology, skin, foundation and retained editable source paths; no costume/contact approval",
+  "assets": [
+    {
+      "runtime": "characters/npcs/households/merchant.glb",
+      "source": "WorkingAssets/NPCs/households/merchant/merchant.blend",
+      "sha256": "39ec282fef3677435226c0b38bf2d75a3ae103451051cc4d2e2c6437c60ef0a1",
+      "body_mesh": "Complete original MPFB body with retained derived identity",
+      "body_vertices": 14517,
+      "skinned_body": true,
+      "separate_opaque_skinned_foundation": "short04.001",
+      "source_body": {
+        "name": "village_farmer_MakeHuman_body",
+        "evaluated_vertices": 13380,
+        "mask_modifiers": []
+      }
+    },
+    {
+      "runtime": "characters/npcs/british/official_man.glb",
+      "source": "WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend",
+      "sha256": "ec39b0c1a1d0a5f41dc63b2888f0005a59c3b254bc839781d6a5683576f4b909",
+      "body_mesh": "base.002",
+      "body_vertices": 14517,
+      "skinned_body": true,
+      "separate_opaque_skinned_foundation": "short03",
+      "source_body": {
+        "name": "Official_MPFB_body",
+        "evaluated_vertices": 13380,
+        "mask_modifiers": [
+          {
+            "name": "Hide helpers",
+            "viewport": true,
+            "render": true
+          },
+          {
+            "name": "Delete.shoes04",
+            "viewport": false,
+            "render": false
+          },
+          {
+            "name": "Delete.male_elegantsuit01",
+            "viewport": false,
+            "render": false
+          }
+        ]
+      }
+    }
+  ]
+}

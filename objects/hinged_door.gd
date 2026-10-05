@@ -103,7 +103,22 @@ func _batch_leaf(pivot: Node3D) -> void:
 			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 			surfaces[material] = surface
 		for index in child.mesh.get_surface_count():
-			surfaces[material].append_from(child.mesh,index,child.transform)
+			var source: Mesh = child.mesh
+			var source_index: int = index
+			if material is ShaderMaterial:
+				# Grain uses each board's original coordinates. Keep those in the
+				# second UV channel while positions are baked into hinge space.
+				var arrays: Array = child.mesh.surface_get_arrays(index)
+				var coordinates := PackedVector2Array()
+				for vertex: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
+					coordinates.append(Vector2(vertex.x,vertex.y))
+				arrays[Mesh.ARRAY_TEX_UV2] = coordinates
+				var board := ArrayMesh.new()
+				board.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+				source = board
+				source_index = 0
+				material.set_shader_parameter("batched_piece_coordinates",true)
+			surfaces[material].append_from(source,source_index,child.transform)
 		if child.name in ["IronPullRing","InteriorPullRing"]:
 			var anchor := Marker3D.new()
 			anchor.name = child.name

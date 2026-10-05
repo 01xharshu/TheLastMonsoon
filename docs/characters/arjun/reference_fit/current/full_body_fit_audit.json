@@ -1,0 +1,16 @@
+{
+  "disabled_clothing_masks": [
+    "Conservative clothing occlusion"
+  ],
+  "body_vertices": 19158,
+  "body_coordinate_sha256": "968ba4d4cdf7b506a5c950034a9dba7e2274f5c16697e48868ecdb3c2fa815fc",
+  "foundation": "Arjun_Foundation_FittedShorts",
+  "foundation_visible": true,
+  "helpers_only_mask": "Hide helpers",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_complete_body_fitted_candidate.blend",
+  "trouser_vertices_fitted": 8148,
+  "maximum_cloth_delta_m": 0.11783061431038727,
+  "ray_misses": 2022,
+  "status": "FULL_BODY_STRUCTURE_PASS_CLOTH_VISUAL_OPEN",
+  "runtime_replaced": false
+}

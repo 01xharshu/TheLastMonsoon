@@ -61,6 +61,19 @@ func _run() -> void:
 		actor.move_and_slide()
 		await physics_frame
 	assert(cemetery_walk,"Cemetery gate/central path blocked")
+	var service_room_walks: Dictionary = {}
+	for route in [
+		["MilitaryHospital","isolation",Vector3(-5,.25,0),Vector3(-7,.25,0)],
+		["MilitaryHospital","convalescent",Vector3(5,.25,0),Vector3(7,.25,0)],
+		["MilitaryHospital","dressing",Vector3(0,.25,-.3),Vector3(0,.25,-2.0)],
+		["GrainFodderWarehouse","issue_office",Vector3(-6,.25,1.5),Vector3(-6,.25,2.7)],
+		["CavalryStables","tack_room",Vector3(-12.5,.25,1.2),Vector3(-12.5,.25,2.3)],
+		["CantonmentChurch","vestry",Vector3(-3.85,.25,-3.0),Vector3(-3.85,.45,-4.4)]
+	]:
+		var site: Node3D = district.get_node(route[0])
+		var passed: bool = await walk_service_room(actor,site.to_global(route[2]),site.to_global(route[3]))
+		assert(passed,"Arjun service room blocked: "+str(route[1]))
+		service_room_walks[route[1]] = passed
 	# Actual resident collider must match new survey grade, rather than a second ground sheet.
 	var terrain_excludes: Array[RID] = [actor.get_rid()]
 	for body in world.find_children("*", "StaticBody3D", true, false):
@@ -84,7 +97,7 @@ func _run() -> void:
 		var vent := PhysicsRayQueryParameters3D.create(magazine.to_global(Vector3(x,3.1,-4.5)),magazine.to_global(Vector3(x,3.1,-5.6)))
 		vent.exclude = [actor.get_rid()]
 		assert(space.intersect_ray(vent).is_empty(), "Magazine vent is blocked")
-	var report := {"date":"2026-10-05","status":"prototype","buildings":entrances,"cemetery_gate_walk":cemetery_walk,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"fort_guards":2,"fort_cannons":2,"armoury_entrance_clear":true,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
+	var report := {"date":"2026-10-05","status":"prototype","buildings":entrances,"service_room_walks":service_room_walks,"cemetery_gate_walk":cemetery_walk,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"fort_guards":2,"fort_cannons":2,"armoury_entrance_clear":true,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
 	var file := FileAccess.open("res://docs/world/cantonment_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
 	if DisplayServer.get_name() != "headless":
@@ -123,3 +136,18 @@ func _run() -> void:
 		assert(root.get_texture().get_image().save_png("res://docs/world/captures/military_fort_overview.png") == OK)
 	print("CANTONMENT WORLD: PASS | twelve room entrances/player walks, four barrack lines, 35 terrain samples")
 	quit()
+
+func walk_service_room(actor: CharacterBody3D, start: Vector3, finish: Vector3) -> bool:
+	actor.global_position = start+Vector3.UP*(actor.get_node("CollisionShape3D").shape.height*.5)
+	actor.velocity = Vector3.ZERO
+	await physics_frame
+	for frame in 240:
+		var toward := finish-actor.global_position
+		toward.y = 0
+		if toward.length() < .22: return true
+		actor.velocity = toward.normalized()*2.5+Vector3(0,-2,0)
+		actor.move_and_slide()
+		actor.call("_try_walk_step",1.0/60.0,toward.normalized()*2.5/60.0)
+		await physics_frame
+	print("SERVICE ROOM WALK FAILED ",start," -> ",finish," actor ",actor.global_position)
+	return false

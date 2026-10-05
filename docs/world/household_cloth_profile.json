@@ -1,0 +1,7 @@
+{
+  "cached_median_us": 1.87,
+  "garment_parts": 2,
+  "passed": true,
+  "scope": "actual imported official woman; garment lookup microbenchmark only, not whole-world FPS or contact approval",
+  "uncached_median_us": 9.0025
+}

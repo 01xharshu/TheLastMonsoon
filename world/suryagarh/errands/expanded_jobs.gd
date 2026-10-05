@@ -24,7 +24,7 @@ func configure(owner: Node3D) -> void:
 	owner._person("medicine_supply","MarketMedicineDispenser",Vector3(-387,7.2,327),"village_farmer")
 	owner._person("money_sender","StrandedMoneySender",Vector3(-375,7.2,322),"village_farmer")
 	owner._person("money_receiver","PortFamilyReceiver",Vector3(-186,2.8,674),"village_farmer")
-	owner._person("passenger","WaitingBrother",Vector3(-246,7.2,212),"village_farmer")
+	owner._person("passenger","WaitingBrother",Vector3(-246,7.2,212),"errand_passenger")
 	owner._person("family_home","FamilyAtHome",Vector3(-375,7.2,307),"village_woman")
 	for id in ["port_cargo","medicine_request","medicine_supply","money_sender","money_receiver","passenger","family_home"]:
 		var target: Node3D = owner.targets[id]
@@ -100,6 +100,8 @@ func release_passenger(at: Vector3 = Vector3.INF) -> void:
 	passenger.remove_meta("seated_coach")
 	passenger.set_process(true); passenger.set("foot_plant_enabled",true)
 	passenger.get("animation_tree").active = true
+	preload("res://world/suryagarh/errands/passenger_contact.gd").cloth(passenger,0.0)
+	passenger.set_grip("r",0.0)
 	passenger.get_node("BodyCollider").collision_layer = 1
 	manager.targets.passenger.collision_layer = 1
 
@@ -141,14 +143,16 @@ func _seat_passenger(delta: float, amount: float = 1.0, hip_target: Vector3 = Ve
 	var bases: Dictionary = passenger.get("_base_rotations")
 	var axes: Dictionary = passenger.get("_pitch_axes")
 	for side in ["l","r"]:
-		for limb in ["upperarm_","lowerarm_"]:
+		passenger.set_grip(side,0.0)
+		for limb in ["upperarm_","lowerarm_","hand_"]:
 			var bone_name: String = limb+side
 			var bone_index := skeleton.find_bone(bone_name)
-			if bone_index >= 0: skeleton.set_bone_pose_rotation(bone_index,bases[bone_name])
+			if bone_index >= 0: skeleton.set_bone_pose_rotation(bone_index,bases.get(bone_name,Quaternion.IDENTITY))
 		for entry in [["thigh_",-1.5],["calf_",1.5]]:
 			var bone: String = entry[0]+side
 			var index := skeleton.find_bone(bone)
 			if index >= 0: skeleton.set_bone_pose_rotation(index,bases[bone]*Quaternion(axes[bone],entry[1]*amount))
+	preload("res://world/suryagarh/errands/passenger_contact.gd").cloth(passenger,amount)
 	var socket: Node3D = cart.seat_sockets.PassengerSeat
 	passenger.global_rotation.y = lerp_angle(transfer_yaw,socket.global_rotation.y+PI,amount) if not transfer.is_empty() else socket.global_rotation.y+PI
 	var hip: Vector3 = skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("pelvis")).origin)
@@ -210,7 +214,7 @@ func _advance_transfer(delta: float) -> void:
 	var u := transfer_time/TRANSFER_SECONDS
 	var skeleton: Skeleton3D = passenger.get("_skeleton")
 	var seat: Vector3 = cart.seat_sockets.PassengerSeat.global_position
-	var step: Vector3 = cart.to_global(Vector3(transfer_side*1.12,1.48,1.40))
+	var step: Vector3 = cart.to_global(Vector3(transfer_side*1.12,1.48,1.50))
 	var target: Vector3
 	var amount: float
 	if transfer == "boarding":
@@ -234,8 +238,9 @@ func _advance_transfer(delta: float) -> void:
 			swing = smoothstep(.5,.85,u) if lead else smoothstep(.65,1,u)
 			foot = step_foot.lerp(finish,swing)+Vector3.UP*sin(swing*PI)*.10
 		leg_solver._solve_leg(side,skeleton.to_local(foot))
-	if u > .15 and u < .8:
-		passenger.solve_hand_contact("r",cart.to_global(Vector3(transfer_side*.87,1.65,1.80)))
+	if u > .37 and u < .72:
+		var weight := smoothstep(.37,.48,u)*(1.0-smoothstep(.58,.72,u))
+		preload("res://world/suryagarh/errands/passenger_contact.gd").grip(passenger,cart,transfer_side,weight)
 	if u >= 1:
 		var completed := transfer
 		transfer = ""; cart.remove_meta("errand_transfer")

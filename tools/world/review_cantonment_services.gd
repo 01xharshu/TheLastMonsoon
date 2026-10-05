@@ -62,6 +62,44 @@ func run() -> void:
 	world.add_child(sun)
 	for frame in 8: await physics_frame
 	var district: Node3D = builder.get_node("BritishCantonment")
+	var manager: Node3D = district.get_node("ServiceWorkplaces")
+	assert(manager.workers.size()==5)
+	var body_vertices := 0
+	var foundation_vertices := 0
+	var worker_clearances := 0
+	for actor in manager.workers:
+		var complete := false
+		var foundation := false
+		for mesh in actor.find_children("*","MeshInstance3D",true,false):
+			if "export_full_body" in str(mesh.name):
+				complete = mesh.skin != null
+				body_vertices += mesh.mesh.surface_get_array_len(0)
+			if "foundation" in str(mesh.name):
+				foundation = mesh.skin != null
+				foundation_vertices += mesh.mesh.surface_get_array_len(0)
+		assert(complete and foundation,"Worker missing complete skinned MPFB body/foundation")
+		var body: PhysicsBody3D = actor.get_node("BodyCollider")
+		var shape_node: CollisionShape3D = body.get_node("BodyShape")
+		var worker_query := PhysicsShapeQueryParameters3D.new()
+		worker_query.shape = shape_node.shape
+		worker_query.transform = shape_node.global_transform
+		worker_query.transform.origin.y += .015
+		var own_bodies: Array[RID] = []
+		for own_body in actor.find_children("*","PhysicsBody3D",true,false): own_bodies.append(own_body.get_rid())
+		worker_query.exclude = own_bodies
+		var occupancy_hits := world.get_world_3d().direct_space_state.intersect_shape(worker_query)
+		for hit in occupancy_hits: print("WORKPLACE HIT ",actor.name," at ",worker_query.transform.origin," with ",hit.collider.get_path())
+		assert(occupancy_hits.is_empty(),"Worker intersects workplace: "+str(actor.name))
+		worker_clearances += 1
+	manager.update_activity(Vector3(500,9,515))
+	assert(manager.active_workers<=3)
+	manager.update_activity(Vector3(1000,9,1000))
+	assert(manager.active_workers==0)
+	var scheduling_usec := 0
+	for i in 100:
+		manager.update_activity(Vector3(500+i,9,515))
+		scheduling_usec += manager.update_usec
+	manager.set_process(false)
 	var samples := 0
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = .35
@@ -77,11 +115,32 @@ func run() -> void:
 			query.transform.origin = site.to_global(Vector3(0,.91+(.25 if label != "MilitaryCemetery" else .04),z))
 			assert(world.get_world_3d().direct_space_state.intersect_shape(query).is_empty(),"Fixture capsule obstruction: "+label)
 			samples += 1
+	var room_door_samples := 0
+	for route in [
+		["MilitaryHospital",Vector3(-5,.25,0),Vector3(-7,.25,0)],
+		["MilitaryHospital",Vector3(5,.25,0),Vector3(7,.25,0)],
+		["MilitaryHospital",Vector3(0,.25,-.3),Vector3(0,.25,-2.0)],
+		["GrainFodderWarehouse",Vector3(-6,.25,1.5),Vector3(-6,.25,2.7)],
+		["CavalryStables",Vector3(-12.5,.25,1.2),Vector3(-12.5,.25,2.3)],
+		["CantonmentChurch",Vector3(-3.85,.45,-3.0),Vector3(-3.85,.45,-4.4)]
+	]:
+		var site: Node3D = district.get_node(route[0])
+		for i in 12:
+			var query := PhysicsShapeQueryParameters3D.new()
+			query.shape = capsule
+			query.transform.origin = site.to_global(route[1].lerp(route[2],i/11.0)+Vector3(0,.91,0))
+			var hits := world.get_world_3d().direct_space_state.intersect_shape(query)
+			for hit in hits: print("ROOM HIT ",route[0]," at ",query.transform.origin," ",hit.collider.get_path())
+			assert(hits.is_empty(),"New service-room doorway obstructed: "+route[0])
+			room_door_samples += 1
 	var camera := Camera3D.new()
 	world.add_child(camera)
 	camera.make_current()
 	for spec in [
 		["GrainFodderWarehouse","warehouse_interior",Vector3(0,2.1,4.4),Vector3(0,1.2,-2)],
+		["GrainFodderWarehouse","issue_office",Vector3(-6,2.0,2.55),Vector3(-6,1.2,4.2)],
+		["MilitaryHospital","dressing_room",Vector3(0,2.0,-1.4),Vector3(0,1.2,-3.5)],
+		["CantonmentChurch","vestry",Vector3(-3.8,2.0,-3.9),Vector3(-3.8,1.3,-5.5)],
 		["GrainFodderWarehouse","warehouse_fodder",Vector3(1,2.0,0),Vector3(6,.7,2)],
 		["GrainFodderWarehouse","warehouse_exterior",Vector3(13,6,17),Vector3(0,1.5,0)],
 		["CavalryStables","stables_interior",Vector3(12,2.1,3.8),Vector3(-7,1.1,-1.5)],
@@ -99,8 +158,8 @@ func run() -> void:
 		for frame in 4: await process_frame
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://docs/world/captures/service_fixture_"+spec[1]+".png")
-	var report := {"date":"2026-10-05","fixture_capsule_samples":samples,"renderer":RenderingServer.get_current_rendering_method(),"scope":"isolated production cantonment geometry; isolated material review; full-world routes validated separately; no Arjun movement acceptance"}
+	var report := {"date":"2026-10-05","room_door_samples":room_door_samples,"workers":5,"complete_body_vertices":body_vertices,"foundation_vertices":foundation_vertices,"worker_clearances":worker_clearances,"worker_build_usec":manager.get_meta("build_usec"),"mean_schedule_usec":scheduling_usec/100.0,"max_active_workers":3,"fixture_capsule_samples":samples,"renderer":RenderingServer.get_current_rendering_method(),"scope":"production service geometry and full-body workers in isolated fixture; workplace collision and scheduler measured; full-world routes checked separately"}
 	var file := FileAccess.open("res://docs/world/cantonment_service_fixture_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
-	print("SERVICE FIXTURE PASS: ",samples," capsule clearance samples; eleven native captures")
+	print("SERVICE FIXTURE PASS: ",samples," aisle + ",room_door_samples," room door capsule samples; five workers; fourteen native captures")
 	quit()

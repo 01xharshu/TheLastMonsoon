@@ -67,6 +67,10 @@ func run() -> void:
 	check(not bay.try_dock(cart),"Occupied bay accepted dock")
 	intruder.free()
 	cart.global_transform = initial
+	check(bay._overlaps_vehicle(cart),"Owner footprint missing")
+	cart.global_position = bay.to_global(Vector3(0,0,7))
+	check(bay._overlaps_vehicle(cart),"Vehicle body overlaps bay with centre outside")
+	cart.global_transform = initial
 	# A physical obstacle must reject final docking, preserving the vehicle transform.
 	var obstacle := StaticBody3D.new()
 	var block := CollisionShape3D.new()
@@ -81,7 +85,7 @@ func run() -> void:
 	check(cart.global_transform.is_equal_approx(initial),"Failed dock changed transform")
 	obstacle.queue_free()
 	await frames(2)
-	if not live:
+	if not live or "--return" in OS.get_cmdline_user_args():
 		actor.global_position = cart.to_global(Vector3(-2,.96,2.79))
 		check(cart.board_at(actor,"RearPassengerLeft","passenger"),"Return passenger boarding failed")
 		await frames(85)
@@ -107,7 +111,7 @@ func run() -> void:
 		var clear: bool = vehicle.boarding._clearance_at(vehicle.global_position)
 		results.append({"label":standing.get_meta("parking_label"),"occupied":standing.occupant != null,"docked":standing.docked,"vehicle_clear":clear,"position":[standing.global_position.x,standing.global_position.y,standing.global_position.z]})
 		if live: check(clear,"Live standing blocked: "+str(standing.name))
-	var report := {"status":"PASS" if failures.is_empty() else "FAIL","scope":"full-world standing clearance" if live else "physical docking, occupancy, road return and fare","failures":failures,"bays":results}
+	var report := {"status":"PASS" if failures.is_empty() else "FAIL","scope":"full-world standing clearance and accelerated road return" if live and "--return" in OS.get_cmdline_user_args() else ("full-world standing clearance" if live else "physical docking, occupancy, road return and fare"),"failures":failures,"bays":results}
 	var path := "res://docs/world/cart_parking_live_validation.json" if live else "res://docs/world/cart_parking_validation.json"
 	var file := FileAccess.open(path,FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))

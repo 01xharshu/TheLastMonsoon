@@ -7,6 +7,10 @@ ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'WorkingAssets/Arjun/reference_fit'
 REVIEW=ROOT/'docs/characters/arjun/reference_fit'
 bpy.ops.wm.open_mainfile(filepath=str(OUT/'arjun_multiview_fit_candidate.blend'))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 rig=bpy.data.objects['Arjun_Rig']
 # Inspect eye geometry for a projective mapping anchored on actual globe centres.
 eyes=bpy.data.objects['Arjun_Eyes']

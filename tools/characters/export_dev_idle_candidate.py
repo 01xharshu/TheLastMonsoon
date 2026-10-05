@@ -108,14 +108,19 @@ def bake_masked(original, label):
     cutout.matrix_basis = original.matrix_basis.copy()
     cutout.modifiers.new("Armature deformation",'ARMATURE').object = rig
     return cutout
-bake_masked(body,"Dev_visible_skin_export")
+body_export=bake_masked(body,"Dev_complete_body_export")
+body_group=body.vertex_groups['body'].index
+expected=sum(1 for v in body.data.vertices if any(g.group==body_group and g.weight>0 for g in v.groups))
+assert len(body_export.data.vertices)==expected, (len(body_export.data.vertices),expected)
+print('DEV_COMPLETE_BODY',expected,'human vertices retained; foundation separate')
+bake_masked(bpy.data.objects["Dev_opaque_foundation_shorts"],"Dev_foundation_export")
 bake_masked(outfit,"Dev_fitted_upper_export")
 rig.data.pose_position = 'POSE'
 scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT')
 rig.select_set(True)
 for obj in bpy.data.objects:
-    if obj.type == 'MESH' and obj not in (body,outfit): obj.select_set(True)
+    if obj.type == 'MESH' and obj not in (body,outfit,bpy.data.objects["Dev_opaque_foundation_shorts"]): obj.select_set(True)
 bpy.context.view_layer.objects.active = rig
 runtime = GAME / "dev_idle_candidate.glb"
 bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,

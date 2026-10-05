@@ -1,0 +1,112 @@
+{
+  "complete_body_vertices": 13380,
+  "body_masks": [],
+  "foundation_vertices": 3273,
+  "samples": [
+    {
+      "amount": 0,
+      "garment": "Kurta loose lower panel",
+      "samples": 1600,
+      "inside_samples": 0,
+      "max_penetration_m": 0
+    },
+    {
+      "amount": 0,
+      "garment": "Knee length wrapped dhoti",
+      "samples": 1600,
+      "inside_samples": 0,
+      "max_penetration_m": 0
+    },
+    {
+      "amount": 0,
+      "garment": "Dhoti woven border",
+      "samples": 576,
+      "inside_samples": 0,
+      "max_penetration_m": 0
+    },
+    {
+      "amount": 0.25,
+      "garment": "Kurta loose lower panel",
+      "samples": 1600,
+      "inside_samples": 95,
+      "max_penetration_m": 0.023140712874010205
+    },
+    {
+      "amount": 0.25,
+      "garment": "Knee length wrapped dhoti",
+      "samples": 1600,
+      "inside_samples": 93,
+      "max_penetration_m": 0.023871668498031795
+    },
+    {
+      "amount": 0.25,
+      "garment": "Dhoti woven border",
+      "samples": 576,
+      "inside_samples": 34,
+      "max_penetration_m": 0.021145370148587972
+    },
+    {
+      "amount": 0.5,
+      "garment": "Kurta loose lower panel",
+      "samples": 1600,
+      "inside_samples": 183,
+      "max_penetration_m": 0.04345178510993719
+    },
+    {
+      "amount": 0.5,
+      "garment": "Knee length wrapped dhoti",
+      "samples": 1600,
+      "inside_samples": 230,
+      "max_penetration_m": 0.052764504969673
+    },
+    {
+      "amount": 0.5,
+      "garment": "Dhoti woven border",
+      "samples": 576,
+      "inside_samples": 84,
+      "max_penetration_m": 0.047663593323704845
+    },
+    {
+      "amount": 0.75,
+      "garment": "Kurta loose lower panel",
+      "samples": 1600,
+      "inside_samples": 275,
+      "max_penetration_m": 0.05663778539747
+    },
+    {
+      "amount": 0.75,
+      "garment": "Knee length wrapped dhoti",
+      "samples": 1600,
+      "inside_samples": 247,
+      "max_penetration_m": 0.05440915474900976
+    },
+    {
+      "amount": 0.75,
+      "garment": "Dhoti woven border",
+      "samples": 576,
+      "inside_samples": 55,
+      "max_penetration_m": 0.01213416516839061
+    },
+    {
+      "amount": 1,
+      "garment": "Kurta loose lower panel",
+      "samples": 1600,
+      "inside_samples": 298,
+      "max_penetration_m": 0.06780383037403226
+    },
+    {
+      "amount": 1,
+      "garment": "Knee length wrapped dhoti",
+      "samples": 1600,
+      "inside_samples": 325,
+      "max_penetration_m": 0.07038642920088023
+    },
+    {
+      "amount": 1,
+      "garment": "Dhoti woven border",
+      "samples": 576,
+      "inside_samples": 115,
+      "max_penetration_m": 0.06909193098545074
+    }
+  ]
+}

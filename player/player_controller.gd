@@ -28,9 +28,11 @@ var health: float = MAX_HEALTH
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or health <= 0.0: return
 	health = maxf(0.0, health - amount)
+	var climb := get_node_or_null("ClimbComponent")
+	if climb != null and climb.active: climb.release_grip()
 
 func receive_combat_hit(amount: float, attacker: Node3D) -> void:
-	if get_meta("combat_blocking",false) and survival.stamina>=5:
+	if not get_meta("climbing",false) and get_meta("combat_blocking",false) and survival.stamina>=5:
 		var toward:=attacker.global_position-global_position;toward.y=0
 		if toward.normalized().dot($VisualRoot.global_basis.z)>.2:
 			survival.stamina-=5;take_damage(amount*.2);return
@@ -585,6 +587,10 @@ func _handle_movement(
 	# -----------------------------------------------------
 	# SPRINT
 	# -----------------------------------------------------
+
+	# Escape from a low stance only after the existing standing-clearance check.
+	if Input.is_action_pressed("sprint") and input_direction != Vector3.ZERO and $StealthStance.is_low():
+		$StealthStance.stand()
 
 	var wants_to_sprint: bool = (
 		Input.is_action_pressed(

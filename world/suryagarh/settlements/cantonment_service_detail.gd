@@ -17,15 +17,18 @@ static func furnish(b, district: Node3D) -> void:
 				Detail.prop(grain,"res://objects/household/grain_sack.tscn",Vector3(x-.8+col*.8,.52,-3.2+row*.9)).rotation.y = col*.17
 	for x in [-6.0,6.0]:
 		for z in [1.0,2.3]:
-			var bundle = b.piece(grain,"LooseFodderBundle",Vector3(x,.65,z),Vector3(2.4,.8,1),straw)
+			var bundle_x: float = -7.5 if x < 0 else x
+			var bundle_z: float = (.55 if z == 1.0 else 1.65) if x < 0 else z
+			var bundle_width: float = 1.8 if x < 0 else 2.4
+			var bundle = b.piece(grain,"LooseFodderBundle",Vector3(bundle_x,.65,bundle_z),Vector3(bundle_width,.8,1),straw)
 			for child in bundle.get_children():
 				if child is MeshInstance3D:
 					var hay_mesh := SphereMesh.new()
 					hay_mesh.radius = .5
 					hay_mesh.height = 1
 					child.mesh = hay_mesh
-					child.scale = Vector3(2.4,.8,1)
-			for dx in [-.7,.7]:
+					child.scale = Vector3(bundle_width,.8,1)
+			for dx in ([-.5,.5] if x < 0 else [-.7,.7]):
 				var binding := MeshInstance3D.new()
 				var ring := TorusMesh.new()
 				ring.inner_radius = .317
@@ -34,7 +37,7 @@ static func furnish(b, district: Node3D) -> void:
 				binding.material_override = wood
 				binding.rotation.z = PI/2
 				binding.scale.z = 1.25
-				binding.position = Vector3(x+dx,.65,z)
+				binding.position = Vector3(bundle_x+dx,.65,bundle_z)
 				grain.add_child(binding)
 
 	Detail.prop(grain,"res://objects/household/storage/basket.tscn",Vector3(-3,.24,2.7))

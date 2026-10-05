@@ -271,12 +271,14 @@ func compound() -> void:
 			body.set_meta("climb_hold_center_z",c.position.z)
 			body.set_meta("climb_hold_spacing",.40)
 			body.set_meta("climb_hold_rows",11)
+			body.set_meta("climb_hold_missing_rows",[1,3,5,7,9])
+			body.set_meta("climb_lane_half_width",.16)
 		piece(c,"WallWalk",Vector3(side*50.3,4.62,0),Vector3(3.5,.36,96),stone)
 		piece(c,"Coping",Vector3(side*52,4.8,0),Vector3(1.55,.14,96),stone,false)
 		# Worn projecting masonry communicates the climb route.
 		if side<0:
-			for row in 11:
-				for col in 4:
+			for row in range(0,11,2):
+				for col in [1,2]:
 					piece(c,"ClimbingStone",Vector3(side*52.78,.42+row*.40,-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),stone,false)
 	piece(c,"SouthWall",Vector3(0,2.4,48),Vector3(104,4.8,1.4),brick)
 	for side in [-1.0,1.0]:

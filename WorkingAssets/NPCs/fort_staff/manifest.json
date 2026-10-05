@@ -1,0 +1,13 @@
+{
+  "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+  "editable": "WorkingAssets/NPCs/fort_staff/fort_staff_mpfb.blend",
+  "runtime": "WorkingAssets/NPCs/fort_staff/fort_staff_rigged_candidate.glb",
+  "complete_body_vertices": 13380,
+  "runtime_body_vertices": 14517,
+  "missing_body_positions": 0,
+  "source_sha256": "1af0818069afe2f06d15ff2a4ee907e7854e82ca0e62ac6aea1ad496ed8878bc",
+  "foundation_vertices": 1817,
+  "clothing_body_masks_enabled": false,
+  "runtime_sha256": "2ee26e8253c86e8ade87ef3fdb9057a0484cc749f8e2bef42116cfc0db8eb54c",
+  "visual_approved": false
+}

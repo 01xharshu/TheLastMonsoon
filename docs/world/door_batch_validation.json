@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "renderer": "Forward+/Metal Apple M4",
+  "resolution": [
+    960,
+    720
+  ],
+  "pixel_identical": true,
+  "triangle_vertices_before": 4656,
+  "triangle_vertices_after": 4656,
+  "mesh_nodes_before": 48,
+  "mesh_nodes_after": 2,
+  "scope": "fixed-camera rigid-leaf geometry/material pixels, hinge/collision and retained pull markers; not full-world motion or performance approval"
+}

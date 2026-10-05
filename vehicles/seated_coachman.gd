@@ -50,7 +50,7 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
  actor.global_rotation.y=socket.global_rotation.y+PI
  var pelvis:=skeleton.find_bone("pelvis")
  var hip:Vector3=skeleton.to_global(skeleton.get_bone_global_pose(pelvis).origin)
- actor.global_position+=socket.global_position-hip
+ actor.global_position+=socket.global_position+coach.global_basis.y*.11-hip
  # Solve ankles after the pelvis is seated; targets travel with the footboard.
  for side in ["l","r"]:
   var target: Vector3 = foot_target_world(side)
@@ -62,4 +62,4 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
    actor.call("set_grip",side,.7)
 
 func foot_target_world(side: String) -> Vector3:
- return coach.to_global(Vector3(-.18 if side == "l" else .18,1.24,.48))
+ return coach.to_global(Vector3(-.18 if side == "l" else .18,1.46,.48))

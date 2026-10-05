@@ -15,7 +15,7 @@ static func sight(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vecto
 		query.exclude.append(pane.get_rid())
 	return space.intersect_ray(query)
 
-static func shoot(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vector3, to: Vector3, damage: float, initial: Array[RID]) -> Dictionary:
+static func shoot(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vector3, to: Vector3, damage: float, initial: Array[RID], attacker: Node = null) -> Dictionary:
 	var query := PhysicsRayQueryParameters3D.create(from,to)
 	query.exclude = exclusions(tree,initial)
 	var remaining := damage
@@ -31,6 +31,6 @@ static func shoot(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vecto
 			if remaining <= 0.0 or (to-query.from).dot(direction) <= 0.0: return hit
 			continue
 		if body.has_method("take_damage"):
-			preload("res://combat/damage_policy.gd").apply(body,remaining,tree.root.find_child("Player",true,false),"gun")
+			preload("res://combat/damage_policy.gd").apply(body,remaining,attacker if attacker != null else tree.root.find_child("Player",true,false),"gun")
 		return hit
 	return {}

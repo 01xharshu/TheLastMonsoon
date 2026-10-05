@@ -25,6 +25,11 @@ func run() -> void:
 		service.interact(player)
 		assert(not service.completed,"Unavailable clerk accepted service")
 		service.staff.set_meta("dead",false)
+	for service in services:
+		player.global_position = service.global_position+Vector3(0,.2,1.5)
+		player.get_node("VisualRoot").global_rotation.y = PI
+		await physics_frame
+		assert(player.call("_find_interactable") == service,"Clerk service cannot be selected through regular player interaction")
 	inv.add_item("rupees",5)
 	for role in ["petition","court","revenue"]:
 		for service in services:
@@ -70,12 +75,17 @@ func run() -> void:
 		player.global_position = door.global_position+Vector3(0,.95,1.2)
 		player.velocity = Vector3.ZERO
 		door.interact(player)
-		for frame in 180: await physics_frame
+		for frame in 360:
+			await physics_frame
+			if door.opened and not door.moving: break
 		if not door.opened:
 			print("LATCH FAILED ",room.name," ",player.get_meta("door_latch_failure","none")," gap ",player.get_meta("door_latch_hand_gap",-1))
 			quit(1)
 			return
-		assert(is_equal_approx(door.swing,1))
+		if not is_equal_approx(door.swing,1):
+			print("LATCH SWING INCOMPLETE ",room.name," swing=",door.swing," moving=",door.moving," failure=",player.get_meta("door_latch_failure","none"))
+			quit(1)
+			return
 		player.global_position = Vector3(520,12,170)
 	clock.advance_minutes(12*60)
 	for frame in 80: await physics_frame

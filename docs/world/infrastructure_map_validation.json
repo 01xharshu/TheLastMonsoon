@@ -1,5 +1,5 @@
 {
-	"built_count": 108,
+	"built_count": 114,
 	"district_plots": 12,
 	"failures": [],
 	"sites": {
@@ -70,6 +70,7 @@
 		"British Cantonment": "(500.0, 470.0)",
 		"British Courthouse": "(559.0, 130.0)",
 		"British Household": "(-455.0, -184.0)",
+		"British Household Coach Parking (reserved)": "(-475.0, -173.0)",
 		"Cantonment Bazaar": "(640.0, 470.0)",
 		"Cavalry Stables": "(500.0, 421.0)",
 		"Civil Lines": "(680.0, 245.0)",
@@ -88,11 +89,14 @@
 		"Estate Field 5": "(-277.0, 354.0)",
 		"Forest Shrine": "(620.0, -198.0)",
 		"Government House": "(-390.0, -110.0)",
+		"Government House Family Carriage Parking": "(-265.0, -18.0)",
 		"Grain and Fodder Warehouse": "(515.0, 515.0)",
 		"Gunpowder Magazine": "(548.0, 515.0)",
 		"Harvest Yard": "(-408.0, 211.0)",
 		"Hooghly Reach Port": "(-194.0, 668.0)",
+		"Landowner Household Coach Parking (reserved)": "(-321.0, 344.0)",
 		"Landowner Residence": "(-321.0, 344.0)",
+		"Merchant Household Coach Parking (reserved)": "(-410.0, 303.0)",
 		"Merchant Residence": "(-413.0, 282.0)",
 		"Merchant Ship": "(-85.0, 680.0)",
 		"Military Cemetery": "(439.0, 470.0)",
@@ -108,8 +112,10 @@
 		"Timber Bridge": "(132.7333, 165.0)",
 		"Town Hall": "(-320.0, -470.0)",
 		"Village Boat Landing": "(0.0, 0.0)",
+		"Village Goods Cart Parking": "(-273.0, 183.0)",
 		"Village Grain Store": "(-280.0, 285.0)",
 		"Village Horse Stable": "(-260.0, 194.0)",
+		"Village Passenger Ekka Parking": "(-243.0, 207.0)",
 		"Village Well": "(-289.0, 231.0)"
 	},
 	"status": "PASS"

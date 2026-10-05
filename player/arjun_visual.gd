@@ -671,6 +671,7 @@ func _pose_climb(delta: float) -> void:
 	keep_climb_body_outside(component.wall_normal,component.wall_point,ledge_y)
 	var base_y: float = component.hold_base_y if component.has_holds else ledge_y-4.8+.42
 	var contact_blend: float = smoothstep(.04,.14,t)*(1.0-smoothstep(.87,.95,t))
+	if component.leap_active and component.leap.phase != "mantle": contact_blend = component.leap.weight()
 	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
 		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds else (-.42 if side=="l" else .42)
@@ -764,7 +765,7 @@ func _pose_climb(delta: float) -> void:
 		var support: float = foot_contact * (1.0 - smoothstep(.18, .55, cycle))
 		if component.has_holds and t >= .14 and t < .78:
 			foot_target = component.step_contact(side,true)
-			support = 1.0
+			support = component.leap.weight(true) if component.leap_active else 1.0
 			climb_foot_targets[side] = foot_target
 		elif t >= .78:
 			var lead: bool = side == "l"

@@ -1,7 +1,7 @@
 {
   "status": "VISUAL_MATCH_FAILED_NOT_EXACT",
-  "source": "WorkingAssets/Arjun/reference_fit/arjun_eye_contact_candidate.blend",
-  "source_sha256": "09d5734301935904ea0710b0d8046e74ba454a4d0b803fe3ebccb7284abf43d9",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_complete_body_fitted_candidate.blend",
+  "source_sha256": "afb4793740cfc901ab03cf62cbc441c572a45b940780346a3a97e1dcf0cbd734",
   "human_origin": "existing MakeHuman/MPFB Arjun body",
   "detail_capture_provenance": {
     "boot_front.png": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/boot_front.png",
@@ -12,5 +12,7 @@
     "cloth.png": "docs/characters/arjun/reference_fit/eyes_moustache_2026-10-01/cloth.png"
   },
   "runtime_replaced": false,
-  "motion_review": "not approved on new candidate"
+  "motion_review": "not approved on new candidate",
+  "full_body_audit": "full_body_export_audit.json",
+  "full_body_fit_audit": "full_body_fit_audit.json"
 }

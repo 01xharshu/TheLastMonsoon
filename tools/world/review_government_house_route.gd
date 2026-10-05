@@ -9,14 +9,21 @@ var camera_blocks := 0
 var recording := false
 var capture_time := 0.0
 var frame_index := 0
+var capture_pending := false
+var return_only := false
 func _process(delta: float) -> bool:
 	if not recording: return false
 	capture_time+=delta
-	if capture_time < .1: return false
-	capture_time-=.1
+	if capture_time < .1 or capture_pending: return false
+	capture_time=0.0
+	capture_frame()
+	return false
+func capture_frame() -> void:
+	capture_pending=true
+	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_jpg("/tmp/tlm_house_route_frames/%05d.jpg"%frame_index,.9)
 	frame_index+=1
-	return false
+	capture_pending=false
 func _initialize() -> void: call_deferred("run")
 func controls(direction: Vector3) -> void:
 	var local := Basis(Vector3.UP,player.camera_pivot.global_rotation.y).inverse()*direction
@@ -28,6 +35,7 @@ func controls(direction: Vector3) -> void:
 func walk(label: String, target: Vector3) -> bool:
 	var started := Time.get_ticks_msec()
 	var reached := false
+	var fastest_fall := 0.0
 	var camera: Camera3D = player.get_node("CameraPivot/SpringArm3D/Camera3D")
 	for frame in 900:
 		var point: Vector3 = house.to_local(player.global_position)
@@ -41,19 +49,22 @@ func walk(label: String, target: Vector3) -> bool:
 		player.camera_pivot.rotation.y=lerp_angle(player.camera_pivot.rotation.y,yaw,.08)
 		controls(house.global_basis*direction)
 		await physics_frame
+		fastest_fall=minf(fastest_fall,player.velocity.y)
 		var ray := PhysicsRayQueryParameters3D.create(camera.arm.global_position,camera.global_position)
 		ray.exclude=[player.get_rid()]
 		ray.collision_mask=camera.arm.collision_mask
 		if not world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): camera_blocks+=1
 	controls(Vector3.ZERO)
 	for i in 8: await physics_frame
-	var result := {"stage":label,"reached":reached,"target":str(target),"finish":str(house.to_local(player.global_position)),"elapsed_seconds":(Time.get_ticks_msec()-started)/1000.0}
+	var result := {"stage":label,"reached":reached,"target":str(target),"finish":str(house.to_local(player.global_position)),"elapsed_seconds":(Time.get_ticks_msec()-started)/1000.0,"fastest_fall_mps":fastest_fall}
 	stages.append(result)
 	print("HOUSE ROUTE ",JSON.stringify(result))
 	if not reached: failures.append(label+" could not reach target")
-	if DisplayServer.get_name()!="headless" and label in ["entrance","study_bay","drawing_bay","second_landing","bedroom_bay"]:
+	if fastest_fall < -3.0: failures.append(label+" excessive fall speed: "+str(fastest_fall))
+	if DisplayServer.get_name()!="headless" and label in ["entrance","study_bay","drawing_bay","second_landing","bedroom_bay","second_descent","first_descent","exit"]:
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://docs/world/captures/house_route_"+label+".png")
+		var prefix := "house_return_" if return_only else "house_route_"
+		root.get_texture().get_image().save_png("res://docs/world/captures/"+prefix+label+".png")
 	return reached
 func run() -> void:
 	root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
@@ -67,7 +78,8 @@ func run() -> void:
 	player.set_process_unhandled_input(false)
 	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
 	for i in 12: await physics_frame
-	player.global_position=house.to_global(Vector3(0,.95,24))
+	return_only=OS.get_cmdline_user_args().has("--return-only")
+	player.global_position=house.to_global(Vector3(-19,10.15,-5) if return_only else Vector3(0,.95,24))
 	player.velocity=Vector3.ZERO
 	player.camera_pivot.rotation=Vector3(-.12,0,0)
 	player.get_node("CameraPivot/SpringArm3D/Camera3D").make_current()
@@ -82,6 +94,7 @@ func run() -> void:
 		["study_door",Vector3(-20,1.29,10.5)],
 		["study_bay",Vector3(-20,1.29,16)],
 		["study_return",Vector3(-14,1.29,10.5)],
+		["study_hall_return",Vector3(0,1.29,10.5)],
 		["cross_hall",Vector3(0,1.29,0)],
 		["stair_approach",Vector3(20,1.29,13)],
 		["first_landing",Vector3(20,5.55,-13)],
@@ -95,14 +108,33 @@ func run() -> void:
 		["bedroom_cross_hall",Vector3(0,10.15,10.5)],
 		["bedroom_approach",Vector3(0,10.15,-10.5)],
 		["bedroom_door",Vector3(-19,10.15,-10.5)],
-		["bedroom_bay",Vector3(-19,10.15,-5)]
+		["bedroom_bay",Vector3(-19,10.15,-5)],
+		["bedroom_return_door",Vector3(-19,10.15,-10.5)],
+		["bedroom_return_hall",Vector3(0,10.15,-10.5)],
+		["top_cross_hall",Vector3(0,10.15,10.5)],
+		["top_stair_door",Vector3(20,10.15,10.5)],
+		["top_landing_aisle",Vector3(20,10.15,16)],
+		["top_landing_turn",Vector3(28,10.15,16)],
+		["second_descent_approach",Vector3(28,10.15,13)],
+		["second_descent",Vector3(28,5.55,-13)],
+		["first_descent_approach",Vector3(20,5.55,-13)],
+		["first_descent",Vector3(20,1.29,13)],
+		["return_hall",Vector3(0,1.29,10.5)],
+		["exit",Vector3(0,.95,24)]
 	]
+	if return_only:
+		var start_index: int = 0
+		for index in route.size():
+			if route[index][0]=="bedroom_return_door": start_index=index
+		route=route.slice(start_index)
 	for stage in route:
 		if not await walk(stage[0],stage[1]): break
 	recording=false
+	while capture_pending: await process_frame
 	if camera_blocks>0: failures.append("Camera segment hit geometry on %d physics frames"%camera_blocks)
 	var report := {"status":"PASS" if failures.is_empty() else "FAIL","stages":stages,"camera_blocked_frames":camera_blocks,"failures":failures,"limits":"Actual walk controller at default speed; endpoint views are not continuous motion/owner acceptance"}
-	var file:=FileAccess.open("res://docs/world/government_house_route_validation.json",FileAccess.WRITE)
+	var report_path := "res://docs/world/government_house_return_validation.json" if return_only else "res://docs/world/government_house_route_validation.json"
+	var file:=FileAccess.open(report_path,FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("GOVERNMENT HOUSE ROUTE ",report.status)
 	world.queue_free()

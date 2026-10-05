@@ -45,7 +45,7 @@ loft('Female ribcage and pelvis',[(-.84,1.14,.18,.22),(-.64,1.16,.29,.35),(-.42,
 loft('Tapered female neck',[(-.69,1.18,.23,.28),(-.90,1.20,.19,.29),(-1.10,1.25,.145,.225)])
 loft('Long facial planes',[(-1.08,1.27,.125,.21),(-1.23,1.24,.135,.22),(-1.37,1.13,.112,.18),(-1.53,1.00,.105,.12),(-1.64,.94,.10,.075)],group='Head')
 ellipsoid('Lower jaw',(0,.905,-1.45),(.090,.035,.20),coat,'Jaw',True)
-ellipsoid('Muzzle',(0,.93,-1.64),(.125,.08,.10),dark,'Head',False)
+muzzle=ellipsoid('Muzzle',(0,.93,-1.64),(.125,.08,.10),dark,'Head',False)
 # Female dewlap is a thin folded sheet rather than a bulb beneath the throat.
 loft('Folded dewlap',[(-.57,.89,.035,.13),(-.78,.87,.035,.19),(-.97,.94,.032,.20),(-1.13,1.03,.025,.13)])
 for side in [-1,1]:
@@ -84,12 +84,20 @@ for side in [-1,1]:
  extras.append((o,'Head'))
  # Long leaf-like ears with a recessed inner surface.
  ear=ellipsoid('Ear '+tag,(side*.225,1.35,-1.14),(.14,.025,.064),coat,'Ear.'+tag,False)
+ for vertex in ear.data.vertices:
+  tip=max(0,side*vertex.co.x/.14);vertex.co.z-=.020*tip*tip;vertex.co.y-=.015*tip*tip
  ear.rotation_euler[1]=side*.18
  inner=ellipsoid('Ear inner '+tag,(side*.225,1.36,-1.145),(.110,.008,.042),inside,'Ear.'+tag,False)
+ for vertex in inner.data.vertices:
+  tip=max(0,side*vertex.co.x/.14);vertex.co.z-=.020*tip*tip;vertex.co.y-=.015*tip*tip
  inner.rotation_euler[1]=side*.18
  ellipsoid('Eyelid '+tag,(side*.125,1.285,-1.30),(.015,.018,.028),coat,'Head',False)
  ellipsoid('Eye '+tag,(side*.134,1.285,-1.30),(.009,.012,.021),eye,'Head',False)
- ellipsoid('Nostril '+tag,(side*.076,.955,-1.712),(.020,.010,.006),eye,'Head',False)
+ cutter=ellipsoid('Nostril opening cutter '+tag,(side*.076,.955,-1.713),(.024,.014,.024),eye,'Head',False)
+ extras.pop();bpy.context.view_layer.objects.active=muzzle
+ cut=muzzle.modifiers.new('Inset nostril '+tag,'BOOLEAN');cut.operation='DIFFERENCE';cut.object=cutter
+ bpy.ops.object.modifier_apply(modifier=cut.name);bpy.data.objects.remove(cutter,do_unlink=True)
+ ellipsoid('Nostril '+tag,(side*.076,.955,-1.697),(.020,.010,.006),eye,'Head',False)
 segment('Mouth crease',(-.09,.903,-1.691),(.09,.903,-1.691),.004,.004,eye,'Jaw',False)
 ellipsoid('Udder',(0,.745,.57),(.16,.15,.20),pink,'Body',False)
 for x in [-.07,.07]:

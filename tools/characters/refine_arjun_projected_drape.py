@@ -9,6 +9,10 @@ OUT=ROOT/'WorkingAssets/Arjun/reference_fit'
 REVIEW=ROOT/'docs/characters/arjun/reference_fit/projected_drape_2026-10-01'
 REVIEW.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 rig=bpy.data.objects['Arjun_Rig']
 cream=bpy.data.materials['Unbleached draped cotton']
 leather=bpy.data.materials['Worn dark-brown leather']

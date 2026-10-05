@@ -10,6 +10,10 @@ SOURCE=ROOT/'WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend'
 OUT=ROOT/'WorkingAssets/Arjun/reference_fit'
 REVIEW=ROOT/'docs/characters/arjun/reference_fit'
 bpy.ops.wm.open_mainfile(filepath=str(SOURCE))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 body=bpy.data.objects['Arjun_MakeHuman_Body']
 calibrate()
 report=apply_reference_fit(body)

@@ -3,6 +3,42 @@ extends Node3D
 const SEGMENTS := 16
 var cart: Node3D
 var reins: Array[Dictionary] = []
+const FULL_DETAIL_DISTANCE := 80.0
+const DETAIL_CULL_DISTANCE := 180.0
+const DISTANCE_CHECK_SECONDS := .25
+const DISTANT_UPDATE_SECONDS := .1
+var distance_lod_enabled := true
+var detail_updates := 0
+var _distance_elapsed := DISTANCE_CHECK_SECONDS
+var _detail_elapsed := 0.0
+var _distance_squared := 0.0
+
+func _detail_due(delta: float) -> bool:
+ if not distance_lod_enabled:
+  visible = true
+  return true
+ # Occupied vehicles keep immediate contact updates, independent of camera distance.
+ if cart.boarding != null and cart.boarding.rider != null:
+  visible = true
+  _detail_elapsed = 0.0
+  return true
+ _distance_elapsed += delta
+ if _distance_elapsed >= DISTANCE_CHECK_SECONDS:
+  _distance_elapsed = 0.0
+  var camera := get_viewport().get_camera_3d()
+  _distance_squared = camera.global_position.distance_squared_to(cart.global_position) if camera != null else 0.0
+ visible = _distance_squared <= DETAIL_CULL_DISTANCE * DETAIL_CULL_DISTANCE
+ if not visible:
+  _detail_elapsed = 0.0
+  return false
+ if _distance_squared <= FULL_DETAIL_DISTANCE * FULL_DETAIL_DISTANCE:
+  _detail_elapsed = 0.0
+  return true
+ _detail_elapsed += delta
+ if _detail_elapsed < DISTANT_UPDATE_SECONDS: return false
+ _detail_elapsed = fmod(_detail_elapsed,DISTANT_UPDATE_SECONDS)
+ return true
+
 func configure(vehicle: Node3D) -> void:
  cart = vehicle
  process_priority = 120 # After the character's pose and arm contact solve.
@@ -49,6 +85,8 @@ func anchors(entry: Dictionary) -> Array[Vector3]:
   hand = rig.to_global(rig.get_bone_global_pose(rig.find_bone("hand_"+entry.side))*visual.equipment.palm_offsets[entry.side])
  return [bit,hand]
 func _process(delta: float) -> void:
+ if not _detail_due(delta): return
+ detail_updates += 1
  for entry in reins:
   var pins := anchors(entry)
   entry.rendered_pins = pins.duplicate()

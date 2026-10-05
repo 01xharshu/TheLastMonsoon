@@ -1,0 +1,29 @@
+[
+  {
+    "role": "daroga",
+    "body_vertices": 13380,
+    "body_faces": 13378,
+    "foundation": true,
+    "no_body_masks": true,
+    "runtime_body_indices": 80268,
+    "runtime_foundation": true
+  },
+  {
+    "role": "mohurrir",
+    "body_vertices": 13380,
+    "body_faces": 13378,
+    "foundation": true,
+    "no_body_masks": true,
+    "runtime_body_indices": 80268,
+    "runtime_foundation": true
+  },
+  {
+    "role": "burkundaz",
+    "body_vertices": 13380,
+    "body_faces": 13378,
+    "foundation": true,
+    "no_body_masks": true,
+    "runtime_body_indices": 80268,
+    "runtime_foundation": true
+  }
+]

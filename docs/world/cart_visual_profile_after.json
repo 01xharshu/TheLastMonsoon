@@ -1,0 +1,115 @@
+{
+ "phase": "after",
+ "results": [
+  {
+   "baseline_mean_us": 109.703333333333,
+   "baseline_p50_us": 80,
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "mean_us": 109.04,
+   "p50_us": 81,
+   "p95_us": 183,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "baseline_mean_us": 111.221666666667,
+   "baseline_p50_us": 80,
+   "detail_updates": 100,
+   "distance_m": 120.0,
+   "mean_us": 22.1366666666667,
+   "p50_us": 1,
+   "p95_us": 167,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "baseline_mean_us": 98.445,
+   "baseline_p50_us": 79,
+   "detail_updates": 0,
+   "distance_m": 260.0,
+   "mean_us": 0.46,
+   "p50_us": 0,
+   "p95_us": 1,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "baseline_mean_us": 93.0566666666667,
+   "baseline_p50_us": 79,
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "mean_us": 98.7583333333333,
+   "p50_us": 80,
+   "p95_us": 177,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "baseline_mean_us": 91.6366666666667,
+   "baseline_p50_us": 80,
+   "detail_updates": 100,
+   "distance_m": 120.0,
+   "mean_us": 19.1516666666667,
+   "p50_us": 1,
+   "p95_us": 127,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "baseline_mean_us": 106.421666666667,
+   "baseline_p50_us": 80,
+   "detail_updates": 0,
+   "distance_m": 260.0,
+   "mean_us": 0.37,
+   "p50_us": 0,
+   "p95_us": 1,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "baseline_mean_us": 116.251666666667,
+   "baseline_p50_us": 80,
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "mean_us": 101.551666666667,
+   "p50_us": 80,
+   "p95_us": 180,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  },
+  {
+   "baseline_mean_us": 106.603333333333,
+   "baseline_p50_us": 80,
+   "detail_updates": 100,
+   "distance_m": 120.0,
+   "mean_us": 18.945,
+   "p50_us": 1,
+   "p95_us": 146,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  },
+  {
+   "baseline_mean_us": 106.798333333333,
+   "baseline_p50_us": 80,
+   "detail_updates": 0,
+   "distance_m": 260.0,
+   "mean_us": 0.34,
+   "p50_us": 0,
+   "p95_us": 1,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  }
+ ],
+ "scope": "Direct CPU timing of flexible rein update; excludes frame/render/horse/driver/physics costs",
+ "status": "PASS"
+}

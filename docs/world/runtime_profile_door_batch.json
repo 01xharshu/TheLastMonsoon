@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-05",
+  "renderer": "forward_plus",
+  "requested_window_size": "1280x720",
+  "resolution": "1280x720",
+  "scope": "live resident world, static cameras and active world simulation; desktop contention possible; not gameplay FPS or target-hardware approval",
+  "startup_ms": 187400,
+  "views": {
+    "cantonment": {
+      "cpu_physics_ms": 65.595,
+      "cpu_process_ms": 94.045,
+      "draw_calls_p50": 3976.0,
+      "frame_wall_ms_p50": 9.983,
+      "frame_wall_ms_p95": 31.751,
+      "nodes": 52625.0,
+      "objects": 6842.0,
+      "primitives": 1847365.0,
+      "static_memory_bytes": 709791354.0
+    },
+    "civil_lines": {
+      "cpu_physics_ms": 15.402,
+      "cpu_process_ms": 117.708,
+      "draw_calls_p50": 3866.0,
+      "frame_wall_ms_p50": 58.214,
+      "frame_wall_ms_p95": 100.201,
+      "nodes": 52625.0,
+      "objects": 6554.0,
+      "primitives": 2225932.0,
+      "static_memory_bytes": 708593874.0
+    },
+    "village": {
+      "cpu_physics_ms": 14.919,
+      "cpu_process_ms": 76.407,
+      "draw_calls_p50": 3053.0,
+      "frame_wall_ms_p50": 51.293,
+      "frame_wall_ms_p95": 88.948,
+      "nodes": 52624.0,
+      "objects": 3466.0,
+      "primitives": 5342877.0,
+      "static_memory_bytes": 706949478.0
+    }
+  },
+  "vsync": "disabled",
+  "validation": "DIAGNOSTIC ONLY: Metal fence timeouts during shared renderer load; no controlled FPS claim"
+}

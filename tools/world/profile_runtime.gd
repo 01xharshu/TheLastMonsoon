@@ -32,10 +32,11 @@ func _run() -> void:
 			draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		samples.sort()
 		draws.sort()
-		views[spec[0]] = {"frame_wall_ms_p50":samples[60],"frame_wall_ms_p95":samples[114],"draw_calls_p50":draws[60],"objects":Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),"primitives":Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"static_memory_bytes":Performance.get_monitor(Performance.MEMORY_STATIC)}
+		views[spec[0]] = {"frame_wall_ms_p50":samples[60],"frame_wall_ms_p95":samples[114],"draw_calls_p50":draws[60],"cpu_process_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"cpu_physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000,"objects":Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),"primitives":Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"static_memory_bytes":Performance.get_monitor(Performance.MEMORY_STATIC)}
 		print("RUNTIME VIEW ",spec[0]," ",views[spec[0]])
 	var path := "res://docs/world/runtime_profile_baseline.json"
 	if "--after" in OS.get_cmdline_user_args(): path = "res://docs/world/runtime_profile_lighting_after.json"
+	if "--door-batch" in OS.get_cmdline_user_args(): path = "res://docs/world/runtime_profile_door_batch.json"
 	var file := FileAccess.open(path,FileAccess.WRITE)
 	file.store_string(JSON.stringify({"date":Time.get_date_string_from_system(),"renderer":RenderingServer.get_current_rendering_method(),"requested_window_size":"1280x720","resolution":str(root.get_texture().get_width())+"x"+str(root.get_texture().get_height()),"vsync":"disabled","startup_ms":startup_ms,"views":views,"scope":"live resident world, static cameras and active world simulation; desktop contention possible; not gameplay FPS or target-hardware approval"},"\t"))
 	file.close()

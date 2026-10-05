@@ -11,6 +11,8 @@ func dress(actor: Node3D) -> void:
 		if "casualsuit" in label or "upper_cutout" in label: upper=node
 		if "kurta" in label: lower=node
 		var color := Color(.56,.51,.40) if cook else Color(.33,.39,.36)
+		if "dhoti" in label:
+			fit_dhoti_depth(node)
 		if "dhoti" in label: color=Color(.47,.44,.35) if cook else Color(.58,.54,.44)
 		if "wrap" in label: color=Color(.62,.57,.45) if cook else Color(.38,.30,.20)
 		if "border" in label or "fold" in label: color*=.68
@@ -32,7 +34,7 @@ func apron(source: MeshInstance3D) -> void:
 	if joints.is_empty(): return
 	var rig: Skeleton3D=source.get_node(source.skeleton)
 	var torso_binds: Array[int]=[]
-	for name in ["pelvis","spine_01","spine_02"]:
+	for name in ["pelvis","spine_01","spine_02","spine_03"]:
 		var bone := rig.find_bone(name)
 		var found := -1
 		for bind in source.skin.get_bind_count():
@@ -54,7 +56,7 @@ func apron(source: MeshInstance3D) -> void:
 		for column in columns+1:
 			var u := float(column)/columns
 			var x := (u*2-1)*width
-			var z := lerpf(.29,.28,v)+sin(u*TAU*5)*.012*smoothstep(.3,.75,v)
+			var z := lerpf(.245,.35,v)-.10*pow(u*2.0-1.0,2.0)*smoothstep(.25,.7,v)+sin(u*TAU*5)*.012*smoothstep(.3,.75,v)
 			var position := Vector3(x,y,z)
 			vertices.append(position)
 			normals.append(Vector3(0,0,1))
@@ -74,10 +76,10 @@ func apron(source: MeshInstance3D) -> void:
 			var v := float(row)/8.0
 			var y := lerpf(1.25,1.41,v)
 			for column in 2:
-				vertices.append(Vector3(side*lerpf(.105,.16,v)+(float(column)-.5)*.025,y,lerpf(.29,.17,v)))
+				vertices.append(Vector3(side*lerpf(.105,.16,v)+(float(column)-.5)*.025,y,lerpf(.23,.145,v)))
 				normals.append(Vector3(0,0,1));uv.append(Vector2(float(column),v))
-				bones.append_array(PackedInt32Array([torso_binds[2],0,0,0]))
-				skin_weights.append_array(PackedFloat32Array([1,0,0,0]))
+				bones.append_array(PackedInt32Array(torso_binds))
+				skin_weights.append_array(nearest_torso_weights(vertices[-1],points,joints,weights,torso_binds))
 		for row in 8:
 			var a := offset+row*2
 			indices.append_array(PackedInt32Array([a,a+1,a+2,a+1,a+3,a+2]))
@@ -121,10 +123,14 @@ func tailored_hem(upper: MeshInstance3D,lower: MeshInstance3D) -> void:
 		upper_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	upper.mesh=upper_mesh
 	var rig: Skeleton3D=lower.get_node(lower.skeleton)
-	var pelvis := rig.find_bone("pelvis")
-	var bind := 0
-	for index in lower.skin.get_bind_count():
-		if lower.skin.get_bind_bone(index)==pelvis or str(lower.skin.get_bind_name(index))=="pelvis":bind=index;break
+	var torso_binds: Array[int]=[]
+	for name in ["pelvis","spine_01","spine_02"]:
+		var bone := rig.find_bone(name)
+		var bind := -1
+		for index in lower.skin.get_bind_count():
+			if lower.skin.get_bind_bone(index)==bone or str(lower.skin.get_bind_name(index))==name: bind=index;break
+		if bind<0: return
+		torso_binds.append(bind)
 	var vertices:=PackedVector3Array();var normals:=PackedVector3Array();var uv:=PackedVector2Array()
 	var bones:=PackedInt32Array();var weights:=PackedFloat32Array();var indices:=PackedInt32Array()
 	for row in 9:
@@ -132,11 +138,12 @@ func tailored_hem(upper: MeshInstance3D,lower: MeshInstance3D) -> void:
 		for column in 65:
 			var u:=float(column)/64.0;var angle:=u*TAU
 			var fold:=sin(angle*10.0+v*.5)*.006
-			var radius_x:=lerpf(.225,.24,v)+fold
-			var radius_z:=lerpf(.245,.22,v)+fold
-			vertices.append(Vector3(cos(angle)*radius_x,lerpf(1.01,.66,v),sin(angle)*radius_z))
+			var radius_x:=lerpf(.175,.245,smoothstep(0.0,.55,v))+fold
+			var radius_z:=lerpf(.14,.22,smoothstep(0.0,.55,v))+fold
+			vertices.append(Vector3(cos(angle)*radius_x,lerpf(1.01,.66,v),sin(angle)*radius_z+.025))
 			normals.append(Vector3(cos(angle),0,sin(angle)).normalized());uv.append(Vector2(u,v))
-			bones.append_array(PackedInt32Array([bind,0,0,0]));weights.append_array(PackedFloat32Array([1,0,0,0]))
+			var waist_blend:=smoothstep(.78,1.02,lerpf(1.01,.66,v))*.75
+			bones.append_array(PackedInt32Array([torso_binds[0],torso_binds[1],torso_binds[2],0]));weights.append_array(PackedFloat32Array([1.0-waist_blend,waist_blend*.67,waist_blend*.33,0]))
 	for row in 8:
 		for column in 64:
 			var a:=row*65+column
@@ -146,3 +153,32 @@ func tailored_hem(upper: MeshInstance3D,lower: MeshInstance3D) -> void:
 	arrays[Mesh.ARRAY_BONES]=bones;arrays[Mesh.ARRAY_WEIGHTS]=weights;arrays[Mesh.ARRAY_INDEX]=indices
 	var mesh:=ArrayMesh.new();mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	lower.mesh=mesh
+
+func nearest_torso_weights(position: Vector3,points: PackedVector3Array,joints: PackedInt32Array,weights: PackedFloat32Array,binds: Array[int]) -> PackedFloat32Array:
+	var best:=INF
+	var result:=PackedFloat32Array([0,0,1,0])
+	for vertex in points.size():
+		var distance:=points[vertex].distance_squared_to(position)
+		if distance>=best:continue
+		var torso:=PackedFloat32Array([0,0,0,0])
+		var total:=0.0
+		for influence in 4:
+			var index:=binds.find(joints[vertex*4+influence])
+			if index>=0:
+				torso[index]+=weights[vertex*4+influence];total+=weights[vertex*4+influence]
+		if total<.85:continue
+		best=distance
+		for i in 4:torso[i]/=total
+		result=torso
+	return result
+
+func fit_dhoti_depth(node: MeshInstance3D) -> void:
+	# Fit the outer wrap rather than remove any covered MPFB body surface.
+	var mesh:=ArrayMesh.new()
+	for surface in node.mesh.get_surface_count():
+		var arrays:=node.mesh.surface_get_arrays(surface)
+		var points: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+		for i in points.size():points[i].z*=.80
+		arrays[Mesh.ARRAY_VERTEX]=points
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	node.mesh=mesh

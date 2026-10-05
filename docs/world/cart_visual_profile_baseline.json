@@ -1,0 +1,88 @@
+{
+ "phase": "baseline",
+ "results": [
+  {
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "p50_us": 79,
+   "p95_us": 177,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 120.0,
+   "p50_us": 80,
+   "p95_us": 181,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 260.0,
+   "p50_us": 79,
+   "p95_us": 176,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 0
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "p50_us": 79,
+   "p95_us": 175,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 120.0,
+   "p50_us": 79,
+   "p95_us": 182,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 260.0,
+   "p50_us": 79,
+   "p95_us": 191,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 1
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 20.0,
+   "p50_us": 78,
+   "p95_us": 172,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 120.0,
+   "p50_us": 79,
+   "p95_us": 176,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  },
+  {
+   "detail_updates": 600,
+   "distance_m": 260.0,
+   "p50_us": 110,
+   "p95_us": 190,
+   "rein_strips": 2,
+   "samples": 600,
+   "variant": 2
+  }
+ ],
+ "scope": "Direct CPU timing of flexible rein update; excludes frame/render/horse/driver/physics costs",
+ "status": "PASS"
+}

@@ -8,6 +8,10 @@ sys.path.insert(0,str(Path(__file__).parent))
 import fit_arjun_reference_face as fit
 OUT=ROOT/'WorkingAssets/Arjun/reference_fit';REVIEW=ROOT/'docs/characters/arjun/reference_fit'
 bpy.ops.wm.open_mainfile(filepath=str(OUT/'arjun_multiview_surface_candidate.blend'))
+import sys
+sys.path.insert(0,str(Path(__file__).parent))
+from arjun_full_body import ensure_full_body
+ensure_full_body()
 fit.FIT=OUT/'reference_face_residual_fit.json'
 fit.calibrate('face_landmarks_surface.json')
 body=bpy.data.objects['Arjun_MakeHuman_Body'];report=fit.apply_reference_fit(body)

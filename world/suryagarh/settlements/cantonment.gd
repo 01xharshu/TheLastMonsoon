@@ -87,6 +87,8 @@ func build(builder: Node3D) -> void:
 	preload("res://world/suryagarh/settlements/cantonment_service_detail.gd").church(b,church_fittings)
 	preload("res://world/suryagarh/settlements/cantonment_service_detail.gd").cemetery(b,district)
 	preload("res://world/suryagarh/settlements/cantonment_service_detail.gd").furnish(b,district)
+	preload("res://world/suryagarh/settlements/cantonment_rooms.gd").install(b,district)
+	preload("res://world/suryagarh/settlements/cantonment_workplaces.gd").install(b,district)
 	for node in district.get_children():
 		if node is Node3D and node.get_child_count() > 0: b.merge_visuals(node)
 	district.set_meta("parade_bounds",Rect2(Vector2(-26,-24),Vector2(52,48)))

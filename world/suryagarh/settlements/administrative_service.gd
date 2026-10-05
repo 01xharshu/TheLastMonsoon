@@ -5,7 +5,7 @@ var completed := false
 var staff: Node3D
 func _ready() -> void:
 	add_to_group("administrative_services")
-	marker_height = 1.1
+	marker_height = .35
 	interaction_max_distance = 2.5
 	refresh()
 func refresh() -> void:

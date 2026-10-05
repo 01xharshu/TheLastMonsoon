@@ -126,7 +126,9 @@ func tick(delta:float)->void:
 	var turning:=absf(angle_difference(previous_yaw,cow.rotation.y))>.0001
 	var stepping:=moving or turning
 	var translating:=cow.global_position.distance_to(previous_position)>.0001
-	rig.set_bone_pose_position(rig.find_bone("Body"),body_rest_position+Vector3.DOWN*(.07 if stepping else .02))
+	# Small idle weight shifts are solved before the hooves, preserving contact.
+	var weight_shift:=Vector3(sin(elapsed*.43)*.004,sin(elapsed*1.65)*.0015,0) if not stepping else Vector3.ZERO
+	rig.set_bone_pose_position(rig.find_bone("Body"),body_rest_position+Vector3.DOWN*(.07 if stepping else .02)+weight_shift)
 	phase=fmod(phase+delta/(1.6 if turning else 2.4),1)
 	for tag in ORDER:
 		var local_phase:=fmod(phase+OFFSETS[tag],1)
@@ -162,5 +164,13 @@ func tick(delta:float)->void:
 		contact_seconds+=delta
 		if drinking:
 			yard.water_liters=maxf(0,yard.water_liters-delta*.16);yard.refresh_supplies()
-	var tail:=rig.find_bone("Tail");rig.set_bone_pose_rotation(tail,rest[tail]*Quaternion(Vector3.UP,sin(elapsed*1.6)*.09))
+	# Offset ear flicks and occasional swishes avoid a constant metronome loop.
+	for side in ["L","R"]:
+		var ear:=rig.find_bone("Ear."+side)
+		var ear_cycle:=fmod(elapsed+(2.8 if side=="R" else 0.0),9.7)
+		var flick:=sin(ear_cycle*TAU/1.1)*sin(ear_cycle*PI/1.1)*.12 if ear_cycle<1.1 else 0.0
+		rig.set_bone_pose_rotation(ear,rest[ear]*Quaternion(Vector3.UP,flick))
+	var swish_cycle:=fmod(elapsed,12.3)
+	var swish:=sin(swish_cycle*3.6)*sin(swish_cycle*PI/3.5)*.18 if swish_cycle<3.5 else 0.0
+	var tail:=rig.find_bone("Tail");rig.set_bone_pose_rotation(tail,rest[tail]*Quaternion(Vector3.UP,swish))
 	cow.get_node("CowBody").force_update_transform()
