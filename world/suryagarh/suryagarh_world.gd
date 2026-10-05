@@ -29,6 +29,9 @@ func _ready() -> void:
 	errands.name = "ErrandSystem"
 	add_child(errands)
 	preload("res://world/suryagarh/settlements/asset_first_placement.gd").new().integrate(self)
+	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
+	combat_encounters.name="CombatEncounters"
+	add_child(combat_encounters)
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 

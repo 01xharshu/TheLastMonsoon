@@ -38,6 +38,9 @@ func _ready() -> void:
 	compound()
 	place_new_props()
 	place_period_props()
+	var notice_board := preload("res://interaction/market_notice_board.gd").new()
+	notice_board.position = Vector3(-347,layout.height(-347,271),271)
+	add_child(notice_board)
 	landing()
 	preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
 	preload("res://world/suryagarh/settlements/administrative_district.gd").new().build(self)
@@ -400,9 +403,9 @@ func merge_visuals(parent: Node3D) -> void:
 		var p: Node = node.get_parent()
 		var dynamic := false
 		while p!=parent:
-			if p is Interactable: dynamic = true
+			if p is Interactable or p is Skeleton3D or p is CharacterBody3D or p.get_script() != null: dynamic = true
 			p=p.get_parent()
-		if dynamic or node.material_override==null or not node.visible: continue
+		if dynamic or node.skin != null or node.material_override==null or not node.visible: continue
 		var m: Material = node.material_override
 		if not groups.has(m):
 			var st := SurfaceTool.new()

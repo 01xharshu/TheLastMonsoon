@@ -8,6 +8,11 @@ extends DirectionalLight3D
 @onready var moon: DirectionalLight3D = $"../Moon"
 var environment: Environment
 var sky_material: ProceduralSkyMaterial
+const LIGHTING_INTERVAL := 0.1
+const CLOCK_JUMP_MINUTES := 2.88
+var lighting_elapsed := 0.0
+var last_lighting_fraction := -1.0
+var last_lighting_minutes := -INF
 
 func _ready() -> void:
 	var world_environment := get_node_or_null("../WorldEnvironment") as WorldEnvironment
@@ -19,12 +24,22 @@ func _ready() -> void:
 	shadow_enabled = true
 	_update_day_night_lighting()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if game_time == null: return
+	var minutes := game_time.total_game_minutes
+	# Read the clock once, without recomputing a wrapped fraction on every frame.
+	# Sleep/load/time skips refresh immediately; paused clocks perform no writes.
+	if minutes == last_lighting_minutes: return
+	lighting_elapsed += delta
+	if lighting_elapsed < LIGHTING_INTERVAL and absf(minutes-last_lighting_minutes) < CLOCK_JUMP_MINUTES: return
+	lighting_elapsed = fmod(lighting_elapsed,LIGHTING_INTERVAL)
 	_update_day_night_lighting()
 
 func _update_day_night_lighting() -> void:
 	if game_time == null or moon == null: return
 	var fraction := game_time.get_time_of_day_fraction()
+	last_lighting_fraction = fraction
+	last_lighting_minutes = game_time.total_game_minutes
 	var elevation := sin((fraction - 0.25) * TAU)
 	rotation_degrees = Vector3(90.0 - fraction * 360.0, sun_azimuth_degrees, 0)
 	moon.rotation_degrees = Vector3(rotation_degrees.x + 180.0, sun_azimuth_degrees, 0)

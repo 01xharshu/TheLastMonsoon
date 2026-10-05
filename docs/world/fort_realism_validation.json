@@ -4,7 +4,7 @@
 	"renderer": "headless",
 	"samples": [
 		{
-			"cook_hand_gap_max_m": 0.00371162197552621
+			"cook_hand_gap_max_m": 0.000999787356704473
 		},
 		{
 			"max_mesh_base_gap_m": 0.000000395881215808913,

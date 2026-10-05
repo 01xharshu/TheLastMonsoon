@@ -1,0 +1,27 @@
+{
+  "actors": {
+    "boatman": {
+      "max_planted_step_slip_m": 0.0000030719531878276,
+      "passed": true,
+      "support_ankle_delta_m": 0.0000187456607818604,
+      "swing_ankle_lift_m": 0.0599009394645691,
+      "travel_speed_m_s": 0.611111111111111
+    },
+    "dock_porter": {
+      "max_planted_step_slip_m": 0.00000392149740946479,
+      "passed": true,
+      "support_ankle_delta_m": 0.0000204145908355713,
+      "swing_ankle_lift_m": 0.0649132132530212,
+      "travel_speed_m_s": 0.555555555555556
+    },
+    "record_clerk": {
+      "max_planted_step_slip_m": 0.00000228469343710458,
+      "passed": true,
+      "support_ankle_delta_m": 0.0000267624855041504,
+      "swing_ankle_lift_m": 0.0399233400821686,
+      "travel_speed_m_s": 0.388888888888889
+    }
+  },
+  "passed": true,
+  "scope": "baked flat-floor ankle heights and stance slip; no toe/mesh/cloth/terrain approval"
+}

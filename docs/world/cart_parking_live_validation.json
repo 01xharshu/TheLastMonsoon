@@ -1,0 +1,73 @@
+{
+	"bays": [
+		{
+			"docked": true,
+			"label": "Village Passenger Ekka Parking",
+			"occupied": true,
+			"position": [
+				-243.0,
+				7.19999980926514,
+				207.0
+			],
+			"vehicle_clear": true
+		},
+		{
+			"docked": true,
+			"label": "Village Goods Cart Parking",
+			"occupied": true,
+			"position": [
+				-273.0,
+				7.19999980926514,
+				183.0
+			],
+			"vehicle_clear": true
+		},
+		{
+			"docked": true,
+			"label": "Government House Family Carriage Parking",
+			"occupied": true,
+			"position": [
+				-265.0,
+				7.73874998092651,
+				-18.0
+			],
+			"vehicle_clear": true
+		},
+		{
+			"docked": true,
+			"label": "Landowner Household Coach Parking (reserved)",
+			"occupied": true,
+			"position": [
+				-321.0,
+				7.23999977111816,
+				344.0
+			],
+			"vehicle_clear": true
+		},
+		{
+			"docked": true,
+			"label": "Merchant Household Coach Parking (reserved)",
+			"occupied": true,
+			"position": [
+				-410.0,
+				7.23999977111816,
+				303.0
+			],
+			"vehicle_clear": true
+		},
+		{
+			"docked": true,
+			"label": "British Household Coach Parking (reserved)",
+			"occupied": true,
+			"position": [
+				-475.0,
+				8.5600004196167,
+				-173.0
+			],
+			"vehicle_clear": true
+		}
+	],
+	"failures": [],
+	"scope": "full-world standing clearance",
+	"status": "PASS"
+}

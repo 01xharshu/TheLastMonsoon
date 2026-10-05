@@ -36,6 +36,10 @@ for slug, suffix in ([(RANK.capitalize(), 'man')] if UNIFORM else [('Companion',
             bpy.ops.wm.open_mainfile(filepath=str(ROOT / f'WorkingAssets/NPCs/british/{RANK}_skirt_candidate/{RANK}_woman_skirt_candidate.blend'))
     rig = bpy.data.objects[f'{slug}_game_engine_rig']
     body = bpy.data.objects[f'{slug}_MPFB_body']
+    import sys
+    sys.path.insert(0, str(ROOT / 'tools/characters'))
+    from whole_body_contract import retain_complete_body
+    retain_complete_body(body)
     outfit = bpy.data.objects[f'{slug}_fitted_cloth_base']
     rig.data.pose_position = 'REST'
     bpy.context.view_layer.update()

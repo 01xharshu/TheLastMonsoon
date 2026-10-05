@@ -1,0 +1,18 @@
+{
+	"bays": [
+		{
+			"docked": true,
+			"label": "Public Coach Parking",
+			"occupied": true,
+			"position": [
+				-265.0,
+				0.0,
+				-18.0
+			],
+			"vehicle_clear": true
+		}
+	],
+	"failures": [],
+	"scope": "physical docking, occupancy, road return and fare",
+	"status": "PASS"
+}

@@ -6,6 +6,8 @@ var elapsed := DURATION
 var target: Node3D
 var impact_done := false
 var previous_blade := PackedVector3Array()
+var struck_bodies: Array[RID] = []
+var closest_target_contact := INF
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 
@@ -16,6 +18,8 @@ func strike() -> bool:
 	ControllerFeedback.pulse("melee")
 	elapsed = 0.0
 	impact_done = false
+	struck_bodies.clear()
+	closest_target_contact=INF
 	previous_blade = visual.equipment.sword_blade_segment()
 	return true
 
@@ -60,6 +64,7 @@ func _process(delta: float) -> void:
 		if previous_blade.size() == 2:
 			for end in [0,1]:
 				distance = minf(distance,point.distance_to(Geometry3D.get_closest_point_to_segment(point,previous_blade[end],blade[end])))
+		closest_target_contact=minf(closest_target_contact,distance)
 		if distance <= .14:
 			var ray := PhysicsRayQueryParameters3D.create(blade[0],point)
 			ray.exclude = [actor.get_rid()]
@@ -67,6 +72,20 @@ func _process(delta: float) -> void:
 			if obstacle.is_empty() or obstacle.collider == target:
 				impact_done = true
 				if target.cut_flag(): actor.get_node("FameComponent").award_flag_cut()
+	if visual.slash_phase >= .30 and visual.slash_phase <= .82 and blade.size()==2:
+		var segments: Array = [[blade[0],blade[1]]]
+		if previous_blade.size()==2:
+			segments.append([previous_blade[0],blade[0]])
+			segments.append([previous_blade[1],blade[1]])
+		for segment in segments:
+			var query := PhysicsRayQueryParameters3D.create(segment[0],segment[1])
+			query.exclude = [actor.get_rid()]
+			var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
+			if hit.is_empty() or not hit.collider.has_method("take_damage"): continue
+			var rid: RID = hit.collider.get_rid()
+			if rid in struck_bodies: continue
+			struck_bodies.append(rid)
+			preload("res://combat/damage_policy.gd").apply(hit.collider,45.0,actor,"sword")
 	previous_blade = blade
 	if elapsed >= DURATION:
 		visual.slash_phase = -1.0

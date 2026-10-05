@@ -12,6 +12,7 @@ const JOBS := {
 	"merchant_parcel": {"title":"Cloth parcel for the market", "offer":"office", "goal":"market", "kind":"delivery", "pay":8, "description":"Counting-house clerk: Collect our sealed cloth parcel from the dispatch table, then deliver it to the market receiver. Eight rupees on delivery; no deposit."},
 	"market_sort": {"title":"Sort the market stores", "offer":"market", "goal":"work", "kind":"work", "pay":5, "description":"Market receiver: Put the sacks at the sorting table in order. Hold the work interaction for three seconds, then return to me for five rupees."},
 }
+var pending_passenger: Dictionary = {}
 var expanded: Node
 var stages: Dictionary = {}
 # Last paid day remains even when a new shift is accepted or cancelled.
@@ -72,6 +73,7 @@ func _build_world() -> void:
 	floor_levels.office = 7.44; floor_levels.parcel = 7.44
 	expanded = preload("res://world/suryagarh/errands/expanded_jobs.gd").new()
 	expanded.name = "ExpandedJobs"; add_child(expanded); expanded.configure(self)
+	expanded.restore_trip(pending_passenger); pending_passenger.clear()
 	for id in ["board","work"]:
 		var post := MeshInstance3D.new()
 		var mesh := BoxMesh.new(); mesh.size = Vector3(.12,1.4,.12)
@@ -177,13 +179,15 @@ func objective(id: String) -> String:
 	var job: Dictionary = JOBS[id]
 	if job.has("pickup"):
 		if job.kind == "escort": return "Stop a passenger cart beside the waiting brother." if stages.get(id,"") == "accepted" else "Drive the passenger home and stop to let him out."
-		return "Collect: " + str(job.title) if stages.get(id,"") == "accepted" else "Deliver: " + str(job.title)
+		var stops := {"port_cargo":"the consignment at the port warehouse", "office":"the goods to the counting-house clerk", "medicine_supply":"the medicine from the market dispenser", "medicine_request":"the medicine to the worried neighbour", "money_sender":"the sealed purse from the sender", "money_receiver":"the sealed purse to the family at the port"}
+		var endpoint: String = str(job.pickup) if stages.get(id,"") == "accepted" else str(job.goal)
+		return ("Collect " if stages.get(id,"") == "accepted" else "Deliver ") + str(stops.get(endpoint,job.title))
 	if job.kind == "aid": return "Bring one roti to the traveller on the village road."
 	if job.kind == "delivery": return "Deliver the parcel to the market receiver." if stages.get(id, "") == "carrying" else "Collect the sealed cloth parcel inside the counting house."
 	return "Return to the market receiver for payment." if stages.get(id, "") == "worked" else "Hold the interaction at the sorting table for three seconds."
 
 func export_state() -> Dictionary:
-	return {"active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true)}
+	return {"active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true), "passenger_trip":expanded.export_trip() if expanded != null else pending_passenger.duplicate(true)}
 
 func restore_state(data: Dictionary) -> void:
 	if expanded != null: expanded.release_passenger()
@@ -206,6 +210,9 @@ func restore_state(data: Dictionary) -> void:
 		var kind: String = JOBS[requested].kind
 		if stage == "accepted" or (stage == "carrying" and kind in ["delivery","escort"]) or (stage == "worked" and kind == "work"):
 			active = requested; stages[active] = stage
+	pending_passenger = data.get("passenger_trip",{}).duplicate(true) if data.get("passenger_trip",{}) is Dictionary else {}
+	if expanded != null:
+		expanded.restore_trip(pending_passenger); pending_passenger.clear()
 
 func _message(value: String) -> void:
 	toast.text = value; toast_seconds = 5.0; toast.show()
@@ -263,7 +270,7 @@ func _button(value: String, action: Callable) -> void:
 
 func open_panel(id: String = "journal") -> void:
 	if panel.get_parent().visible or get_tree().paused: return
-	if player.get_meta("map_open",false) or player.get_meta("scroll_open",false) or player.get_meta("document_busy",false) or player.get_meta("weapon_wheel_open",false) or player.get_meta("climbing",false) or player.has_meta("mounted_vehicle") or player.get_meta("rest_action","") != "" or player.get_meta("river_action","") != "" or player.health <= 0 or player.inventory_ui.is_open(): return
+	if player.get_meta("map_open",false) or player.get_meta("scroll_open",false) or player.get_meta("document_busy",false) or player.get_meta("weapon_wheel_open",false) or player.get_meta("climbing",false) or (player.has_meta("mounted_vehicle") and player.get_meta("mounted_vehicle") != null) or player.get_meta("rest_action","") != "" or player.get_meta("river_action","") != "" or player.health <= 0 or player.inventory_ui.is_open(): return
 	source = id
 	for child in rows.get_children(): rows.remove_child(child); child.queue_free()
 	paper_title.text = "PUBLIC WORK NOTICES" if active.is_empty() else JOBS[active].title.to_upper()
@@ -303,6 +310,9 @@ func next_endpoint() -> String:
 
 func tracked_objective() -> String:
 	if active.is_empty(): return ""
+	if active == "family_cart" and expanded != null:
+		if expanded.transfer == "boarding": return "Wait for your passenger to board the cart"
+		if expanded.transfer == "exiting": return "Let your passenger step down safely"
 	if JOBS[active].has("pickup"): return objective(active)
 	match next_endpoint():
 		"parcel": return "Collect the cloth parcel at the counting house"

@@ -59,7 +59,8 @@ func _build_households() -> void:
 		actor.global_position=british.to_global(Vector3(-1 if label=="OfficialMan" else 2,.24,2))
 		actor.set("_home",actor.position); actor.set("movement_enabled",false)
 		actor.set_meta("household","BritishHousehold"); couple.append(actor)
-	_coach(landlord,[landowner],[Vector3(-316,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
+	# Centre the parked coach in the court so its return/departure turn clears both arcades.
+	_coach(landlord,[landowner],[Vector3(-321,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
 	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-410,7.24,330),Vector3(-379,7.24,330)])
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
 	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 3 household coaches")
@@ -173,11 +174,19 @@ func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
 	coach.position=route[0];add_child(coach)
 	coach.add_to_group("household_coach")
 	coach.set_meta("household",str(home.name))
+	coach.set_meta("booking_status", "british_reserved" if home.name == "BritishHousehold" else "household_reserved")
+	coach.add_to_group("cart_parking_vehicles")
+	var bay := preload("res://vehicles/cart_parking_bay.gd").new()
+	bay.name = str(home.name) + "CoachParking"
+	add_child(bay)
+	bay.configure(coach, str(home.name).capitalize() + " Coach Parking (reserved)")
 	# Household traffic has occupied seats; public playable carts remain separate.
 	for child in coach.get_children():
 		if child.name.ends_with("Boarding"):child.queue_free()
 	var driver:=_staff(home,"Coachman",home.to_local(route[0]),"village_farmer",Vector3.FORWARD)
 	var travel:=Travel.new();travel.name="HouseholdTravel";travel.configure(coach,people,route,driver)
+	bay.standing_heading = coach.global_rotation.y
+	bay.global_rotation.y = coach.global_rotation.y
 	coach.add_child(travel)
 	var office_center:=route[-1]+Vector3(12,-.04,-18 if home.name=="MerchantHousehold" else 0)
 	var office:=_workplace(home,office_center)

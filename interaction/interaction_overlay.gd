@@ -387,11 +387,6 @@ func _physics_process(
 			continue
 
 
-		if not candidate.interaction_available():
-
-			continue
-
-
 		# -------------------------------------------------
 		# IMPORTANT
 		#
@@ -405,18 +400,11 @@ func _physics_process(
 		)
 
 
-		var distance := (
-			actor.global_position
-			.distance_to(
-				anchor
-			)
-		)
-
-
-		if distance > MARKER_MAX_DISTANCE:
-
+		# Exact anchor range before availability, projection and visibility rays.
+		if actor.global_position.distance_squared_to(anchor) > MARKER_MAX_DISTANCE * MARKER_MAX_DISTANCE:
 			continue
-
+		if not candidate.interaction_available():
+			continue
 
 		if camera.is_position_behind(
 			anchor
@@ -484,7 +472,7 @@ func _physics_process(
 			candidate
 		] = anchor
 
-		if distance > MARKER_HIDE_DISTANCE:
+		if actor.global_position.distance_squared_to(anchor) > MARKER_HIDE_DISTANCE * MARKER_HIDE_DISTANCE:
 			markers.append(candidate)
 
 

@@ -150,9 +150,7 @@ func shell(label: String, center: Vector3, size: Vector2, caption: String) -> No
 
 func bed(parent: Node3D, p: Vector3, white: bool) -> void:
 	b.piece(parent,"CotFrame",p+Vector3(0,0.45,0),Vector3(1.3,0.12,2.1),b.wood)
-	b.piece(parent,"Pillow",p+Vector3(0,.62,-.72),Vector3(.9,.13,.38),wall_surface,false)
-	b.piece(parent,"FoldedBlanket",p+Vector3(0,.60,.65),Vector3(1.15,.07,.5),timber_surface,false)
-	b.piece(parent,"Bedding",p+Vector3(0,0.54,0),Vector3(1.2,0.08,2),b.plaster if white else b.ochre,false)
+	preload("res://world/suryagarh/settlements/military_room_finish.gd").bed(parent,p,white)
 	for x in [-0.5,0.5]:
 		for z in [-0.85,0.85]: b.piece(parent,"CotLeg",p+Vector3(x,0.21,z),Vector3(0.09,0.42,0.09),b.wood)
 

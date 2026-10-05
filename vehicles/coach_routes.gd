@@ -33,3 +33,11 @@ static func route(graph: AStar2D, start: Vector2, destination: String) -> Packed
  if start.distance_to(graph.get_point_position(id)) > 40.0: return PackedVector2Array()
  var end := graph.get_closest_point(STOPS[destination])
  return graph.get_point_path(id,end)
+
+static func route_to_point(graph: AStar2D, start: Vector2, goal: Vector2) -> PackedVector2Array:
+ var first := graph.get_closest_point(start)
+ var last := graph.get_closest_point(goal)
+ if start.distance_to(graph.get_point_position(first)) > 40 or goal.distance_to(graph.get_point_position(last)) > 40: return PackedVector2Array()
+ var points := graph.get_point_path(first,last)
+ if not points.is_empty(): points.append(goal)
+ return points

@@ -1,5 +1,5 @@
 {
-	"date": "2026-10-01",
+	"date": "2026-10-05",
 	"failures": [],
 	"max_tree_foot_gap_m": -0.119970321655273,
 	"open": "staff, market services, normal-speed motion, historical and owner art approval",
@@ -17,7 +17,11 @@
 			"passed": true
 		},
 		"CollectorBungalow": {
-			"end": "(640.0, 11.14092, 235.2391)",
+			"end": "(640.0, 11.14092, 235.2392)",
+			"passed": true
+		},
+		"CollectorBungalowRoomCircuit": {
+			"end": "(640.1669, 11.14092, 235.0)",
 			"passed": true
 		},
 		"CollectorBungalowServiceQuarters": {
@@ -40,6 +44,10 @@
 			"end": "(720.0, 11.14092, 235.2364)",
 			"passed": true
 		},
+		"OfficerBungalowRoomCircuit": {
+			"end": "(720.1669, 11.14092, 235.0)",
+			"passed": true
+		},
 		"OfficerBungalowServiceQuarters": {
 			"end": "(720.0, 11.14092, 194.2369)",
 			"passed": true
@@ -57,7 +65,7 @@
 			"passed": true
 		},
 		"collector_bungalow_drive": {
-			"end": "(640.0, 11.08513, 248.1972)",
+			"end": "(640.0, 10.90092, 248.2456)",
 			"passed": true
 		},
 		"officer_bungalow_drive": {

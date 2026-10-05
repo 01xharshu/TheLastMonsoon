@@ -2,6 +2,7 @@ extends "res://characters/npcs/british/british_npc_actor.gd"
 ## Personal work branch overlays arms while retaining independent locomotion.
 @export var household_job:String="resident"
 func _ready() -> void:
+	if not has_meta("combat_faction"): set_meta("combat_faction","indian")
 	super._ready()
 	var vitality := preload("res://combat/npc_vitality.gd").new()
 	vitality.name = "Vitality"
@@ -46,7 +47,7 @@ func _ready() -> void:
 	animation_tree.advance(0.0)
 
 func _process(delta:float) -> void:
-	if get_meta("dead",false): return
+	if get_meta("dead",false) or get_meta("knocked_out",false): return
 	super._process(delta)
 	if household_job=="WaterBearer" and _skeleton!=null:
 		var pot:=get_node_or_null("CarriedWaterPot") as Node3D

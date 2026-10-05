@@ -17,3 +17,11 @@ func _place(label: String, cart: Node3D, at: Vector2, heading: float) -> void:
 	cart.position = Vector3(at.x, layout.height(at.x, at.y), at.y)
 	cart.rotation.y = heading
 	add_child(cart)
+	cart.add_to_group("live_travel_carts")
+
+	cart.add_to_group("cart_parking_vehicles")
+	var bay := preload("res://vehicles/cart_parking_bay.gd").new()
+	bay.name = label + "Parking"
+	add_child(bay)
+	bay.configure(cart, label.capitalize() + " Parking")
+	cart.set_meta("booking_status", "public")

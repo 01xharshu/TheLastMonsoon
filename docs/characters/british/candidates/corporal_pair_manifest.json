@@ -16,13 +16,13 @@
   "runtime_exports": {
     "man": {
       "path": "characters/npcs/british/corporal_man.glb",
-      "sha256": "eb0b14646ed3c7c16fdc76633cb870e80f58242f086e65adec87941e08740507",
-      "bytes": 1502220
+      "sha256": "11e5ed9687027b6777a5f98504b0abf121ba54a02c5759d9ab907e74db6f3614",
+      "bytes": 1872436
     },
     "woman": {
       "path": "characters/npcs/british/corporal_woman.glb",
-      "sha256": "2574dfecb9e517fe50515cc3f625da3ae1d7734c07344150f009ee1715c34a7b",
-      "bytes": 1923216
+      "sha256": "2f94848a8b8c7b9d07028fdc70dcef84f9a184fa7cbd7390db21a456044b51b7",
+      "bytes": 2246176
     }
   },
   "animation": "Independent Godot AnimationTree idle/walk Blend2 with calibrated walk TimeScale; personal clips and male/female profiles",

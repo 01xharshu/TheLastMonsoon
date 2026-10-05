@@ -71,6 +71,15 @@ func _run() -> void:
 			for previous in rifle_bounds:check(not previous.intersects(bounds),"rifle displays do not overlap")
 			rifle_bounds.append(bounds)
 	check(guns==6,"six fitted rifle displays")
+	check(get_nodes_in_group("fort_cannons").size()==2,"both cannons constructed")
+	var shelves:=0
+	for child in armoury.get_children():
+		if child.get_meta("part_label","")=="ArmourySideShelf":shelves+=1
+	check(shelves==6,"six armoury shelves constructed")
+	var linen_beds:=0
+	for room in world.get_node("Settlement/BritishCantonment").get_children():
+		linen_beds+=int(room.get_meta("linen_bed_count",0))
+	check(linen_beds==40,"all forty cantonment beds receive linen")
 	for cannon in get_nodes_in_group("fort_cannons"):
 		var bounds:AABB=fort.weapon_bounds(cannon,cannon)
 		print("CANNON BOUNDS ",cannon.name," ",bounds)
@@ -78,12 +87,13 @@ func _run() -> void:
 	player.global_position=Vector3(0,50,0)
 	var district:Node3D=world.get_node("Settlement/BritishCantonment")
 	await capture("cantonment_exterior",fort.to_local(district.to_global(Vector3(-27,3,-30))),fort.to_local(district.to_global(Vector3(-43,1,-46))))
+	await capture("cot_linen",fort.to_local(district.to_global(Vector3(-49,1.45,-45.6))),fort.to_local(district.to_global(Vector3(-49,.88,-47.7))))
 	await capture("barracks_interior",fort.to_local(district.to_global(Vector3(-43,2,-42))),fort.to_local(district.to_global(Vector3(-48,1,-48))))
 	await capture("officers_interior",fort.to_local(district.to_global(Vector3(43,2,-42))),fort.to_local(district.to_global(Vector3(50,1,-47))))
 	await capture("armoury",Vector3(69,2.3,-34),Vector3(69,1.1,-44))
 	await capture("cannon",Vector3(75,2.5,51),Vector3(69,.8,45))
 	await capture("guards",Vector3(12,2.0,82),Vector3(8,1,87))
-	var report:={"date":"2026-10-01","renderer":RenderingServer.get_current_rendering_method(),"checks":checks,"failures":failures,"open":"normal-speed character contact, guard response, cannon operation, final art"}
+	var report:={"date":"2026-10-05","renderer":RenderingServer.get_current_rendering_method(),"checks":checks,"failures":failures,"open":"normal-speed character contact, guard response, cannon operation, final art"}
 	var file:=FileAccess.open("res://docs/world/military_contact_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
 	print("MILITARY CONTACT ","PASS" if failures.is_empty() else "FAIL")

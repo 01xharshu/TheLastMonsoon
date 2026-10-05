@@ -21,6 +21,8 @@ var last_chase_goal := Vector3.ZERO
 var chase_age := 0.0
 var cooldown := 0.0
 var nav_cache: Dictionary = {}
+var debug_contacts:=false
+var last_clear_failure: String=""
 func _ready() -> void:
 	station = get_parent().get_parent()
 	process_physics_priority = 20
@@ -80,7 +82,10 @@ func clear_at(at: Vector3, radius: float) -> bool:
 	query.exclude = exclusions
 	query.collision_mask = 1
 	query.margin = .005
-	if not station.get_world_3d().direct_space_state.intersect_shape(query,4).is_empty(): return false
+	var contacts:=station.get_world_3d().direct_space_state.intersect_shape(query,4)
+	if not contacts.is_empty():
+		if debug_contacts:last_clear_failure=str(contacts[0].collider.get_path())+" at "+str(station.to_local(at))
+		return false
 	var floor_query := PhysicsRayQueryParameters3D.create(at+Vector3.UP*.2,at-Vector3.UP*.3,1)
 	floor_query.exclude = exclusions
 	return not station.get_world_3d().direct_space_state.intersect_ray(floor_query).is_empty()
@@ -236,13 +241,17 @@ func move_suspect(delta: float, speed: float, paired: bool) -> void:
 	if paired:
 		var desired := suspect.global_position+suspect.global_basis*Vector3(.74,-.9,-.15)
 		var next_officer: Vector3=officer.global_position.move_toward(desired,delta*2.4)
+		var support_query:=PhysicsRayQueryParameters3D.create(next_officer+Vector3.UP*.25,next_officer-Vector3.UP*.25,1)
+		support_query.exclude=exclusions
+		var support:=station.get_world_3d().direct_space_state.intersect_ray(support_query)
+		if not support.is_empty():next_officer.y=support.position.y+.001
 		if clear_at(next_officer,.29):
 			var travel: float=officer.global_position.distance_to(next_officer)
 			officer.global_position=next_officer
 			officer.global_rotation.y=rotate_toward(officer.global_rotation.y,suspect.global_rotation.y,delta*4.0)
 			officer.travel_speed=travel/maxf(delta,.001)
 		else:
-			if not route_blocked:print("ESCORT SOLID ",station.to_local(next_officer))
+			if debug_contacts and not route_blocked:print("ESCORT SOLID ",station.to_local(next_officer)," BLOCKER ",last_clear_failure," SUPPORT ",support)
 			route_blocked=true
 func abort() -> void:
 	if is_instance_valid(detention): detention.release_detention()

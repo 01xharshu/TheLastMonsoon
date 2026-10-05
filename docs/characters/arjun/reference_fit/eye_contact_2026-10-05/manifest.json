@@ -1,0 +1,11 @@
+{
+  "status": "VISUAL_REVIEW_OPEN",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_boot_panels_candidate.blend",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_eye_contact_candidate.blend",
+  "body_origin": "existing MPFB Arjun_MakeHuman_Body",
+  "shape_key": "Arjun_eyelid_contact_candidate",
+  "affected_vertices": 1800,
+  "maximum_delta_m": 0.0012034000736226608,
+  "exact_match": false,
+  "runtime_replaced": false
+}

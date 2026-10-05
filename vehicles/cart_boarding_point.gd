@@ -14,7 +14,9 @@ func configure(owner_cart: Node3D, seat: String, kind: String) -> void:
 	marker_height = 0.0
 
 func interaction_available() -> bool:
+	if is_instance_valid(cart) and cart.get_meta("booking_status", "public") != "public": return false
 	if not super.interaction_available() or not is_instance_valid(cart) or cart.rider != null: return false
+	if role == "passenger" and cart.has_meta("errand_passenger"): return false
 	if role == "passenger" and absf(position.x) > .8:
 		var camera := get_viewport().get_camera_3d()
 		if camera != null and signf(cart.to_local(camera.global_position).x) != signf(position.x): return false

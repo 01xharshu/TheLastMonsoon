@@ -54,6 +54,9 @@ func _patrol_body_blocked(local_motion: Vector3) -> bool:
 	return false
 
 func _ready() -> void:
+	if not has_meta("combat_faction"): set_meta("combat_faction","british")
+	add_to_group("combat_actors")
+	call_deferred("_configure_combat")
 	_home = position
 	_clock = cycle_offset
 	_create_body_collider()
@@ -236,7 +239,10 @@ func _make_clip(walking: bool, turning: bool = false) -> Animation:
 	return clip
 
 func _process(delta: float) -> void:
-	if animation_player == null:
+	if animation_player == null or get_meta("dead",false) or get_meta("knocked_out",false):
+		return
+	if get_meta("external_combat_motion",false):
+		_set_animation(&"walk" if travel_speed > .02 else &"idle",delta)
 		return
 	if not movement_enabled:
 		contact_blocked = false
@@ -292,6 +298,9 @@ func _process(delta: float) -> void:
 		body_collider.force_update_transform()
 	_set_animation(&"turn" if turning else (&"walk" if walking else &"idle"), delta)
 
+func take_damage(amount: float) -> void:
+	get_node("Vitality").take_damage(amount)
+
 func _set_animation(state: StringName, delta: float) -> void:
 	animation_state = state
 	var target := 1.0 if state == &"walk" else 0.0
@@ -305,7 +314,7 @@ func _set_animation(state: StringName, delta: float) -> void:
 	animation_tree.set("parameters/turning/blend_amount", turn_blend)
 	if state == &"turn":
 		animation_tree.set("parameters/turn_seek/seek_request", clampf(_turn_progress, 0.0, 1.0) * 0.5)
-	if foot_plant.skeleton != null:
+	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
 		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))
 	for index in _finger_rest:
@@ -314,9 +323,23 @@ func _set_animation(state: StringName, delta: float) -> void:
 		if finger_name.begins_with("thumb"):
 			curl *= 0.55
 		_skeleton.set_bone_pose_rotation(index, _finger_rest[index] * Quaternion(_finger_pitch[index], curl))
-	if foot_plant.skeleton != null:
+	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
 		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
 		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:
 			foot_plant.clear()
 		_last_facing = rotation.y
 		foot_plant.update(_walk_phase, foot_plant_enabled and state == &"walk" and locomotion_blend > 0.95 and travel_speed > 0.001, locomotion_blend if foot_plant_enabled else 0.0, nominal_walk_speed * animation_player.get_animation("walk").length)
+
+func combat_react(action: String) -> void:
+	var motion := get_node_or_null("CombatMotion")
+	if motion != null: motion.play(action)
+
+func _configure_combat() -> void:
+	if animation_tree == null: return
+	var motion := preload("res://combat/npc_combat_motion.gd").new()
+	motion.name = "CombatMotion"
+	add_child(motion)
+	if get_node_or_null("Vitality") == null:
+		var vitality := preload("res://combat/npc_vitality.gd").new()
+		vitality.name = "Vitality"
+		add_child(vitality)

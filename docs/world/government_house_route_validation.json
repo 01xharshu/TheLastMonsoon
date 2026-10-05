@@ -1,0 +1,148 @@
+{
+  "camera_blocked_frames": 0,
+  "failures": [],
+  "limits": "Actual walk controller at default speed; endpoint views are not continuous motion/owner acceptance",
+  "stages": [
+    {
+      "elapsed_seconds": 3.976,
+      "finish": "(0.0, 1.240265, 10.32664)",
+      "reached": true,
+      "stage": "entrance",
+      "target": "(0.0, 1.29, 10.5)"
+    },
+    {
+      "elapsed_seconds": 4.147,
+      "finish": "(-20.16855, 1.240265, 10.49217)",
+      "reached": true,
+      "stage": "study_door",
+      "target": "(-20.0, 1.29, 10.5)"
+    },
+    {
+      "elapsed_seconds": 1.272,
+      "finish": "(-20.02121, 1.240265, 16.22969)",
+      "reached": true,
+      "stage": "study_bay",
+      "target": "(-20.0, 1.29, 16.0)"
+    },
+    {
+      "elapsed_seconds": 2.409,
+      "finish": "(-13.82138, 1.241001, 10.48921)",
+      "reached": true,
+      "stage": "study_return",
+      "target": "(-14.0, 1.29, 10.5)"
+    },
+    {
+      "elapsed_seconds": 4.806,
+      "finish": "(0.166992, 1.241, -0.042404)",
+      "reached": true,
+      "stage": "cross_hall",
+      "target": "(0.0, 1.29, 0.0)"
+    },
+    {
+      "elapsed_seconds": 5.294,
+      "finish": "(20.21729, 1.240131, 12.96823)",
+      "reached": true,
+      "stage": "stair_approach",
+      "target": "(20.0, 1.29, 13.0)"
+    },
+    {
+      "elapsed_seconds": 5.52,
+      "finish": "(20.00592, 5.501065, -13.19257)",
+      "reached": true,
+      "stage": "first_landing",
+      "target": "(20.0, 5.55, -13.0)"
+    },
+    {
+      "elapsed_seconds": 3.566,
+      "finish": "(5.787964, 5.500297, -10.53337)",
+      "reached": true,
+      "stage": "upper_cross_hall",
+      "target": "(6.0, 5.55, -10.5)"
+    },
+    {
+      "elapsed_seconds": 3.362,
+      "finish": "(5.990936, 5.500297, 5.71666)",
+      "reached": true,
+      "stage": "drawing_aisle",
+      "target": "(6.0, 5.55, 5.5)"
+    },
+    {
+      "elapsed_seconds": 2.344,
+      "finish": "(-5.176117, 5.50091, 5.511337)",
+      "reached": true,
+      "stage": "drawing_bay",
+      "target": "(-5.0, 5.55, 5.5)"
+    },
+    {
+      "elapsed_seconds": 2.682,
+      "finish": "(6.196991, 5.50091, 5.500259)",
+      "reached": true,
+      "stage": "drawing_return_aisle",
+      "target": "(6.0, 5.55, 5.5)"
+    },
+    {
+      "elapsed_seconds": 3.333,
+      "finish": "(6.010284, 5.50091, -10.6665)",
+      "reached": true,
+      "stage": "drawing_return",
+      "target": "(6.0, 5.55, -10.5)"
+    },
+    {
+      "elapsed_seconds": 5.498,
+      "finish": "(28.21002, 5.500233, -12.98489)",
+      "reached": true,
+      "stage": "second_stair_approach",
+      "target": "(28.0, 5.55, -13.0)"
+    },
+    {
+      "elapsed_seconds": 5.514,
+      "finish": "(28.00693, 10.10044, 13.15811)",
+      "reached": true,
+      "stage": "second_landing",
+      "target": "(28.0, 10.15, 13.0)"
+    },
+    {
+      "elapsed_seconds": 8.467,
+      "finish": "(-0.2258, 10.10023, 10.51579)",
+      "reached": true,
+      "stage": "bedroom_cross_hall",
+      "target": "(0.0, 10.15, 10.5)"
+    },
+    {
+      "elapsed_seconds": 4.367,
+      "finish": "(-0.006805, 10.10023, -10.73584)",
+      "reached": true,
+      "stage": "bedroom_approach",
+      "target": "(0.0, 10.15, -10.5)"
+    },
+    {
+      "elapsed_seconds": 3.956,
+      "finish": "(-19.17554, 10.10023, -10.50912)",
+      "reached": true,
+      "stage": "bedroom_door",
+      "target": "(-19.0, 10.15, -10.5)"
+    },
+    {
+      "elapsed_seconds": 1.275,
+      "finish": "(-19.02057, 10.10023, -4.769867)",
+      "reached": true,
+      "stage": "bedroom_bay",
+      "target": "(-19.0, 10.15, -5.0)"
+    }
+  ],
+  "status": "PASS",
+  "evidence": {
+    "world/suryagarh/settlements/government_house.gd": {
+      "sha256": "36e09069d731cb9f86a103f30e54549218bd657e87a84c7ad537e36e50f08d36",
+      "bytes": 19881
+    },
+    "tools/world/review_government_house_route.gd": {
+      "sha256": "92dc40f84d7203d3d9aa56987c9ae7db2f2b1dec755b05b10fb462a4c5cb8ec6",
+      "bytes": 5092
+    },
+    "docs/world/captures/government_house_route.mp4": {
+      "sha256": "46843c3ec020c97e3a64a4311c2e99cb180e580905109be47d5543e0b613ef23",
+      "bytes": 16645023
+    }
+  }
+}

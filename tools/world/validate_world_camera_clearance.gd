@@ -17,7 +17,10 @@ func _run() -> void:
  var failures := 0
  var locations := [
   ["house_ground_hall", Vector3(20, 0.95, 8.0)],
-  ["house_upper_room", Vector3(28, 5.55, -8.0)]
+  ["house_upper_room", Vector3(28, 5.55, -8.0)],
+  ["house_study", Vector3(-19, 1.29, 16)],
+  ["house_drawing_room", Vector3(-5, 5.55, 5.5)],
+  ["house_bedroom", Vector3(-19, 10.15, -5)]
  ]
  for location in locations:
   var center: Vector3 = house.to_global(location[1])
@@ -37,7 +40,18 @@ func _run() -> void:
    camera._process(0.0)
    var distance: float = arm.global_position.distance_to(camera.global_position)
    var max_open_distance := arm.spring_length + 0.1
-   var clear: bool = distance > 0.08 and distance <= max_open_distance
+   # Close-wall retraction can reach the pivot; verify clearance and body hiding.
+   var clear: bool = distance >= 0.0 and distance <= max_open_distance
+   if distance <= camera.BODY_HIDE_DISTANCE:
+    clear = clear and not player.visual_root.visible
+   var sphere := SphereShape3D.new()
+   sphere.radius = camera.near
+   var overlap := PhysicsShapeQueryParameters3D.new()
+   overlap.shape = sphere
+   overlap.transform = Transform3D(Basis.IDENTITY, camera.global_position)
+   overlap.collision_mask = arm.collision_mask
+   overlap.exclude = [player.get_rid()]
+   clear = clear and world.get_world_3d().direct_space_state.intersect_shape(overlap, 1).is_empty()
    var query := PhysicsRayQueryParameters3D.create(arm.global_position, camera.global_position)
    query.collision_mask = arm.collision_mask
    query.exclude = [player.get_rid()]

@@ -17,7 +17,7 @@ func build(builder: Node3D) -> void:
 	architecture.district = lines
 	architecture.shell_builder.b = b
 	architecture.shell_builder.district = lines
-	for spec in [["CollectorBungalow",-40.0,Vector2(32,18)], ["OfficerBungalow",40.0,Vector2(24,14)]]:
+	for spec in [["CollectorBungalow",-40.0,Vector2(24,16)], ["OfficerBungalow",40.0,Vector2(20,14)]]:
 		var home: Node3D = architecture.room(spec[0],Vector3(spec[1],0,-10),spec[2],"")
 		home.remove_from_group("administrative_buildings")
 		home.add_to_group("civil_lines_bungalows")
@@ -146,6 +146,12 @@ func refine_home(home: Node3D, size: Vector2) -> void:
 			var detail := preload("res://world/suryagarh/settlements/bhairavpur_house_detail.gd").new()
 			detail.settlement = b
 			detail._window_frame(home,Vector3(side*w/2,1.425,z),Vector2(opening,1.35),side*PI/2,false,true)
+			# Place the shutter leaves beyond the interior masonry face, with inner casing.
+			# The shared window helper now puts them partly inside a 0.4 m wall.
+			var frame: Node3D = home.get_child(home.get_child_count()-1)
+			frame.get_node("PairedWoodShutters").position.z = -.28
+			for edge in [-1.0,1.0]: b.piece(frame,"InnerWindowJamb",Vector3(edge*(opening/2+.025),.675,-.28),Vector3(.09,1.51,.16),b.wood,false)
+			for y in [-.02,1.37]: b.piece(frame,"InnerWindowRail",Vector3(0,y,-.28),Vector3(opening+.16,.09,.16),b.wood,false)
 		b.piece(home,"RoofFascia",Vector3(side*(w/2+.4),3.67,0),Vector3(.12,.22,d+1.4),b.wood,false)
 		b.piece(home,"VerandaSkirting",Vector3(side*(w/4+.85),.36,d/2+.22),Vector3(w/2-1.7,.2,.09),b.wood,false)
 	for x in [-1.55,1.55]: b.piece(home,"EntranceJamb",Vector3(x,1.54,d/2+.23),Vector3(.12,2.6,.16),b.wood,false)
@@ -166,10 +172,22 @@ func refine_home(home: Node3D, size: Vector2) -> void:
 		b.piece(home,"Floorboard",Vector3(-w/2+.34+i*.65,.25,0),Vector3(.64,.02,d-.4),b.wood,false)
 	for z in [-d/2+.23,d/2-.23]:
 		for side in [-1.0,1.0]: b.piece(home,"WallSkirting",Vector3(side*(w/4+1),.36,z),Vector3(w/2-2,.18,.08),b.wood,false)
-	# Sleeping room divided from office/reception, with a genuine central doorway.
-	for side in [-1.0,1.0]:
-		b.piece(home,"BedroomPartition",Vector3(3.5,1.65,side*(d/4+.55)),Vector3(.16,2.82,d/2-1.1),b.plaster)
-	b.piece(home,"BedroomDoorHead",Vector3(3.5,3.0,0),Vector3(.16,.65,2.2),b.plaster)
+	# Bearing walls divide a central reception hall from office and sleeping rooms.
+	# Their heads meet the ceiling ties; open doors retain a clear cross-house route.
+	for x in [-3.5,3.5]:
+		for side in [-1.0,1.0]:
+			b.piece(home,"RoomBearingWall",Vector3(x,1.77,side*(d/4+.55)),Vector3(.18,3.06,d/2-1.1),b.plaster)
+		b.piece(home,"RoomDoorHead",Vector3(x,2.92,0),Vector3(.18,.76,2.2),b.plaster)
+		for z in [-1.12,1.12]: b.piece(home,"RoomDoorJamb",Vector3(x,1.39,z),Vector3(.23,2.3,.12),b.wood,false)
+		b.piece(home,"RoomDoorTimberHead",Vector3(x,2.57,0),Vector3(.23,.12,2.35),b.wood,false)
+	# Reception furniture sits behind the entrance-to-centre walking path.
+	architecture.desk(home,Vector3(0,.26,-3.5))
+	chair(home,Vector3(-2,.26,-3.5),PI/2)
+	chair(home,Vector3(2,.26,-3.5),-PI/2)
+	prop(home,"storage/brass_pot",Vector3(.6,1.10,-3.5))
+	b.piece(home,"BedHeadboard",Vector3(6,1.04,-3.93),Vector3(1.42,.9,.12),b.wood)
+	for x in [5.4,6.6]: b.piece(home,"BedHeadPost",Vector3(x,.82,-3.93),Vector3(.09,1.16,.09),b.wood)
+	bookcase(home,Vector3(-w/2+.5,.26,0))
 	chair(home,Vector3(-6,.26,-1.8),PI)
 	architecture.desk(home,Vector3(-w/3,.26,3))
 	chair(home,Vector3(-w/3,.26,4.2),PI)
@@ -225,3 +243,15 @@ func awning(stall: Node3D) -> void:
 	for x in [-4.2,4.2]:
 		b.piece(stall,"AwningPost",Vector3(x,1.43,5.5),Vector3(.12,2.86,.12),b.wood)
 	b.piece(stall,"AwningFrontRail",Vector3(0,2.78,5.5),Vector3(8.5,.08,.08),b.wood,false)
+
+func bookcase(home: Node3D, at: Vector3) -> void:
+	var node := Node3D.new()
+	node.name = "OfficeBookcase"
+	node.position = at
+	home.add_child(node)
+	for z in [-.85,.85]: b.piece(node,"BookcaseUpright",Vector3(0,1.1,z),Vector3(.55,2.2,.09),b.wood)
+	b.piece(node,"BookcaseBacking",Vector3(-.24,1.1,0),Vector3(.06,2.2,1.75),b.wood)
+	for y in [.08,.72,1.38,2.13]: b.piece(node,"BookcaseShelf",Vector3(0,y,0),Vector3(.55,.08,1.8),b.wood)
+	for y in [.15,.79,1.45]:
+		for i in 7:
+			b.piece(node,"BoundVolume",Vector3(.04,y+.19,-.65+i*.21),Vector3(.32,.38+(i%3)*.035,.16),b.ochre if i%2 else b.wood,false)

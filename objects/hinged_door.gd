@@ -3,6 +3,8 @@ extends Interactable
 var width := 2.6
 var height := 2.32
 var night_lock := true
+@export_range(0, 23) var opening_hour := 6
+@export_range(0, 23) var closing_hour := 20
 var always_open := false
 var inside_only := false
 var auto_open_at_dawn := true
@@ -28,7 +30,7 @@ func build(material: Material) -> void:
 	position.x += width*.5
 	interaction_icon = "gate"
 	interaction_max_distance = 3.0
-	marker_height = minf(height*.55,2.0)
+	marker_height = height*.18 if inside_only else minf(height*.50,1.22)
 	add_to_group("house_doors")
 	iron = StandardMaterial3D.new()
 	iron.albedo_color = Color(.12,.105,.09)
@@ -57,7 +59,7 @@ func build(material: Material) -> void:
 				_visual(pivot,"StrapRivet",Vector3(-side*(.08+rivet*leaf_width*.17),y,.08),Vector3(.024,.024,.016),iron)
 		var brace := _visual(pivot,"InnerDiagonalBrace",Vector3(-side*leaf_width*.5,height*.47,-.084),Vector3(sqrt(pow(leaf_width*.80,2)+pow(height*.52,2)),.10,.045),timber)
 		brace.rotation.z = side*atan2(height*.52,leaf_width*.80)
-		_visual(pivot,"LatchPlate",Vector3(-side*(leaf_width-.12),minf(height*.52,1.25),.075),Vector3(.13,.24,.025),iron)
+		_visual(pivot,"LatchPlate",Vector3(-side*(leaf_width-.12),(height*.18 if inside_only else minf(height*.52,1.25)),.075),Vector3(.13,.24,.025),iron)
 		# A rounded iron pull, rather than a painted mark on the leaf.
 		var pull := MeshInstance3D.new()
 		pull.name = "IronPullRing"
@@ -69,7 +71,7 @@ func build(material: Material) -> void:
 		pull.mesh = ring
 		pull.material_override = iron
 		pull.rotation.x = PI*.5
-		pull.position = Vector3(-side*(leaf_width-.12),minf(height*.50,1.22),.115)
+		pull.position = Vector3(-side*(leaf_width-.12),(height*.18 if inside_only else minf(height*.50,1.22)),.115)
 		pivot.add_child(pull)
 		var inner_pull := pull.duplicate() as MeshInstance3D
 		inner_pull.name="InteriorPullRing"
@@ -82,11 +84,41 @@ func build(material: Material) -> void:
 		collision.shape = shape
 		add_child(collision)
 		leaf_shapes.append(collision)
-		_visual(pivot,"InteriorLatchBar",Vector3(-side*(leaf_width-.18),minf(height*.52,1.25),-.11),Vector3(.34,.07,.05),iron)
+		_visual(pivot,"InteriorLatchBar",Vector3(-side*(leaf_width-.18),(height*.18 if inside_only else minf(height*.52,1.25)),-.11),Vector3(.34,.07,.05),iron)
+	for pivot in leaf_pivots: _batch_leaf(pivot)
 	rotation.y = 0
 	swing = 1.0 if opened else 0.0
 	last_safe_swing = swing
 	_label()
+
+func _batch_leaf(pivot: Node3D) -> void:
+	# Boards and ironwork move rigidly with the hinge. Preserve that pivot and
+	# the separate collision leaf, but submit one surface per shared material.
+	var surfaces: Dictionary = {}
+	for child in pivot.get_children():
+		if not child is MeshInstance3D: continue
+		var material: Material = child.material_override
+		if not surfaces.has(material):
+			var surface := SurfaceTool.new()
+			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+			surfaces[material] = surface
+		for index in child.mesh.get_surface_count():
+			surfaces[material].append_from(child.mesh,index,child.transform)
+		if child.name in ["IronPullRing","InteriorPullRing"]:
+			var anchor := Marker3D.new()
+			anchor.name = child.name
+			anchor.transform = child.transform
+			pivot.remove_child(child)
+			pivot.add_child(anchor)
+		child.free()
+	var merged := ArrayMesh.new()
+	for material: Material in surfaces:
+		surfaces[material].set_material(material)
+		surfaces[material].commit(merged)
+	var visual := MeshInstance3D.new()
+	visual.name = "BatchedLeafBoardsAndIronwork"
+	visual.mesh = merged
+	pivot.add_child(visual)
 
 func _visual(parent: Node3D,label: String,at: Vector3,size: Vector3,material: Material) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
@@ -121,8 +153,14 @@ func _bind_clock() -> void:
 		clock.time_changed.connect(_time_changed)
 		_time_changed(clock.current_day,clock.current_hour,clock.current_minute)
 
+func hours_allow_entry(hour: int) -> bool:
+	if opening_hour == closing_hour: return true
+	if opening_hour < closing_hour:
+		return hour >= opening_hour and hour < closing_hour
+	return hour >= opening_hour or hour < closing_hour
+
 func _time_changed(_day: int,hour: int,_minute: int) -> void:
-	var night := hour >= 20 or hour < 6
+	var night := not hours_allow_entry(hour)
 	locked = night and night_lock and not always_open
 	if night != last_night or (locked and opened):
 		last_night = night
@@ -164,6 +202,14 @@ func interact(player: CharacterBody3D) -> void:
 		action.name="DoorLatchAction"
 		player.add_child(action)
 	action.begin(self)
+
+func interaction_anchor() -> Vector3:
+	if opened and is_inside_tree() and get_tree().current_scene != null:
+		var player = get_tree().current_scene.get_node_or_null("Player")
+		if player != null:
+			var pull := nearest_pull(player.global_position)
+			if pull != null: return pull.global_position
+	return super.interaction_anchor()
 
 func nearest_pull(at: Vector3) -> Node3D:
 	var nearest: Node3D

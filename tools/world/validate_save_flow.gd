@@ -39,9 +39,11 @@ func validate() -> void:
 	var door = world.get_node("Settlement/BhairavpurHouse1/EntranceDoor")
 	door.restore_state(false)
 	var shutters = world.get_node("Settlement/BhairavpurHouse1/TimberWindowFrameEast/PairedWoodShutters")
+	shutters.swing_direction=-1.0
 	shutters.restore_state(true)
 	check(saves.save_game(world,2),"Could not save slot 2")
 	door.restore_state(true)
+	shutters.swing_direction=1.0
 	shutters.restore_state(false)
 	check(saves.newest_slot()==2,"Continue did not choose newest slot")
 	var saved_position := player.global_position
@@ -54,6 +56,7 @@ func validate() -> void:
 	saves.apply_pending(world)
 	check(player.global_position.distance_to(saved_position)<0.01,"Player position did not restore")
 	check(not door.opened and is_zero_approx(door.swing),"Manual door state did not restore from slot")
+	check(shutters.swing_direction == -1.0,"Manual shutter swing direction did not restore from slot")
 	check(shutters.opened and is_equal_approx(shutters.swing,1.0),"Manual shutter state did not restore from slot")
 	check(absf(world.get_node("GameTimeSystem").total_game_minutes-2200.0)<0.01,"Game time did not restore")
 	check(inventory.get_item_count("roti")==3 and inventory.has_water_bag(),"Inventory did not restore")

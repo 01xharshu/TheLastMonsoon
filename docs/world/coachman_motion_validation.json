@@ -1,0 +1,33 @@
+{
+	"results": [
+		{
+			"ankle_error_m": 0.0,
+			"hand_error_m": 0.000929520872887224,
+			"lean": 0.176951858605844,
+			"state": "idle",
+			"turn": 0.0
+		},
+		{
+			"ankle_error_m": 0.0,
+			"hand_error_m": 0.000955309893470258,
+			"lean": 0.231672743714164,
+			"state": "accelerating",
+			"turn": 0.0
+		},
+		{
+			"ankle_error_m": 0.0,
+			"hand_error_m": 0.000807356147561222,
+			"lean": 0.176385821679484,
+			"state": "turning",
+			"turn": 0.0549695803596419
+		},
+		{
+			"ankle_error_m": 0.0,
+			"hand_error_m": 0.000845314876642078,
+			"lean": 0.134910202987738,
+			"state": "braking",
+			"turn": 0.0000304028157305034
+		}
+	],
+	"scope": "controlled driving pose signals; stationary cart; native Metal"
+}

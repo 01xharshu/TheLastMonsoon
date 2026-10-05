@@ -84,7 +84,7 @@ func _run() -> void:
 		var vent := PhysicsRayQueryParameters3D.create(magazine.to_global(Vector3(x,3.1,-4.5)),magazine.to_global(Vector3(x,3.1,-5.6)))
 		vent.exclude = [actor.get_rid()]
 		assert(space.intersect_ray(vent).is_empty(), "Magazine vent is blocked")
-	var report := {"date":"2026-10-01","status":"prototype","buildings":entrances,"cemetery_gate_walk":cemetery_walk,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"fort_guards":2,"fort_cannons":2,"armoury_entrance_clear":true,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
+	var report := {"date":"2026-10-05","status":"prototype","buildings":entrances,"cemetery_gate_walk":cemetery_walk,"resident_terrain_samples":terrain_samples,"magazine_open_vents":3,"fort_guards":2,"fort_cannons":2,"armoury_entrance_clear":true,"renderer":RenderingServer.get_current_rendering_method(),"open":"sepoy population, horse population, working hospital/depot, historical art, full approach route, performance"}
 	var file := FileAccess.open("res://docs/world/cantonment_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
 	if DisplayServer.get_name() != "headless":
@@ -99,6 +99,7 @@ func _run() -> void:
 		assert(root.get_texture().get_image().save_png("res://docs/world/captures/cantonment_overview.png") == OK)
 		for spec in [
 			["GrainFodderWarehouse","warehouse_interior",Vector3(0,2.1,4.4),Vector3(0,1.2,-2)],
+			["GrainFodderWarehouse","warehouse_fodder",Vector3(1,2.0,0),Vector3(6,.7,2)],
 			["GrainFodderWarehouse","warehouse_exterior",Vector3(13,6,17),Vector3(0,1.5,0)],
 			["CavalryStables","stables_interior",Vector3(12,2.1,3.8),Vector3(-7,1.1,-1.5)],
 			["CavalryStables","stables_exterior",Vector3(22,7,19),Vector3(0,1.5,0)],

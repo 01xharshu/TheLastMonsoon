@@ -55,7 +55,6 @@ func disembark() -> void:
  transition_target=travel.coach.to_global(Vector3(side*.55,1.37,2.77));change("stand_from_seat");elapsed=-stagger
 
 func tick(delta:float) -> void:
- if actor.get_meta("dead",false):return
  if actor.get_meta("dead",false): return
  if state not in ["seated","sit_down","stand_from_seat","enter_coach"]:actor.set_meta("seated_coach",null)
  elapsed+=delta
@@ -123,6 +122,7 @@ func tick(delta:float) -> void:
   _pitch("spine_02",.35)
   var paper: Vector3 = travel.office.to_global(Vector3(office_side*1.6+.08,1.12,-.08))
   _solve_work_hand(paper+Vector3(sin(elapsed*2)*.025,0,0))
+  travel._passenger_cloth(actor,true)
  else:actor.call("_set_animation",&"idle",delta)
  actor.get_node("BodyCollider").force_update_transform()
 

@@ -197,7 +197,7 @@ func _refresh_cards() -> void:
 		["%d / %d" % [roundi(survival.stamina),roundi(survival.max_stamina)],"Stamina"],
 		[str(owned.size())+" carried",", ".join(owned) if not owned.is_empty() else "No weapons acquired"],
 		["%d / %d" % [roundi(player.health),roundi(player.MAX_HEALTH)],"Healthy" if player.health >= player.MAX_HEALTH else "Injured · bandage to recover"],
-		[source_notice.headline,source_notice.message] if is_instance_valid(source_notice) else ["Public notices","Town hall · Police office"]
+		[source_notice.headline,source_notice.message] if is_instance_valid(source_notice) else ["Market news","Bhairavpur notice board"]
 	]
 	var current := str(data)
 	if current == snapshot: return

@@ -19,7 +19,7 @@ func _ready() -> void:
 	plaster = preload("res://world/suryagarh/settlements/building_realism.gd").finish(Color(.82,.80,.72),position.y)
 	ochre = material(Color(.65,.55,.40))
 	brick = preload("res://world/suryagarh/settlements/military_detail.gd").surface(Color(.42,.27,.20),1)
-	wood = textured("dark_wood",Color(.68,.55,.42),.72)
+	wood = preload("res://world/suryagarh/settlements/building_realism.gd").wood(Color(.34,.24,.16))
 	tile = material(Color(.42,.25,.18),true)
 	stone = material(Color(.53,.49,.41),true)
 	iron = material(Color(.14,.14,.13))
@@ -188,6 +188,12 @@ func main_floor(h: Node3D) -> void:
 		var y: float=level*STOREY
 		piece(h,"UpperFloorMain",Vector3(-9,y-.14,0),Vector3(50,.28,40),wood)
 		piece(h,"UpperFloorRight",Vector3(33,y-.14,0),Vector3(2,.28,40),wood)
+		# Only the flight arriving at this floor needs an opening. The broad
+		# former 16 m cut left an unused fall-through beside the upper landing.
+		var opening_left: float = 18.0 if level==1 else 26.0
+		var opening_right: float = 22.0 if level==1 else 30.0
+		piece(h,"StairwellFloorLeft",Vector3((16+opening_left)*.5,y-.14,0),Vector3(opening_left-16,.28,24),wood)
+		piece(h,"StairwellFloorRight",Vector3((opening_right+32)*.5,y-.14,0),Vector3(32-opening_right,.28,24),wood)
 		for z in [-16.0,16.0]:
 			piece(h,"StairLanding",Vector3(24,y-.14,z),Vector3(16,.28,8),wood)
 		piece(h,"CentralRunner",Vector3(0,y+.012,0),Vector3(7,.025,23),carpet,false)

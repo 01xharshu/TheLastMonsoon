@@ -7,7 +7,10 @@ func _ready() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	get_tree().root.mode = Window.MODE_WINDOWED
 	get_tree().root.size = Vector2i(1280,720)
+	get_tree().root.content_scale_size = Vector2i(1280,720)
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	var stage: Node3D = preload("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	get_tree().root.add_child(stage)
 	get_tree().current_scene = stage
@@ -47,8 +50,16 @@ func run() -> void:
 		views.append(["realism_police",police.to_global(Vector3(0,1.85,16)),police.to_global(Vector3(3,1.3,8))])
 		views.append(["realism_house_hall",house.to_global(Vector3(0,2,17)),house.to_global(Vector3(0,1.8,-10))])
 		views.append(["realism_house_study",house.to_global(Vector3(-19,2,16)),house.to_global(Vector3(-23.5,1.4,10.5))])
-		views.append(["realism_house_drawing",house.to_global(Vector3(-7,6.3,13)),house.to_global(Vector3(-5,5.3,9))])
+		views.append(["realism_house_drawing",house.to_global(Vector3(-5,6.2,5.5)),house.to_global(Vector3(-5,5.25,9))])
 		views.append(["realism_house_bedroom",house.to_global(Vector3(-19,11, -5)),house.to_global(Vector3(-23,10.4,-11))])
+		for argument in OS.get_cmdline_user_args():
+			if argument.begins_with("--view="):
+				var selected := argument.trim_prefix("--view=")
+				views = views.filter(func(view): return view[0] == selected)
+				if views.is_empty():
+					push_error("Unknown building capture view: "+selected)
+					get_tree().quit(1)
+					return
 		for view in views:
 			camera.position = view[1]
 			camera.look_at(view[2])
@@ -56,6 +67,9 @@ func run() -> void:
 			for i in 5: await get_tree().process_frame
 			RenderingServer.force_draw(false)
 			var path: String = "res://docs/world/captures/building_site_"+str(view[0])+".png"
-			get_tree().root.get_texture().get_image().save_png(path)
+			if get_tree().root.get_texture().get_image().save_png(path) != OK:
+				push_error("Could not save "+path)
+				get_tree().quit(1)
+				return
 			print("BUILDING SITE CAPTURE ",path)
 	get_tree().quit()

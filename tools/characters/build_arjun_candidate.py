@@ -407,6 +407,7 @@ for i in body_ids:
     if (p.z<1.11 and abs(p.x)<.24) or (1.11<p.z<1.33 and abs(p.x)<.17):mask_ids.append(i)
 covered.add(mask_ids,1,'REPLACE')
 mask=body.modifiers.new('Conservative clothing occlusion','MASK');mask.vertex_group=covered.name;mask.invert_vertex_group=True
+mask.show_viewport=False;mask.show_render=False
 foundation.hide_render=True
 foundation.hide_set(True)
 

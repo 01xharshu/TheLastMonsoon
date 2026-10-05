@@ -1,0 +1,48 @@
+# Combat and civilian rescue — 5 October 2026
+
+Status: IN_PROGRESS. Existing MakeHuman/MPFB bodies are reused. Animation curves and behavior are candidates; final realism and 1.0x contact approval remain open.
+
+## Implemented
+
+Arjun's sword/knife strikes, alternating punches and ground/air kicks are sampled clips in his live AnimationTree. Punches filter the upper body so locomotion legs continue. Melee contact remains timed to extension. Sword damage uses actual blade segments and endpoint sweeps, with once-per-body damage per stroke. Existing firearm/reload, run and jump paths are retained.
+
+Damage has an explicit attacker and kind. Indian household actors and the encounter peasant reject Arjun's gun, blade, arrow, punch, kick and takedown damage. Their physical bodies still stop shots. British and police receivers accept player damage. AI abuse carries its real attacker, can injure the peasant without reporting Arjun for it, and ends in a living knockout. Unarmed finishers are nonlethal; weapons can kill enemies.
+
+A separate clearly adult shirtless peasant retains the farmer's complete editable MPFB body and opaque dhoti. Source: `WorkingAssets/NPCs/rescue_peasant/rescue_peasant.blend`; runtime: `characters/npcs/rescue_peasant.glb`; builder: `tools/characters/build_rescue_peasant.py`. Original farmer source/runtime remain intact. Clothing and fallen contact require rendered review.
+
+`world/suryagarh/combat_encounters.gd` places an arrogant British private and peasant near the station road at approximately (322.5, ground, 151). Proximity starts timed strikes; repeated injury causes a fall. Intervening alerts police, ends the beating, and lets the peasant recover. Three independent patrol actors follow the police/compound road, Civil Lines avenue and cantonment approach. Each has an alert marker, staggered 4 Hz awareness checks, collision-checked travel, pursuit, timed attacks, rear capture, a four-Space escape window and a road escort handing off to the existing station/jail loop.
+
+B begins a rear hold against a stationary enemy in reach, with rear-angle and obstruction checks. B cancels it. A paired hand solve follows the victim's upper torso; the timed hold ends in knockout. This is a restrained fictional game animation, with hand/neck/cloth contact still awaiting visual approval.
+
+## Verification and exact continuation
+
+- `tools/characters/validate_arjun_motion_tree.gd`: PASS `/tmp/tlm_combat_tree_2026-10-05.log`.
+- `tools/weapons/validate_combat_motion.gd`: PASS `/tmp/tlm_combat_regression_2026-10-05.log`; existing two-object/one-resource shutdown warning.
+- `tools/world/validate_police_arrest.gd`: PASS `/tmp/tlm_combat_arrest_2026-10-05.log`; complete nine-phase station loop, palm error 0.01135 m, continuous 17.01 m escort.
+- `tools/characters/validate_combat_rescue.gd`: dedicated arena checks in progress, `/tmp/tlm_combat_rescue_2026-10-05.log`. First run exposed fixture physics-disable and insufficient wall time for fall; fixture repaired. Need final rerun and fresh Metal frames.
+
+Next: finish focused combat/rescue checks, full-world encounter/patrol/capture/escape/escort check, then inspect Metal action/fall/paired captures and a 1.0x recording. Add missing block/dodge/knife motion as required by the full action matrix. Measure actual update cost and memory; a 4 Hz sensing design is not a whole-game performance result. Save/load of active crime/grapple/custody and owner approval remain open. Shared ledger size gate currently fails because concurrent entries exceed the budget; preserve those entries.
+
+5 October continuation: arena damage/action/grapple/fall PASS after gating NPC foot-placement during combat (`/tmp/tlm_combat_rescue_2026-10-05.log`). The first Metal fall visibly floated; foot-placement was restoring pelvis translation after tree evaluation. Fixed tree fall lowers head near floor. Retained peasant source now also includes same-body opaque underwear foundation beneath the dhoti. Sword-tree migration exposed a final repeated-flag-strike regression; instrumented blade contact and rerun pending. World rescue/patrol/capture fixture authored: `tools/world/validate_combat_encounters.gd`, `/tmp/tlm_combat_world_2026-10-05.log`. Next fix its first typed-variable parse error and rerun; refresh Metal only after final gameplay checks pass.
+
+Live-world rescue/patrol/sight/capture/escape and three connected road paths PASS on the first behavior rerun. Continuous road escort then FAILED: its endpoint x=4 crossed the station facade beside the center entrance. Changed the road approach to the center ramp/porch and x=0 doorway, then hand off to the station grid behind the facade. Full continuous rerun pending `/tmp/tlm_combat_world_2026-10-05.log`. Added tree guard, stamina-cost collision-body dodge (X), player hit reaction and timed knife impact. Unarmed aim holds a guard; B rear hold includes a short collision-checked approach and provisional neck-target error check. Fresh Metal run is in progress; other chats also have renderer processes, so fence/timeout results cannot approve pixels or performance.
+
+Latest fixes: rear neck-target error reduced from 0.126 m to 0.00977 m by forward torso reach plus collision-checked approach (arena PASS). Road escort now uses the center entry and moves the officer around Arjun while turning rather than crossing his capsule. It physically reached the hall; handoff then raised an Array versus Array[RID] assignment error, fixed with `exclusions.assign(...)`. Concurrent map work introduced a missing `player/minimap.gd` preload that broke the field map and flooded world logs; narrowly guarded that optional minimap load in `player/world_map.gd`, retaining all other map edits. Final full-world rerun required on this combined worktree.
+
+Core arena PASS includes guard/dodge/hit/sword/knife tree deformation, 0.00977 m rear neck-target error, living knockouts, grounded fall and gun damage against an already unconscious enemy. Idle combat components and settled down actors now stop processing; recovery reactivates their tree/vitality. First center-door full-world run PASS reaches all seven jail phases with maximum player step 0.02166 m; stricter officer-pair gate still fails at porch. Ground survey added to station officer movement and curb-aware road movement; investigating exact collider before final acceptance. Local passive coordinator sample: p95 282 microseconds, 90 samples; no whole-game/FPS/8 GB claim.
+
+Porch investigation found a real 25 cm support gap: the porch ends at local z=21.75 while the entrance ramp begins at z=22.0. Arjun's capsule bridged it, but NPC ground rays dropped into it. Added a matching 5 m-wide stone `EntryRampPorchJoin` in `world/suryagarh/settlements/civic_building.gd`, retaining collisions and existing porch/ramp. Final pair/route test rerun pending. Tightened rear neck-target check to 3 cm; current rig error remains approximately 1 cm.
+
+Current continuation: final world rescue/patrol/escape/continuous jail/pair gates PASS after porch join; maximum step 0.02072 m. British aggressor now pursues and fights after intervention; police strike damage checks their actual hand sphere and interrupts player attacks. Native punch/kick checks added; kick contacts, punch misses and is being corrected in the visible animation, without increasing damage reach.
+
+Visible punch contact corrected with forward torso commitment and inward arm alignment: left fist approximately (0.181, 1.103, 0.649), native punch 12 and native kick 20 damage exactly once. Damage spheres retain their original small limb bounds. Added opposite-fist and beyond-reach miss checks.
+
+Rendered native fixture exposed a camera-authority error: its one-off camera look_at was overwritten by SpringArm updates, turning the second attack away. Fixture now sets the camera pivot and disables mouse input, retaining physics and native action playback. Fresh renderer rerun pending. Added `tools/characters/capture_combat_motion.gd` for an eight-second 30 Hz paired-action review; offline pacing is not a frame-rate claim.
+
+Final combined-worktree native Metal arena PASS: both fists, actual boot contact, beyond-reach miss, guard/dodge, tree action poses, rear hold 0.00885 m target error, living floor fall, protected civilian and weapon kill checks. Original sword contact regression PASS (minimum blade contact 0.13260 m), locomotion tree PASS, station arrest nine-phase PASS (17.010 m escort, 0.01135 m palm error). Station/world shutdown still reports two ObjectDB and one resource warning, not a clean leak gate. Next normal-speed rendered contact review.
+
+Removed only the obsolete own `rescue_peasant.blend1` backup after no-reference search; retained current editable `rescue_peasant.blend`, builder and manifest.
+
+Close rendered down-pose inspection found both forearms still held aloft from the standing base. Corrected down/fall/rise shoulder and elbow offsets so arms settle toward the floor; fresh render required. Rear hold remains a provisional neck-target solve: finger wrap and clothing compression are still art defects, despite small rig error.
+
+Added actual British-fist versus player-capsule regression. It exposed a strike that could never reach at the pursuit stopping distance. Corrected NPC spine/shoulder extension and arm alignment; arena PASS now proves NPC contact as well as player contact. Down-pose arms also corrected after close pixel inspection.

@@ -47,3 +47,15 @@ Following the owner’s request that Dev look elder, his MPFB age macro increase
 Hair-card opacity repair: restored the original short04 and moustache texture alpha, with baked dark RGB that preserves transparency. Previously the plain dark material filled the card outlines; both assets now use double-sided dithered transparency in Blender, exported with their alpha texture. The texture sources retain their CC0 provenance.
 
 Final source close-up and Metal idle/stride captures inspected after the hair-alpha repair; the 72-frame walk video is refreshed. Age shaping refits body/clothes, so the quarter-stride coverage was reviewed again. Face surface detail and hair silhouette remain refinement work.
+
+## Eye and eyebrow realism — 2026-10-05
+
+Replaced pale default irises with the MakeHuman brown-eye texture and changed fitted eyebrows from core eyebrow012 to fuller eyebrow008. The eyes retain textured sclera and use roughness 0.24; complexion, age shaping and moustache stay as authored. Updated source close-up inspected. Source and static preview rebuilt; animation source/runtime regenerated. Added `--face` to the existing capture tool for a distinct native Metal portrait at `docs/characters/npcs/dev_face_metal.png`; this complements the full-body views. Collar construction, cloth drape and traveling planted-foot drift remain open; no live story placement.
+
+Editable source and active motion source remain retained, with their texture dependencies. Only redundant task-owned `.blend1` backups are removed. Shared handoff-size gate was already failing on unrelated active entries; Dev’s entry remains brief.
+
+Metal portrait inspected: brown irises and fuller brows survive export. The close-up exposes the existing modern folded collar and jagged neckline coverage; these remain explicit defects for the next tailoring pass. Capture log: `/tmp/dev_face_metal_2026-10-05.log` (DEV_FACE_CAPTURE 0).
+
+## Neckline repair — 2026-10-05
+
+The first attempt to reshape the connected folded collar produced visible overlapping folds and was replaced. The retained fitted shoulder topology now sits beneath a continuous tapered front neckline panel; the standing band tapers toward the neck. The skin mask begins at 1.37 m instead of 1.43 m to cover its cut edge beneath the coat. This removes the jagged missing-skin edge from the previous Metal portrait. The overlay remains a tailoring candidate rather than a verified historical collar; shoulder transitions and drape need further refinement. Source and current static/motion exports retained; superseded same-view captures replaced.

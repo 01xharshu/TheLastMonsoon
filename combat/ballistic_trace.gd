@@ -30,6 +30,7 @@ static func shoot(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vecto
 			query.from = hit.position + direction*.02
 			if remaining <= 0.0 or (to-query.from).dot(direction) <= 0.0: return hit
 			continue
-		if body.has_method("take_damage"): body.take_damage(remaining)
+		if body.has_method("take_damage"):
+			preload("res://combat/damage_policy.gd").apply(body,remaining,tree.root.find_child("Player",true,false),"gun")
 		return hit
 	return {}

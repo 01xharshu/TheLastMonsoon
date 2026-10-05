@@ -55,6 +55,9 @@ func _capture() -> void:
 	camera.fov = 37.0
 	camera.position = Vector3(4.2, 1.6, 0) if walking else Vector3(0, 1.6, 4.2)
 	camera.look_at(Vector3(0, .9, 0))
+	if "--face" in OS.get_cmdline_user_args():
+		camera.position = Vector3(0, 1.62, .8)
+		camera.look_at(Vector3(0, 1.62, 0))
 	camera.make_current()
 	player.play(clip)
 	player.pause()
@@ -72,6 +75,15 @@ func _capture() -> void:
 				return
 		print("DEV_WALK_RECORD 72 frames at fixed 30 Hz; in-place studio study")
 		quit(0)
+		return
+	if "--face" in OS.get_cmdline_user_args():
+		player.seek(0.0, true)
+		for frame in 4:
+			await process_frame
+		RenderingServer.force_draw(false)
+		var error := viewport.get_texture().get_image().save_png("res://docs/characters/npcs/dev_face_metal.png")
+		print("DEV_FACE_CAPTURE ", error)
+		quit(error)
 		return
 	for phase in [0.0, .25, .5, .75]:
 		player.seek(duration * phase, true)

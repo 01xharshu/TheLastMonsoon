@@ -18,6 +18,11 @@ var transition_progress := 0.0
 var transition_start := Vector3.ZERO
 var transition_ground := Vector3.ZERO
 var transition_side := 1.0
+# All horse-drawn bodies share the same travel advantage over 4/7 m/s on foot.
+const CRUISE_SPEED := 10.0
+const FAST_SPEED := 15.0
+const REVERSE_SPEED := 3.4
+const ACCELERATION := 5.0
 const TRANSITION_SECONDS := 1.2
 
 func configure(owner_cart: Node3D) -> void:
@@ -68,7 +73,9 @@ func _cart_handle_exclusions() -> Array[RID]:
 	return cart_handle_rids
 
 func _vehicle_exclusions() -> Array[RID]:
-	return _cart_handle_exclusions() + [collision_body.get_rid(), rider.get_rid()]
+	var exclusions := _cart_handle_exclusions() + [collision_body.get_rid()]
+	if is_instance_valid(rider): exclusions.append(rider.get_rid())
+	return exclusions
 
 func _clearance_at(next_at: Vector3) -> bool:
 	var next_basis := cart.global_basis
@@ -122,6 +129,8 @@ func transition_hand_world() -> Vector3:
 	return cart.to_global(Vector3(transition_side * .85, step.y + 1.0, step.z + .30))
 
 func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
+	if is_instance_valid(cart) and cart.get_meta("booking_status", "public") != "public": return false
+	if kind == "passenger" and cart.has_meta("errand_passenger"): return false
 	if kind == "driver" and cart.has_method("can_move") and not cart.can_move(): return false
 	if rider != null or actor.get_meta("climbing", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	var socket: Node3D = cart.seat_sockets.get(seat)
@@ -201,18 +210,22 @@ func _physics_process(delta: float) -> void:
 		var throttle := Input.get_axis("move_backward", "move_forward")
 		var steer := Input.get_axis("move_right", "move_left")
 		if travel.payer != null:
-			var control: Vector2 = travel.controls()
+			var control: Vector2 = travel.controls(delta)
 			throttle = control.x
 			steer = control.y
+			# Road-following turns and final docking stop before rotating.
+			if throttle == 0.0: speed = 0.0
 			if throttle == 0.0 and steer != 0.0:
 				var previous_heading := cart.rotation.y
 				cart.rotation.y += steer*delta*.35
 				if not _clearance_at(cart.global_position): cart.rotation.y = previous_heading
+		if cart.get_meta("errand_transfer",false):
+			throttle = 0; steer = 0; speed = 0
 		var previous_speed := speed
-		var target_speed := 5.2 if Input.is_action_pressed("sprint") and throttle > 0.0 else 3.4
-		speed = move_toward(speed, throttle * target_speed, delta * 1.5)
+		var target_speed := REVERSE_SPEED if throttle < 0.0 else (FAST_SPEED if travel.payer != null or (role == "driver" and Input.is_action_pressed("sprint")) else CRUISE_SPEED)
+		speed = move_toward(speed, throttle * target_speed, delta * ACCELERATION)
 		rider_acceleration = lerpf(rider_acceleration, (speed - previous_speed) / maxf(delta, 0.001), 1.0 - exp(-6.0 * delta))
-		rider_turn = lerpf(rider_turn, steer * clampf(absf(speed) / 5.2, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
+		rider_turn = lerpf(rider_turn, steer * clampf(absf(speed) / FAST_SPEED, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
 		var old_heading: float = cart.rotation.y
 		cart.rotation.y += steer * delta * 0.42 * clampf(absf(speed), 0.0, 1.0)
 		if not _clearance_at(cart.global_position):

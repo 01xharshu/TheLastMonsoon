@@ -5,5 +5,11 @@
   "clumps": 180,
   "exact_match": false,
   "runtime_replaced": false,
-  "review": "All four views inspected: reduced gloss, but sparse loop-like waves over a cap; face, drape and boot detail still differ."
+  "review": "All four views inspected: reduced gloss, but sparse loop-like waves over a cap; face, drape and boot detail still differ.",
+  "source_retention": {
+    "date": "2026-10-05 IST",
+    "candidate_file": "removed_superseded_study",
+    "reproducible": true,
+    "audit": "docs/assets/source_retention_2026-10-02.json"
+  }
 }

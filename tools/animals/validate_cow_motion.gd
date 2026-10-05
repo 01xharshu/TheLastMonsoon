@@ -4,6 +4,7 @@ func check(value:bool,label:String)->void:
 	if not value:errors.append(label);push_error(label)
 func _initialize()->void:_run.call_deferred()
 func _run()->void:
+	create_timer(90).timeout.connect(func():quit(2))
 	var scene:=Node3D.new();root.add_child(scene);current_scene=scene
 	var owner:=Node3D.new();owner.name="BhairavpurHouse27";scene.add_child(owner);owner.add_to_group("bhairavpur_home")
 	var floor:=StaticBody3D.new();floor.position=Vector3(-321,7.15,289);scene.add_child(floor)
@@ -13,11 +14,11 @@ func _run()->void:
 	yard.motion.enabled=false;yard.caretaker.enabled=false
 	check(yard.motion.rig.get_bone_count()==19,"neck/jaw/four hooves articulated")
 	var seen:Dictionary={};var contacts:Dictionary={};var traveled:=0.0
-	for frame in 3200:
+	for frame in 6000:
 		var prior:Vector3=yard.cow.global_position
 		yard.motion.tick(1.0/30);yard.caretaker.tick(1.0/30)
 		traveled+=prior.distance_to(yard.cow.global_position);seen[yard.motion.state]=true
-		if yard.motion.state in ["graze","feed","drink"] and yard.motion.head_weight>.98:
+		if yard.motion.state in ["graze","feed","drink"] and yard.motion.head_weight>.999:
 			if not contacts.has(yard.motion.state):contacts[yard.motion.state]={"error":0.0,"frames":0}
 			contacts[yard.motion.state].error=maxf(contacts[yard.motion.state].error,yard.motion.contact_error);contacts[yard.motion.state].frames+=1
 	check(traveled>6,"cow actually walks between surfaces")

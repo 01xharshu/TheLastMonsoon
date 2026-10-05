@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-05",
+  "renderer": "forward_plus",
+  "resolution": "5120x2880",
+  "scope": "live resident world, static cameras and active world simulation; desktop contention possible; not gameplay FPS or target-hardware approval",
+  "startup_ms": 22346,
+  "views": {
+    "cantonment": {
+      "draw_calls_p50": 3856.0,
+      "frame_wall_ms_p50": 128.001,
+      "frame_wall_ms_p95": 168.24,
+      "nodes": 52184.0,
+      "objects": 6553.0,
+      "primitives": 2226034.0,
+      "static_memory_bytes": 705667539.0
+    },
+    "civil_lines": {
+      "draw_calls_p50": 3839.0,
+      "frame_wall_ms_p50": 149.121,
+      "frame_wall_ms_p95": 195.272,
+      "nodes": 52184.0,
+      "objects": 6524.0,
+      "primitives": 2636502.0,
+      "static_memory_bytes": 704990459.0
+    },
+    "village": {
+      "draw_calls_p50": 3053.0,
+      "frame_wall_ms_p50": 87.61,
+      "frame_wall_ms_p95": 113.035,
+      "nodes": 52184.0,
+      "objects": 3463.0,
+      "primitives": 6320864.0,
+      "static_memory_bytes": 703351946.0
+    }
+  },
+  "vsync": "disabled",
+  "requested_window_size": "1280x720",
+  "resolution_evidence": "Viewport PNG dimensions; high DPI backing scale differs from requested window"
+}

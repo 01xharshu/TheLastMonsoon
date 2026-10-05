@@ -24,6 +24,10 @@ for role,color in [('daroga',(.36,.32,.23)),('mohurrir',(.42,.38,.29)),('burkund
     for i,m in enumerate(obj.data.materials):
      if m==mat:obj.data.materials[i]=copy
  body=next(o for o in bpy.data.objects if o.type=='MESH' and 'MakeHuman_body' in o.name)
+ import sys
+ sys.path.insert(0, str(ROOT / 'tools/characters'))
+ from whole_body_contract import retain_complete_body
+ retain_complete_body(body)
  raw=body.copy();raw.data=body.data.copy();raw.name='Uniform unmasked template';bpy.context.collection.objects.link(raw)
  for m in list(raw.modifiers):
   if m.type=='MASK' and m.name!='Hide helpers':raw.modifiers.remove(m)

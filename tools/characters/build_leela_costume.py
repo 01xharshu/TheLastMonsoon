@@ -184,6 +184,7 @@ for mod in body.modifiers:
 # Cover torso and legs inside garments without hiding the neckline or hands.
 group=body.vertex_groups.new(name='Costume exposed skin');ids=[i for i,v in enumerate(shaped_coordinates(body)) if v[2]>1.22 or abs(v[0])>.22];group.add(ids,1,'REPLACE')
 m=body.modifiers.new('Hide covered body','MASK');m.vertex_group=group.name
+m.show_viewport=False;m.show_render=False
 scene=bpy.context.scene;scene.view_layers[0].material_override=None;scene.cycles.samples=48
 scene.render.resolution_x=800;scene.render.resolution_y=1000
 cam=scene.camera;cam.data.ortho_scale=1.95

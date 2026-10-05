@@ -1,0 +1,15 @@
+{
+  "status": "VISUAL_REVIEW_OPEN",
+  "source": "WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend",
+  "candidate": "WorkingAssets/Arjun/reference_fit/arjun_boot_panels_candidate.blend",
+  "panels": [
+    "Arjun_ContinuousVamp_-1_0",
+    "Arjun_ContinuousVamp_-1_1",
+    "Arjun_ContinuousVamp_1_0",
+    "Arjun_ContinuousVamp_1_1"
+  ],
+  "projection_misses": 0,
+  "edge_stitches": 1008,
+  "runtime_replaced": false,
+  "exact_match": false
+}

@@ -12,5 +12,11 @@
   "body_changed": false,
   "face_changed": false,
   "runtime_replaced": false,
-  "exact_match": false
+  "exact_match": false,
+  "source_retention": {
+    "date": "2026-10-05 IST",
+    "candidate_file": "removed_superseded_study",
+    "reproducible": true,
+    "audit": "docs/assets/source_retention_2026-10-02.json"
+  }
 }

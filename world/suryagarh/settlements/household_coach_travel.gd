@@ -123,14 +123,14 @@ func step(delta:float) -> void:
 		if dwell>=1.8:_phase("returning")
 	elif phase in ["departing","returning"]:
 		var target:Vector3=route[target_index];var offset:=target-coach.global_position
-		var amount:=minf(offset.length(),delta*2)
+		var amount:=minf(offset.length(),delta*preload("res://vehicles/cart_rider.gd").CRUISE_SPEED)
 		var desired_heading:=atan2(-offset.x,-offset.z)
 		var heading:=rotate_toward(coach.rotation.y,desired_heading,delta*1.2)
 		if absf(angle_difference(coach.rotation.y,desired_heading))>.03:amount=0
 		var next_basis:=Basis(Vector3.UP,heading)
 		var next_at:=coach.global_position+offset.normalized()*amount
 		if _clear(next_at,next_basis):
-			coach.global_position=next_at;coach.rotation.y=heading;distance_travelled+=amount;coach.set_forward_motion(2 if amount>0 else 0,delta)
+			coach.global_position=next_at;coach.rotation.y=heading;distance_travelled+=amount;coach.set_forward_motion(amount/maxf(delta,.0001),delta)
 		else:blocked_frames+=1;coach.set_forward_motion(0,delta)
 		if coach.global_position.distance_to(target)<.03:
 			if direction==1 and target_index==route.size()-1:
@@ -174,6 +174,7 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
 	var pelvis:=skeleton.find_bone("pelvis")
 	var hip:Vector3=skeleton.to_global(skeleton.get_bone_global_pose(pelvis).origin)
 	actor.global_position+=socket.global_position-hip
+	if socket_name!="CoachmanSeat":_passenger_cloth(actor,true)
 	if socket_name=="CoachmanSeat":
 		for side in ["l","r"]:
 			actor.call("solve_hand_contact",side,coach.rein_grip_world(side))
@@ -190,16 +191,28 @@ func _clear(at:Vector3,basis:Basis) -> bool:
 		query.exclude=exclusions;query.collision_mask=1
 		var hits:=space.intersect_shape(query,1)
 		if not hits.is_empty():
-			if blocked_frames==0:print("COACH_BLOCKED ",coach.name," ",phase," ",hits[0].collider.get_path())
+			if blocked_frames==0:print("COACH_BLOCKED ",coach.name," ",phase," from=",coach.global_position," next=",at," obstacle=",hits[0].collider.get_path()," obstacle_at=",hits[0].collider.global_position)
 			return false
 	return true
 
 func _passenger_cloth(actor:Node3D,seated:bool) -> void:
 	if actor.get("movement_profile")!=&"female":return
-	var skirt:MeshInstance3D
-	for node in actor.find_children("*","MeshInstance3D",true,false):
-		if "gathered skirt" in node.name.to_lower():skirt=node
-		if "gathered skirt" in node.name.to_lower() or "fitted waist transition" in node.name.to_lower():node.visible=not seated
+	# The rig and its garment meshes are stable after spawning. Cache once;
+	# seated passengers call this every physics frame to follow their pelvis.
+	if not actor.has_meta("coach_cloth_meshes"):
+		var garment_meshes: Array[MeshInstance3D] = []
+		for node in actor.find_children("*","MeshInstance3D",true,false):
+			var label := node.name.to_lower()
+			if "gathered skirt" in label or "fitted waist transition" in label:
+				garment_meshes.append(node)
+		actor.set_meta("coach_cloth_meshes",garment_meshes)
+	var skirt: MeshInstance3D
+	var change_visibility: bool = not actor.has_meta("coach_cloth_seated") or actor.get_meta("coach_cloth_seated") != seated
+	for node in actor.get_meta("coach_cloth_meshes"):
+		if not is_instance_valid(node): continue
+		if "gathered skirt" in node.name.to_lower(): skirt = node
+		if change_visibility: node.visible = not seated
+	actor.set_meta("coach_cloth_seated",seated)
 	if not actor.has_meta("coach_dress") and skirt!=null:
 		var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var rings:=[Vector3(0,.1,0),Vector3(0,-.07,-.26),Vector3(0,-.28,-.52),Vector3(0,-.42,-.56)]
@@ -216,6 +229,13 @@ func _passenger_cloth(actor:Node3D,seated:bool) -> void:
 		surface.index();surface.generate_normals()
 		var dress:=MeshInstance3D.new();dress.name="SeatedDressCandidate";dress.mesh=surface.commit()
 		dress.material_override=skirt.get_active_material(0)
-		coach.seat_sockets["RearPassengerRight"].add_child(dress)
+		actor.add_child(dress)
 		actor.set_meta("coach_dress",dress)
-	if actor.has_meta("coach_dress"):actor.get_meta("coach_dress").visible=seated
+	if actor.has_meta("coach_dress"):
+		var dress:MeshInstance3D=actor.get_meta("coach_dress")
+		dress.visible=seated
+		if seated:
+			# Garment follows this resident at either chair, independently of the vehicle.
+			var rig:Skeleton3D=actor.get("_skeleton")
+			var hip:Vector3=rig.to_global(rig.get_bone_global_pose(rig.find_bone("pelvis")).origin)
+			dress.global_transform=Transform3D(actor.global_basis*Basis(Vector3.UP,PI),hip)

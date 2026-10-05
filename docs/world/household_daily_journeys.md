@@ -1,6 +1,6 @@
 # Wealthy household journeys
 
-Updated 2026-10-01. [Rendered activity gallery](household_daily_journeys.html). Functional activity sequence; final authored motion and garment contact remain open.
+Updated 2026-10-05. [Rendered activity gallery](household_daily_journeys.html). Functional activity sequence; final authored motion and garment contact remain open.
 
 The Indian landowner, wealthy merchant, British official and British woman each have a separate resident journey controller and personal AnimationTree. Their coaches wait until everyone has boarded and sat down. Residents walk through their home entrance, approach a carriage door, climb the running board, enter the cabin, turn and sit. At work they stand, climb down, walk through the office entrance, sit at a desk and use a ledger-work pose. They then stand, leave the office, board again, return, get out and walk back inside the home.
 
@@ -22,6 +22,12 @@ These are small furnished office annexes near the existing household demonstrati
 - Office chairs have separate sit and stand transitions. The pelvis position derives from the resident's own rig and chair height. A right-hand solve follows a small ledger-work target; this is not a finished writing performance.
 - Return walking uses the home entrance path and original interior location. Body collision is enabled for walking and disabled for vehicle/seat transitions.
 - The demonstration waits 12 seconds at home and 18 seconds at work. It is not yet a clock-based 09:00–17:00 daily timetable or a citywide traffic/navigation system.
+
+## Seated garment correction — 5 October
+
+The British woman's existing seated gown candidate now belongs to her actor and follows her own pelvis and facing. It is reused at the office chair as well as the carriage seat. The standing skirt and waist transition are hidden while she works, and restored when she leaves the desk. This corrects the vehicle-only attachment; it does not provide simulated folds or blended sitting/climbing cloth. No human bodies were created or replaced.
+
+The focused `--work-only` capture mode refreshes the four desk-work views without replacing the distinct entrance/climbing evidence. An office garment check samples visibility and pelvis alignment during work. The earlier 1 October views for other stages retain their original dates.
 
 ## Evidence and limits
 

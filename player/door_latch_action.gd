@@ -10,6 +10,7 @@ var amount := 0.0
 var released := false
 var last_gap := INF
 var approach_time := 0.0
+var clearance_target := Vector3.ZERO
 
 func begin(target: Node3D) -> bool:
 	if phase != "": return false
@@ -27,6 +28,8 @@ func begin(target: Node3D) -> bool:
 	elapsed=0.0
 	approach_time=0.0
 	released=false
+	last_gap=INF
+	actor.set_meta("door_latch_failure","")
 	actor.set_meta("door_latch_active",true)
 	return true
 
@@ -38,13 +41,35 @@ func _physics_process(delta: float) -> void:
 	actor.velocity=Vector3.ZERO
 	var horizontal := pull.global_position-actor.global_position
 	horizontal.y=0
+	if phase == "clearance":
+		elapsed+=delta
+		amount=1.0-smoothstep(0.0,.3,elapsed)
+		var retreat := clearance_target-actor.global_position
+		retreat.y=0
+		if retreat.length()>.05:
+			actor.velocity=retreat.normalized()*minf(1.6,retreat.length()/maxf(delta,.001))
+			actor.velocity.y=-3.0
+			_move_with_steps(delta)
+		if elapsed>.3:
+			door.set_open(false)
+			if door.moving: actor.set_meta("door_latch_released",true); finish(); return
+		if elapsed>3.0:
+			actor.set_meta("door_latch_failure","closing sweep occupied")
+			finish()
+		return
 	if phase == "approach":
 		approach_time+=delta
 		if horizontal.length()>.435:
 			var motion := horizontal.normalized()*minf(delta*1.6,horizontal.length()-.42)
 			actor.velocity=motion/maxf(delta,.001)
 			actor.velocity.y=-3.0
-			actor.move_and_slide()
+			var before := actor.global_position
+			_move_with_steps(delta)
+			var travel := actor.global_position-before
+			travel.y=0
+			if travel.length()<.001 and horizontal.length()<.7:
+				phase="reach"
+				elapsed=0.0
 			if approach_time>2.0:
 				actor.set_meta("door_latch_failure","approach blocked")
 				finish(); return
@@ -63,6 +88,12 @@ func _physics_process(delta: float) -> void:
 				finish()
 			return
 		released=true
+		if door.opened:
+			phase="clearance"
+			elapsed=0.0
+			var local := door.to_local(actor.global_position)
+			clearance_target=door.to_global(Vector3(0,local.y,-door.swing_direction*.9))
+			return
 		if not door.opened:
 			door.swing_direction=1.0 if door.get_parent().to_local(actor.global_position).z<door.position.z else -1.0
 		door.set_open(not door.opened)
@@ -73,6 +104,8 @@ func apply_pose() -> void:
 	if phase == "" or phase == "approach": return
 	var rig: Skeleton3D=visual.skeleton
 	var equipment=visual.equipment
+	visual.pose("spine_02",Vector3(.18,0,0),amount)
+	rig.force_update_all_bone_transforms()
 	var hand_index := rig.find_bone("hand_r")
 	var hand := rig.get_bone_global_pose(hand_index)
 	var palm: Vector3=hand*equipment.palm_offsets["r"]
@@ -102,3 +135,11 @@ func finish() -> void:
 	if is_instance_valid(actor):
 		actor.set_meta("door_latch_active",false)
 		actor.velocity=Vector3.ZERO
+
+func _move_with_steps(delta: float) -> void:
+	var horizontal := Vector3(actor.velocity.x,0,actor.velocity.z)*delta
+	actor.step_ground_grace=.15 if actor.is_on_floor() else maxf(0,actor.step_ground_grace-delta)
+	actor.step_up_grace=maxf(0,actor.step_up_grace-delta)
+	actor.move_and_slide()
+	actor._try_walk_step(delta,horizontal)
+	actor._try_walk_step_down()

@@ -1,0 +1,37 @@
+{
+	"date": "2026-10-05",
+	"renderer": "forward_plus",
+	"resolution": "1280x720",
+	"scope": "live resident world, static cameras and active world simulation; desktop contention possible; not gameplay FPS or target-hardware approval",
+	"startup_ms": 18509,
+	"views": {
+		"cantonment": {
+			"draw_calls_p50": 4306.0,
+			"frame_wall_ms_p50": 69.479,
+			"frame_wall_ms_p95": 82.077,
+			"nodes": 56968.0,
+			"objects": 7079.0,
+			"primitives": 2088582.0,
+			"static_memory_bytes": 784993529.0
+		},
+		"civil_lines": {
+			"draw_calls_p50": 5383.0,
+			"frame_wall_ms_p50": 68.546,
+			"frame_wall_ms_p95": 70.248,
+			"nodes": 56968.0,
+			"objects": 8145.0,
+			"primitives": 2540330.0,
+			"static_memory_bytes": 783757689.0
+		},
+		"village": {
+			"draw_calls_p50": 6769.0,
+			"frame_wall_ms_p50": 38.46,
+			"frame_wall_ms_p95": 40.328,
+			"nodes": 56967.0,
+			"objects": 7384.0,
+			"primitives": 6477352.0,
+			"static_memory_bytes": 782932533.0
+		}
+	},
+	"vsync": "disabled"
+}

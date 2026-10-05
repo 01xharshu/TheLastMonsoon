@@ -161,6 +161,7 @@ indices = [v.index for v in body.data.vertices if v.co.z>1.41 or
 visible.add(indices,1,'REPLACE')
 body_mask=body.modifiers.new("Hide clothed skin",'MASK')
 body_mask.vertex_group=visible.name
+body_mask.show_viewport=False;body_mask.show_render=False
 for mod in body.modifiers:
     if mod.name.startswith("Delete."):
         mod.show_viewport=False; mod.show_render=False

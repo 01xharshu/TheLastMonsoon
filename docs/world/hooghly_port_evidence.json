@@ -1,23 +1,25 @@
 {
-  "updated": "2026-10-01T10:46:51.337984+05:30",
+  "updated": "2026-10-05 IST",
+  "scope": "Ship/port material and construction detail pass",
   "status": "PASS",
   "routes": 40,
   "channel_samples": 105,
   "renderer": "Godot Forward+/Metal",
-  "sha256": {
-    "WorkingAssets/Ships/hooghly_merchant_1850s.blend": "666f4c3761ef6f0de23b176ca42c0a03c83aafe84d7b7c8bde87bc23eb38c300",
-    "assets/vehicles/ships/hooghly_merchant/hooghly_merchant_1850s.glb": "3162215b18d7fb9de80456426b5d8a625398898ae0275817f8305b52e839add9",
-    "world/suryagarh/hooghly_port.gd": "fae77a189e50b3a17c0fc288888c923faa9c753e76eaf34b8235d91478b542ad",
-    "world/suryagarh/landscape_layout.gd": "6bebb34ef791dd77253eb1ec440445ce87b85fffcd937481dfbc09963f400cb9",
-    "world/suryagarh/shaders/river.gdshader": "f9ae734485d78b0dc6d68b751a877b9e9a79fd9ace1ab1b03046e18a39046125",
-    "docs/world/hooghly_port_validation.json": "a4beb95735d41a404712fa3be7b15a7a3a4f59e93d9737ba16370483aea4f4c7"
+  "latest_native_review": [
+    "cabin",
+    "overview"
+  ],
+  "source_and_capture_sha256": {
+    "world/suryagarh/hooghly_port.gd": "5b89ad97bc127c81082a3c3c7d678b00cb9af38ef4a4e364348a405d1fff7e76",
+    "world/suryagarh/shaders/merchant_surface.gdshader": "fca0aef9e72ffc391d55978495332c41076cde465db621c289c2f121f6f8e8be",
+    "tools/world/validate_hooghly_port.gd": "7b93702bc6eaea8b5486b9f92645a6bde63aff521e69b440579ba575bc34e763",
+    "docs/world/hooghly_port_validation.json": "a4beb95735d41a404712fa3be7b15a7a3a4f59e93d9737ba16370483aea4f4c7",
+    "docs/world/captures/hooghly_port_ship.png": "63d532bfcc26392335cad2b884ac3b139a0e24d0f6656ce5534000ba852318ab",
+    "docs/world/captures/hooghly_port_deck.png": "6153774933faa554ccc66411d8909d5d53d44894a208542cebb0a3dde1106577",
+    "docs/world/captures/hooghly_port_hold.png": "e2f05b7fc1300f887d86a0f5ec4d29b8c8d813f79ed49e9ba37f31c9de3cf273",
+    "docs/world/captures/hooghly_port_cabin.png": "a24373d2a0478bfdfb1eb46070eef10c0be50165f8f292202cd80e75e14e2dee",
+    "docs/world/captures/hooghly_port_overview.png": "fd49c7d91a1820fe167a05057f1b08eaa1d9f8c151fcd250e4ff6845502301eb"
   },
-  "captures": [
-    "docs/world/captures/hooghly_port_overview.png",
-    "docs/world/captures/hooghly_port_ship.png",
-    "docs/world/captures/hooghly_port_deck.png",
-    "docs/world/captures/hooghly_port_hold.png",
-    "docs/world/captures/hooghly_port_cabin.png",
-    "docs/world/captures/hooghly_port_sea.png"
-  ]
+  "art_approved": false,
+  "integrated_run_log": "/tmp/tlm_port_realism_routes_1005.log"
 }

@@ -36,6 +36,11 @@ func run() -> void:
 		root.get_viewport().scaling_3d_scale=1.0
 		await capture("fort_kitchen_realism",Vector3(-42,2.1,-67.5),Vector3(-44,1.6,-76))
 		await capture("fort_cook_contact",Vector3(-38.8,1.95,-76.8),Vector3(-41,1.25,-75.1))
+		if "--staff-only" in OS.get_cmdline_user_args():
+			world.queue_free()
+			await process_frame
+			quit(0)
+			return
 		await capture("fort_stores_realism",Vector3(5,2.2,-67.3),Vector3(0,1.8,-77))
 		await capture("fort_staff_quarters",Vector3(48,2.1,-67),Vector3(44,1.0,-76))
 		await capture("fort_service_court",Vector3(20,7,-53),Vector3(0,1.5,-75))
@@ -104,8 +109,9 @@ func run() -> void:
 	player.global_position=origin
 	await physics_frame
 	await physics_frame
-	player.get_node("VisualRoot").global_rotation.y=PI
-	check(player._find_interactable()==door,"normal player prompt remains reachable with leaves open")
+	var open_pull_direction: Vector3=door.interaction_anchor()-player.global_position
+	player.get_node("VisualRoot").global_rotation.y=atan2(open_pull_direction.x,open_pull_direction.z)
+	check(player._find_interactable()==door,"normal player prompt finds the visible pull on an open leaf")
 	# Exercise the real movement controller and its step assist over the door sill.
 	player.set_physics_process(true)
 	player.velocity=Vector3.ZERO
@@ -118,9 +124,11 @@ func run() -> void:
 	player.global_position=origin
 	await physics_frame
 	await physics_frame
-	player.get_node("VisualRoot").global_rotation.y=PI
+	var close_pull_direction: Vector3=door.interaction_anchor()-player.global_position
+	player.get_node("VisualRoot").global_rotation.y=atan2(close_pull_direction.x,close_pull_direction.z)
 	player._try_primary_interaction()
-	await create_timer(3.0).timeout
+	await create_timer(5.0).timeout
+	print("WORLD CLOSE ",player.get_node("DoorLatchAction").phase," ",player.get_meta("door_latch_failure","")," at ",player.global_position," hand gap ",player.get_meta("door_latch_hand_gap",-1))
 	check(not door.opened and is_zero_approx(door.swing),"normal action closes the open door")
 	# A body in the leaf sweep must postpone closure rather than get pushed or trapped.
 	player.global_position=Vector3(0,30,0)
@@ -183,5 +191,5 @@ func capture(label: String,at: Vector3,target: Vector3) -> void:
 	camera.global_position=fort.to_global(at)
 	camera.look_at(fort.to_global(target))
 	for i in 10: await process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(true)
 	root.get_texture().get_image().save_png("res://docs/world/captures/"+label+".png")

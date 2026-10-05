@@ -5,6 +5,10 @@ extends CanvasLayer
 const Style = preload("res://ui/menu_style.gd")
 const SettingsPanel = preload("res://ui/settings_panel.gd")
 
+var navigation: HBoxContainer
+var centre: CenterContainer
+var shade: ColorRect
+var map: Control
 var overlay: Control
 var column: VBoxContainer
 var previous_mouse_mode: Input.MouseMode
@@ -22,24 +26,41 @@ func _ready() -> void:
 	add_child(overlay)
 
 	# Dark cinematic backdrop
-	var shade := ColorRect.new()
+	shade = ColorRect.new()
 	shade.color = Color(0.018, 0.025, 0.02, 0.92)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(shade)
 
 	# Subtle vignette
-	Style._add_vignette(overlay)
+	# Map supplies its own parchment backdrop.
 
 	# Centre column
-	var centre := CenterContainer.new()
+	centre = CenterContainer.new()
 	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centre.offset_top = 80
+	centre.offset_bottom = -24
 	overlay.add_child(centre)
 
 	column = VBoxContainer.new()
 	column.custom_minimum_size.x = 480
-	column.add_theme_constant_override("separation", 10)
+	column.add_theme_constant_override("separation", 6)
 	centre.add_child(column)
 
+	map = world.get_node("Player/UI/WorldMap")
+	map.theme = Style.make_theme()
+	navigation = HBoxContainer.new()
+	navigation.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	navigation.position = Vector2(-104, 12)
+	navigation.add_theme_constant_override("separation", 12)
+	for tab in ["map", "game", "settings"]:
+		var button := Button.new()
+		button.icon = load("res://assets/ui/map_icons/%s.svg" % tab)
+		button.toggle_mode = true
+		button.tooltip_text = {"map":"Map", "game":"Save / Load / Main menu", "settings":"Display / Graphics / Controls"}[tab]
+		button.custom_minimum_size = Vector2(60, 52)
+		button.pressed.connect(select_tab.bind(tab))
+		navigation.add_child(button)
+	overlay.add_child(navigation)
 	overlay.hide()
 
 # ── Open / Close ─────────────────────────────────────────────
@@ -53,7 +74,7 @@ func open() -> void:
 	if overlay.visible:
 		return
 	var player: CharacterBody3D = world.get_node("Player")
-	if player.get_meta("map_open", false) or player.get_meta("weapon_wheel_open", false):
+	if player.get_meta("weapon_wheel_open", false):
 		return
 	if player.inventory_ui.is_open():
 		player.inventory_ui.close_inventory()
@@ -62,7 +83,9 @@ func open() -> void:
 	previous_mouse_mode = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	overlay.show()
-	show_main()
+	map.refresh_sites()
+	player.set_meta("map_open", true)
+	select_tab("map")
 	get_tree().paused = true
 
 func close() -> void:
@@ -70,23 +93,31 @@ func close() -> void:
 		return
 	get_tree().paused = false
 	overlay.hide()
+	map.hide()
+	world.get_node("Player").set_meta("map_open", false)
 	world.get_node("Player/UI/HUDRoot").visible = previous_hud_visible
 	Input.mouse_mode = previous_mouse_mode
 
 # ── Input ────────────────────────────────────────────────────
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and not event.is_echo():
+		toggle()
+		get_viewport().set_input_as_handled()
+		return
 	if not overlay.visible:
 		return
-	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_B and event.pressed:
-		if page == "main":
-			close()
-		else:
-			show_main()
+	if event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_LEFT_SHOULDER,JOY_BUTTON_RIGHT_SHOULDER]:
+		var current := 0 if page == "map" else (2 if page == "settings" else 1)
+		select_tab(["map","game","settings"][posmod(current + (-1 if event.button_index == JOY_BUTTON_LEFT_SHOULDER else 1),3)])
 		get_viewport().set_input_as_handled()
 		return
-	if event.is_action_pressed("pause") and not event.is_echo():
-		close()
+	if event is InputEventJoypadButton and event.button_index == JOY_BUTTON_B and event.pressed:
+		if page in ["main", "map"]:
+			close()
+		else:
+			select_tab("game")
 		get_viewport().set_input_as_handled()
+		return
 
 # ── Content helpers ──────────────────────────────────────────
 func clear_content() -> void:
@@ -99,7 +130,7 @@ func show_main() -> void:
 	page = "main"
 	clear_content()
 
-	column.add_child(Style.heading("Paused", 44))
+	column.add_child(Style.heading("Journey", 32))
 
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 12
@@ -111,7 +142,19 @@ func show_main() -> void:
 
 	column.add_child(Style.button("Save Game", func(): show_slots(true)))
 	column.add_child(Style.button("Load Game", func(): show_slots(false)))
-	column.add_child(Style.button("Settings", func(): show_settings()))
+	var latest := Style.button("Load last save", func():
+		close()
+		SaveManager.start_loaded_game(SaveManager.newest_slot())
+	)
+	latest.disabled = SaveManager.newest_slot() == 0
+	column.add_child(latest)
+	var actor: CharacterBody3D = world.get_node("Player")
+	var boarding: Node = actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null
+	if is_instance_valid(boarding) and actor.get_meta("cart_role","") == "passenger" and boarding.cart.has_method("show_coachman_blockout"):
+		var travel := Style.button("Cancel coach journey" if boarding.travel.payer != null else "Coach travel · 2 rupees",map._travel_pressed)
+		travel.disabled = boarding.transition != "" or (boarding.travel.payer == null and not map.waypoint.is_finite())
+		column.add_child(travel)
+
 
 	var spacer2 := Control.new()
 	spacer2.custom_minimum_size.y = 4
@@ -182,7 +225,7 @@ func show_settings() -> void:
 	page = "settings"
 	clear_content()
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(500, minf(600.0, get_viewport().get_visible_rect().size.y - 120.0))
+	scroll.custom_minimum_size = Vector2(500, minf(600.0, get_viewport().get_visible_rect().size.y - 220.0))
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var settings := SettingsPanel.new()
@@ -212,3 +255,16 @@ func show_return_confirmation() -> void:
 	column.add_child(Style.button("Cancel", func(): show_main()))
 
 	Style.stagger_children(column, 0.06)
+
+func select_tab(tab: String) -> void:
+	page = tab
+	for index in 3:
+		var button: Button = navigation.get_child(index)
+		button.set_pressed_no_signal(["map","game","settings"][index] == tab)
+		button.queue_redraw()
+	map.visible = tab == "map"
+	centre.visible = tab != "map"
+	shade.visible = tab != "map"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE if tab == "map" else Control.MOUSE_FILTER_STOP
+	if tab == "game": show_main()
+	elif tab == "settings": show_settings()

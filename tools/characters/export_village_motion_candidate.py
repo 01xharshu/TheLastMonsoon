@@ -16,11 +16,25 @@ FEMALE = "--female" in sys.argv or "--fruit-seller" in sys.argv
 SLUG = ("village_fruit_seller" if "--fruit-seller" in sys.argv else
         "village_weaver_assistant" if "--weaver-assistant" in sys.argv else
         "village_woman" if FEMALE else "village_farmer")
+if "--purpose" in sys.argv:
+    SLUG = sys.argv[sys.argv.index("--purpose") + 1]
+    if SLUG not in ("dock_porter", "boatman", "record_clerk"):
+        raise ValueError("Unsupported purpose role")
 OUT = ROOT / "WorkingAssets/NPCs" / SLUG
 bpy.ops.wm.open_mainfile(filepath=str(OUT / (SLUG + "_mpfb.blend")))
 rig = bpy.data.objects[SLUG + "_rig"]
 # Repair the candidate only; retain the original static source/world preview.
 body = bpy.data.objects[SLUG + "_MakeHuman_body"]
+import sys
+sys.path.insert(0, str(ROOT / 'tools/characters'))
+from whole_body_contract import retain_complete_body
+retain_complete_body(body)
+if "--purpose" in sys.argv:
+    for modifier in body.modifiers:
+        if modifier.type == 'MASK' and modifier.name != 'Hide helpers':
+            modifier.show_viewport = False
+            modifier.show_render = False
+    body['body_retention'] = 'Complete underlying MPFB body in source and runtime; no outfit skin cutout'
 if FEMALE:
     visible = body.vertex_groups['Visible period skin']
     arm_groups = {group.index for group in body.vertex_groups
@@ -34,7 +48,9 @@ if FEMALE:
 drape_names = (['Wrapped sari lower drape', 'Sari lower border'] if FEMALE else
                ['Knee length wrapped dhoti', 'Dhoti woven border', 'Kurta loose lower panel'])
 for name in drape_names:
-    obj = bpy.data.objects[name]
+    obj = bpy.data.objects.get(name)
+    if obj is None:
+        continue
     obj.vertex_groups.clear()
     for vertex in obj.data.vertices:
         x, y, z = vertex.co
@@ -54,12 +70,19 @@ for bone in rig.pose.bones:
 rig.animation_data_clear()
 rig.animation_data_create()
 
+gait = None
+captures = []
+if "--purpose" in sys.argv:
+    sys.path.insert(0, str(ROOT / 'tools/characters'))
+    from purpose_gait import GroundedGait
+    gait = GroundedGait(rig, SLUG)
+
 def rotate(name, world_axis, angle):
-    bone = rig.pose.bones.get(name)
+    bone = rig.pose.bones.get(name) or rig.pose.bones.get(name.replace("spine0", "spine_0"))
     if bone is None:
         return
     local_axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector(world_axis)
-    bone.rotation_quaternion = base[name] @ Quaternion(local_axis, angle)
+    bone.rotation_quaternion = base[bone.name] @ Quaternion(local_axis, angle)
 
 def pose(clip, phase):
     for bone in rig.pose.bones:
@@ -79,25 +102,31 @@ def pose(clip, phase):
         rotate('thigh_r', (1, 0, 0), -.30 * step)
         rotate('calf_l', (1, 0, 0), -.27 * lift_l)
         rotate('calf_r', (1, 0, 0), -.27 * lift_r)
-        rotate('upperarm_l', (1, 0, 0), -.18 * step)
-        rotate('upperarm_r', (1, 0, 0), .18 * step)
+        rotate('upperarm_l', (1, 0, 0), -(gait.profile['arm'] if gait else .18) * step)
+        rotate('upperarm_r', (1, 0, 0), (gait.profile['arm'] if gait else .18) * step)
         rotate('spine01', (0, 0, 1), .016 * math.sin(phase * math.tau * 2))
     bpy.context.view_layer.update()
 
 for clip, frames in [('idle', 61), ('walk', 37)]:
     action = bpy.data.actions.new(clip)
     action.use_fake_user = True
+    captured_frames = []
     rig.animation_data.action = action
     for frame in range(1, frames+1):
         phase = (frame-1) / (frames-1)
         pose(clip, phase)
+        if gait:
+            captured_frames.append((frame, gait.step(clip, phase)))
         for bone in rig.pose.bones:
             bone.keyframe_insert('rotation_quaternion', frame=frame, group=bone.name)
             if bone.name == 'Root':
                 bone.keyframe_insert('location', frame=frame, group=bone.name)
+    captures.append((action, captured_frames))
     action['loop'] = True
     action['review_status'] = 'CANDIDATE_NOT_APPROVED'
 
+if gait:
+    gait.bake(captures)
 rig.animation_data.action = bpy.data.actions['idle']
 scene.frame_set(1)
 source = OUT / (SLUG + "_motion_candidate.blend")
@@ -123,24 +152,41 @@ def bake_masked_rest(original, label):
     cutout.matrix_basis = original.matrix_basis.copy()
     cutout.modifiers.new('Armature deformation', 'ARMATURE').object = rig
     return cutout
-bake_masked_rest(body, SLUG + "_export_skin_cutout")
+masked_originals = {body, outfit}
+# Godot does not evaluate Blender MASK modifiers on skinned clothing either.
+# Bake each role's cut sleeve/vest/trouser component in rest pose, retaining
+# its weights; save the fully editable source above before creating cutouts.
+if "--purpose" in sys.argv:
+    for original in list(bpy.data.objects):
+        if original.type == 'MESH' and original not in masked_originals and any(m.type == 'MASK' for m in original.modifiers):
+            bake_masked_rest(original, original.name + '_export_cutout')
+            masked_originals.add(original)
+bake_masked_rest(body, SLUG + ("_export_full_body" if "--purpose" in sys.argv else "_export_skin_cutout"))
 bake_masked_rest(outfit, SLUG + "_export_upper_cutout")
 rig.data.pose_position = 'POSE'
 scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT')
 rig.select_set(True)
 for obj in bpy.data.objects:
-    if obj.type == 'MESH' and obj not in (body, outfit): obj.select_set(True)
+    if obj.type == 'MESH' and obj not in masked_originals: obj.select_set(True)
 bpy.context.view_layer.objects.active = rig
 bpy.ops.export_scene.gltf(filepath=str(runtime), export_format='GLB', use_selection=True,
     export_animations=True, export_animation_mode='ACTIONS', export_force_sampling=True,
     export_frame_range=False, export_cameras=False, export_lights=False,
     export_yup=True, export_skins=True, export_apply=False)
+if "--purpose" in sys.argv:
+    sys.path.insert(0, str(ROOT / 'tools/characters'))
+    from purpose_identity import tint_glb
+    tint_glb(runtime, SLUG)
+    from purpose_gait import normalize_animation_times
+    normalize_animation_times(runtime)
 report = dict(status='MOTION_CANDIDATE_NOT_APPROVED', source=str(source.relative_to(ROOT)),
     source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
     runtime=str(runtime.relative_to(ROOT)),
     runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),
-    actions=['idle','walk'], motion_approved=False, in_world=False,
+    actions=['idle','walk'], complete_runtime_body=True, loop_time_origin_normalized=bool(gait), gait_profile=gait.profile if gait else None,
+    max_ankle_target_error_m=gait.max_target_error if gait else None,
+    gait_scope='flat-floor baked foot targets; no terrain, toe-roll or full motion approval' if gait else None, motion_approved=False, in_world=False,
     garment_repair='Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation')
 (OUT / 'motion_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
 print('VILLAGE_MOTION', json.dumps(report))

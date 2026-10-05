@@ -26,6 +26,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	_build_boarding_doors()
 	_build_audio()
+	_create_coachman.call_deferred()
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
 	add_child(boarding)
@@ -39,6 +40,22 @@ func _ready() -> void:
 	_add_boarding_point("CoachmanSeat", Vector3(0,1.7,.17), "driver")
 	_add_boarding_point("RearPassengerRight", Vector3(1.15,1.89,2.26), "passenger")
 	_add_boarding_point("RearPassengerLeft", Vector3(-1.15,1.89,2.26), "passenger")
+
+func _create_coachman() -> void:
+	# Occupied household coaches already supply their own MakeHuman driver.
+	if is_in_group("household_coach"): return
+	var document := GLTFDocument.new()
+	var state := GLTFState.new()
+	var path := "res://WorkingAssets/NPCs/village_farmer/village_farmer_rigged_candidate.glb"
+	if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
+		push_error("MakeHuman coachman source failed to load: "+path)
+		return
+	var actor := preload("res://vehicles/seated_coachman.gd").new()
+	actor.name = "CoachmanMakeHuman"
+	actor.coach = self
+	actor.set_meta("human_source",path)
+	actor.add_child(document.generate_scene(state))
+	visual_root.add_child(actor)
 
 func _build_audio() -> void:
 	for i in 4:
@@ -203,7 +220,6 @@ func _build() -> void:
 	var leather := _mat(Color(.14,.075,.045))
 	var brass := _mat(Color(.43,.32,.13),.55)
 	var cloth := _mat(Color(.21,.24,.24))
-	var skin := _mat(Color(.39,.25,.16))
 	var upholstery := _mat(Color(.34,.20,.16))
 	var lining := _mat(Color(.37,.33,.26))
 	var glass := _mat(Color(.65,.72,.69,.22))
@@ -289,22 +305,8 @@ func _build() -> void:
 	for side in [-1.0,1.0]:
 		_beam("DriverSeatSupport",Vector3(side*.65,1.25,.98),Vector3(side*.65,1.65,.98),.08,wood)
 		_beam("DriverHandRail",Vector3(side*.84,1.26,.46),Vector3(side*.84,1.72,1.18),.055,iron)
-	# Temporary seated coachman volume establishes sight line and reach to reins.
-	_box("CoachmanCoat",Vector3(0,2.17,.91),Vector3(.51,.72,.30),cloth)
-	_box("CoachmanLegLeft",Vector3(-.19,1.43,.52),Vector3(.15,.48,.42),cloth)
-	_box("CoachmanLegRight",Vector3(.19,1.43,.52),Vector3(.15,.48,.42),cloth)
-	var head := MeshInstance3D.new()
-	head.name = "CoachmanHeadBlockout"
-	var sphere := SphereMesh.new()
-	sphere.radius = .18
-	sphere.height = .36
-	head.mesh = sphere
-	head.position = Vector3(0,2.72,.87)
-	head.material_override = skin
-	visual_root.add_child(head)
-	_box("CoachmanTurbanBlockout",Vector3(0,2.90,.87),Vector3(.38,.13,.34),cloth)
+	# Humans are supplied by the existing MakeHuman/MPFB actor at runtime.
 	for side in [-1.0,1.0]:
-		_beam("CoachmanArm",Vector3(side*.26,2.39,.85),Vector3(side*.21,1.97,.67),.095,cloth)
 		_beam("Rein",Vector3(side*.20,1.97,.65),Vector3(side*.78,1.84,-2.99),.013,leather)
 	# Pair harness: central pole, crossbar, breast straps, and traces to the frame.
 	_beam("CentralPole",Vector3(0,.97,1.48),Vector3(0,1.14,-2.57),.09,wood)
@@ -337,12 +339,12 @@ func set_forward_motion(speed: float, delta: float) -> void:
 		wheel.rotation.x += speed*delta/radius
 	for anim in horse_animations:
 		if combat != null and combat.animation_dead(anim): continue
-		var clip := "AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle"
+		var clip := "AnimalArmature|Gallop" if absf(speed) > 6.0 else ("AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle")
 		if anim.current_animation != clip: anim.play(clip,.15)
-		anim.speed_scale = clampf(absf(speed)/4.2,.65,1.4) if clip.ends_with("Walk") else 1.0
+		anim.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.65,1.7) if clip != "AnimalArmature|Idle" else 1.0
 	if absf(speed) > .25 and not horse_animations.is_empty() and not hoof_players.is_empty():
 		var anim: AnimationPlayer = horse_animations[0]
-		var length: float = anim.get_animation("AnimalArmature|Walk").length
+		var length: float = anim.get_animation(anim.current_animation).length
 		if length > 0.0:
 			var previous := sound_cycle
 			sound_cycle += delta * anim.speed_scale / length

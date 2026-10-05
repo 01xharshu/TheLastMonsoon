@@ -18,29 +18,40 @@ func run() -> void:
 	root.size = Vector2i(1280,720)
 	root.content_scale_size = Vector2i(1280,720)
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-	create_timer(240).timeout.connect(func(): push_error("Document validation timeout"); quit(2))
+	var watchdog := create_timer(240)
+	var on_timeout := func(): push_error("Document validation timeout"); quit(2)
+	watchdog.timeout.connect(on_timeout)
 	var actor: CharacterBody3D = world.get_node("Player")
 	for i in 12: await process_frame
 	var scroll: Control = actor.get_node("UI/IdentityScroll")
 	var motion: Node3D = actor.get_node("DocumentMotion")
-	# Document-motion fixture only; no notice is attached to a runtime building.
-	var notice: Node3D = preload("res://interaction/wall_notice.gd").new()
-	notice.name = "DocumentTestFixture"
-	notice.position = Vector3(-320,9.5,-430)
-	world.add_child(notice)
+	var board: Node3D = world.get_node("Settlement/MarketNoticeBoard")
+	var notice: Node3D = board.get_node("MarketNews")
+	check(get_nodes_in_group("public_notice_boards").size()==1,"One playable market notice board")
 	var camera := Camera3D.new()
 	world.add_child(camera)
 	camera.make_current()
-	actor.global_position = notice.global_position + Vector3(0,-1.5,.65)
-	actor.rotation.y = PI
-	actor.get_node("VisualRoot").rotation.y = 0
+	actor.global_position = notice.global_position + Vector3(0,-.51,.50)
+	actor.rotation.y = 0
+	actor.get_node("VisualRoot").rotation.y = PI
 	camera.global_position = actor.global_position + Vector3(1.2,1.4,1.9)
 	camera.look_at(actor.global_position+Vector3(0,1.15,0))
 	for i in 12: await physics_frame
 	actor.set_physics_process(false)
+	# The review camera owns this staged view; the inactive player camera must
+	# not hide Arjun based on an obstruction outside the camera being rendered.
+	actor.get_node("CameraPivot/SpringArm3D/Camera3D").set_process(false)
+	actor.visual_root.show()
+	check(absf(board.global_position.y - actor.global_position.y + .90)<.15,"Board and actor ground support")
+	await capture("market_board")
 	var stowed: bool = actor.get_node("VisualRoot/CharacterVisual").equipment.stowed
 	var points: int = actor.get_node("FameComponent").points
-	scroll.set_open(true)
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_O
+	key.keycode = KEY_O
+	key.pressed = true
+	scroll._input(key)
+	check(scroll.opening,"O-key opens record")
 	for i in 18: await process_frame
 	await capture("unroll")
 	await create_timer(1.0).timeout
@@ -69,7 +80,7 @@ func run() -> void:
 	var rig: Skeleton3D = actor.get_node("VisualRoot/CharacterVisual").skeleton
 	for side in ["l","r"]:
 		var palm: Vector3 = rig.to_global(rig.get_bone_global_pose(rig.find_bone("hand_"+side)) * actor.get_node("VisualRoot/CharacterVisual").equipment.palm_offsets[side])
-		var gap := palm.distance_to(motion.to_global(Vector3(-.18 if side=="l" else .18,0,0)))
+		var gap := palm.distance_to(motion.edge_targets[side])
 		print("DOCUMENT PALM ",side," gap=",gap)
 		check(gap<.02,"Reading palm contact "+side)
 	await capture("hand_contact")
@@ -88,6 +99,24 @@ func run() -> void:
 	scroll.set_open(true)
 	check(not scroll.opening,"Recovery prevents overlapping documents")
 	await create_timer(1.0).timeout
+	# Early close must reverse from the current pose instead of jumping fully open.
+	scroll.set_open(true)
+	await create_timer(.10).timeout
+	var before_close: Vector3 = motion.global_position
+	var before_amount: float = motion.open_amount
+	scroll.set_open(false)
+	await process_frame
+	check(motion.open_amount <= before_amount+.01,"Early close does not jump to a fully open pose")
+	check(motion.global_position.distance_to(before_close)<.10,"Early close paper continuity")
+	await create_timer(1.0).timeout
+	# Both rollers retain their round cross section while the paper shortens.
+	scroll.set_open(true)
+	await create_timer(.35).timeout
+	for roller in motion.rollers:
+		check(roller.global_basis.get_scale().is_equal_approx(Vector3.ONE),"Rollers stay round")
+	await capture("partial_unroll")
+	scroll.set_open(false)
+	await create_timer(1.0).timeout
 	root.size = Vector2i(800,600)
 	root.content_scale_size = Vector2i(800,600)
 	for i in 3: await process_frame
@@ -103,7 +132,7 @@ func run() -> void:
 		for i in 3: await process_frame
 		camera.global_position = actor.global_position + Vector3(1.0,.85,.10)
 		camera.look_at(actor.global_position + Vector3(0,.55,-.2))
-		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://docs/world/captures/document_motion"))
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://document_review_frames"))
 		scroll.set_open(true)
 		var times: Array[int] = []
 		for i in 40:
@@ -112,8 +141,11 @@ func run() -> void:
 			await process_frame
 			RenderingServer.force_draw(false)
 			times.append(Time.get_ticks_usec())
-			root.get_texture().get_image().save_png("res://docs/world/captures/document_motion/%03d.png" % i)
-		var timing := FileAccess.open("res://docs/world/captures/document_motion/times.json",FileAccess.WRITE)
+			root.get_texture().get_image().save_png("user://document_review_frames/%03d.png" % i)
+		var timing := FileAccess.open("user://document_review_frames/times.json",FileAccess.WRITE)
 		timing.store_string(JSON.stringify(times))
 	print("DOCUMENT READING: ", "PASS" if failures.is_empty() else "FAIL", " | cards, unroll, remove/repost, recovery, weapon, redraw, narrow layout")
+	watchdog.timeout.disconnect(on_timeout)
+	world.queue_free()
+	for i in 3: await process_frame
 	quit(0 if failures.is_empty() else 1)

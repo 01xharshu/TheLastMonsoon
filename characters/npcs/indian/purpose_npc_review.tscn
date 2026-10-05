@@ -1,0 +1,68 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://characters/npcs/indian/indian_npc_candidate.gd" id="1"]
+
+[sub_resource type="PlaneMesh" id="ground"]
+size = Vector2(12, 12)
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 1
+background_color = Color(0.2, 0.22, 0.25, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.35
+
+[sub_resource type="StandardMaterial3D" id="floor_mat"]
+albedo_color = Color(0.45, 0.45, 0.45, 1)
+
+[node name="PurposeNPCReview" type="Node3D"]
+
+[node name="dock_porter" type="Node3D" parent="."]
+position = Vector3(-1.55, 0, 0)
+script = ExtResource("1")
+candidate_slug = "dock_porter"
+
+[node name="boatman" type="Node3D" parent="."]
+position = Vector3(0, 0, 0)
+script = ExtResource("1")
+candidate_slug = "boatman"
+
+[node name="record_clerk" type="Node3D" parent="."]
+position = Vector3(1.55, 0, 0)
+script = ExtResource("1")
+candidate_slug = "record_clerk"
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground")
+material_override = SubResource("floor_mat")
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-45, -25, 0)
+shadow_enabled = true
+
+[node name="Camera" type="Camera3D" parent="."]
+position = Vector3(0, 1.7, 5.2)
+rotation_degrees = Vector3(-7, 0, 0)
+fov = 32.0
+current = true
+
+[node name="dock_porterLabel" type="Label3D" parent="."]
+position = Vector3(-1.55, 1.9, 0)
+text = "Dock porter"
+font_size = 36
+billboard = 1
+
+[node name="boatmanLabel" type="Label3D" parent="."]
+position = Vector3(0, 1.9, 0)
+text = "Boatman"
+font_size = 36
+billboard = 1
+
+[node name="record_clerkLabel" type="Label3D" parent="."]
+position = Vector3(1.55, 1.9, 0)
+text = "Record clerk"
+font_size = 36
+billboard = 1

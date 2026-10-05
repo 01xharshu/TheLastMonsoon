@@ -5,23 +5,23 @@
 	"routes": [
 		{
 			"arrived": true,
-			"finish": "(-102.0317, 4.220194, 680.0)",
+			"finish": "(-102.0318, 4.220191, 680.0)",
 			"label": "quay to supported jetty",
 			"start": "(-168.0, 3.780264, 680.0)",
 			"swimming": false
 		},
 		{
 			"arrived": true,
-			"finish": "(-102.0, 4.220194, 683.9993)",
+			"finish": "(-102.0, 4.220191, 683.9993)",
 			"label": "berth turn",
-			"start": "(-102.0317, 4.220194, 680.0)",
+			"start": "(-102.0318, 4.220191, 680.0)",
 			"swimming": false
 		},
 		{
 			"arrived": true,
 			"finish": "(-88.01093, 4.220604, 684.0)",
 			"label": "gangway boards ship",
-			"start": "(-102.0, 4.220194, 683.9993)",
+			"start": "(-102.0, 4.220191, 683.9993)",
 			"swimming": false
 		},
 		{
@@ -243,7 +243,7 @@
 		},
 		{
 			"arrived": true,
-			"finish": "(-85.02457, -0.119669, 666.0744)",
+			"finish": "(-85.02457, -0.119669, 666.0745)",
 			"label": "crew berth exploration",
 			"start": "(-87.0, -0.119888, 670.0049)",
 			"swimming": false
@@ -252,7 +252,7 @@
 			"arrived": true,
 			"finish": "(-86.969, -0.1189, 669.9964)",
 			"label": "crew berth return",
-			"start": "(-85.02457, -0.119669, 666.0744)",
+			"start": "(-85.02457, -0.119669, 666.0745)",
 			"swimming": false
 		},
 		{

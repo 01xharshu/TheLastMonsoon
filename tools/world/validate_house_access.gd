@@ -81,6 +81,7 @@ func run() -> void:
 	await physics_frame
 	shutter.interact(player)
 	await create_timer(3.0).timeout
+	print("SHUTTER LATCH ",player.get_meta("door_latch_failure","none")," at ",player.global_position," hand gap ",player.get_meta("door_latch_hand_gap",-1))
 	check(shutter.opened and is_equal_approx(shutter.swing,1.0) and is_equal_approx(absf(leaf.rotation.y),PI*.5),"inside can animate wooden shutters open")
 	player.global_position=Vector3(0,30,0)
 	await physics_frame

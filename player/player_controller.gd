@@ -29,6 +29,19 @@ func take_damage(amount: float) -> void:
 	if amount <= 0.0 or health <= 0.0: return
 	health = maxf(0.0, health - amount)
 
+func receive_combat_hit(amount: float, attacker: Node3D) -> void:
+	if get_meta("combat_blocking",false) and survival.stamina>=5:
+		var toward:=attacker.global_position-global_position;toward.y=0
+		if toward.normalized().dot($VisualRoot.global_basis.z)>.2:
+			survival.stamina-=5;take_damage(amount*.2);return
+	take_damage(amount)
+	var combat:=get_node_or_null("CombatInput")
+	if combat!=null:combat.interrupt()
+	var grapple:=get_node_or_null("RearGrapple")
+	if grapple!=null and grapple.active:grapple.cancel()
+	var visual:=get_node_or_null("VisualRoot/CharacterVisual")
+	if visual!=null:visual.hit_phase=0.0
+
 @export var swim_speed: float = 2.6
 var is_swimming := false
 var water_surface := 0.0
@@ -298,11 +311,15 @@ func _physics_process(
 	if get_meta("door_latch_active",false):
 		survival.set_sprinting(false)
 		return
-	if get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
+	if get_meta("paired_combat",false) or get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
 		_hide_interaction_labels()
 		return
+	if has_meta("combat_dodge"):
+		var direction: Vector3=get_meta("combat_dodge")
+		velocity.x=direction.x*3.2;velocity.z=direction.z*3.2
+		_apply_gravity(delta);move_and_slide();return
 	if get_meta("river_action", "") != "":
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
@@ -752,16 +769,18 @@ func _find_interactable() -> Interactable:
 	for node in get_tree().get_nodes_in_group("interactables"):
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
 		var candidate := node as Interactable
-		if candidate == null or not candidate.interaction_available(): continue
+		if candidate == null: continue
+		# Door roots can be far from their latch: retain the authored anchor for range.
+		var target_point := candidate.interaction_anchor() if candidate.is_in_group("house_doors") else candidate.global_position
+		var offset := target_point - global_position
+		if offset.length_squared() > candidate.interaction_max_distance * candidate.interaction_max_distance: continue
+		if not candidate.interaction_available(): continue
+		var distance := offset.length()
 		var screen_point := Vector2.ZERO
 		if view_camera != null and candidate.is_in_group("weapon_pickups"):
 			if view_camera.is_position_behind(candidate.interaction_anchor()): continue
 			screen_point = view_camera.unproject_position(candidate.interaction_anchor())
 			if not view_rect.has_point(screen_point): continue
-		var target_point := candidate.interaction_anchor() if candidate.is_in_group("house_doors") else candidate.global_position
-		var offset := target_point - global_position
-		var distance := offset.length()
-		if distance > candidate.interaction_max_distance: continue
 		var flat := Vector3(offset.x, 0, offset.z)
 		var alignment := forward.dot(flat.normalized()) if flat.length() > 0.1 else 1.0
 		if alignment < 0.65: continue

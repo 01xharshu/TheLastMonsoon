@@ -18,13 +18,13 @@ func _ready() -> void:
 				hair.set_shader_parameter("hair_color",original.albedo_color)
 				mesh.set_surface_override_material(surface,hair)
 				continue
-			if "police drab cotton" not in original.resource_name.to_lower():continue
+			if not ("police drab cotton" in original.resource_name.to_lower() or "police tan fittings" in original.resource_name.to_lower()):continue
 			var cloth:=ShaderMaterial.new()
 			cloth.shader=preload("res://characters/npcs/households/household_cloth.gdshader")
 			cloth.set_shader_parameter("cloth_color",original.albedo_color)
 			mesh.set_surface_override_material(surface,cloth)
 func _process(delta: float) -> void:
-	if get_meta("dead",false) or animation_tree == null: return
+	if get_meta("dead",false) or get_meta("knocked_out",false) or animation_tree == null: return
 	_set_animation(&"walk" if travel_speed>.02 else &"idle",delta)
 	if is_instance_valid(detainee) and duty_state in ["restraint","escort"]:
 		if duty_state=="restraint":

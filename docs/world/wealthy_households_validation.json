@@ -1,36 +1,38 @@
 {
   "clear_new_home_entrances": 2,
   "coaches": 3,
-  "errors": [],
+  "errors": [
+    "office seated garment missing"
+  ],
   "hand_contacts": [
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.00150876096449792,
+      "error_m": 0.00158546457532793,
       "hand": "l"
     },
     {
       "actor": "LandownerHouseholdWaterBearer",
-      "error_m": 0.00150475185364485,
+      "error_m": 0.00158546457532793,
       "hand": "r"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00144791789352894,
+      "error_m": 0.00143606029450893,
       "hand": "l"
     },
     {
       "actor": "MerchantHouseholdWaterBearer",
-      "error_m": 0.00145141617394984,
+      "error_m": 0.00146097550168633,
       "hand": "r"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.00192515284288675,
+      "error_m": 0.00191215763334185,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdWaterBearer",
-      "error_m": 0.00192515284288675,
+      "error_m": 0.00191215763334185,
       "hand": "r"
     },
     {
@@ -55,12 +57,12 @@
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.000814882223494351,
+      "error_m": 0.000818027998320758,
       "hand": "l"
     },
     {
       "actor": "BritishHouseholdCoachman",
-      "error_m": 0.000814882223494351,
+      "error_m": 0.000811742094811052,
       "hand": "r"
     }
   ],
@@ -83,15 +85,15 @@
       },
       "blocked_frames": 0,
       "coach": "LandownerHouseholdCoach",
-      "distance_m": 133.795529979468,
-      "phase": "departing",
+      "distance_m": 145.0,
+      "phase": "boarding_return",
       "resident_actions": [
         {
           "actor": "LandownerHouseholdLandowner",
           "blocked_frames": 0,
           "obstacle": "",
-          "position": "(-321.48, 8.075469, 337.6002)",
-          "state": "seated",
+          "position": "(-314.5003, 7.212001, 320.0887)",
+          "state": "leave_office",
           "visited": {
             "climb_down": true,
             "climb_step": true,
@@ -130,15 +132,15 @@
       },
       "blocked_frames": 0,
       "coach": "MerchantHouseholdCoach",
-      "distance_m": 173.989453124999,
-      "phase": "boarding_return",
+      "distance_m": 232.0,
+      "phase": "home",
       "resident_actions": [
         {
           "actor": "MerchantHouseholdMerchant",
           "blocked_frames": 0,
           "obstacle": "",
-          "position": "(-381.4009, 7.212001, 317.0971)",
-          "state": "leave_office",
+          "position": "(-410.0, 7.452, 283.0)",
+          "state": "home",
           "visited": {
             "climb_down": true,
             "climb_step": true,
@@ -159,7 +161,7 @@
           }
         }
       ],
-      "round_trips": 1
+      "round_trips": 2
     },
     {
       "actions": {
@@ -178,15 +180,15 @@
       },
       "blocked_frames": 0,
       "coach": "BritishHouseholdCoach",
-      "distance_m": 146.99914855957,
-      "phase": "working",
+      "distance_m": 195.999151611327,
+      "phase": "home_arrival",
       "resident_actions": [
         {
           "actor": "OfficialMan",
           "blocked_frames": 0,
           "obstacle": "",
-          "position": "(-464.6, 8.393846, -123.6429)",
-          "state": "work",
+          "position": "(-473.1, 8.56, -170.23)",
+          "state": "outside_coach",
           "visited": {
             "climb_down": true,
             "climb_step": true,
@@ -210,8 +212,8 @@
           "actor": "OfficialWoman",
           "blocked_frames": 0,
           "obstacle": "",
-          "position": "(-461.4, 8.530326, -123.6262)",
-          "state": "work",
+          "position": "(-473.6, 9.205, -170.23)",
+          "state": "step_to_ground",
           "visited": {
             "climb_down": true,
             "climb_step": true,
@@ -235,8 +237,10 @@
       "round_trips": 1
     }
   ],
-  "max_sampled_contact_error_m": 0.00197133887559175,
-  "passed": true,
+  "max_office_cloth_anchor_error_m": 0.0,
+  "max_sampled_contact_error_m": 0.00197263760492206,
+  "office_cloth_samples": 360,
+  "passed": false,
   "residents": 4,
   "scope": "household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate",
   "staff": 9

@@ -5,6 +5,7 @@ uniform sampler2D timber : source_color, filter_linear_mipmap, repeat_enable;
 uniform vec4 tint : source_color = vec4(0.4,0.3,0.2,1.0);
 uniform float surface_kind = 0.0;
 uniform float base_roughness = 0.85;
+uniform bool pier_boards = false;
 varying vec3 local_at;
 varying vec3 local_normal;
 float noise(vec3 p) {
@@ -28,6 +29,10 @@ void fragment(){
  else if(surface_kind<2.5){col*=0.76+0.35*mottling;float weave=sin(p.x*420.0)*sin(p.z*420.0);col*=1.0+weave*0.025;}
  else if(surface_kind<3.5){col*=0.82+0.25*mottling;col=mix(col,grain*0.5,smoothstep(0.68,0.88,wear)*0.25);}
  else {col*=0.7+0.5*mottling;}
+ if(pier_boards && weights.y>0.8){
+  float edge=min(fract(p.x/0.28),1.0-fract(p.x/0.28));
+  col*=mix(0.32,1.0,smoothstep(0.005,0.022,edge));
+ }
  ALBEDO=col;
  ROUGHNESS=clamp(base_roughness+(wear-0.5)*0.15,0.35,1.0);
  METALLIC=surface_kind>0.5&&surface_kind<1.5?0.45:0.0;

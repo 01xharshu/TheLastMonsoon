@@ -13,6 +13,10 @@ GAME.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(OUT / "arjun_brother_mpfb.blend"))
 rig = bpy.data.objects["Brother_game_engine_rig"]
 body = bpy.data.objects["Arjun_brother_independent_MakeHuman_body"]
+import sys
+sys.path.insert(0, str(ROOT / 'tools/characters'))
+from whole_body_contract import retain_complete_body
+retain_complete_body(body)
 outfit = bpy.data.objects["Dev_fitted_uniform_upper"]
 
 # Keep the waist attached while allowing the lower coat to follow each thigh.

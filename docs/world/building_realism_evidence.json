@@ -1,0 +1,90 @@
+{
+  "review_date": "2026-10-05 IST",
+  "renderer": "Forward+/Metal",
+  "resolution": [
+    1280,
+    720
+  ],
+  "capture_exit_code": 0,
+  "captures": [
+    {
+      "view": "town_hall",
+      "path": "docs/world/captures/building_site_town_hall.png",
+      "bytes": 1029878,
+      "sha256": "d555a1b0fa3dd436dbccfd60450673b15df133b50b9fd9f71988538c04bcd883",
+      "modified_IST": "2026-10-05T10:15:34.452754+05:30"
+    },
+    {
+      "view": "district_police",
+      "path": "docs/world/captures/building_site_district_police.png",
+      "bytes": 1133527,
+      "sha256": "1ff10c56e9589907938140737cfb84e8e787a865676ce23d8a1c401d93d4690e",
+      "modified_IST": "2026-10-05T10:15:35.764574+05:30"
+    },
+    {
+      "view": "government_house",
+      "path": "docs/world/captures/building_site_government_house.png",
+      "bytes": 802171,
+      "sha256": "79d8da3f476534059347460dc8023c462c9621cc252f27e09ed711d4361825f1",
+      "modified_IST": "2026-10-05T10:15:36.448756+05:30"
+    },
+    {
+      "view": "realism_town_hall",
+      "path": "docs/world/captures/building_site_realism_town_hall.png",
+      "bytes": 512362,
+      "sha256": "6224da4dfc4683555906eb7020be8374c6c057d34d230056ecaba907f3a286ad",
+      "modified_IST": "2026-10-05T10:15:37.118114+05:30"
+    },
+    {
+      "view": "realism_police",
+      "path": "docs/world/captures/building_site_realism_police.png",
+      "bytes": 548021,
+      "sha256": "eefe67d2dc4e590debb0a9666f4f167dde3f184ebae14f6a9a07d275aed9b048",
+      "modified_IST": "2026-10-05T10:15:37.829842+05:30"
+    },
+    {
+      "view": "realism_house_hall",
+      "path": "docs/world/captures/building_site_realism_house_hall.png",
+      "bytes": 421233,
+      "sha256": "0a99500384892b8a1f40734da0c9fd4679b2143a8b5dbf18f808416fb3029467",
+      "modified_IST": "2026-10-05T10:15:38.383567+05:30"
+    },
+    {
+      "view": "realism_house_study",
+      "path": "docs/world/captures/building_site_realism_house_study.png",
+      "bytes": 465157,
+      "sha256": "82d2ec3da0def01f85d547f37b30b696572a83a2d6952b664c326887884d47e0",
+      "modified_IST": "2026-10-05T10:15:38.939635+05:30"
+    },
+    {
+      "view": "realism_house_drawing",
+      "path": "docs/world/captures/building_site_realism_house_drawing.png",
+      "bytes": 312145,
+      "sha256": "5e32994d6bed6d584b78b45f79e4fe639eb51587460ce1e17d2852f0c10d760e",
+      "modified_IST": "2026-10-05T10:15:40.600995+05:30"
+    },
+    {
+      "view": "realism_house_bedroom",
+      "path": "docs/world/captures/building_site_realism_house_bedroom.png",
+      "bytes": 506555,
+      "sha256": "cc9f3eff747112aa68c5f847fbc4799fa4b2e703346200285871670c27744eff",
+      "modified_IST": "2026-10-05T10:15:41.083712+05:30"
+    }
+  ],
+  "source_sha256": {
+    "world/suryagarh/settlements/civic_building.gd": "b68f3d44cd2c079d7e7bf502c6d8650b77c600503f75c38f0f17a6f19c59b77e",
+    "world/suryagarh/settlements/civic_details.gd": "c2f75f0a91e663410fc2f2fbcce30f7d3aa2a3147d39eaf6e835c11fb57a5df7",
+    "world/suryagarh/settlements/government_house.gd": "935c9abcc83ca3bc568aecb45696c00cf0f9c623cbcf53e99913078263921b3f",
+    "world/suryagarh/settlements/building_realism.gd": "d8fc4aafa07201d3c8e29bd9b38da76d57f947617ee776de4b685f8b3ba5646d",
+    "world/suryagarh/settlements/building_finish.gdshader": "0d567662a6203f6a3dbde4baf4b530f693dd893252c30ab61737c78663f066f1",
+    "world/suryagarh/settlements/building_wood.gdshader": "fe7f11340abe98fe7341505d6bd7d54972143bf0ca7a06615585867f56495ef6"
+  },
+  "limits": [
+    "Nine full-world Forward+/Metal views inspected; latest run exits 0 without errors or fence timeouts",
+    "Five Government House camera locations pass segment and near-plane sphere clearance; extreme retraction correctly hides body; shutdown resource/leak diagnostics remain",
+    "Normal-speed player contact, owner art acceptance and 8 GB hardware performance remain open",
+    "Nine static views predate the stair-bay floor repair; latest route/floor evidence is government_house_route_validation.json and captures/government_house_route.mp4"
+  ],
+  "capture_log": "/tmp/tlm_building_resume_20261005.log",
+  "camera_log": "/tmp/tlm_building_camera_final_20261005.log"
+}

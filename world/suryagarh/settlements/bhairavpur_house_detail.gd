@@ -180,7 +180,7 @@ func _window_frame(parent: Node3D,at: Vector3,size: Vector2,yaw: float,open_entr
 		shutter.name="PairedWoodShutters"
 		shutter.width=size.x
 		shutter.height=size.y
-		shutter.position=Vector3(-size.x*.5,0,.14)
+		shutter.position=Vector3(-size.x*.5,0,-.12)
 		shutter.opened=false
 		shutter.inside_only=true
 		shutter.auto_open_at_dawn=false

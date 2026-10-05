@@ -1,6 +1,6 @@
 extends Node3D
 ## Isolated motion study; clothing and ground contact remain unapproved.
-@export_enum("village_farmer", "village_woman", "village_fruit_seller", "village_weaver_assistant") var candidate_slug: String = "village_farmer"
+@export_enum("village_farmer", "village_woman", "village_fruit_seller", "village_weaver_assistant", "dock_porter", "boatman", "record_clerk") var candidate_slug: String = "village_farmer"
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend := 0.0
@@ -24,7 +24,23 @@ func _ready() -> void:
 		if not animation_player.has_animation(clip_name):
 			push_error("Missing candidate clip: " + clip_name)
 			return
-		animation_player.get_animation(clip_name).loop_mode = Animation.LOOP_LINEAR
+		var clip := animation_player.get_animation(clip_name)
+		if candidate_slug in ["dock_porter", "boatman", "record_clerk"]:
+			# Exported sampling starts at 1/30 s; normalize the first key to zero
+			# so every loop has the authored duration without an initial hold.
+			var first_key := INF
+			var last_key := 0.0
+			for track in clip.get_track_count():
+				for key in clip.track_get_key_count(track):
+					var time := clip.track_get_key_time(track, key)
+					first_key = minf(first_key, time)
+					last_key = maxf(last_key, time)
+			if first_key < INF and last_key > first_key:
+				for track in clip.get_track_count():
+					for key in clip.track_get_key_count(track):
+						clip.track_set_key_time(track, key, clip.track_get_key_time(track, key) - first_key)
+				clip.length = last_key - first_key
+		clip.loop_mode = Animation.LOOP_LINEAR
 	animation_player.stop()
 	animation_tree = AnimationTree.new()
 	animation_tree.name = "PersonalAnimationTree"

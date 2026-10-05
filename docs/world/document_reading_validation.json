@@ -1,0 +1,43 @@
+{
+  "updated": "2026-10-05 IST",
+  "renderer": "Forward+/Metal",
+  "world": "world/suryagarh/suryagarh_world.tscn",
+  "functional_pass": true,
+  "evidence_lines": [
+    "DOCUMENT CONTACT world=(-347.0, 8.387799, 271.247) mesh=(-347.0, 8.387799, 271.247) visible=true size=(0.38, 0.003, 0.5)",
+    "DOCUMENT PALM l gap=0.0",
+    "DOCUMENT PALM r gap=0.0",
+    "DOCUMENT READING: PASS | cards, unroll, remove/repost, recovery, weapon, redraw, narrow layout"
+  ],
+  "placement": {
+    "node": "Settlement/MarketNoticeBoard",
+    "x": -347,
+    "z": 271,
+    "height": "landscape terrain height"
+  },
+  "motion_duration_seconds": 10.519,
+  "checks": [
+    "O-key input",
+    "actual placed board and ground support",
+    "six cards",
+    "take/read/press back",
+    "paper edge palm contact",
+    "early-close continuity",
+    "round rollers during unroll",
+    "weapon restoration",
+    "recovery lock",
+    "no settled parchment redraw",
+    "narrow layout"
+  ],
+  "visual_review": "Fresh actor-visible Metal captures inspected; staged opening/closing preview retained",
+  "manual_play_approved": false,
+  "owner_art_approved": false,
+  "performance_8gb_approved": false,
+  "source_sha256": {
+    "player/document_motion.gd": "3690cd22c74c2e91f9d2c5d7cf781947a491198e6798047150b68218158e84aa",
+    "player/identity_scroll.gd": "355f2003435500f6719c4cb8248eb69b8236699f683c6fe875dced5a291d2f9b",
+    "interaction/wall_notice.gd": "a14f2ad2e99d7e8e1c350c462420891934f2e33bc54b91e06d5d25904dcc890c",
+    "interaction/market_notice_board.gd": "1f34cd3d8a7f09b6c243c301fbd6d3d61e87e7e67bac541ff67c85a074078eb5",
+    "tools/world/validate_document_reading.gd": "29e7b6aa9e759f0162ee9c9f91f7c6e8c02a78d1716abb1d922da90de5b52efb"
+  }
+}

@@ -74,10 +74,13 @@ leather = mat("Brown leather", (.16,.085,.045))
 
 eyes = HumanService.add_mhclo_asset(str(DATA / "eyes/low-poly/low-poly.mhclo"), body, asset_type="Eyes", subdiv_levels=0)
 eyes.name = "Brother_eyes"
+eye_material=mat("Dev brown eyes",(1,1,1),DATA / "eyes/materials/brown_eye.png")
+eye_material.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.24
+eyes.data.materials.clear();eyes.data.materials.append(eye_material)
 hair = HumanService.add_mhclo_asset(str(DATA / "hair/short04/short04.mhclo"), body, asset_type="Hair", subdiv_levels=0)
 hair.name = "Brother_short_hair"
 hair.data.materials.clear(); hair.data.materials.append(dark)
-brows = HumanService.add_mhclo_asset(str(DATA / "eyebrows/eyebrow012/eyebrow012.mhclo"),
+brows = HumanService.add_mhclo_asset(str(DATA / "eyebrows/eyebrow008/eyebrow008.mhclo"),
     body,asset_type="Eyebrows",subdiv_levels=0)
 brows.name = "Dev_fitted_eyebrows"
 # Fitted CC0 moustache, shortened from the original long style.
@@ -112,6 +115,7 @@ upper_group.add([v.index for v in outfit.data.vertices if find(v.index)==upper_c
     ], 1, 'REPLACE')
 outfit_mask = outfit.modifiers.new("Keep fitted upper", 'MASK')
 outfit_mask.vertex_group = upper_group.name
+# Preserve the original shoulder connectivity beneath the tailored overlay.
 
 def attach(name, vertices, faces, material, bone):
     mesh = bpy.data.meshes.new(name)
@@ -154,8 +158,8 @@ for vertex in skirt.data.vertices:
     vertex.co.y += math.sin(angle)*fold
 waist_leather = mat("Dark leather waist belt",(.045,.022,.012))
 rings("Coat waist seam", [(.96,.212,.166,0,0),(.988,.212,.166,0,0)], waist_leather, sides=40)
-rings("Uniform standing collar",[(1.405,.105,.081,0,0),(1.435,.103,.079,0,0),
-    (1.465,.095,.074,0,0)],coat,"spine03",sides=40)
+rings("Uniform standing collar",[(1.395,.102,.080,0,0),(1.435,.095,.074,0,0),
+    (1.470,.086,.064,0,0)],coat,"spine03",sides=40)
 for side,sign in [("left",1),("right",-1)]:
     suffix = "l" if sign == 1 else "r"
     thigh = rig.data.bones["thigh_" + suffix]
@@ -194,6 +198,19 @@ def front_y(x,z):
     hits = [tree.ray_cast(Vector((x,-1,z)),Vector((0,1,0)),2)[0] for tree in garment_trees]
     values = [hit.y for hit in hits if hit is not None]
     return min(values)-.005 if values else -.15
+# Continuous tapered front panel covers the old folded collar and joins the band.
+neck_vertices=[]
+for row in range(10):
+    t=row/9; z=1.32+.145*t; width=.225-.12*t
+    for col in range(17):
+        u=col/8-1; x=width*u
+        top_y=-.084*math.sqrt(max(.12,1-(x/.105)**2))
+        y=(1-t)*front_y(x,1.32)+t*top_y-.007
+        # Keep this layer ahead of the legacy collar where the folds protrude.
+        if t<.8: y=min(y,front_y(x,z)-.009)
+        neck_vertices.append((x,y,z))
+attach("Dev tailored front neckline",neck_vertices,
+    [(r*17+c,r*17+c+1,(r+1)*17+c+1,(r+1)*17+c) for r in range(9) for c in range(16)],coat,"spine03")
 def fitted_strip(name,start,end,width,material):
     vertices=[]
     for i in range(18):
@@ -219,10 +236,11 @@ for i in range(6):
 
 # Hide the basemesh under cloth while retaining editable source geometry.
 visible=body.vertex_groups.new(name="Visible skin")
-indices=[v.index for v in body.data.vertices if v.co.z>1.43 or
+indices=[v.index for v in body.data.vertices if v.co.z>1.37 or
          (abs(v.co.x)>.36 and .86<v.co.z<1.37)]
 visible.add(indices,1,'REPLACE')
 mask=body.modifiers.new("Hide clothed skin",'MASK'); mask.vertex_group=visible.name
+mask.show_viewport=False;mask.show_render=False
 for mod in body.modifiers:
     if mod.name.startswith("Delete."): mod.show_viewport=False; mod.show_render=False
 

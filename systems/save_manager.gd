@@ -9,22 +9,25 @@ const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
 	"camera_distance": 1.25, "aim_camera_distance": 0.55,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
+	"graphics_quality": 2, "key_bindings": {},
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
 signal input_device_changed(device: String)
 var active_input_device := "keyboard_mouse"
 var active_joypad_id := -1
 var _original_input_events: Dictionary = {}
-var options: Dictionary = DEFAULTS.duplicate()
+var options: Dictionary = DEFAULTS.duplicate(true)
 var pending_slot := -1
 var save_root := SAVE_DIR
 var settings_path := SETTINGS_FILE
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_options()
 	_add_combat_actions()
 	_cache_input_events()
+	_restore_bindings()
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	_select_input_device()
 	apply_options()
@@ -101,13 +104,14 @@ func _add_combat_actions() -> void:
 	InputMap.action_add_event("reload",reload_pad)
 	_add_key_action("weapon_wheel",KEY_QUOTELEFT)
 	_add_pad_button_action("weapon_wheel",JOY_BUTTON_DPAD_RIGHT)
-	_add_key_action("open_map",KEY_M)
-	_add_pad_button_action("open_map",JOY_BUTTON_DPAD_LEFT)
+	# Escape / Options owns the map menu; M and D-pad-left are freed.
 	_add_key_action("stow_weapon",KEY_H)
 	_add_pad_button_action("stow_weapon",JOY_BUTTON_DPAD_UP)
 	_add_pad_button_action("context_modifier",JOY_BUTTON_LEFT_SHOULDER)
 	_add_pad_button_action("next_weapon",JOY_BUTTON_RIGHT_SHOULDER)
 	_add_key_action("identity_scroll",KEY_O)
+	_add_key_action("identity_scroll",KEY_M)
+	_add_pad_button_action("identity_scroll",JOY_BUTTON_DPAD_LEFT)
 	_add_pad_button_action("identity_scroll",JOY_BUTTON_TOUCHPAD)
 
 func _add_key_action(action: String, key: Key) -> void:
@@ -186,6 +190,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"remaining_household_ids": _remaining_household_ids(world),
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 		"door_states": _door_states(world),
+		"cart_states": preload("res://vehicles/cart_save_state.gd").collect(world),
 		"household_cattle": _cattle_states(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
@@ -195,7 +200,9 @@ func save_game(world: Node3D, slot: int) -> bool:
 	var fame := actor.get_node_or_null("FameComponent")
 	if fame != null: data["fame"] = {"points":fame.points,"witnessed_deeds":fame.witnessed_deeds}
 	var map: Control = actor.get_node("UI/WorldMap")
-	if is_finite(map.waypoint.x): data["waypoint"] = [map.waypoint.x,map.waypoint.y]
+	if is_finite(map.waypoint.x):
+		data["waypoint"] = [map.waypoint.x,map.waypoint.y]
+		data["waypoint_site"] = map.selected_site
 	var temp := slot_path(slot)+".tmp"
 	var file := FileAccess.open(temp,FileAccess.WRITE)
 	if file == null: return false
@@ -304,6 +311,7 @@ func apply_pending(world: Node3D) -> void:
 		if String(chest.get_path()) in data.get("opened_treasure_chests",[]):
 			chest.restore_opened()
 	_restore_door_states(world,data.get("door_states",{}))
+	preload("res://vehicles/cart_save_state.gd").restore(world,data.get("cart_states",[]))
 	for service in world.get_tree().get_nodes_in_group("administrative_services"):
 		var key := str(world.get_path_to(service))
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
@@ -316,6 +324,7 @@ func apply_pending(world: Node3D) -> void:
 	var map: Control = actor.get_node("UI/WorldMap")
 	if data.get("waypoint") is Array and data.waypoint.size()==2:
 		map.waypoint = Vector2(float(data.waypoint[0]),float(data.waypoint[1]))
+		map.selected_site = str(data.get("waypoint_site",""))
 
 func _collected_forage_ids(world: Node3D) -> Array[String]:
 	var ids: Array[String] = []
@@ -391,6 +400,15 @@ func apply_options(world: Node = null) -> void:
 		player.mouse_sensitivity = 0.0025*clampf(float(options.mouse),0.3,2.0)
 		player.third_person_distance = clampf(float(options.camera_distance),1.25,4.0)
 		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
+		var quality := clampi(int(options.graphics_quality),0,2)
+		world.get_viewport().scaling_3d_scale = [0.65,0.85,1.0][quality]
+		world.get_viewport().msaa_3d = [Viewport.MSAA_DISABLED,Viewport.MSAA_2X,Viewport.MSAA_4X][quality]
+		if world.has_node("Sun"):
+			world.get_node("Sun").directional_shadow_max_distance = [40.0,80.0,130.0][quality]
+		if world.has_node("WorldEnvironment"):
+			var environment: Environment = world.get_node("WorldEnvironment").environment
+			environment.ssao_enabled = quality > 0
+			environment.ssil_enabled = quality == 2
 		if world.has_node("BackgroundMusic"): world.get_node("BackgroundMusic").bus = "Music"
 
 func _remaining_medical_ids(world: Node3D) -> Array[String]:
@@ -403,15 +421,19 @@ func _remaining_medical_ids(world: Node3D) -> Array[String]:
 func _door_states(world: Node3D) -> Dictionary:
 	var states := {}
 	for door in world.get_tree().get_nodes_in_group("house_doors"):
-		if world.is_ancestor_of(door): states[String(world.get_path_to(door))]=door.opened
+		if world.is_ancestor_of(door): states[String(world.get_path_to(door))]={"opened":door.opened,"swing_direction":door.swing_direction}
 	return states
 
 func _restore_door_states(world: Node3D,states: Dictionary) -> void:
 	for path in states:
-		if not states[path] is bool: continue
+		var value = states[path]
+		if not (value is bool or (value is Dictionary and value.get("opened") is bool)): continue
 		var node := world.get_node_or_null(NodePath(path))
 		if node != null and node.is_in_group("house_doors") and node.has_method("restore_state"):
-			node.restore_state(states[path])
+			if value is Dictionary:
+				node.swing_direction=-1.0 if float(value.get("swing_direction",1.0))<0 else 1.0
+				node.restore_state(value.opened)
+			else: node.restore_state(value)
 
 func _remaining_household_ids(world: Node3D) -> Array[String]:
 	var remaining: Array[String] = []
@@ -443,3 +465,27 @@ func _administrative_service_states(world: Node3D) -> Dictionary:
 	for service in world.get_tree().get_nodes_in_group("administrative_services"):
 		if world.is_ancestor_of(service): states[str(world.get_path_to(service))] = service.export_state()
 	return states
+
+func _restore_bindings() -> void:
+	if not options.key_bindings is Dictionary: options.key_bindings = {}
+	for action in options.key_bindings:
+		if action == "pause" or not _original_input_events.has(action): continue
+		var events: Array = _original_input_events[action].filter(func(event): return not event is InputEventKey)
+		var key := InputEventKey.new()
+		key.physical_keycode = int(options.key_bindings[action])
+		events.append(key)
+		_original_input_events[action] = events
+
+func bind_key(action: String, keycode: int) -> bool:
+	if action == "pause" or keycode in [KEY_ESCAPE,KEY_NONE] or not _original_input_events.has(action): return false
+	for other in _original_input_events:
+		if other == action or str(other).begins_with("ui_"): continue
+		for event in _original_input_events[other]:
+			if event is InputEventKey and event.physical_keycode == keycode: return false
+	options.key_bindings = options.key_bindings.duplicate(true)
+	options.key_bindings[action] = keycode
+	_restore_bindings()
+	_input_map_applied = false
+	_set_active_input_device(active_input_device)
+	set_option("key_bindings",options.key_bindings)
+	return true

@@ -36,13 +36,15 @@ def loft(name,sections,material=coat,group='Body',skin=True):
  data=bpy.data.meshes.new(name);data.from_pydata(verts,[],faces);data.materials.append(material)
  o=bpy.data.objects.new(name,data);bpy.context.collection.objects.link(o)
  for poly in data.polygons:poly.use_smooth=True
+ bpy.context.view_layer.objects.active=o
+ sub=o.modifiers.new('Anatomical surface interpolation','SUBSURF');sub.levels=2;sub.render_levels=2;bpy.ops.object.modifier_apply(modifier=sub.name)
  (parts if skin else extras).append((o,group));return o
 # Authored cross-sections keep a straighter back and distinguish brisket, ribcage and pelvis.
-loft('Female ribcage and pelvis',[(-.84,1.14,.18,.22),(-.64,1.14,.29,.32),(-.42,1.12,.32,.34),(-.12,1.10,.36,.36),(.22,1.11,.365,.355),(.49,1.13,.30,.31),(.68,1.16,.30,.30),(.87,1.17,.19,.23),(.94,1.16,.06,.13)])
-ellipsoid('Moderate female hump',(0,1.45,-.53),(.17,.12,.25))
+loft('Female ribcage and pelvis',[(-.84,1.14,.18,.22),(-.64,1.16,.29,.35),(-.42,1.155,.32,.36),(-.12,1.10,.36,.36),(.22,1.11,.365,.355),(.49,1.13,.30,.31),(.68,1.16,.30,.30),(.87,1.17,.19,.23),(.94,1.16,.06,.13)])
+# Withers are integrated into the ribcage sections rather than a separate lump.
 loft('Tapered female neck',[(-.69,1.18,.23,.28),(-.90,1.20,.19,.29),(-1.10,1.25,.145,.225)])
 loft('Long facial planes',[(-1.08,1.27,.125,.21),(-1.23,1.24,.135,.22),(-1.37,1.13,.112,.18),(-1.53,1.00,.105,.12),(-1.64,.94,.10,.075)],group='Head')
-ellipsoid('Lower jaw',(0,1.045,-1.43),(.095,.045,.20),coat,'Jaw',False)
+ellipsoid('Lower jaw',(0,.905,-1.45),(.090,.035,.20),coat,'Jaw',True)
 ellipsoid('Muzzle',(0,.93,-1.64),(.125,.08,.10),dark,'Head',False)
 # Female dewlap is a thin folded sheet rather than a bulb beneath the throat.
 loft('Folded dewlap',[(-.57,.89,.035,.13),(-.78,.87,.035,.19),(-.97,.94,.032,.20),(-1.13,1.03,.025,.13)])
@@ -50,24 +52,45 @@ for side in [-1,1]:
  tag='L' if side<0 else 'R';x=side*.27
  for end,z in [('Front',-.60),('Hind',.62)]:
   upper=(x,1.15,z);knee=(x,.59,z+(.09 if end=='Hind' else -.015));fetlock=(x,.085,z-.04)
-  segment(end+' thigh '+tag,upper,knee,.10,.065,group=end+'Upper.'+tag)
+  if end=='Hind':ellipsoid('Hindquarter muscle '+tag,(x,.995,.69),(.115,.235,.16),group=end+'Upper.'+tag)
+  else:ellipsoid('Scapular muscle '+tag,(side*.245,1.10,-.50),(.060,.19,.15),group=end+'Upper.'+tag)
+  segment(end+' thigh '+tag,upper,knee,.09,.062,group=end+'Upper.'+tag)
   ellipsoid(end+' joint '+tag,knee,(.068,.08,.069),group=end+'Lower.'+tag)
-  segment(end+' lower '+tag,knee,fetlock,.055,.036,group=end+'Lower.'+tag)
+  segment(end+' lower '+tag,knee,fetlock,.045,.031,group=end+'Lower.'+tag)
+  ellipsoid('Fetlock '+end+tag,(x,.13,z-.04),(.044,.067,.047),group=end+'Lower.'+tag)
   for split in [-1,1]:
    hoof=ellipsoid('Cloven hoof '+end+tag+str(split),(x+split*.028,.056,z-.085),(.026,.052,.083),dark,end+'Foot.'+tag,False)
    for v in hoof.data.vertices:
     if v.co.z+hoof.location.z<.014:v.co.z=.009-hoof.location.z
- # Small tapered female horns, distinct from ears and hump.
- base=(side*.095,1.44,-1.16);mid=(side*.14,1.56,-1.13);tip=(side*.16,1.64,-1.19)
- segment('Horn base '+tag,base,mid,.036,.021,horn,'Head',False)
- segment('Horn tip '+tag,mid,tip,.021,.002,horn,'Head',False)
+ # A continuous swept horn removes the old angular cone join.
+ curve=[]
+ for step in range(15):
+  t=step/14
+  curve.append((side*(.095+.083*t-.025*t*t),1.425+.24*t,-1.16+.065*math.sin(t*math.pi)-.055*t*t))
+ verts=[];faces=[];sides=16
+ for row,c in enumerate(curve):
+  tangent=point(curve[min(row+1,14)])-point(curve[max(row-1,0)])
+  tangent.normalize();u=tangent.cross(Vector((0,1,0))).normalized();v=tangent.cross(u).normalized()
+  radius=.033*(1-row/14)**.8+.001
+  for column in range(sides):
+   angle=column/sides*math.tau;verts.append(point(c)+(u*math.cos(angle)+v*math.sin(angle))*radius)
+ for row in range(14):
+  for column in range(sides):
+   a=row*sides+column;b=row*sides+(column+1)%sides;faces.append((a,b,b+sides,a+sides))
+ faces.extend([tuple(range(sides-1,-1,-1)),tuple(range(14*sides,15*sides))])
+ data=bpy.data.meshes.new('Swept horn '+tag);data.from_pydata(verts,[],faces);data.materials.append(horn)
+ o=bpy.data.objects.new('Curved horn '+tag,data);bpy.context.collection.objects.link(o)
+ for face in data.polygons:face.use_smooth=True
+ extras.append((o,'Head'))
  # Long leaf-like ears with a recessed inner surface.
  ear=ellipsoid('Ear '+tag,(side*.225,1.35,-1.14),(.14,.025,.064),coat,'Ear.'+tag,False)
  ear.rotation_euler[1]=side*.18
- ellipsoid('Ear inner '+tag,(side*.23,1.353,-1.155),(.115,.012,.048),inside,'Ear.'+tag,False)
- ellipsoid('Eyelid '+tag,(side*.124,1.285,-1.30),(.014,.019,.025),coat,'Head',False)
- ellipsoid('Eye '+tag,(side*.126,1.285,-1.30),(.012,.014,.018),eye,'Head',False)
+ inner=ellipsoid('Ear inner '+tag,(side*.225,1.36,-1.145),(.110,.008,.042),inside,'Ear.'+tag,False)
+ inner.rotation_euler[1]=side*.18
+ ellipsoid('Eyelid '+tag,(side*.125,1.285,-1.30),(.015,.018,.028),coat,'Head',False)
+ ellipsoid('Eye '+tag,(side*.134,1.285,-1.30),(.009,.012,.021),eye,'Head',False)
  ellipsoid('Nostril '+tag,(side*.076,.955,-1.712),(.020,.010,.006),eye,'Head',False)
+segment('Mouth crease',(-.09,.903,-1.691),(.09,.903,-1.691),.004,.004,eye,'Jaw',False)
 ellipsoid('Udder',(0,.745,.57),(.16,.15,.20),pink,'Body',False)
 for x in [-.07,.07]:
  for z in [.49,.64]:segment('Teat',(x,.68,z),(x,.60,z),.021,.013,pink,'Body',False)
@@ -121,6 +144,8 @@ for v in body.data.vertices:
  weights={'Body':1.0}
  if gz<-.64:
   n=min(1,max(0,(-gz-.64)/.30));h=min(1,max(0,(-gz-1.02)/.26));weights={'Body':1-n,'Neck':n*(1-h),'Head':n*h}
+ if gy<.98 and -1.68<gz<-1.22:
+  jaw=min(1,max(0,(.98-gy)/.06));weights={'Head':1-jaw,'Jaw':jaw}
  if gy<1.06 and abs(gx)>.18:
   end='Front' if gz<0 else 'Hind';tag='L' if gx<0 else 'R'
   leg=min(1,max(0,(1.1-gy)/.28));lower=min(1,max(0,(.67-gy)/.17))
@@ -143,9 +168,10 @@ for clip,length in [('idle',3.0),('head_lower',4.0)]:
  track=rig.animation_data.nla_tracks.new();track.name=clip;track.strips.new(clip,0,action)
 rig.animation_data.action=None;bpy.context.scene.frame_set(0)
 WORK.mkdir(parents=True,exist_ok=True);OUT.parent.mkdir(parents=True,exist_ok=True)
+bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(WORK/'household_cow.blend'))
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format='GLB',use_selection=True,export_yup=True,export_animations=True,export_animation_mode='NLA_TRACKS')
-manifest={'status':'neck/jaw/hoof articulation candidate; native contact and visual review required','source':'tools/animals/build_household_cow.py; original geometry and rig, no external imagery','morphology_reference':'https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed','glb_sha256':hashlib.sha256(OUT.read_bytes()).hexdigest(),'vertices':sum(len(o.data.vertices) for o in [body]+[e[0] for e in extras]),'bones':len(bones),'clips':['idle','head_lower']}
+manifest={'status':'blended withers, muscular limbs, continuous curved horns and eye/muzzle refinement; art approval open','source':'tools/animals/build_household_cow.py; original geometry and rig, no external imagery','morphology_reference':'https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed','glb_sha256':hashlib.sha256(OUT.read_bytes()).hexdigest(),'vertices':sum(len(o.data.vertices) for o in [body]+[e[0] for e in extras]),'bones':len(bones),'clips':['idle','head_lower']}
 (WORK/'manifest.json').write_text(json.dumps(manifest,indent=2))
 print('HOUSEHOLD COW BUILD',json.dumps(manifest))

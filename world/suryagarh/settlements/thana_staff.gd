@@ -22,6 +22,7 @@ func _ready() -> void:
 		actor.rotation.y = record["facing"]
 		actor.set_meta("thana_role", role)
 		actor.set_meta("station_bound", true)
+		actor.set_meta("combat_faction", "police")
 		actor.set_meta("cultural_identity", "Sikh" if role=="burkundaz" else "unspecified")
 		actor.set_meta("uniform_status", "1857_fictional_pattern_review_open")
 		actor.set_meta("visual_status", "candidate_unapproved")

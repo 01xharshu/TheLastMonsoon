@@ -86,9 +86,11 @@ func build(b) -> void:
 		collision.shape = shape
 		collision.position.y = .73
 		cannon.add_child(collision)
+		preload("res://world/suryagarh/settlements/military_room_finish.gd").emplacement(b,Vector3(signf(x)*69,0,45))
 	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/storage/crate.tscn",Vector3(-7,.24,3))
 	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/storage/barrel.tscn",Vector3(7,.24,3))
 	preload("res://world/suryagarh/settlements/military_detail.gd").prop(armoury,"res://objects/household/supplies/record_folio.tscn",Vector3(.6,.85,-4))
+	preload("res://world/suryagarh/settlements/military_room_finish.gd").armoury(b,armoury)
 	var main_details := preload("res://world/suryagarh/settlements/fort_service_detail.gd").new()
 	main_details.configure()
 	main_details.command_rooms(b)

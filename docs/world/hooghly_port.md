@@ -43,12 +43,28 @@ Full-world startup still reports unrelated `arjun_house.gd:23` child access and 
 
 Next action: owner normal-speed playthrough at Hooghly Reach Port (reachable downstream or through the F4 review point), reviewing third-person camera clearance and desired art detail. The earlier river fish/AAA realism art review remains independently open in the river refinement work.
 
-## Interior and exterior realism pass — IN_PROGRESS
+## Interior and exterior realism pass — COMPLETE (material and construction detail milestone)
 
-Updated 2026-10-01 IST/root. Objective: replace flat ship/port surfaces with textured and weathered materials; add construction and lived-in interior detail while retaining verified passages. Files: `world/suryagarh/hooghly_port.gd`, new ship surface shader. Next: implement, inspect native exterior/deck/hold/cabin views and rerun actual-controller routes.
+Updated: 2026-10-05 IST/root chat. User scope: improve realism inside and outside the explorable ship and port. Runtime changes are in `world/suryagarh/hooghly_port.gd` and `world/suryagarh/shaders/merchant_surface.gdshader`; rebuildable Blender hull source is retained. The shader reuses the project's existing `assets/architecture/materials/dark_wood_Diffuse.jpg` texture.
 
-Material/detail milestone: live ship meshes now use UV-independent timber grain, varied surface roughness, mottled aged copper, painted timber wear and canvas texture. Quay/warehouse surfaces use the same material family. Cabin panel rails/stiles, berth drawers/blanket, shelf books, table drawer/inkstand, hold ribs/knees/straps and framed glowing lanterns added in `hooghly_port.gd`. Added details are decorative and stay outside verified aisles. Native captures running: `/tmp/tlm_port_realism_{ship,deck,hold,cabin}.log`. Next: inspect pixels, correct any material issues and rerun controller validation.
+### Changes
 
-First renderer review: timber texture was overly red and micro-normal mapping caused distant sparkle. Corrected to luminance-driven grain using per-surface timber tint, aligned deck grain lengthwise and removed incorrectly oriented tangent normal sampling. Actual-controller full rerun PASS (40 routes, 105 channel samples, swim containment and shore return). Next: refresh final Metal views with corrected shader.
+- Lengthwise timber grain and varied roughness on deck, spars, cargo and furniture; subdued timber colours after native review corrected overly red wood and distant sparkle.
+- Mottled copper/patina, painted-timber wear and canvas surface variation; textured port masonry, plaster and roofing. Jetty/berth/gangway board seams use the material rather than additional mesh instances.
+- Captain cabin panelling, berth drawer fronts/brass handles/blanket, shelf books, table drawer, inkstand and drawn chart linework.
+- Hold frame ribs, beam knees and iron straps outside the existing passages.
+- Framed glowing lanterns suspended from actual overhead supports, with warm interior light.
+- Two-sided hull rendering preserves the enclosed interior after a first replacement-shader culling defect was found and corrected. Collision, walkways and the sealed dry-space predicate are retained.
+- Route validator now guards against an unavailable/uninstantiable world script before treating water-state checks as integrated evidence.
 
-Hold renderer correction: the replacement shader initially culled inside faces of the authored hull. Enabled two-sided rendering to retain the sealed visible interior. Final capture rerun required for this correction.
+### Current verification
+
+2026-10-05 full actual-controller/native Metal run PASS, zero failures: 40 movement routes, 105 terrain/channel samples, captain cabin/decks/hold/crew routes, dry hold, sea buoyancy/physical boundary and tidal return to shore. Current log `/tmp/tlm_port_realism_routes_1005.log` contains `SURYAGARH READY` and no script/renderer errors; report `docs/world/hooghly_port_validation.json`. Earlier 10-02 logs had unrelated errands/cattle dependency errors and are superseded for integrated verification.
+
+Fresh native Metal cabin and overview captures PASS and pixels inspected on 10-05: `docs/world/captures/hooghly_port_cabin.png`, `hooghly_port_overview.png`; logs `/tmp/tlm_port_realism_{cabin,overview}_1005.log`. Latest ship/deck/hold views from the corrected material pass are retained in the same capture directory and were visually reviewed. Capture commands use `TLM_PORT_VIEW=cabin` or `overview` with the existing capture script. Source/capture hashes: `docs/world/hooghly_port_evidence.json`.
+
+`git diff --check` PASS. Shared documentation gate remains FAIL because other tasks' historical images are absent and concurrent handoff growth exceeds its limit; see `/tmp/tlm_port_docs_1005.log`. This task's latest captures and documentation links are present. Other task entries and assets are preserved.
+
+### Remaining visual work and exact next action
+
+This material/construction pass is implemented and verified; it does not establish AAA art or owner approval. Current furniture edges, bedding folds, cabin windows, hull wear placement and shoreline dressing remain visibly simplified. Next: owner normal-speed review at the Hooghly Reach Port F4 point, then a focused geometry/window/cloth and shoreline dressing pass based on that review. The large ship remains moored; no new human assets were created.

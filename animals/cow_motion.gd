@@ -12,7 +12,7 @@ var time:=0.0
 var state:="idle"
 var stage:=0
 var head_weight:=0.0
-var speed:=.38
+var speed:=.34
 var contact_error:=0.0
 var maximum_stance_error:=0.0
 var contact_seconds:=0.0
@@ -77,7 +77,7 @@ func _solve_leg(bones:Array,target_world:Vector3)->void:
 	rig.force_update_all_bone_transforms()
 func _head_contact(target:Vector3)->void:
 	var start:=mouth_world();var goal:=start.lerp(target,head_weight)
-	for iteration in 24:
+	for iteration in 60:
 		for name in ["Head","Neck"]:
 			var bone:=rig.find_bone(name);var pivot:=rig.to_global(rig.get_bone_global_pose(bone).origin)
 			var from:=rig.global_basis.inverse()*(mouth_world()-pivot)
@@ -96,6 +96,8 @@ func _destination()->Vector3:
 func tick(delta:float)->void:
 	time+=delta;elapsed+=delta
 	for bone in rest:rig.set_bone_pose_rotation(bone,rest[bone])
+	var previous_yaw:=cow.rotation.y
+	var previous_position:=cow.global_position
 	var moving:=state=="walk"
 	rig.set_bone_pose_position(rig.find_bone("Body"),body_rest_position+Vector3.DOWN*(.06 if moving else .02))
 	if moving:
@@ -104,7 +106,7 @@ func tick(delta:float)->void:
 			state=["idle","graze","feed","drink"][stage];time=0;moving=false;planted.clear()
 		else:
 			var yaw:=atan2(-offset.x,-offset.z)
-			cow.global_rotation.y=rotate_toward(cow.global_rotation.y,yaw,delta*.9)
+			cow.global_rotation.y=rotate_toward(cow.global_rotation.y,yaw,delta*.25)
 			# Turn before translating; prevent sideways sliding at the destination.
 			if absf(angle_difference(cow.global_rotation.y,yaw))<.18:
 				var motion:=offset.normalized()*minf(offset.length(),speed*delta)
@@ -114,33 +116,40 @@ func tick(delta:float)->void:
 			cow.global_position.y=floor_y(cow.global_position)
 	else:
 		var facing:=PI if state=="graze" else 0.0
-		cow.rotation.y=rotate_toward(cow.rotation.y,facing,delta*.9)
+		cow.rotation.y=rotate_toward(cow.rotation.y,facing,delta*.25)
+		if absf(angle_difference(cow.rotation.y,facing))>.08:time=0
 		var duration:=8.0 if state=="graze" else (5.0 if state in ["feed","drink"] else 4.0)
 		if time>duration:
 			if state=="feed" and contact_seconds>1:yard.feed_portions=maxi(0,yard.feed_portions-1);yard.refresh_supplies()
-			stage=(stage+1)%4;state="walk";time=0;contact_seconds=0
+			stage=(stage+1)%4;state="walk";time=0;contact_seconds=0;planted.clear()
 	# Solve all four feet every step. A stance hoof stays at its world position.
-	phase=fmod(phase+delta/2.4,1)
+	var turning:=absf(angle_difference(previous_yaw,cow.rotation.y))>.0001
+	var stepping:=moving or turning
+	var translating:=cow.global_position.distance_to(previous_position)>.0001
+	rig.set_bone_pose_position(rig.find_bone("Body"),body_rest_position+Vector3.DOWN*(.07 if stepping else .02))
+	phase=fmod(phase+delta/(1.6 if turning else 2.4),1)
 	for tag in ORDER:
 		var local_phase:=fmod(phase+OFFSETS[tag],1)
 		var bone:int=feet[tag][2]
 		var origin:=rig.to_global(rig.get_bone_global_rest(bone).origin)
 		var target:=origin
-		var stance:=not moving or local_phase<.66
+		var stance_fraction:=.50 if turning else .66
+		var stance:=not stepping or local_phase<stance_fraction
 		if stance:
-			if not planted.has(tag):planted[tag]=Vector3(origin.x,floor_y(origin)+.085,origin.z)+(-cow.global_basis.z*.22 if moving else Vector3.ZERO)
+			if not planted.has(tag):planted[tag]=Vector3(origin.x,floor_y(origin)+.085,origin.z)+(-cow.global_basis.z*.20 if translating else Vector3.ZERO)
 			target=planted[tag]
 		else:
 			planted.erase(tag)
-			var swing:=(local_phase-.66)/.34
+			var swing:=(local_phase-stance_fraction)/(1-stance_fraction)
 			target+=cow.global_basis*Vector3(0,0,lerpf(.16,-.16,swing))
 			target.y=floor_y(target)+.085+sin(swing*PI)*.075
 		_solve_leg(feet[tag],target)
 		if stance:maximum_stance_error=maxf(maximum_stance_error,rig.to_global(rig.get_bone_global_pose(bone).origin).distance_to(target))
 	var target:=mouth_world()
-	var feeding: bool = state=="feed" and yard.feed_portions>0
-	var drinking: bool = state=="drink" and yard.water_liters>0
-	var grazing:=state=="graze"
+	var aligned:bool=absf(angle_difference(cow.rotation.y,PI if state=="graze" else 0.0))<.08
+	var feeding:bool=state=="feed" and yard.feed_portions>0 and aligned
+	var drinking:bool=state=="drink" and yard.water_liters>0 and aligned
+	var grazing:=state=="graze" and aligned
 	head_weight=move_toward(head_weight,1.0 if feeding or drinking or grazing else 0.0,delta*.55)
 	if grazing:target=cow.to_global(Vector3(0,.075,-.93))
 	if feeding:target=yard.fodder.global_position+Vector3.UP*.055*yard.fodder.scale.y
@@ -149,7 +158,7 @@ func tick(delta:float)->void:
 	if feeding or grazing:
 		var jaw:=rig.find_bone("Jaw")
 		rig.set_bone_pose_rotation(jaw,rest[jaw]*Quaternion(Vector3.RIGHT,sin(elapsed*TAU*1.1)*.035*head_weight))
-	if (feeding or drinking or grazing) and contact_error<.025 and head_weight>.98:
+	if (feeding or drinking or grazing) and contact_error<.025 and head_weight>.999:
 		contact_seconds+=delta
 		if drinking:
 			yard.water_liters=maxf(0,yard.water_liters-delta*.16);yard.refresh_supplies()

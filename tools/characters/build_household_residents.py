@@ -79,6 +79,11 @@ for side,x in [('l',.184),('r',-.184)]:
 out=root/f'WorkingAssets/NPCs/households/{role}'; out.mkdir(parents=True,exist_ok=True)
 bpy.context.preferences.filepaths.save_version=0
 
+import sys
+sys.path.insert(0,str(root/'tools/characters'))
+from whole_body_contract import retain_complete_body
+retain_complete_body(bpy.data.objects['village_farmer_MakeHuman_body'])
+
 # Bake evaluated rest geometry, including morphs and garment masks, then retain skinning.
 for rig in bpy.data.objects:
  if rig.type=='ARMATURE':rig.data.pose_position='REST'

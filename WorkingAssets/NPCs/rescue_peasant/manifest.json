@@ -1,0 +1,9 @@
+{
+  "source": "WorkingAssets/NPCs/rescue_peasant/rescue_peasant.blend",
+  "runtime": "characters/npcs/rescue_peasant.glb",
+  "source_sha256": "530a745588c1b2a5f674ea9d181fd053036c0bc122141d99b45656fc8729200b",
+  "runtime_sha256": "008419a816dd554264c2ee4c5d2d7db84a49d97a0f0b688d07a1bd82f18a9e12",
+  "provenance": "Retained MPFB adult farmer",
+  "visual_approved": false,
+  "motion_approved": false
+}

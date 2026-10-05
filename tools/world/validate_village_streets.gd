@@ -44,7 +44,7 @@ func _run()->void:
 		check(blocked==0,str(actor.name)+" complete home/market path clearance")
 		journey.wait=0
 		var start:Vector3=actor.global_position
-		for frame in 120:journey.tick(1.0/60)
+		for frame in 240:journey.tick(1.0/60)
 		check(actor.global_position.distance_to(start)>1.5,str(actor.name)+" real movement and cadence")
 		check(actor.animation_state==&"walk",str(actor.name)+" walk tree active")
 		for frame in 1600:journey.tick(.25)

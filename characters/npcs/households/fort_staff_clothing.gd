@@ -54,7 +54,7 @@ func apron(source: MeshInstance3D) -> void:
 		for column in columns+1:
 			var u := float(column)/columns
 			var x := (u*2-1)*width
-			var z := lerpf(.254,.233,v)+sin(u*TAU*5)*.012*smoothstep(.3,.75,v)
+			var z := lerpf(.29,.28,v)+sin(u*TAU*5)*.012*smoothstep(.3,.75,v)
 			var position := Vector3(x,y,z)
 			vertices.append(position)
 			normals.append(Vector3(0,0,1))
@@ -74,7 +74,7 @@ func apron(source: MeshInstance3D) -> void:
 			var v := float(row)/8.0
 			var y := lerpf(1.25,1.41,v)
 			for column in 2:
-				vertices.append(Vector3(side*lerpf(.105,.16,v)+(float(column)-.5)*.025,y,lerpf(.255,.17,v)))
+				vertices.append(Vector3(side*lerpf(.105,.16,v)+(float(column)-.5)*.025,y,lerpf(.29,.17,v)))
 				normals.append(Vector3(0,0,1));uv.append(Vector2(float(column),v))
 				bones.append_array(PackedInt32Array([torso_binds[2],0,0,0]))
 				skin_weights.append_array(PackedFloat32Array([1,0,0,0]))

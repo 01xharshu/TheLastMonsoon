@@ -7,7 +7,7 @@ var reading := false
 func _ready() -> void:
 	interaction_text = "Take down and read notice"
 	marker_height = .30
-	interaction_max_distance = 1.25
+	interaction_max_distance = .85
 	add_to_group("wall_notices")
 	paper = MeshInstance3D.new()
 	var mesh := BoxMesh.new()
@@ -39,6 +39,7 @@ func interaction_available() -> bool:
 func interact(actor: CharacterBody3D) -> void:
 	var scroll: Control = actor.get_node("UI/IdentityScroll")
 	if not interaction_available() or not scroll.can_open(): return
-	if actor.global_position.distance_to(global_position) > 1.5: return
+	var offset := actor.global_position-global_position
+	if Vector2(offset.x,offset.z).length() > .58: return
 	reading = true
 	scroll.open_notice(self)

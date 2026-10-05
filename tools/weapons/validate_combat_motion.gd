@@ -133,6 +133,7 @@ func run() -> void:
 	for i in 45:
 		visual._process(1.0/60.0)
 		slash._process(1.0/60.0)
+	print("FINAL BLADE MIN CONTACT ",slash.closest_target_contact)
 	check(blocked.cut,"same reachable pole breaks after obstacle removed")
 	print("COMBAT MOTION ","PASS" if failures==0 else "FAIL "+str(failures))
 	quit(1 if failures else 0)

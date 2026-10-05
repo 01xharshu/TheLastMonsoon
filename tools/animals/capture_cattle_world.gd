@@ -1,0 +1,26 @@
+extends SceneTree
+func _initialize()->void:_run.call_deferred()
+func _run()->void:
+	root.size=Vector2i(1280,720);root.content_scale_size=root.size;root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
+	var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
+	world.get_node("Player").hide();world.get_node("Player/UI").hide();world.get_node("LandscapeUI").hide()
+	for frame in 8:await physics_frame
+	world.process_mode=Node.PROCESS_MODE_DISABLED
+	var yard:Node3D=get_nodes_in_group("household_cattle")[0]
+	var camera:=Camera3D.new();world.add_child(camera);camera.make_current();camera.fov=48
+	camera.global_position=yard.global_position+Vector3(4,2.6,-6);camera.look_at(yard.global_position+Vector3(0,1,0))
+	DirAccess.make_dir_recursive_absolute("/tmp/tlm_cattle_world_frames")
+	var views:Dictionary={}
+	for frame in 1200:
+		for substep in 3:yard.motion.tick(1.0/30);yard.caretaker.tick(1.0/30)
+		await process_frame
+		RenderingServer.force_draw(false)
+		var pixels:=root.get_texture().get_image()
+		pixels.save_jpg("/tmp/tlm_cattle_world_frames/%04d.jpg"%frame,.91)
+		var label:String=yard.motion.state
+		if label in ["graze","feed","drink"] and yard.motion.head_weight>.999 and not views.has(label):
+			pixels.save_png("res://docs/world/captures/cow_world_"+label+".png");views[label]=true;print("WORLD COW VIEW ",label," contact ",yard.motion.contact_error)
+		if yard.caretaker.stage=="offer" and yard.caretaker.elapsed>3 and not views.has("caretaker"):
+			pixels.save_png("res://docs/world/captures/cow_world_caretaker.png");views["caretaker"]=true;print("WORLD CARETAKER CONTACT ",yard.caretaker.last_contact_error)
+	print("COW WORLD MOTION: frames1200 at 10fps; views ",views," transfers ",yard.caretaker.transfers," hoof ",yard.motion.maximum_stance_error)
+	world.queue_free();await process_frame;quit()

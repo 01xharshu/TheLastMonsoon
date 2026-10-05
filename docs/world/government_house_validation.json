@@ -6,7 +6,7 @@
 	"plot": "(-390.0, -110.0)",
 	"room_tables": 12,
 	"stair_flights": 2,
-	"static_bodies": 957,
+	"static_bodies": 999,
 	"status": "PASS",
 	"support_heights": {
 		"avenue": 8.6299991607666,

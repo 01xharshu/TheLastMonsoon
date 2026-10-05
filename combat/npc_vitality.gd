@@ -31,33 +31,32 @@ func _ready() -> void:
 	body.set("damage_receiver",self)
 
 func take_damage(amount: float) -> void:
-	if dead or not is_finite(amount) or amount <= 0: return
-	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",actor)
+	receive_hit(amount,get_tree().root.find_child("Player",true,false),"weapon")
+
+func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool:
+	if dead or not is_finite(amount) or amount <= 0.0: return false
+	if actor.get_meta("knocked_out",false) and kind in ["punch","kick","takedown","abuse"]:return false
+	if attacker != null and attacker.name == "Player" and actor.get_meta("combat_faction","indian") == "indian": return false
+	if attacker != null and attacker.name == "Player":
+		get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",actor)
+	actor.set_meta("last_attacker",attacker)
+	actor.set_meta("last_hit_kind",kind)
 	health = maxf(0.0,health-amount)
-	if health > 0: return
-	dead = true
-	actor.set_meta("dead",true)
-	actor.set_process(false)
-	var tree: AnimationTree = actor.get("animation_tree")
-	if tree != null: tree.active = false
-	var animation: AnimationPlayer = actor.get("animation_player")
-	if animation != null: animation.pause()
-	var coach: Node3D = actor.get_meta("seated_coach",null)
-	if is_instance_valid(coach):
-		actor.reparent(coach,true)
-		var skeleton: Skeleton3D = actor.get("_skeleton")
-		var spine := skeleton.find_bone("spine_02")
-		var head := skeleton.find_bone("head")
-		var axes: Dictionary = actor.get("_pitch_axes")
-		for entry in [[spine,"spine_02",.65],[head,"head",.45]]:
-			if entry[0] < 0: continue
-			var start := skeleton.get_bone_pose_rotation(entry[0])
-			var end := start*Quaternion(axes[entry[1]],entry[2])
-			create_tween().tween_method(func(q: Quaternion): skeleton.set_bone_pose_rotation(entry[0],q),start,end,.8)
-	else:
-		create_tween().set_parallel(true).tween_property(actor,"rotation:x",PI*.5,1.0)
+	if actor.has_method("combat_react"): actor.combat_react("down" if actor.get_meta("knocked_out",false) else "hit" if health > 0 else "fall")
+	if health > 0: return true
+	if kind in ["punch","kick","takedown","abuse"]:
+		health=1.0
+		actor.set_meta("knocked_out",true)
+		actor.set("movement_enabled",false)
 		actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
+		return true
+	dead = true
+	actor.set_meta("knocked_out",false)
+	actor.set_meta("dead",true)
+	actor.set("movement_enabled",false)
+	actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
 	died.emit()
+	return true
 
 func _physics_process(_delta: float) -> void:
 	if not is_instance_valid(hit_body): return

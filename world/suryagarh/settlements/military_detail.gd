@@ -19,8 +19,11 @@ static func room(b,room:Node3D,w:float,d:float,roof_ties:bool=true)->void:
 	b.piece(room,"VerandaBeam",Vector3(0,3.62,d*.5+1),Vector3(w+.3,.18,.18),timber)
 	b.piece(room,"EaveShade",Vector3(0,3.74,d*.5+.65),Vector3(w+.6,.12,1.7),timber,false)
 	if roof_ties:
-		for x in range(-int(w*.5)+2,int(w*.5),3):
-			b.piece(room,"RoofTie",Vector3(x,3.35,0),Vector3(.12,.18,d-.35),timber,false)
+		for z in range(-int(d*.5)+1,int(d*.5),3):
+			b.piece(room,"RoofTie",Vector3(0,3.45,z),Vector3(w-.35,.18,.14),timber,false)
+			b.piece(room,"KingPost",Vector3(0,3.6+w*.03,z),Vector3(.14,w*.06-.2,.14),timber,false)
+			for side in [-1.0,1.0]:
+				b.piece(room,"PrincipalRafter",Vector3(side*w*.25,3.6+w*.03,z),Vector3(w*.5,.14,.14),timber,false).rotation.z=-side*.12
 	for side in [-1.0,1.0]:
 		b.piece(room,"DampPlinth",Vector3(side*w*.5,.48,0),Vector3(.43,.48,d),lime)
 		b.piece(room,"WindowSill",Vector3(side*(w*.5+.08),1.35,0),Vector3(.58,.12,2.3),b.stone)
@@ -37,3 +40,6 @@ static func room(b,room:Node3D,w:float,d:float,roof_ties:bool=true)->void:
 			prop(room,"res://objects/household/storage/stool.tscn",Vector3(x,.24,1.1))
 			prop(room,"res://objects/household/supplies/record_folio.tscn",Vector3(x,1.06,-.1))
 			prop(room,"res://objects/household/oil_lamp_visual.tscn",Vector3(x+.6,1.06,-.1))
+
+	if str(room.name).contains("Barracks") or str(room.name).contains("Sepoy") or room.name=="OfficersQuarters":
+		preload("res://world/suryagarh/settlements/military_room_finish.gd").room(b,room,w,d)

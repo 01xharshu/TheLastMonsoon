@@ -299,20 +299,27 @@ func _merge_static_geometry(node: Node3D) -> void:
 		var ancestor: Node = mesh.get_parent()
 		var dynamic := false
 		while ancestor != node and ancestor != null:
-			if ancestor is Interactable:
+			if ancestor is Interactable or ancestor is Skeleton3D or ancestor is CharacterBody3D or ancestor.get_script() != null:
 				dynamic = true
 				break
 			ancestor = ancestor.get_parent()
 		if dynamic: continue
-		# Imported meshes keep their source materials and editable hierarchy.
-		if mesh.material_override == null or mesh.name == "OilFlame": continue
-		var mat: Material = mesh.material_override
-		if not surfaces.has(mat):
-			var surface := SurfaceTool.new()
-			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-			surfaces[mat] = surface
+		# Keep skinned/animated objects separate; static imported furniture can
+		# share a material surface without changing its collision or source file.
+		if mesh.mesh == null or mesh.skin != null or mesh.name == "OilFlame" or mesh.get_script() != null: continue
+		if mesh.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_ON: continue
+		var missing_material := false
+		for i in mesh.mesh.get_surface_count():
+			if mesh.get_active_material(i) == null: missing_material = true
+		if missing_material: continue
 		var transform: Transform3D = node.global_transform.affine_inverse()*mesh.global_transform
 		for i in mesh.mesh.get_surface_count():
+			var mat: Material = mesh.get_active_material(i)
+			if mat == null: continue
+			if not surfaces.has(mat):
+				var surface := SurfaceTool.new()
+				surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+				surfaces[mat] = surface
 			surfaces[mat].append_from(mesh.mesh,i,transform)
 		mesh.free()
 	var merged := ArrayMesh.new()
@@ -323,4 +330,6 @@ func _merge_static_geometry(node: Node3D) -> void:
 		var visual := MeshInstance3D.new()
 		visual.name = "VillageMergedGeometry"
 		visual.mesh = merged
+		visual.visibility_range_end = 750
+		visual.visibility_range_end_margin = 60
 		node.add_child(visual)

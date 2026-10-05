@@ -46,7 +46,7 @@ func _process(delta: float) -> void:
 	var forward := right_contact.global_position-global_position
 	forward.y=0
 	var axis := Vector3.UP.cross(forward.normalized()).normalized()
-	var desired_world := Basis(axis,.34)*_skeleton.global_basis*pose.basis
+	var desired_world := Basis(axis,.42)*_skeleton.global_basis*pose.basis
 	var desired := _skeleton.global_basis.inverse()*desired_world
 	var parent := _skeleton.get_bone_parent(spine)
 	if parent >= 0: desired=_skeleton.get_bone_global_pose(parent).basis.inverse()*desired

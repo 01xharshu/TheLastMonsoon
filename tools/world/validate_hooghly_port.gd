@@ -53,6 +53,13 @@ func ship_point(x: float,z: float,y: float=4.22) -> Vector3:
 
 func run() -> void:
 	world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
+	var world_script: Script = world.get_script()
+	if world_script == null or not world_script.can_instantiate():
+		var reason := "World script did not compile; integrated water-state verification unavailable"
+		FileAccess.open("res://docs/world/hooghly_port_validation.json",FileAccess.WRITE).store_string(JSON.stringify({"status":"BLOCKED","failures":[reason]},"\t")+"\n")
+		push_error(reason)
+		quit(2)
+		return
 	root.add_child(world)
 	current_scene = world
 	player = world.get_node("Player")

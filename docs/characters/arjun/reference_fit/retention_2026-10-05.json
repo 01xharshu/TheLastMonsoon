@@ -1,0 +1,324 @@
+{
+  "date": "2026-10-05",
+  "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend",
+  "reason": "Primary hair-clump study already retired by source audit; later sculpted/material/eye/boot chain retained. Backup is not a builder input.",
+  "removed": [
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_hair_clump_candidate.blend1",
+      "bytes": 24201945,
+      "sha256": "40916795b58163fbc685e1bca58bc984d0b2b6cc7bd2b447e3b714e6d624d5f2"
+    }
+  ],
+  "replacement_evidence": "docs/characters/arjun/reference_fit/current",
+  "retained_calibration_images": [
+    "face_surface.png",
+    "face_residual.png"
+  ],
+  "superseded_captures_removed": [
+    {
+      "path": "docs/characters/arjun/reference_fit/three_quarter_residual.png",
+      "bytes": 672491,
+      "sha256": "602af852849f1305c5519f3fb9de0221ce74e8bbb1817c1cd05d4266d11fc403"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/side.png",
+      "bytes": 622727,
+      "sha256": "c5ac5359d6c0f7ba2c148b2efa52419e04fc207a1d33627c227f8f55e06cef17"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/back_surface.png",
+      "bytes": 635682,
+      "sha256": "d377d41ef5d5c7b6dfdd49f9f06c4da1e0ce83a4ec5a59e7275ae3ac52915079"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/back_residual.png",
+      "bytes": 635396,
+      "sha256": "371a9c37e1dbe3cd1fa9f036b3a8cedfa2bd7997d6e8803b1c8d52760e255ea4"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/side_residual.png",
+      "bytes": 618218,
+      "sha256": "ad9248a1fafb0d5e13ab86f740e6c220beccbe2124284e6311850e5e4913bd73"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/side_surface.png",
+      "bytes": 617991,
+      "sha256": "e7b1b35438950cdf6a6841447659f020f0fcd0f1bbaea3294250c538ee5b4073"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/reference_comparison.png",
+      "bytes": 1316340,
+      "sha256": "b20a04b7853438226cb267699155f22588bcd80462d6b5dcaea4f7bce58ad275"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/front_residual.png",
+      "bytes": 657793,
+      "sha256": "652adbb7f89764d3e2da68002a2e7885755fe54c10626a17ab3c3d4104b69ad6"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/three_quarter.png",
+      "bytes": 675452,
+      "sha256": "d1151d0ccad3c6537f2c16f40704d30dd585c90eb1c101d939768e25d603b503"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/front_surface.png",
+      "bytes": 657431,
+      "sha256": "fdd57407d4e1717f28819a1691183ca93b8071f0ade3fb4878482b09178d176d"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/back.png",
+      "bytes": 644952,
+      "sha256": "753ecf66249b2f680fdf4b60b4f99c367897646f99112e4f755e9b50f9c673ec"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/front.png",
+      "bytes": 661205,
+      "sha256": "ce0e144704b8441d839a1fb048c136bfc707f8b0c37da81c3d676b17abd05b12"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/three_quarter_surface.png",
+      "bytes": 672653,
+      "sha256": "28511e78f2a899ec5c5e462a22792f12a3ad9318369109418634c73227bdfb0b"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/boot_side.png",
+      "bytes": 561979,
+      "sha256": "654fd3f3a20a8dee28b1248310d338062dcd455c1113561cb6f51e69dd090a20"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/side.png",
+      "bytes": 617212,
+      "sha256": "2f6943cd5d1262c294446ca861e6bc060f45f00fe6d446204b15627e0991dc29"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/face.png",
+      "bytes": 872909,
+      "sha256": "00a37cdd9bb9a0bbf9f8ce4675c10f254bf2ee50e5fda4986193e7acb068e4b3"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/three_quarter.png",
+      "bytes": 674131,
+      "sha256": "0bff2b3aca5709297f9bf3403cfd011caa5bc12f2dabab7eaae14b8a2b0aa5a4"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/boot_quarter.png",
+      "bytes": 541999,
+      "sha256": "2763ffc41028e4baa959c3b202fb512a1ba95ea0019c97dd5f58485ee46c950a"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/back.png",
+      "bytes": 630645,
+      "sha256": "ab14d3b74feb478050d057d49fc0fb8d5226b3574eef0774268a658f9f262264"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/front.png",
+      "bytes": 660123,
+      "sha256": "5cb000232db74130a0cb2aa48922f07e77e5798ec1ab7dde6d393bbf1bd0afd2"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_panels_2026-10-02/boot_front.png",
+      "bytes": 539625,
+      "sha256": "67cc4e98c58c790318a343784899a2f710b38ba0e4887faae75d9028bb4508bb"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/hair_clumps_2026-10-01/side.png",
+      "bytes": 623268,
+      "sha256": "02e54929c310cdd75b3f76da3dc0c1cb58263d16f63117f000a920860def41da"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/hair_clumps_2026-10-01/reference_comparison.png",
+      "bytes": 1320624,
+      "sha256": "1887f653b2911be80b0bc931eb356072963800d9086d7e4789216febe7be4d58"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/hair_clumps_2026-10-01/three_quarter.png",
+      "bytes": 676895,
+      "sha256": "817085c1475521a0e7c5ac90bbf55adc018beae4a8ea6bc76e993c55f3682011"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/hair_clumps_2026-10-01/back.png",
+      "bytes": 644824,
+      "sha256": "0ed24567bebf01d5829d72a3231186b7a1847d3f88fecda6cec6fea36911dad1"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/hair_clumps_2026-10-01/front.png",
+      "bytes": 661579,
+      "sha256": "6ace312aff294df0586eaf2ab039c304ea044a00159732d4b1d04a479fd2e870"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01/side.png",
+      "bytes": 622468,
+      "sha256": "70608c2a4d44c09d2be04f790c0d04ff72eb2620f4010a363915fc88725a6f20"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01/reference_comparison.png",
+      "bytes": 1325628,
+      "sha256": "68e80254d5361b0b6bf949b60d4df33ba3d3885eadece8ad75fa57f597323635"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01/three_quarter.png",
+      "bytes": 676787,
+      "sha256": "96d3dfaabd6c555644d8ac4892c36cc6b1f1a3afbe4e2c58ae0407e05c5574b1"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01/back.png",
+      "bytes": 644778,
+      "sha256": "737d3d751507cb9dcdb1b1c54a419a1a1fcb1cbcb9f6f25e71a42d0332c3cb5e"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/sculpted_hair_2026-10-01/front.png",
+      "bytes": 662215,
+      "sha256": "3bdf447afb0e4fe1cd9e1b65c2684debf8ec9d2d49bfff95edf5ad3ac8e6cf55"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/continuous_drape_2026-10-01/side.png",
+      "bytes": 619542,
+      "sha256": "70fb894e412644abe1785e9eba520347ef1742edf6711b4b33fe416217fb3f9e"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/continuous_drape_2026-10-01/three_quarter.png",
+      "bytes": 669132,
+      "sha256": "b99bd0add7343f551b81aafc46ec479472a52552f0606ff2ff2e8fc7a91de0a2"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/continuous_drape_2026-10-01/back.png",
+      "bytes": 639612,
+      "sha256": "41068d12f1c81811cac61fd57482469a417cfbd11708bd71985943499627a59c"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/continuous_drape_2026-10-01/front.png",
+      "bytes": 653430,
+      "sha256": "49ecbdf2653074ac90de16509234e589bba3ea37a06ecbe07e539962454d858a"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_contact_2026-10-01/boot_side.png",
+      "bytes": 564325,
+      "sha256": "d21d2dc59d1595e765164e629dcb2b5e35d59b93c15ec39352f921277cd35d92"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_contact_2026-10-01/face.png",
+      "bytes": 872930,
+      "sha256": "254160bcd4a09c08f2293f5b3fd1815de826ed640428834529fa9ce26a2b394c"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/boot_contact_2026-10-01/boot_front.png",
+      "bytes": 536329,
+      "sha256": "3627f6917961b9a783798d0230925664ca063c28dadef66618b139bfbd62d109"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/face_detail.png",
+      "bytes": 939538,
+      "sha256": "0f5638e7cca103e9b40d366c6c5ef6fdd01f9c1f54a57cb7a58a3956850477f5"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/side.png",
+      "bytes": 620729,
+      "sha256": "1f399edd2c175934eeb8d533c0f874bb6ef21cd961f5ead6bbfe9ee77b1d13da"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/cloth_detail.png",
+      "bytes": 901284,
+      "sha256": "ef89a760ae8f8aa0eb3c218dd9f6cece887c2536eb2387e159df3ece1845e195"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/reference_comparison.png",
+      "bytes": 1319838,
+      "sha256": "b76d6df8028827143254816615601a02850eacd9c4771a50f86ffa3d9cc08455"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/three_quarter.png",
+      "bytes": 673198,
+      "sha256": "519262315fb4fb1e85f0774971bbe3390389c8cb1286dc6d31d22e4158a949ba"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/boot_detail.png",
+      "bytes": 875331,
+      "sha256": "acb9ac2a9d03579e81b9879eef7a1eccd1be51c80151ec24ff6d13b47dd92d2c"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/back.png",
+      "bytes": 638737,
+      "sha256": "e17b6f8875d60e716fdd912dec96f0a84cec86c03c898ecd69e204c1ab894fa7"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/material_realism_2026-10-01/front.png",
+      "bytes": 657296,
+      "sha256": "d07a82871573f1b0bed594e173892ff3706862bfdc9c55117da89cd648c477c1"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/eyes_moustache_2026-10-01/cloth.png",
+      "bytes": 898454,
+      "sha256": "b19a84a11a8a3c06766a76c0807d16f8395545902bd3da2f78ddf304f5e90689"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/eyes_moustache_2026-10-01/face.png",
+      "bytes": 873655,
+      "sha256": "471dd5b77dc9539b87e562658d0c398196fc0bda35020bdbb726c21d0d5c0411"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/eyes_moustache_2026-10-01/face_three_quarter.png",
+      "bytes": 871588,
+      "sha256": "e0b3d5ea6dd031d68e3aef524989e3c19374b7c1730b65c760dfcf75c3635a1d"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/drape_boots_2026-10-01/side.png",
+      "bytes": 615536,
+      "sha256": "bc8ede25e6c4ae190394b66f1f44604354d016221e29ca4d600adfb89357ac57"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/drape_boots_2026-10-01/reference_comparison.png",
+      "bytes": 1300013,
+      "sha256": "bc704b4c2449608bf0c05ff4cb78cc02786cbae7b58961319d758080cb5ef426"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/drape_boots_2026-10-01/three_quarter.png",
+      "bytes": 664560,
+      "sha256": "c8e8539097bcb028b0b83712684e64c2157fe07586922adc9fa9dda7c0789ebb"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/drape_boots_2026-10-01/back.png",
+      "bytes": 631086,
+      "sha256": "c3bfee9646d232d91d15442e165043f6ad795331d6a17e7c9ff9ca77d8e9ff3a"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/drape_boots_2026-10-01/front.png",
+      "bytes": 647559,
+      "sha256": "9d20ed26934da92ab2af6e5a615cde6947c0fab58c441ea819f3fca35a61077b"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/eye_contact_2026-10-05/face.png",
+      "bytes": 872459,
+      "sha256": "e727522e277f9022e9ce6d841287413f120ca32365711abad232f4302748be56"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/eye_contact_2026-10-05/face_three_quarter.png",
+      "bytes": 870558,
+      "sha256": "bb5395fb0833f237f2b91766e4a92abebf960af3c43133806c77732180baa701"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/projected_drape_2026-10-01/side.png",
+      "bytes": 620031,
+      "sha256": "950c700b0d929332420ceaf09687a528f784e45961b188cd2674bc6c9b45dce6"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/projected_drape_2026-10-01/reference_comparison.png",
+      "bytes": 1316600,
+      "sha256": "d039120161f078b3873cc1c7864aa3f236d719814dcec0bf838eab604b59546f"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/projected_drape_2026-10-01/three_quarter.png",
+      "bytes": 674161,
+      "sha256": "2887e2f5bf8f496430443184fd52fa79e08c67cd5cb7e0a02af95c65633dd978"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/projected_drape_2026-10-01/back.png",
+      "bytes": 639915,
+      "sha256": "be2481de0551c769055742fd02c42fa765a06cfda714fa69b38876e00689c714"
+    },
+    {
+      "path": "docs/characters/arjun/reference_fit/projected_drape_2026-10-01/front.png",
+      "bytes": 657001,
+      "sha256": "cb21c4cd3bbaadd68a9d9e133ca63669b28314b65b2a680faa7a0d4ccd491186"
+    }
+  ]
+}

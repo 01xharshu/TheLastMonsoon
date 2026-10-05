@@ -1,0 +1,42 @@
+extends SceneTree
+const Door = preload("res://objects/hinged_door.gd")
+const Map = preload("res://player/map_infrastructure.gd")
+const LiveCarts = preload("res://world/suryagarh/live_carts.gd")
+const Households = preload("res://world/suryagarh/settlements/wealthy_households.gd")
+const Boarding = preload("res://vehicles/cart_boarding_point.gd")
+const Rider = preload("res://vehicles/cart_rider.gd")
+func _initialize() -> void:
+	call_deferred("run")
+func run() -> void:
+	var door = Door.new()
+	assert(not door.hours_allow_entry(5))
+	assert(door.hours_allow_entry(6))
+	assert(door.hours_allow_entry(19))
+	assert(not door.hours_allow_entry(20))
+	door.opening_hour = 20
+	door.closing_hour = 6
+	assert(door.hours_allow_entry(23))
+	assert(door.hours_allow_entry(0))
+	assert(not door.hours_allow_entry(12))
+	door.free()
+	var world := Node3D.new()
+	root.add_child(world)
+	var bay := Node3D.new()
+	bay.set_meta("parking_label", "Public Cart Parking")
+	world.add_child(bay)
+	bay.position = Vector3(12,0,24)
+	assert(Map.collect(world)["Public Cart Parking"] == Vector2(12,24))
+	var cart := Node3D.new()
+	world.add_child(cart)
+	cart.set_meta("booking_status", "british_reserved")
+	var handle = Boarding.new()
+	handle.cart = cart
+	assert(not handle.interaction_available())
+	var rider = Rider.new()
+	rider.cart = cart
+	assert(not rider.board_at(null,"CoachmanSeat","driver"))
+	handle.free()
+	rider.free()
+	world.free()
+	print("HOURS / PARKING / RESERVED BOARDING: PASS")
+	quit()

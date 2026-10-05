@@ -89,8 +89,8 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 
 func _layout() -> void:
 	if not is_instance_valid(weapon_label): return
-	place(status_label,Vector2(32,size.y-111),Vector2(236,16))
-	place($SurvivalHUD,Vector2(28,size.y-81),Vector2(248,58))
+	place(status_label,Vector2(32,size.y-301),Vector2(236,16))
+	place($SurvivalHUD,Vector2(28,size.y-271),Vector2(248,58))
 	place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
 	place($InventoryPanel,Vector2((size.x-640)/2,(size.y-420)/2),Vector2(640,420))
 	place($PrimaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62),Vector2(500,38))
@@ -210,7 +210,7 @@ func _draw() -> void:
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
-	var y: float = size.y-132
+	var y: float = size.y-322
 	draw_style_box(box(INK,Color(BRASS,0.36)),Rect2(20,y,264,113))
 	draw_line(Vector2(32,y+8),Vector2(272,y+8),BRASS,1,true)
 	diamond(Vector2(152,y+8),3,IVORY)
@@ -218,12 +218,12 @@ func _draw() -> void:
 	for segment in 5:
 		var segment_x: float = 32.0 + float(segment) * 50.0
 		var fill: float = clampf((health - float(segment) * health_per_segment) / health_per_segment, 0.0, 1.0)
-		draw_rect(Rect2(segment_x, size.y-91, 46.0, 10.0), Color(0.08,0.08,0.07,0.55))
+		draw_rect(Rect2(segment_x, size.y-281, 46.0, 10.0), Color(0.08,0.08,0.07,0.55))
 		if fill > 0.0:
-			draw_rect(Rect2(segment_x, size.y-91, 46.0 * fill, 10.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
+			draw_rect(Rect2(segment_x, size.y-281, 46.0 * fill, 10.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
-		var horse_y: float = size.y-211
+		var horse_y: float = size.y-401
 		draw_style_box(box(INK,Color(BRASS,0.45)),Rect2(20,horse_y,310,32))
 		draw_string(SERIF,Vector2(34,horse_y+19),"HORSE STAMINA",HORIZONTAL_ALIGNMENT_LEFT,-1,17,IVORY)
 		draw_rect(Rect2(185,horse_y+13,128,6),Color(0.24,0.23,0.18))

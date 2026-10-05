@@ -1,7 +1,9 @@
 {
+	"cook_hand_gap_max_m": 0.0110268453136086,
 	"failures": [],
-	"latch_contact_gap_m": 0.000184574033482932,
+	"latch_contact_gap_m": 0.0000000105367119473954,
+	"minimum_cook_palm_separation_m": 0.241765081882477,
 	"passed": true,
-	"renderer": "macOS",
+	"renderer": "headless",
 	"scope": "normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"
 }

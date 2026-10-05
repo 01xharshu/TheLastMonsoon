@@ -125,6 +125,18 @@
 			"pass": true
 		},
 		{
+			"check": "both cannons constructed",
+			"pass": true
+		},
+		{
+			"check": "six armoury shelves constructed",
+			"pass": true
+		},
+		{
+			"check": "all forty cantonment beds receive linen",
+			"pass": true
+		},
+		{
 			"check": "cannon above ground FortCannonWest",
 			"pass": true
 		},
@@ -133,7 +145,7 @@
 			"pass": true
 		}
 	],
-	"date": "2026-10-01",
+	"date": "2026-10-05",
 	"failures": [],
 	"open": "normal-speed character contact, guard response, cannon operation, final art",
 	"renderer": "forward_plus"

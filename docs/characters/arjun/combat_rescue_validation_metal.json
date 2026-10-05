@@ -1,0 +1,8 @@
+{
+	"errors": [],
+	"fallen_head_y_m": 0.316649824380875,
+	"rear_hold_target_error_m": 0.00883795507252216,
+	"renderer": "forward_plus",
+	"status": "PASS",
+	"visual_approved": false
+}

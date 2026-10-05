@@ -1,8 +1,8 @@
 {
   "errors": [],
-  "escort_distance_m": 17.0101706311107,
+  "escort_distance_m": 17.01002121903,
   "max_player_step_m": 0.0191969722509384,
-  "officer_palm_error_m": 0.0113446647301316,
+  "officer_palm_error_m": 0.0113495830446482,
   "passed": true,
   "phases": [
     "approach",

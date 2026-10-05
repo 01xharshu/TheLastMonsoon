@@ -1,0 +1,22 @@
+{
+  "renderer": "Godot 4.7.2 Forward+/Metal Apple M4",
+  "sequence_seconds": 73,
+  "fps": 15,
+  "frames": 1095,
+  "scope": "fixed-step simulated 1.0x studio playback, not hardware performance or actual-world motion approval",
+  "files_sha256": {
+    "WorkingAssets/NPCs/river_woman/river_woman_motion.blend": "53e6589e841b3f3f64dd9c9a772939acce5b691278da5f52cdc6439e4aa553d5",
+    "WorkingAssets/NPCs/river_woman/river_woman_rigged_candidate.glb": "93c7b384e761582a9a0a19586dc720941f839b1ee7230da49656c9cc402b270f",
+    "characters/npcs/indian/river_woman_study.gd": "5c51914cf5c151ac6bad7bfad0cf9791316a563ad8f1e2274f68f125399d2863",
+    "characters/npcs/indian/river_contact_solver.gd": "d2a4c1a30617dd9abdf18694c3cad3a695c861dc4f058d57872cf9841ef62ac3",
+    "tools/characters/capture_river_routine.gd": "cd55d8053d69a446d2b60a693157a238ffca12e90abcc179d2e330197afe0ea2",
+    "docs/characters/npcs/river_routine_motion.mp4": "738d4df07cf0220e42a9ba18a8b542b9b4a43ba01cda3001396ebf467e2f6254",
+    "characters/npcs/indian/indian_npc_candidate.gd": "a7f83608d80d96c725c9ff29b29d1388788a020ba231d5bae9549ca81d23ca0b",
+    "characters/npcs/indian/river_routine_review.gd": "2bc82bb960b734055a4eb54d8dc4c588e9f1ff2c0d6b52cf6ed2768754137cff",
+    "tools/characters/validate_river_routine.gd": "02da3b65cd16960f85aafb662c0c1545ae365da1e4263b5e1f6f3bdbb3f9e10b"
+  },
+  "visual_approved": false,
+  "motion_approved": false,
+  "in_world": false,
+  "last_updated": "2026-10-05 12:56 IST"
+}

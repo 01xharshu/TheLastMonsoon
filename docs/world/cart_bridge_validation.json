@@ -7,11 +7,11 @@
 			"crossed": true,
 			"direction": -1.0,
 			"lateral_error_m": 0.0,
-			"speed": 5.2,
-			"ticks": 545,
+			"speed": 15.0,
+			"ticks": 197,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": -136.165608406067
+			"x_offset": -136.250015258789
 		},
 		{
 			"can_move": true,
@@ -19,11 +19,11 @@
 			"crossed": true,
 			"direction": 1.0,
 			"lateral_error_m": 0.0,
-			"speed": 5.2,
-			"ticks": 545,
+			"speed": 15.0,
+			"ticks": 197,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": 136.165420532227
+			"x_offset": 136.249984741211
 		},
 		{
 			"can_move": true,
@@ -31,11 +31,11 @@
 			"crossed": true,
 			"direction": -1.0,
 			"lateral_error_m": 0.0,
-			"speed": 2.25,
-			"ticks": 2292,
+			"speed": 0.5,
+			"ticks": 2213,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": -136.158715009689
+			"x_offset": -136.049999237061
 		},
 		{
 			"can_move": true,
@@ -43,11 +43,11 @@
 			"crossed": true,
 			"direction": 1.0,
 			"lateral_error_m": 0.0,
-			"speed": 2.25,
-			"ticks": 2292,
+			"speed": 1.5,
+			"ticks": 2217,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": 136.158584594727
+			"x_offset": 136.050003051758
 		},
 		{
 			"can_move": true,
@@ -55,11 +55,11 @@
 			"crossed": true,
 			"direction": -1.0,
 			"lateral_error_m": 0.0,
-			"speed": 2.25,
-			"ticks": 2292,
+			"speed": 0.5,
+			"ticks": 2213,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": -136.158715009689
+			"x_offset": -136.049999237061
 		},
 		{
 			"can_move": true,
@@ -67,11 +67,11 @@
 			"crossed": true,
 			"direction": 1.0,
 			"lateral_error_m": 0.0,
-			"speed": 2.25,
-			"ticks": 2292,
+			"speed": 1.5,
+			"ticks": 2217,
 			"transition": "",
 			"width_m": 6.0,
-			"x_offset": 136.158584594727
+			"x_offset": 136.050003051758
 		}
 	],
 	"scope": "actual bridge/carts in isolated physics fixture; terrain approaches and owner route review open",

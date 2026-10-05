@@ -192,7 +192,7 @@ func _kitchen(b,room: Node3D) -> void:
 	for side in ["l","r"]:
 		var marker := Marker3D.new()
 		marker.name="CookContact"+side.to_upper()
-		marker.position=Vector3(3.84 if side=="l" else 4.10,1.25 if side=="l" else 1.30,-2.44 if side=="l" else -2.49)
+		marker.position=Vector3(3.84 if side=="l" else 4.10,1.28 if side=="l" else 1.30,-2.44 if side=="l" else -2.49)
 		room.add_child(marker)
 	b.piece(room,"WaterPotStand",Vector3(-7,.36,2.2),Vector3(1.8,.24,1),b.stone)
 	_pot(b,room,"KitchenWaterPot",Vector3(-7.45,.48,2.2))

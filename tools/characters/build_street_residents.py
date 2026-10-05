@@ -54,7 +54,7 @@ for side,sign in [('l',1),('r',-1)]:
  for y,width,height in sections:
   for col in range(16):
    a=2*math.pi*col/16
-   verts.append((sign*.184+math.cos(a)*width,y,.012+max(0,math.sin(a))*height))
+   verts.append((sign*.184+math.cos(a)*width,y,.004+max(0,math.sin(a))*height))
  for row in range(len(sections)-1):
   for col in range(16):
    a=row*16+col;b=row*16+(col+1)%16;faces.append((a,b,b+16,a+16))

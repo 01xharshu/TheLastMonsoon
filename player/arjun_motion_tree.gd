@@ -57,6 +57,8 @@ func configure(model: Node3D) -> bool:
 		library.add_animation(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	library.add_animation("detention_arrest", _detention_clip(source.get_animation("idle"), true))
 	library.add_animation("detention_wait", _detention_clip(source.get_animation("idle"), false))
+	for action in ["punch","punch_left","kick","jump_kick","grapple","sword","knife","hit","block","dodge"]:
+		library.add_animation(action,preload("res://player/melee_motion.gd").make(skeleton,source.get_animation("idle"),action))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
@@ -140,7 +142,27 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("detention_pose", 1, "detention_arrest")
 	graph.connect_node("detention", 0, "climb")
 	graph.connect_node("detention", 1, "detention_pose")
-	graph.connect_node("output", 0, "detention")
+	var actions := AnimationNodeBlendSpace1D.new()
+	actions.min_space = 0.0
+	actions.max_space = 9.0
+	actions.blend_mode = AnimationNodeBlendSpace1D.BLEND_MODE_DISCRETE
+	var action_index := 0
+	for action in ["punch","punch_left","kick","jump_kick","grapple","sword","knife","hit","block","dodge"]:
+		actions.add_blend_point(_clip("motion/"+action),float(action_index),-1,action)
+		action_index += 1
+	graph.add_node("melee_action",actions)
+	graph.add_node("melee_seek",AnimationNodeTimeSeek.new())
+	var melee_layer:=AnimationNodeBlend2.new()
+	for bone in ["spine_01","spine_02","head","upperarm_l","upperarm_r","lowerarm_l","lowerarm_r","hand_l","hand_r"]:
+		melee_layer.set_filter_path(NodePath("Arjun_Rig/Skeleton3D:"+bone),true)
+	for side in ["l","r"]:
+		for finger in ["index","middle","ring","pinky","thumb"]:
+			for joint in ["01","02","03"]:melee_layer.set_filter_path(NodePath("Arjun_Rig/Skeleton3D:"+finger+"_"+joint+"_"+side),true)
+	graph.add_node("melee",melee_layer)
+	graph.connect_node("melee_seek",0,"melee_action")
+	graph.connect_node("melee",0,"detention")
+	graph.connect_node("melee",1,"melee_seek")
+	graph.connect_node("output", 0, "melee")
 	tree_root = graph
 	callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	active = true
@@ -394,3 +416,10 @@ func update_detention(delta: float, amount: float, arrested: bool, speed: float 
 	var mode_weight: float = get("parameters/detention_pose/blend_amount")
 	set("parameters/detention_pose/blend_amount", move_toward(mode_weight, 1.0 if arrested else 0.0, delta*1.5))
 	advance(delta)
+
+func set_melee(action: int, progress: float) -> void:
+	(tree_root as AnimationNodeBlendTree).get_node("melee").filter_enabled=action < 2 or (action >= 4 and action != 9)
+	set("parameters/melee/blend_amount",1.0 if progress >= 0.0 else 0.0)
+	set("parameters/melee_action/blend_position",float(action))
+	if progress >= 0.0:
+		set("parameters/melee_seek/seek_request",clampf(progress,0,1)*(.45 if action==7 else .5 if action==8 else .42 if action==9 else .68 if action==5 else .55 if action==6 else 1.2 if action == 4 else .52 if action >= 2 else .42))

@@ -1,0 +1,44 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/record_clerk/record_clerk_mpfb.blend",
+  "source_sha256": "46243542c1b00e2b2a81d71f3ca9450f1455f2c84d8d38be058b3b1b49c47c66",
+  "runtime": "characters/npcs/record_clerk.glb",
+  "runtime_sha256": "d4fe92aa02b355eb5ce0ecbd275b9c31628fac5eea2e52d92fb576aff8117f9d",
+  "mpfb_core_assets_license": "CC0-1.0",
+  "bone_count": 53,
+  "mesh_count": 11,
+  "body_vertices": 19158,
+  "purpose_role": "record_clerk",
+  "macro_profile": {
+    "gender": 1.0,
+    "age": 0.69,
+    "muscle": 0.18,
+    "weight": 0.9,
+    "proportions": 0.5,
+    "height": 0.42,
+    "cupsize": 0.45,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.55,
+      "caucasian": 0.2,
+      "african": 0.25
+    }
+  },
+  "face_targets": {
+    "head/head-fat-incr": 0.5,
+    "chin/chin-height-decr": 0.2,
+    "cheek/l-cheek-volume-incr": 0.35,
+    "cheek/r-cheek-volume-incr": 0.35,
+    "nose/nose-scale-depth-decr": 0.14
+  },
+  "skin_tint": [
+    0.82,
+    0.64,
+    0.46,
+    1
+  ],
+  "foundation_retained": true,
+  "complete_runtime_body": true,
+  "visual_approved": false,
+  "motion_approved": false
+}

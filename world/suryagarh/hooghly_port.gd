@@ -47,6 +47,10 @@ func piece(parent: Node3D, label: String, at: Vector3, size: Vector3, mat: Mater
 	mesh.size = size
 	visual.mesh = mesh
 	visual.material_override = mat
+	if label in ["PierWalk","BerthHead","ShipGangway","JettyApproach"]:
+		var boards: ShaderMaterial = mat.duplicate()
+		boards.set_shader_parameter("pier_boards",true)
+		visual.material_override = boards
 	visual.position = at
 	parent.add_child(visual)
 	if solid:
@@ -249,7 +253,8 @@ func interior_lamp(parent: Node3D, at: Vector3, reach: float) -> void:
 	for x in [-0.095,0.095]:
 		for z in [-0.095,0.095]:
 			piece(parent,"LanternFrame",at+Vector3(x,0,z),Vector3(0.018,0.30,0.018),iron,false)
-	beam(parent,"LanternHanger",at+Vector3(0,0.18,0),at+Vector3(0,0.45,0),0.015,iron)
+	var mount_y := 4.32 if parent.name == "CustomsWarehouse" else (3.22 if at.y < 3.0 else 5.91)
+	beam(parent,"LanternHanger",at+Vector3(0,0.18,0),Vector3(at.x,mount_y,at.z),0.015,iron)
 	var flame := material(Color(1.0,0.60,0.18))
 	flame.emission_enabled = true
 	flame.emission = Color(1.0,0.40,0.08)
@@ -345,6 +350,16 @@ func build_ship_detail() -> void:
 	piece(ship,"ChartTableDrawer",Vector3(0,4.02,19.60),Vector3(1.45,0.16,0.06),dark_oak,false)
 	piece(ship,"ChartDrawerPull",Vector3(0,4.02,19.55),Vector3(0.15,0.035,0.035),brass,false)
 	piece(ship,"Inkstand",Vector3(0.68,4.24,20.45),Vector3(0.16,0.07,0.12),brass,false)
+	# Navigation chart linework rests on the paper, with no floating UI labels.
+	var chart_ink := material(Color(0.20,0.23,0.19))
+	for i in 6:
+		beam(ship,"ChartLatitude",Vector3(-0.6,4.228,19.92+float(i)*0.1),Vector3(0.6,4.228,19.92+float(i)*0.1),0.0015,chart_ink)
+	for i in 7:
+		beam(ship,"ChartLongitude",Vector3(-0.6+float(i)*0.2,4.228,19.92),Vector3(-0.6+float(i)*0.2,4.228,20.42),0.0015,chart_ink)
+	for i in 12:
+		var a := float(i)*0.08
+		var b := float(i+1)*0.08
+		beam(ship,"ChartCoastline",Vector3(-0.5+a,4.23,20.1+sin(a*8.0)*0.1),Vector3(-0.5+b,4.23,20.1+sin(b*8.0)*0.1),0.004,chart_ink)
 	# Knees below deck beams and iron straps express load-bearing joins.
 	for z in range(-16,18,4):
 		for side in [-1,1]:

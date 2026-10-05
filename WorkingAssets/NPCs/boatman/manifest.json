@@ -1,0 +1,44 @@
+{
+  "status": "CANDIDATE_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/boatman/boatman_mpfb.blend",
+  "source_sha256": "e04f2c75584eb71fcc6e3ef10dd9b403f828fe4e45e3663952f88832b168b09d",
+  "runtime": "characters/npcs/boatman.glb",
+  "runtime_sha256": "2f380731ad38a95bfea824499345308badc225bca120b016dbe94b65a575671d",
+  "mpfb_core_assets_license": "CC0-1.0",
+  "bone_count": 53,
+  "mesh_count": 9,
+  "body_vertices": 19158,
+  "purpose_role": "boatman",
+  "macro_profile": {
+    "gender": 1.0,
+    "age": 0.56,
+    "muscle": 0.45,
+    "weight": 0.18,
+    "proportions": 0.5,
+    "height": 0.42,
+    "cupsize": 0.45,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.55,
+      "caucasian": 0.2,
+      "african": 0.25
+    }
+  },
+  "face_targets": {
+    "chin/chin-width-decr": 0.32,
+    "head/head-scale-vert-incr": 0.16,
+    "head/head-fat-decr": 0.3,
+    "nose/nose-scale-horiz-decr": 0.18,
+    "nose/nose-scale-depth-incr": 0.26
+  },
+  "skin_tint": [
+    0.56,
+    0.38,
+    0.25,
+    1
+  ],
+  "foundation_retained": true,
+  "complete_runtime_body": true,
+  "visual_approved": false,
+  "motion_approved": false
+}

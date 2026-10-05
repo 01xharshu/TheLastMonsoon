@@ -57,6 +57,8 @@ func refresh() -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	# Map pins use the grounded depth-tested world marker; retain edge navigation.
+	if destination.get("endpoint","") == "" and not at_edge: return
 	var p := marker_position
 	if at_edge:
 		var side := direction.orthogonal()
@@ -65,6 +67,7 @@ func _draw() -> void:
 	else:
 		_symbol(p)
 	_text(p+Vector2(0,-25),distance_text,22,GOLD)
+	if destination.get("endpoint","") == "": return
 	# Matching sub-marker explains the active goal without covering the destination.
 	draw_line(Vector2(36,86),Vector2(36,119),Color(.6,.6,.52,.75),2)
 	_symbol(Vector2(62,102),.78)

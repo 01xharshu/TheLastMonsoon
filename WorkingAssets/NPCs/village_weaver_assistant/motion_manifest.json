@@ -1,13 +1,18 @@
 {
   "status": "MOTION_CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_motion_candidate.blend",
-  "source_sha256": "0acbbd175c9a42ca47c237363481350907fcae3239aa7e6b95a326fbdb205cfd",
+  "source_sha256": "6704011dd2d84c9f60ba14c7eac5cc6c37ab0032db6e3c6ca699b6e32af1b38e",
   "runtime": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_rigged_candidate.glb",
-  "runtime_sha256": "b7a36963624954a182eba5e6db7db85a8e754c63182a837acebc68da3b9318b0",
+  "runtime_sha256": "420dfd6c2fbd149d548903b78145c4eb55608a9fab1e9819f5922034d15c0ff7",
   "actions": [
     "idle",
     "walk"
   ],
+  "complete_runtime_body": true,
+  "loop_time_origin_normalized": false,
+  "gait_profile": null,
+  "max_ankle_target_error_m": null,
+  "gait_scope": null,
   "motion_approved": false,
   "in_world": false,
   "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation"

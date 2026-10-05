@@ -25,6 +25,13 @@ FEMALE = FEMALE or FRUIT_SELLER
 SLUG = ("village_fruit_seller" if FRUIT_SELLER else
         "village_weaver_assistant" if WEAVER_ASSISTANT else
         "village_woman" if FEMALE else "village_farmer")
+PURPOSE = sys.argv[sys.argv.index("--purpose") + 1] if "--purpose" in sys.argv else None
+sys.path.insert(0, str(ROOT / 'tools/characters'))
+from purpose_identity import PROFILES, TINTS, FACES, apply_face, tint_glb
+if PURPOSE:
+    if FEMALE or FRUIT_SELLER or WEAVER_ASSISTANT or PURPOSE not in PROFILES:
+        raise ValueError("Choose a supported purpose role without other role flags")
+    SLUG = PURPOSE
 OUT = ROOT / "WorkingAssets/NPCs" / SLUG
 RUNTIME = ROOT / "characters/npcs" / (SLUG + ".glb")
 DATA = Path.home() / "Library/Application Support/Blender/5.2/extensions/.user/blender_org/mpfb/data"
@@ -41,7 +48,11 @@ if FRUIT_SELLER:
     macro.update(age=.48, muscle=.35, weight=.43, height=.34)
 if WEAVER_ASSISTANT:
     macro.update(age=.38, muscle=.39, weight=.41, height=.47)
+if PURPOSE:
+    macro.update(PROFILES[PURPOSE])
 body = HumanService.create_human(macro_detail_dict=macro)
+if PURPOSE:
+    apply_face(body, PURPOSE)
 body.name = SLUG + "_MakeHuman_body"
 body["source_workflow"] = "MPFB core basemesh; independent adult village NPC"
 body["approval"] = "visual candidate, not owner approved"
@@ -65,7 +76,17 @@ def mat(name, color, texture=None, rough=.85):
 
 skin_texture = (DATA / "skins/middleage_asian_female/middleage_lightskinned_female_diffuse2.png"
     if FEMALE else DATA / "skins/middleage_african_male/middleage_darkskinned_male_diffuse.png")
-skin = mat("Warm brown skin - MPFB core", (.50, .39, .31), skin_texture, .68)
+if PURPOSE:
+    skin_texture = DATA / 'skins/young_asian_male/young_lightskinned_male_diffuse3.png'
+skin = mat("Warm brown skin - MPFB core", (.50, .39, .31), skin_texture, .54 if PURPOSE else .68)
+if PURPOSE:
+    bs = skin.node_tree.nodes.get('Principled BSDF')
+    tex = next(n for n in skin.node_tree.nodes if n.type == 'TEX_IMAGE')
+    mix = skin.node_tree.nodes.new('ShaderNodeMixRGB')
+    mix.blend_type = 'MULTIPLY'; mix.inputs[0].default_value = 1
+    mix.inputs[2].default_value = TINTS[PURPOSE]
+    skin.node_tree.links.new(tex.outputs['Color'], mix.inputs[1])
+    skin.node_tree.links.new(mix.outputs[0], bs.inputs['Base Color'])
 if FEMALE:
     bs = skin.node_tree.nodes.get("Principled BSDF")
     tex = next(n for n in skin.node_tree.nodes if n.type == 'TEX_IMAGE')
@@ -87,11 +108,32 @@ hair_mat = mat("Dark hair", (.025, .019, .016))
 eyes = HumanService.add_mhclo_asset(str(DATA / "eyes/low-poly/low-poly.mhclo"), body,
                                    asset_type="Eyes", subdiv_levels=0)
 eyes.name = "Farmer_eyes"
+if PURPOSE:
+    eyes.data.materials.clear()
+    eyes.data.materials.append(mat('Detailed brown eyes with sclera', (1,1,1), DATA / 'eyes/materials/brown_eye.png', .22))
 hair_name = "braid01" if FEMALE else "short04"
+if PURPOSE:
+    hair_name = {'dock_porter':'short02','boatman':'short01','record_clerk':'short03'}[PURPOSE]
 hair = HumanService.add_mhclo_asset(str(DATA / "hair" / hair_name / (hair_name + ".mhclo")), body,
                                    asset_type="Hair", subdiv_levels=0)
 hair.name = "Farmer_hair"
 hair.data.materials.clear(); hair.data.materials.append(hair_mat)
+if PURPOSE:
+    hair_mat = mat('Individual textured dark hair', (.20,.16,.12), DATA / 'hair' / hair_name / (hair_name + '_diffuse.png'), .68)
+    bs = hair_mat.node_tree.nodes['Principled BSDF']
+    tex = next(n for n in hair_mat.node_tree.nodes if n.type == 'TEX_IMAGE')
+    hair_mat.node_tree.links.new(tex.outputs['Alpha'], bs.inputs['Alpha'])
+    hair_mat.surface_render_method = 'DITHERED'
+    hair.data.materials.clear(); hair.data.materials.append(hair_mat)
+    brow_name = 'eyebrow006' if PURPOSE == 'dock_porter' else 'eyebrow008'
+    brow = HumanService.add_mhclo_asset(str(DATA / 'eyebrows' / brow_name / (brow_name+'.mhclo')), body, asset_type='Eyebrows', subdiv_levels=0)
+    brow_mat = mat('Textured dark eyebrows', (.15,.12,.10), DATA / 'eyebrows' / brow_name / (brow_name+'.png'), .75)
+    bs = brow_mat.node_tree.nodes['Principled BSDF']
+    tex = next(n for n in brow_mat.node_tree.nodes if n.type == 'TEX_IMAGE')
+    brow_mat.node_tree.links.new(tex.outputs['Alpha'], bs.inputs['Alpha'])
+    brow_mat.surface_render_method = 'DITHERED'
+    brow.data.materials.clear(); brow.data.materials.append(brow_mat)
+
 
 # MPFB's fitted core garments supply shoulder, chest and sleeve topology. Keep
 # only the upper connected component; the era-specific lower drapes are separate.
@@ -114,6 +156,15 @@ for vertex in outfit.data.vertices:
 top_root = max(top_height, key=top_height.get)
 top_group = outfit.vertex_groups.new(name="Period upper only")
 top_group.add([v.index for v in outfit.data.vertices if find(v.index) == top_root], 1.0, 'REPLACE')
+if PURPOSE:
+    counts = {}
+    for vertex in outfit.data.vertices:
+        component = find(vertex.index)
+        if vertex.co.z < .80:
+            counts[component] = counts.get(component, 0) + 1
+    lower_root = max((component for component in counts if top_height[component] < 1.1), key=counts.get)
+    lower_group = outfit.vertex_groups.new(name='Period lower only')
+    lower_group.add([v.index for v in outfit.data.vertices if find(v.index) == lower_root], 1, 'REPLACE')
 top_mask = outfit.modifiers.new("Keep fitted upper", 'MASK')
 top_mask.vertex_group = top_group.name
 # The full MPFB outfit masks the body beneath both its top and trousers.
@@ -160,12 +211,12 @@ def mesh(name, verts, faces, material, mode="body", native=False):
         if mode == "head":
             assignment = {"head": 1.0}
         elif mode == "chest":
-            assignment = {"spine01": 1.0}
+            assignment = {"spine_01" if PURPOSE else "spine01": 1.0}
         elif mode == "leg":
             side = "l" if co.x > 0 else "r"
             assignment = {"thigh_" + side: .65, "calf_" + side: .35} if co.z < .7 else {"thigh_" + side: 1.0}
         elif mode == "torso":
-            assignment = {"spine01": 1.0} if co.z > 1.2 else {"pelvis": 1.0}
+            assignment = {"spine_01" if PURPOSE else "spine01": 1.0} if co.z > 1.2 else {"pelvis": 1.0}
         else:
             assignment = {}
             for _, i, dist in tree.find_n(co, 4):
@@ -183,6 +234,12 @@ def mesh(name, verts, faces, material, mode="body", native=False):
 
 def rings(name, levels, material, mode="body", sides=16, flutter=0):
     verts = []
+    if PURPOSE and name in ('Knee length wrapped dhoti', 'Dhoti woven border'):
+        hip = [source.vertices[i].co for i in ids if .55 < source.vertices[i].co.z < .90
+               and sum(w for bone,w in weights[i].items() if bone == 'pelvis' or bone.startswith('thigh_')) > .60]
+        fit_x = max(abs(v.x) for v in hip) + .035
+        fit_y = max(abs(v.y) for v in hip) + .035
+        levels = [(z, rx * fit_x/.23, ry * fit_y/.20, cx, cy) for z,rx,ry,cx,cy in levels]
     for row, (z, rx, ry, cx, cy) in enumerate(levels):
         for j in range(sides):
             a = j * math.tau / sides
@@ -279,6 +336,42 @@ else:
         mesh("Weaver assistant folded cloth", verts,
              [(0,1,2,3),(0,4,5,1),(3,2,6,7),(4,7,6,5)], cloth, mode="body")
 
+if PURPOSE:
+    # Fit accessories to this independent body instead of the donor's fixed
+    # head height; remove the lower shirt shell that forms pointed tails.
+    bpy.data.objects.remove(bpy.data.objects['Kurta loose lower panel'], do_unlink=True)
+    # Retain the fitted MPFB hair; the donor wrap needs separate tailoring.
+    for name in ['Soft cotton head wrap', 'Head wrap fold']:
+        bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
+    # Short work wrap avoids the previous knee-length hem crossing the knee.
+    for name in ['Knee length wrapped dhoti', 'Dhoti woven border']:
+        for vertex in bpy.data.objects[name].data.vertices:
+            vertex.co.z = .60 + (vertex.co.z - .43) * (.24 / .41)
+    palettes = {
+        "dock_porter": ((.32,.22,.14), (.46,.39,.28), (.40,.24,.13)),
+        "boatman": ((.17,.25,.29), (.44,.48,.45), (.23,.29,.29)),
+        "record_clerk": ((.72,.66,.52), (.67,.62,.49), (.30,.24,.18)),
+    }
+    for material, color in zip([cotton, dhoti_cotton, turban], palettes[PURPOSE]):
+        material.diffuse_color = (*color, 1)
+        material.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*color, 1)
+    sys.path.insert(0, str(ROOT / 'tools/characters'))
+    from purpose_wardrobe import apply as apply_purpose_wardrobe
+    apply_purpose_wardrobe(PURPOSE, outfit, rig, mat, source)
+    # Recoverable opaque fitted foundation, using the actual MPFB surface and
+    # existing skin weights. Outer garments never replace the underlying body.
+    keep = {i for i in ids if .70 < source.vertices[i].co.z < .91
+            and sum(w for bone,w in weights[i].items() if bone == 'pelvis' or bone.startswith('thigh_')) > .60}
+    faces = [list(p.vertices) for p in source.polygons if all(i in keep for i in p.vertices)]
+    used = sorted({i for face in faces for i in face})
+    remap = {i:j for j,i in enumerate(used)}
+    foundation = mesh('Opaque fitted underwear foundation',
+        [source.vertices[i].co + source.vertices[i].normal * .004 for i in used],
+        [[remap[i] for i in face] for face in faces], mat('Opaque cotton foundation', (.18,.14,.11)), native=True)
+    foundation['presentation'] = 'Opaque fitted adult underwear; no explicit genital anatomy'
+    body['purpose_role'] = PURPOSE
+    body['macro_profile'] = json.dumps(macro)
+
 # Keep an intact editable MPFB body in the source, but mask skin physically
 # covered by the period outfit. MPFB's outfit deletion map includes its removed
 # modern trousers, so a new narrow mask is required for animated exports.
@@ -290,11 +383,25 @@ for vertex in body.data.vertices:
         exposed = z > 1.25 or z < .18 or (abs(x) > .27 and z < 1.16)
     else:
         exposed = z > 1.37 or z < .46 or (abs(x) > .39 and z < 1.16)
+    if PURPOSE:
+        arm_prefix = ('lowerarm_', 'hand_') if PURPOSE == 'dock_porter' else ('upperarm_', 'lowerarm_', 'hand_')
+        arm_indices = {g.index for g in body.vertex_groups if g.name.startswith(arm_prefix)}
+        uncovered_arm = sum(g.weight for g in vertex.groups if g.group in arm_indices) > .10
+        exposed = z > 1.37 or z < (.14 if PURPOSE == 'record_clerk' else .59 if PURPOSE == 'dock_porter' else .60)
+        exposed = exposed or (uncovered_arm if PURPOSE != 'record_clerk' else (abs(x) > .39 and z < 1.16))
     if exposed:
         visible_ids.append(vertex.index)
 visible_skin.add(visible_ids, 1.0, 'REPLACE')
 period_mask = body.modifiers.new("Hide skin beneath period cloth", 'MASK')
 period_mask.vertex_group = visible_skin.name
+period_mask.show_viewport = False
+period_mask.show_render = False
+if PURPOSE:
+    # Owner requires the entire underlying body in runtime as well as source.
+    # Only non-human MPFB helper geometry is excluded from the export.
+    period_mask.show_viewport = False
+    period_mask.show_render = False
+    body['body_retention'] = 'Complete underlying MPFB body in source and runtime; no outfit skin cutout'
 
 # MPFB helper geometry must not leak into glTF; retain the source Blender file.
 for side, sign in [("l", 1), ("r", -1)]:
@@ -307,6 +414,8 @@ rig.data.pose_position = 'POSE'
 bpy.context.view_layer.update()
 for mod in body.modifiers:
     if mod.name == 'Hide helpers': mod.show_render = True
+from whole_body_contract import retain_complete_body
+retain_complete_body(body)
 blend = OUT / (SLUG + "_mpfb.blend")
 bpy.ops.wm.save_as_mainfile(filepath=str(blend))
 bpy.ops.object.select_all(action='DESELECT')
@@ -340,6 +449,8 @@ if FEMALE:
     rest = raw[20+json_size:]
     RUNTIME.write_bytes(struct.pack('<4sII', b'glTF', 2, 20+len(packed)+len(rest))
                         + struct.pack('<I4s', len(packed), b'JSON') + packed + rest)
+if PURPOSE:
+    tint_glb(RUNTIME, PURPOSE)
 # Render the exact baked meshes delivered to Godot, not the editable originals.
 for obj in meshes:
     obj.hide_render = True
@@ -348,7 +459,8 @@ manifest = dict(status="CANDIDATE_NOT_APPROVED", source=str(blend.relative_to(RO
     runtime=str(RUNTIME.relative_to(ROOT)),
     runtime_sha256=hashlib.sha256(RUNTIME.read_bytes()).hexdigest(),
     mpfb_core_assets_license="CC0-1.0", bone_count=len(rig.data.bones),
-    mesh_count=len(meshes), body_vertices=len(body.data.vertices))
+    mesh_count=len(meshes), body_vertices=len(body.data.vertices), purpose_role=PURPOSE,
+    macro_profile=macro, face_targets=FACES.get(PURPOSE, {}), skin_tint=TINTS.get(PURPOSE), foundation_retained=bool(PURPOSE), complete_runtime_body=True, visual_approved=False, motion_approved=False)
 (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 print("NPC_BUILD", json.dumps(manifest))
 

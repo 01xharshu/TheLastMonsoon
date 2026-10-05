@@ -1,0 +1,1179 @@
+{
+  "date": "2026-10-05 IST",
+  "status": "APPLIED",
+  "retained": [
+    {
+      "path": "WorkingAssets/Animals/household_cow/household_cow.blend",
+      "bytes": 1326697,
+      "sha256": "281eaa6030cab653dd5fbc6af2cc5c22d028f23136f551fa3df193ad853f2bc2",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 32,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/arjun_body_v1.blend",
+      "bytes": 199058,
+      "sha256": "57e1e27641e6077bb2997319bc581249c0d3d70b2a3d3e7dc17a2250cd87ed06",
+      "library_counts": {
+        "objects": 29,
+        "meshes": 28,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/arjun_character_v2.blend",
+      "bytes": 8993403,
+      "sha256": "09b9e623e6637e483fe76284a31bca9ea9337743677fd1888797df2d2c7c5cd2",
+      "library_counts": {
+        "objects": 15,
+        "meshes": 11,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/arjun_character_v2_body_approved.blend",
+      "bytes": 330244,
+      "sha256": "88aeae0af993934d6fb5ae60579e2c9d781ebab5c956d906c8fa3f80c244e8dc",
+      "library_counts": {
+        "objects": 4,
+        "meshes": 3,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
+      "bytes": 25230279,
+      "sha256": "d22bf2ee4394abfde39a92b94f6740ad7d286db4e209bd7ad571a9d8f333dc76",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 26,
+        "armatures": 1,
+        "actions": 10
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend",
+      "bytes": 24581973,
+      "sha256": "85302e915a67ee9a426743e83b66d2a65c4e18cfe6506722087cf724e1c7f075",
+      "library_counts": {
+        "objects": 32,
+        "meshes": 25,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend",
+      "bytes": 27918832,
+      "sha256": "1eba2dc85d559d4fa5b95668b2e994ff49cae3feace9eb96d0cbee9821f0a014",
+      "library_counts": {
+        "objects": 81,
+        "meshes": 74,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_boot_panels_candidate.blend",
+      "bytes": 28358746,
+      "sha256": "fe29e40951ba1e797690fd2b6ea68d34b384848e39e1a39f4b8e7704d68fbe16",
+      "library_counts": {
+        "objects": 97,
+        "meshes": 90,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_eye_moustache_candidate.blend",
+      "bytes": 27894627,
+      "sha256": "a19fd194f007489164de623318963e0b0dc780ab0624fa48e0e23658ba552098",
+      "library_counts": {
+        "objects": 81,
+        "meshes": 74,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_material_realism_candidate.blend",
+      "bytes": 25959847,
+      "sha256": "dc0f8a589a0ac35b63f591a2ed9677a060ac454b2ef193408737e24072751c05",
+      "library_counts": {
+        "objects": 80,
+        "meshes": 73,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_fit_candidate.blend",
+      "bytes": 24646533,
+      "sha256": "a06968576682b44890a5fef045353ec1ee48f312c0acf15bf885bfe922a91cb1",
+      "library_counts": {
+        "objects": 32,
+        "meshes": 25,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend",
+      "bytes": 21178126,
+      "sha256": "1699ebda45ab576543f39e6ea5d1a1c01e24ea8460ce1514876a48037707eeb2",
+      "library_counts": {
+        "objects": 34,
+        "meshes": 27,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_surface_candidate.blend",
+      "bytes": 24813594,
+      "sha256": "6abefc1e810dc34530a058e62c69e351f59a43af85b4138c136de47995da1e25",
+      "library_counts": {
+        "objects": 34,
+        "meshes": 27,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend",
+      "bytes": 22842713,
+      "sha256": "39815c418da99e96b8f3fe23da055aa09977dc43718cdd92949916e53665bee6",
+      "library_counts": {
+        "objects": 78,
+        "meshes": 71,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend",
+      "bytes": 25949927,
+      "sha256": "05d7c99b7b8695b7a8588c2c85e87ffd4f6b77bd297d5de4a76fbb561ce46786",
+      "library_counts": {
+        "objects": 80,
+        "meshes": 73,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/riding_cloth/arjun_riding_cloth.blend",
+      "bytes": 22273751,
+      "sha256": "027b0da75cdb40714ad95ccac134dc4c01e6dfd090bc0314791270381709273f",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 26,
+        "armatures": 1,
+        "actions": 10
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Arjun/weapon_enfield_p53.blend",
+      "bytes": 175890,
+      "sha256": "f95ba6c0c1faa5eddae9222e28e9711f03cb551b4d469b9b99594656c1b3f467",
+      "library_counts": {
+        "objects": 44,
+        "meshes": 37,
+        "armatures": 0,
+        "actions": 12
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/British_flag_01.blend",
+      "bytes": 217819,
+      "sha256": "8f3deb84cfcb8b73f55a940f2b9af26cf27e6db835ec816ce4811f6569a00dac",
+      "library_counts": {
+        "objects": 9,
+        "meshes": 6,
+        "armatures": 0,
+        "actions": 1
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Environment/MangoTree/mango_tree_01.blend",
+      "bytes": 14907269,
+      "sha256": "55f99aee39c0c4dd9cba785c0edaaa762364e76e404c4b1413fe82172d3e8cd8",
+      "library_counts": {
+        "objects": 5,
+        "meshes": 4,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Horse/candidates/body_refinement/horse_body_refinement.blend",
+      "bytes": 2610080,
+      "sha256": "a2e549e273c4f6acd520962669e2ead07b2cfa09a5a7e2312641d8ead6e61c02",
+      "library_counts": {
+        "objects": 2,
+        "meshes": 1,
+        "armatures": 1,
+        "actions": 26
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Horse/candidates/quaternius_horse/rigged_horse_candidate.blend",
+      "bytes": 2436104,
+      "sha256": "6cd48032d6a4e91f895782cdd8cce90faaacf4b8db3ef58fe5efd106bd50795b",
+      "library_counts": {
+        "objects": 2,
+        "meshes": 1,
+        "armatures": 1,
+        "actions": 26
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Horse/village_horse_body.blend",
+      "bytes": 581534,
+      "sha256": "9f62550ca99789541574e8546c4a032b11674ac36ffc6a74a967962c5a1ee3e6",
+      "library_counts": {
+        "objects": 1,
+        "meshes": 1,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/arjun_brother/arjun_brother_mpfb.blend",
+      "bytes": 2675512,
+      "sha256": "51b7ad093e0c6390c895c128a451ddd859b9909f23fb7eb1f125ffdd171c23d5",
+      "library_counts": {
+        "objects": 21,
+        "meshes": 20,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/arjun_brother/dev_idle_candidate.blend",
+      "bytes": 2721607,
+      "sha256": "d6192bac7643d837c8424417d149b7ae0fa2270e0fa1c6e1934afcc54ea62637",
+      "library_counts": {
+        "objects": 21,
+        "meshes": 20,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend",
+      "bytes": 4737916,
+      "sha256": "d3cd128380ffaa35526b47c6556c09c17c7efb8294b255431009d0417b14fd8c",
+      "library_counts": {
+        "objects": 25,
+        "meshes": 23,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/colonel_pair/colonel_pair_mpfb_candidate.blend",
+      "bytes": 5162384,
+      "sha256": "c8db0fb1acdd60aa3730d9dbb2cf165fc86b1c3b44870af7cdfc081e41be93f5",
+      "library_counts": {
+        "objects": 25,
+        "meshes": 23,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend",
+      "bytes": 4729288,
+      "sha256": "e07d589143a5c8d088b22aec22c3a2209ca4efc8a6e4e6d5036d18e7c15ca314",
+      "library_counts": {
+        "objects": 31,
+        "meshes": 29,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/corporal_skirt_candidate/corporal_woman_skirt_candidate.blend",
+      "bytes": 4774962,
+      "sha256": "c7572caec7a7c3b2700497db19767e747c59959f6b4d75aa6635844271767903",
+      "library_counts": {
+        "objects": 31,
+        "meshes": 29,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend",
+      "bytes": 5435597,
+      "sha256": "4cc2116cfcfccc6d59ede2f9a9136123fb1f7b2a97afff2fdeb88f71acaa67f7",
+      "library_counts": {
+        "objects": 25,
+        "meshes": 23,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend",
+      "bytes": 4983768,
+      "sha256": "351dc2d3535c402a6f70d40cdd06ba42c118d040c3b5dad500f25a5e12cf5ca2",
+      "library_counts": {
+        "objects": 25,
+        "meshes": 23,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend",
+      "bytes": 5108453,
+      "sha256": "a54c5869a5d0ffe9b5e04384e3281eaa02d96ca7e5d394040390527f05c30af1",
+      "library_counts": {
+        "objects": 19,
+        "meshes": 17,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend",
+      "bytes": 4700063,
+      "sha256": "4c7d15b0c74648d3a21395911fb9f151500327b8a907cd9f19f1eb75d7fc5fd3",
+      "library_counts": {
+        "objects": 28,
+        "meshes": 26,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend",
+      "bytes": 4809131,
+      "sha256": "c45087424f4fee375ade37b167f7dba20a1524a2f8a644ba7281110594493225",
+      "library_counts": {
+        "objects": 28,
+        "meshes": 26,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend",
+      "bytes": 4907304,
+      "sha256": "55ef45a1598683a325a2423d4cbe9e3b3b6133ef1fdf0c2c311ea17a88cd888b",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 31,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/sergeant_skirt_candidate/sergeant_woman_skirt_candidate.blend",
+      "bytes": 4966353,
+      "sha256": "47f45012ff529910c572cba13c1dd5c02ee1c4710a18f61f5fc7487bdb3d54a9",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 31,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/sergeant_uniform/sergeant_uniform.blend",
+      "bytes": 5092397,
+      "sha256": "7ff728130afbb0f1905824d874c4db43c724606dfbfa87619bc9cda6acc6df52",
+      "library_counts": {
+        "objects": 33,
+        "meshes": 31,
+        "armatures": 2,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/households/landowner/landowner.blend",
+      "bytes": 935445,
+      "sha256": "fe0f0c37db6e331425822f7d4717e3c25d3effa2969a8271484de242ca41ba89",
+      "library_counts": {
+        "objects": 16,
+        "meshes": 15,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/households/merchant/merchant.blend",
+      "bytes": 935469,
+      "sha256": "5925a90ae41f4644e44854c3a12d0ca2f0478f8ad316bac34b31b045f6cc8a35",
+      "library_counts": {
+        "objects": 16,
+        "meshes": 15,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/body_study/leela_body_study.blend",
+      "bytes": 12099031,
+      "sha256": "b696b5e34a22f8c8335c1763e0a481f568b2b22506e0f6af87624ed11413b864",
+      "library_counts": {
+        "objects": 10,
+        "meshes": 6,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/body_study/reviews/2026-09-30-before-reference-fit/leela_body_study.blend",
+      "bytes": 12028040,
+      "sha256": "276dffc0bcc9abc6565037c15bcde9ca1439dac9a51bde786ccf93834c16ab35",
+      "library_counts": {
+        "objects": 10,
+        "meshes": 6,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/candidate/leela_mpfb_study.blend",
+      "bytes": 2983965,
+      "sha256": "ea0449a43e5e18d9afb30fc708677917730a6ceef1c282c0101c8a3bfd26fa59",
+      "library_counts": {
+        "objects": 17,
+        "meshes": 16,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/costume_study/leela_costume_study.blend",
+      "bytes": 13072988,
+      "sha256": "4ef9bdd4c18f1c48bc87461d2b9fc440a55e0920699e437d990e7e43b48a621d",
+      "library_counts": {
+        "objects": 159,
+        "meshes": 37,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/costume_study/reviews/before-fabric-realism/leela_costume_study.blend",
+      "bytes": 12761910,
+      "sha256": "561efc3295baa216168675585627458b90970f37afc07f12ba4be9168857322f",
+      "library_counts": {
+        "objects": 159,
+        "meshes": 37,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/leela/costume_study/reviews/before-sleeve-scarf-refinement/leela_costume_study.blend",
+      "bytes": 12734411,
+      "sha256": "d1ae056ad058b93412d80ba97c3de1c247d17be791befa7448f999891f27a566",
+      "library_counts": {
+        "objects": 131,
+        "meshes": 31,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/street_residents/landowner/landowner.blend",
+      "bytes": 943640,
+      "sha256": "00671bddbf7a8dbd391a718137ea495965c8f83ea721911ffb86e313a555f471",
+      "library_counts": {
+        "objects": 17,
+        "meshes": 16,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/street_residents/merchant/merchant.blend",
+      "bytes": 943345,
+      "sha256": "e227365d4ab171ae93c4f6e88dc72a9450d8cc4e04bfddde67e492edde686ee7",
+      "library_counts": {
+        "objects": 17,
+        "meshes": 16,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/burkundaz/burkundaz_motion.blend",
+      "bytes": 975765,
+      "sha256": "d9836890539f5aa53febb7a8559cd14ba86dd383a3a1a115f21e952c9a242194",
+      "library_counts": {
+        "objects": 30,
+        "meshes": 29,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/daroga/daroga_motion.blend",
+      "bytes": 948219,
+      "sha256": "2fae669e8786795f96da7a49b9916c4791e7390dc85d963dda98e813386efed3",
+      "library_counts": {
+        "objects": 19,
+        "meshes": 18,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/mohurrir/mohurrir_motion.blend",
+      "bytes": 947997,
+      "sha256": "0480c89785309c373918f98f2eb278dd82131d644f94df35a5a4660c1d32c25e",
+      "library_counts": {
+        "objects": 19,
+        "meshes": 18,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+      "bytes": 2653099,
+      "sha256": "db5a63b353b2d68209b64f376735d5e836a547978d8cf1b2f1d35914dce39015",
+      "library_counts": {
+        "objects": 10,
+        "meshes": 9,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend",
+      "bytes": 2617596,
+      "sha256": "7b0ae0f00d3de3191b97dd1fbd09ec6b02fadc74e76d48297fd4d476fce1adb0",
+      "library_counts": {
+        "objects": 10,
+        "meshes": 9,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_motion_candidate.blend",
+      "bytes": 3055026,
+      "sha256": "2a034f4f30e81c1f52d0cd268417f35aedd33f096c636ddfe652045a5a38bb73",
+      "library_counts": {
+        "objects": 9,
+        "meshes": 8,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend",
+      "bytes": 3018403,
+      "sha256": "405107b1c97937d80e3d4167026bae2fa3f22deaa6c79248c5d129248ba326d9",
+      "library_counts": {
+        "objects": 9,
+        "meshes": 8,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_motion_candidate.blend",
+      "bytes": 2793346,
+      "sha256": "0acbbd175c9a42ca47c237363481350907fcae3239aa7e6b95a326fbdb205cfd",
+      "library_counts": {
+        "objects": 11,
+        "meshes": 10,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend",
+      "bytes": 2760273,
+      "sha256": "2aacb78c160a4b1c1bcbdfd8c6a8cc406554a16edd01f64c78ecd3ac67b234c5",
+      "library_counts": {
+        "objects": 11,
+        "meshes": 10,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend",
+      "bytes": 2877333,
+      "sha256": "786f9299312d21e951e6e743b15dea561516bae23497b2937838b2e60b3795c0",
+      "library_counts": {
+        "objects": 8,
+        "meshes": 7,
+        "armatures": 1,
+        "actions": 2
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend",
+      "bytes": 2846457,
+      "sha256": "401fe62bcae2852e388b357b0dbc9f584aee61a5b6fce3873bc14b7bc763689e",
+      "library_counts": {
+        "objects": 8,
+        "meshes": 7,
+        "armatures": 1,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Sang.blend",
+      "bytes": 119017,
+      "sha256": "4c7cd1923758f2abdab40fa035e81c9d6adbb9372f0b7fe09b654964ee63b030",
+      "library_counts": {
+        "objects": 17,
+        "meshes": 14,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Ships/hooghly_merchant_1850s.blend",
+      "bytes": 1609875,
+      "sha256": "666f4c3761ef6f0de23b176ca42c0a03c83aafe84d7b7c8bde87bc23eb38c300",
+      "library_counts": {
+        "objects": 14,
+        "meshes": 14,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/charpai_01.blend",
+      "bytes": 146675,
+      "sha256": "c12229016534851f4f15acbd8f8a0b71ec599492b079d1b9d22e3146ab356e96",
+      "library_counts": {
+        "objects": 59,
+        "meshes": 58,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/enfield_ammo_packet.blend",
+      "bytes": 155384,
+      "sha256": "81147ff4cc806c942f584472188ae399df98c9b6b98c12f9c13d05f659776b54",
+      "library_counts": {
+        "objects": 37,
+        "meshes": 32,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/mango_tree_01.blend",
+      "bytes": 125743,
+      "sha256": "b03a55f9ced2b040295dffee56eadcb36042935ccf0a81ea033146d9207ab3ba",
+      "library_counts": {
+        "objects": 2,
+        "meshes": 0,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/vehicle_river_boat_01.blend",
+      "bytes": 141225,
+      "sha256": "92f632c9978d8799b0c827f6010053a1d4ed3c9f3c94d9c189d2a997ba99fe45",
+      "library_counts": {
+        "objects": 37,
+        "meshes": 23,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/weapon_talwar_01.blend",
+      "bytes": 136778,
+      "sha256": "2c59d9493ffb5e6fd901e3c100b5051b3cffc3f50e0d197525f52a091e9cfc8e",
+      "library_counts": {
+        "objects": 15,
+        "meshes": 12,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/wooden_gun_carriage_v1.blend",
+      "bytes": 301066,
+      "sha256": "25ac3fa33c8dbf6fc2379fa32a4a9296c5ba4c11f77e7005e1546859ab362af0",
+      "library_counts": {
+        "objects": 87,
+        "meshes": 80,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/wooden_signboard.blend",
+      "bytes": 144855,
+      "sha256": "71e45ea48c773978ceeb62bec8abdd40e18909291a5493782f6153d936cfcb48",
+      "library_counts": {
+        "objects": 29,
+        "meshes": 24,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/adams_1851/adams_1851.blend",
+      "bytes": 130370,
+      "sha256": "e7c9c5f3b2e5032c3fd3dc3117c6f2e291ab54c965b56da29dea28003b28abb0",
+      "library_counts": {
+        "objects": 55,
+        "meshes": 25,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/double_percussion_gun/double_percussion_gun.blend",
+      "bytes": 113573,
+      "sha256": "7b72cf62e06df16d4e2f60ee157a20103b693b99ad09b9a7e821822b84a3fe43",
+      "library_counts": {
+        "objects": 23,
+        "meshes": 23,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/period_arrow/period_arrow.blend",
+      "bytes": 107875,
+      "sha256": "5a3687631edfecebe1c6058606120502f2c3cf03db388d74f2dabb541e915f8d",
+      "library_counts": {
+        "objects": 10,
+        "meshes": 5,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/period_bow/period_bow.blend",
+      "bytes": 111616,
+      "sha256": "f5a39d7f8fe9c5783f17236a4f6abd020b2023bf89714eddb6966d703a4b9701",
+      "library_counts": {
+        "objects": 23,
+        "meshes": 1,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/period_quiver/period_quiver.blend",
+      "bytes": 137517,
+      "sha256": "22c58f63ec0623258158cf89ab9849d62ea24f52b3fa36cd1cc1117aea532f33",
+      "library_counts": {
+        "objects": 161,
+        "meshes": 36,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/period_spear/period_spear.blend",
+      "bytes": 114873,
+      "sha256": "8c47192362d84140cf5f843c415977c5c8149d9d4d2770ac118113bec2355463",
+      "library_counts": {
+        "objects": 22,
+        "meshes": 6,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "environment/weapons/period_utility_knife/period_utility_knife.blend",
+      "bytes": 109838,
+      "sha256": "1c32317d8e913054a98ea1299488915f1a05382fc166cdcfdbbfb47566088a1c",
+      "library_counts": {
+        "objects": 5,
+        "meshes": 5,
+        "armatures": 0,
+        "actions": 0
+      },
+      "reason": "Editable source or reproducible candidate dependency retained; no new visual approval"
+    },
+    {
+      "path": "WorkingAssets/Animals/household_cow/household_cow.blend1",
+      "reason": "Backup belongs to concurrent modified source; kept"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_hair_clump_candidate.blend1",
+      "reason": "Backup newer than source or replacement not validated; kept"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/burkundaz/burkundaz_motion.blend1",
+      "reason": "Backup belongs to concurrent modified source; kept"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/daroga/daroga_motion.blend1",
+      "reason": "Backup belongs to concurrent modified source; kept"
+    },
+    {
+      "path": "WorkingAssets/NPCs/thana_motion/mohurrir/mohurrir_motion.blend1",
+      "reason": "Backup belongs to concurrent modified source; kept"
+    }
+  ],
+  "removed": [
+    {
+      "path": "WorkingAssets/Arjun/arjun_body_v1.blend1",
+      "bytes": 97507,
+      "sha256": "f2ce10bed5f2dc1cdc39ecf16f9f036b561778a9159e5ad4cfb05cf8c9cbdc34",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/arjun_body_v1.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/arjun_character_v2.blend1",
+      "bytes": 8839699,
+      "sha256": "ff9647e7f5002cbe92ef84ff5f21f9c22a645c6b619e7a957a6367466abb42bd",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/arjun_character_v2.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend1",
+      "bytes": 25234460,
+      "sha256": "998f4edff3143849913d2a494d9b75600443c6ae003f36f52682a30f76222e24",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend1",
+      "bytes": 24585467,
+      "sha256": "8cb728fa6f04aec4c88bbd6f3bc8133d2c4438cd3d7b7e73e7998e8aad948528",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/candidate/arjun_reference_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend1",
+      "bytes": 27909190,
+      "sha256": "b2e5529ba3ab29ff461b2a58a7cd61bd5131a3536da9dc54763d8860d2233534",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_boot_contact_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_continuous_drape_candidate.blend",
+      "bytes": 21338686,
+      "sha256": "1ea229dbb5a57553377333f75b131ff20b4231d2df159a8d1b3a1c870e569f54",
+      "reason": "Failed lumpy drape/buried straps; replaced by projected-drape study",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_drape_boot_candidate.blend",
+      "bytes": 21336931,
+      "sha256": "3597e915ceda304213d5af53e208d7c5aac4be6ca496ca00918f0b30cbb6bf7c",
+      "reason": "Failed wrap/boot detail; replaced by projected-drape study",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_eye_moustache_candidate.blend1",
+      "bytes": 26879638,
+      "sha256": "fdc89603c66e6f176396bd480c78ee5d471ba86517790466da7cf9c61d5d04a8",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_eye_moustache_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_hair_clump_candidate.blend",
+      "bytes": 23725711,
+      "sha256": "5970803350f0b071544c9cb13515129900ae94d749e62f61e81ee356532308ba",
+      "reason": "Superseded hair study; later sculpted/material/eye/boot chain retained",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_material_realism_candidate.blend1",
+      "bytes": 25959917,
+      "sha256": "f57a44e0840879b6ea7ad91084a582c70b2c429c254567aa89a8a77fc9333b15",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_material_realism_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_fit_candidate.blend1",
+      "bytes": 24644196,
+      "sha256": "ce035a5dfc0424e9aafe26abe56ec7f10f7747163862b45ed952cb3e3c13963b",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_multiview_fit_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend1",
+      "bytes": 21178240,
+      "sha256": "6d4319b82b9153fe21958a68e06b3730fbdacd24bb5de84d3bfc8f37554416cd",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_multiview_residual_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_multiview_surface_candidate.blend1",
+      "bytes": 24810641,
+      "sha256": "c509665cf4f6ac4ec25dd90a62a63190c8183dc5d3a4de977789f2bf55b2e66a",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_multiview_surface_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend1",
+      "bytes": 22842408,
+      "sha256": "873ab51e7d5d626ff20cdbd5d3fe3ffc91079a1e39fe94c4148c9a9e71ff285c",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_projected_drape_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend1",
+      "bytes": 25948983,
+      "sha256": "9ea73613903ec986cd206d18884239e15e209c56accc1c99eec40b233c909066",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/reference_fit/arjun_sculpted_hair_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/riding_cloth/arjun_riding_cloth.blend1",
+      "bytes": 22268623,
+      "sha256": "8d8e371e1341af6f4c063aefde32bab50c48595d5a1fc50b9aebafdb9b006a83",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/riding_cloth/arjun_riding_cloth.blend"
+    },
+    {
+      "path": "WorkingAssets/Arjun/weapon_enfield_p53.blend1",
+      "bytes": 180043,
+      "sha256": "73b0afc99719af4cdd139919a7d7861779255fdb3ccca65d9a78b52f511fb283",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/weapon_enfield_p53.blend"
+    },
+    {
+      "path": "WorkingAssets/British_flag_01.blend1",
+      "bytes": 172444,
+      "sha256": "8991f5d7ff629b1e22006884c7cbd0f138948cfa14aa105cf3f9cad2366a77be",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/British_flag_01.blend"
+    },
+    {
+      "path": "WorkingAssets/Environment/MangoTree/mango_tree_01.blend1",
+      "bytes": 14903752,
+      "sha256": "90db15c1fcad9bb20d5c1ee143ac5cef4bdf90ab0ac584a8bcdad30ab46ebe89",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Environment/MangoTree/mango_tree_01.blend"
+    },
+    {
+      "path": "WorkingAssets/Horse/candidates/body_refinement/horse_body_refinement.blend1",
+      "bytes": 2726621,
+      "sha256": "1ad7f6f6ac44a3d4bb29d47ab400290831713bb16ce246495be85f6f096f6f57",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Horse/candidates/body_refinement/horse_body_refinement.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend1",
+      "bytes": 4712746,
+      "sha256": "2c7e25747d85faa165ddddb67967e39c53a6da14e515061a2e8c44d2e3b730c6",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend1",
+      "bytes": 4676820,
+      "sha256": "9590bb940d8b8617dfff1af70c10d761304a41500ab6d9a74e3609cc1bdf07b2",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend1",
+      "bytes": 4809143,
+      "sha256": "3b76004982be7f4ee407ed5258810309db328e9ccea6aa8cc70ec344e9193774",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/british/private_skirt_candidate/private_woman_skirt_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend1",
+      "bytes": 2654847,
+      "sha256": "4f14f6d749f161caf440076843af30713eeae1e3c90452f8a08ba1ad89658175",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend1",
+      "bytes": 2615695,
+      "sha256": "5637c886c6f2bf01188bbbcfcafe7024c4b7ca101dea9d4a05344728db80a82b",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_farmer/village_farmer_mpfb.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend1",
+      "bytes": 3018368,
+      "sha256": "0e1eeed0cc10fbc7fa546bf5dd2fdeb0ec2dcda559ee8856825a64b2f088dfcd",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_mpfb.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend1",
+      "bytes": 2755579,
+      "sha256": "4e2b98e997fd1e2e60cec2fd7bf32f4bcc746a3d7e5103292debe1fc3d0e47bb",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_mpfb.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend1",
+      "bytes": 2880156,
+      "sha256": "5bb690e859a60592151a06ee27bb90088b1e360771ab445b224afecebc7d47df",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_woman/village_woman_motion_candidate.blend"
+    },
+    {
+      "path": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend1",
+      "bytes": 2841233,
+      "sha256": "64a6db80c203b47ed8a5f647bd7d386d087d904fe00baec9a76bf5ab22b67899",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/NPCs/village_woman/village_woman_mpfb.blend"
+    },
+    {
+      "path": "WorkingAssets/Sang.blend1",
+      "bytes": 129629,
+      "sha256": "dba81e158b2bfd2eb889dd3629d8405230a89cb1495b26a06b37477b43121683",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Sang.blend"
+    },
+    {
+      "path": "WorkingAssets/Ships/hooghly_merchant_1850s.blend1",
+      "bytes": 1610217,
+      "sha256": "31231f28502343778e4f256e504c2eb94efc73088cc7b5e6c0c0fbcc7b1a960c",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Ships/hooghly_merchant_1850s.blend"
+    },
+    {
+      "path": "WorkingAssets/arjun_body_v1.blend1",
+      "bytes": 97514,
+      "sha256": "55989cc8232242d34955e04753ff5451e3689cd9ed8b595a40fd12b98f8485c3",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/Arjun/arjun_body_v1.blend"
+    },
+    {
+      "path": "WorkingAssets/charpai_01.blend1",
+      "bytes": 97472,
+      "sha256": "40d7853232a1f7a68e934d18a53003cfb69c94227575728e59be5e4eea51dc87",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/charpai_01.blend"
+    },
+    {
+      "path": "WorkingAssets/enfield_ammo_packet.blend1",
+      "bytes": 155179,
+      "sha256": "bd63c3544c9cb4db59029cb5a38a368a50b33c58d4059bea0d1303f872128955",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/enfield_ammo_packet.blend"
+    },
+    {
+      "path": "WorkingAssets/mango_tree_01.blend1",
+      "bytes": 125726,
+      "sha256": "46b966f7a97caa03aa7d5f66225f69c5cb4a34d98b7e35321d7de97a0550cec5",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/mango_tree_01.blend"
+    },
+    {
+      "path": "WorkingAssets/vehicle_river_boat_01.blend1",
+      "bytes": 141186,
+      "sha256": "658ab9c18bae2c12468d6b16360e109f891ab0872fe2e346148e0fba861dd3fe",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/vehicle_river_boat_01.blend"
+    },
+    {
+      "path": "WorkingAssets/weapon_talwar_01.blend1",
+      "bytes": 97465,
+      "sha256": "b6e335cdbbd02388bcc8152e186950b5a2129997f28905df37fd01e310c9577d",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/weapon_talwar_01.blend"
+    },
+    {
+      "path": "WorkingAssets/wooden_gun_carriage_v1.blend1",
+      "bytes": 297141,
+      "sha256": "c88090bc22d7e0daf6170f4ccefb0b752a8e8f09cdf75b5dd8c8580af8cf5e42",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/wooden_gun_carriage_v1.blend"
+    },
+    {
+      "path": "WorkingAssets/wooden_signboard.blend1",
+      "bytes": 116616,
+      "sha256": "ddd6166be8ee9ec7935a20028e2539bae4c10812fa1b41572e2a6e9d927456d3",
+      "reason": "Unreferenced automatic backup; current editable source validates in Blender",
+      "retained_replacement": "WorkingAssets/wooden_signboard.blend"
+    }
+  ],
+  "reclaimed_bytes": 399415889,
+  "validation": "Blender library directory read; not rendered appearance approval"
+}

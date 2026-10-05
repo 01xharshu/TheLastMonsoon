@@ -19,6 +19,8 @@ var slash_phase := -1.0
 var slash_target_world := Vector3.ZERO
 var punch_phase := -1.0
 var kick_phase := -1.0
+var knife_phase := -1.0
+var hit_phase := -1.0
 var bones: Dictionary = {}
 var base_rotations: Dictionary = {}
 var axes: Dictionary = {}
@@ -138,11 +140,23 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
+	if hit_phase>=0:
+		hit_phase+=delta/.45
+		if hit_phase>=1:hit_phase=-1
 	if actor.get_meta("detention_action","")=="": detention_contacts.update(self)
 	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
-	var special_pose: bool = slash_phase >= 0.0 or punch_phase >= 0.0 or kick_phase >= 0.0 or actor.get_meta("river_action", "") != "" or mounted or actor.get_meta("stealth_stance", "") != ""
+	var special_pose: bool = actor.get_meta("river_action", "") != "" or mounted or actor.get_meta("stealth_stance", "") != ""
 	if motion_tree != null:
 		motion_tree.active = not special_pose
+		var combat := actor.get_node("CombatInput")
+		var melee_phase := kick_phase if kick_phase >= 0 else punch_phase
+		var action: int = (3 if combat.air_kick else 2) if kick_phase >= 0 else (1 if combat.left_punch else 0)
+		if slash_phase >= 0:action=5;melee_phase=slash_phase
+		elif knife_phase >= 0:action=6;melee_phase=knife_phase
+		elif actor.has_meta("combat_dodge_phase"):action=9;melee_phase=actor.get_meta("combat_dodge_phase")
+		elif hit_phase>=0:action=7;melee_phase=hit_phase
+		elif combat.blocking:action=8;melee_phase=.5
+		motion_tree.set_melee(action,melee_phase)
 		if not actor.get_meta("climbing", false): motion_tree.release_climb(delta)
 	if actor.get_meta("detention_action", "") != "":
 		_pose_detention(delta)
@@ -238,14 +252,15 @@ func _process(delta: float) -> void:
 						var target: Quaternion = base_rotations[name] * Quaternion(Vector3.RIGHT, curl)
 						skeleton.set_bone_pose_rotation(bones[name], skeleton.get_bone_pose_rotation(bones[name]).slerp(target, blend))
 	if armed and slash_phase >= 0.0:
-		# Wind up over the right shoulder, then sweep the blade across the rope.
-		var sweep := smoothstep(0.18,0.72,slash_phase)
-		var release := 1.0 - smoothstep(0.76,1.0,slash_phase)
-		pose("spine_02",Vector3(-0.10,lerpf(-0.25,0.38,sweep),0.0),release)
-		pose("upperarm_r",Vector3(lerpf(-1.15,0.35,sweep),lerpf(-0.65,0.65,sweep),lerpf(-0.60,0.10,sweep)),release)
-		pose("lowerarm_r",Vector3(lerpf(-1.15,-0.40,sweep),0,0),release)
+		if motion_tree == null:
+			# Wind up over the right shoulder, then sweep the blade across the rope.
+			var sweep := smoothstep(0.18,0.72,slash_phase)
+			var release := 1.0 - smoothstep(0.76,1.0,slash_phase)
+			pose("spine_02",Vector3(-0.10,lerpf(-0.25,0.38,sweep),0.0),release)
+			pose("upperarm_r",Vector3(lerpf(-1.15,0.35,sweep),lerpf(-0.65,0.65,sweep),lerpf(-0.60,0.10,sweep)),release)
+			pose("lowerarm_r",Vector3(lerpf(-1.15,-0.40,sweep),0,0),release)
 		equipment.apply_sword_strike(slash_phase,slash_target_world)
-	if punch_phase >= 0.0:
+	if punch_phase >= 0.0 and motion_tree == null:
 		var windup := smoothstep(0.0,.22,punch_phase)
 		var strike := smoothstep(.25,.43,punch_phase)
 		var recover := 1.0-smoothstep(.58,1.0,punch_phase)
@@ -257,7 +272,7 @@ func _process(delta: float) -> void:
 		pose("lowerarm_r",Vector3(lerpf(-1.35,-.18,strike)*effort,0,0),blend)
 		pose("upperarm_l",Vector3(-.48*effort,0,.42*effort),blend)
 		pose("lowerarm_l",Vector3(-.9*effort,0,0),blend)
-	if kick_phase >= 0.0:
+	if kick_phase >= 0.0 and motion_tree == null:
 		var chamber := smoothstep(0.0,.27,kick_phase)
 		var extension := smoothstep(.28,.46,kick_phase)
 		var recover := 1.0-smoothstep(.56,1.0,kick_phase)
@@ -297,14 +312,14 @@ func _process(delta: float) -> void:
 		motion_tree.update_longgun_motion(delta, longgun_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
 		if longgun_equipped:
 			pose("spine_02", Vector3(-0.025 * motion_tree.longgun_aim_blend + 0.035 * motion_tree.longgun_recoil_blend - 0.025 * motion_tree.longgun_reload_blend, -0.025 * motion_tree.longgun_aim_blend, 0.0), 0.4)
-	equipment.apply_rifle_grip(armed and slash_phase >= 0.0)
+	equipment.apply_rifle_grip((armed and slash_phase >= 0.0) or knife_phase >= 0.0)
 	var interaction: Node = actor.get_node_or_null("InteractionPoseComponent")
 	var reaching: bool = actor.get_meta("interaction_reach", false) or (interaction != null and (interaction.amount > 0.0 or interaction.ground_pickup))
 	var door_action = actor.get_node_or_null("DoorLatchAction")
 	if door_action != null and door_action.phase != "":
 		door_action.apply_pose()
 		reaching=true
-	if equipment.stowed and not reaching and not actor.is_swimming and not special_pose:
+	if equipment.stowed and punch_phase < 0 and kick_phase < 0 and hit_phase < 0 and not actor.has_meta("combat_dodge") and not actor.get_meta("combat_blocking",false) and not actor.get_meta("paired_combat",false) and not reaching and not actor.is_swimming and not special_pose:
 		equipment.keep_relaxed_hands_clear()
 
 

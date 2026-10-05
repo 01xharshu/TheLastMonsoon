@@ -9,6 +9,8 @@ func check(ok: bool,label: String) -> void:
 func run() -> void:
 	root.mode=Window.MODE_WINDOWED
 	root.size=Vector2i(1280,720)
+	root.content_scale_size=Vector2i(1280,720)
+	root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
 	stage=Node3D.new()
 	root.add_child(stage)
 	current_scene=stage
@@ -61,14 +63,37 @@ func run() -> void:
 	check(door.opened and is_equal_approx(door.swing,1.0),"contact releases and opens leaves away from player")
 	check(not player.get_meta("door_latch_active",false),"recovery restores player control")
 	await capture("arjun_door_latch_open")
+	var close_direction: Vector3=door.interaction_anchor()-player.global_position
+	player.get_node("VisualRoot").global_rotation.y=atan2(close_direction.x,close_direction.z)
+	player._try_primary_interaction()
+	await create_timer(5.0).timeout
+	print("EXTERIOR CLOSE ",action.phase," ",player.get_meta("door_latch_failure","")," ",player.global_position)
+	check(not door.opened and is_zero_approx(door.swing),"normal exterior action closes an open leaf")
 	# Locked exterior must not start a gesture or open the door.
 	door.restore_state(false);door.night_lock=true;door._time_changed(1,21,0)
 	door.interact(player)
 	check(action.phase=="" and not door.opened,"outside night latch rejects gesture")
+	player.global_position=Vector3(.12,.9,-1.2)
+	await physics_frame;await physics_frame
+	door.swing_direction=1.0
+	door.interact(player)
+	await create_timer(3.2).timeout
+	check(door.opened and is_equal_approx(door.swing,1.0),"inside night exit uses interior pull and contact gesture")
+	door.interact(player)
+	await create_timer(5.0).timeout
+	check(not door.opened and is_zero_approx(door.swing),"closing gesture retreats clear of leaf sweep")
+	var saves=root.get_node("SaveManager")
+	door.swing_direction=-1.0;door.restore_state(true)
+	var saved: Dictionary=saves._door_states(stage)
+	door.swing_direction=1.0;door.restore_state(false)
+	saves._restore_door_states(stage,JSON.parse_string(JSON.stringify(saved)))
+	check(door.opened and door.swing_direction == -1.0,"serialized door state restores opening direction")
+	saves._restore_door_states(stage,{"TestDoor":false})
+	check(not door.opened,"older boolean door saves remain compatible")
 	var kitchen:=Node3D.new();kitchen.name="FortKitchen";stage.add_child(kitchen)
 	for side in ["L","R"]:
 		var marker:=Marker3D.new();marker.name="CookContact"+side
-		marker.position=Vector3(3.84,.83,.61) if side=="L" else Vector3(4.10,.88,.56)
+		marker.position=Vector3(3.84,.86,.61) if side=="L" else Vector3(4.10,.88,.56)
 		kitchen.add_child(marker)
 	for index in 2:
 		var actor=preload("res://characters/npcs/households/fort_staff.gd").new()
@@ -82,10 +107,20 @@ func run() -> void:
 		if index==0:
 			var aprons=actor.find_children("CookSkinnedWorkApron","MeshInstance3D",true,false)
 			check(aprons.size()==1 and aprons[0].skin != null,"cook apron uses original skeleton skin")
-	for i in 30:await physics_frame
+	# Let the actor evaluate its first live pose before measuring contact.
+	for i in 3: await process_frame
+	var cook=stage.get_node("Cook")
+	var worst_cook_gap := 0.0
+	var minimum_palm_separation := INF
+	for i in 180:
+		await physics_frame
+		worst_cook_gap=maxf(worst_cook_gap,maxf(cook.get_meta("hand_contact_l",INF),cook.get_meta("hand_contact_r",INF)))
+		minimum_palm_separation=minf(minimum_palm_separation,cook.palm_world("l").distance_to(cook.palm_world("r")))
+	check(worst_cook_gap<.018,"cook keeps vessel and spoon contact across full stir cycle")
+	check(minimum_palm_separation>.12,"cook work targets keep hands uncrossed")
 	camera.position=Vector3(4.8,1.6,-2.3);camera.look_at(Vector3(4.6,.85,1))
 	await capture("fort_staff_clothing_detail")
-	var report={"failures":failures,"passed":failures.is_empty(),"latch_contact_gap_m":gap,"renderer":DisplayServer.get_name(),"scope":"normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"}
+	var report={"failures":failures,"passed":failures.is_empty(),"latch_contact_gap_m":gap,"cook_hand_gap_max_m":worst_cook_gap,"minimum_cook_palm_separation_m":minimum_palm_separation,"renderer":DisplayServer.get_name(),"scope":"normal E approach/reach/release/recovery, night rejection, distinct staff fabric and skinned apron; art review separate"}
 	var file=FileAccess.open("res://docs/world/staff_latch_validation.json",FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	stage.queue_free();await process_frame
 	quit(0 if failures.is_empty() else 1)

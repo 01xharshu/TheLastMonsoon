@@ -1,4 +1,6 @@
 # Bhairavpur streets and resident journeys
+Current integration and motion follow-up: [October 5 cow and resident review](cow_and_resident_motion_2026-10-05.md). The milestone below is retained as earlier evidence.
+
 Updated: 2026-10-01. Status: IN_PROGRESS; integrated route behavior PASS, final visual quality open.
 
 ## Implemented

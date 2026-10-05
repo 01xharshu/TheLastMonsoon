@@ -244,11 +244,11 @@ func _animate_motion(speed: float, delta: float) -> void:
 	for wheel in wheels:
 		wheel.rotation.x += speed * delta / radius
 	if horse_animation != null and (combat == null or not combat.animation_dead(horse_animation)):
-		var clip := "AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle"
+		var clip := "AnimalArmature|Gallop" if absf(speed) > 6.0 else ("AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle")
 		if horse_animation.current_animation != clip:
 			horse_animation.play(clip,.15)
-		horse_animation.speed_scale = clampf(absf(speed)/4.2,.65,1.5) if clip.ends_with("Walk") else 1.0
-		if clip.ends_with("Walk") and not hoof_players.is_empty():
+		horse_animation.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.65,1.7) if clip != "AnimalArmature|Idle" else 1.0
+		if clip != "AnimalArmature|Idle" and not hoof_players.is_empty():
 			var length: float = horse_animation.get_animation(clip).length
 			if length > 0.0:
 				var previous := sound_cycle

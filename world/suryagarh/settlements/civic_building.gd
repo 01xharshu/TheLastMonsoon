@@ -12,7 +12,7 @@ func _ready() -> void:
 	plaster = surface("clay_plaster",Color(.95,.91,.80),.45)
 	ochre = material(Color(.37,.18,.13))
 	stone = material(Color(.46,.43,.35),true)
-	wood = surface("dark_wood",Color(.75,.63,.46),.65)
+	wood = preload("res://world/suryagarh/settlements/building_realism.gd").wood(Color(.38,.28,.19))
 	tile = material(Color(.48,.23,.14),true)
 	iron = material(Color(.12,.13,.12))
 	if police:
@@ -85,6 +85,9 @@ func _ready() -> void:
 	var approach_length := 24.0 if not police else 18.0
 	var end := Vector3(0,layout.height(position.x,position.z+depth*.5+approach_length)-position.y,depth*.5+approach_length)
 	piece(self,"EntryPorch",Vector3(0,-.12,depth*.5+1.75),Vector3(width+1,.24,4),stone)
+	if police:
+		# The 21.75 m porch edge and 22 m ramp start left a 25 cm support gap.
+		piece(self,"EntryRampPorchJoin",Vector3(0,-.15,depth*.5+3.88),Vector3(5,.30,.55),stone)
 	# Follow the surveyed ground between the porch and road. A single straight
 	# slab was buried by the town hall's shallow rise, leaving two visible ends.
 	var segments := int(end.z-start.z)

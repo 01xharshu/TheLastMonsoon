@@ -1,0 +1,39 @@
+{
+  "status": "APPLIED",
+  "media_count": 503,
+  "media_bytes": 597227330,
+  "reclaimed_bytes": 2795038,
+  "duplicates": [
+    {
+      "path": "docs/characters/arjun/weapon_bow_detail_2026-09-25.png",
+      "bytes": 16509,
+      "sha256": "d1832377c4ea88055265de9d85faeaabe2f9b05f16e12c39d6c861f7f2cc6c25",
+      "replacement": "docs/characters/arjun/weapon_bow_detail_2026-09-23.png"
+    },
+    {
+      "path": "docs/characters/arjun/weapon_spear_detail_2026-09-25.png",
+      "bytes": 8012,
+      "sha256": "79b39c8850ff0874444d11b8e48a28d08bbae9507b2add8d8638eef0056bdee4",
+      "replacement": "docs/characters/arjun/weapon_spear_detail_2026-09-23.png"
+    },
+    {
+      "path": "docs/characters/arjun/weapon_arrow_detail_2026-09-25.png",
+      "bytes": 4743,
+      "sha256": "667569594111a0fc067d962f451233ef1a018d3c648c81e6b17d58a021ca2532",
+      "replacement": "docs/characters/arjun/weapon_arrow_detail_2026-09-23.png"
+    },
+    {
+      "path": "docs/world/captures/service_warehouse_exterior.png",
+      "bytes": 43146,
+      "sha256": "3bf630d201ecd94306f7ad3222a85e8626c142bfdc35011f7b84a923390dfb4f",
+      "replacement": "docs/world/captures/service_stables_interior.png"
+    },
+    {
+      "path": "docs/characters/arjun/climb_review_2026-09-30/grip_reworked.png",
+      "bytes": 2722628,
+      "sha256": "fc4a65df81e7e2f91f3d0840c1bdc26e429cea0e26f5f7d77fed3561dceb571d",
+      "replacement": "docs/characters/arjun/solid_climb_2026-10-01/grip.png"
+    }
+  ],
+  "policy": "Keep distinct evidence and active defects; replace same-view captures in place. No age-based deletion."
+}

@@ -3,7 +3,8 @@ const Detail = preload("res://world/suryagarh/settlements/military_detail.gd")
 
 static func furnish(b, district: Node3D) -> void:
 	var wood := Detail.surface(Color(.29,.19,.10),2)
-	var straw := Detail.surface(Color(.55,.43,.20),2)
+	var straw := ShaderMaterial.new()
+	straw.shader = preload("res://world/suryagarh/settlements/cantonment_straw.gdshader")
 	var stone := Detail.surface(Color(.57,.57,.51))
 	var grain: Node3D = district.get_node("GrainFodderWarehouse")
 	# Keep a broad central loading aisle; storage is lifted clear of damp stone.
@@ -16,8 +17,26 @@ static func furnish(b, district: Node3D) -> void:
 				Detail.prop(grain,"res://objects/household/grain_sack.tscn",Vector3(x-.8+col*.8,.52,-3.2+row*.9)).rotation.y = col*.17
 	for x in [-6.0,6.0]:
 		for z in [1.0,2.3]:
-			b.piece(grain,"LooseFodderBundle",Vector3(x,.65,z),Vector3(2.4,.8,1),straw)
-			for dx in [-.7,.7]: b.piece(grain,"BundleBinding",Vector3(x+dx,.65,z),Vector3(.035,.83,1.03),wood,false)
+			var bundle = b.piece(grain,"LooseFodderBundle",Vector3(x,.65,z),Vector3(2.4,.8,1),straw)
+			for child in bundle.get_children():
+				if child is MeshInstance3D:
+					var hay_mesh := SphereMesh.new()
+					hay_mesh.radius = .5
+					hay_mesh.height = 1
+					child.mesh = hay_mesh
+					child.scale = Vector3(2.4,.8,1)
+			for dx in [-.7,.7]:
+				var binding := MeshInstance3D.new()
+				var ring := TorusMesh.new()
+				ring.inner_radius = .317
+				ring.outer_radius = .340
+				binding.mesh = ring
+				binding.material_override = wood
+				binding.rotation.z = PI/2
+				binding.scale.z = 1.25
+				binding.position = Vector3(x+dx,.65,z)
+				grain.add_child(binding)
+
 	Detail.prop(grain,"res://objects/household/storage/basket.tscn",Vector3(-3,.24,2.7))
 	var stable: Node3D = district.get_node("CavalryStables")
 	for i in 8:
@@ -36,6 +55,7 @@ static func furnish(b, district: Node3D) -> void:
 	var ward: Node3D = district.get_node("MilitaryHospital")
 	for x in [-9.0,-3.0,3.0,9.0]:
 		for z in [-2.0,2.0]:
+			bed_linen(ward,Vector3(x,.868,z),preload("res://world/suryagarh/settlements/military_room_finish.gd").cloth(Color(.78,.76,.66)))
 			b.piece(ward,"BedHeadboard",Vector3(x,1.02,z-1.03),Vector3(1.32,.9,.08),wood)
 			b.piece(ward,"BedsideCabinet",Vector3(x+1.5,.60,z),Vector3(.65,.72,.65),wood)
 			Detail.prop(ward,"res://objects/household/water_pot_visual.tscn",Vector3(x+1.5,.96,z)).scale = Vector3.ONE*.45
@@ -87,6 +107,10 @@ static func cemetery(b, district: Node3D) -> void:
 	b.piece(yard,"RearWall",Vector3(0,.6,-10.5),Vector3(12,1.2,.35),stone)
 	for x in [-3.7,3.7]: b.piece(yard,"GateWall",Vector3(x,.6,10.5),Vector3(4.6,1.2,.35),stone)
 	for x in [-1.35,1.35]: b.piece(yard,"GatePier",Vector3(x,.9,10.5),Vector3(.45,1.8,.45),stone)
+	for side in [-1,1]:
+		for z in [9.4,10.4]: b.piece(yard,"OpenGateFrame",Vector3(side*1.30,.7,z),Vector3(.05,1.3,.05),b.iron)
+		for y in [.16,.75,1.28]: b.piece(yard,"OpenGateRail",Vector3(side*1.30,y,9.9),Vector3(.05,.05,1.05),b.iron)
+		for i in 5: b.piece(yard,"OpenGateBar",Vector3(side*1.30,.7,9.5+i*.2),Vector3(.025,1.2,.025),b.iron)
 	b.piece(yard,"GravelWalk",Vector3(0,.015,0),Vector3(2.1,.03,21),b.ochre,false)
 	for x in [-3.5,3.5]:
 		for i in 5:
@@ -117,3 +141,22 @@ static func roof(b, room: Node3D, w: float, d: float) -> void:
 		for side in [-1,1]:
 			var rafter = b.piece(room,"PrincipalRafter",Vector3(side*w/4,3.59+w*.03,z),Vector3(w/2+.15,.16,.16),wood,false)
 			rafter.rotation.z = side*-.12
+
+static func bed_linen(parent: Node3D, p: Vector3, mat: Material) -> void:
+	var mesh := MeshInstance3D.new()
+	mesh.name = "DrapedWardLinen"
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ix in 16:
+		for iz in 20:
+			for corner in [Vector2(0,0),Vector2(0,1),Vector2(1,0),Vector2(1,0),Vector2(0,1),Vector2(1,1)]:
+				var x: float = -.70+(ix+corner.x)*1.4/16
+				var z: float = -.95+(iz+corner.y)*1.9/20
+				var drop := maxf(0,absf(x)-.58)*1.6
+				var ripple := .006*sin(x*31+z*4)+.003*sin(z*26)
+				surface.add_vertex(Vector3(x,-drop+ripple,z))
+	surface.generate_normals()
+	mesh.mesh = surface.commit()
+	mesh.material_override = mat
+	mesh.position = p
+	parent.add_child(mesh)

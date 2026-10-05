@@ -12,6 +12,10 @@ func _run() -> void:
 	for frame in 8: await physics_frame
 	actor = world.get_node("Player")
 	actor.set_physics_process(false)
+	if "--capture-only" in OS.get_cmdline_user_args():
+		await capture_views()
+		quit()
+		return
 	var lines: Node3D = world.get_node("Settlement/CivilLines")
 	var market: Node3D = world.get_node("Settlement/CantonmentBazaar")
 	check(get_nodes_in_group("civil_lines_bungalows").size()==2,"Two role-specific bungalows")
@@ -23,6 +27,8 @@ func _run() -> void:
 		for building in get_nodes_in_group(group):
 			var entry: Vector3 = building.get_node("Entrance").global_position
 			await walk(str(building.name),[entry,building.to_global(Vector3(0,0.25,2.8 if group == "cantonment_bazaar_stalls" else 0))])
+	for home in get_nodes_in_group("civil_lines_bungalows"):
+		await walk(str(home.name)+"RoomCircuit",[home.to_global(Vector3(0,.25,0)),home.to_global(Vector3(-6,.25,0)),home.to_global(Vector3(6,.25,0)),home.to_global(Vector3(0,.25,0))])
 	var exclusions: Array[RID] = [actor.get_rid()]
 	for body in world.find_children("*","StaticBody3D",true,false):
 		if body.name != "GroundCollision": exclusions.append(body.get_rid())
@@ -59,9 +65,14 @@ func _run() -> void:
 			max_tree_gap = maxf(max_tree_gap,gap)
 			check(absf(gap+.12)<.025,"Tree root gap "+str(gap)+" at "+str(p))
 			tree_count += 1
-	var report := {"date":"2026-10-01","walks":walks,"terrain_samples":samples,"trees_checked":tree_count,"max_tree_foot_gap_m":max_tree_gap,"failures":failures,"status":"construction candidate","renderer":RenderingServer.get_current_rendering_method(),"open":"staff, market services, normal-speed motion, historical and owner art approval"}
+	var report := {"date":Time.get_date_string_from_system(),"walks":walks,"terrain_samples":samples,"trees_checked":tree_count,"max_tree_foot_gap_m":max_tree_gap,"failures":failures,"status":"construction candidate","renderer":RenderingServer.get_current_rendering_method(),"open":"staff, market services, normal-speed motion, historical and owner art approval"}
 	var file := FileAccess.open("res://docs/world/civil_lines_validation.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))
+	file.close()
+	await capture_views()
+	print("CIVIL LINES / BAZAAR: ","PASS" if failures.is_empty() else "FAIL"," | walks=",walks.size()," terrain samples=",samples," failures=",failures)
+	quit(0 if failures.is_empty() else 1)
+func capture_views() -> void:
 	if DisplayServer.get_name() != "headless":
 		var camera := Camera3D.new()
 		world.add_child(camera)
@@ -72,18 +83,19 @@ func _run() -> void:
 			["civil_lines_overview",Vector3(785,85,355),Vector3(675,10,235)],
 			["collector_bungalow",Vector3(665,20,274),Vector3(640,12,235)],
 			["cantonment_bazaar",Vector3(692,36,530),Vector3(632,9,470)],
-			["collector_interior",Vector3(639,12.1,239),Vector3(633,11.6,232)],
-			["officer_interior",Vector3(721,12.1,237),Vector3(726,11.6,232)],
+			["collector_interior",Vector3(639,12.0,235),Vector3(633,11.6,232.5)],
+			["officer_interior",Vector3(721,12.0,235),Vector3(726,11.5,232.5)],
 			["collector_veranda",Vector3(648,12.1,253),Vector3(636,11.8,244)],
-			["bazaar_player_height",Vector3(633,10.3,465),Vector3(640,10.1,452)]
+			["bazaar_player_height",Vector3(633,10.3,465),Vector3(640,10.1,452)],
+			["collector_office",Vector3(633,12.0,238),Vector3(634,11.5,232)],
+			["officer_bedroom",Vector3(728,12.0,239),Vector3(726,11.3,232)]
 		]:
 			camera.global_position = view[1]
 			camera.look_at(view[2])
 			for frame in 8: await process_frame
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://docs/world/captures/"+view[0]+".png")
-	print("CIVIL LINES / BAZAAR: ","PASS" if failures.is_empty() else "FAIL"," | walks=",walks.size()," terrain samples=",samples," failures=",failures)
-	quit(0 if failures.is_empty() else 1)
+
 func check(ok: bool, label: String) -> void:
 	if not ok: failures.append(label)
 func walk(id: String, points: Array) -> void:
