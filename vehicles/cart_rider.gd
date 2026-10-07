@@ -218,8 +218,8 @@ func _physics_process(delta: float) -> void:
 		if cart.get_meta("errand_transfer",false):
 			throttle = 0; steer = 0; speed = 0
 		var previous_speed := speed
-		var target_speed := REVERSE_SPEED if throttle < 0.0 else (FAST_SPEED if travel.payer != null or (role == "driver" and Input.is_action_pressed("sprint")) else CRUISE_SPEED)
-		speed = move_toward(speed, throttle * target_speed, delta * ACCELERATION)
+		var target_speed:float = float(cart.get_meta("draft_reverse_speed",REVERSE_SPEED)) if throttle < 0.0 else (float(cart.get_meta("draft_fast_speed",FAST_SPEED)) if travel.payer != null or (role == "driver" and Input.is_action_pressed("sprint")) else float(cart.get_meta("draft_cruise_speed",CRUISE_SPEED)))
+		speed = move_toward(speed, throttle * target_speed, delta * float(cart.get_meta("draft_acceleration",ACCELERATION)))
 		rider_acceleration = lerpf(rider_acceleration, (speed - previous_speed) / maxf(delta, 0.001), 1.0 - exp(-6.0 * delta))
 		var yaw_step := steering_step(steer, delta, travel.payer != null and throttle == 0.0)
 		rider_turn = lerpf(rider_turn, turning_rate / .42 * clampf(absf(speed) / FAST_SPEED, 0.0, 1.0), 1.0 - exp(-6.0 * delta))

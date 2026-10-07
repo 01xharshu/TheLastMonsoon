@@ -1,10 +1,11 @@
 extends Node3D
-## Isolated 120 x 100 m playable blockout. Z+ is the approach; Z- climbs to the keep.
+## Main-world 120 x 100 m ruined hill fort; standalone scene remains available. Z+ is the approach; Z- climbs to the keep.
 const WIDTH := 120.0
 const DEPTH := 100.0
 const SCENERY_MARGIN := 25.0
 const GRID := 2.0
 const Shape = preload("res://world/ruined_fort/fort_shape.gd")
+const Landscape = preload("res://world/suryagarh/landscape_layout.gd")
 const NAV_FILE := "res://world/ruined_fort/fort_navigation.res"
 @export var embedded_in_world := false
 @export var force_navigation_rebake := false
@@ -21,6 +22,7 @@ var nodes := {}
 var rock_mesh_shared: SphereMesh
 var nav_ground_faces := PackedVector3Array()
 var rng := RandomNumberGenerator.new()
+var landscape = Landscape.new()
 
 func _ready() -> void:
 	rng.seed = 1857
@@ -79,6 +81,9 @@ func height_at(x: float, z: float) -> float:
 	return Shape.height_at(x,z)
 
 func _build_terrain() -> void:
+	if embedded_in_world and not force_navigation_rebake and ResourceLoader.exists(NAV_FILE):
+		_build_cliffs()
+		return
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var half_x: float = WIDTH * 0.5 + (0.0 if embedded_in_world else SCENERY_MARGIN)
@@ -130,7 +135,12 @@ func _build_cliffs() -> void:
 		var side: int = i % 4
 		var x: float = rng.randf_range(-82,82) if side < 2 else (-70.0 if side == 2 else 70.0)
 		var z: float = (-62.0 if side == 0 else 62.0) if side < 2 else rng.randf_range(-64,64)
-		_block("SceneryRidge", "Terrain", Vector3(x,height_at(x,z)+2.8,z), Vector3(rng.randf_range(7,15),rng.randf_range(4,10),rng.randf_range(5,11)), dark_stone, rng.randf_range(-0.45,0.45), false)
+		var size := Vector3(rng.randf_range(7,15),rng.randf_range(4,10),rng.randf_range(5,11))
+		var ground: float = height_at(x,z)
+		if embedded_in_world:
+			var world_site := to_global(Vector3(x,0,z))
+			ground = landscape.height(world_site.x,world_site.z)-global_position.y
+		_block("SceneryRidge", "Terrain", Vector3(x,ground+size.y*0.32,z),size,dark_stone,rng.randf_range(-0.45,0.45),false)
 func _block(label: String, group: String, at: Vector3, size: Vector3, material: Material, yaw: float = 0.0, collides: bool = true) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.name = label
@@ -249,6 +259,11 @@ func _build_architecture() -> void:
 	_wall(15,-47,7,7.6,PI*0.5,true)
 	for column_x in [-5.0,5.0]:
 		_block("WatchtowerPier", "Architecture", Vector3(column_x,height_at(column_x,-47)+4.1,-47),Vector3(1.5,8.2,1.5),stone)
+	_build_climb_route()
+	for step in range(4):
+		var zz: float = -40.8-step*0.6
+		var top: float = height_at(0,-47)+0.175*(step+1)
+		_block("KeepAccessStep", "Architecture",Vector3(0,top-0.15,zz),Vector3(4.0,0.3,0.65),pale)
 	_block("WatchtowerBase", "Architecture", Vector3(0,height_at(0,-47)+0.35,-47), Vector3(13,0.7,8), pale)
 
 func _cover_piece(x: float, z: float, kind: String, yaw: float) -> void:
@@ -263,16 +278,37 @@ func _cover_piece(x: float, z: float, kind: String, yaw: float) -> void:
 		size = Vector3(1.7,1.1,1.7)
 		mat = wood
 	var body := _block(kind.capitalize() + "Cover", "Cover", Vector3(x,h+size.y*0.5,z), size, mat, yaw)
+	if kind == "crate":
+		# Boards and projecting corner straps give the reusable crate readable construction.
+		for side in [-1.0,1.0]:
+			for course in range(5):
+				var board := MeshInstance3D.new()
+				var board_mesh := BoxMesh.new()
+				board_mesh.size = Vector3(1.72,0.18,0.07)
+				board.mesh = board_mesh
+				board.material_override = wood
+				board.position = Vector3(0,-0.43+course*0.21,side*0.87)
+				body.add_child(board)
+			for corner in [-1.0,1.0]:
+				var strap := MeshInstance3D.new()
+				var strap_mesh := BoxMesh.new()
+				strap_mesh.size = Vector3(0.12,1.16,0.09)
+				strap.mesh = strap_mesh
+				strap.material_override = rubble_mat
+				strap.position = Vector3(corner*0.65,0,side*0.91)
+				body.add_child(strap)
 	body.set_meta("cover_type", "full" if kind in ["full","rock"] else "low")
 	for side in [-1.0,1.0]:
 		var marker := Marker3D.new()
 		marker.name = "PeekLeft" if side < 0 else "PeekRight"
-		marker.position = Vector3(side*(size.x*0.5+0.45),0.0,-size.z*0.5-0.6)
+		marker.position = Vector3(side*(size.x*0.5+0.45),-size.y*0.5,-size.z*0.5-0.6)
 		marker.set_meta("cover_type", body.get_meta("cover_type"))
 		body.add_child(marker)
 	var point := Marker3D.new()
 	point.name = "CoverPoint"
-	point.position = Vector3(0,0,-size.z*0.5-0.85)
+	point.position = Vector3(0,-size.y*0.5,-size.z*0.5-0.85)
+	point.add_to_group("fort_cover_points")
+	point.set_meta("cover_normal", body.basis * Vector3.FORWARD)
 	point.set_meta("cover_type", body.get_meta("cover_type"))
 	body.add_child(point)
 
@@ -298,13 +334,53 @@ func _build_props() -> void:
 	for p in [Vector2(-20,20),Vector2(14,11),Vector2(-9,-16),Vector2(22,-34)]:
 		_block("ClothCoveredCrate", "Props", Vector3(p.x,height_at(p.x,p.y)+0.55,p.y),Vector3(1.6,1.1,1.5),cloth,0.2)
 
+func _build_climb_route() -> void:
+	# Optional west shortcut with visible hand/boot stones and a supported landing.
+	var base: float = height_at(-34,-18)
+	var wall := _block("WestClimbWall", "Architecture",Vector3(-34,base+1.8,-18),Vector3(1.2,3.6,4.0),stone)
+	wall.add_to_group("climbable_walls")
+	wall.set_meta("top_y",to_global(Vector3(0,base+3.6,0)).y)
+	wall.set_meta("climb_center_z",wall.global_position.z)
+	wall.set_meta("climb_hold_center_z",wall.global_position.z)
+	wall.set_meta("climb_hold_base_y",to_global(Vector3(0,base+0.4,0)).y)
+	wall.set_meta("climb_hold_spacing",0.4)
+	wall.set_meta("climb_hold_rows",8)
+	wall.set_meta("climb_lane_half_width",0.55)
+	_block("WestWallWalk", "Architecture",Vector3(-32.1,base+3.42,-18),Vector3(3.0,0.36,4.0),pale)
+	for row in range(8):
+		for side in [-1.0,1.0]:
+			_block("ClimbingStone", "Architecture",Vector3(-34.66,base+0.4+row*0.4,-18+side*0.24),Vector3(0.22,0.14,0.38),pale,0,false)
+
 func _build_vegetation() -> void:
+	# Shared tuft mesh, one instanced draw for clustered dry grass.
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for blade in range(7):
+		var angle: float = blade*2.399
+		var base := Vector3(cos(angle),0,sin(angle))*0.12
+		var width := Vector3(cos(angle+PI/2),0,sin(angle+PI/2))*0.035
+		var tip := base+Vector3(cos(angle)*0.13,0.45+blade*0.025,sin(angle)*0.13)
+		for vertex in [base-width,tip,base+width,base+width,tip,base-width]: surface.add_vertex(vertex)
+	surface.generate_normals()
+	var mesh := surface.commit()
+	mesh.surface_set_material(0,grass)
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.mesh = mesh
+	batch.instance_count = 240
+	var index := 0
 	for center in [Vector2(-34,37),Vector2(35,23),Vector2(-39,7),Vector2(34,-15),Vector2(-29,-34),Vector2(32,-42)]:
-		for i in range(13):
-			var x: float = center.x+rng.randf_range(-7,7)
-			var z: float = center.y+rng.randf_range(-6,6)
-			var size := Vector3(rng.randf_range(0.4,1.2),rng.randf_range(0.3,0.8),rng.randf_range(0.4,1.1))
-			_block("DryGrass" if i % 3 else "Shrub", "Vegetation", Vector3(x,height_at(x,z)+size.y*0.5,z),size,grass if i % 3 else shrub,rng.randf_range(-PI,PI),false)
+		for i in range(40):
+			var x: float = center.x+rng.randf_range(-5,5)
+			var z: float = center.y+rng.randf_range(-4,4)
+			var scale_factor: float = rng.randf_range(0.7,1.6)
+			var transform := Transform3D(Basis(Vector3.UP,rng.randf_range(-PI,PI)).scaled(Vector3.ONE*scale_factor),Vector3(x,height_at(x,z),z))
+			batch.set_instance_transform(index,transform)
+			index += 1
+	var visual := MultiMeshInstance3D.new()
+	visual.name = "ClusteredDryGrass"
+	visual.multimesh = batch
+	nodes.Vegetation.add_child(visual)
 
 func _build_navigation() -> void:
 	var region := NavigationRegion3D.new()

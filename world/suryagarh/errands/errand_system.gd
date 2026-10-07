@@ -3,7 +3,7 @@ extends Node3D
 const Target = preload("res://world/suryagarh/errands/errand_target.gd")
 const Actor = preload("res://characters/npcs/households/household_npc_actor.gd")
 const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
-const JOBS := {
+var JOBS := {
 	"port_delivery": {"title":"A consignment from the ship port", "offer":"office", "pickup":"port_cargo", "goal":"office", "kind":"delivery", "pay":18, "description":"Dispatch clerk: Our ship consignment is waiting at the port warehouse. Collect the sealed goods and bring them back to this counting house. Eighteen rupees after handover."},
 	"urgent_medicine": {"title":"Medicine for a sick neighbour", "offer":"medicine_request", "pickup":"medicine_supply", "goal":"medicine_request", "kind":"delivery", "pay":10, "description":"Neighbour: Please fetch the prepared medicine packet from the market dispenser and bring it to me. My family is waiting. Ten rupees on delivery."},
 	"emergency_money": {"title":"Emergency money for a family", "offer":"money_sender", "pickup":"money_sender", "goal":"money_receiver", "kind":"delivery", "pay":12, "description":"Traveller: Carry this sealed purse to my brother by the port. It belongs to his family and cannot be spent. Your twelve-rupee wage is separate."},
@@ -13,6 +13,8 @@ const JOBS := {
 	"market_sort": {"title":"Sort the market stores", "offer":"market", "goal":"work", "kind":"work", "pay":5, "description":"Market receiver: Put the sacks at the sorting table in order. Hold the work interaction for three seconds, then return to me for five rupees."},
 }
 var pending_passenger: Dictionary = {}
+var roadside: Node
+var pending_roadside: Dictionary = {}
 var expanded: Node
 var stages: Dictionary = {}
 # Last paid day remains even when a new shift is accepted or cancelled.
@@ -35,6 +37,7 @@ var toast_seconds := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	JOBS.merge(preload("res://world/suryagarh/errands/roadside_opportunities.gd").catalogue())
 	player = get_parent().get_node("Player")
 	_build_ui()
 	call_deferred("_build_world")
@@ -43,7 +46,7 @@ func _build_world() -> void:
 	await get_tree().physics_frame
 	# Flat surveyed village road and the existing merchant counting house.
 	_person("road", "StrandedTraveller", Vector3(-378,7.2,315), "village_farmer")
-	_person("office", "DispatchClerk", Vector3(-365.4,7.44,312.7), "village_farmer")
+	_person("office", "DispatchClerk", Vector3(-365.4,7.44,312.7), "record_clerk")
 	_person("market", "MarketReceiver", Vector3(-389,7.2,321), "village_woman")
 	_prop("board", Vector3(-383,8.45,319), "WORK NOTICES", Vector3(1.35,1.45,.12))
 	_prop("parcel", Vector3(-368.6,8.34,311.35), "CLOTH DISPATCH", Vector3(.45,.25,.35))
@@ -73,6 +76,9 @@ func _build_world() -> void:
 	floor_levels.office = 7.44; floor_levels.parcel = 7.44
 	expanded = preload("res://world/suryagarh/errands/expanded_jobs.gd").new()
 	expanded.name = "ExpandedJobs"; add_child(expanded); expanded.configure(self)
+	roadside = preload("res://world/suryagarh/errands/roadside_opportunities.gd").new()
+	roadside.name="RoadsideOpportunities";add_child(roadside);roadside.configure(self,pending_roadside)
+	pending_roadside.clear()
 	expanded.restore_trip(pending_passenger); pending_passenger.clear()
 	for id in ["board","work"]:
 		var post := MeshInstance3D.new()
@@ -81,7 +87,10 @@ func _build_world() -> void:
 		targets[id].add_child(post)
 
 func _person(id: String, label: String, at: Vector3, model: String) -> void:
-	var actor := Actor.new()
+	var purpose := model in ["dock_porter","boatman","record_clerk"]
+	var actor = preload("res://characters/npcs/indian/purpose_work_actor.gd").new() if purpose else Actor.new()
+	if purpose: actor.purpose_role = model
+	actor.set_meta("source_model", model)
 	actor.name = label; actor.position = at
 	actor.movement_enabled = false
 	actor.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -116,6 +125,7 @@ func _near(id: String) -> bool:
 
 func use_endpoint(id: String, actor: CharacterBody3D) -> void:
 	if actor != player or not _near(id): return
+	if roadside!=null and roadside.use_endpoint(id): return
 	if expanded != null and expanded.use_endpoint(id): return
 	if not active.is_empty():
 		var job: Dictionary = JOBS[active]
@@ -125,6 +135,7 @@ func use_endpoint(id: String, actor: CharacterBody3D) -> void:
 			stages[active] = "carrying"; _message("Collected: " + job.title + ". " + objective(active)); return
 		if id == "work" and job.kind == "work" and stage == "accepted":
 			_clear_job_waypoint()
+			WorldAudio.play_at("wood_knock",targets.work.global_position,-23.0)
 			stages[active] = "worked"; _message("Stores sorted. Return to the market receiver for your wage."); return
 		if id == job.goal and job.kind == "delivery" and stage == "carrying":
 			_finish(active); return
@@ -142,7 +153,7 @@ func current_job_day() -> int:
 	return int(floor(get_parent().get_node("GameTimeSystem").total_game_minutes/1440.0))+1
 
 func repeatable(id: String) -> bool:
-	return id in ["merchant_parcel","market_sort","port_delivery"]
+	return id in ["merchant_parcel","market_sort","port_delivery"] or JOBS.get(id,{}).get("roadside",false)
 
 func job_available(id: String) -> bool:
 	if not JOBS.has(id): return false
@@ -153,9 +164,12 @@ func job_available(id: String) -> bool:
 func accept(id: String) -> bool:
 	if not active.is_empty() or not job_available(id): return false
 	var job: Dictionary = JOBS[id]
+	if job.get("roadside",false) and source != job.offer: return false
 	if source != "board" and source != job.offer: return false
 	if not _near(source): return false
 	active = id; stages[id] = "accepted"
+	if id=="family_cart" and expanded!=null: expanded.bind_passenger(id,"passenger","family_home")
+	if roadside!=null: roadside.accepted(id)
 	close_panel(); _message("Job accepted: " + job.title + ". " + objective(id))
 	return true
 
@@ -163,6 +177,7 @@ func _finish(id: String) -> void:
 	# The caller verifies real progress, receiver and range before payment.
 	if active != id or not job_available(id): return
 	_clear_job_waypoint()
+	if roadside!=null: roadside.completed(id)
 	completed_days[id] = current_job_day()
 	stages[id] = "completed"; active = ""
 	player.get_node("InventoryComponent").add_item("rupees",int(JOBS[id].pay))
@@ -173,11 +188,14 @@ func cancel() -> void:
 	if active.is_empty(): return
 	_clear_job_waypoint()
 	if expanded != null: expanded.release_passenger()
+	if roadside!=null: roadside.cancelled(active)
 	stages.erase(active); active = ""
 	close_panel(); _message("Job cancelled. Entrusted goods returned; no wage paid.")
 
 func objective(id: String) -> String:
 	var job: Dictionary = JOBS[id]
+	if job.has("road_objective"):
+		return job.road_objective if stages.get(id,"")=="carrying" else job.road_pickup
 	if job.has("pickup"):
 		if job.kind == "escort": return "Stop a passenger cart beside the waiting brother." if stages.get(id,"") == "accepted" else "Drive the passenger home and stop to let him out."
 		var stops := {"port_cargo":"the consignment at the port warehouse", "office":"the goods to the counting-house clerk", "medicine_supply":"the medicine from the market dispenser", "medicine_request":"the medicine to the worried neighbour", "money_sender":"the sealed purse from the sender", "money_receiver":"the sealed purse to the family at the port"}
@@ -188,10 +206,12 @@ func objective(id: String) -> String:
 	return "Return to the market receiver for payment." if stages.get(id, "") == "worked" else "Hold the interaction at the sorting table for three seconds."
 
 func export_state() -> Dictionary:
-	return {"active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true), "passenger_trip":expanded.export_trip() if expanded != null else pending_passenger.duplicate(true)}
+	return {"roadside":roadside.export_state() if roadside!=null else pending_roadside.duplicate(true), "active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true), "passenger_trip":expanded.export_trip() if expanded != null else pending_passenger.duplicate(true)}
 
 func restore_state(data: Dictionary) -> void:
 	if expanded != null: expanded.release_passenger()
+	pending_roadside=data.get("roadside",{}).duplicate(true) if data.get("roadside",{}) is Dictionary else {}
+	if roadside!=null: roadside.restore_state(pending_roadside)
 	toast_seconds = 0.0
 	if is_instance_valid(toast): toast.hide()
 	stages.clear(); completed_days.clear(); active = ""
@@ -212,6 +232,8 @@ func restore_state(data: Dictionary) -> void:
 		if stage == "accepted" or (stage == "carrying" and kind in ["delivery","escort"]) or (stage == "worked" and kind == "work"):
 			active = requested; stages[active] = stage
 	pending_passenger = data.get("passenger_trip",{}).duplicate(true) if data.get("passenger_trip",{}) is Dictionary else {}
+	if roadside!=null: roadside.restore_active()
+	if active=="family_cart" and expanded!=null: expanded.bind_passenger(active,"passenger","family_home")
 	if expanded != null:
 		expanded.restore_trip(pending_passenger); pending_passenger.clear()
 
@@ -288,6 +310,7 @@ func open_panel(id: String = "journal") -> void:
 	else:
 		for job_id in JOBS:
 			var job: Dictionary = JOBS[job_id]
+			if job.get("roadside",false) and not targets.has(job.offer): continue
 			if id not in ["journal","board",job.offer]: continue
 			if not job_available(job_id):
 				_line(job.title + (" — Paid today · Return tomorrow" if repeatable(job_id) else " — Completed")); continue

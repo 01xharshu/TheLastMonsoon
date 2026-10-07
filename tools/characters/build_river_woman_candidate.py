@@ -59,16 +59,6 @@ shader=cotton.node_tree.nodes['Principled BSDF']
 shader.inputs['Base Color'].default_value=(.29,.24,.095,1)
 shader.inputs['Roughness'].default_value=.95
 upper.data.materials.clear();upper.data.materials.append(cotton)
-# Covered torso only: retain the native surface in source, conservatively mask
-# under the blouse in the export rather than changing the woman's physique.
-visible=body.vertex_groups.get('Visible period skin')
-covered=[]
-if visible:
-    for v in body.data.vertices:
-        torso=sum(g.weight for g in v.groups if body.vertex_groups[g.group].name in ['pelvis','spine_01','spine_02','spine_03'])
-        if .82<v.co.z<1.20 and abs(v.co.x)<.18:covered.append(v.index)
-    visible.remove(covered)
-
 # Preserve opaque foundation from the same native body surface, using fitted
 # bra and narrow rear/broad front brief regions; no visible anatomy is added.
 vertices=[];faces=[];source_indices=[]
@@ -99,11 +89,14 @@ for i,index in enumerate(source_indices):
         name=body.vertex_groups[assignment.group].name
         if name in bone_names:(foundation.vertex_groups.get(name) or foundation.vertex_groups.new(name=name)).add([i],assignment.weight,'REPLACE')
 foundation['presentation']='Opaque adult foundation derived from original MPFB body; fit review open'
+# Clothing correctives retain the entire native body in every pose.
+from river_cloth_correctives import fit_river_cloth
+fit_river_cloth(ROOT,rig,body,[upper]+[bpy.data.objects[n] for n in ['Wrapped sari lower drape','Sari lower border','Woven sari pallu over blouse']])
 source=OUT/'river_woman_motion.blend'
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
-# Bake the existing conservative skin/upper masks before export while retaining
-# complete source body and foundation in the saved working file.
-masked={body,bpy.data.objects['Fitted cotton upper base']}
+# Bake helper exclusion and clothing-only masks. The full human body and
+# separate opaque foundation are both exported.
+masked={body}
 depsgraph=bpy.context.evaluated_depsgraph_get()
 for original in masked:
     mesh=bpy.data.meshes.new_from_object(original.evaluated_get(depsgraph),preserve_all_data_layers=True,depsgraph=depsgraph)
@@ -111,10 +104,10 @@ for original in masked:
     for group in original.vertex_groups:cutout.vertex_groups.new(name=group.name)
     cutout.parent=rig;cutout.matrix_parent_inverse=original.matrix_parent_inverse.copy();cutout.matrix_basis=original.matrix_basis.copy()
     cutout.modifiers.new('Armature deformation','ARMATURE').object=rig
-rig.data.pose_position='POSE';bpy.context.scene.frame_set(1)
+rig.data.pose_position='POSE';rig.animation_data_create();rig.animation_data.action=bpy.data.actions.get('idle');bpy.context.scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
 for obj in bpy.data.objects:
-    if obj.type=='MESH' and obj not in masked and obj != foundation:obj.select_set(True)
+    if obj.type=='MESH' and obj not in masked :obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
 runtime=ROOT/'characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb'
 runtime.parent.mkdir(parents=True,exist_ok=True)

@@ -19,9 +19,11 @@ func _ready() -> void:
 	add_child(shape)
 	var visual := MeshInstance3D.new()
 	var mesh := SphereMesh.new()
-	mesh.radius = 0.10
-	mesh.height = 0.27
+	mesh.radius = 0.05
+	mesh.height = 0.13
 	visual.mesh = mesh
+	visual.position.y = -0.07
+	visual.name = "FruitVisual"
 	visual.rotation.z = 0.4
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.93, 0.53, 0.07)
@@ -43,3 +45,7 @@ func _finish_collection() -> void:
 	collected = true
 	harvested.emit(forage_id)
 	queue_free()
+
+func pickup_point() -> Vector3:
+	# The palm meets the upper skin of the grounded, hand-sized fruit.
+	return to_global(Vector3(0, -0.015, 0))

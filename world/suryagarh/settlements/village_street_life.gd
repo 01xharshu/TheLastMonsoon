@@ -18,6 +18,7 @@ func _ready() -> void:
 	_resident("ClothMarketVisitor","res://characters/npcs/street_residents/merchant.glb",HOME_MARKET,0.0)
 	_resident("GrainStoreBuyer","res://characters/npcs/street_residents/landowner.glb",HOME_GRAIN,3.0)
 	add_child(preload("res://world/suryagarh/settlements/household_cattle.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/village_river_routine.gd").new())
 
 func _resident(label:String,path:String,route:Array[Vector2],delay:float) -> void:
 	var actor:=Actor.new();actor.name=label
@@ -36,6 +37,7 @@ func _lane(label:String,points:Array,width:float,wear:float) -> void:
 	material.set_shader_parameter("earth_texture",preload("res://assets/nature/materials/brown_mud_dry_diff_1k.jpg"))
 	material.set_shader_parameter("earth_normal",preload("res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg"))
 	material.set_shader_parameter("lane_width",width);material.set_shader_parameter("wheel_wear",wear)
+	material.set_shader_parameter("wet_earth",1.0 if wear>0 else 0.0)
 	var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var run:=0.0
 	for i in points.size()-1:

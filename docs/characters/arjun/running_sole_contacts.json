@@ -1,0 +1,10 @@
+{
+	"all_ground_boot_minimum_y_m": 0.00799970887601376,
+	"hardware_fps_verified": false,
+	"jump_release": true,
+	"maximum_planted_boot_y_m": 0.00800026766955853,
+	"minimum_planted_boot_y_m": 0.0079997181892395,
+	"samples": 117,
+	"status": "PASS",
+	"visual_approved": false
+}

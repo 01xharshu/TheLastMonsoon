@@ -1,0 +1,54 @@
+[
+  {
+    "key": "fire",
+    "download": "https://opengameart.org/sites/default/files/fire-1.wav",
+    "page": "https://opengameart.org/content/fire-crackling",
+    "author": "AntumDeluge",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "context": "Fireplace crackling",
+    "sha256": "26702de8a195bcbafeae72034861d875a1b7917168a25106f4e1957ecdddf7e5",
+    "source_file": "WorkingAssets/Audio/world_sources/fire.wav",
+    "runtime_file": "audio/ambience/fire.wav",
+    "changes": "Mono 22050 Hz PCM, high/low pass, 40 ms fade-in; loop recordings overlap-crossfaded by 100 ms; sparrow excerpt first 5 seconds"
+  },
+  {
+    "key": "cow",
+    "download": "https://upload.wikimedia.org/wikipedia/commons/4/48/Mudchute_cow_1.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mudchute_cow_1.ogg",
+    "author": "Secretlondon",
+    "license": "CC-BY-SA-3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "context": "Irish Moiled cow in London; generic cattle vocalization candidate, not breed-specific zebu approval",
+    "sha256": "ac0a7dc56e6abc7b17a45d8bea5644350516dd2b995f1da506849892aaf8650b",
+    "source_file": "WorkingAssets/Audio/world_sources/cow.ogg",
+    "runtime_file": "audio/ambience/cow.wav",
+    "changes": "Mono 22050 Hz PCM, high/low pass, 40 ms fade-in; loop recordings overlap-crossfaded by 100 ms; sparrow excerpt first 5 seconds"
+  },
+  {
+    "key": "river",
+    "download": "https://upload.wikimedia.org/wikipedia/commons/3/32/Rivernoise.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:Rivernoise.ogg",
+    "author": "Secretlondon",
+    "license": "CC-BY-SA-3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "context": "River Esk, Scotland; water texture candidate, not a recording of the game location",
+    "sha256": "fe4493ab8e309de8c4b58c82cc1e84e7831add270547da854a2ae927ee774e05",
+    "source_file": "WorkingAssets/Audio/world_sources/river.ogg",
+    "runtime_file": "audio/ambience/river.wav",
+    "changes": "Mono 22050 Hz PCM, high/low pass, 40 ms fade-in; loop recordings overlap-crossfaded by 100 ms; sparrow excerpt first 5 seconds"
+  },
+  {
+    "key": "sparrow",
+    "download": "https://upload.wikimedia.org/wikipedia/commons/0/01/House_Sparrow.ogg",
+    "page": "https://commons.wikimedia.org/wiki/File:House_Sparrow.ogg",
+    "author": "Gypsypkd",
+    "license": "Public-domain dedication",
+    "license_url": "https://commons.wikimedia.org/wiki/File:House_Sparrow.ogg#Licensing",
+    "context": "House sparrow recorded in India",
+    "sha256": "74be92d234318a9d164b5a07b93e5a6a70220484b02684b776c94288ff73ab50",
+    "source_file": "WorkingAssets/Audio/world_sources/sparrow.ogg",
+    "runtime_file": "audio/ambience/sparrow.wav",
+    "changes": "Mono 22050 Hz PCM, high/low pass, 40 ms fade-in; loop recordings overlap-crossfaded by 100 ms; sparrow excerpt first 5 seconds"
+  }
+]

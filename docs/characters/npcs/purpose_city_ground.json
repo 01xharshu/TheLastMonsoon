@@ -1,0 +1,30 @@
+{
+  "actors": {
+    "boatman": {
+      "collider": "@StaticBody3D@2:<StaticBody3D#414279802636>",
+      "gap_m": -0.0000445842742919922,
+      "ground_y": 2.87999987602234,
+      "minimum_body_y": 2.87995529174805,
+      "passed": true,
+      "position": "(-186.0, 2.879999, 674.0)"
+    },
+    "dock_porter": {
+      "collider": "@StaticBody3D@2:<StaticBody3D#414279802636>",
+      "gap_m": -0.0000510215759277344,
+      "ground_y": 2.87999987602234,
+      "minimum_body_y": 2.87994885444641,
+      "passed": true,
+      "position": "(-189.0, 2.879999, 680.0)"
+    },
+    "record_clerk": {
+      "collider": "@StaticBody3D@47471:<StaticBody3D#3266507278885>",
+      "gap_m": -0.000113487243652344,
+      "ground_y": 7.4399995803833,
+      "minimum_body_y": 7.43988609313965,
+      "passed": true,
+      "position": "(-365.4, 7.44, 312.7)"
+    }
+  },
+  "passed": true,
+  "scope": "stationary complete-body lowest surface versus collision ground in actual city; moving terrain and visual acceptance separate"
+}

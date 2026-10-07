@@ -37,10 +37,13 @@ func place_flag(point: Vector2, label: String) -> void:
 	marker.bind_visual()
 	# The pole base is authored at y=0; cloth extends away from the roadway.
 	visual.rotation.y = PI
+	visual.add_to_group("wind_flag_roots")
 	for animator in visual.find_children("*", "AnimationPlayer", true, false):
-		if animator.has_animation("wind_loop"):
-			animator.get_animation("wind_loop").loop_mode = Animation.LOOP_LINEAR
-			animator.play("wind_loop")
+		var wind_clip: String = "wind" if animator.has_animation("wind") else "wind_loop"
+		if animator.has_animation(wind_clip):
+			animator.get_animation(wind_clip).loop_mode = Animation.LOOP_LINEAR
+			animator.add_to_group("wind_flags")
+			animator.play(wind_clip)
 			animator.seek(float(placements.size())*.31,true)
 	var collision := CollisionShape3D.new()
 	var shape := CylinderShape3D.new()

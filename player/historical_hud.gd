@@ -8,9 +8,11 @@ const BRASS := Color(0.61,0.47,0.27)
 const INK := Color(0.035,0.046,0.038,0.38)
 var weapon_label: Label
 var status_label: Label
+var money_label: Label
 var player: CharacterBody3D
 var heading: float = 0.0
 var health: float = 100.0
+var health_trail: float = 100.0
 var sight_pulse := 0.0
 var human_target := false
 
@@ -40,6 +42,7 @@ func label(text_value: String, font_size: int, serif: bool = false) -> Label:
 
 func _ready() -> void:
 	player = get_parent().get_parent() as CharacterBody3D
+	health_trail = player.health
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hud_theme := Theme.new()
@@ -70,6 +73,11 @@ func _ready() -> void:
 	content.get_node("HintLabel").add_theme_font_size_override("font_size",13)
 	status_label = label("VITALITY",10)
 	status_label.name = "VitalityLabel"
+	status_label.visible = false
+	money_label = label("0",14,true)
+	money_label.name = "MoneyLabel"
+	money_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	money_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	weapon_label = label("UNARMED",24,true)
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	weapon_label.name = "WeaponLabel"
@@ -90,8 +98,9 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 func _layout() -> void:
 	if not is_instance_valid(weapon_label): return
 	place(status_label,Vector2(32,size.y-301),Vector2(236,16))
-	place($SurvivalHUD,Vector2(28,size.y-271),Vector2(248,58))
-	place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
+	place(money_label,Vector2(199,size.y-76),Vector2(109,28))
+	place($SurvivalHUD,Vector2(20,size.y-164),Vector2(144,144))
+	place(weapon_label,Vector2(size.x-450,size.y-234),Vector2(420,34))
 	place($InventoryPanel,Vector2((size.x-640)/2,(size.y-420)/2),Vector2(640,420))
 	place($PrimaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62),Vector2(500,38))
 	place($SecondaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62+36),Vector2(500,32))
@@ -102,7 +111,9 @@ func _process(delta: float) -> void:
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)
 	var combat: Node = player.get_node_or_null("CombatComponent")
+	money_label.text = str(player.inventory.get_item_count("rupees"))
 	health = player.health
+	health_trail = health if health >= health_trail else move_toward(health_trail,health,delta*32.0)
 	if combat:
 		weapon_label.text = combat.get_hud_text()
 	else:
@@ -119,9 +130,9 @@ func _process(delta: float) -> void:
 		weapon_label.text = pistol.get_hud_text()
 	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
 		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN"}[equipment.selected]
-		place(weapon_label,Vector2(size.x-303,size.y-181),Vector2(258,28))
+		place(weapon_label,Vector2(size.x-303,size.y-331),Vector2(258,28))
 	else:
-		place(weapon_label,Vector2(size.x-450,size.y-114),Vector2(420,34))
+		place(weapon_label,Vector2(size.x-450,size.y-234),Vector2(420,34))
 	queue_redraw()
 
 func _update_gun_sight(delta: float) -> void:
@@ -173,7 +184,7 @@ func _draw_ammo() -> void:
 	var capacity: int = 5 if sidearm else (2 if double_barrel else 1)
 	var spare: int = player.inventory.get_item_count("pistol_ball" if sidearm else ("shot_charge" if double_barrel else "paper_cartridges"))
 	var x: float = size.x-318
-	var y: float = size.y-190
+	var y: float = size.y-340
 	draw_style_box(box(Color(.04,.045,.044,.45),Color(BRASS,.42)),Rect2(x,y,288,126))
 	draw_line(Vector2(x+16,y+42),Vector2(x+272,y+42),Color(IVORY,.35),1,true)
 	_draw_gun_silhouette(Vector2(x+19,y+70),sidearm,double_barrel)
@@ -210,20 +221,31 @@ func _draw() -> void:
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
-	var y: float = size.y-322
-	draw_style_box(box(INK,Color(BRASS,0.36)),Rect2(20,y,264,113))
-	draw_line(Vector2(32,y+8),Vector2(272,y+8),BRASS,1,true)
-	diamond(Vector2(152,y+8),3,IVORY)
-	var health_per_segment: float = player.MAX_HEALTH / 5.0
-	for segment in 5:
-		var segment_x: float = 32.0 + float(segment) * 50.0
-		var fill: float = clampf((health - float(segment) * health_per_segment) / health_per_segment, 0.0, 1.0)
-		draw_rect(Rect2(segment_x, size.y-281, 46.0, 10.0), Color(0.08,0.08,0.07,0.55))
-		if fill > 0.0:
-			draw_rect(Rect2(segment_x, size.y-281, 46.0 * fill, 10.0), IVORY if health > 20.0 else Color(0.78,0.28,0.22))
+	# Thin framed health strip follows the reference; delayed fill makes damage readable.
+	var track := Rect2(178,size.y-95,140,7)
+	draw_rect(track.grow(2),Color(0.025,0.03,0.025,0.8))
+	draw_rect(track.grow(1),Color(IVORY,0.42),false,1)
+	draw_rect(track,Color(0.10,0.12,0.10,0.8))
+	var fraction: float = clampf(health/player.MAX_HEALTH,0,1)
+	var trail: float = clampf(health_trail/player.MAX_HEALTH,0,1)
+	draw_rect(Rect2(track.position,Vector2(track.size.x*trail,track.size.y)),Color(0.65,0.44,0.22))
+	var health_color := IVORY if fraction>0.4 else (Color(0.84,0.61,0.31) if fraction>0.2 else Color(0.81,0.28,0.20))
+	draw_rect(Rect2(track.position,Vector2(track.size.x*fraction,track.size.y)),health_color)
+	for i in range(1,5):
+		var x: float = track.position.x+track.size.x*float(i)/5.0
+		draw_line(Vector2(x,track.position.y),Vector2(x,track.end.y),Color(0.045,0.05,0.04,0.7),1)
+	# The purse shares the health strip's alignment and engraved brass/ink treatment.
+	var purse := Rect2(178,size.y-76,140,28)
+	draw_style_box(box(Color(0.035,0.042,0.035,0.76),Color(BRASS,0.85)),purse)
+	draw_line(purse.position+Vector2(1,1),purse.position+Vector2(139,1),Color(IVORY,0.45),1,true)
+	var coin := purse.position+Vector2(14,14)
+	draw_circle(coin,7,Color(BRASS,0.22))
+	draw_arc(coin,7,0,TAU,32,IVORY,1,true)
+	draw_arc(coin,4.5,0,TAU,24,Color(BRASS,0.85),1,true)
+	draw_line(coin+Vector2(-1,-2),coin+Vector2(1,2),IVORY,1,true)
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
-		var horse_y: float = size.y-401
+		var horse_y: float = size.y-211
 		draw_style_box(box(INK,Color(BRASS,0.45)),Rect2(20,horse_y,310,32))
 		draw_string(SERIF,Vector2(34,horse_y+19),"HORSE STAMINA",HORIZONTAL_ALIGNMENT_LEFT,-1,17,IVORY)
 		draw_rect(Rect2(185,horse_y+13,128,6),Color(0.24,0.23,0.18))
@@ -242,4 +264,4 @@ func _draw() -> void:
 			var direction: String = ["N","E","S","W"][int(angle)/90]
 			draw_string(font,Vector2(x-5,94),direction,HORIZONTAL_ALIGNMENT_LEFT,-1,11,IVORY)
 	if gear == null or gear.stowed or gear.selected not in [1,3]:
-		draw_line(Vector2(size.x-295,size.y-69),Vector2(size.x-30,size.y-69),BRASS,1,true)
+		draw_line(Vector2(size.x-295,size.y-219),Vector2(size.x-30,size.y-219),BRASS,1,true)

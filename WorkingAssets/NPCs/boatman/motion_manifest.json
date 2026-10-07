@@ -1,9 +1,735 @@
 {
   "status": "MOTION_CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/boatman/boatman_motion_candidate.blend",
-  "source_sha256": "279f1fb8a69ef5c08915b46025069964d0b93a1253826085d00c62d0fffa8ed7",
+  "source_sha256": "8b29befd8b5786edae5d28784165018ba9e2c7f84e8e6763f83d2df428458000",
   "runtime": "characters/npcs/motion/boatman/boatman_rigged_candidate.glb",
-  "runtime_sha256": "8fe02e3a9db0c4fe60e29af885b9c60459de56a8ac5350d7eb475742cc33d57d",
+  "runtime_sha256": "d6a390087cbdcb50998a1e49cb1fdf44c8a79208aebbbd513a2f565aee799cbe",
+  "cloth_correctives": {
+    "Knee length wrapped dhoti": [
+      {
+        "sample": 0,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12957426432467584
+      },
+      {
+        "sample": 1,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.12663584195576408
+      },
+      {
+        "sample": 2,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12140839877473575
+      },
+      {
+        "sample": 3,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.11760294344458673
+      },
+      {
+        "sample": 4,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.11273681586052708
+      },
+      {
+        "sample": 5,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10157628504636658
+      },
+      {
+        "sample": 6,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10718238955449685
+      },
+      {
+        "sample": 7,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10796833948091518
+      },
+      {
+        "sample": 8,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10323894206908008
+      },
+      {
+        "sample": 9,
+        "corrected_vertices": 1150,
+        "max_rest_correction_m": 0.09586854944078904
+      },
+      {
+        "sample": 10,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.08989389764360813
+      },
+      {
+        "sample": 11,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10916953710182281
+      },
+      {
+        "sample": 12,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12099316499225235
+      },
+      {
+        "sample": 13,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.13429049283696542
+      },
+      {
+        "sample": 14,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.14168221103612413
+      },
+      {
+        "sample": 15,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.14471158341613768
+      },
+      {
+        "sample": 16,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1493529926515043
+      },
+      {
+        "sample": 17,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.15305867944781956
+      },
+      {
+        "sample": 18,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.15599491359257125
+      },
+      {
+        "sample": 19,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1607430083711662
+      },
+      {
+        "sample": 20,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.16317003171643568
+      },
+      {
+        "sample": 21,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.16463338633831143
+      },
+      {
+        "sample": 22,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.165795050685869
+      },
+      {
+        "sample": 23,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.16892342746019148
+      },
+      {
+        "sample": 24,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.16674251245261695
+      },
+      {
+        "sample": 25,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.16692032588771502
+      },
+      {
+        "sample": 26,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.17010411426370184
+      },
+      {
+        "sample": 27,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1720916615990941
+      },
+      {
+        "sample": 28,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.17411253402532986
+      },
+      {
+        "sample": 29,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.17562031836393216
+      },
+      {
+        "sample": 30,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.17558695461569107
+      },
+      {
+        "sample": 31,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.1766298774122184
+      },
+      {
+        "sample": 32,
+        "corrected_vertices": 1149,
+        "max_rest_correction_m": 0.17143787258671192
+      },
+      {
+        "sample": 33,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.15738876237761945
+      },
+      {
+        "sample": 34,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.14160592413758866
+      },
+      {
+        "sample": 35,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1351068151174514
+      },
+      {
+        "sample": 36,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1302548660943005
+      },
+      {
+        "sample": 37,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12751334231651806
+      },
+      {
+        "sample": 38,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.12478543430868186
+      },
+      {
+        "sample": 39,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.12286044710052349
+      },
+      {
+        "sample": 40,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12028748655067201
+      },
+      {
+        "sample": 41,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.11056855633207957
+      },
+      {
+        "sample": 42,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.09767491061300847
+      },
+      {
+        "sample": 43,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.08992551873785372
+      },
+      {
+        "sample": 44,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.09015247553720793
+      },
+      {
+        "sample": 45,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.08693176271208544
+      },
+      {
+        "sample": 46,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.10140794786013478
+      },
+      {
+        "sample": 47,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.10944337254476467
+      },
+      {
+        "sample": 48,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.11432567531627481
+      },
+      {
+        "sample": 49,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.11858185132715403
+      },
+      {
+        "sample": 50,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.12241474740368341
+      },
+      {
+        "sample": 51,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.12711936414974667
+      },
+      {
+        "sample": 52,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.13459287885738747
+      },
+      {
+        "sample": 53,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.13816120752743064
+      },
+      {
+        "sample": 54,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1461016923698059
+      },
+      {
+        "sample": 55,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1566889339547955
+      },
+      {
+        "sample": 56,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.15897878734009083
+      },
+      {
+        "sample": 57,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.16302256593644024
+      },
+      {
+        "sample": 58,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.16610155524808654
+      },
+      {
+        "sample": 59,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1735423366966595
+      },
+      {
+        "sample": 60,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1696217536244236
+      },
+      {
+        "sample": 61,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.17023639407650226
+      },
+      {
+        "sample": 62,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.17197969240819708
+      },
+      {
+        "sample": 63,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.17128664629115742
+      },
+      {
+        "sample": 64,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.170755548533022
+      },
+      {
+        "sample": 65,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1774501278417386
+      },
+      {
+        "sample": 66,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1773535607566534
+      },
+      {
+        "sample": 67,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.1647582919308631
+      },
+      {
+        "sample": 68,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.17098597070860297
+      },
+      {
+        "sample": 69,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.15806425373077418
+      },
+      {
+        "sample": 70,
+        "corrected_vertices": 1151,
+        "max_rest_correction_m": 0.1425442083917094
+      },
+      {
+        "sample": 71,
+        "corrected_vertices": 1152,
+        "max_rest_correction_m": 0.13383125011623836
+      }
+    ],
+    "Dhoti woven border": [
+      {
+        "sample": 0,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13123393359401658
+      },
+      {
+        "sample": 1,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12829671559247743
+      },
+      {
+        "sample": 2,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12307142188766206
+      },
+      {
+        "sample": 3,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11926731972868115
+      },
+      {
+        "sample": 4,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.114524661132681
+      },
+      {
+        "sample": 5,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.10575135291139025
+      },
+      {
+        "sample": 6,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11118455216317762
+      },
+      {
+        "sample": 7,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11347115936019418
+      },
+      {
+        "sample": 8,
+        "corrected_vertices": 575,
+        "max_rest_correction_m": 0.10514654545698299
+      },
+      {
+        "sample": 9,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.0978642087596946
+      },
+      {
+        "sample": 10,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.09228211926692087
+      },
+      {
+        "sample": 11,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11170747894683027
+      },
+      {
+        "sample": 12,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12362253750662112
+      },
+      {
+        "sample": 13,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13610975213151796
+      },
+      {
+        "sample": 14,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.14348636516922567
+      },
+      {
+        "sample": 15,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1478528385680179
+      },
+      {
+        "sample": 16,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.15303764298671782
+      },
+      {
+        "sample": 17,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1564228131428953
+      },
+      {
+        "sample": 18,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1591196698005857
+      },
+      {
+        "sample": 19,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16351828801836632
+      },
+      {
+        "sample": 20,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16586584200786042
+      },
+      {
+        "sample": 21,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1672623197750874
+      },
+      {
+        "sample": 22,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16817834057829406
+      },
+      {
+        "sample": 23,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17236553838122579
+      },
+      {
+        "sample": 24,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16683967935659835
+      },
+      {
+        "sample": 25,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16713210189834204
+      },
+      {
+        "sample": 26,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16734219771630807
+      },
+      {
+        "sample": 27,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16926991696913965
+      },
+      {
+        "sample": 28,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17126676622140571
+      },
+      {
+        "sample": 29,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17507302533048216
+      },
+      {
+        "sample": 30,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1802330095608967
+      },
+      {
+        "sample": 31,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.18309972756544446
+      },
+      {
+        "sample": 32,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17580408776420814
+      },
+      {
+        "sample": 33,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16135611065938973
+      },
+      {
+        "sample": 34,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.14650277633358222
+      },
+      {
+        "sample": 35,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13776169716838554
+      },
+      {
+        "sample": 36,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13497848779704105
+      },
+      {
+        "sample": 37,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1325701594888129
+      },
+      {
+        "sample": 38,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13017873428018137
+      },
+      {
+        "sample": 39,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12871265666123158
+      },
+      {
+        "sample": 40,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12611616041399606
+      },
+      {
+        "sample": 41,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11428912574364727
+      },
+      {
+        "sample": 42,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.10141965106849038
+      },
+      {
+        "sample": 43,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.09464486902509135
+      },
+      {
+        "sample": 44,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.09185875238978215
+      },
+      {
+        "sample": 45,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.08866879640419462
+      },
+      {
+        "sample": 46,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.10315568576506931
+      },
+      {
+        "sample": 47,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.111170948763401
+      },
+      {
+        "sample": 48,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.11603685849112577
+      },
+      {
+        "sample": 49,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12027877729912687
+      },
+      {
+        "sample": 50,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12409902821441769
+      },
+      {
+        "sample": 51,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.12893656667769174
+      },
+      {
+        "sample": 52,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13496782216784123
+      },
+      {
+        "sample": 53,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.14000040885857354
+      },
+      {
+        "sample": 54,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.14805498948710819
+      },
+      {
+        "sample": 55,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1586545404733562
+      },
+      {
+        "sample": 56,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.15932370247732558
+      },
+      {
+        "sample": 57,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16334587623394073
+      },
+      {
+        "sample": 58,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16630192426016208
+      },
+      {
+        "sample": 59,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17374219057149634
+      },
+      {
+        "sample": 60,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.167977145808023
+      },
+      {
+        "sample": 61,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16860240933810428
+      },
+      {
+        "sample": 62,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1703705656222281
+      },
+      {
+        "sample": 63,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16969063556450661
+      },
+      {
+        "sample": 64,
+        "corrected_vertices": 575,
+        "max_rest_correction_m": 0.16917488870147493
+      },
+      {
+        "sample": 65,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17944142163071375
+      },
+      {
+        "sample": 66,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1793198464158394
+      },
+      {
+        "sample": 67,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.16868591986862783
+      },
+      {
+        "sample": 68,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.17268139449426145
+      },
+      {
+        "sample": 69,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.1597192780885762
+      },
+      {
+        "sample": 70,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.14420027821937015
+      },
+      {
+        "sample": 71,
+        "corrected_vertices": 576,
+        "max_rest_correction_m": 0.13549099506432224
+      }
+    ]
+  },
   "actions": [
     "idle",
     "walk"
@@ -19,7 +745,6 @@
   "max_ankle_target_error_m": 0.013371975986478976,
   "gait_scope": "flat-floor baked foot targets; no terrain, toe-roll or full motion approval",
   "motion_approved": false,
-  "in_world": false,
-  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation",
-  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
+  "in_world": true,
+  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation"
 }

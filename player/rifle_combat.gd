@@ -5,6 +5,7 @@ const RELOAD = preload("res://audio/weapons/enfield_reload.wav")
 const EMPTY = preload("res://audio/weapons/enfield_empty.wav")
 const PISTOL_SHOT = preload("res://audio/weapons/adams_shot.wav")
 const RELOAD_SECONDS = preload("res://player/enfield_loading_sequence.gd").RELOAD_SECONDS
+const DOUBLE_RELOAD_SECONDS := 1.5
 @export var weapon_selection := 1
 var rounds := 1
 var pending_rounds := 0
@@ -21,6 +22,7 @@ func pistol() -> bool: return weapon_selection == 3
 func double_gun() -> bool: return weapon_selection == 5
 func capacity() -> int: return 5 if pistol() else (2 if double_gun() else 1)
 func ammo_id() -> String: return "pistol_ball" if pistol() else ("shot_charge" if double_gun() else "paper_cartridges")
+func reload_duration() -> float: return 3.5 if pistol() else (DOUBLE_RELOAD_SECONDS if double_gun() else RELOAD_SECONDS)
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -69,6 +71,7 @@ func _process(delta: float) -> void:
 				rounds = mini(capacity(),rounds+pending_rounds)
 				loaded = rounds>0
 				pending_rounds = 0
+				if sound.stream == RELOAD: sound.stop()
 	recoil = move_toward(recoil,0,delta*.32)
 	if visual.equipment.selected == weapon_selection:
 		visual.equipment.aiming = aiming
@@ -99,8 +102,9 @@ func start_reload() -> void:
 		sound.stream = EMPTY
 		sound.play()
 		return
-	reload_remaining = 3.5 if pistol() else (4.4 if double_gun() else RELOAD_SECONDS)
+	reload_remaining = reload_duration()
 	sound.stream = RELOAD
+	sound.pitch_scale = maxf(1.0, RELOAD.get_length() / reload_remaining)
 	sound.play()
 
 func fire() -> void:
@@ -110,6 +114,7 @@ func fire() -> void:
 		sound.play()
 		return
 	rounds -= 1
+	sound.pitch_scale = 1.0
 	loaded = rounds>0
 	shots_fired += 1
 	ControllerFeedback.pulse("shot")

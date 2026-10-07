@@ -28,8 +28,11 @@ var health: float = MAX_HEALTH
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or health <= 0.0: return
 	health = maxf(0.0, health - amount)
+	WorldAudio.play_at("impact",global_position)
 	var climb := get_node_or_null("ClimbComponent")
 	if climb != null and climb.active: climb.release_grip()
+	var hit_visual := get_node_or_null("VisualRoot/CharacterVisual")
+	if hit_visual != null: hit_visual.hit_phase = 0.0
 
 func receive_combat_hit(amount: float, attacker: Node3D) -> void:
 	if not get_meta("climbing",false) and get_meta("combat_blocking",false) and survival.stamina>=5:
@@ -71,6 +74,7 @@ var third_person_height: float
 var third_person_distance: float
 var aim_camera_distance: float = 0.55
 var aim_blend := 0.0
+var climb_camera_blend := 0.0
 var aim_sound: AudioStreamPlayer
 const AIM_CLICK = preload("res://audio/weapons/aim_click.wav")
 
@@ -546,8 +550,10 @@ func _update_weapon_camera(delta: float) -> void:
 	aim_blend = move_toward(aim_blend, 1.0 if gun_aiming else 0.0, delta * 4.5)
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
 	var arm: SpringArm3D = $CameraPivot/SpringArm3D
-	arm.spring_length = lerpf(third_person_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
-	arm.position.x = lerpf(0.6, 0.50, aim_blend)
+	climb_camera_blend = move_toward(climb_camera_blend,1.0 if get_meta("climbing",false) or ($ClimbComponent.catch_seconds>0 and not is_on_floor()) else 0.0,delta*3.0)
+	var travel_distance := lerpf(third_person_distance,maxf(third_person_distance,2.8),climb_camera_blend)
+	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
+	arm.position.x = lerpf(lerpf(.6,.35,climb_camera_blend), .50, aim_blend)
 	var stance_height: float = $StealthStance.camera_height()
 	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
@@ -756,6 +762,7 @@ func _handle_jump() -> void:
 			jump_velocity
 		)
 		$ClimbComponent.arm_jump()
+		WorldAudio.play_at("cloth",global_position,-24.0)
 		ControllerFeedback.pulse("jump")
 
 
@@ -846,6 +853,7 @@ func _advance_interaction_hold(delta: float) -> void:
 		hold_target = null
 		hold_elapsed = 0.0
 		set_meta("interaction_reach",false)
+		WorldAudio.interaction(completed)
 		completed.interact(self)
 		ControllerFeedback.pulse("interaction")
 
@@ -879,6 +887,7 @@ func _try_primary_interaction() -> void:
 		return
 
 
+	WorldAudio.interaction(current_interactable)
 	current_interactable.interact(
 		self
 	)
@@ -905,6 +914,7 @@ func _try_secondary_interaction() -> void:
 		return
 
 
+	WorldAudio.interaction(current_interactable)
 	current_interactable.secondary_interact(
 		self
 	)

@@ -42,6 +42,7 @@ func fire() -> bool:
 	var arrow: Node3D = PROJECTILE.new()
 	actor.get_parent().add_child(arrow)
 	arrow.launch(origin,(target-origin).normalized(),actor)
+	WorldAudio.play_at("bow_loose",origin,-15.0)
 	arrows_fired += 1
 	ControllerFeedback.pulse("bow")
 	draw_fraction = 0.0

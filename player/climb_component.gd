@@ -104,7 +104,12 @@ func try_start() -> bool:
 		var low_ray := PhysicsRayQueryParameters3D.create(lower,lower+forward*1.5)
 		low_ray.exclude = [actor.get_rid()]
 		hit = space.intersect_ray(low_ray)
-	if hit.is_empty() or absf(hit.normal.y) > 0.65: return false
+	if not hit.is_empty() and hit.normal.dot(forward) > -.65:
+		var structural_origin: Vector3 = actor.global_position-Vector3.UP*.85
+		var structural_ray := PhysicsRayQueryParameters3D.create(structural_origin,structural_origin+forward*1.5)
+		structural_ray.exclude = [actor.get_rid()]
+		hit = space.intersect_ray(structural_ray)
+	if hit.is_empty() or absf(hit.normal.y) > 0.65 or hit.normal.dot(forward) > -.65: return false
 	if bool(hit.collider.get_meta("climb_blocked",false)): return false
 	var authored: bool = hit.collider.is_in_group("climbable_walls")
 	var discovered: Dictionary = {}
@@ -117,14 +122,16 @@ func try_start() -> bool:
 			active = true
 			return true
 		discovered = opportunities.survey(actor,hit)
-		if discovered.is_empty(): return false
+		if discovered.is_empty():
+			if OS.get_cmdline_user_args().has("--debug-opportunities"): print("CATCH reject no supported platform")
+			return false
 		layers = discovered.layers
 		authored = true
 	has_holds = not layers.is_empty() or hit.collider.has_meta("climb_hold_base_y")
 	if has_holds:
 		# Only a real, newly launched jump can catch the tall wall route.
 		if catch_seconds <= 0.0 or actor.is_on_floor() or actor.global_position.y-launch_y < .35: return false
-		if actor.global_position.distance_to(hit.position) > .90: return false
+		if Vector2(actor.global_position.x-hit.position.x,actor.global_position.z-hit.position.z).length() > .90: return false
 		route_missing_rows = hit.collider.get_meta("climb_hold_missing_rows",[])
 	if layers.is_empty() and authored and absf(hit.position.z-float(hit.collider.get_meta("climb_center_z",hit.position.z)))>float(hit.collider.get_meta("climb_lane_half_width",.45)): return false
 	wall_normal = hit.normal
@@ -176,21 +183,34 @@ func try_start() -> bool:
 		reachable_row = -1
 		for index in layers.size():
 			var height: float = layers[index].y-actor.global_position.y
-			if height >= .25 and height <= .95 and Vector2(layers[index].x-actor.global_position.x,layers[index].z-actor.global_position.z).length() < .95:
+			if height >= .25 and height <= 1.10 and Vector2(layers[index].x-actor.global_position.x,layers[index].z-actor.global_position.z).length() < .95:
 				reachable_row = index
-	if reachable_row < (0 if not layers.is_empty() else int(hit.collider.get_meta("climb_min_hand_row",3))) or reachable_row >= hold_rows or reachable_row in route_missing_rows: return false
+	if reachable_row < (0 if not layers.is_empty() else int(hit.collider.get_meta("climb_min_hand_row",3))) or reachable_row >= hold_rows or reachable_row in route_missing_rows:
+		if OS.get_cmdline_user_args().has("--debug-opportunities"): print("CATCH reject reach ",actor.global_position," layers=",layers)
+		return false
 	var catch_height: float = layers[reachable_row].y if not layers.is_empty() else hold_base_y+reachable_row*hold_spacing+.07
-	if not layers.is_empty(): grip = layers[reachable_row]+wall_normal*.18
+	if not layers.is_empty():
+		grip = layers[reachable_row]+wall_normal*.36
 	if catch_height-actor.global_position.y < .25: return false
-	grip.y = catch_height-.90
+	grip.y = catch_height-(.78 if not layers.is_empty() else .90)
+	if not layers.is_empty(): grip = outside_architecture(grip)
 	hang_grip = grip
 	grip.y += .35
 	# Stop the vertical pull with the boots below the coping. The last phase
 	# must carry the hips and trailing feet over the lip before landing.
 	crest = Vector3(hit.position.x,top-0.65,hit.position.z)+wall_normal*.36
-	var clearance := Vector3(crest.x,landing.y-.39,crest.z)
-	if not solid.can_move(actor,start,hang_grip,1.6): return false
-	if not solid.can_move(actor,crest,clearance,.9) or not solid.can_move(actor,clearance,landing,.9): return false
+	if not layers.is_empty():
+		crest = layers[-1]+wall_normal*.36
+		crest.y = top-.65
+		crest = outside_architecture(crest)
+	var clearance := Vector3(crest.x,_clearance_y(),crest.z)
+	if not solid.can_move(actor,start,hang_grip,1.6):
+		if OS.get_cmdline_user_args().has("--debug-opportunities"): print("CATCH reject entry sweep ",start," to ",hang_grip)
+		return false
+	var across := Vector3(landing.x,clearance.y,landing.z)
+	if not solid.can_move(actor,crest,clearance,.9) or not solid.can_move(actor,clearance,across,.9) or not solid.can_move(actor,across,landing,.9):
+		if OS.get_cmdline_user_args().has("--debug-opportunities"): print("CATCH reject mantle ",crest," ",clearance," ",across," ",landing)
+		return false
 	# Each ascent step has time for a reach, boot placement and upward push.
 	ascent_steps = maxi(1, roundi((crest.y - grip.y) / (hold_spacing*.5)))
 	duration = maxf(2.8, (ascent_steps * .55) / .58)
@@ -275,11 +295,12 @@ func _physics_process(delta: float) -> void:
 		destination = grip.lerp(crest, minf(1.0, stepped))
 	elif t < .90:
 		# Raise into a crouch at the coping; stand as the hips move onto it.
-		var clearance := Vector3(crest.x, landing.y - .39, crest.z)
+		var clearance := Vector3(crest.x,_clearance_y(),crest.z)
 		destination = crest.lerp(clearance,smoothstep(.78,.90,t))
 	else:
-		var clearance := Vector3(crest.x, landing.y - .39, crest.z)
-		destination = clearance.lerp(landing,smoothstep(.90,1.0,t))
+		var clearance := Vector3(crest.x,_clearance_y(),crest.z)
+		var across := Vector3(landing.x,clearance.y,landing.z)
+		destination = clearance.lerp(across,smoothstep(.90,.96,t)) if t < .96 else across.lerp(landing,smoothstep(.96,1.0,t))
 	var height: float = lerpf(1.6,.9,smoothstep(.78,.88,t))
 	if not solid.move_to(actor,destination,height):
 		progress = previous_progress
@@ -330,3 +351,12 @@ func _hold(row: int, side: String, foot: bool, tangent: Vector3) -> Vector3:
 	if row >= hold_rows:
 		point.y = landing.y-.94+.08
 	return point
+
+func _clearance_y() -> float:
+	return maxf(landing.y-.39,layers[-1].y+.48) if not layers.is_empty() else landing.y-.39
+
+func outside_architecture(point: Vector3) -> Vector3:
+	var edge := 0.0
+	for layer in layers:
+		if layer.y <= point.y+.95: edge = maxf(edge,(layer-wall_point).dot(wall_normal))
+	return point+wall_normal*maxf(0.0,edge+.36-(point-wall_point).dot(wall_normal))

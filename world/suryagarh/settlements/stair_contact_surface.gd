@@ -9,7 +9,7 @@ var tread_bias := .5
 var tread_top := .065
 
 static func add_flight(parent: Node3D, x: float, base: float, length: float, height: float, breadth: float, steps: int, toward_back: bool, bias: float, top: float, wood: Material) -> void:
-	var surface := load("res://world/suryagarh/settlements/stair_contact_surface.gd").new()
+	var surface = load("res://world/suryagarh/settlements/stair_contact_surface.gd").new()
 	surface.name = "StairContactSurface"
 	surface.position = Vector3(x, base, 0)
 	surface.run = length

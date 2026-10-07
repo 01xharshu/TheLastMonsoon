@@ -28,6 +28,7 @@ func _ready() -> void:
 
 func start(action: String) -> void:
 	if visual.skeleton == null: return
+	WorldAudio.play_at("water_drink" if action=="water" else "cloth",actor.global_position)
 	kind = action
 	elapsed = 0.0
 	actor.set_meta("item_use",kind)

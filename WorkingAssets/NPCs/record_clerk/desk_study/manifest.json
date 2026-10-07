@@ -1,0 +1,9 @@
+{
+  "status": "ISOLATED_UNAPPROVED",
+  "source": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/WorkingAssets/NPCs/record_clerk/desk_study/record_clerk_seat.blend",
+  "runtime": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/characters/npcs/review/record_clerk_seat.glb",
+  "live_source_sha256": "6e939061d1f970c9614d69bc24794a0c510e8fd4cb343b05f9104ee801cae737",
+  "seat_cloth_samples": 33,
+  "body_vertices": 13380,
+  "scope": "seat entry and garment fit study; hand/seat/floor contact and renderer approval required"
+}

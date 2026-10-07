@@ -96,6 +96,8 @@ func add_item(
 	)
 
 
+	var owner_actor := get_parent() as Node3D
+	if owner_actor != null and owner_actor.is_node_ready():WorldAudio.play_at("metal_clink" if item_id=="rupees" else "pickup",owner_actor.global_position,-24.0)
 	item_added.emit(
 		item_id,
 		amount,

@@ -1,0 +1,31 @@
+{
+	"limit": "short native smoke route; shared desktop contention; no controlled FPS comparison",
+	"physical_viewport": "(20480, 11520)",
+	"render_3d_pixels": "(2048.0, 1152.0)",
+	"renderer": "forward_plus",
+	"routes": {
+		"cantonment": {
+			"cpu_physics_ms": 3.795,
+			"cpu_process_ms": 28.047,
+			"frame_ms_p50": 28.152,
+			"frame_ms_p95": 46.831,
+			"movement_m": 14.066707611084
+		},
+		"civil_lines": {
+			"cpu_physics_ms": 4.493,
+			"cpu_process_ms": 45.425,
+			"frame_ms_p50": 51.072,
+			"frame_ms_p95": 56.59,
+			"movement_m": 14.252326965332
+		},
+		"village": {
+			"cpu_physics_ms": 3.873,
+			"cpu_process_ms": 30.719,
+			"frame_ms_p50": 34.661,
+			"frame_ms_p95": 38.092,
+			"movement_m": 14.1658630371094
+		}
+	},
+	"scale_3d": 0.100000001490116,
+	"status": "PASS"
+}

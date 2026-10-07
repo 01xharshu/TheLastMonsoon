@@ -84,6 +84,7 @@ func _ready() -> void:
 	bandage_button.pressed.connect(func():
 		consumables.use_bandage()
 		_refresh_inventory())
+	if visible:WorldAudio.play_at("cloth",inventory.get_parent().global_position,-23.0)
 	visible = false
 
 
@@ -174,6 +175,7 @@ func toggle_inventory() -> void:
 func open_inventory() -> void:
 	if get_parent().get_parent().get_parent().get_meta("detention_action", "") != "": return
 
+	WorldAudio.play_at("cloth",inventory.get_parent().global_position,-23.0)
 	visible = true
 
 
@@ -192,6 +194,7 @@ func open_inventory() -> void:
 
 func close_inventory() -> void:
 
+	if visible:WorldAudio.play_at("cloth",inventory.get_parent().global_position,-23.0)
 	visible = false
 
 

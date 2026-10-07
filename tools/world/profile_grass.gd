@@ -21,7 +21,6 @@ func run() -> void:
 	if label == "before" and not OS.get_environment("TLM_GRASS_BASELINE").is_empty(): landscape_path = OS.get_environment("TLM_GRASS_BASELINE")
 	assert(FileAccess.file_exists(landscape_path),"Before profile requires the saved pre-edit landscape snapshot")
 	var landscape: Node3D = load(landscape_path).instantiate()
-	if label == "before": restore_baseline_shader(landscape)
 	scene.add_child(landscape)
 	var env := WorldEnvironment.new()
 	var environment := Environment.new()
@@ -98,24 +97,3 @@ func run() -> void:
 	var report := {"label":label,"renderer":RenderingServer.get_current_rendering_driver_name(),"device":RenderingServer.get_video_adapter_name(),"resolution":[1280,720],"grass_instance_records":total,"grass_batches":batches,"root_samples":root_samples,"maximum_root_surface_error_m":max_root_error,"views":results,"scope":"actual baked terrain/nature; no buildings, humans or active gameplay; isolated rendering comparison, not full-game FPS"}
 	FileAccess.open("res://docs/world/grass_"+label+"_profile.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t")+"\n")
 	quit()
-
-func restore_baseline_shader(landscape: Node3D) -> void:
-	# Exact shader from the recorded Oct-01 candidate; external shader changed later.
-	var shader := Shader.new()
-	shader.code = """shader_type spatial;
-render_mode cull_disabled, diffuse_burley;
-void vertex() {
- vec3 rooted = (MODEL_MATRIX * vec4(VERTEX,1.0)).xyz;
- float weight = clamp(VERTEX.y / 0.28,0.0,1.0);
- float breeze = sin(TIME*1.7+rooted.x*.73+rooted.z*.51);
- VERTEX.xz += vec2(0.8,0.35)*breeze*0.018*weight*weight;
-}
-void fragment() {
- ALBEDO = COLOR.rgb * mix(0.52,0.92,smoothstep(0.0,0.75,UV.y));
- ROUGHNESS = 0.94;
- SPECULAR = 0.12;
-}"""
-	for batch in landscape.get_node("NatureTiles").find_children("*","MultiMeshInstance3D",true,false):
-		if str(batch.name).begins_with("Grass"):
-			var mat := batch.multimesh.mesh.surface_get_material(0) as ShaderMaterial
-			if mat: mat.shader = shader

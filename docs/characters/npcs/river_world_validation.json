@@ -1,0 +1,26 @@
+{
+  "actions": [
+    "depart"
+  ],
+  "blocked_frames": 0,
+  "in_world": true,
+  "issues": [
+    "physical journey returns and delivers",
+    "stage visited fill",
+    "stage visited wash",
+    "stage visited talk",
+    "stage visited pickup_pot",
+    "stage visited return",
+    "stage visited deliver",
+    "stage visited home",
+    "no duplicate departure same day",
+    "no predawn departure"
+  ],
+  "passed": false,
+  "shore": [
+    80.1108703613281,
+    0.0299999993294477,
+    166.0
+  ],
+  "visual_approved": false
+}

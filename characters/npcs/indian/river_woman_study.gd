@@ -1,6 +1,8 @@
 extends "res://characters/npcs/indian/indian_npc_candidate.gd"
 ## Reuses the adult MPFB rig. Action/blocking study, not approved cloth/contact.
 const Contact = preload("res://characters/npcs/indian/river_contact_solver.gd")
+var river_cloth_meshes: Array[MeshInstance3D] = []
+var previous_cloth_keys: Array[int] = [-1,-1]
 var foot_rest: Dictionary = {}
 var hand_errors: Dictionary = {}
 var foot_errors: Dictionary = {}
@@ -13,6 +15,11 @@ var member_index := 0
 var water_full := false
 var delivered := false
 var action := "home"
+var travel_override := false
+var travel_position := Vector3.ZERO
+var travel_direction := Vector3.FORWARD
+var ground_height: Callable
+var water_level := .01
 var home := Vector3.ZERO
 var bank := Vector3.ZERO
 const STAGES := ["depart", "arrive", "lower_pot", "fill", "lift_pot", "wash", "sit_down", "talk", "stand_up", "pickup_pot", "return", "deliver", "home"]
@@ -25,6 +32,9 @@ func _ready() -> void:
 	for node in find_children("*", "Skeleton3D", true, false):
 		skeleton = node as Skeleton3D
 		break
+	for mesh in find_children("*", "MeshInstance3D", true, false):
+		if mesh.mesh != null and mesh.mesh.get_blend_shape_count() > 0 and str(mesh.mesh.get_blend_shape_name(0)).begins_with("River cloth"):
+			river_cloth_meshes.append(mesh)
 	var figure := animation_player.get_node(animation_player.root_node) as Node3D
 	figure.rotation.y = PI
 	for side in ["l", "r"]:
@@ -80,6 +90,7 @@ func _evaluate(delta: float) -> void:
 		if index < DURATIONS.size() - 1:
 			time -= DURATIONS[index]
 	var blend := clampf(time / float(DURATIONS[stage]), 0.0, 1.0)
+	_apply_river_cloth()
 	action = STAGES[stage]
 	water_full = stage >= 4
 	delivered = action == "home" or (action == "deliver" and blend >= .5)
@@ -103,12 +114,14 @@ func _evaluate(delta: float) -> void:
 	if action == "lift_pot": crouch = 1.0-smoothstep(0.0, 1.0, blend)
 	global_position = home.lerp(bank, blend) if action == "depart" else bank
 	if action in ["return", "deliver", "home"]: global_position = bank.lerp(home, blend) if action == "return" else home
+	if walking and travel_override: global_position = travel_position
 	var figure := animation_player.get_node(animation_player.root_node) as Node3D
 	if action == "deliver": crouch = sin(PI*blend)
 	if action == "pickup_pot": crouch = sin(PI*pickup_progress)
 	figure.position.y = -.66 * crouch - .64 * seated - (.02 if walking else 0.0)
 	figure.position.z = -.18*crouch
 	var facing := home-bank if action in ["return", "deliver", "home"] else bank-home
+	if walking and travel_override: facing = travel_direction
 	rotation.y = atan2(-facing.x, -facing.z)
 	if action == "pickup_pot": rotation.y += PI*smoothstep(0.0, 1.0, maxf((blend-.75)*4.0, 0.0))
 	if seated > 0.0: rotation.y += (.35 if member_index == 0 else -.35) * seated
@@ -126,12 +139,13 @@ func _evaluate(delta: float) -> void:
 			var lift := 0.0 if phase < .6 else .055*sin(PI*(phase-.6)/.4)
 			target += global_basis * Vector3(0, lift, z)
 		target += global_basis * Vector3(0, 0, -.10*crouch-.36*seated)
+		if ground_height.is_valid(): target.y += float(ground_height.call(target.x,target.z))-global_position.y
 		var pole := global_position + global_basis * Vector3(rest.origin.x, .35, -1.0)
 		foot_errors[side] = Contact.reach(skeleton, "thigh_"+side, "calf_"+side, "foot_"+side, target, pole)
 		Contact.orient(skeleton, "foot_"+side, global_basis*rest.basis)
 	# Pot follows a continuous, externally defined path; hands reach its handles.
 	var carry := Vector3(0, .88, -.30)
-	var dip := Vector3(0, .09, -.62)
+	var dip := Vector3(0, .09+water_level-.01-bank.y, -.62)
 	var pot_local := carry
 	var tilt := 0.0
 	if action == "lower_pot":
@@ -285,3 +299,14 @@ func _load_river_motion() -> void:
 	animation_tree.active = true
 	step_motion(0.0)
 
+
+func _apply_river_cloth() -> void:
+	var position_in_keys := clampf(elapsed/.75, 0.0, 96.0)
+	var lower := int(floor(position_in_keys))
+	var upper := mini(lower+1,96)
+	for mesh in river_cloth_meshes:
+		for old in previous_cloth_keys:
+			if old>=0 and old!=lower and old!=upper: mesh.set_blend_shape_value(old,0.0)
+		mesh.set_blend_shape_value(lower,1.0 if upper==lower else 1.0-position_in_keys+lower)
+		if upper!=lower: mesh.set_blend_shape_value(upper,position_in_keys-lower)
+	previous_cloth_keys.assign([lower,upper])

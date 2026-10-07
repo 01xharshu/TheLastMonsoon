@@ -1,52 +1,66 @@
 {
 	"failures": [],
 	"passed": true,
-	"rendered": false,
+	"rendered": true,
 	"samples": [
 		{
-			"distance_m": 0.171130463480949,
+			"distance_m": 0.177525132894516,
 			"mode": "held_arm_clearance"
 		},
 		{
-			"foot_drift_m": 0.00000010536712125031,
+			"foot_drift_m": 0.000000136571401299079,
 			"fruit": "(-0.15, 0.135, 0.45)",
-			"largest_frame_palm_step_m": 0.103600323200226,
-			"palm_error_m": 0.0336680002510548
+			"largest_frame_palm_step_m": 0.108047120273113,
+			"palm_error_m": 0.0240503773093224
 		},
 		{
-			"distance_m": 0.297425627708435,
+			"distance_m": 0.297741502523422,
 			"mode": "held_arm_clearance"
 		},
 		{
-			"foot_drift_m": 0.000000195994175555825,
+			"foot_drift_m": 0.0000000942432194506182,
 			"fruit": "(0.15, 0.135, 0.65)",
-			"largest_frame_palm_step_m": 0.129544362425804,
-			"palm_error_m": 0.0571530126035213
+			"largest_frame_palm_step_m": 0.13314089179039,
+			"palm_error_m": 0.047938484698534
 		},
 		{
 			"largest_frame_palm_step_m": 0.0320303440093994,
 			"mode": "eat"
 		},
 		{
-			"largest_frame_palm_step_m": 0.0175605565309525,
+			"largest_frame_palm_step_m": 0.0252328086644411,
 			"mode": "store"
 		},
 		{
-			"boot_sole_error_m": 0.000000141859054558768,
+			"boot_sole_error_m": 0.000000207573175430194,
 			"mode": "slope"
 		},
 		{
-			"local_foot_error_m": 0.000000149754811218372,
-			"local_hand_error_m": 0.000000338489314799517,
+			"mode": "uneven_support",
+			"sole_error_m": 0.0000000396370887735184
+		},
+		{
+			"local_foot_error_m": 0.000000137381917397761,
+			"local_hand_error_m": 0.000000347631669228576,
 			"mode": "moving_eat"
 		},
 		{
-			"distance_m": 0.171688586473465,
+			"joint_distance_m": {
+				"index": 0.0153436318331222,
+				"middle": 0.00194128618059804,
+				"pinky": 0.00940747810605317,
+				"ring": 0.00275946755308166,
+				"thumb": 0.0112194642327802
+			},
+			"mode": "finger_surface"
+		},
+		{
+			"distance_m": 0.165831491351128,
 			"mode": "store_arm_clearance"
 		},
 		{
-			"local_foot_error_m": 0.000000298116333397047,
-			"local_hand_error_m": 0.000000266560078898692,
+			"local_foot_error_m": 0.000000147702010622197,
+			"local_hand_error_m": 0.000000466480145178139,
 			"mode": "moving_store"
 		},
 		{

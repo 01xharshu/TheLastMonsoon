@@ -1,5 +1,5 @@
 """Derive an adult shirtless rescue actor from the retained MPFB farmer source."""
-import bpy, json, hashlib
+import bpy, json, hashlib, math
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'WorkingAssets/NPCs/rescue_peasant'
@@ -14,6 +14,53 @@ retain_complete_body(body)
 for name in ['Fitted cotton upper base', 'Kurta loose lower panel', 'Soft cotton head wrap', 'Head wrap fold']:
     obj = bpy.data.objects.get(name)
     if obj: bpy.data.objects.remove(obj, do_unlink=True)
+# Refine only the rescue outfit: a continuous folded waist above the foundation.
+# The torso, arms and legs remain the same retained MPFB human.
+hip_groups = {g.index for g in body.vertex_groups if g.name.startswith(('pelvis','thigh_','spine01','spine_01'))}
+hip = [v.co for v in body.data.vertices if .80 < v.co.z < .95
+       and sum(g.weight for g in v.groups if g.group in hip_groups) > .6]
+waist_x = max(abs(v.x) for v in hip) + .025
+waist_y = max(abs(v.y) for v in hip) + .025
+for name,levels in [
+ ('Knee length wrapped dhoti',[(.43,.25,.21),(.49,.255,.21),(.65,.23,.20),
+                              (.86,waist_x,waist_y),(.920,waist_x,waist_y),(.935,waist_x+.003,waist_y+.003)]),
+ ('Dhoti woven border',[(.43,.252,.212),(.46,.254,.214)])]:
+ obj=bpy.data.objects[name]
+ materials=list(obj.data.materials)
+ sides=64;verts=[];faces=[]
+ for row,(z,rx,ry) in enumerate(levels):
+  for column in range(sides):
+   angle=column*math.tau/sides
+   amplitude=.015 if z>.85 else .045
+   fold=1+amplitude*math.cos(angle*8+row*.25)
+   verts.append((math.cos(angle)*rx*fold,math.sin(angle)*ry*fold,z))
+ for row in range(len(levels)-1):
+  for column in range(sides):
+   nxt=(column+1)%sides
+   faces.append((row*sides+column,row*sides+nxt,(row+1)*sides+nxt,(row+1)*sides+column))
+ mesh=bpy.data.meshes.new(name+' continuous cotton');mesh.from_pydata(verts,[],faces);mesh.update()
+ uv=mesh.uv_layers.new(name="Cotton wrap UV")
+ for polygon in mesh.polygons:
+  crosses_seam=any(mesh.loops[loop].vertex_index%sides==sides-1 for loop in polygon.loop_indices)
+  for loop in polygon.loop_indices:
+   index=mesh.loops[loop].vertex_index
+   u=(index%sides)/sides
+   if crosses_seam and index%sides==0:u=1.0
+   uv.data[loop].uv=(u,(mesh.vertices[index].co.z-levels[0][0])/(levels[-1][0]-levels[0][0]))
+ for material in materials:mesh.materials.append(material)
+ for polygon in mesh.polygons:polygon.use_smooth=True
+ obj.data=mesh;obj.vertex_groups.clear()
+ for vertex in mesh.vertices:
+  influence=.22*max(0,min(1,(.86-vertex.co.z)/.43))
+  left=max(0,min(1,.5+vertex.co.x/.5))
+  for bone,weight in [('pelvis',1-influence),('thigh_l',influence*left),('thigh_r',influence*(1-left))]:
+   (obj.vertex_groups.get(bone) or obj.vertex_groups.new(name=bone)).add([vertex.index],weight,'REPLACE')
+ obj.shape_key_add(name='Basis')
+ compression=obj.shape_key_add(name='Knockdown cotton compression')
+ compression.value=0.0
+ for vertex in compression.data:
+  if vertex.co.y>.115:vertex.co.y=.115+(vertex.co.y-.115)*.28
+ obj['construction']='Continuous folded waist and knee wrap; full body clearance; restrained weighted hem; lying cotton compression'
 body['combat_role'] = 'Clearly adult Indian peasant; shirtless; opaque dhoti'
 body['source_provenance'] = 'Existing MakeHuman/MPFB farmer; underlying body retained'
 # Foundation follows this same MPFB body and keeps the complete editable surface.
@@ -31,7 +78,8 @@ foundation_vertices = [v.index for v in foundation.data.vertices if .70 < v.co.z
     and sum(g.weight for g in v.groups if g.group in arm_bones) < .01]
 group.add(foundation_vertices, 1.0, 'REPLACE')
 mask = foundation.modifiers.new('Foundation cut', 'MASK'); mask.vertex_group = group.name
-for vertex in foundation.data.vertices: vertex.co += vertex.normal * .004
+foundation_normals = [vertex.normal.copy() for vertex in foundation.data.vertices]
+for vertex, normal in zip(foundation.data.vertices, foundation_normals): vertex.co += normal * .004
 material = bpy.data.materials.new('Opaque cotton foundation'); material.diffuse_color=(.18,.14,.11,1)
 material.use_nodes=True
 material.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(.18,.14,.11,1)

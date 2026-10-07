@@ -15,9 +15,9 @@ func _run() -> void:
 	var fame: Node = actor.get_node("FameComponent")
 	inventory.items.erase("rupees"); inventory.items.erase("roti")
 	var initial_fame: int = fame.points
-	assert(jobs.targets.size() == 6)
+	for required in ["road","office","market","board","parcel","work"]:assert(jobs.targets.has(required))
 	# Confirm the actual player target finder can reach every endpoint, including NPC bodies.
-	for id in jobs.targets:
+	for id in ["road","office","market","board","parcel","work"]:
 		await _visit(actor,jobs,id)
 		actor.get_node("VisualRoot").global_rotation.y = PI
 		if actor._find_interactable() != jobs.targets[id]:

@@ -1,6 +1,6 @@
 extends RefCounted
 ## One shared gun-space path for the cartridge, ramrod and loading fingers.
-const RELOAD_SECONDS := 12.0
+const RELOAD_SECONDS := 1.5
 const MOUTH := Vector3(1.04, 0.057, 0)
 const ROD_CENTER := Vector3(0.56, -0.003, 0)
 const ROD_HALF := 0.48
@@ -10,6 +10,21 @@ static func phase_ease(p: float, a: float, b: float) -> float:
 	return t*t*t*(t*(t*6.0-15.0)+10.0)
 
 static func state(p: float) -> Dictionary:
+	# Fast gameplay loading gesture: approach, insert, return. The retained
+	# detailed ramrod sequence is available below for slower presentation work.
+	var support := Vector3(0.78, 0.057, -0.12)
+	var bore_contact := MOUTH + Vector3(0.026, 0, 0)
+	var contact := support.lerp(bore_contact, phase_ease(p, 0.0, 0.35))
+	var insertion := phase_ease(p, 0.35, 0.65)
+	contact -= Vector3(0.085 * insertion, 0, 0)
+	contact = contact.lerp(Vector3(0.90, -0.003, 0), phase_ease(p, 0.65, 1.0))
+	contact.y -= sin(PI * phase_ease(p, 0.65, 1.0)) * 0.10
+	var paper_basis := Basis(Vector3(0,0,-1), Vector3.RIGHT, Vector3(0,-1,0))
+	return {"rod": Transform3D.IDENTITY, "contact": contact, "curl": 0.90,
+		"cartridge": Transform3D(paper_basis, contact - Vector3(0.026,0,0)),
+		"cartridge_visible": p >= 0.10 and p < 0.65, "depth": 0.0}
+
+static func detailed_state(p: float) -> Dictionary:
 	var rod := Transform3D.IDENTITY
 	var contact := Vector3(0.20,-0.032,0)
 	var curl := 0.90

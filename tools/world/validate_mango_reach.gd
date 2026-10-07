@@ -81,6 +81,8 @@ func validate() -> void:
 		var fruit = load("res://objects/mango.gd").new()
 		world.add_child(fruit)
 		fruit.position = offset
+		var world_mesh: SphereMesh = fruit.get_node("FruitVisual").mesh
+		check(is_equal_approx(world_mesh.radius,component.whole_mango_mesh.radius) and is_equal_approx(world_mesh.height,component.whole_mango_mesh.height), "Fruit changed size during collection")
 		player.get_node("CameraPivot/SpringArm3D/Camera3D").global_transform = camera.global_transform
 		player._update_interaction()
 		if offset.z > 0.7:
@@ -112,7 +114,7 @@ func validate() -> void:
 		check(clearance > 0.12,"Held pickup forearm entered the leg envelope")
 		samples.append({"mode":"held_arm_clearance","distance_m":clearance})
 		check(visual.equipment.stowed,"Pickup did not free the weapon hand")
-		var error: float = initial_palm.distance_to(fruit.global_position+Vector3.UP*0.025)
+		var error: float = initial_palm.distance_to(fruit.pickup_point())
 		var foot_error := 0.0
 		for side in ["l","r"]:
 			var actual: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_"+side)).origin)
@@ -175,6 +177,13 @@ func validate() -> void:
 			if component.ground_pickup: largest_step = maxf(largest_step,previous_palm.distance_to(palm))
 			previous_palm = palm
 			if frame in [15,44,59]: await capture(mode + "_" + str(frame))
+			if mode == "eat" and frame == 59:
+				var previous_camera := camera.global_transform
+				var head_world: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("head")).origin)
+				camera.position = head_world + Vector3(-0.65,0.12,0.65)
+				camera.look_at(head_world + Vector3(0,-0.07,0.1))
+				await capture("mouth_contact")
+				camera.global_transform = previous_camera
 			if frame == 54 and mode == "eat": bite_head_rotation = visual.skeleton.get_bone_pose_rotation(visual.skeleton.find_bone("head"))
 			if frame == 59 and mode == "eat":
 				check(bite_head_rotation.angle_to(visual.skeleton.get_bone_pose_rotation(visual.skeleton.find_bone("head"))) > 0.006,"Eating head did not react to bite")
@@ -220,7 +229,7 @@ func validate() -> void:
 	world.add_child(slope)
 	plane.hide()
 	slope.position.y = -0.05
-	slope.rotation.z = 0.18
+	slope.rotation = Vector3(0.12,0,0.24)
 	await physics_frame
 	var slope_fruit = load("res://objects/mango.gd").new()
 	world.add_child(slope_fruit)
@@ -237,7 +246,15 @@ func validate() -> void:
 		query.exclude = [player.get_rid()]
 		var hit: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
 		check(not hit.is_empty(),"Slope foot has no ground")
-		if not hit.is_empty(): max_ground_error = maxf(max_ground_error,absf((ankle.y-hit.position.y)-0.07))
+		if not hit.is_empty():
+			var foot_basis: Basis = visual.skeleton.global_basis * visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_"+side)).basis
+			var sole_points: PackedVector3Array = visual.get_node("LocomotionFootContact").sole_points[side]
+			check(not sole_points.is_empty(),"Pickup lacks actual boot sole samples")
+			var minimum := INF
+			for sole_point in sole_points:
+				minimum = minf(minimum,(ankle+foot_basis*sole_point-hit.position).dot(hit.normal))
+			check(minimum >= -0.003,"Pickup boot sole penetrates slope")
+			max_ground_error = maxf(max_ground_error,absf(minimum-0.005))
 	check(max_ground_error < 0.015,"Slope boot ankle did not follow ground")
 	samples.append({"mode":"slope","boot_sole_error_m":max_ground_error})
 	await capture("slope")
@@ -249,6 +266,57 @@ func validate() -> void:
 	slope.queue_free()
 	plane.show()
 	await process_frame
+	# Uneven support: each boot has its own height, as on a shallow rut edge.
+	plane.hide()
+	var supports: Array[Node] = []
+	for side in [-1,1]:
+		var support := StaticBody3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.28,0.1,0.5)
+		var shape := CollisionShape3D.new()
+		shape.shape = box
+		support.add_child(shape)
+		var visible_box := MeshInstance3D.new()
+		var box_mesh := BoxMesh.new()
+		box_mesh.size = box.size
+		visible_box.mesh = box_mesh
+		visible_box.material_override = material
+		support.add_child(visible_box)
+		world.add_child(support)
+		support.position = Vector3(side*0.20,0.01 if side==1 else -0.08,0)
+		supports.append(support)
+	await physics_frame
+	var uneven_fruit = load("res://objects/mango.gd").new()
+	world.add_child(uneven_fruit)
+	uneven_fruit.position = Vector3(-0.15,0.135,0.45)
+	player._begin_interaction_hold(uneven_fruit,"interact")
+	for frame in 30:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+	var uneven_error := 0.0
+	for side in ["l","r"]:
+		var foot: Transform3D = visual.skeleton.global_transform * visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_"+side))
+		var bottom := INF
+		for point in visual.get_node("LocomotionFootContact").sole_points[side]:
+			bottom = minf(bottom,(foot*point).y)
+		var expected := 0.06 if foot.origin.x>0 else -0.03
+		uneven_error = maxf(uneven_error,absf(bottom-expected-0.005))
+	check(uneven_error < 0.015,"Pickup soles lost independent uneven support")
+	samples.append({"mode":"uneven_support","sole_error_m":uneven_error})
+	camera.position = Vector3(-1.4,0.65,1.3)
+	camera.look_at(Vector3(0,0.3,0.1))
+	await capture("uneven_support")
+	camera.position = Vector3(-1.0,0.35,-1.1)
+	camera.look_at(Vector3(0,0.25,0))
+	await capture("uneven_support_boots")
+	player._hide_interaction_labels()
+	for frame in 45:
+		visual._process(1.0/60.0)
+		component._process(1.0/60.0)
+	uneven_fruit.queue_free()
+	for support in supports: support.queue_free()
+	plane.show()
+	await physics_frame
 	for mode in ["eat","store"]:
 		var stationary_palms: Dictionary = {}
 		var stationary_feet: Dictionary = {}
@@ -296,6 +364,16 @@ func validate() -> void:
 					camera.look_at(player.global_position+Vector3(0,-0.25,0.15))
 					await capture("moving_"+mode+"_"+str(frame))
 					if mode == "store" and frame == 7:
+						var finger_contact: Dictionary = {}
+						for digit in ["index","middle","ring","pinky","thumb"]:
+							var joint: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone(digit+"_03_r")).origin)
+							var local_joint: Vector3 = component.carried_mango.to_local(joint)
+							var radial := (local_joint / Vector3(0.05,0.065,0.05)).length()
+							finger_contact[digit] = local_joint.length() * (1.0 - 1.0 / maxf(radial,0.001))
+						for digit in finger_contact:
+							check(absf(finger_contact[digit]) < 0.025,"Fruit grip lost surface contact at " + digit)
+						print("FRUIT FINGER SURFACE ",finger_contact)
+						samples.append({"mode":"finger_surface","joint_distance_m":finger_contact})
 						var previous_camera := camera.global_transform
 						camera.position = player.global_position + player.global_basis * Vector3(-0.85,-0.12,0.95)
 						camera.look_at(player.global_position + player.global_basis * Vector3(-0.15,-0.5,0.3))

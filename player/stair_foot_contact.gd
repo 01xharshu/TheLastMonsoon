@@ -16,7 +16,7 @@ func _process(delta: float) -> void:
 	if refresh <= 0.0:
 		surfaces = get_tree().get_nodes_in_group("stair_contact_surfaces")
 		refresh = 1.0
-	if actor.get_meta("mounted_vehicle", null) != null or actor.get_meta("climbing", false) or actor.is_swimming or not actor.is_on_floor():
+	if (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing", false) or actor.is_swimming or not actor.is_on_floor():
 		planted.clear()
 		return
 	var surface: Node3D

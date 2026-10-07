@@ -1,0 +1,10 @@
+{
+  "source": "WorkingAssets/Arjun/combat_clothing/upper_trouser_yoke.blend",
+  "runtime": "characters/arjun/combat_trouser_yoke.glb",
+  "source_sha256": "28af57d34b3ef8184dc6dc49d761a460c15c94433f6b3482fe689b55d4d33a05",
+  "runtime_sha256": "e7663d942e5173dfd3a0c9369662910074d76f0809f041331f1f45d0e7a49cb3",
+  "fitting_body_sha256": "0bd3301a1b06c49d56a204f679ab45463e83e62f0696f71035988f9323d3dd0f",
+  "complete_body_retained_in_source": true,
+  "source_body_vertices": 65119,
+  "visual_approved": false
+}

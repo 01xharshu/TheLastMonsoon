@@ -31,6 +31,8 @@ func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	_select_input_device()
 	apply_options()
+	get_viewport().size_changed.connect(_update_render_budget)
+	_update_render_budget.call_deferred()
 
 func _input(event: InputEvent) -> void:
 	if options.input_device != "auto": return
@@ -192,6 +194,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"door_states": _door_states(world),
 		"cart_states": preload("res://vehicles/cart_save_state.gd").collect(world),
 		"household_cattle": _cattle_states(world),
+		"river_routines": preload("res://world/suryagarh/settlements/river_routine_save.gd").collect(world),
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
 	if world.has_node("ErrandSystem"):
@@ -317,6 +320,7 @@ func apply_pending(world: Node3D) -> void:
 		var key := str(world.get_path_to(service))
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
 	_restore_cattle_states(world,data.get("household_cattle",{}))
+	preload("res://world/suryagarh/settlements/river_routine_save.gd").restore(world,data.get("river_routines",{}))
 	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
 		if not world.is_ancestor_of(operations): continue
 		var key := str(world.get_path_to(operations))
@@ -398,7 +402,11 @@ func apply_options(world: Node = null) -> void:
 		AudioServer.set_bus_mute(index,amount<=0.001)
 		AudioServer.set_bus_volume_db(index,linear_to_db(maxf(amount,0.001)))
 	if DisplayServer.get_name()!="headless":
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
+		var requested_mode := DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
+		# Re-entering WINDOWED on macOS can resize the backing viewport on each
+		# settings/scene application. Only perform a real mode transition.
+		if DisplayServer.window_get_mode() != requested_mode:
+			DisplayServer.window_set_mode(requested_mode)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if options.vsync else DisplayServer.VSYNC_DISABLED)
 	if world and world.has_node("Player"):
 		var player: Node = world.get_node("Player")
@@ -406,7 +414,7 @@ func apply_options(world: Node = null) -> void:
 		player.third_person_distance = clampf(float(options.camera_distance),1.25,4.0)
 		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
 		var quality := clampi(int(options.graphics_quality),0,2)
-		world.get_viewport().scaling_3d_scale = [0.65,0.85,1.0][quality]
+		_apply_render_budget(world.get_viewport(), quality)
 		world.get_viewport().msaa_3d = [Viewport.MSAA_DISABLED,Viewport.MSAA_2X,Viewport.MSAA_4X][quality]
 		if world.has_node("Sun"):
 			world.get_node("Sun").directional_shadow_max_distance = [40.0,80.0,130.0][quality]
@@ -415,6 +423,18 @@ func apply_options(world: Node = null) -> void:
 			environment.ssao_enabled = quality > 0
 			environment.ssil_enabled = quality == 2
 		if world.has_node("BackgroundMusic"): world.get_node("BackgroundMusic").bus = "Music"
+
+static func render_scale_for_size(pixels: Vector2i, quality: int) -> float:
+	# Bound 3D pixel count on Retina/fullscreen displays; canvas UI stays native.
+	var budget: Vector2 = [Vector2(960,540),Vector2(1280,720),Vector2(1920,1080)][clampi(quality,0,2)]
+	return minf(1.0, minf(budget.x / maxf(pixels.x,1), budget.y / maxf(pixels.y,1)))
+
+func _apply_render_budget(viewport: Viewport, quality: int) -> void:
+	var pixels: Vector2i = viewport.get_texture().get_size()
+	viewport.scaling_3d_scale = render_scale_for_size(pixels,quality)
+
+func _update_render_budget() -> void:
+	_apply_render_budget(get_viewport(),clampi(int(options.graphics_quality),0,2))
 
 func _remaining_medical_ids(world: Node3D) -> Array[String]:
 	var remaining: Array[String] = []

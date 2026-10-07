@@ -1,0 +1,43 @@
+{
+	"device": "Apple M4 (Apple9)",
+	"grass_batches": 14516,
+	"grass_instance_records": 1262136,
+	"label": "after",
+	"maximum_root_surface_error_m": 0.00817645263671807,
+	"renderer": "metal",
+	"resolution": [
+		1280,
+		720
+	],
+	"root_samples": 11789,
+	"scope": "actual baked terrain/nature; no buildings, humans or active gameplay; isolated rendering comparison, not full-game FPS",
+	"views": [
+		{
+			"draw_calls": 228,
+			"median_frame_ms": 6.901,
+			"median_gpu_ms": 0.0,
+			"median_render_cpu_ms": 21.4619998931885,
+			"p95_frame_ms": 7.496,
+			"primitives": 281226,
+			"view": "close"
+		},
+		{
+			"draw_calls": 228,
+			"median_frame_ms": 6.897,
+			"median_gpu_ms": 0.0,
+			"median_render_cpu_ms": 0.229000002145767,
+			"p95_frame_ms": 7.67,
+			"primitives": 281226,
+			"view": "walk_height"
+		},
+		{
+			"draw_calls": 233,
+			"median_frame_ms": 6.884,
+			"median_gpu_ms": 0.0,
+			"median_render_cpu_ms": 0.229000002145767,
+			"p95_frame_ms": 7.547,
+			"primitives": 307566,
+			"view": "wide"
+		}
+	]
+}

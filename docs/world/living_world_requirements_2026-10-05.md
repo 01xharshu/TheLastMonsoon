@@ -51,3 +51,7 @@ Owner messages delivered for the six remaining areas; implementation/review rema
 - Final uniforms: **Create British NPCs** and **Create Arjun’s sepoy brother** — period fit, varied bodies, cloth seams/clipping and gear contact across motion, with full MPFB bodies/foundations retained.
 - Torch patrols: **Add fight-triggered music and police** — carried-torch contact, day/night activation, walking/mounted search, bounded lighting/shadows and active patrol simulation.
 - Voices: **Add fight-triggered music and police** — audit approved recordings/pipeline; contextual patrol/search/combat triggers, subtitles, distance, concurrency and cooldown controls. Missing final voice recordings must remain explicitly open; placeholder sounds do not satisfy final voice approval.
+
+## Main grass integration — 2026-10-06
+
+Authored core/detail blades and grass-only baker integrated from terrain owner d388 into current main. Fresh main bake631068 tufts; native preservation PASS144 ground collision tiles plus terrain/water geometry and238 retained non-grass nature batches/2929 instances. Exact main Bermuda before/after Metal captures and isolated profile retained. Main no longer uses Bermuda for baked grass. `grass_main_integration_2026-10-06.md` records commands, costs and limits. Final organic variation, normal traversal and whole-game performance remain open; the rest of the living-world owner scopes remain unchanged.

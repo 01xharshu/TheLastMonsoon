@@ -1,9 +1,9 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/boatman/boatman_mpfb.blend",
-  "source_sha256": "e04f2c75584eb71fcc6e3ef10dd9b403f828fe4e45e3663952f88832b168b09d",
+  "source_sha256": "c279f410c49d92f225a9a0b4e5b2ab6e13a572b10f41b2878a9bf6d522038f7d",
   "runtime": "characters/npcs/boatman.glb",
-  "runtime_sha256": "2f380731ad38a95bfea824499345308badc225bca120b016dbe94b65a575671d",
+  "runtime_sha256": "826dab5321c6c6a9e92ed7e0fc13b0bec24fa411424919928118ac777309acbc",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 9,

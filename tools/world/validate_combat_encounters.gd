@@ -8,6 +8,8 @@ func _initialize() -> void:call_deferred("run")
 func check(ok: bool,label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 	if not ok:errors.append(label)
+func review(_label: String) -> void:
+	pass
 func wait_ticks(count: int) -> void:
 	for i in count:await physics_frame
 func run() -> void:
@@ -26,13 +28,16 @@ func run() -> void:
 	player.position=encounters.peasant.global_position+Vector3(-2,.9,0)
 	await wait_ticks(10)
 	check(encounters.encounter_state=="beating","approach triggers actual beating sequence")
+	await review("approach triggers actual beating sequence")
 	await wait_ticks(320)
 	check(encounters.peasant.get_meta("knocked_out",false) and not encounters.peasant.get_node("Vitality").dead,"repeated British strikes cause living civilian fall")
+	await review("repeated British strikes cause living civilian fall")
 	check(not encounters.wanted,"AI abuse does not blame Arjun")
 	encounters.aggressor.get_node("Vitality").receive_hit(12,player,"punch")
 	await wait_ticks(6)
 	check(encounters.wanted,"player intervention creates police response")
 	check(encounters.encounter_state in ["rescued","recovering"],"intervention stops abuse")
+	await review("intervention stops abuse")
 	await wait_ticks(200)
 	check(not encounters.peasant.get_meta("knocked_out",false),"rescued peasant recovers")
 	var patrol: Dictionary=encounters.patrols[0]
@@ -45,6 +50,7 @@ func run() -> void:
 	encounters.wanted=true;patrol.state="patrol";patrol.sense=0
 	encounters._physics_process(.016)
 	check(patrol.state=="pursue" and patrol.marker.visible,"visible wanted player alerts only this officer")
+	await review("visible wanted player alerts only this officer")
 	# Rear capture uses the real detention component and supports explicit escape.
 	var anchor: Vector3=encounters.ground(Vector3(320,0,150))
 	player.global_position=anchor+Vector3.UP*.9
@@ -73,6 +79,7 @@ func run() -> void:
 	await wait_ticks(5)
 	encounters._physics_process(.016)
 	check(not encounters.escort.is_empty(),"second rear capture starts continuous escort")
+	await review("second rear capture starts continuous escort")
 	var coordinator:=station.get_node("ThanaStaff/ArrestCoordinator")
 	coordinator.custody_seconds=1.0;coordinator.debug_contacts=true
 	var phases: Array[String]=[]
@@ -96,6 +103,10 @@ func run() -> void:
 	var samples: Array[float]=encounters.cost_samples.duplicate();samples.sort()
 	var local_p95: float=samples[int(float(samples.size()-1)*.95)] if not samples.is_empty() else 0
 	var report={"local_tick_p95_us":local_p95,"profile_samples":samples.size(),"whole_game_performance_verified":false,"status":"PASS" if errors.is_empty() else "FAIL","errors":errors,"full_world":true,"continuous_city_escort_verified":"custody" in phases and coordinator.phase=="idle","max_city_escort_step_m":max_step}
-	var file:=FileAccess.open("res://docs/characters/arjun/combat_world_validation.json",FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
+	var suffix:="" if DisplayServer.get_name()=="headless" else "_metal"
+	var file:=FileAccess.open("res://docs/characters/arjun/combat_world_validation%s.json"%suffix,FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	print("COMBAT WORLD ",report.status," ",errors)
-	world.queue_free();await process_frame;await process_frame;quit(0 if errors.is_empty() else 1)
+	preload("res://tools/test_audio_cleanup.gd").stop(root)
+	world.queue_free();await process_frame;await process_frame
+	await preload("res://tools/test_audio_cleanup.gd").settle(self)
+	quit(0 if errors.is_empty() else 1)

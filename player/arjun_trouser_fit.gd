@@ -20,8 +20,8 @@ static func apply(model: Node3D) -> int:
    for vertex in vertices.size():
     var height := vertices[vertex].y
     # Match the overlying kurta's hip transition. The upper trouser
-    # opening sits below the actual waist and must follow the bent thigh.
-    var waist := smoothstep(.96, 1.04, height)
+    # opening must remain on the pelvis while the lower fabric follows the thigh.
+    var waist := smoothstep(.86, .95, height)
     var upper_leg := smoothstep(.43, .59, height)
     var offset := vertex*influences
     for slot in influences:

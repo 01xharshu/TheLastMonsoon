@@ -1,9 +1,9 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/record_clerk/record_clerk_mpfb.blend",
-  "source_sha256": "46243542c1b00e2b2a81d71f3ca9450f1455f2c84d8d38be058b3b1b49c47c66",
+  "source_sha256": "0b198cec5ff3e4cc5ab70d3f428a1b6c424ae175060f82d0250f5c950c345b11",
   "runtime": "characters/npcs/record_clerk.glb",
-  "runtime_sha256": "d4fe92aa02b355eb5ce0ecbd275b9c31628fac5eea2e52d92fb576aff8117f9d",
+  "runtime_sha256": "9e59698044f0683955fddf26c24d84d69fa16797d3974339e43ac3f340b3a448",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 11,

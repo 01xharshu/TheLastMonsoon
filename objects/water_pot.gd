@@ -84,6 +84,7 @@ func _fill_water_bag(player: CharacterBody3D) -> void:
 		return
 
 
+	WorldAudio.play_at("water_fill",global_position)
 	var current_water := (
 		inventory.get_stored_water_liters()
 	)

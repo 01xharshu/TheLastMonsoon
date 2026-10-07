@@ -38,6 +38,7 @@ func start_fill() -> bool:
 	return true
 
 func start_action(value: String) -> void:
+	WorldAudio.play_at("water_fill",actor.global_position)
 	action = value
 	elapsed = 0.0
 	actor.set_meta("river_action",value)

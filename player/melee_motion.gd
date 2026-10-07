@@ -31,13 +31,15 @@ static func make(rig: Skeleton3D, idle: Animation, action: String) -> Animation:
 			elif action == "dodge":
 				angles={"pelvis":Vector3(.2,0,-.15),"spine_01":Vector3(.25,0,-.2),"thigh_l":Vector3(-.5,0,.2),"calf_l":Vector3(.8,0,0),"thigh_r":Vector3(.3,0,-.2),"calf_r":Vector3(.4,0,0),"upperarm_l":Vector3(-.6,0,.35),"upperarm_r":Vector3(-.5,0,-.4)}
 				effort=sin(phase*PI)
-			elif action in ["sword","knife"]:
+			elif action == "knife":
+				angles={"spine_01":Vector3(.28,.10*strike,0),"spine_02":Vector3(.12,.18*strike,0),"upperarm_r":Vector3(lerpf(-.55,-1.62,strike),0,.35),"lowerarm_r":Vector3(lerpf(-1.35,-.08,strike),0,0),"upperarm_l":Vector3(-.48,0,.42),"lowerarm_l":Vector3(-.9,0,0)}
+			elif action == "sword":
 				var sweep:=smoothstep(.18,.72,phase)
-				effort=1.0-smoothstep(.76,1.0,phase)
+				effort=smoothstep(0,.12,phase)*(1.0-smoothstep(.76,1.0,phase))
 				angles={"spine_02":Vector3(-.1,lerpf(-.25,.38,sweep),0),"upperarm_r":Vector3(lerpf(-1.15,.35,sweep),lerpf(-.65,.65,sweep),lerpf(-.6,.1,sweep)),"lowerarm_r":Vector3(lerpf(-1.15,-.4,sweep),0,0),"upperarm_l":Vector3(-.5,0,.35),"lowerarm_l":Vector3(-.7,0,0)}
 			elif action == "grapple":
 				angles={"spine_01":Vector3(.28,0,0),"spine_02":Vector3(.12,0,0),"upperarm_l":Vector3(-1.2,0,.15),"upperarm_r":Vector3(-1.2,0,-.15),"lowerarm_l":Vector3(-1.25,0,0),"lowerarm_r":Vector3(-1.25,0,0)}
-				effort=smoothstep(0,.25,phase)
+				effort=smoothstep(0,.25,phase)*(1.0-smoothstep(.82,1.0,phase))
 			elif action in ["kick","jump_kick"]:
 				var extension := smoothstep(.28,.46,phase)
 				angles = {"pelvis":Vector3(-.12,-.10,-.10),"spine_01":Vector3(.20,0,.08),"spine_02":Vector3(.12,0,0),"thigh_r":Vector3(-1.2,0,0),"calf_r":Vector3(lerpf(1.15,.12,extension),0,0),"foot_r":Vector3(-.18,0,0),"thigh_l":Vector3(-.6 if action=="jump_kick" else .14,0,0),"calf_l":Vector3(.8 if action=="jump_kick" else .14,0,0),"upperarm_l":Vector3(-.55,0,.48),"upperarm_r":Vector3(-.42,0,-.4)}

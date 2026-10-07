@@ -319,7 +319,7 @@ func _set_animation(state: StringName, delta: float) -> void:
 	animation_tree.advance(maxf(delta, 0.0))
 	for index in _finger_rest:
 		var finger_name := _skeleton.get_bone_name(index)
-		var curl := 0.22 if "_01_" in finger_name else (0.32 if "_02_" in finger_name else 0.18)
+		var curl := .95 if get_meta("combat_action","")=="strike" else (0.22 if "_01_" in finger_name else (0.32 if "_02_" in finger_name else 0.18))
 		if finger_name.begins_with("thumb"):
 			curl *= 0.55
 		_skeleton.set_bone_pose_rotation(index, _finger_rest[index] * Quaternion(_finger_pitch[index], curl))

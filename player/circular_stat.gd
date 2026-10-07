@@ -1,7 +1,6 @@
 class_name CircularStat
 extends Control
-const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
-## Small engraved survival medallion. Existing survival signal contract is unchanged.
+## Engraved diamond survival gauge. Existing survival signal contract is unchanged.
 @export_enum("Hydration","Satiety","Stamina","Energy") var icon_type: int = 0:
 	set(value):
 		icon_type = value
@@ -16,7 +15,7 @@ var current_value: float = 100.0
 var maximum_value: float = 100.0
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(56,58)
+	custom_minimum_size = Vector2(48,48)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	queue_redraw()
 
@@ -26,12 +25,27 @@ func set_stat_value(value: float, maximum: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var center := Vector2(size.x/2,20)
+	var center := size*0.5
 	var fraction: float = current_value/maximum_value
 	var color: Color = critical_color if fraction<=0.2 else (low_color if fraction<=0.4 else healthy_color)
-	draw_arc(center,17,0,TAU,64,empty_ring_color,1.5,true)
-	if fraction > 0.0:
-		draw_arc(center,17,-PI/2,-PI/2+TAU*fraction,64,color,ring_width,true)
+	var outline := PackedVector2Array([center+Vector2(0,-22),center+Vector2(22,0),center+Vector2(0,22),center+Vector2(-22,0),center+Vector2(0,-22)])
+	draw_colored_polygon(outline,Color(0.035,0.042,0.035,0.76))
+	draw_polyline(outline,Color(0.61,0.47,0.27,0.85),1,true)
+	draw_line(outline[3],outline[0],Color(icon_color,0.65),1,true)
+	draw_line(outline[0],outline[1],Color(icon_color,0.65),1,true)
+	var inset := PackedVector2Array([center+Vector2(0,-19),center+Vector2(19,0),center+Vector2(0,19),center+Vector2(-19,0),center+Vector2(0,-19)])
+	draw_polyline(inset,empty_ring_color,ring_width,true)
+	# Clip the inset diamond at the level height, filling its interior from the bottom.
+	var fill_y: float = center.y+19.0-fraction*38.0
+	var filled := PackedVector2Array()
+	for edge in 4:
+		var a: Vector2 = inset[edge]
+		var b: Vector2 = inset[edge+1]
+		if a.y >= fill_y: filled.append(a)
+		if (a.y >= fill_y) != (b.y >= fill_y):
+			filled.append(a.lerp(b,(fill_y-a.y)/(b.y-a.y)))
+	if fraction > 0.0 and filled.size() >= 3: draw_colored_polygon(filled,Color(color,0.38))
+	# Solid ivory symbols stay distinct from the muted interior level.
 	match icon_type:
 		0:
 			draw_colored_polygon(PackedVector2Array([center+Vector2(0,-11),center+Vector2(8,2),center+Vector2(7,7),center+Vector2(3,10),center+Vector2(-3,10),center+Vector2(-7,7),center+Vector2(-8,2)]),icon_color)
@@ -45,6 +59,3 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-12),center+Vector2(-7,1),center+Vector2(-1,1),center+Vector2(-4,12),center+Vector2(8,-3),center+Vector2(2,-3)]),icon_color)
 		3:
 			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-11),center+Vector2(-7,-8),center+Vector2(-11,0),center+Vector2(-7,8),center+Vector2(1,11),center+Vector2(7,7),center+Vector2(1,8),center+Vector2(-2,5),center+Vector2(-4,0),center+Vector2(-2,-5),center+Vector2(1,-8)]),icon_color)
-	var names: Array[String] = ["WATER","FOOD","STAMINA","REST"]
-	var font: Font = FONT
-	draw_string(font,Vector2(0,54),names[icon_type],HORIZONTAL_ALIGNMENT_CENTER,size.x,10,Color(icon_color,0.9))

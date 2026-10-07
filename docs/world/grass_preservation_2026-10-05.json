@@ -1,0 +1,8 @@
+{
+	"errors": [],
+	"passed": true,
+	"retained_ground_collision_tiles": 144,
+	"retained_instances": 2929,
+	"retained_tree_rock_batches": 238,
+	"scope": "paired Metal non-grass nature buffers plus terrain/water geometry and collision; baseline scratch snapshot is required"
+}

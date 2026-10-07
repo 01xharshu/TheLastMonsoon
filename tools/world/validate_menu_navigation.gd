@@ -27,7 +27,9 @@ func validate() -> void:
 	player.global_position=expected
 	var pause_menu: CanvasLayer = world.get_node("GameMenu")
 	pause_menu.open()
-	check(paused and pause_menu.overlay.visible,"Pause menu did not open")
+	check(paused and pause_menu.overlay.visible and pause_menu.page == "map","Pause menu did not open on map")
+	pause_menu.select_tab("game")
+	check(pause_menu.page == "main" and pause_menu.centre.visible and pause_menu.navigation.get_child(1).button_pressed,"Game tab did not open")
 	var save_button := button_with_text(pause_menu.column,"Save Game")
 	check(save_button != null,"Save Game button missing")
 	if save_button: save_button.pressed.emit()

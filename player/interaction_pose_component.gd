@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
 		if not ground_pickup or not carried_action.is_empty():
 			if ground_pickup: _finish_ground_pickup()
 			_begin_ground_pickup()
-		pickup_target = actor.hold_target.global_position + Vector3.UP * 0.025
+		pickup_target = actor.hold_target.pickup_point()
 		pickup_target_local = visual.to_local(pickup_target)
 	if ground_pickup:
 		_process_ground_pickup(delta, active)
@@ -132,9 +132,15 @@ func _begin_ground_pickup() -> void:
 		query.exclude = [actor.get_rid()]
 		var ground := actor.get_world_3d().direct_space_state.intersect_ray(query)
 		if not ground.is_empty() and ground.normal.y > 0.70 and absf((ankle.y - ground.position.y) - 0.07) < 0.20:
-			# This rig's ankle is 7 cm above the sole on level ground.
-			ankle.y = ground.position.y + 0.07
 			basis = Basis(Quaternion(Vector3.UP, ground.normal)) * basis
+			var sole_depth := 0.07
+			var contacts := visual.get_node_or_null("LocomotionFootContact")
+			if contacts != null and not contacts.sole_points[side].is_empty():
+				var lowest := INF
+				for sole_point in contacts.sole_points[side]:
+					lowest = minf(lowest, (basis * sole_point).dot(ground.normal))
+				sole_depth = -lowest + 0.005
+			ankle = ground.position + ground.normal * sole_depth
 		foot_anchors[side] = ankle
 		foot_bases[side] = basis
 
@@ -162,7 +168,7 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		for side in ["l", "r"]:
 			var foot: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("foot_" + side))
 			locomotion_feet[side] = visual.skeleton.global_transform * foot
-	visual.model.position.y -= 0.55 * weight
+	visual.model.position.y -= 0.60 * weight
 	var local_target := visual.to_local(pickup_target) if active else pickup_target_local
 	visual.model.position.x += clampf(local_target.x * 0.8, -0.15, 0.15) * weight
 	visual.model.position.z += clampf(local_target.z * 0.3, 0.0, 0.2) * weight
@@ -215,9 +221,14 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		target_world += visual.global_basis.z * sin(lift * PI) * 0.18
 		if carried_elapsed > 1.1 and carried_action == "eat":
 			target_world = target_world.lerp(palm,smoothstep(1.1,1.6,carried_elapsed))
-		if carried_elapsed > (1.1 if carried_action == "eat" else 0.55): carried_mango.hide()
+		if carried_elapsed > (1.1 if carried_action == "eat" else 0.45): carried_mango.hide()
 	if not carried_action.is_empty():
 		target_world = target_world.lerp(_outside_pickup_clothes(target_world), smoothstep(0.0,0.15,carried_elapsed))
+	if carried_action == "store" and carried_elapsed > 0.45:
+		# Once the prop is stored, return the hand to the current locomotion pose.
+		var release := smoothstep(0.45, 0.65, carried_elapsed)
+		target_world = target_world.lerp(palm, release)
+		hand_world_basis = hand_world_basis.orthonormalized().slerp((visual.skeleton.global_basis * hand.basis).orthonormalized(), release)
 	var start_basis: Basis = pickup_start_basis if active else visual.skeleton.global_basis * hand.basis
 	hand_world_basis = start_basis.orthonormalized().slerp(hand_world_basis.orthonormalized(), maxf(weight, smoothstep(0.0,0.3,carried_elapsed)) if not carried_action.is_empty() else weight)
 	for i in 3:
@@ -229,6 +240,7 @@ func _process_ground_pickup(delta: float, active: bool) -> void:
 		_solve_limb("upperarm_r", "lowerarm_r", "hand_r", wrist_target, right_axis + forward_axis * 0.8)
 	_set_world_basis("hand_r", hand_world_basis)
 	var grip := smoothstep(0.65,1.0,amount) * 0.35 if carried_action.is_empty() else 0.35
+	if carried_action == "store": grip *= 1.0 - smoothstep(0.45, 0.65, carried_elapsed)
 	visual.equipment._grasp("r",grip)
 	if carried_mango.visible:
 		hand = visual.skeleton.get_bone_global_pose(hand_index)

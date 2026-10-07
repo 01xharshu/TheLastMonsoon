@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-06",
+  "device": "Apple M4 (Apple9)",
+  "renderer": "forward_plus",
+  "requested_window_size": "1280x720",
+  "resolution": "1280x720",
+  "scope": "Resident full world, static fixed720p camera; stationary player physics, body and camera-clearance callback disabled in diagnostic only; active NPC/world simulation; not normal-controller gameplay or hardware acceptance",
+  "startup_ms": 41928,
+  "views": {
+    "cantonment": {
+      "cpu_physics_ms": 3.605,
+      "cpu_process_ms": 37.993,
+      "draw_calls_p50": 3717.0,
+      "frame_wall_ms_p50": 6.212,
+      "frame_wall_ms_p95": 38.225,
+      "nodes": 65792.0,
+      "objects": 6488,
+      "primitives": 1210945,
+      "static_memory_bytes": 1006818253.0
+    },
+    "civil_lines": {
+      "cpu_physics_ms": 2.902,
+      "cpu_process_ms": 232.785,
+      "draw_calls_p50": 3708.0,
+      "frame_wall_ms_p50": 7.145,
+      "frame_wall_ms_p95": 9.064,
+      "nodes": 65792.0,
+      "objects": 6396,
+      "primitives": 1500212,
+      "static_memory_bytes": 1004164157.0
+    },
+    "village": {
+      "cpu_physics_ms": 4.146,
+      "cpu_process_ms": 26.403,
+      "draw_calls_p50": 2272.0,
+      "frame_wall_ms_p50": 26.283,
+      "frame_wall_ms_p95": 33.2,
+      "nodes": 65792.0,
+      "objects": 2677,
+      "primitives": 2892651,
+      "static_memory_bytes": 998454811.0
+    }
+  },
+  "vsync": "disabled",
+  "source_snapshot": "ordered_runtime_source_snapshot.json",
+  "source_stable": true
+}

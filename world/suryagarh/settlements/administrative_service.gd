@@ -36,6 +36,7 @@ func interact(player: CharacterBody3D) -> void:
 			return
 		inventory.remove_item("rupees",2)
 		inventory.add_item("revenue_receipt",1)
+	WorldAudio.play_at("paper",global_position,-23.0)
 	completed = true
 	refresh()
 func export_state() -> Dictionary:

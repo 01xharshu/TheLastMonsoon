@@ -12,14 +12,17 @@ uniform float wind_strength : hint_range(0.0, 2.0) = 0.25;
 uniform float wind_speed : hint_range(0.0, 4.0) = 0.7;
 uniform vec2 wind_direction = vec2(0.9, 0.4);
 
+global uniform vec3 world_wind;
 void vertex() {
 	vec3 world_origin = MODEL_MATRIX[3].xyz;
 	float tip_weight = pow(clamp(UV.y, 0.0, 1.0), 2.0);
 	float phase = dot(world_origin.xz, vec2(0.31, 0.47));
-	float broad = sin(TIME * wind_speed + phase);
-	float fine = sin(TIME * wind_speed * 1.83 + phase * 1.7 + VERTEX.y * 2.0);
-	vec2 direction = normalize(wind_direction + vec2(0.001));
-	VERTEX.xz += direction * (broad * 0.7 + fine * 0.3) * wind_strength * tip_weight;
+	float broad = sin(world_wind.y * wind_speed + phase);
+	float fine = sin(world_wind.y * wind_speed * 1.83 + phase * 1.7 + VERTEX.y * 2.0);
+	vec2 direction = normalize(world_wind.xz + vec2(0.001));
+	vec3 drift = inverse(mat3(MODEL_MATRIX)) * vec3(direction.x,0.0,direction.y);
+	float gust = 0.78+0.22*sin(world_wind.y*0.71-world_origin.x*0.015-world_origin.z*0.011);
+	VERTEX += drift * gust * (broad * 0.7 + fine * 0.3) * wind_strength * length(world_wind.xz) * 0.4 * tip_weight;
 }
 
 void fragment() {

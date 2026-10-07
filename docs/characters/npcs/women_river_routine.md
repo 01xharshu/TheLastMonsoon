@@ -34,3 +34,11 @@ The donor pallu was bound to nonexistent `spine01`; repaired via native-body wei
 ## Exact next action
 
 Open the retained river source, repair blouse clearance/masking and create seated/crouched sari/pallu corrective shapes over this same authoritative MPFB body/foundation. Verify those shapes and skin weights survive GLB export. Inspect close front/side/rear full 1.0x cycles, actual palm/finger grips, sole planting and loaded-gait balance on the real river bank. Only after clothing/contact passes, survey collision-safe home routes and integrate morning/day/save behavior in Bhairavpur. Keep the current live population unchanged until that evidence exists.
+
+## Continuation — 2026-10-07 15:30 IST, /root, IN_PROGRESS
+
+Objective: complete native body/foundation retention, posed cloth fit, real-bank morning route and save integration. Added `tools/characters/export_river_poses.gd` (97 sampled runtime skeleton poses), `river_cloth_correctives.py`, runtime interpolation and removed torso masking/foundation export exclusion in the builder. Blender build running: `/tmp/tlm_river_cloth_build.log`. Source/rest body retained; clothing-only collision corrections do not alter physique. Next: inspect rebuilt moving pixels, integrate a grounded village-to-ghat route and test schedule/save/contact. Historical mask/excluded-foundation notes above are superseded by the current full-body contract.
+
+15:40 IST milestone: Blender build succeeded (`/tmp/tlm_river_cloth_build.log`), 97 correction keys per outer garment and foundation now exported. Added `village_river_routine.gd`, `river_routine_save.gd`, one VillageStreetLife child and two save-manager hooks, preserving other dirty changes. Runtime actor accepts route/terrain/water overrides. Next: parser/contact/render checks and physical route/save sweep; integration is not verified yet.
+
+15:29 IST verification: revised flat-fixture 75s/30Hz target sweep PASS; fresh Metal nine-shot render inspected (blouse coverage improved, sari remains angular). First live test exposed unnamed collider-child lookup; fixed with explicit BodyShape name. Real-bank endpoint is (80.11087,0.03,166). Retained audited body node name and 14517 runtime body vertices; foundation included. Next: rerun live route/save test, moving cloth/contact review.

@@ -24,7 +24,7 @@ func _run() -> void:
 	env.environment.ambient_light_color = Color(.7,.75,.8)
 	env.environment.ambient_light_energy = .7
 	add_child(env)
-	_box("Floor",Vector3(0,-.1,10),Vector3(14,.2,35),Color(.3,.32,.25))
+	_box("Floor",Vector3(0,-.1,10),Vector3(14,.2,80),Color(.3,.32,.25))
 	actor = preload("res://player/player.tscn").instantiate()
 	add_child(actor)
 	actor.set_physics_process(false)
@@ -46,13 +46,30 @@ func _run() -> void:
 		DisplayServer.window_set_size(Vector2i(960,540))
 		get_viewport().scaling_3d_scale = .55
 		DirAccess.make_dir_recursive_absolute("/tmp/tlm_leap_frames")
-	for record in [{"height":.75,"z":0.0,"id":"low_wall"},{"height":4.8,"z":8.0,"id":"wall"},{"height":12.8,"z":16.0,"id":"tower"},{"height":8.8,"z":24.0,"id":"building"}]:
+	for record in [{"height":.75,"z":0.0,"id":"low_wall"},{"height":4.8,"z":8.0,"id":"wall"},{"height":12.8,"z":16.0,"id":"tower"},{"height":8.8,"z":24.0,"id":"building"},{"height":3.2,"z":32.0,"id":"house"},{"height":3.1,"z":40.0,"id":"house_sloped"}]:
+		if OS.get_cmdline_user_args().has("--house-only") and not record.id.begins_with("house"): continue
+		if OS.get_cmdline_user_args().has("--sloped-only") and record.id != "house_sloped": continue
+		if OS.get_cmdline_user_args().has("--lateral-only") and record.id != "building": continue
 		var height: float = record.height
+		if record.id.begins_with("house"):
+			var builder := preload("res://tools/characters/climb_house_fixture.gd").new()
+			add_child(builder)
+			for field in ["plaster","ochre","brick","wood","tile","stone","iron"]: builder.set(field,builder.material(Color(.52,.41,.29)))
+			var house: Node3D = builder.make_building("ClimbOrdinaryHouse",Vector2(4,record.z),Vector2(8,6),false,false,false,true)
+			house.position.y = 0
+			var detail := preload("res://world/suryagarh/settlements/bhairavpur_house_detail.gd").new()
+			var palette: Array[Material] = [builder.ochre]
+			detail.configure(builder,palette)
+			detail.house(house,Vector2(8,6),0 if record.id == "house_sloped" else 2)
+			preload("res://world/suryagarh/settlements/bhairavpur_village.gd").new()._merge_static_geometry(house)
+			_check(house.has_meta("climb_architecture"),"merged house retains architectural grips")
 		var wall := _box(record.id,Vector3(.7,height*.5,record.z),Vector3(1.4,height,4),Color(.43,.28,.20))
-		if record.id == "building":
+		if record.id.begins_with("house"):
+			wall.free()
+		elif record.id == "building":
 			wall.name = "Building"
 			for row in 9:
-				_box("ClimbLedge",Vector3(-.06,.9+row*.9,record.z),Vector3(.24,.14,1.2),Color(.58,.57,.46),false)
+				_box("ClimbLedge_%d" % row,Vector3(-.06,.9+row*.9,record.z),Vector3(.24,.14,1.2),Color(.58,.57,.46),false)
 			_box("RoofCoping",Vector3(.7,height+.04,record.z),Vector3(1.6,.08,4.2),Color(.58,.57,.46))
 		elif height > 2.0:
 			wall.add_to_group("climbable_walls")
@@ -74,8 +91,32 @@ func _run() -> void:
 		if not climb.active: continue
 		var waited := 0.0
 		var saved: Vector3 = actor.global_position
+		var lateral_checked := false
 		for frame in 1800:
 			if climb.waiting_for_move:
+				if record.id == "building" and not lateral_checked and climb.leap.held_row == climb.layers.size()-1:
+					lateral_checked = true
+					var side_start: Vector3 = actor.global_position
+					Input.action_press("move_right")
+					_check(climb.request_move(),"lateral launch uses continuous visible coping")
+					Input.action_release("move_right")
+					for transfer_frame in 35:
+						climb._physics_process(1.0/30.0)
+						visual._process(1.0/30.0)
+						_sample()
+						await _capture("lateral_catch")
+					_check(climb.leap.phase == "hang" and actor.global_position.z > side_start.z+.6,"lateral catch settles on coping")
+					Input.action_press("move_right")
+					_check(climb.request_move(),"second lateral launch follows same continuous edge")
+					Input.action_release("move_right")
+					for transfer_frame in 35:
+						climb._physics_process(1.0/30.0)
+						visual._process(1.0/30.0)
+						_sample()
+						await _capture("lateral_edge_end")
+					Input.action_press("move_right")
+					_check(not climb.request_move() and climb.leap.phase == "hang","edge end rejects unsupported sideways jump")
+					Input.action_release("move_right")
 				if waited == 0.0: saved = actor.global_position
 				waited += 1.0/30.0
 				_check_hang(saved)
@@ -89,8 +130,22 @@ func _run() -> void:
 			await _capture(record.id)
 			if not climb.active: break
 		_check(not climb.active and actor.global_position.y > height+.8,"land on "+record.id)
-		if not climb.active: completed_routes += 1
+		if not climb.active:
+			completed_routes += 1
+			var roof_start: Vector3 = actor.global_position
+			for stride in 20:
+				actor.velocity = Vector3(0,-.5,-1.0 if record.id == "building" else 1.0)
+				actor.move_and_slide()
+				await _capture(record.id+"_roof_walk")
+			_check(actor.is_on_floor() and absf(actor.global_position.z-roof_start.z) > .1,"solid roof supports walking "+record.id)
+			if rendered:
+				get_viewport().get_texture().get_image().save_png(folder+"/"+record.id+"_roof_walk.png")
 		print("ROUTE ",record.id," root=",actor.global_position)
+	if OS.get_cmdline_user_args().has("--house-only") or OS.get_cmdline_user_args().has("--sloped-only") or OS.get_cmdline_user_args().has("--lateral-only"):
+		_check(max_settled_palm < .04,"house caught palms reach architectural edges")
+		print("HOUSE CLIMB ","PASS" if failures == 0 else "FAIL"," routes=",completed_routes," frames=",frame_number," palm=",max_settled_palm)
+		await _finish(1 if failures else 0)
+		return
 	await _launch(8.0)
 	for tick in 20: climb._physics_process(1.0/30.0)
 	var health: float = actor.health
@@ -146,7 +201,10 @@ func _run() -> void:
 		visual._process(1.0/30.0)
 		await _capture("armed_pursuer")
 	_check(firearm.shots == 1 and actor.health == before_hit-18 and climb.releasing,"armed pursuer shoots exposed climber and breaks grip")
-	_check(firearm.cartridges == 3 and firearm.cooldown > 11.0,"Enfield consumes cartridge and waits for period reload")
+	_check(firearm.cartridges == 3 and firearm.cooldown > 0.0,"Enfield consumes cartridge and respects shared reload timing")
+	actor.set_meta("climbing",false)
+	_check(firearm.can_engage(),"roof and airborne escape remain targetable after releasing grip")
+	actor.set_meta("climbing",true)
 	for tick in 45:
 		climb._physics_process(1.0/30.0)
 		if not climb.active:
@@ -154,10 +212,24 @@ func _run() -> void:
 			actor.move_and_collide(actor.velocity/30.0)
 		visual._process(1.0/30.0)
 		await _capture("armed_fall")
+	actor.global_position=Vector3(.8,5.74,8)
+	for tick in 10:
+		actor.velocity=Vector3.DOWN
+		actor.move_and_slide()
+		await _capture("roof_target")
+	_check(actor.is_on_floor() and not climb.active,"roof escape target stands with restored collider")
+	firearm.cooldown=0.0
+	var roof_health: float=actor.health
+	for tick in 12:
+		firearm._process(.1)
+		visual._process(1.0/30.0)
+		await _capture("roof_firearm_hit")
+	_check(firearm.shots==2 and actor.health==roof_health-18,"armed pursuer can hit an exposed grounded roof escape target")
+	_check(visual.hit_phase>=0.0,"roof hit produces body impact reaction")
 	_check(airborne_frames > 0,"leaps release palms and boots in flight")
 	_check(max_settled_palm < .04,"caught palms reach visible layers")
 	print("LEAP CLIMB ","PASS" if failures == 0 else "FAIL"," routes=",completed_routes," flight_frames=",airborne_frames," settled_palm=",max_settled_palm," frames=",frame_number)
-	get_tree().quit(1 if failures else 0)
+	await _finish(1 if failures else 0)
 
 func _launch(z: float) -> void:
 	actor.survival.stamina = 100
@@ -205,7 +277,9 @@ func _sample() -> void:
 		for side in ["l","r"]:
 			var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_"+side))
 			var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets[side])
-			max_settled_palm = maxf(max_settled_palm,palm.distance_to(climb.leap.contact(side,false)))
+			var gap: float = palm.distance_to(climb.leap.contact(side,false))
+			if OS.get_cmdline_user_args().has("--debug-contact") and gap > .04 and frame_number%5 == 0: print("PALM gap=",gap," root=",actor.global_position," row=",climb.leap.held_row," palm=",palm," target=",climb.leap.contact(side,false)," model=",visual.model.global_position)
+			max_settled_palm = maxf(max_settled_palm,gap)
 
 func _capture(label: String) -> void:
 	camera.global_position = actor.global_position+Vector3(-3.6,1.0,3.3)
@@ -217,6 +291,16 @@ func _capture(label: String) -> void:
 		pixels.resize(960,540)
 		pixels.save_png("/tmp/tlm_leap_frames/frame_%04d.png"%frame_number)
 		if frame_number%30 == 0: pixels.save_png(folder+"/"+label+".png")
-	else:
-		await get_tree().physics_frame
 	frame_number += 1
+	await get_tree().physics_frame
+
+func _finish(code: int) -> void:
+	for node in get_tree().root.get_children(): node.process_mode = Node.PROCESS_MODE_DISABLED
+	for type_name in ["AudioStreamPlayer","AudioStreamPlayer3D"]:
+		for voice in get_tree().root.find_children("*",type_name,true,false):
+			voice.stop()
+			voice.stream = null
+			voice.queue_free()
+	await get_tree().create_timer(.15).timeout
+	for tick in 3: await get_tree().physics_frame
+	get_tree().quit(code)

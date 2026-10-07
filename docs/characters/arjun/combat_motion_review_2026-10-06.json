@@ -1,0 +1,19 @@
+{
+	"arjun_sha256": "0bd3301a1b06c49d56a204f679ab45463e83e62f0696f71035988f9323d3dd0f",
+	"dodge_contacts_released": true,
+	"fps": 30,
+	"frames": 600,
+	"hardware_fps_verified": false,
+	"jump_airborne": true,
+	"jump_contacts_released": true,
+	"npc_motion_script_sha256": "a5f12ecacda062c3d93a2b69a2252ca635097fa7564d29ac40250104233e13bf",
+	"offline_render": true,
+	"playback_seconds": 20,
+	"rear_hold_script_sha256": "22280b0311de00da0deced08a1a5e6804f205ff584f0f7552dda96209679cf0b",
+	"rescue_peasant_sha256": "01679666ff9921bd92982a586381f7c8a926d1284a187c75a8154db631b356ac",
+	"stance_contact_samples": 94,
+	"stance_script_sha256": "807c42ddfe5a9847ecc196ef3073e1d9b24e307de57d696019f77d2f723dcb1e",
+	"stance_target_max_error_m": 0.000138767063617706,
+	"visual_approved": false,
+	"yoke_sha256": "e7663d942e5173dfd3a0c9369662910074d76f0809f041331f1f45d0e7a49cb3"
+}

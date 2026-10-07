@@ -1,0 +1,18 @@
+{
+	"bake_seconds": 32.46,
+	"batch_width_m": 18,
+	"core_blades": 6,
+	"core_fade_m": [
+		48,
+		70
+	],
+	"detail_fade_m": [
+		18,
+		30
+	],
+	"near_detail_blades": 18,
+	"root_burial_m": 0.018,
+	"scope": "grass-only; other landscape content retained",
+	"simulation_nodes": 0,
+	"tufts": 631068
+}

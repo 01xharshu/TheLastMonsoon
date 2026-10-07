@@ -1,9 +1,9 @@
 {
   "status": "CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/dock_porter/dock_porter_mpfb.blend",
-  "source_sha256": "207d2348265d557993d0ecc3fb58b242b839712957dce2ecd6e1dec07e9b4e15",
+  "source_sha256": "4d1b998a26677dbc6b1c2a94f70a1952527dd7cc00af43f290bb0b3ff133d1c4",
   "runtime": "characters/npcs/dock_porter.glb",
-  "runtime_sha256": "a4395ea09a6023ab4912b0fbc0f88c5f0765f8ae84282e6c88ee1826cd30a42d",
+  "runtime_sha256": "736b31ade33f0bf30361378e76bbb2436a5b5432621c5f15900a6cdfe3247712",
   "mpfb_core_assets_license": "CC0-1.0",
   "bone_count": 53,
   "mesh_count": 8,

@@ -138,7 +138,11 @@ func tick(delta:float)->void:
 		var stance_fraction:=.50 if turning else .66
 		var stance:=not stepping or local_phase<stance_fraction
 		if stance:
-			if not planted.has(tag):planted[tag]=Vector3(origin.x,floor_y(origin)+.085,origin.z)+(-cow.global_basis.z*.20 if translating else Vector3.ZERO)
+			if not planted.has(tag):
+				planted[tag]=Vector3(origin.x,floor_y(origin)+.085,origin.z)+(-cow.global_basis.z*.20 if translating else Vector3.ZERO)
+				if stepping:
+					var audio:=get_node_or_null("/root/WorldAudio")
+					if audio!=null:audio.foot_contact(cow,tag,planted[tag]-Vector3.UP*.085,-28.0)
 			target=planted[tag]
 		else:
 			planted.erase(tag)

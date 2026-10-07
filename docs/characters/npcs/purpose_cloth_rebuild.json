@@ -1,0 +1,38 @@
+[
+  {
+    "role": "dock_porter",
+    "stage": "build",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_dock_porter_build.log"
+  },
+  {
+    "role": "dock_porter",
+    "stage": "motion",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_dock_porter_motion.log"
+  },
+  {
+    "role": "boatman",
+    "stage": "build",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_boatman_build.log"
+  },
+  {
+    "role": "boatman",
+    "stage": "motion",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_boatman_motion.log"
+  },
+  {
+    "role": "record_clerk",
+    "stage": "build",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_record_clerk_build.log"
+  },
+  {
+    "role": "record_clerk",
+    "stage": "motion",
+    "exit": 0,
+    "log": "/tmp/tlm_purpose_record_clerk_motion.log"
+  }
+]

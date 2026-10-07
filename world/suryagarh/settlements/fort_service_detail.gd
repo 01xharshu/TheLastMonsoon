@@ -125,7 +125,9 @@ func command_rooms(b) -> void:
 			if not str(back.name).begins_with("ChairBack") or absf(back.position.x-seat.position.x)>.01 or absf(back.position.z-seat.position.z-.35)>.01: continue
 			if absf(back.position.y-(level*4.6+1.1))>.01: continue
 			back.position.y=floor_y+.82
-			back.get_child(0).mesh.size.y=.75
+			var back_mesh := back.get_child(0) as MeshInstance3D
+			var authored_height: float=back_mesh.mesh.get_aabb().size.y
+			if authored_height>.001:back_mesh.scale.y*=.75/authored_height
 	var y := 4.6
 	for x in [-3.0,3.0]:
 		for z in [-8.85,-7.15]: b.piece(main,"CouncilTableLeg",Vector3(x,y+.58,z),Vector3(.18,.64,.18),timber)

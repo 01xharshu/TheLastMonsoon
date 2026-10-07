@@ -11,6 +11,10 @@ func _ready() -> void:
 	goods.variant = 1
 	_place("VillageGoodsCart", goods, Vector2(-273.0, 183.0), PI)
 	_place("GovernmentHouseFamilyCarriage", FamilyCart.new(), Vector2(-265.0, -18.0), PI * .5)
+	_place("VillageBullockCart",preload("res://vehicles/bullock_cart.gd").new(),Vector2(-403,225),PI*.5)
+	var freight:=preload("res://vehicles/bullock_cart.gd").new()
+	_place("RoadBullockFreight",freight,Vector2(-416,230),-PI*.5)
+	var journey:=preload("res://vehicles/bullock_road_journey.gd").new();journey.name="RoadJourney";journey.configure(freight);freight.add_child(journey)
 
 func _place(label: String, cart: Node3D, at: Vector2, heading: float) -> void:
 	cart.name = label

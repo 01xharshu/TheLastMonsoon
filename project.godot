@@ -19,6 +19,8 @@ config/icon="res://icon.svg"
 
 SaveManager="*res://systems/save_manager.gd"
 ControllerFeedback="*res://systems/controller_feedback.gd"
+WorldAudio="*res://systems/world_audio.gd"
+WindSystem="*res://systems/wind_system.gd"
 
 [display]
 
@@ -148,3 +150,10 @@ look_down={
 
 rendering_device/driver.windows="d3d12"
 lights_and_shadows/directional_shadow/size=2048
+
+[shader_globals]
+
+world_wind={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}

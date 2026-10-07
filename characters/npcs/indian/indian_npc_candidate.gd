@@ -6,6 +6,9 @@ var animation_tree: AnimationTree
 var locomotion_blend := 0.0
 var walking := false
 var playback_rate := 1.0
+var cloth_phase_time := 0.0
+var cloth_meshes: Array[MeshInstance3D] = []
+var purpose_feet: RefCounted
 
 func _ready() -> void:
 	var document := GLTFDocument.new()
@@ -16,6 +19,9 @@ func _ready() -> void:
 		return
 	var figure := document.generate_scene(state)
 	add_child(figure)
+	if candidate_slug in ["boatman", "dock_porter", "record_clerk"]:
+		purpose_feet = preload("res://characters/npcs/indian/purpose_foot_contact.gd").new()
+		purpose_feet.setup(figure.find_children("*", "Skeleton3D", true, false)[0])
 	animation_player = figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if animation_player == null:
 		push_error("Missing candidate AnimationPlayer")
@@ -41,6 +47,9 @@ func _ready() -> void:
 						clip.track_set_key_time(track, key, clip.track_get_key_time(track, key) - first_key)
 				clip.length = last_key - first_key
 		clip.loop_mode = Animation.LOOP_LINEAR
+	for mesh in figure.find_children("*", "MeshInstance3D", true, false):
+		if mesh.mesh != null and mesh.mesh.get_blend_shape_count() >= 8 and mesh.mesh.get_blend_shape_name(0) == "Walk cloth 00":
+			cloth_meshes.append(mesh)
 	animation_player.stop()
 	animation_tree = AnimationTree.new()
 	animation_tree.name = "PersonalAnimationTree"
@@ -53,7 +62,9 @@ func _ready() -> void:
 		node.animation = clip_name
 		graph.add_node(clip_name, node)
 	graph.add_node("walk_rate", AnimationNodeTimeScale.new())
-	graph.add_node("locomotion", AnimationNodeBlend2.new())
+	var locomotion := AnimationNodeBlend2.new()
+	locomotion.sync = not cloth_meshes.is_empty()
+	graph.add_node("locomotion", locomotion)
 	graph.connect_node("walk_rate", 0, "walk")
 	graph.connect_node("locomotion", 0, "idle")
 	graph.connect_node("locomotion", 1, "walk_rate")
@@ -73,3 +84,18 @@ func step_motion(delta: float) -> void:
 	animation_tree.set("parameters/locomotion/blend_amount", locomotion_blend)
 	animation_tree.set("parameters/walk_rate/scale", clampf(playback_rate, 0.1, 3.0))
 	animation_tree.advance(maxf(delta, 0.0))
+	if purpose_feet != null: purpose_feet.update()
+	apply_walk_cloth(delta)
+
+func apply_walk_cloth(delta: float) -> void:
+	if cloth_meshes.is_empty(): return
+	cloth_phase_time += maxf(delta, 0.0) * clampf(playback_rate, .1, 3.0)
+	var length := animation_player.get_animation("walk").length
+	for mesh in cloth_meshes:
+		var samples: int = mesh.mesh.get_blend_shape_count()
+		var phase := fposmod(cloth_phase_time / length, 1.0) * float(samples)
+		var first: int = int(floor(phase)) % samples
+		var fraction: float = phase - floorf(phase)
+		for index in samples:
+			var value: float = (1.0 - fraction) if index == first else fraction if index == (first + 1) % samples else 0.0
+			mesh.set_blend_shape_value(index, value * locomotion_blend)

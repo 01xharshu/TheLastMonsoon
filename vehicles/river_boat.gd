@@ -202,6 +202,7 @@ func _physics_process(delta: float) -> void:
 	if rider != null: _sync_rider()
 
 func _paddle_splash(point: Vector3) -> void:
+	WorldAudio.play_at("splash",point,-20.0)
 	paddle_contacts += 1
 	var ripple := MeshInstance3D.new()
 	ripple.name = "PaddleRipple"

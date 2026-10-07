@@ -1,0 +1,11 @@
+{
+  "checks_failed": [],
+  "event_counts": {
+    "cloth": 2,
+    "impact": 1,
+    "pickup": 1,
+    "step_stone": 5
+  },
+  "pass": true,
+  "visual_approved": false
+}

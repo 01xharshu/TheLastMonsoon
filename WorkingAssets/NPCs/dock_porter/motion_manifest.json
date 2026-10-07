@@ -1,9 +1,10 @@
 {
   "status": "MOTION_CANDIDATE_NOT_APPROVED",
   "source": "WorkingAssets/NPCs/dock_porter/dock_porter_motion_candidate.blend",
-  "source_sha256": "59420cb3dc900e4aba351e413c318a4db28a0a7dc7d3d076c951479839b89cad",
+  "source_sha256": "efa95c9952da23ca18e3fa1c7598abdc859472257150f2042d9889e13387ffc9",
   "runtime": "characters/npcs/motion/dock_porter/dock_porter_rigged_candidate.glb",
-  "runtime_sha256": "d8632a42ea64e62620dc68938c33a4c39fed1c17ddb61e33369bcba2594935ca",
+  "runtime_sha256": "cc9e0ca7537d8d22afe12e029fc7720d7653d0c4a64fd5fcce5c9c0e2ead516d",
+  "cloth_correctives": {},
   "actions": [
     "idle",
     "walk"
@@ -14,12 +15,12 @@
     "stride": 0.4,
     "clearance": 0.065,
     "sway": 0.012,
-    "arm": 0.12
+    "arm": 0.12,
+    "stance_width": 0.06
   },
-  "max_ankle_target_error_m": 0.0093410006495407,
+  "max_ankle_target_error_m": 0.01798313192398873,
   "gait_scope": "flat-floor baked foot targets; no terrain, toe-roll or full motion approval",
   "motion_approved": false,
-  "in_world": false,
-  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation",
-  "whole_body_revision": "2026-10-05: complete-body retention; previous cloth/contact evidence needs renewed review"
+  "in_world": true,
+  "garment_repair": "Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation"
 }

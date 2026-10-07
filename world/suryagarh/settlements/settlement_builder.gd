@@ -100,7 +100,7 @@ func place_period_props() -> void:
 func piece(parent: Node3D, label: String, center: Vector3, size: Vector3, mat: Material, solid := true) -> Node3D:
 	var node := Node3D.new()
 	node.name = label
-	parent.add_child(node)
+	parent.add_child(node,true)
 	node.position = center
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()

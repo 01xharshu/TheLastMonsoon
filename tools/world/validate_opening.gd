@@ -15,6 +15,7 @@ func run() -> void:
 	root.get_node("SaveManager").pending_slot = 0
 	root.get_node("SaveManager").apply_pending(world)
 	var opening = world.get_node("OpeningSequence")
+	check(opening.shade.color == Color.BLACK,"Opening fade must be black before its first update")
 	check(is_equal_approx(opening.top_bar.anchor_bottom,0.12) and is_equal_approx(opening.bottom_bar.anchor_top,0.88),"Letterbox bars missing")
 	check(is_equal_approx(opening.subtitle.anchor_top,0.88),"Captions outside lower bar")
 	check(opening.hint.text == "","Visible skip UI")

@@ -1,0 +1,35 @@
+{
+  "source": "https://opengameart.org/content/different-steps-on-wood-stone-leaves-gravel-and-mud",
+  "download": "https://opengameart.org/sites/default/files/%5Bkdd%5DDifferentSteps_0.zip",
+  "author": "TinyWorlds, edited from PDSounds recordings",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "sha256": "987d072b7deaa65177e005ddd8185f2351be7c9a76cd7575dea560549c39b33b",
+  "changes": "Active subset converted to mono 22050 Hz PCM, high-pass and 3 ms fade-in",
+  "files": [
+    {
+      "archive_member": "wood01.ogg",
+      "runtime_file": "audio/ambience/step_wood01.wav"
+    },
+    {
+      "archive_member": "wood02.ogg",
+      "runtime_file": "audio/ambience/step_wood02.wav"
+    },
+    {
+      "archive_member": "wood03.ogg",
+      "runtime_file": "audio/ambience/step_wood03.wav"
+    },
+    {
+      "archive_member": "stone01.ogg",
+      "runtime_file": "audio/ambience/step_stone01.wav"
+    },
+    {
+      "archive_member": "mud02.ogg",
+      "runtime_file": "audio/ambience/step_mud02.wav"
+    },
+    {
+      "archive_member": "gravel.ogg",
+      "runtime_file": "audio/ambience/step_gravel.wav"
+    }
+  ]
+}

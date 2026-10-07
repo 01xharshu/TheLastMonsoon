@@ -3,7 +3,7 @@ import bpy, math
 from mathutils import Vector
 
 GAITS = {
- 'dock_porter': dict(stride=.40, clearance=.065, sway=.012, arm=.12),
+ 'dock_porter': dict(stride=.40, clearance=.065, sway=.012, arm=.12, stance_width=.06),
  'boatman': dict(stride=.44, clearance=.060, sway=.008, arm=.16),
  'record_clerk': dict(stride=.28, clearance=.040, sway=.024, arm=.085),
 }
@@ -33,12 +33,13 @@ class GroundedGait:
 
  def step(self,clip,phase):
   walking=clip=='walk'
-  for constraint in self.constraints:constraint.influence=1 if walking else 0
-  if walking:
+  active_feet=walking or self.profile.get('stance_width',0.0)>0
+  for constraint in self.constraints:constraint.influence=1 if active_feet else 0
+  if active_feet:
    profile=self.profile
    root=self.rig.pose.bones.get('Root')
    if root:
-    root.location=root.bone.matrix_local.to_3x3().inverted()@Vector((profile['sway']*math.sin(phase*math.tau),0,-.025+.004*math.cos(phase*math.tau*2)))
+    root.location=root.bone.matrix_local.to_3x3().inverted()@Vector((profile['sway']*math.sin(phase*math.tau) if walking else 0,0,-.025+(.004*math.cos(phase*math.tau*2) if walking else 0)))
    for side,offset in [('l',0),('r',.5)]:
     goal,rest=self.targets[side];t=(phase+offset)%1
     if t<.60:
@@ -46,7 +47,9 @@ class GroundedGait:
     else:
      u=(t-.60)/.40;smooth=u*u*(3-2*u)
      y=profile['stride']*(.5-smooth);lift=profile['clearance']*math.sin(math.pi*u)
-    goal.location=self.rig.matrix_world@(rest+Vector((0,y,lift)))
+    if not walking:y=0;lift=0
+    stance=self.profile.get('stance_width',0.0)*(1 if side=='l' else -1)
+    goal.location=self.rig.matrix_world@(rest+Vector((stance,y,lift)))
   bpy.context.view_layer.update()
   if walking:
    for side in ['l','r']:

@@ -135,7 +135,7 @@
     },
     {
       "path": "characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb",
-      "sha256": "54612ae793380c81134421749f1ceb05a05a8aacc8b58aa5d98cb4567d8252d1",
+      "sha256": "5347b84b92a898ec71b98503d239195a42de486cbfc5d019d165fef8190181b2",
       "body": [
         {
           "node": "village_woman_MakeHuman_body_export_cutout",

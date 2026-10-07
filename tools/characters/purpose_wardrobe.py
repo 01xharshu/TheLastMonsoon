@@ -3,6 +3,40 @@ import bpy
 from mathutils import Vector
 
 
+def continuous_arm_cut(obj, prefixes, limit):
+    """Cut fabric along interpolated deform-weight contours, not whole faces."""
+    import bmesh
+    bm=bmesh.new();bm.from_mesh(obj.data)
+    deform=bm.verts.layers.deform.verify()
+    indices={g.index for g in obj.vertex_groups if g.name.startswith(prefixes)}
+    upper=obj.vertex_groups['Period upper only'].index
+    discard=[f for f in bm.faces if any(v[deform].get(upper,0)<.5 for v in f.verts)]
+    bmesh.ops.delete(bm,geom=discard,context='FACES')
+    def value(v):return sum(v[deform].get(i,0) for i in indices)
+    cuts=set()
+    for edge in list(bm.edges):
+        a,b=edge.verts;wa,wb=value(a),value(b)
+        if (wa-limit)*(wb-limit)<0:
+            t=(limit-wa)/(wb-wa);weights_a=dict(a[deform]);weights_b=dict(b[deform])
+            _,v=bmesh.utils.edge_split(edge,a,t)
+            for index in weights_a.keys()|weights_b.keys():v[deform][index]=(1-t)*weights_a.get(index,0)+t*weights_b.get(index,0)
+            cuts.add(v)
+    for face in list(bm.faces):
+        boundary=[v for v in face.verts if v in cuts]
+        if len(boundary)==2 and len(face.verts)>3:
+            bmesh.utils.face_split(face,boundary[0],boundary[1])
+    discard=[f for f in bm.faces if sum(value(v) for v in f.verts)/len(f.verts)>limit+1e-6]
+    bmesh.ops.delete(bm,geom=discard,context='FACES')
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS')
+    lowest=min(v.co.z for v in bm.verts)
+    for v in bm.verts:
+        if v.is_boundary and v.co.z<lowest+.07:v.co.z=lowest+.015
+    bm.to_mesh(obj.data);bm.free()
+    for modifier in list(obj.modifiers):
+        if modifier.type=='MASK':obj.modifiers.remove(modifier)
+    obj['armhole_construction']='Continuous interpolated fabric contour; original cloth weights retained'
+
+
 def apply(role, outfit, rig, material, body_surface=None):
     def arm_weight(vertex, obj, prefixes):
         indices = {g.index for g in obj.vertex_groups if g.name.startswith(prefixes)}
@@ -16,8 +50,9 @@ def apply(role, outfit, rig, material, body_surface=None):
         modifier.vertex_group = group.name
 
     def copy_garment(name, color):
-        obj = outfit.copy()
-        obj.data = outfit.data.copy()
+        base=bpy.data.objects.get('Purpose garment donor') or outfit
+        obj = base.copy()
+        obj.data = base.data.copy()
         bpy.context.collection.objects.link(obj)
         obj.name = name
         obj.data.materials.clear()
@@ -27,7 +62,10 @@ def apply(role, outfit, rig, material, body_surface=None):
     if role in ('dock_porter', 'boatman'):
         prefixes = ('lowerarm_', 'hand_') if role == 'dock_porter' else ('upperarm_', 'lowerarm_', 'hand_')
         keep = [v.index for v in outfit.data.vertices if arm_weight(v, outfit, prefixes) < (.12 if role == 'dock_porter' else .35)]
-        mask(outfit, 'Short work sleeves' if role == 'dock_porter' else 'Sleeveless work tunic', keep)
+        # Keep an unchanged donor for the trousers before trimming upper cloth.
+        donor=outfit.copy();donor.data=outfit.data.copy()
+        bpy.context.collection.objects.link(donor);donor.name='Purpose garment donor'
+        continuous_arm_cut(outfit,prefixes,.12 if role=='dock_porter' else .35)
         for name in ['Knee length wrapped dhoti', 'Dhoti woven border']:
             obj = bpy.data.objects[name]
             if role == 'boatman':
@@ -44,7 +82,7 @@ def apply(role, outfit, rig, material, body_surface=None):
         for v in sash.data.vertices:
             v.co.x *= 1.015
             v.co.y *= 1.02
-            v.co.z = .81 + (v.co.z - bottom) / (top - bottom) * (.075 if role == 'dock_porter' else .045)
+            v.co.z = min(p.co.z for p in outfit.data.vertices) - .025 + (v.co.z - bottom) / (top - bottom) * (.065 if role == 'dock_porter' else .045)
         sash.data.materials.clear()
         sash.data.materials.append(material(sash.name, (.30,.065,.04) if role == 'dock_porter' else (.035,.07,.13)))
         if role == 'dock_porter':
@@ -62,6 +100,8 @@ def apply(role, outfit, rig, material, body_surface=None):
             bm=bmesh.new();bm.from_mesh(shorts.data)
             bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),
                 dist=.00001,plane_co=(0,0,.56),plane_no=(0,0,1),clear_inner=True)
+            bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),
+                dist=.00001,plane_co=(0,0,min(v.co.z for v in outfit.data.vertices)+.04),plane_no=(0,0,1),clear_outer=True)
             bm.to_mesh(shorts.data);bm.free()
             for name in ['Knee length wrapped dhoti', 'Dhoti woven border']:
                 bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
@@ -82,11 +122,11 @@ def apply(role, outfit, rig, material, body_surface=None):
         vest = copy_garment('Clerk buttoned sleeveless waistcoat', (.095,.12,.14))
         keep = [v.index for v in vest.data.vertices
                 if arm_weight(v, vest, ('upperarm_', 'lowerarm_', 'hand_')) < .35]
-        mask(vest, 'Waistcoat armholes', keep)
+        continuous_arm_cut(vest,('upperarm_', 'lowerarm_', 'hand_'),.35)
         for v in vest.data.vertices:
             v.co += v.normal * .014
         # Small dull buttons follow the torso surface instead of floating boxes.
-        points = [v.co for v in vest.data.vertices if v.index in keep]
+        points = [v.co for v in vest.data.vertices]
         button_mat = material('Clerk horn buttons', (.30,.23,.14))
         for z in [1.02, 1.075, 1.13]:
             nearest = sorted(points, key=lambda p: p.x*p.x + (p.z-z)**2)[:18]
@@ -108,10 +148,16 @@ def apply(role, outfit, rig, material, body_surface=None):
         from mathutils.bvhtree import BVHTree
         tree = BVHTree.FromPolygons([v.co for v in body_surface.vertices],
             [tuple(p.vertices) for p in body_surface.polygons])
-        layers = {'Fitted cotton upper base': .012,
-                  'Porter fitted short work trousers': .025,
-                  'Clerk full length trousers': .025,
-                  'Clerk buttoned sleeveless waistcoat': .030}
+        layers = {'Fitted cotton upper base': .024,
+                  'Porter fitted short work trousers': .038,
+                  'Clerk full length trousers': .038,
+                  'Clerk buttoned sleeveless waistcoat': .044}
+        for name in ['Wide madder waist sash','Narrow indigo waist binding']:
+            obj=bpy.data.objects.get(name)
+            if obj:
+                for v in obj.data.vertices:
+                    point,normal,_,distance=tree.find_nearest(v.co)
+                    if point is not None:v.co=point+normal*.052
         for name, clearance in layers.items():
             obj = bpy.data.objects.get(name)
             if obj is None: continue
@@ -119,3 +165,14 @@ def apply(role, outfit, rig, material, body_surface=None):
                 point, normal, polygon, distance = tree.find_nearest(vertex.co)
                 if point is not None and (vertex.co-point).dot(normal) < clearance:
                     vertex.co = point + normal * clearance
+
+    donor=bpy.data.objects.get('Purpose garment donor')
+    if donor:bpy.data.objects.remove(donor,do_unlink=True)
+
+    for name in ['Fitted cotton upper base','Knee length wrapped dhoti','Dhoti woven border',
+                 'Wide madder waist sash','Narrow indigo waist binding',
+                 'Porter fitted short work trousers','Clerk full length trousers','Clerk buttoned sleeveless waistcoat']:
+        obj=bpy.data.objects.get(name)
+        if obj:
+            edge=obj.modifiers.new('Fabric thickness and finished edge','SOLIDIFY')
+            edge.thickness=.002;edge.offset=-1.0

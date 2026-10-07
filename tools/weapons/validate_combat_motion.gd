@@ -136,4 +136,9 @@ func run() -> void:
 	print("FINAL BLADE MIN CONTACT ",slash.closest_target_contact)
 	check(blocked.cut,"same reachable pole breaks after obstacle removed")
 	print("COMBAT MOTION ","PASS" if failures==0 else "FAIL "+str(failures))
+	preload("res://tools/test_audio_cleanup.gd").stop(root)
+	world.queue_free()
+	await process_frame
+	await process_frame
+	await preload("res://tools/test_audio_cleanup.gd").settle(self)
 	quit(1 if failures else 0)

@@ -144,7 +144,7 @@ func _tick(delta: float) -> void:
 			if strike_age>=1.5:
 				strike_age=0;strike_hit=false
 				aggressor.combat_react("strike")
-			if strike_age>=.28 and not strike_hit:
+			if strike_age>=.28 and strike_age<=.60 and not strike_hit and strike_hits_actor(aggressor,peasant):
 				strike_hit=true
 				var vitality:=peasant.get_node("Vitality")
 				vitality.receive_hit(28,aggressor,"abuse")
@@ -188,7 +188,7 @@ func _tick(delta: float) -> void:
 				patrol.index+=patrol.step
 		else:
 			seen=seen or patrol.seen
-			if firearm != null and player.get_meta("climbing",false):
+			if firearm != null and firearm.can_engage():
 				actor.travel_speed = 0
 				continue
 			var offset:=player.global_position-actor.global_position;offset.y=0
@@ -300,16 +300,25 @@ func _process(_delta: float) -> void:
 		actor.solve_hand_contact(side,target);actor.set_grip(side,.3)
 
 func strike_hits_player(actor: Node3D) -> bool:
-	if not visible_to(actor):return false
+	return visible_to(actor) and strike_hits_actor(actor,player)
+
+func strike_hits_actor(actor: Node3D, target: Node3D) -> bool:
 	actor._skeleton.force_update_all_bone_transforms()
 	var hand: int=actor._skeleton.find_bone("hand_r")
 	var point: Vector3=actor._skeleton.to_global(actor._skeleton.get_bone_global_pose(hand).origin)
 	var query:=PhysicsShapeQueryParameters3D.new()
 	var sphere:=SphereShape3D.new();sphere.radius=.14
 	query.shape=sphere;query.transform.origin=point
-	query.exclude=[actor.body_collider.get_rid()];query.collision_mask=1
-	for hit in get_world_3d().direct_space_state.intersect_shape(query,4):
-		if hit.collider==player:return true
+	query.exclude=[actor.body_collider.get_rid()];query.collision_mask=9
+	var policy=preload("res://combat/damage_policy.gd")
+	for hit in get_world_3d().direct_space_state.intersect_shape(query,8):
+		var receiver: Node=policy.receiver(hit.collider)
+		if receiver!=target and (receiver==null or receiver.get_parent()!=target):continue
+		var sight:=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*1.2,point,1)
+		sight.exclude=[actor.body_collider.get_rid()]
+		var obstacle:=get_world_3d().direct_space_state.intersect_ray(sight)
+		if not obstacle.is_empty() and policy.receiver(obstacle.collider)!=receiver:continue
+		return true
 	return false
 
 func fight_aggressor(delta: float) -> void:

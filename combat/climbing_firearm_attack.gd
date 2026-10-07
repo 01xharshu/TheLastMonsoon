@@ -31,7 +31,7 @@ func _process(delta: float) -> void:
 	if owner_actor.get_meta("dead",false) or owner_actor.get_meta("knocked_out",false) or owner_actor.get_meta("grappled",false) or owner_actor.get_meta("combat_action","") == "hit":
 		aim_age = 0.0
 		return
-	var aiming: bool = hostile and is_instance_valid(target) and target.get_meta("climbing",false) and owner_actor.global_position.distance_to(target.global_position) <= 45.0
+	var aiming: bool = can_engage()
 	if aiming:
 		var toward := target.global_position-owner_actor.global_position
 		owner_actor.global_rotation.y = atan2(toward.x,toward.z)
@@ -68,3 +68,8 @@ func _process(delta: float) -> void:
 		aim_age = 0.0
 		sound.play()
 		Trace.shoot(space,get_tree(),muzzle,target.global_position+forward*.5,18,excluded,owner_actor)
+
+func can_engage() -> bool:
+	if not hostile or not is_instance_valid(target): return false
+	if owner_actor.global_position.distance_to(target.global_position) > 45.0: return false
+	return bool(target.get_meta("climbing",false)) or not target.is_on_floor() or target.global_position.y-owner_actor.global_position.y>2.5

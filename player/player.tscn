@@ -344,7 +344,7 @@ text = "[TAB] Close                [0] Quick Drink"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SurvivalHUD" type="HBoxContainer" parent="UI/HUDRoot" unique_id=52984324]
+[node name="SurvivalHUD" type="Control" parent="UI/HUDRoot" unique_id=52984324]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 20.0

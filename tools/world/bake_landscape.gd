@@ -31,6 +31,9 @@ func bake() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT)
 	rng.seed = 1857
 	world.name = "Landscape"
+	if "--grass-only" in OS.get_cmdline_user_args():
+		refresh_grass(start)
+		return
 	terrain_material = ShaderMaterial.new()
 	terrain_material.shader = load("res://world/suryagarh/shaders/terrain.gdshader")
 	terrain_material.set_shader_parameter("road_mask_tex", bake_road_mask())
@@ -38,7 +41,7 @@ func bake() -> void:
 		terrain_material.set_shader_parameter(pair[0] + "_tex", load("res://assets/nature/materials/" + pair[1] + "_diff_1k.jpg"))
 		terrain_material.set_shader_parameter(pair[0] + "_normal", load("res://assets/nature/materials/" + pair[1] + "_nor_gl_1k.jpg"))
 	save_resource(terrain_material, "terrain_material.tres")
-	for slug in ["island_tree_02", "boulder_01", "grass_bermuda_01"]:
+	for slug in ["island_tree_02", "boulder_01"]:
 		var model: Node = load("res://assets/nature/models/" + slug + ".glb").instantiate()
 		var instances: Array[Node] = model.find_children("*", "MeshInstance3D", true, false)
 		assert(not instances.is_empty())
@@ -53,6 +56,8 @@ func bake() -> void:
 				mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 				mat.roughness = 0.88
 		model.free()
+	nature_meshes["grass_bermuda_01"] = preload("res://world/suryagarh/grass_blades.gd").make_mesh()
+	nature_meshes["grass_detail"] = preload("res://world/suryagarh/grass_blades.gd").make_mesh(true)
 	var terrain := Node3D.new()
 	terrain.name = "TerrainTiles"
 	attach(terrain, world)
@@ -191,7 +196,7 @@ func multimesh_batch(mesh: Mesh, transforms: Array[Transform3D], parent: Node3D,
 	instance.multimesh = mm
 	instance.lod_bias = 8.0 if batch_name == "BroadleafTrees" else 1.0
 	instance.visibility_range_end = distance
-	instance.visibility_range_end_margin = 25.0
+	instance.visibility_range_end_margin = 4.0 if batch_name.begins_with("Grass") else 25.0
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if batch_name.begins_with("Grass") else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	attach(instance, parent)
 
@@ -243,20 +248,35 @@ func bake_nature(origin: Vector2, tx: int, tz: int, parent: Node3D) -> void:
 	multimesh_batch(nature_meshes["boulder_01"], rocks, tile, "Boulders", 650)
 	tree_count += trees.size()
 	rock_count += rocks.size()
-	# Small independent patches allow near-ground cover to cull without a world-sized AABB.
-	for gz in 4:
-		for gx in 4:
+	bake_grass(origin,tx,tz,tile)
+
+func bake_grass(origin: Vector2,tx: int,tz: int,tile: Node3D) -> void:
+	# 18 m batches keep nearby detail from drawing whole 36 m patches.
+	var terrain_tile: MeshInstance3D = world.get_node("TerrainTiles/Terrain_%02d_%02d" % [tx,tz])
+	var ground_vertices: PackedVector3Array = terrain_tile.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var sampling_step := ground_vertices[1].x-ground_vertices[0].x
+	var grass_rng := RandomNumberGenerator.new()
+	grass_rng.seed = 1857+tx*149+tz*1879
+	for gz in 8:
+		for gx in 8:
 			var grass: Array[Transform3D] = []
-			for i in 240:
-				var p := origin + Vector2(gx * 36 + rng.randf_range(0, 36), gz * 36 + rng.randf_range(0, 36))
-				var h: float = layout.height(p.x, p.y)
+			for i in 128:
+				var p := origin + Vector2(gx*18+grass_rng.randf_range(0,18),gz*18+grass_rng.randf_range(0,18))
+				var h: float = layout.height(p.x,p.y)
 				if layout.built_area(p.x,p.y): continue
-				if h < 1.8 or h > 95 or layout.road_distance(p.x, p.y) < 5.5: continue
+				if h < 1.8 or h > 95 or layout.road_distance(p.x,p.y) < 5.5: continue
 				if p.distance_to(Vector2(-310,230)) < 70: continue
-				var size: float = rng.randf_range(0.6, 1.5)
-				grass.append(Transform3D(Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3.ONE * size), Vector3(p.x-origin.x, h-0.025, p.y-origin.y)))
+				# Macro variation makes gaps and clumps; do not fill every square uniformly.
+				var cover := .72+.18*sin(p.x*.11+sin(p.y*.09))
+				if grass_rng.randf() > cover: continue
+				var size := Vector3(grass_rng.randf_range(.85,1.2),grass_rng.randf_range(.7,1.25),grass_rng.randf_range(.85,1.2))
+				var frame := preload("res://world/suryagarh/grass_blades.gd").baked_frame(ground_vertices,origin,p,sampling_step,Layout.TILE)
+				frame.origin -= Vector3(origin.x,.018,origin.y)
+				frame.basis = frame.basis*Basis(Vector3.UP,grass_rng.randf_range(0,TAU)).scaled(size)
+				grass.append(frame)
 			grass_count += grass.size()
-			multimesh_batch(nature_meshes["grass_bermuda_01"], grass, tile, "Grass_%d_%d" % [gx,gz], 95)
+			multimesh_batch(nature_meshes["grass_bermuda_01"],grass,tile,"GrassCore_%d_%d" % [gx,gz],85)
+			multimesh_batch(nature_meshes["grass_detail"],grass,tile,"GrassDetail_%d_%d" % [gx,gz],45)
 
 func bake_water() -> void:
 	var st := SurfaceTool.new()
@@ -302,3 +322,26 @@ func bake_horizon() -> void:
 	horizon.mesh = st.commit()
 	horizon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	attach(horizon, world)
+
+func refresh_grass(start: int) -> void:
+	# Preserve every existing tree, rock, collision, route and reserved plot.
+	world.free()
+	world = load(OUT+"landscape.scn").instantiate()
+	nature_meshes["grass_bermuda_01"] = preload("res://world/suryagarh/grass_blades.gd").make_mesh()
+	nature_meshes["grass_detail"] = preload("res://world/suryagarh/grass_blades.gd").make_mesh(true)
+	for tile in world.get_node("NatureTiles").get_children():
+		var parts: PackedStringArray = str(tile.name).split("_")
+		if parts.size()!=3 or parts[0]!="Nature" or not parts[1].is_valid_int() or not parts[2].is_valid_int(): continue
+		for child in tile.get_children():
+			if str(child.name).begins_with("Grass"): child.free()
+		bake_grass(Vector2(tile.position.x,tile.position.z),int(parts[1]),int(parts[2]),tile)
+		print("GRASS TILE ",tile.name)
+	var packed := PackedScene.new()
+	assert(packed.pack(world)==OK)
+	save_resource(packed,"landscape.scn")
+	var report := {"tufts":grass_count,"core_blades":6,"near_detail_blades":18,"batch_width_m":18,"core_fade_m":[48,70],"detail_fade_m":[18,30],"simulation_nodes":0,"root_burial_m":.018,"bake_seconds":(Time.get_ticks_msec()-start)/1000.0,"scope":"grass-only; other landscape content retained"}
+	FileAccess.open("res://docs/world/grass_bake_2026-10-05.json",FileAccess.WRITE).store_string(JSON.stringify(report,"	")+"
+")
+	print("GRASS BAKE PASS ",JSON.stringify(report))
+	world.free()
+	quit()

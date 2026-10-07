@@ -32,6 +32,8 @@ func _ready() -> void:
 	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
 	combat_encounters.name="CombatEncounters"
 	add_child(combat_encounters)
+	var muddy_roads:=preload("res://world/suryagarh/muddy_road_travel.gd").new()
+	muddy_roads.name="MuddyRoadTravel";add_child(muddy_roads)
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 

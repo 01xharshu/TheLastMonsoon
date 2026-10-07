@@ -1,5 +1,8 @@
 extends Node
 ## Additional requests share the job ledger; entrusted goods are never spending money.
+var job_id := "family_cart"
+var pickup_id := "passenger"
+var goal_id := "family_home"
 var manager: Node3D
 var passenger: Node3D
 var cart: Node3D
@@ -19,11 +22,11 @@ var home: Vector3
 
 func configure(owner: Node3D) -> void:
 	manager = owner
-	owner._person("port_cargo","PortWarehouseKeeper",Vector3(-189,2.8,680),"village_farmer")
+	owner._person("port_cargo","PortWarehouseKeeper",Vector3(-189,2.8,680),"dock_porter")
 	owner._person("medicine_request","WorriedNeighbour",Vector3(-396,7.2,327),"village_woman")
 	owner._person("medicine_supply","MarketMedicineDispenser",Vector3(-387,7.2,327),"village_farmer")
 	owner._person("money_sender","StrandedMoneySender",Vector3(-375,7.2,322),"village_farmer")
-	owner._person("money_receiver","PortFamilyReceiver",Vector3(-186,2.8,674),"village_farmer")
+	owner._person("money_receiver","PortFamilyReceiver",Vector3(-186,2.8,674),"boatman")
 	owner._person("passenger","WaitingBrother",Vector3(-246,7.2,212),"errand_passenger")
 	owner._person("family_home","FamilyAtHome",Vector3(-375,7.2,307),"village_woman")
 	for id in ["port_cargo","medicine_request","medicine_supply","money_sender","money_receiver","passenger","family_home"]:
@@ -53,36 +56,37 @@ func configure(owner: Node3D) -> void:
 	borrowed.add_to_group("live_travel_carts")
 
 func use_endpoint(id: String) -> bool:
-	if manager.active != "family_cart": return false
+	if manager.active != job_id: return false
 	if passenger.get_meta("dead",false):
 		manager.cancel(); manager._message("The passenger cannot travel. No wage paid."); return true
 	if not transfer.is_empty(): return true
-	var stage: String = manager.stages.get("family_cart","")
-	if id == "passenger" and stage == "accepted":
+	var stage: String = manager.stages.get(job_id,"")
+	if id == pickup_id and stage == "accepted":
 		for handle in get_tree().get_nodes_in_group("cart_boarding_handles"):
 			var vehicle: Node3D = handle.get_parent()
 			if not vehicle.get("seat_sockets").has("PassengerSeat"): continue
 			if vehicle.global_position.distance_to(passenger.global_position) > 5.0: continue
 			if vehicle.boarding.role == "passenger" and vehicle.boarding.rider != null: continue
 			if absf(vehicle.boarding.speed) > .15 or vehicle.boarding.transition != "": continue
+			if vehicle.has_meta("errand_passenger") or vehicle.boarding.travel.payer != null: continue
 			cart = vehicle; seated = true
 			passenger.set_process(false); passenger.set("foot_plant_enabled",false)
 			passenger.get("animation_tree").active = false
 			passenger.get_node("BodyCollider").collision_layer = 0
-			manager.targets.passenger.collision_layer = 0
+			manager.targets[pickup_id].collision_layer = 0
 			cart.set_meta("errand_passenger",passenger)
-			manager._clear_job_waypoint(); manager.stages.family_cart = "carrying"
+			manager._clear_job_waypoint(); manager.stages[job_id] = "carrying"
 			_begin_transfer("boarding")
 			manager._message("Wait while your passenger boards the cart.")
 			return true
-		manager._message("Bring a passenger cart beside him and stop. The employer's cart is nearby.")
+		manager._message("Bring a passenger cart beside the traveller and stop.")
 		return true
-	if id == "family_home" and stage == "carrying":
+	if id == goal_id and stage == "carrying":
 		if not seated or not is_instance_valid(cart):
-			manager.stages.family_cart = "accepted"
+			manager.stages[job_id] = "accepted"
 			manager._message("Collect the passenger by cart first."); return true
-		if cart.global_position.distance_to(manager.targets.family_home.global_position) > 7.0 or absf(cart.boarding.speed) > .15:
-			manager._message("Bring the cart beside the home and stop before unloading."); return true
+		if cart.global_position.distance_to(manager.targets[goal_id].global_position) > 7.0 or absf(cart.boarding.speed) > .15:
+			manager._message("Bring the passenger cart beside the destination and stop before unloading."); return true
 		var ground := _clear_exit()
 		if not ground.is_finite():
 			manager._message("Park with clear ground beside the passenger step."); return true
@@ -91,7 +95,7 @@ func use_endpoint(id: String) -> bool:
 	return false
 
 func release_passenger(at: Vector3 = Vector3.INF) -> void:
-	if passenger == null: return
+	if not is_instance_valid(passenger): return
 	if is_instance_valid(cart):
 		cart.remove_meta("errand_passenger"); cart.remove_meta("errand_transfer")
 	transfer = ""; transfer_time = 0.0
@@ -103,25 +107,25 @@ func release_passenger(at: Vector3 = Vector3.INF) -> void:
 	preload("res://world/suryagarh/errands/passenger_contact.gd").cloth(passenger,0.0)
 	passenger.set_grip("r",0.0)
 	passenger.get_node("BodyCollider").collision_layer = 1
-	manager.targets.passenger.collision_layer = 1
+	if manager.targets.has(pickup_id): manager.targets[pickup_id].collision_layer = 1
 
 func _physics_process(delta: float) -> void:
 	if manager == null or get_tree().paused: return
 	if seated and passenger.get_meta("dead",false):
 		manager.cancel(); manager._message("The passenger cannot travel. No wage paid."); return
-	if manager.active == "family_cart":
+	if manager.active == job_id:
 		var mounting = manager.player.get_meta("mounted_vehicle") if manager.player.has_meta("mounted_vehicle") else null
 		if mounting != null and mounting.role == "driver" and absf(mounting.speed) < .15 and mounting.transition == "":
-			if manager.stages.family_cart == "accepted" and manager._near("passenger"):
-				use_endpoint("passenger")
-			elif manager.stages.family_cart == "carrying" and manager._near("family_home"):
-				use_endpoint("family_home")
+			if manager.stages[job_id] == "accepted" and manager._near(pickup_id):
+				use_endpoint(pickup_id)
+			elif manager.stages[job_id] == "carrying" and manager._near(goal_id):
+				use_endpoint(goal_id)
 	if seated and is_instance_valid(cart):
 		if transfer.is_empty(): _seat_passenger(delta)
 		else: _advance_transfer(delta)
 	# A resumed escort returns to the pickup instead of inventing a seated cart.
-	if manager.active == "family_cart" and manager.stages.family_cart == "carrying" and not seated:
-		manager.stages.family_cart = "accepted"
+	if manager.active == job_id and manager.stages[job_id] == "carrying" and not seated:
+		manager.stages[job_id] = "accepted"
 	call_cooldown = maxf(0,call_cooldown-delta)
 	if call_cooldown > 0 or not manager.active.is_empty() or manager.player.get_meta("map_open",false): return
 	for request in [["medicine_request","urgent_medicine","Please help! My neighbour needs medicine."],["money_sender","emergency_money","Can someone take money to my family at the port?"],["road","road_meal","Please, traveller! Could you spare some food?"]]:
@@ -165,13 +169,15 @@ func _vehicle_state(vehicle: Node3D) -> Dictionary:
 func export_trip() -> Dictionary:
 	var result := {"borrowed":_vehicle_state(borrowed)}
 	if seated and is_instance_valid(cart): result["occupied"] = _vehicle_state(cart)
+	result["job"] = job_id
 	return result
 
-func _restore_vehicle(data: Dictionary) -> Node3D:
+func _restore_vehicle(data: Dictionary, require_passenger: bool = true) -> Node3D:
 	var path: String = str(data.get("path",""))
 	if path.is_empty() or path.begins_with("/") or ".." in path: return null
 	var vehicle := manager.get_parent().get_node_or_null(NodePath(path)) as Node3D
-	if vehicle == null or vehicle.get("seat_sockets") == null or not vehicle.get("seat_sockets").has("PassengerSeat"): return null
+	if vehicle == null or vehicle.get("seat_sockets") == null or vehicle.get("boarding") == null: return null
+	if require_passenger and not vehicle.get("seat_sockets").has("PassengerSeat"): return null
 	var at = data.get("position",[])
 	var heading = data.get("heading",0)
 	if not at is Array or at.size() != 3 or not (heading is int or heading is float): return null
@@ -185,16 +191,16 @@ func _restore_vehicle(data: Dictionary) -> Node3D:
 
 func restore_trip(data: Dictionary) -> void:
 	if data.get("borrowed",{}) is Dictionary: _restore_vehicle(data.get("borrowed",{}))
-	if manager.active != "family_cart" or manager.stages.get("family_cart","") != "carrying": return
+	if manager.active != job_id or manager.stages.get(job_id,"") != "carrying": return
 	var occupied = data.get("occupied",{})
 	cart = _restore_vehicle(occupied) if occupied is Dictionary else null
 	if cart == null or passenger.get_meta("dead",false):
-		manager.stages.family_cart = "accepted"; cart = null; return
+		manager.stages[job_id] = "accepted"; cart = null; return
 	seated = true
 	passenger.set_process(false); passenger.set("foot_plant_enabled",false)
 	passenger.get("animation_tree").active = false
 	passenger.get_node("BodyCollider").collision_layer = 0
-	manager.targets.passenger.collision_layer = 0
+	manager.targets[pickup_id].collision_layer = 0
 	cart.set_meta("errand_passenger",passenger)
 	_seat_passenger(0)
 
@@ -245,13 +251,13 @@ func _advance_transfer(delta: float) -> void:
 		var completed := transfer
 		transfer = ""; cart.remove_meta("errand_transfer")
 		if completed == "exiting":
-			release_passenger(exit_ground); manager._finish("family_cart")
-		else: manager._message("Your passenger is aboard. Drive to the family home.")
+			release_passenger(exit_ground); manager._finish(job_id)
+		else: manager._message("Your passenger is aboard. " + manager.objective(job_id))
 
 func _clear_exit() -> Vector3:
 	var space := manager.get_world_3d().direct_space_state
 	var body: CollisionShape3D = passenger.get_node("BodyCollider/BodyShape")
-	var excluded: Array[RID] = [passenger.get_node("BodyCollider").get_rid(),manager.targets.passenger.get_rid(),cart.boarding.collision_body.get_rid(),manager.player.get_rid()]
+	var excluded: Array[RID] = [passenger.get_node("BodyCollider").get_rid(),manager.targets[pickup_id].get_rid(),cart.boarding.collision_body.get_rid(),manager.player.get_rid()]
 	for side in [1.0,-1.0]:
 		var at := cart.to_global(Vector3(side*2.35,0,1.4))
 		var ray := PhysicsRayQueryParameters3D.create(at+Vector3.UP*2,at-Vector3.UP*3,1,excluded)
@@ -264,3 +270,9 @@ func _clear_exit() -> Vector3:
 		query.exclude = excluded; query.collision_mask = 1
 		if space.intersect_shape(query,1).is_empty(): return at
 	return Vector3.INF
+
+func bind_passenger(request: String, pickup: String, goal: String) -> void:
+	if seated: release_passenger()
+	job_id=request; pickup_id=pickup; goal_id=goal
+	passenger=manager.targets[pickup].person;home=passenger.global_position
+	leg_solver.actor=passenger

@@ -7,10 +7,17 @@ var age := 0.0
 var active := false
 var contact_error := 0.0
 var victim_movement := false
+var neck_bone := -1
+var palms: Dictionary = {}
 func _ready() -> void:
 	actor=get_parent()
 	visual=actor.get_node("VisualRoot/CharacterVisual")
+	for side in ["l", "r"]:
+		var hand: int=visual.bones["hand_"+side]
+		palms[side]=[hand, visual.skeleton.get_bone_parent(hand)]
 	process_priority=40
+	set_process(false)
+	set_physics_process(false)
 	if not InputMap.has_action("rear_grapple"):
 		InputMap.add_action("rear_grapple")
 		var key:=InputEventKey.new();key.physical_keycode=KEY_B
@@ -39,6 +46,9 @@ func begin() -> bool:
 		chosen=target;closest=distance
 	if chosen==null:return false
 	victim=chosen;age=0;active=true
+	set_process(true)
+	set_physics_process(true)
+	neck_bone=victim._skeleton.find_bone("neck_01")
 	victim_movement=victim.movement_enabled
 	victim.set_meta("grappled",true)
 	victim.movement_enabled=false
@@ -61,16 +71,32 @@ func _process(delta: float) -> void:
 	visual.motion_tree.set_melee(4,minf(age/1.2,1.0))
 	visual.motion_tree.advance(0)
 	var rig: Skeleton3D=victim._skeleton
-	var chest:=rig.to_global(rig.get_bone_global_pose(rig.find_bone("neck_01")).origin)
+	var chest:=rig.to_global(rig.get_bone_global_pose(neck_bone).origin)
 	contact_error=0
+	var hero_rig: Skeleton3D=visual.skeleton
+	var equipment: Node3D=visual.equipment
+	var weight:=smoothstep(0,.3,age)*(1.0-smoothstep(1.0,1.2,age))
 	for side in ["l","r"]:
-		var target:=chest+victim.global_basis*Vector3(.10 if side=="l" else -.10,.015,-.06)
-		visual.climb_targets[side].global_position=target
-		var solver: SkeletonIK3D=visual.climb_ik[side]
-		solver.influence=smoothstep(0,.3,age)
-		solver.start(true)
-		var hand: Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(visual.bones["hand_"+side]).origin)
-		contact_error=maxf(contact_error,hand.distance_to(target))
+		var sign_side:=1.0 if side=="l" else -1.0
+		var target:=chest+victim.global_basis*Vector3(.09*sign_side,.005,-.035)
+		var inward: Vector3=victim.global_basis*Vector3(-sign_side,0,0)
+		var forward: Vector3=victim.global_basis.z.normalized()
+		var across:=forward.cross(inward).normalized()
+		var palm_basis:=Basis(across,forward,inward)
+		var desired: Basis=hero_rig.global_basis.inverse()*palm_basis*(equipment.palm_axes[side] as Basis).inverse()
+		var hand_index: int=palms[side][0]
+		var parent: int=palms[side][1]
+		var hand:=hero_rig.get_bone_global_pose(hand_index)
+		var pose_basis:=Basis(hand.basis.get_rotation_quaternion().slerp(desired.get_rotation_quaternion(),weight))
+		var local_target: Vector3=(hand*equipment.palm_offsets[side]).lerp(hero_rig.to_local(target),weight)
+		# Solve the wrist from the palm offset, then orient it toward the collar.
+		for iteration in 2:
+			equipment._solve_arm(side,local_target-pose_basis*equipment.palm_offsets[side])
+			hero_rig.set_bone_pose_rotation(hand_index,(hero_rig.get_bone_global_pose(parent).basis.inverse()*pose_basis).orthonormalized().get_rotation_quaternion())
+			hero_rig.force_update_all_bone_transforms()
+		equipment._grasp(side,.42*weight)
+		var palm: Vector3=hero_rig.to_global(hero_rig.get_bone_global_pose(hand_index)*equipment.palm_offsets[side])
+		contact_error=maxf(contact_error,palm.distance_to(target))
 	if age>=1.2:
 		victim.get_node("Vitality").receive_hit(100,actor,"takedown")
 		cancel()
@@ -83,6 +109,8 @@ func cancel() -> void:
 			victim.set_meta("combat_action","");victim.animation_tree.set("parameters/combat/blend_amount",0.0)
 			victim.movement_enabled=victim_movement
 	active=false;victim=null
+	set_process(false)
+	set_physics_process(false)
 	actor.set_meta("paired_combat",false)
 	for solver in visual.climb_ik.values():solver.influence=0;solver.stop()
 	visual.motion_tree.set_melee(0,-1)

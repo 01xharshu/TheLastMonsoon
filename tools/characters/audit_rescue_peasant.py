@@ -16,7 +16,15 @@ body_count,_=check_mesh('RescuePeasantSkin');foundation_count,opaque=check_mesh(
 if body_count<manifest['full_body_vertex_count']:errors.append('export has fewer vertices than complete helper-free source')
 if not opaque or not foundation_count:errors.append('opaque separate foundation missing')
 if not manifest.get('complete_runtime_body') or manifest.get('clothing_body_masks_enabled',True):errors.append('body mask contract fails')
-report=dict(passed=not errors,errors=errors,full_body_export_vertices=body_count,foundation_vertices=foundation_count,foundation_separate_and_opaque=opaque,source_sha256=manifest['source_sha256'],runtime_sha256=manifest['runtime_sha256'],visual_approved=False)
+cloth_correctives={}
+for name in ['Knee length wrapped dhoti','Dhoti woven border']:
+ node=next(n for n in doc['nodes'] if n.get('name')==name)
+ mesh=doc['meshes'][node['mesh']]
+ targets=mesh['primitives'][0].get('targets',[])
+ cloth_correctives[name]=len(targets)
+ if len(targets)!=1 or 'Knockdown cotton compression' not in mesh.get('extras',{}).get('targetNames',[]):errors.append(name+' floor corrective missing')
+ if any(abs(weight)>.00001 for weight in mesh.get('weights',[])):errors.append(name+' standing corrective must start at zero')
+report=dict(passed=not errors,errors=errors,full_body_export_vertices=body_count,foundation_vertices=foundation_count,foundation_separate_and_opaque=opaque,cloth_floor_correctives=cloth_correctives,source_sha256=manifest['source_sha256'],runtime_sha256=manifest['runtime_sha256'],visual_approved=False)
 (ROOT/'docs/characters/arjun/rescue_peasant_full_body_validation.json').write_text(json.dumps(report,indent=2)+'\n')
 print('RESCUE_FULL_BODY',json.dumps(report))
 if errors:raise SystemExit(1)

@@ -422,6 +422,12 @@ func sword_blade_segment() -> PackedVector3Array:
 	var blade_transform := skeleton.global_transform*hand_pose*talwar_hand.transform
 	return PackedVector3Array([blade_transform*Vector3(.08,0,0),blade_transform*Vector3(.81,.13,0)])
 
+func knife_blade_segment() -> PackedVector3Array:
+	# The source blade spans local x=.01 to .14 m; follow the evaluated hand.
+	var hand_pose := skeleton.get_bone_global_pose(skeleton.find_bone("hand_r"))
+	var blade_transform := skeleton.global_transform*hand_pose*knife_hand.transform
+	return PackedVector3Array([blade_transform*Vector3(.01,0,0),blade_transform*Vector3(.14,0,0)])
+
 func apply_pistol_grip() -> void:
 	# The short barrel follows the camera while the right palm meets the wood grip.
 	skeleton.force_update_all_bone_transforms()

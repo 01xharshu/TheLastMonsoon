@@ -64,6 +64,7 @@ func open_notice(notice: Node3D) -> void:
 func set_open(value: bool) -> void:
 	if opening == value: return
 	if value and not can_open(): return
+	WorldAudio.play_at("paper",player.global_position)
 	opening = value
 	visible = true
 	player.set_meta("scroll_open", value or motion.active)

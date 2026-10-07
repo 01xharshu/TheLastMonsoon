@@ -244,6 +244,7 @@ func set_open(value: bool) -> void:
 		if _character_in_leaf(lerpf(swing,target,float(sample)/12.0)): return
 	opened = value
 	moving = true
+	WorldAudio.play_at("door",global_position)
 	last_safe_swing = swing
 	motion = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	motion.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

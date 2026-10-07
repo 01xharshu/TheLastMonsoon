@@ -74,7 +74,7 @@ func run() -> void:
 	check(visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge was absent at the loading hand")
 	var cartridge_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
 	check(visual.equipment.enfield_cartridge.global_position.distance_to(cartridge_palm) < 0.10,"Enfield cartridge was not in the left palm")
-	rifle.reload_remaining = rifle.RELOAD_SECONDS*0.36
+	rifle.reload_remaining = rifle.RELOAD_SECONDS*0.30
 	visual._process(1.0/60.0)
 	check(not visual.equipment.enfield_cartridge.visible,"Enfield paper cartridge remained after the loading gesture")
 	var loading_palm: Vector3 = visual.skeleton.global_transform * (visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")) * visual.equipment.palm_offsets["l"])
@@ -84,7 +84,7 @@ func run() -> void:
 	check(early_left.distance_to(loading_left) > 0.06,"Enfield loading hand did not move")
 	check(visual.equipment.reload_progress > 0.5,"Enfield reload pose did not follow timer")
 	var rod: Node3D = visual.equipment.enfield_hand.find_child("enfield_ramrod",true,false)
-	check(rod != null and rod.position.x > (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x + 0.1,"Enfield ramrod did not extend")
+	check(rod != null and rod.transform.is_equal_approx(visual.equipment.ramrod_rest["enfield_ramrod"]),"Fast reload moved the stowed ramrod")
 	var sample_count := int(rifle.RELOAD_SECONDS*60.0)
 	var max_pinch_error := 0.0
 	var previous_contact := Vector3.ZERO
@@ -117,9 +117,9 @@ func run() -> void:
 	print("RELOAD PATH MAX STEP: ",maximum_step," source m")
 	print("RELOAD CONTACT SWEEP: ",max_pinch_error," m / ",sample_count+1," poses")
 	rifle.reload_remaining = rifle.RELOAD_SECONDS
-	rifle._process(5.0)
-	check(not rifle.loaded and is_equal_approx(rifle.reload_remaining,rifle.RELOAD_SECONDS-5.0),"Slower reload completed at the old five-second deadline")
-	rifle._process(rifle.RELOAD_SECONDS-5.0+0.1)
+	rifle._process(rifle.RELOAD_SECONDS - 0.1)
+	check(not rifle.loaded and is_equal_approx(rifle.reload_remaining,0.1),"Reload chambered before its completion deadline")
+	rifle._process(0.11)
 	check(rifle.loaded,"Reload did not chamber a round")
 	visual._process(1.0/60.0)
 	check(absf(rod.position.x - (visual.equipment.ramrod_rest["enfield_ramrod"] as Transform3D).origin.x) < 0.001,"Enfield ramrod did not return")

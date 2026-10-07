@@ -4,6 +4,7 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 
 | Work area | Source of truth | Focused evidence |
 | --- | --- | --- |
+| World sound and wind | [coverage and remaining gates](world/audio_and_wind.md) | [world route with sound](world/audio_world_route.mp4); behaviour/contact audio PASS, owner listening and performance open |
 | Project audit, unfinished scope and owner continuation | [2026-10-05 audit](agent/project_audit_2026-10-05.md) | Current chat dispatch, missing/unverified locations, storage and performance priorities |
 | Workspace retention, cart standing and schedules | [current scope and limits](world/workspace_optimisation.md) | [retention report](assets/workspace_evidence_retention.json), hours/reserved boarding regression |
 | Cantonment warehouses, stables, hospital, church and cemetery | [interior/exterior pass](world/cantonment_service_realism.md) | [routes](world/cantonment_validation.json); native close views `world/captures/service_*.png`, final art open |
@@ -17,7 +18,7 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 | Women’s morning river animation | [routine, source and open gates](characters/npcs/women_river_routine.md) | [target sweep](characters/npcs/river_routine_validation.json); [1.0x fixture playback](characters/npcs/river_routine_motion.mp4); cloth and real-bank review open |
 | River, boat, fish and climb status | [focused status](world/river_boat_climb_status.md) | live captures (capture retired), underwater fish (capture retired) |
 | Hooghly port, sea boundary and explorable merchant ship | [scope and evidence](world/hooghly_port.md), [port module](../world/suryagarh/hooghly_port.gd) | [native overview](world/captures/hooghly_port_overview.png), [player route validation](../tools/world/validate_hooghly_port.gd) |
-| Paid errands, roadside aid and work notices | [play loop, controls and limits](world/errands_and_paid_work.md) | [saved cart](world/captures/errand_cart_resume.png), [boarding](world/captures/errand_boarding_step.png), [step down](world/captures/errand_exiting_step.png); port/medicine/money/passenger jobs + daily work |
+| Paid errands, roadside aid and work notices | [play loop, controls and limits](world/errands_and_paid_work.md), [travelling requests](world/travelling_opportunities.md) | [saved cart](world/captures/errand_cart_resume.png), [boarding](world/captures/errand_boarding_step.png), [step down](world/captures/errand_exiting_step.png); port/medicine/money/passenger jobs + daily work |
 | World interaction and chest | [behavior and limits](world/interaction_system.md) | icon prompt (capture retired), kneel contact (capture retired) |
 | Wall notices and O-key record cards | [interaction, period evidence and gates](world/document_reading.md) | [record cards](world/captures/document_cards.png), [paper grip](world/captures/document_hand_contact.png), [market board](world/captures/document_market_board.png) |
 | Bandage supplies and healing | [behavior and limits](world/medical_supplies.md) | rolled cloth pickup (capture retired) |
@@ -30,7 +31,7 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 | Player on existing stairs | [test scope and limits](world/player_stair_traversal.md), [live controller test](../tools/world/validate_player_world_stairs.gd) | [eight up/down results](world/player_world_stairs_validation.json), Metal mid-ascent (capture retired) |
 | Exterior stairs and ridden horse | [behavior and limits](world/player_stair_traversal.md#exterior-stairs-and-horse-follow-up) | [Arjun routes](world/exterior_stairs_validation.json), [horse routes](world/horse_stairs_validation.json), horse landing (capture retired) |
 | Landing and stair support | [repairs and period limits](world/period_access.md) | [contact/traversal result](world/period_access_validation.json), [live test](../tools/world/validate_period_access.gd) |
-| Ruined hill fort blockout | [status and remaining checks](world/ruined_fort_blockout.md), [standalone scene](../world/ruined_fort/ruined_fort.tscn) | Metal overview (capture retired), [route validation](../tools/world/validate_ruined_fort.gd) |
+| Ruined hill fort blockout | [status and remaining checks](world/ruined_fort_blockout.md), [standalone scene](../world/ruined_fort/ruined_fort.tscn) | [Main-world Metal overview](world/captures/ruined_fort_in_world.png), [feature checks](../tools/world/validate_fort_features.gd) |
 | Wealthy households and residents | [homes, wardrobe and limits](world/wealthy_households.md), [resident journeys](world/household_daily_journeys.md) | [population/routes](world/wealthy_households_validation.json), merchant preview (capture retired); final art/contact open |
 | World construction | [settlement builder](../world/suryagarh/settlements/settlement_builder.gd), [landscape bake](../tools/world/bake_landscape.gd) | [world captures](world/captures/) |
 | House access and occupied command fort | [behavior and limits](world/house_access_and_occupied_fort.md), [staff clothing/latch motion](world/staff_clothing_and_latch_motion.md) | [focused checks](world/house_access_validation.json), fort (capture retired); final realism open |
@@ -44,8 +45,10 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 | Water pouch fit and relaxed hands | [attachment, shape and checks](characters/arjun/water_bag_attachment.md) | [empty](characters/arjun/water_bag_fit_2026-09-30/empty_back.png), [full](characters/arjun/water_bag_fit_2026-09-30/full_back.png), [moving hands](characters/arjun/water_bag_fit_2026-09-30/motion_turn.png); action-specific motion review open |
 | Arjun equipment | [equipment script](../player/arjun_equipment.gd), [wheel](../player/weapon_wheel.gd), [weapon set status](characters/arjun/weapon_set_status.md) | [weapon set review](characters/arjun/weapon_set_review_2026-09-23.png); [older equipment validation](characters/arjun/equipment_validation.json) uses rejected appearance |
 | Arjun combat motion, flag break and boat seat | [focused status](characters/arjun/combat_motion_2026-09-24.md) | paddle water contact (capture retired), [stroke measurements](world/boat_stroke_validation.json) |
+| Arjun combat and civilian rescue | [implementation and open realism work](characters/arjun/combat_rescue_2026-10-05.md) | [native contacts](characters/arjun/combat_rescue_validation_metal.json), [running soles](characters/arjun/running_sole_contacts.json), [world integration](characters/arjun/combat_world_validation.json), [20s motion review](characters/arjun/combat_motion_1x_2026-10-06.mp4) |
 | Arjun prone and cover | [controls, checks and limits](characters/arjun/stealth_stance.md) | crate cover (capture retired), prone (capture retired) |
 | Arjun AnimationTree | [locomotion blend and limits](characters/arjun/animation_tree.md) | [focused check](../tools/characters/validate_arjun_motion_tree.gd) |
+| Arjun jump and house roofs | [leap, catch and roof access](characters/arjun/leap_climb_2026-10-06.md) | [Metal house motion](characters/arjun/leap_climb_2026-10-05/house_roofs_1x_2026-10-06.mp4) |
 | Arjun window climbing | [sill crossing and limits](characters/arjun/window_climb.md) | [Metal motion preview](characters/arjun/window_climb/window_crossing.mp4) |
 | Arjun object climbing | [height-based ledges and limits](characters/arjun/object_climbing.md) | [fixture](../tools/characters/validate_arjun_object_climb.tscn) |
 | Arjun uneven climbing | [sloped rocks and broken edges](characters/arjun/rock_climbing.md) | [Metal preview](characters/arjun/rock_climb_2026-10-01/broken_edge.mp4) |
@@ -55,7 +58,7 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 | Station interior detail | [masonry, ventilation, lanterns and room furnishings](world/police_refinement_2026-09-30.md) | routes/vent openings PASS; fresh Metal day/night views, final art and 8 GB hardware gates open |
 | Thana police staff | [period basis, placement and candidate limits](characters/npcs/thana_staff.md) | three rigged uniform candidates, Sikh guard; station/arrest checks PASS; period pattern/art review open |
 | Whole bodies under all human clothing | [migration and verification](characters/npcs/whole_body_standard.md) | Source/runtime retention migration; cloth/contact approval separate |
-| Purpose NPC batch | [porter, boatman and record clerk](characters/npcs/purpose_npcs.md) | Independent MPFB sources; cloth/contact and work actions pending |
+| Purpose NPC batch | [porter, boatman and record clerk](characters/npcs/purpose_npcs.md) | Independent MPFB sources; sampled idle/walk fit PASS, work actions/final art open |
 | Additional Indian NPCs | [fruit seller and weaving assistant candidates](characters/npcs/other_indian_npcs.md) | [Metal motion preview](characters/npcs/other_indian_npcs_motion.mp4); independent trees pass, visual and contact review failed |
 | Dev, Arjun's sepoy elder brother | [character candidate and story role](characters/npcs/arjun_brother.md) | [three-quarter MakeHuman render](../WorkingAssets/NPCs/arjun_brother/three_quarter.png); editable source and static preview, art open |
 | Leela, Arjun's later love interest | [references and body realism](characters/npcs/leela.md) | [body front](../WorkingAssets/NPCs/leela/body_study/body_front.png), [face portrait](../WorkingAssets/NPCs/leela/body_study/face_three_quarter.png); body first, likeness open, no game placement |
@@ -70,3 +73,5 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 The [2026-09 handoff archive](agent/history/2026-09-23-pre-compact-handoff.md) preserves earlier decisions and commands. Open it only when the current handoff and focused evidence do not answer a historical question.
 
 For a new feature, update the relevant source and focused docs. Keep the handoff to: status, material changes, evidence or failure, and one exact next action. Avoid copying console output or repeating milestones there.
+
+Ordered completion continuation: [fit, integration, route and performance](characters/npcs/ordered_completion_2026-10-06.md). Main authored grass: [integration and paired native evidence](world/grass_main_integration_2026-10-06.md).

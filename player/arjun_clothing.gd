@@ -187,6 +187,8 @@ func _process(delta: float) -> void:
  var acceleration := (local_velocity - previous_velocity) / maxf(delta,.001)
  previous_velocity = local_velocity
  var goal := Vector2(-acceleration.x,-acceleration.z) * .0007 + Vector2(0,-local_velocity.z) * .0012
+ var breeze: Vector3 = rig.global_basis.orthonormalized().inverse() * WindSystem.sample(actor.global_position) * WindSystem.exposure
+ goal += Vector2(breeze.x,breeze.z) * .0015
  goal = goal.limit_length(.014) * (1.0-moisture*.4)
  # Substep a damped spring so frame stalls cannot throw fabric through the body.
  var remaining := minf(delta,.1)

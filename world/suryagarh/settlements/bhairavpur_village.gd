@@ -321,6 +321,7 @@ func _merge_static_geometry(node: Node3D) -> void:
 				surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 				surfaces[mat] = surface
 			surfaces[mat].append_from(mesh.mesh,i,transform)
+		preload("res://player/climb_opportunities.gd").retain_edge(node,mesh)
 		mesh.free()
 	var merged := ArrayMesh.new()
 	for mat: Material in surfaces:

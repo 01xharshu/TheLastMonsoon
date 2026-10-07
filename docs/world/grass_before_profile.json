@@ -14,28 +14,28 @@
 	"views": [
 		{
 			"draw_calls": 204,
-			"median_frame_ms": 13.45,
+			"median_frame_ms": 6.902,
 			"median_gpu_ms": 0.0,
-			"median_render_cpu_ms": 0.388999998569489,
-			"p95_frame_ms": 20.275,
+			"median_render_cpu_ms": 0.248999997973442,
+			"p95_frame_ms": 7.632,
 			"primitives": 177486,
 			"view": "close"
 		},
 		{
 			"draw_calls": 204,
-			"median_frame_ms": 6.898,
+			"median_frame_ms": 6.921,
 			"median_gpu_ms": 0.0,
-			"median_render_cpu_ms": 0.361999988555908,
-			"p95_frame_ms": 9.437,
+			"median_render_cpu_ms": 0.221000000834465,
+			"p95_frame_ms": 7.41,
 			"primitives": 177486,
 			"view": "walk_height"
 		},
 		{
 			"draw_calls": 206,
-			"median_frame_ms": 6.9,
+			"median_frame_ms": 6.904,
 			"median_gpu_ms": 0.0,
-			"median_render_cpu_ms": 0.503000020980835,
-			"p95_frame_ms": 7.552,
+			"median_render_cpu_ms": 0.726999998092651,
+			"p95_frame_ms": 7.254,
 			"primitives": 181326,
 			"view": "wide"
 		}

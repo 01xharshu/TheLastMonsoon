@@ -198,6 +198,12 @@ func validate() -> void:
 	check(player.inventory.get_item_count("mango") == 1, "Pickup was duplicated")
 	survival.satiety = 50
 	survival.hydration = 50
+	check(not player.consumables.eat_mango() and player.inventory.get_item_count("mango") == 1, "Busy pickup allowed overlapping eating")
+	var pose = player.get_node("InteractionPoseComponent")
+	var visual = player.get_node("VisualRoot/CharacterVisual")
+	for frame in 45:
+		visual._process(1.0/60.0)
+		pose._process(1.0/60.0)
 	check(player.consumables.eat_mango(), "Satchel eating failed")
 	check(survival.satiety == 62 and survival.hydration == 56, "Mango nutrition incorrect")
 	check(player.inventory.get_item_count("mango") == 0, "Eating did not consume fruit")
@@ -207,6 +213,9 @@ func validate() -> void:
 	check(not fresh.collected and survival.satiety == 62, "World eating was still allowed")
 	fresh.interact(player)
 	check(fresh.collected and player.inventory.get_item_count("mango") == 1, "Second mango was not collected")
+	for frame in 110:
+		visual._process(1.0/60.0)
+		pose._process(1.0/60.0)
 	check(player.consumables.eat_mango() and survival.satiety == 74, "Satchel eating failed")
 	var full_fruit = load("res://objects/mango.gd").new()
 	world.add_child(full_fruit)

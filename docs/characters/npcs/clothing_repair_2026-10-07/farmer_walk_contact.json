@@ -1,0 +1,65 @@
+{
+  "sources": {
+    "village_farmer": {
+      "path": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/WorkingAssets/NPCs/village_farmer/village_farmer_clothing_fitted.blend",
+      "sha256": "89bcdd4bf318d4f3aeca5abe2dc86be67a5d47cd0c8068cffffb69497ed267ee"
+    }
+  },
+  "passed": false,
+  "substeps_per_frame": 2,
+  "clip": "walk",
+  "scope": "source walk vertex and polygon-center surface sampling; not full continuous mesh or renderer approval",
+  "actors": {
+    "village_farmer": {
+      "Fitted cotton upper base": {
+        "max_penetration_m": 0.017311543022515252,
+        "penetrating_samples": 935,
+        "worst_point": {
+          "frame": 9.0,
+          "point": [
+            -0.1315751075744629,
+            -0.042682647705078125,
+            1.1741726398468018
+          ],
+          "sample_kind": "vertex_samples",
+          "nearest_body_region": "spine_03",
+          "nearest_body_point": [
+            -0.14848072826862335,
+            -0.04537763446569443,
+            1.1715340614318848
+          ]
+        },
+        "vertex_samples": 521,
+        "face_center_samples": 414,
+        "nearest_body_regions": {
+          "spine_03": 923,
+          "upperarm_l": 12
+        }
+      },
+      "Knee length wrapped dhoti": {
+        "max_penetration_m": 0,
+        "penetrating_samples": 0,
+        "worst_point": null,
+        "vertex_samples": 0,
+        "face_center_samples": 0,
+        "nearest_body_regions": {}
+      },
+      "Dhoti woven border": {
+        "max_penetration_m": 0,
+        "penetrating_samples": 0,
+        "worst_point": null,
+        "vertex_samples": 0,
+        "face_center_samples": 0,
+        "nearest_body_regions": {}
+      },
+      "Kurta loose lower panel": {
+        "max_penetration_m": 0,
+        "penetrating_samples": 0,
+        "worst_point": null,
+        "vertex_samples": 0,
+        "face_center_samples": 0,
+        "nearest_body_regions": {}
+      }
+    }
+  }
+}

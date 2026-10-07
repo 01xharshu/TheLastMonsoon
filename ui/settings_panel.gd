@@ -39,7 +39,7 @@ func _ready() -> void:
 	add_toggle("VSync", "vsync")
 	_section("Graphics")
 	var quality := OptionButton.new()
-	for title in ["Low · 65% / 40 m shadows", "Medium · 85% / 80 m shadows", "High · 100% / 130 m shadows"]: quality.add_item(title)
+	for title in ["Low · up to 540p / 40 m shadows", "Medium · up to 720p / 80 m shadows", "High · up to 1080p / 130 m shadows"]: quality.add_item(title)
 	quality.selected = int(SaveManager.options.graphics_quality)
 	quality.item_selected.connect(func(index: int): SaveManager.set_option("graphics_quality",index))
 	add_child(quality)

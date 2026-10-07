@@ -108,6 +108,7 @@ func single_attack() -> void:
 
 func punch() -> void:
 	if punch_time >= 0.0 or kick_time >= 0.0 or not available(): return
+	WorldAudio.play_at("cloth",actor.global_position)
 	punch_time = 0.0
 	left_punch = not left_punch
 	punch_landed = false
@@ -118,6 +119,7 @@ func punch() -> void:
 func kick() -> void:
 	if kick_cooldown > 0.0 or punch_time >= 0.0 or not available(): return
 	kick_cooldown = .65
+	WorldAudio.play_at("cloth",actor.global_position)
 	kick_time = 0.0
 	air_kick = not actor.is_on_floor()
 	kick_landed = false
@@ -148,7 +150,9 @@ func _melee_hit(_reach: float, damage: float) -> bool:
 		sight.exclude=[actor.get_rid()]
 		var hit:=actor.get_world_3d().direct_space_state.intersect_ray(sight)
 		if not hit.is_empty() and policy.receiver(hit.collider)!=policy.receiver(body):continue
-		if policy.apply(body,damage,actor,"kick" if kick_active else "punch"):return true
+		if policy.apply(body,damage,actor,"kick" if kick_active else "punch"):
+			WorldAudio.play_at("impact",point,-13.0)
+			return true
 	return false
 
 func dodge() -> bool:

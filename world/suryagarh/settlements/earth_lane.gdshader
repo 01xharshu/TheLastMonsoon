@@ -4,6 +4,7 @@ uniform sampler2D earth_texture : source_color, filter_linear_mipmap_anisotropic
 uniform sampler2D earth_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float lane_width = 4.0;
 uniform float wheel_wear = 1.0;
+uniform float wet_earth = 0.0;
 varying vec3 world_position;
 void vertex(){world_position=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -19,7 +20,9 @@ void fragment(){
  ALBEDO=earth*mix(.90,1.08,grain);
  NORMAL_MAP=texture(earth_normal,world_position.xz/3.0).rgb;
  NORMAL_MAP_DEPTH=mix(.20,.52,shoulder);
- ROUGHNESS=.94;
- SPECULAR=.14;
+ float wet=wet_earth*smoothstep(.52,.82,(sin(world_position.x*.11+world_position.z*.075-1.5)+1.0)*.5);
+ ALBEDO*=mix(1.0,.56,wet);
+ ROUGHNESS=mix(.94,.38,wet);
+ SPECULAR=mix(.14,.43,wet);
  ALPHA=(1.0-smoothstep(.74+noise(world_position.xz*1.7)*.12,.99,abs(UV.x-.5)*2.0))*.90;
 }

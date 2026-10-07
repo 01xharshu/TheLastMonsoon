@@ -18,7 +18,7 @@ func _run() -> void:
  var ok := arm.shape is SphereShape3D and arm.collision_mask == 4294967295
  for i in 12: await physics_frame
  var open_distance: float = arm.global_position.distance_to(camera.global_position)
- ok = ok and open_distance > 1.6 and open_distance < 1.9
+ ok = ok and absf(open_distance - arm.spring_length) < 0.05
  var ground := MeshInstance3D.new()
  var floor_mesh := PlaneMesh.new()
  floor_mesh.size = Vector2(8, 8)
@@ -60,6 +60,6 @@ func _run() -> void:
   await physics_frame
   camera._process(1.0 / 60.0)
  var restored_distance: float = arm.global_position.distance_to(camera.global_position)
- ok = ok and restored_distance > 1.6
+ ok = ok and absf(restored_distance - arm.spring_length) < 0.05
  print("CAMERA OBSTRUCTION: ", "PASS" if ok else "FAIL", " | open=", open_distance, " blocked=", blocked_distance, " tight=", tight_distance, " restored=", restored_distance)
  quit(0 if ok else 1)

@@ -26,7 +26,10 @@ func _run() -> void:
  for i in 4: await physics_frame
  gun.start_reload()
  check(gun.reload_remaining>0 and actor.inventory.get_item_count("shot_charge")==2,"Two chambers were not loaded")
- gun._process(5.0)
+ check(is_equal_approx(gun.reload_remaining,1.5),"Double gun reload is not fast")
+ gun._process(1.4)
+ check(gun.rounds==0,"Double gun loaded before reload completed")
+ gun._process(0.11)
  check(gun.rounds==2,"Double gun did not finish loading")
  gun.aiming = true
  gun.fire()

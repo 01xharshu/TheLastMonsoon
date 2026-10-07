@@ -56,6 +56,10 @@ func _ready() -> void:
 	clothing.name = "Clothing"
 	add_child(clothing)
 	clothing.setup(model, skeleton)
+	preload("res://player/combat_trouser_yoke.gd").apply(model,skeleton)
+	var foot_contacts:=preload("res://player/locomotion_foot_contact.gd").new()
+	foot_contacts.name="LocomotionFootContact"
+	add_child(foot_contacts)
 	for i in skeleton.get_bone_count():
 		var bone := skeleton.get_bone_name(i)
 		bones[bone] = i
@@ -300,7 +304,7 @@ func _process(delta: float) -> void:
 				duration = 3.8
 			Equipment.Selection.DOUBLE_GUN:
 				reload_node = actor.get_node_or_null("DoubleGunCombat")
-				duration = 4.4
+				duration = preload("res://player/rifle_combat.gd").DOUBLE_RELOAD_SECONDS
 		if reload_node != null and reload_node.reload_remaining > 0.0:
 			equipment.reload_progress = clampf(1.0-reload_node.reload_remaining/duration,0.0,1.0)
 	if motion_tree != null:

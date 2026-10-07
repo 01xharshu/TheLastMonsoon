@@ -1,0 +1,13 @@
+{
+  "blocked": true,
+  "cart_at": "(-215.4789, 5.491167, -27.15531)",
+  "contacts": [
+    {
+      "collider": "/root/Suryagarh/Landscape/TerrainTiles/Terrain_04_05/GroundCollision",
+      "shape_center": "(0.0, 1.68, 2.8)",
+      "shape_size": "(2.25, 2.0, 3.15)"
+    }
+  ],
+  "ground_y": 5.49106502532959,
+  "scope": "actual carriage movement-clearance shapes and saved terrain at failed paid-road junction; no collision bypass"
+}

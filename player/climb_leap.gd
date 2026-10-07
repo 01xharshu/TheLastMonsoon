@@ -9,19 +9,33 @@ var from := Vector3.ZERO
 var to := Vector3.ZERO
 var launches := 0
 var flight_seconds := .58
+var lateral_transfer := false
+var lateral_grip := Vector3.ZERO
 
 func begin(component: Node) -> void:
 	c = component
 	held_row = c.first_hand_row
 	target_row = held_row
 	phase = "catch"
+	lateral_transfer = false
 	clock = 0.0
 	from = c.start
 	to = c.hang_grip
 
 func request() -> bool:
 	if phase != "hang": return false
-	if held_row >= c.hold_rows or c._hold(held_row,"l",false,Vector3.UP.cross(c.wall_normal)).y >= c.landing.y-.99:
+	var sideways := Input.get_axis("move_left","move_right")
+	if absf(sideways) > .5:
+		var edge: Dictionary = c.opportunities.side_grip(c,sideways)
+		if edge.is_empty(): return false
+		lateral_transfer = true
+		lateral_grip = edge.point
+		target_row = held_row
+		from = c.actor.global_position
+		to = c.outside_architecture(lateral_grip+c.wall_normal*.36-Vector3.UP*.78)
+		return launch_checked()
+	lateral_transfer = false
+	if held_row >= (c.hold_rows if c.layers.is_empty() else c.layers.size()-1) or c._hold(held_row,"l",false,Vector3.UP.cross(c.wall_normal)).y >= c.landing.y-.99:
 		phase = "mantle"
 		c.crest = c.actor.global_position
 		c.progress = .78
@@ -34,8 +48,7 @@ func request() -> bool:
 	var best := -INF
 	var tangent := Vector3.UP.cross(c.wall_normal).normalized()
 	var origin: Vector3 = c._hold(held_row,"l",false,tangent)
-	var sideways := Input.get_axis("move_left","move_right")
-	for row in range(held_row+1,c.hold_rows+1):
+	for row in range(held_row+1,c.hold_rows+1 if c.layers.is_empty() else c.layers.size()):
 		if row in c.route_missing_rows: continue
 		var point: Vector3 = c._hold(row,"l",false,tangent)
 		var rise: float = point.y-origin.y
@@ -53,7 +66,12 @@ func request() -> bool:
 	from = c.actor.global_position
 	to = c.wall_point+c.wall_normal*.36
 	to.y = c._hold(target_row,"l",false,Vector3.UP.cross(c.wall_normal)).y-.90
-	if not c.layers.is_empty(): to = c.layers[target_row]+c.wall_normal*.18-Vector3.UP*.90
+	if not c.layers.is_empty():
+		to = c.layers[target_row]+c.wall_normal*.36-Vector3.UP*.78
+		to = c.outside_architecture(to)
+	return launch_checked()
+
+func launch_checked() -> bool:
 	# Sweep the outward launch arc as well as its endpoint.
 	var previous := from
 	for sample in range(1,13):
@@ -96,6 +114,10 @@ func advance(delta: float) -> void:
 		launches += 1
 	elif phase == "flight" and clock >= flight_seconds:
 		held_row = target_row
+		if lateral_transfer:
+			var displacement: Vector3 = lateral_grip-c.layers[held_row]
+			c.layers[held_row] = lateral_grip
+			c.landing += displacement
 		phase = "settle"
 		clock = 0.0
 	elif (phase == "catch" and clock >= .32) or (phase == "settle" and clock >= .26):
@@ -106,6 +128,8 @@ func advance(delta: float) -> void:
 
 func contact(side: String, foot: bool) -> Vector3:
 	var row := held_row
+	if lateral_transfer and phase == "flight" and not foot:
+		return lateral_grip+Vector3.UP.cross(c.wall_normal).normalized()*(.24 if side == "r" else -.24)
 	if phase == "flight": row = target_row
 	if foot:
 		if c.layers.is_empty(): row = maxi(0,floori(float(row)-1.60/c.hold_spacing))
@@ -118,6 +142,11 @@ func contact(side: String, foot: bool) -> Vector3:
 	return c._hold(row,side,foot,Vector3.UP.cross(c.wall_normal).normalized())
 
 func weight(foot := false) -> float:
+	if foot and not c.layers.is_empty():
+		var supported := false
+		for layer in c.layers:
+			if layer.y <= c.layers[clampi(held_row,0,c.layers.size()-1)].y-1.60 and Vector2(layer.x-c.actor.global_position.x,layer.z-c.actor.global_position.z).length() < .65: supported = true; break
+		if not supported: return 0.0
 	match phase:
 		"flight": return 0.0
 		"catch": return smoothstep(.10,.30,clock)

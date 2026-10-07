@@ -12,10 +12,10 @@ func _ready() -> void:
 	name = "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip_contents = true
-	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	offset_left = 20
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	offset_left = -200
 	offset_top = -200
-	offset_right = 200
+	offset_right = -20
 	offset_bottom = -20
 	map.refresh_sites.call_deferred()
 	var terrain_view := ColorRect.new()

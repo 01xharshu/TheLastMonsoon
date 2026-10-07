@@ -101,6 +101,7 @@ func _build_overlay() -> void:
 	layer.layer = 110
 	add_child(layer)
 	shade = ColorRect.new()
+	shade.color = Color.BLACK
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(shade)

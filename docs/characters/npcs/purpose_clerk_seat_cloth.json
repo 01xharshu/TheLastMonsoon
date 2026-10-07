@@ -1,0 +1,59 @@
+{
+  "sources": {
+    "record_clerk": {
+      "path": "WorkingAssets/NPCs/record_clerk/desk_study/record_clerk_seat.blend",
+      "sha256": "8b1b699d6aa8151084e62b659662814c443cc58791fbe3635ae1327d80e135ee"
+    }
+  },
+  "passed": false,
+  "substeps_per_frame": 2,
+  "clip": "seat_entry",
+  "scope": "source seat_entry vertex and polygon-center surface sampling; not full continuous mesh or renderer approval",
+  "actors": {
+    "record_clerk": {
+      "Fitted cotton upper base": {
+        "max_penetration_m": 0.01699108211323619,
+        "penetrating_samples": 128,
+        "worst_point": {
+          "frame": 34.0,
+          "point": [
+            -0.3383599817752838,
+            -0.18965715169906616,
+            0.7714036703109741
+          ],
+          "sample_kind": "vertex_samples",
+          "nearest_body_region": "hand_r",
+          "nearest_body_point": [
+            -0.3643852174282074,
+            -0.20166465640068054,
+            0.7613356113433838
+          ]
+        },
+        "vertex_samples": 33,
+        "face_center_samples": 95,
+        "nearest_body_regions": {
+          "pinky_01_l": 17,
+          "hand_l": 89,
+          "pinky_01_r": 15,
+          "hand_r": 7
+        }
+      },
+      "Clerk full length trousers": {
+        "max_penetration_m": 0,
+        "penetrating_samples": 0,
+        "worst_point": null,
+        "vertex_samples": 0,
+        "face_center_samples": 0,
+        "nearest_body_regions": {}
+      },
+      "Clerk buttoned sleeveless waistcoat": {
+        "max_penetration_m": 0,
+        "penetrating_samples": 0,
+        "worst_point": null,
+        "vertex_samples": 0,
+        "face_center_samples": 0,
+        "nearest_body_regions": {}
+      }
+    }
+  }
+}

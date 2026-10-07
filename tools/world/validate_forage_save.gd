@@ -50,6 +50,12 @@ func validate() -> void:
 	fruit[0].interact(player)
 	fruit[0].interact(player)
 	fruit[1].interact(player)
+	check(not player.consumables.eat_mango(), "Store recovery allowed overlapping eating")
+	var pose = player.get_node("InteractionPoseComponent")
+	var visual = player.get_node("VisualRoot/CharacterVisual")
+	for frame in 45:
+		visual._process(1.0/60.0)
+		pose._process(1.0/60.0)
 	check(player.consumables.eat_mango(), "Satchel eating failed")
 	check(player.inventory.get_item_count("mango") == 1, "Repeated pickup duplicated inventory")
 	check(player.survival.satiety == 62 and player.survival.hydration == 56, "Satchel eating did not restore nutrition")

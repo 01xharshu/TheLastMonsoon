@@ -79,6 +79,9 @@ func capture() -> void:
 			peak_draws = maxi(peak_draws,int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 			peak_triangles = maxi(peak_triangles,int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
 	actor.inventory.add_item("paper_cartridges",1)
+	# Sampled poses do not advance gameplay; clear that synthetic timer before
+	# testing a real reload reservation and interruption.
+	combat.reload_remaining = 0.0
 	for stop_mode in ["stow","switch"]:
 		visual.equipment.selected = 1
 		visual.equipment.stowed = false

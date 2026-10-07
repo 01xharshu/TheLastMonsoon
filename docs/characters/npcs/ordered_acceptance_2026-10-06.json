@@ -1,0 +1,49 @@
+{
+  "updated_ist": "2026-10-06 12:10 IST",
+  "status": "IN_PROGRESS",
+  "scope": "verified purpose idle/walk baseline and main grass integration, not whole-game acceptance",
+  "purpose_reports": {
+    "purpose_cloth_contact": {
+      "passed": true,
+      "sha256": "0c223233e7f516f990f8cec0aa8e12c92eb8caa807290c274ecc07e5ba0bd8c0"
+    },
+    "purpose_idle_cloth_contact": {
+      "passed": true,
+      "sha256": "d291662e26949d56497e13f7f6df36dd5c747180336a1b8f3f37e92a526a6c58"
+    },
+    "purpose_sole_contact": {
+      "passed": true,
+      "sha256": "309b74efef614247d449611b04486054d3c2a29147ae1b59f6cfd699bd853204"
+    },
+    "purpose_city_ground": {
+      "passed": true,
+      "sha256": "927df38abb4d1b096f97653b99141da15759b0e301fd9cf126194dabf74d9d73"
+    },
+    "purpose_work_actor_validation": {
+      "passed": true,
+      "sha256": "091633ade77d216a780583dbfa445947b03a4f0422cc2e7de4b1f69a40570077"
+    },
+    "purpose_gait_validation": {
+      "passed": true,
+      "sha256": "783c21e1fcad51fd4318e040a851b6a25256d6a3de0645da9cfc003c24aa5379"
+    },
+    "purpose_world_validation": {
+      "passed": true,
+      "sha256": "cf344679da354674df68b5f07d2c68bec334507e72876c0a8205f44db5087dd0"
+    }
+  },
+  "open": [
+    "run/turn/seated/role actions",
+    "moving terrain and foot roll",
+    "other human owner fit",
+    "period/final art",
+    "full normal-controller combat/police/travel route",
+    "whole-game target hardware performance"
+  ],
+  "title_save_continue": "PASS",
+  "combat_police_city_route": "PASS mechanical fixed60Hz",
+  "paid_coach_contracts": "PASS funds/refund/skip/disk resume",
+  "paid_main_continuous_journey": "FAIL refunded at50.410m due cabin/terrain contact",
+  "native_world_profile": "Retained clear720p views, source stable; performance acceptance open",
+  "next": "Reconcile junction grade/cabin clearance, rerun actual main road and native contact; continue role-action fit and controller/night/performance gates"
+}

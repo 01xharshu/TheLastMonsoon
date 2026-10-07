@@ -3,22 +3,22 @@
     "boatman": {
       "max_planted_step_slip_m": 0.0000030719531878276,
       "passed": true,
-      "support_ankle_delta_m": 0.0000187456607818604,
-      "swing_ankle_lift_m": 0.0599009394645691,
+      "support_ankle_delta_m": 0.0000000596046447753906,
+      "swing_ankle_lift_m": 0.0599080622196198,
       "travel_speed_m_s": 0.611111111111111
     },
     "dock_porter": {
-      "max_planted_step_slip_m": 0.00000392149740946479,
+      "max_planted_step_slip_m": 0.000267394905677065,
       "passed": true,
-      "support_ankle_delta_m": 0.0000204145908355713,
-      "swing_ankle_lift_m": 0.0649132132530212,
+      "support_ankle_delta_m": 0.00113654136657715,
+      "swing_ankle_lift_m": 0.0649293661117554,
       "travel_speed_m_s": 0.555555555555556
     },
     "record_clerk": {
       "max_planted_step_slip_m": 0.00000228469343710458,
       "passed": true,
-      "support_ankle_delta_m": 0.0000267624855041504,
-      "swing_ankle_lift_m": 0.0399233400821686,
+      "support_ankle_delta_m": 0.0,
+      "swing_ankle_lift_m": 0.0399336814880371,
       "travel_speed_m_s": 0.388888888888889
     }
   },

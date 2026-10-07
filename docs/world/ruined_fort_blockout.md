@@ -1,9 +1,26 @@
-# Ruined fort blockout — 2026-09-25
+# Ruined hill fort — current integration, 2026-10-06
 
-Status: playable isolated Godot scene, **blockout only**. Open `res://world/ruined_fort/ruined_fort.tscn` to walk it with the existing player. The fort is not yet placed in Suryagarh's main landscape.
+Status: integrated in the main Suryagarh world as `OldFort`, at `(520,120,-350)`. The playable footprint is 120 × 100 m; the shared landscape grades the surrounding hillside and access trail. Embedded mode does not add a second ground mesh. The standalone scene remains available for focused iteration.
 
-The traversable footprint is 120 m east–west by 100 m north–south, with 25 m of extra terrain and rock scenery outside. The approach begins at z=+47, the outer ruins occupy roughly z=+30 to +15, the central ruins z=+15 to -15, the inner fort z=-15 to -38, and the watchtower occupies the north end. Terrain rises about 8 m overall. Gaps between wall fragments support a direct center route, a longer west flank, and a tighter east flank. The blockout contains intact, damaged and collapsed arch landmarks, short stairs, 28 main cover objects, loose masonry, planks and clustered dry vegetation. Cover bodies have `cover_type` metadata, a `CoverPoint`, and `PeekLeft` / `PeekRight` markers.
+Five zones rise approximately 8 m from approach to keep. Central, west and east paths weave between broken walls, intact/damaged/collapsed arches and 28 cover pieces. Navigation is saved offline; the latest bake contains 1,224 polygons.
 
-The scene builds a NavigationRegion3D from terrain and collision geometry at load. `tools/world/validate_ruined_fort.gd` currently reports 1,369 baked polygons, a 65-point entry-to-keep path and 28 cover objects. Metal/Forward+ overview: [ruined_fort_blockout.png](captures/ruined_fort_blockout.png). This capture confirms geometry renders; it is an overhead blockout view, not normal-speed player traversal or sightline approval.
+## Current realism and movement batch
 
-Remaining work: replace box modules with period stonework and genuinely broken silhouettes, shape more distinct floor levels and interior rooms, inspect the three routes at player eye height and normal speed, measure cover gaps and 25–45 m sightlines, test AI navigation across every flank, integrate the fort into Suryagarh at an approved site, and profile on the 8 GB target. The current overview still reads sparse in places and some peripheral cliff pieces have boxy silhouettes. No historical or final art approval is claimed.
+- Peripheral rocks now use the native landscape height outside the fort footprint, with buried bases.
+- Replaced box vegetation with 240 clustered grass tufts in a single MultiMesh.
+- Crate cover has separate board and strap details.
+- CoverPoint and peek markers are at foot height; CoverPoint markers expose the `fort_cover_points` group and cover normal/type metadata.
+- Added four keep access steps and a west climb shortcut with eight projecting hold rows and a supported wall walk. It uses the existing player climb system and its animation transitions; no shared character animation files were changed.
+- Embedded loading skips unnecessary temporary terrain generation when saved navigation exists.
+
+## Evidence and limits
+
+`tools/world/validate_fort_features.gd`: **PASS** for 28 ground-level markers, supported climb landing and 240 grass instances. `tools/world/bake_fort_navigation.gd`: **PASS**, 1,224 polygons. These checks do not establish normal-speed jump/catch/mantle contact or full flank traversal.
+
+[Main-world Metal/Forward+ overview](captures/ruined_fort_in_world.png) freshly captured and inspected on 2026-10-06. It confirms hillside placement and grounded peripheral scenery. The fort still visibly reads as a sparse blockout; masonry remains rectangular and peripheral boulders too rounded. The screenshot predates the final crate board additions in this batch.
+
+The capture reached `SURYAGARH READY` and saved successfully, but shared-world errors were logged in `systems/world_audio.gd`, `cantonment_workplaces.gd`, `civic_missions.gd` and `cart_mud_effects.gd`. This is not a clean full-world runtime pass.
+
+## Exact next work
+
+Develop chipped stone modules and denser ruined interiors, reuse detailed period props, improve rocky silhouettes, inspect all three routes at player height, run actual climb/cover transitions at normal speed, then add the fort combat encounter/objective using existing full-body MPFB actors and their AnimationTrees. Measure cover gaps, sightlines and performance afterward. Final realism, historical approval and an actual 8 GB device test remain open.

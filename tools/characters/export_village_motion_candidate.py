@@ -67,6 +67,13 @@ base = {}
 for bone in rig.pose.bones:
     bone.rotation_mode = 'QUATERNION'
     base[bone.name] = bone.rotation_quaternion.copy()
+if "--purpose" in sys.argv and SLUG == "record_clerk":
+    # Leave construction-aware room for this broader torso rather than drive
+    # the upper arms into its fitted shirt/waistcoat during the gait.
+    for side, sign in [('l', 1), ('r', -1)]:
+        bone = rig.pose.bones['upperarm_' + side]
+        axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector((0, 1, 0))
+        base[bone.name] = Quaternion(axis, sign * math.radians(15))
 rig.animation_data_clear()
 rig.animation_data_create()
 
@@ -84,10 +91,34 @@ def rotate(name, world_axis, angle):
     local_axis = bone.bone.matrix_local.to_3x3().inverted() @ Vector(world_axis)
     bone.rotation_quaternion = base[bone.name] @ Quaternion(local_axis, angle)
 
+def relax_purpose_hands():
+    for side, sign in [('l', 1), ('r', -1)]:
+        middle = rig.pose.bones['middle_01_' + side]
+        index = rig.pose.bones['index_01_' + side]
+        pinky = rig.pose.bones['pinky_01_' + side]
+        forward = (middle.bone.tail_local - middle.bone.head_local).normalized()
+        across = pinky.bone.head_local - index.bone.head_local
+        palm = forward.cross(across).normalized() * sign
+        for finger, curl in [('index', 20), ('middle', 24), ('ring', 28), ('pinky', 32), ('thumb', 10)]:
+            for joint, amount in [(1, 1.0), (2, .75), (3, .55)]:
+                bone = rig.pose.bones[f'{finger}_{joint:02d}_{side}']
+                tangent = (bone.bone.tail_local - bone.bone.head_local).normalized()
+                axis = bone.bone.matrix_local.to_3x3().inverted() @ tangent.cross(palm).normalized()
+                relaxed = Quaternion(axis, math.radians(curl * amount))
+                if joint == 1 and finger != 'thumb':
+                    align_axis = tangent.cross(forward)
+                    if align_axis.length_squared > .000001:
+                        local_axis = bone.bone.matrix_local.to_3x3().inverted() @ align_axis.normalized()
+                        angle = math.acos(max(-1.0, min(1.0, tangent.dot(forward)))) * .4
+                        relaxed = Quaternion(local_axis, angle) @ relaxed
+                bone.rotation_quaternion = base[bone.name] @ relaxed
+
 def pose(clip, phase):
     for bone in rig.pose.bones:
         bone.rotation_quaternion = base[bone.name].copy()
         bone.location = (0, 0, 0)
+    if gait:
+        relax_purpose_hands()
     if clip == 'idle':
         breathe = math.sin(phase * math.tau)
         rotate('spine01', (1, 0, 0), .008 * breathe)
@@ -129,6 +160,10 @@ if gait:
     gait.bake(captures)
 rig.animation_data.action = bpy.data.actions['idle']
 scene.frame_set(1)
+cloth_report = None
+if gait:
+    from purpose_cloth_correctives import fit_walk_cloth
+    cloth_report = fit_walk_cloth(rig, body, SLUG)
 source = OUT / (SLUG + "_motion_candidate.blend")
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
 runtime = ROOT / "characters/npcs/motion" / SLUG / (SLUG + "_rigged_candidate.glb")
@@ -153,7 +188,7 @@ def bake_masked_rest(original, label):
     cutout.matrix_basis = original.matrix_basis.copy()
     cutout.modifiers.new('Armature deformation', 'ARMATURE').object = rig
     return cutout
-masked_originals = {body, outfit}
+masked_originals = {body} if gait and outfit.data.shape_keys else {body, outfit}
 # Godot does not evaluate Blender MASK modifiers on skinned clothing either.
 # Bake each role's cut sleeve/vest/trouser component in rest pose, retaining
 # its weights; save the fully editable source above before creating cutouts.
@@ -163,7 +198,8 @@ if "--purpose" in sys.argv:
             bake_masked_rest(original, original.name + '_export_cutout')
             masked_originals.add(original)
 bake_masked_rest(body, SLUG + ("_export_full_body" if "--purpose" in sys.argv else "_export_skin_cutout"))
-bake_masked_rest(outfit, SLUG + "_export_upper_cutout")
+if outfit in masked_originals:
+    bake_masked_rest(outfit, SLUG + "_export_upper_cutout")
 rig.data.pose_position = 'POSE'
 scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT')
@@ -185,9 +221,9 @@ report = dict(status='MOTION_CANDIDATE_NOT_APPROVED', source=str(source.relative
     source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
     runtime=str(runtime.relative_to(ROOT)),
     runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),
-    actions=['idle','walk'], complete_runtime_body=True, loop_time_origin_normalized=bool(gait), gait_profile=gait.profile if gait else None,
+    cloth_correctives=cloth_report, actions=['idle','walk'], complete_runtime_body=True, loop_time_origin_normalized=bool(gait), gait_profile=gait.profile if gait else None,
     max_ankle_target_error_m=gait.max_target_error if gait else None,
-    gait_scope='flat-floor baked foot targets; no terrain, toe-roll or full motion approval' if gait else None, motion_approved=False, in_world=False,
+    gait_scope='flat-floor baked foot targets; no terrain, toe-roll or full motion approval' if gait else None, motion_approved=False, in_world=SLUG in {"dock_porter", "boatman", "record_clerk"},
     garment_repair='Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation')
 (OUT / 'motion_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
 print('VILLAGE_MOTION', json.dumps(report))

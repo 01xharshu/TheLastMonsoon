@@ -12,7 +12,7 @@ for role in ['dock_porter','boatman','record_clerk']:
   for key in ['source','runtime']:
    if hashlib.sha256((ROOT/manifest[key]).read_bytes()).hexdigest()!=manifest[key+'_sha256']:
     report['errors'].append(role+': '+name+' '+key+' hash mismatch')
- path=folder/(role+'_rigged_candidate.glb');raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0]
+ path=ROOT/json.loads((folder/'motion_manifest.json').read_text())['runtime'];raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0]
  doc=json.loads(raw[20:20+length]);binary=raw[28+length:]
  body=next(node for node in doc['nodes'] if node.get('name')==role+'_export_full_body')
  primitives=doc['meshes'][body['mesh']]['primitives']

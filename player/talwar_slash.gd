@@ -6,16 +6,21 @@ var elapsed := DURATION
 var target: Node3D
 var impact_done := false
 var previous_blade := PackedVector3Array()
-var struck_bodies: Array[RID] = []
+var struck_bodies: Array[Node] = []
 var closest_target_contact := INF
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+
+func _ready() -> void:
+	set_process(false)
 
 func strike() -> bool:
 	if not available(): return false
 	target = _find_target()
 	visual.slash_target_world = target.global_position+Vector3.UP*ROPE_HEIGHT if is_instance_valid(target) else Vector3.ZERO
 	ControllerFeedback.pulse("melee")
+	set_process(true)
+	WorldAudio.play_at("blade_swoosh",actor.global_position,-17.0)
 	elapsed = 0.0
 	impact_done = false
 	struck_bodies.clear()
@@ -50,7 +55,9 @@ func _process(delta: float) -> void:
 		target = null
 		visual.slash_phase = -1.0
 		return
-	if elapsed >= DURATION: return
+	if elapsed >= DURATION:
+		set_process(false)
+		return
 	elapsed = minf(DURATION, elapsed + delta)
 	visual.slash_phase = elapsed / DURATION
 	if is_instance_valid(target):
@@ -82,10 +89,12 @@ func _process(delta: float) -> void:
 			query.exclude = [actor.get_rid()]
 			var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
 			if hit.is_empty() or not hit.collider.has_method("take_damage"): continue
-			var rid: RID = hit.collider.get_rid()
-			if rid in struck_bodies: continue
-			struck_bodies.append(rid)
-			preload("res://combat/damage_policy.gd").apply(hit.collider,45.0,actor,"sword")
+			var policy=preload("res://combat/damage_policy.gd")
+			var receiver: Node=policy.receiver(hit.collider)
+			if receiver in struck_bodies:continue
+			if policy.apply(hit.collider,45.0,actor,"sword"):
+				WorldAudio.play_at("impact",hit.position,-16.0)
+				struck_bodies.append(receiver)
 	previous_blade = blade
 	if elapsed >= DURATION:
 		visual.slash_phase = -1.0

@@ -4,7 +4,11 @@
   "full_body_export_vertices": 14517,
   "foundation_vertices": 473,
   "foundation_separate_and_opaque": true,
-  "source_sha256": "916b162090e7811ccb359097cba261f7d0b072fe0fd1ad5a2169e753b90710d5",
-  "runtime_sha256": "008419a816dd554264c2ee4c5d2d7db84a49d97a0f0b688d07a1bd82f18a9e12",
+  "cloth_floor_correctives": {
+    "Knee length wrapped dhoti": 1,
+    "Dhoti woven border": 1
+  },
+  "source_sha256": "c87080a2b49e964fc44d020fbcfbfc6f159cfb0d64e57ec49dc08c630cb2aa9c",
+  "runtime_sha256": "01679666ff9921bd92982a586381f7c8a926d1284a187c75a8154db631b356ac",
   "visual_approved": false
 }

@@ -61,6 +61,7 @@ func interaction_available() -> bool:
 func interact(actor: CharacterBody3D) -> void:
 	if opened or actor.global_position.distance_to(global_position) > 2.8: return
 	opened = true
+	WorldAudio.play_at("chest_open",global_position)
 	lid.create_tween().tween_property(lid,"rotation:x",1.15,.42)
 	var prizes := {"paper_cartridges":6,"pistol_ball":4,"rupees":26}
 	for item in prizes:

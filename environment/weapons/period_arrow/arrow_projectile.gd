@@ -34,6 +34,7 @@ func _physics_process(delta: float) -> void:
 	if not hit.is_empty():
 		global_position = hit.position
 		active = false
+		WorldAudio.play_at("arrow_impact",hit.position,-18.0)
 		hit_count += 1
 		if hit.collider.has_method("take_damage"): preload("res://combat/damage_policy.gd").apply(hit.collider,35.0,shooter,"arrow")
 		get_tree().create_timer(8.0).timeout.connect(queue_free)

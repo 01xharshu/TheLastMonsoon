@@ -22,7 +22,7 @@ func make_actor(label: String, model: String, at: Vector3, faction: String) -> N
 func snap(label: String) -> void:
 	if not captures:return
 	for i in 2:await process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false, 1.0/60.0)
 	root.get_texture().get_image().save_png("res://docs/characters/arjun/combat_%s_2026-10-05.png"%label)
 func run() -> void:
 	world=Node3D.new();root.add_child(world);current_scene=world
@@ -125,6 +125,23 @@ func run() -> void:
 	check(enemy_vitality.health==31,"punch misses enemy beyond visible reach")
 	british.position.z=1
 	await _physics_ticks(3)
+	player.inventory.add_item("utility_knife",1)
+	visual.equipment.selected=4;visual.equipment.stowed=false;visual.equipment._refresh()
+	enemy_vitality.health=75
+	var knife:=player.get_node("KnifeStrike")
+	check(knife.strike(),"native knife action starts")
+	for tick in 38:
+		await physics_frame
+		if tick==14:print("KNIFE EXTENSION ",visual.equipment.knife_blade_segment())
+	print("KNIFE CONTACT health ",enemy_vitality.health," blade ",visual.equipment.knife_blade_segment())
+	check(enemy_vitality.health==57,"visible knife blade contacts enemy once")
+	player.inventory.add_item("talwar",1)
+	visual.equipment.selected=0;visual.equipment._refresh()
+	enemy_vitality.health=75
+	check(player.get_node("TalwarSlash").strike(),"native sword action starts")
+	await _physics_ticks(48)
+	check(enemy_vitality.health==30,"sword damages actor once across multiple colliders")
+	visual.equipment.stowed=true;visual.equipment._refresh()
 	# Restore normal physics for the public rear-grapple availability contract.
 	player.set_physics_process(true)
 	player.position=Vector3(0,.9,.25);british.rotation.y=0
@@ -134,7 +151,7 @@ func run() -> void:
 	for i in 24:await physics_frame
 	var hold_error: float=grapple.contact_error
 	print("HOLD CONTACT ",hold_error," root separation ",Vector2(player.position.x-british.position.x,player.position.z-british.position.z).length())
-	check(hold_error<.03,"rear hold reaches neck targets within 3 cm rig envelope")
+	check(hold_error<.03,"rear hold palms reach collar targets within 3 cm")
 	check(grapple.active and player.get_meta("paired_combat",false),"paired hold locks player movement")
 	if captures:
 		grapple.set_process(false);grapple.set_physics_process(false);visual.set_process(false)
@@ -149,12 +166,29 @@ func run() -> void:
 	var head: int=british._skeleton.find_bone("head")
 	var head_y: float=british._skeleton.to_global(british._skeleton.get_bone_global_pose(head).origin).y
 
-	check(head_y<.6,"fallen head is near physical floor")
+	check(head_y<.35,"fallen head is near physical floor")
+	var down_bounds: Dictionary=preload("res://tools/characters/skinned_ground_audit.gd").bounds(british)
+	var lowest:=INF
+	for measured_bounds in down_bounds.values():lowest=minf(lowest,measured_bounds.minimum_y)
+	check(lowest>=-.025 and lowest<.03,"fallen visible meshes meet floor without penetration")
+	check(absf(enemy_vitality.torso_shape.global_basis.y.dot(Vector3.UP))<.35,"fallen torso receiver follows horizontal body")
+	var body_ray:=PhysicsRayQueryParameters3D.create(enemy_vitality.torso_shape.global_position+Vector3.UP*1.2,enemy_vitality.torso_shape.global_position-Vector3.UP*.4,8)
+	body_ray.exclude=[player.get_rid()]
+	var body_hit:=world.get_world_3d().direct_space_state.intersect_ray(body_ray)
+	check(not body_hit.is_empty() and Policy.receiver(body_hit.collider)==enemy_vitality,"fallen physical torso remains hittable")
+	check(not player.get_node("TalwarSlash").is_processing() and not knife.is_processing(),"idle weapon controllers stop processing")
+	check(not grapple.is_processing() and not grapple.is_physics_processing(),"completed rear restraint sleeps both update callbacks")
+
 	check(vitality.receive_hit(100,british,"abuse") and indian.get_meta("knocked_out",false) and not vitality.dead,"civilian beating causes nonlethal fall")
 	for i in 80:await physics_frame
 	await snap("peasant_fall")
+	var peasant_bounds: Dictionary=preload("res://tools/characters/skinned_ground_audit.gd").bounds(indian)
+	var peasant_lowest:=INF
+	for measured_bounds in peasant_bounds.values():peasant_lowest=minf(peasant_lowest,measured_bounds.minimum_y)
+	print("PEASANT FLOOR MINIMUM ",peasant_lowest)
+	check(peasant_lowest>=-.025 and peasant_lowest<.03,"fallen rescue peasant meets floor without penetration")
 	check(enemy_vitality.receive_hit(35,player,"gun") and enemy_vitality.dead,"gun can kill a knocked-out enemy")
-	var report={"rear_hold_target_error_m":hold_error,"status":"PASS" if errors.is_empty() else "FAIL","errors":errors,"fallen_head_y_m":head_y,"renderer":RenderingServer.get_current_rendering_method(),"visual_approved":false}
+	var report={"rear_hold_target_error_m":hold_error,"status":"PASS" if errors.is_empty() else "FAIL","errors":errors,"fallen_head_y_m":head_y,"fallen_mesh_minimum_y_m":lowest,"peasant_mesh_minimum_y_m":peasant_lowest,"renderer":RenderingServer.get_current_rendering_method(),"visual_approved":false}
 	var file:=FileAccess.open("res://docs/characters/arjun/combat_rescue_validation%s.json"%("_metal" if captures else ""),FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	print("COMBAT RESCUE ",report.status," ",errors)
 	world.queue_free();await process_frame;await process_frame

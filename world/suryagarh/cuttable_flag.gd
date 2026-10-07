@@ -16,6 +16,7 @@ func bind_visual() -> void:
 func cut_flag() -> bool:
 	if cut: return false
 	cut = true
+	WorldAudio.play_at("step_wood",global_position,-12.0)
 	var timber: MeshInstance3D = find_child("eic_flagpole_timber",true,false)
 	if timber == null: return true
 	var scale_factor: float = timber.global_basis.y.length()

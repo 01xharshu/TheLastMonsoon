@@ -137,6 +137,9 @@ func _run() -> void:
 	var report := {"status":"PASS" if passed else "FAIL","checks":checks,"max_knee_deg":max_knee,"max_seat_error_m":seat_error,"max_sole_error_m":sole_error,"max_palm_error_m":palm_error,"seated_lean_deg":seated_lean,"gallop_lean_deg":gallop_lean,"jump_lean_deg":jump_lean,"samples":samples,"physics_hz":60,"max_sample_gap_ticks":max_sample_gap,"recording_timing":"derive frame durations from physics_tick / 60"}
 	FileAccess.open("res://docs/world/rider_seated_motion_"+suffix+".json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("RIDER SEATED MOTION ",report.status," ",checks)
+	preload("res://tools/test_audio_cleanup.gd").stop(root)
 	world.queue_free()
 	await process_frame
+	await process_frame
+	await preload("res://tools/test_audio_cleanup.gd").settle(self)
 	quit(0 if passed else 1)
