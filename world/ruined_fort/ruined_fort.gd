@@ -4,6 +4,7 @@ const WIDTH := 120.0
 const DEPTH := 100.0
 const SCENERY_MARGIN := 25.0
 const GRID := 2.0
+const Modules = preload("res://world/ruined_fort/fort_modules.gd")
 const Shape = preload("res://world/ruined_fort/fort_shape.gd")
 const Landscape = preload("res://world/suryagarh/landscape_layout.gd")
 const NAV_FILE := "res://world/ruined_fort/fort_navigation.res"
@@ -19,18 +20,17 @@ var cloth := _mat(Color("aaa08a"))
 var grass := _mat(Color("777b54"))
 var shrub := _mat(Color("68715a"))
 var nodes := {}
-var rock_mesh_shared: SphereMesh
+var rock_mesh_shared: ArrayMesh
+var stone_mesh_shared: ArrayMesh
+var masonry_transforms: Array[Transform3D] = []
 var nav_ground_faces := PackedVector3Array()
 var rng := RandomNumberGenerator.new()
 var landscape = Landscape.new()
 
 func _ready() -> void:
 	rng.seed = 1857
-	rock_mesh_shared = SphereMesh.new()
-	rock_mesh_shared.radius = 0.5
-	rock_mesh_shared.height = 1.0
-	rock_mesh_shared.radial_segments = 7
-	rock_mesh_shared.rings = 4
+	rock_mesh_shared = Modules.fractured_rock()
+	stone_mesh_shared = Modules.chipped_stone()
 	for group in ["Terrain", "Architecture", "Cover", "Props", "Vegetation", "Navigation", "Gameplay", "Lighting"]:
 		var node := Node3D.new()
 		node.name = group
@@ -55,7 +55,12 @@ func _ready() -> void:
 	_build_cover()
 	_build_props()
 	_build_vegetation()
+	_finish_masonry()
 	_build_navigation()
+	if not force_navigation_rebake:
+		var encounter := preload("res://world/ruined_fort/fort_encounter.gd").new()
+		encounter.name = "FortEncounter"
+		nodes.Gameplay.add_child(encounter)
 	if not embedded_in_world: $Gameplay/Player.position = Vector3(0, height_at(0, 47) + 1.1, 47)
 	print("RUINED FORT BLOCKOUT READY | 120 x 100 m | three routes | 8 m ascent")
 
@@ -177,7 +182,9 @@ func _wall(x: float, z: float, length: float, tall: float, yaw: float = 0.0, dam
 		if damaged:
 			section_height *= [0.91,0.58,0.76,0.98,0.67][i % 5]
 		var width: float = section - (0.08 if damaged else 0.025)
-		_block("DamagedWallStone" if damaged else "WallStone", "Architecture", Vector3(site.x,ground+section_height*0.5,site.z), Vector3(width,section_height,0.82), stone if i % 3 else pale, yaw)
+		var body := _block("DamagedWallStone" if damaged else "WallStone", "Architecture", Vector3(site.x,ground+section_height*0.5,site.z), Vector3(width,section_height,0.82),stone,yaw)
+		body.get_child(0).hide()
+		_stone_section(site,ground,width,section_height,yaw)
 		if damaged and i % 3 == 1:
 			_block("FallenMasonry", "Props", Vector3(site.x+0.8,ground+0.18,site.z+1.1),Vector3(0.7,0.36,0.8),rubble_mat,yaw+0.33,false)
 
@@ -188,9 +195,8 @@ func _arch_block(root: Node3D, label: String, at: Vector3, size: Vector3, materi
 	body.rotation.z = tilt
 	root.add_child(body)
 	var visual := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	visual.mesh = mesh
+	visual.mesh = stone_mesh_shared
+	visual.scale = size
 	visual.material_override = material
 	body.add_child(visual)
 	var collision := CollisionShape3D.new()
@@ -324,6 +330,21 @@ func _build_cover() -> void:
 	for p in layout: _cover_piece(p[0],p[1],p[2],p[3])
 
 func _build_props() -> void:
+	var assets := ["storage/crate","grain_sack","storage/basket","water_pot_visual","storage/barrel","storage/bench"]
+	for index in range(18):
+		var site: Vector2 = [Vector2(-24,23),Vector2(25,8),Vector2(-26,-5),Vector2(24,-25),Vector2(-19,-30),Vector2(18,-40)][index/3]
+		var x: float = site.x-2.5+(index%3)*1.1
+		var z: float = site.y+1.4
+		var prop: Node3D = load("res://objects/household/"+assets[index%assets.size()]+".tscn").instantiate()
+		prop.name = "Salvaged"+str(index)
+		prop.position = Vector3(x,height_at(x,z),z)
+		prop.rotation.y = rng.randf_range(-.4,.4)
+		nodes.Props.add_child(prop)
+	for site in [Vector2(-24,23),Vector2(25,8),Vector2(-26,-5),Vector2(24,-25),Vector2(-19,-30),Vector2(18,-40)]:
+		for tile in range(5):
+			var x: float = site.x-2+tile*0.85
+			var z: float = site.y-1.8
+			_block("BrokenFloorSlab","Props",Vector3(x,height_at(x,z)+.05,z),Vector3(.8,.1,1.7),pale,rng.randf_range(-.08,.08),false)
 	for i in range(45):
 		var x: float = rng.randf_range(-47,47)
 		var z: float = rng.randf_range(-47,40)
@@ -406,3 +427,39 @@ func _build_navigation() -> void:
 	NavigationServer3D.bake_from_source_geometry_data(nav, source)
 	region.navigation_mesh = nav
 	print("FORT NAVIGATION POLYGONS: ", nav.get_polygon_count())
+
+func _stone_section(site: Vector3, ground: float, width: float, tall: float, yaw: float) -> void:
+	var rows: int = maxi(1,ceili(tall/0.43))
+	var columns: int = maxi(2,ceili(width/0.85))
+	var course: float = tall/rows
+	var brick: float = width/columns
+	for row in range(rows):
+		for column in range(columns):
+			var x: float = -width*0.5+(column+0.5)*brick
+			var stagger: float = 0.12 if row%2 else -0.12
+			x = clampf(x+stagger,-width*0.5+brick*0.45,width*0.5-brick*0.45)
+			var center := site+Vector3(x,0,0).rotated(Vector3.UP,yaw)
+			center.y = ground+(row+0.5)*course
+			var basis := Basis(Vector3.UP,yaw+rng.randf_range(-.018,.018)).scaled(Vector3(brick*1.03,course*1.03,rng.randf_range(.85,.95)))
+			masonry_transforms.append(Transform3D(basis,center))
+
+func _finish_masonry() -> void:
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.use_colors = true
+	batch.mesh = stone_mesh_shared
+	batch.instance_count = masonry_transforms.size()
+	for i in range(masonry_transforms.size()):
+		batch.set_instance_transform(i,masonry_transforms[i])
+		var tint: float = rng.randf_range(.85,1.12)
+		batch.set_instance_color(i,Color(tint,tint*.99,tint*.96,1))
+	var visual := MultiMeshInstance3D.new()
+	visual.name = "ModularChippedMasonry"
+	visual.multimesh = batch
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("b2a68e")
+	material.vertex_color_use_as_albedo = true
+	material.roughness = 1
+	visual.material_override = material
+	nodes.Architecture.add_child(visual)
+	masonry_transforms.clear()

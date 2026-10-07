@@ -7,7 +7,7 @@ import argparse,hashlib
 parser=argparse.ArgumentParser()
 parser.add_argument('role',nargs='?',default='all',choices=['all','village_farmer','village_woman','village_fruit_seller','village_weaver_assistant'])
 parser.add_argument('--source',type=Path)
-parser.add_argument('--output',type=Path,default=ROOT/'docs/characters/npcs/village_clothing_contact.json')
+parser.add_argument('--output',type=Path,help='Optional temporary JSON; normally print concise results only')
 parser.add_argument('--clip',choices=['idle','walk'],default='walk')
 parser.add_argument('--substeps',type=int,default=1)
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
@@ -34,10 +34,11 @@ for role in roles:
    for key in obj.data.shape_keys.key_blocks:
     if key.name!='Basis':key.value=0
  result={o.name:{'max_penetration_m':0,'penetrating_samples':0,'worst_point':None,'vertex_samples':0,'face_center_samples':0,'nearest_body_regions':{}} for o in cloth}
- for sample_index in range((60 if clip=='idle' else 36)*substeps+1):
+ scale=bpy.context.scene.render.fps/30
+ duration=int((60 if clip=='idle' else 36)*scale)
+ for sample_index in range(duration*substeps+1):
   frame=1+sample_index/substeps
   for obj in corrected:
-   duration=60 if clip=='idle' else 36
    first=int(frame);fraction=frame-first
    for key in obj.data.shape_keys.key_blocks:
     if key.name=='Basis':continue
@@ -70,9 +71,10 @@ for role in roles:
       result[obj.name]['max_penetration_m']=depth;result[obj.name]['worst_point']={'frame':frame,'point':list(point),'sample_kind':kind,'nearest_body_region':region,'nearest_body_point':list(nearest)}
    ev.to_mesh_clear()
  report[role]=result
- print('CLOTH_CONTACT',role,json.dumps(result),flush=True)
+ print('CLOTH_CONTACT',role,clip,'max_mm=',{name:round(value['max_penetration_m']*1000,3) for name,value in result.items()},'penetrating_samples=',sum(value['penetrating_samples'] for value in result.values()),flush=True)
 output=args.output
 passed=all(v['penetrating_samples']==0 for actor in report.values() for v in actor.values())
-output.write_text(json.dumps({'sources':sources,'passed':passed,'substeps_per_frame':substeps,'clip':clip,'scope':'source '+clip+' vertex and polygon-center surface sampling; not full continuous mesh or renderer approval','actors':report},indent=2)+'\n')
+if output:
+ output.write_text(json.dumps({'sources':sources,'passed':passed,'substeps_per_frame':substeps,'clip':clip,'scope':'source '+clip+' vertex and polygon-center surface sampling; not full continuous mesh or renderer approval','actors':report},indent=2)+'\n')
 
 raise SystemExit(0 if passed else 1)

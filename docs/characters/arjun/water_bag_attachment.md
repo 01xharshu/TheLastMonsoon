@@ -12,9 +12,9 @@ Ordinary stowed-weapon locomotion now routes relaxed palms outside conservative 
 
 ## Evidence
 
-- [Metal empty view](water_bag_fit_2026-09-30/empty_back.png), [half view](water_bag_fit_2026-09-30/half_back.png), [full view](water_bag_fit_2026-09-30/full_back.png).
-- [Running](water_bag_fit_2026-09-30/motion_run.png), [turning](water_bag_fit_2026-09-30/motion_turn.png), [measurements](water_bag_fit_2026-09-30/review.json).
-- [World empty](water_bag_fit_2026-09-30/world_empty.png), [world full](water_bag_fit_2026-09-30/world_full.png), [ordinary world movement](water_bag_fit_2026-09-30/world_walk.png).
+- Metal empty view (test output deleted), half view (test output deleted), full view (test output deleted).
+- Running (test output deleted), turning (test output deleted), [measurements](water_bag_fit_2026-09-30/review.json).
+- World empty (test output deleted), world full (test output deleted), ordinary world movement (test output deleted).
 
 Godot 4.7.2 Forward+/Metal 4.0, Apple M4. Captures use actual Player input at normal time scale for walk/run/turn/stop. Water bag waist validation PASS (inventory, pinned loop, turn, bounded sway and removal). Mango reach PASS. Firearms test PASS, including 721 loading contact poses. World startup still emits the separately tracked FortCook/FortSteward skeleton errors.
 

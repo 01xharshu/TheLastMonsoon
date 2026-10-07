@@ -1,5 +1,5 @@
 extends Node3D
-## Damped leather strips with pinned bit/palm endpoints; two draw surfaces per cart.
+## Damped leather strips with pinned bit/palm endpoints and persistent quad buffers.
 const SEGMENTS := 16
 var cart: Node3D
 var reins: Array[Dictionary] = []
@@ -52,8 +52,12 @@ func _ready() -> void:
   var bit: Vector3 = a if a.z < b.z else b
   var hand: Vector3 = b if a.z < b.z else a
   var side := "l" if hand.distance_to(cart.to_local(cart.rein_grip_world("l"))) < hand.distance_to(cart.to_local(cart.rein_grip_world("r"))) else "r"
-  var strip := MeshInstance3D.new()
-  strip.mesh = ImmediateMesh.new()
+  var strip := MultiMeshInstance3D.new()
+  strip.multimesh = MultiMesh.new()
+  strip.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+  strip.multimesh.mesh = QuadMesh.new()
+  strip.multimesh.mesh.size = Vector2.ONE
+  strip.multimesh.instance_count = SEGMENTS
   var material: StandardMaterial3D = part.material_override.duplicate()
   material.cull_mode = BaseMaterial3D.CULL_DISABLED
   strip.material_override = material
@@ -118,14 +122,15 @@ func _process(delta: float) -> void:
      points[index+1] -= correction*.5
   points[0] = pins[0]
   points[SEGMENTS] = pins[1]
-  var mesh: ImmediateMesh = entry.strip.mesh
-  mesh.clear_surfaces()
-  mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+  var strip: MultiMeshInstance3D = entry.strip
+  var bounds := AABB(to_local(points[0]),Vector3.ZERO)
   for index in SEGMENTS:
    var a: Vector3 = to_local(points[index])
    var b: Vector3 = to_local(points[index+1])
    var across := (b-a).cross(Vector3.UP).normalized()*.009
    var normal := across.cross(b-a).normalized()
-   mesh.surface_set_normal(normal)
-   for vertex in [a-across,a+across,b+across,a-across,b+across,b-across]: mesh.surface_add_vertex(vertex)
-  mesh.surface_end()
+   # Same two triangles, width and normal as the former ImmediateMesh strip.
+   # Reuse the instance buffer instead of freeing/recreating GPU surfaces.
+   strip.multimesh.set_instance_transform(index,Transform3D(Basis(across*2.0,b-a,normal),(a+b)*.5))
+   bounds = bounds.expand(a).expand(b)
+  strip.multimesh.custom_aabb = bounds.grow(.02)

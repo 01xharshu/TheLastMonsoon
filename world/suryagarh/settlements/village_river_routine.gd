@@ -13,7 +13,7 @@ var visit_seconds := 0.0
 var blocked_frames := 0
 var ramp: Array[Vector3] = []
 var shore := Vector3.ZERO
-const SPEED := .48
+const SPEED := .4
 
 func _ready() -> void:
 	name = "VillageRiverRoutine"
@@ -76,7 +76,7 @@ func tick(delta: float) -> void:
 			if target.distance_to(journey.position)>.001: woman.travel_direction=(target-journey.position).normalized()
 			woman.elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journey.walk_seconds,9.6)
 			if journey.arrived: woman.sample(11.0 if mode=="depart" else 65.0)
-			else: woman.tick_routine(delta)
+			else: woman._evaluate(delta)
 		if all_arrived:
 			mode="visit" if mode=="depart" else "deliver"
 			visit_seconds=10.0 if mode=="visit" else 65.0
@@ -99,18 +99,26 @@ func _move(index: int, delta: float) -> void:
 	var target: Vector3 = journey.path[journey.goal]
 	var offset: Vector3 = target-journey.position
 	var motion := offset.limit_length(SPEED*delta)
+	var next := Vector3(journey.position)+motion
+	next.y=_ground_height(next.x,next.z)
+	motion=next-journey.position
 	var shape: CollisionShape3D = woman.get_node("BodyCollider/BodyShape")
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape=shape.shape;query.transform=shape.global_transform
-	query.transform.origin.y+=.05;query.motion=motion;query.margin=.005;query.collision_mask=1
+	query.transform.origin.y+=.12;query.motion=motion;query.margin=.005;query.collision_mask=1
 	var exclusions: Array[RID] = []
-	for member in women: exclusions.append(member.get_node("BodyCollider").get_rid())
+	for member in women:
+		if member.has_node("BodyCollider"): exclusions.append(member.get_node("BodyCollider").get_rid())
 	query.exclude=exclusions
 	var safe := get_world_3d().direct_space_state.cast_motion(query)
 	if safe[0]<.99:
-		blocked_frames+=1;return
+		blocked_frames+=1
+		if blocked_frames==1:
+			query.transform.origin+=motion
+			for hit in get_world_3d().direct_space_state.intersect_shape(query,8): print("RIVER_OBSTACLE ",hit.collider.get_path())
+		return
 	journey.position+=motion;journey.walk_seconds+=delta
-	if journey.position.distance_to(target)<.001:
+	if Vector2(journey.position.x,journey.position.z).distance_to(Vector2(target.x,target.z))<.001:
 		var end: int = journey.path.size()-1 if mode=="depart" else 0
 		if journey.goal==end: journey.arrived=true
 		else: journey.goal+=1 if mode=="depart" else -1
@@ -121,7 +129,15 @@ func _ground_height(x: float,z: float) -> float:
 			if x<=ramp[i+1].x:
 				return lerpf(ramp[i].y,ramp[i+1].y,inverse_lerp(ramp[i].x,ramp[i+1].x,x))
 		return shore.y
-	return layout.height(x,z)
+	var expected := layout.height(x,z)
+	var ray := PhysicsRayQueryParameters3D.create(Vector3(x,expected+1.0,z),Vector3(x,expected-1.0,z),1)
+	var exclusions: Array[RID] = []
+	for member in women:
+		if member.has_node("BodyCollider"): exclusions.append(member.get_node("BodyCollider").get_rid())
+	ray.exclude=exclusions
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	if not hit.is_empty() and hit.normal.y>.6 and absf(hit.position.y-expected)<.5: return hit.position.y
+	return expected
 
 func _build_ghat() -> void:
 	var z := 166.0
@@ -168,5 +184,7 @@ func restore_state(state: Dictionary) -> void:
 		journeys[i].position=Vector3(p[0],p[1],p[2]);journeys[i].goal=clampi(int(saved.goal),0,journeys[i].path.size()-1)
 		journeys[i].walk_seconds=float(saved.walk_seconds);journeys[i].arrived=bool(saved.arrived)
 		women[i].travel_position=journeys[i].position
+		var direction: Vector3=journeys[i].path[journeys[i].goal]-journeys[i].position
+		if direction.length()>.001: women[i].travel_direction=direction.normalized()
 		women[i].elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journeys[i].walk_seconds,9.6) if mode in ["depart","return"] else visit_seconds
 		women[i].sample(women[i].elapsed if mode!="home" else 72.0)

@@ -10,7 +10,7 @@ Native Apple M4 Metal verification:
 
 - `/Applications/Godot.app/Contents/MacOS/Godot --path . --script tools/world/validate_hud_health.gd` — PASS: actual health, live survival signals, right-radar logical alignment, damage trail and healing. Log `/tmp/hud_health_review.log`.
 - `tools/world/validate_hud_diamonds.gd` with the same Godot command — native PASS at 0, 1, 20, 50 and 100 percent, including zero-fill triangulation guard. Log `/tmp/hud_diamond_extremes.log`.
-- Visually inspected full-world captures: [full health](captures/hud_health_100.png), [critical health](captures/hud_health_15.png). UI frames/icons and empty/filled portions remain readable; both corners have clear spacing. Captures use temporary low 3D quality in memory, preserving saved settings.
+- Visually inspected full-world captures: full health (test output deleted), critical health (test output deleted). UI frames/icons and empty/filled portions remain readable; both corners have clear spacing. Captures use temporary low 3D quality in memory, preserving saved settings.
 - Scoped `git diff --check` and `python3 tools/check_agent_docs.py` PASS.
 
 Fixture corrections: assign actual survival values before emitting (the producer refreshes them); compare radar position with HUD logical width rather than Retina pixels; disable fixture input so desktop keystrokes cannot open the document overlay. Rejected obscured captures were replaced by the final gameplay views.

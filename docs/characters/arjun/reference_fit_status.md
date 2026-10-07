@@ -6,7 +6,7 @@
 
 Latest combined source: `WorkingAssets/Arjun/reference_fit/arjun_complete_body_fitted_candidate.blend`. Required parents include `arjun_complete_body_candidate.blend` and `arjun_eye_contact_candidate.blend`; earlier sculpted/material/eye/boot inputs remain in the rebuild chain.
 
-[Four-view comparison](reference_fit/current/reference_comparison.png), [front face](reference_fit/current/face.png), [three-quarter face](reference_fit/current/face_three_quarter.png), [boot front](reference_fit/current/boot_front.png), [boot side](reference_fit/current/boot_side.png), [boot quarter](reference_fit/current/boot_quarter.png), and [torso/sash](reference_fit/current/cloth.png). Full front/side/back/three-quarter renders and capture provenance are in `reference_fit/current/`.
+Four-view comparison (test output deleted), front face (test output deleted), three-quarter face (test output deleted), boot front (test output deleted), boot side (test output deleted), boot quarter (test output deleted), and torso/sash (test output deleted). Full front/side/back/three-quarter renders and capture provenance are in `reference_fit/current/`.
 
 ## Changes checked in renders
 

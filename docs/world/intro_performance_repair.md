@@ -1,0 +1,13 @@
+# Intro and render-budget repair
+
+Updated 2026-10-07. The intro fade now starts opaque black before its first process update. Graphics levels bound 3D rendering to 960×540, 1280×720 and 1920×1080 while leaving the canvas UI at its normal resolution. Aspect ratio is retained and smaller windows are not upscaled. Settings labels describe these limits.
+
+`systems/save_manager.gd` uses Window/SubViewport size for the budget. On the macOS fullscreen route, texture metadata reported 20480×11520 while the actual window/rendered image was 5120×2880. The texture metadata therefore cannot be used for this calculation. Fullscreen and repeated settings transitions retain the budget; redundant window-mode writes are avoided. Keep concurrent quit/audio-drain changes in this file.
+
+`vehicles/flexible_cart_reins.gd` retains its damped simulation, pinned endpoints, strip width/material and distance cadence. Persistent instanced quads replace clearing/rebuilding ImmediateMesh surfaces each frame. Native three-variant validation passed buffer retention, original segment-corner parity, attachment and far/near update behavior. Headless rendering cannot read MultiMesh transforms; corner parity requires the native renderer.
+
+The full opening regression passed natural completion, Space/Escape skip, morning clock and movement release. The first native walking route completed all three areas, but Metal fence timeouts occurred around the former rein surface rebuild while other native game jobs were active. This was not a clean renderer/performance pass. A final whole-world run after the persistent-buffer change is required before calling that timeout resolved. No universal FPS or final art approval is claimed.
+
+Reusable checks: `python3 tools/world/run_intro_validation.py` checks initial black pixels, render sizes, fullscreen and settings reapplication. Add `--reins` for the real cart variants or `--route` for the natural intro and controller walking route. Engine logs use an OS temporary directory removed on exit, failure or interruption; no test media/reports are retained.
+
+User check: start Play Game, watch the opening and confirm no white flash; press W after morning, then move/turn near the village carts. Repeat with Space and Escape skip. Switch Settings → Graphics between Medium and High, toggle fullscreen, return to the game and verify movement/clarity. Review Civil Lines and cantonment with other game test processes closed. Existing household doorstep blockage diagnostics and older asset-import UV/tangent findings remain separate from this focused display/rein repair until reproduced and verified by their owners.

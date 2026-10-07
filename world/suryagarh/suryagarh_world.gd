@@ -25,6 +25,8 @@ func _ready() -> void:
 	$LandscapeUI/ReviewHelp.visible = false
 	move_to_review_point(0)
 	last_safe_position = player.position
+	var river_dynamics:=preload('res://world/suryagarh/river_dynamics.gd').new()
+	add_child(river_dynamics)
 	var errands := preload("res://world/suryagarh/errands/errand_system.gd").new()
 	errands.name = "ErrandSystem"
 	add_child(errands)
@@ -74,4 +76,5 @@ func _physics_process(_delta: float) -> void:
 	var deep_enough := layout.height(p.x, p.z) < Layout.WATER_LEVEL - 1.0
 	if $HooghlyPort.is_dry_ship_interior(p): deep_enough = false
 	var entry_height := 0.65 if player.is_swimming else 0.3
+	player.set_meta('river_current',preload('res://world/suryagarh/river_dynamics.gd').current_at(p) if deep_enough else Vector3.ZERO)
 	player.set_water_state(deep_enough and p.y < Layout.WATER_LEVEL + entry_height, Layout.WATER_LEVEL)

@@ -378,6 +378,14 @@ func _pose_rest(delta: float) -> void:
 	var hip_y := skeleton.to_global(skeleton.get_bone_global_pose(hip_index).origin).y
 	var desired_hip_y := actor.global_position.y - 0.17 + 0.07 * lie
 	model.position.y += clampf(desired_hip_y - hip_y, -0.25, 0.25)
+	var brace_phase := clampf((progress - 0.38) / 0.52, 0.0, 1.0)
+	var brace_weight := pow(sin(PI * brace_phase), 2.0)
+	if brace_weight > 0.01 and equipment != null:
+		skeleton.force_update_all_bone_transforms()
+		var hand_index := skeleton.find_bone("hand_r")
+		var current_hand := skeleton.get_bone_global_pose(hand_index).origin
+		var cot_hand := skeleton.to_local(actor.to_global(Vector3(0.12, -0.18, -0.27)))
+		equipment._solve_arm("r", current_hand.lerp(cot_hand, brace_weight))
 	for side in ["l", "r"]:
 		if progress < 0.98:
 			_rest_seated_foot_contact(side, smoothstep(0.12, 0.32, progress) * (1.0 - smoothstep(0.88, 0.98, progress)), smoothstep(0.44, 0.62, progress))

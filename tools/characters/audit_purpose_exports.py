@@ -30,6 +30,5 @@ for role in ['dock_porter','boatman','record_clerk']:
  report['actors'][role]={'full_body_vertices':count,'independent_body_position_sha256':digest.hexdigest(),'foundation_separate_and_opaque':opaque}
 if len(body_hashes)!=3:report['errors'].append('Underlying body geometry is not independently different')
 report['passed']=not report['errors']
-(ROOT/'docs/characters/npcs/purpose_full_body_validation.json').write_text(json.dumps(report,indent=2)+'\n')
 print('PURPOSE_FULL_BODY',json.dumps(report))
 if report['errors']:raise SystemExit(1)

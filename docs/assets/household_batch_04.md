@@ -2,7 +2,7 @@
 
 Four reusable visual candidates in `objects/household/supplies/`. This batch follows ease of production, not story order. No complete story object list has been supplied; correspondence and ruled records are generic, with no invented clue text. No new usable prompts or rewards were added.
 
-![Studio overview](paper_supply_overview.png)
+Studio overview (test output deleted)
 
 | Prefab | Construction / integration status | Final animation requirements |
 | --- | --- | --- |

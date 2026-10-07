@@ -6,7 +6,7 @@ Suryagarh is fictional. Before adding an object to a playable scene, record evid
 
 The Company armoury holds five prototype pickups: Enfield, talwar, double gun, bow, and Adams pistol. Arjun starts unarmed and must enter the store to take each item. The rack and this collection of held/private arms are fictional design inferences, not a reconstruction of documented Company issue.
 
-The [2026-09-27 Forward+/Metal rack capture](captures/23_company_weapon_rack.png) was inspected after refitting all five objects to two shelves. Bounds checks confirm a 15 mm support allowance and containment within the rack; a standing room-side physics ray reaches each pickup. Detailed changes and limitations: [weapon store](weapon_store.md).
+The 2026-09-27 Forward+/Metal rack capture (historical test output unavailable) was inspected after refitting all five objects to two shelves. Bounds checks confirm a 15 mm support allowance and containment within the rack; a standing room-side physics ray reaches each pickup. Detailed changes and limitations: [weapon store](weapon_store.md).
 
 | Item | Period evidence | Game decision |
 | --- | --- | --- |

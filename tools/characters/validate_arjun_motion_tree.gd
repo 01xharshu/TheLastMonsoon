@@ -93,6 +93,30 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: sleeping branch did not engage")
 		quit(1)
 		return
+	var source: AnimationPlayer = model.find_children("*", "AnimationPlayer", true, false)[0]
+	var lie_clip := source.get_animation("motion/lie_down")
+	var wake_clip := source.get_animation("motion/rise_from_lie")
+	var arm_path := NodePath("Arjun_Rig/Skeleton3D:upperarm_r")
+	var lie_arm := lie_clip.find_track(arm_path, Animation.TYPE_ROTATION_3D)
+	var wake_arm := wake_clip.find_track(arm_path, Animation.TYPE_ROTATION_3D)
+	if lie_arm < 0 or wake_arm < 0 or lie_clip.get_track_count() < 12:
+		push_error("ARJUN MOTION TREE: authored lie/wake tracks missing")
+		quit(1)
+		return
+	if lie_clip.rotation_track_interpolate(lie_arm, lie_clip.length * 0.5).angle_to(lie_clip.rotation_track_interpolate(lie_arm, lie_clip.length)) < 0.08:
+		push_error("ARJUN MOTION TREE: lie transition lacks a distinct brace pose")
+		quit(1)
+		return
+	tree.update_rest(0.1, 0.5, 0.65, false)
+	if tree.get("parameters/sleep_motion/blend_amount") > 0.01:
+		push_error("ARJUN MOTION TREE: lie clip was not sought through the middle pose")
+		quit(1)
+		return
+	tree.update_rest(0.1, 0.5, 0.65, true)
+	if tree.get("parameters/sleep_motion/blend_amount") < 0.99:
+		push_error("ARJUN MOTION TREE: wake clip did not replace lie clip")
+		quit(1)
+		return
 	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
 	tree.rest_blend = 0.0
 	tree.update_motion(0.1, 0.0, 0.0, false)

@@ -10,19 +10,12 @@ var budget_elapsed := 0.0
 func configure(site: Node3D) -> void:
 	district = site
 	clock = get_tree().current_scene.get_node("GameTimeSystem")
-	var document := GLTFDocument.new()
-	var state := GLTFState.new()
-	assert(document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/dev/dev_idle_candidate.glb"),state)==OK)
-	var source := document.generate_scene(state)
-	var packed := PackedScene.new()
-	assert(packed.pack(source)==OK)
-	source.free()
 	for i in 4:
 		var actor = Sepoy.new()
 		actor.name = "Sepoy%02d" % (i+1)
 		actor.set_meta("source_model","characters/npcs/dev/dev_idle_candidate.glb")
 		actor.set_meta("visual_status","unnamed uniform reuse; final sepoy diversity and role acting open")
-		actor.add_child(packed.instantiate())
+		actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/dev/dev_idle_candidate.glb"))
 		actor.add_to_group("cantonment_sepoys")
 		district.add_child(actor)
 		actor.position = Vector3(-20+i*4,.07,10)

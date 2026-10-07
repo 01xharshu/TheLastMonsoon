@@ -29,15 +29,17 @@ func _run() -> void:
 	scene.add_child(player)
 	player.set_meta("mounted_vehicle", null)
 	player.global_position = Vector3(0, 0.83, 0)
+	player.set_process(false)
 	player.set_physics_process(false)
 	player.set_process_unhandled_input(false)
+	player.get_node("StairFootContact").set_process(false)
 	player.get_node("UI").hide()
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-45, 30, 0)
 	scene.add_child(light)
 	var camera := Camera3D.new()
 	scene.add_child(camera)
-	camera.global_position = Vector3(2.5, 1.65, 2.2)
+	camera.global_position = Vector3(1.65, 1.28, 1.35) if OS.get_environment("TLM_REST_CLOSE") == "1" else Vector3(2.5, 1.65, 2.2)
 	camera.look_at(Vector3(0, 0.55, 0))
 	camera.make_current()
 	var sample_name := OS.get_environment("TLM_REST_SAMPLE")
@@ -63,6 +65,9 @@ func _run() -> void:
 	var samples := [{"label":"sit", "progress":0.35}]
 	if sample_name == "lie": samples = [{"label":"lie", "progress":1.0}]
 	elif sample_name == "mid": samples = [{"label":"mid", "progress":0.65}]
+	elif sample_name == "mid_wake":
+		player.set_meta("rest_waking", true)
+		samples = [{"label":"mid_wake", "progress":0.65}]
 	for sample in samples:
 		player.set_meta("rest_progress", sample.progress)
 		for frame in 12: await process_frame
@@ -79,8 +84,11 @@ func _run() -> void:
 		elif sample.label == "lie":
 			assert(absf(points.foot_l.y - points.foot_r.y) < 0.07, "Reclined legs are vertically stacked")
 			assert(points.hand_l.y > 0.60 and points.hand_r.y > 0.60, "Reclined hand fell below cot weave")
-		if not DisplayServer.get_name() == "headless": await RenderingServer.frame_post_draw
-		var path: String = "res://docs/characters/arjun/charpai_" + str(sample.label) + "_contact.png"
-		if not DisplayServer.get_name() == "headless": root.get_texture().get_image().save_png(path)
+		var output_dir := OS.get_environment("TLM_REST_CAPTURE_DIR")
+		if output_dir != "" and DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			DirAccess.make_dir_recursive_absolute(output_dir)
+			var path: String = output_dir.path_join("charpai_" + str(sample.label) + ".png")
+			root.get_texture().get_image().save_png(path)
 		print("REST CONTACT ", sample.label, " ", JSON.stringify(positions))
 	quit()

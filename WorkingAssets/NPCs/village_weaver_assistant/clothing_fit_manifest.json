@@ -1,0 +1,27 @@
+{
+  "role": "village_weaver_assistant",
+  "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_motion_candidate.blend",
+  "garments": {
+    "Fitted cotton upper base": {
+      "vertices": 1613,
+      "pose_keys": 98
+    },
+    "Knee length wrapped dhoti": {
+      "vertices": 480,
+      "pose_keys": 98
+    },
+    "Dhoti woven border": {
+      "vertices": 192,
+      "pose_keys": 98
+    },
+    "Kurta loose lower panel": {
+      "vertices": 480,
+      "pose_keys": 98
+    }
+  },
+  "body_preserved": true,
+  "fitted_source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_clothing_fitted.blend",
+  "runtime": "characters/npcs/motion/village_weaver_assistant/village_weaver_assistant_rigged_candidate.glb",
+  "runtime_sha256": "880148f2c9ff364559dc7d74c340b142cc4b91f650ac82263a43517fb04b9278",
+  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
+}

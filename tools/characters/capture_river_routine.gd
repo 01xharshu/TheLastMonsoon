@@ -1,7 +1,11 @@
 extends SceneTree
+var output_dir := OS.get_environment("TLM_RIVER_TEST_OUTPUT")
 func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
+	if output_dir.is_empty():
+		push_error("Run with temporary TLM_RIVER_TEST_OUTPUT; caller must clean it in finally")
+		quit(1);return
 	if DisplayServer.get_name() == "headless":
 		quit(1)
 		return
@@ -29,7 +33,7 @@ func run() -> void:
 		camera.look_at(center + Vector3(0, .7, 0))
 		await process_frame
 		RenderingServer.force_draw(false)
-		var path := "res://docs/characters/npcs/river_%s.png" % entry[0]
+		var path := output_dir+"/river_%s.png" % entry[0]
 		var picture := (scene.get_parent() as SubViewport).get_texture().get_image()
 		picture.resize(1280, 720)
 		var error := picture.save_png(path)
@@ -41,7 +45,7 @@ func run() -> void:
 
 func record(scene: Node3D) -> void:
 	(scene.get_parent() as SubViewport).size = Vector2i(854,480)
-	var folder := "/tmp/tlm_river_routine_frames"
+	var folder := output_dir+"/frames"
 	DirAccess.make_dir_recursive_absolute(folder)
 	for woman in scene.women: woman.sample(0.0)
 	for frame in 1095:

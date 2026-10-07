@@ -2,7 +2,7 @@
 
 Two reusable dressing candidates in `objects/household/sets/`, assembled in production order rather than story order. These are saved prefabs, not new placements in occupied homes or civic buildings.
 
-![Cooking corner and records desk](activity_sets_overview.png)
+Cooking corner and records desk (test output deleted)
 
 **Cooking corner:** original clay hearth base, side supports and back, iron griddle and handle, shared hollow water pot, tied grain sack and basket. Hearth opening faces forward. No lit fire, fuel consumption, cooking reward or prompt is implied. Named CookApproach, CookingSurface, GriddleGrip and PotApproach references support the later contact pass. Hearth parts and existing storage props have colliders; griddle and visual-only pot need action-specific collision at integration.
 

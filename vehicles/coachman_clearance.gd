@@ -69,7 +69,7 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
     if maxf(a.y,maxf(b.y,c.y)) < 1.40 or minf(a.y,minf(b.y,c.y)) > 2.12: continue
     var normal: Vector3 = (directions[indices[offset]]+directions[indices[offset+1]]+directions[indices[offset+2]]).normalized()
     var id := triangles.size()
-    triangles.append({"a":a,"b":b,"c":c,"normal":normal})
+    triangles.append({"a":a,"b":b,"c":c,"normal":normal,"low":a.min(b).min(c),"high":a.max(b).max(c)})
     var low := _cell(a.min(b).min(c))
     var high := _cell(a.max(b).max(c))
     for x in range(low.x,high.x+1):
@@ -90,6 +90,10 @@ func nearest(at: Vector3) -> Dictionary:
      if visited.has(id): continue
      visited[id] = true
      var triangle: Dictionary = triangles[id]
+     # Exact lower bound: distant triangle boxes cannot beat the current hit.
+     # Keep the existing cell/triangle order and tie handling for contact parity.
+     var box_point: Vector3 = at.clamp(triangle.low, triangle.high)
+     if box_point.distance_squared_to(at) > distance + 0.0000000001: continue
      var point := closest(at,triangle.a,triangle.b,triangle.c)
      var squared := point.distance_squared_to(at)
      if squared < distance:

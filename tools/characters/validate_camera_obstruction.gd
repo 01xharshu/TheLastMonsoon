@@ -61,5 +61,12 @@ func _run() -> void:
   camera._process(1.0 / 60.0)
  var restored_distance: float = arm.global_position.distance_to(camera.global_position)
  ok = ok and absf(restored_distance - arm.spring_length) < 0.05
- print("CAMERA OBSTRUCTION: ", "PASS" if ok else "FAIL", " | open=", open_distance, " blocked=", blocked_distance, " tight=", tight_distance, " restored=", restored_distance)
+ box.size = Vector3(0.35, 3.0, 1.2)
+ wall.position = Vector3(0.6, 1.5, 0.3)
+ for i in 15:
+  await physics_frame
+  camera._process(1.0 / 60.0)
+ var shoulder_distance: float = arm.global_position.distance_to(camera.global_position)
+ ok = ok and camera.shoulder_scale == 0.0 and shoulder_distance > camera.BODY_HIDE_DISTANCE and player.visual_root.visible
+ print("CAMERA OBSTRUCTION: ", "PASS" if ok else "FAIL", " | open=", open_distance, " blocked=", blocked_distance, " tight=", tight_distance, " restored=", restored_distance, " shoulder=", shoulder_distance)
  quit(0 if ok else 1)

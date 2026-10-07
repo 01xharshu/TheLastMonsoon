@@ -20,6 +20,7 @@ func run() -> void:
  check(audio.streams.size()==25,'25 cached action types plus six recorded footstep variants')
  for key in env.clips:check(env.clips[key].data.size()>0,'recording '+str(key)+' loads')
  check(env.loops.size()==8,'environment loops capped at eight')
+ check(env.loops[0].volume_db>=-6 and env.loops[0].unit_size>=6,'fire mix retains near-field audibility')
  var lights:=get_nodes_in_group('village_gathering_fire')
  check(not lights.is_empty(),'live gathering fire sources exist')
  var fire: Node3D=lights[0]
@@ -35,6 +36,7 @@ func run() -> void:
  var layout:=preload('res://world/suryagarh/landscape_layout.gd').new()
  var river_at:=Vector3(layout.river_x(165),2,165)
  env.tick(river_at,12,.25);check(env.river_voice.playing,'water audible near river')
+ check(env.river_voice.volume_db>=-6,'river recording is not doubly attenuated')
  env.tick(Vector3(-650,8,165),12,.25);check(not env.river_voice.playing,'water silent inland')
  check(not env.day_at(2) and env.day_at(8),'day bird schedule excludes night')
  var bird: Node3D
@@ -49,6 +51,11 @@ func run() -> void:
   check(int(env.emissions.get('sparrow',0))==before,'night emits no day bird')
   env.bird_wait=0;env.tick(bird.global_position+Vector3(10,0,0),8,.25)
   check(int(env.emissions.get('sparrow',0))>before,'day emits local recorded bird')
+  silence(audio);audio.play_at('sparrow',bird.global_position,-3)
+  var bird_voice: AudioStreamPlayer3D=audio.voices[0]
+  check(bird_voice.max_distance>=40 and bird_voice.unit_size>=8,'bird voice covers canopy scheduling radius')
+  silence(audio);audio.play_at('impact',bird.global_position)
+  check(bird_voice.max_distance==28 and bird_voice.unit_size==1,'reused ambient voice restores action attenuation')
  var yard: Node3D=get_nodes_in_group('household_cattle')[0]
  var motion: Node=yard.motion;motion.enabled=false
  motion.state='idle';env.actors[motion.get_instance_id()].wait=0
@@ -82,8 +89,25 @@ func run() -> void:
  camera.global_position=Vector3(-335,10,230)
  for i in 20:wind._process(.25)
  check(not wind.sheltered and wind.exposure>.8,'open village lane restores wind')
+ var flags:=get_nodes_in_group('wind_flag_roots')
+ check(not flags.is_empty(),'live wind flag roots exist')
+ for flag in flags:
+  var base: Vector3=flag.global_position
+  flag.rotation.y=2.0
+  for i in 500:wind._process(.1)
+  var cloth_direction: Vector3=flag.global_basis.x.normalized()
+  var breeze: Vector3=wind.sample(flag.global_position).normalized()
+  check(cloth_direction.dot(breeze)>.99,'flag aligns its authored cloth axis with breeze')
+  check(flag.global_position.is_equal_approx(base),'wind rotation preserves pole grounding')
+  break
+ var animators:=get_nodes_in_group('wind_flags')
+ check(not animators.is_empty(),'live authored flutter clips exist')
+ if not animators.is_empty():
+  var animator: AnimationPlayer=animators[0]
+  var expected: float=clampf(wind.sample(animator.get_parent().global_position).length()/2.5,.15,1.8)
+  check(animator.is_playing() and is_equal_approx(animator.speed_scale,expected),'flutter clip speed follows local gust')
  evidence['renderer']=str(RenderingServer.get_rendering_device().get_device_name()) if RenderingServer.get_rendering_device()!=null else 'headless'
  evidence['passed']=failures.is_empty();evidence['listening_approved']=false
- var file:=FileAccess.open('res://docs/world/environment_audio_validation.json',FileAccess.WRITE);file.store_string(JSON.stringify(evidence,'  '));file.close()
+ # Disposable results are printed only; no checkout reports are retained.
  preload('res://tools/test_audio_cleanup.gd').stop(root);await preload('res://tools/test_audio_cleanup.gd').settle(self)
  print('ENVIRONMENT AUDIO: '+('PASS' if failures.is_empty() else 'FAIL'));quit(0 if failures.is_empty() else 1)

@@ -11,7 +11,7 @@ The grove reuses `island_tree_02.glb`, already in the project with its Poly Have
 ## Evidence and gaps
 
 - Godot scene parsed and loaded; revised landscape bake completed: 144 tiles, 2,129 baked trees.
-- Fresh native renderer captures: [forest approach](captures/forest_approach.png), [cave entrance](captures/cave_entrance.png), [idol chamber](captures/idol_chamber.png). The first capture showed terrain blocking the idol; the revised floor removes that obstruction.
+- Fresh native renderer captures: forest approach (test output deleted), cave entrance (test output deleted), idol chamber (test output deleted). The first capture showed terrain blocking the idol; the revised floor removes that obstruction.
 - Visual review fails: the approach camera intersects foliage, no guided walkable switchback has been proved from the lower slope, the cave still reads as assembled rock forms with sky exposure, and the idol remains a coarse procedural blockout. Day/night lighting, collision traversal, tree collision, 8 GB performance, cultural/sculptural review and final likeness are unverified.
 
 Next: lay out and walk a forest path from the lower hillside; sculpt a continuous enclosed cave roof with a controlled skylight; replace the blockout with a commissioned/referenced stone sculpture; capture player-eye entry and approach in the target renderer and review with the owner.

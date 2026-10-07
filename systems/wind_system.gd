@@ -24,6 +24,7 @@ func _process(delta: float) -> void:
  var angle := .42+.22*sin(elapsed*.017)
  direction=Vector2(cos(angle),sin(angle))
  RenderingServer.global_shader_parameter_set('world_wind',Vector3(direction.x*speed,elapsed,direction.y*speed))
+ _update_flags(delta)
  var camera := get_viewport().get_camera_3d()
  if camera==null:ambience.volume_db=-60;return
  shelter_timer-=delta
@@ -33,7 +34,9 @@ func _process(delta: float) -> void:
   query.collision_mask=1
   sheltered=not camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
  exposure=move_toward(exposure,.12 if sheltered else 1.0,delta*.8)
- ambience.volume_db=linear_to_db(maxf(.001,speed/5.0*exposure*.09))
+ ambience.volume_db=linear_to_db(maxf(.001,speed/5.0*exposure*.45))
+
+func _update_flags(delta: float) -> void:
  for animator in get_tree().get_nodes_in_group('wind_flags'):
   if is_instance_valid(animator):animator.speed_scale=clampf(sample(animator.get_parent().global_position).length()/2.5,.15,1.8)
  for flag in get_tree().get_nodes_in_group('wind_flag_roots'):
@@ -57,3 +60,8 @@ func _fit_leaves(mesh: MeshInstance3D) -> void:
   material.set_shader_parameter('alpha_cutoff',original.alpha_scissor_threshold)
   material.set_shader_parameter('wind_strength',.045)
   mesh.set_surface_override_material(i,material)
+
+func _exit_tree() -> void:
+ if is_instance_valid(ambience):
+  ambience.stop()
+  ambience.stream=null

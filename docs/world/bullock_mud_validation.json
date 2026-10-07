@@ -1,5 +1,0 @@
-{
-  "errors": [],
-  "passed": true,
-  "scope": "actual world bullock integration, MPFB source, real road motion, collision, saved transforms, loaded-cargo pause, wet/idle/dry emission guards; renderer and full motion/cloth approval separate"
-}

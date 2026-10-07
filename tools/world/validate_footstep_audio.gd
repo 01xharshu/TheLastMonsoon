@@ -33,7 +33,5 @@ func run() -> void:
   if airborne and not actor.is_on_floor() and count(audio)!=previous:airborne_silent=false
  check(airborne_silent,'airborne motion produces no footsteps')
  check(audio.voices.size()==24,'contact events preserve voice cap')
- var report:={'pass':failures.is_empty(),'event_counts':audio.event_counts,'checks_failed':failures,'visual_approved':false}
- FileAccess.open('res://docs/world/footstep_audio_validation.json',FileAccess.WRITE).store_string(JSON.stringify(report,'  '))
  preload('res://tools/test_audio_cleanup.gd').stop(root);await preload('res://tools/test_audio_cleanup.gd').settle(self)
  print('FOOTSTEP AUDIO: '+('PASS' if failures.is_empty() else 'FAIL'));quit(0 if failures.is_empty() else 1)

@@ -12,10 +12,10 @@ Government House had bare handrail bars and isolated treads. Its two flights now
 
 `tools/world/validate_period_access.gd`:
 
-- Metal rendered review: [landing](captures/30_period_landing.png), [Government House stair support](captures/31_period_stair_support.png), both inspected.
+- Metal rendered review: landing (historical test output unavailable), Government House stair support (historical test output unavailable), both inspected.
 - All 567 deck samples clear the bank; all 20 piles reach it or the river bed.
 - Government House has 196 visible rail supports; four side rays hit matching guard collision.
-- Actual player walks from the bank to the jetty end without jump or a fall between segments. Headless result: [validation JSON](period_access_validation.json).
+- Actual player walks from the bank to the jetty end without jump or a fall between segments. Headless result: validation JSON (test output deleted).
 
 `tools/world/validate_player_world_stairs.tscn` also passes all eight real-player up/down routes after the guard change. See [traversal scope](player_stair_traversal.md). This does not approve boot planting or Arjun's rejected appearance.
 

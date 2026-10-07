@@ -1,10 +1,13 @@
 {
-  "status": "broader bovine facial planes and cheeks, shaped cloven walls/flat soles, larger eyelids/ears, layered procedural pigmentation; 19-bone rig and target contract retained; final art approval open",
+  "status": "broader bovine facial planes and cheeks, shaped cloven walls/flat soles, fitted eyelids/thin inner ears, subtle Breath morph, layered procedural pigmentation; 19-bone rig and target contract retained; final art approval open",
   "source": "tools/animals/build_household_cow.py; original geometry and rig, no external imagery",
   "morphology_reference": "https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed",
-  "glb_sha256": "fae7262aa78b0117bc77ce2d8acd190d72455a9cf03752f18e76402e13f9ff53",
-  "vertices": 40858,
+  "glb_sha256": "83da679ce35a54d30af7cc639de2d3b98eb53644cab3134470eb39aaa60391c6",
+  "vertices": 40456,
   "bones": 19,
+  "morphs": [
+    "Breath"
+  ],
   "clips": [
     "idle",
     "head_lower"

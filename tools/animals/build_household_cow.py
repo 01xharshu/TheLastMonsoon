@@ -2,7 +2,7 @@
 import bpy, math, json, hashlib
 from pathlib import Path
 from mathutils import Vector
-ROOT=Path('/Users/harshmishra/Documents/GitHub/TheLastMonsoon')
+ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'assets/animals/cow/household_cow.glb'
 WORK=ROOT/'WorkingAssets/Animals/household_cow'
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
@@ -118,14 +118,29 @@ for side in [-1,1]:
  for face in data.polygons:face.use_smooth=True
  extras.append((o,'Head'))
  # Long leaf-like ears with a recessed inner surface.
- ear=ellipsoid('Ear '+tag,(side*.225,1.35,-1.14),(.165,.035,.074),coat,'Ear.'+tag,False)
+ ear=ellipsoid('Ear '+tag,(side*.225,1.35,-1.14),(.165,.018,.074),coat,'Ear.'+tag,False)
  for vertex in ear.data.vertices:
   tip=max(0,side*vertex.co.x/.14);vertex.co.z-=.020*tip*tip;vertex.co.y-=.015*tip*tip
  ear.rotation_euler[1]=side*.18
- inner=ellipsoid('Ear inner '+tag,(side*.225,1.36,-1.145),(.130,.009,.049),inside,'Ear.'+tag,False)
- for vertex in inner.data.vertices:
-  tip=max(0,side*vertex.co.x/.14);vertex.co.z-=.020*tip*tip;vertex.co.y-=.015*tip*tip
- inner.rotation_euler[1]=side*.18
+ # Fitted upper ear surface follows the thin outer shell at 1 mm clearance.
+ verts=[point((0,.019,0))];faces=[];count=32
+ for row in range(1,6):
+  r=row/5
+  for i in range(count):
+   angle=i/count*math.tau;x=.130*r*math.cos(angle);z=.049*r*math.sin(angle)
+   height=.018*math.sqrt(max(0,1-(x/.165)**2-(z/.074)**2))+.001
+   tip=max(0,side*x/.14)
+   verts.append(point((x,height-.020*tip*tip,z+.015*tip*tip)))
+ for i in range(count):faces.append((0,1+(i+1)%count,1+i))
+ for row in range(4):
+  for i in range(count):
+   a=1+row*count+i;b=1+row*count+(i+1)%count
+   faces.append((a,b,b+count,a+count))
+ data=bpy.data.meshes.new('Fitted inner ear');data.from_pydata(verts,[],faces);data.materials.append(inside)
+ inner=bpy.data.objects.new('Ear inner '+tag,data);bpy.context.collection.objects.link(inner)
+ inner.location=point((side*.225,1.35,-1.145));inner.rotation_euler[1]=side*.18
+ for face in data.polygons:face.use_smooth=True
+ extras.append((inner,'Ear.'+tag))
  # An open lid cuff seats the eye within the cheek instead of a bead on it.
  verts=[];faces=[];count=32
  for radius,lateral in [(1.0,.150),(.84,.166),(.68,.168)]:
@@ -216,6 +231,13 @@ for v in body.data.vertices:
  for name,w in weights.items():
   if w>0:body.vertex_groups[name].add([v.index],w,'REPLACE')
 bind(body,None)
+body.shape_key_add(name='Basis')
+breath=body.shape_key_add(name='Breath')
+for v in body.data.vertices:
+ p=body.matrix_world@v.co;gx,gy,gz=p.x,p.z,-p.y
+ flank=math.exp(-((gz-.10)/.53)**2)*max(0,min(1,(gy-.78)/.30))*max(0,min(1,(abs(gx)-.15)/.15))
+ breath.data[v.index].co.x+=math.copysign(.006*flank,gx)
+ breath.data[v.index].co.z+=.001*flank
 for o,g in extras:bind(o,g)
 rig.animation_data_create()
 for clip,length in [('idle',3.0),('head_lower',4.0)]:
@@ -230,11 +252,18 @@ for clip,length in [('idle',3.0),('head_lower',4.0)]:
    pb.keyframe_insert('rotation_euler',frame=frame)
  track=rig.animation_data.nla_tracks.new();track.name=clip;track.strips.new(clip,0,action)
 rig.animation_data.action=None;bpy.context.scene.frame_set(0)
+# Editable UV islands also provide valid tangent data for exported morph normals.
+for obj in [body]+[entry[0] for entry in extras]:
+ bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj
+ if obj.data.shape_keys:obj.active_shape_key_index=0
+ bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT')
+ bpy.ops.uv.smart_project(angle_limit=math.radians(66),island_margin=.015)
+ bpy.ops.object.mode_set(mode='OBJECT')
 WORK.mkdir(parents=True,exist_ok=True);OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(WORK/'household_cow.blend'))
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format='GLB',use_selection=True,export_yup=True,export_animations=True,export_animation_mode='NLA_TRACKS')
-manifest={'status':'broader bovine facial planes and cheeks, shaped cloven walls/flat soles, larger eyelids/ears, layered procedural pigmentation; 19-bone rig and target contract retained; final art approval open','source':'tools/animals/build_household_cow.py; original geometry and rig, no external imagery','morphology_reference':'https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed','glb_sha256':hashlib.sha256(OUT.read_bytes()).hexdigest(),'vertices':sum(len(o.data.vertices) for o in [body]+[e[0] for e in extras]),'bones':len(bones),'clips':['idle','head_lower']}
+manifest={'status':'broader bovine facial planes and cheeks, shaped cloven walls/flat soles, fitted eyelids/thin inner ears, subtle Breath morph, layered procedural pigmentation; 19-bone rig and target contract retained; final art approval open','source':'tools/animals/build_household_cow.py; original geometry and rig, no external imagery','morphology_reference':'https://www.fao.org/4/t1265e/t1270e03.htm; not an authenticated 1857 breed','glb_sha256':hashlib.sha256(OUT.read_bytes()).hexdigest(),'vertices':sum(len(o.data.vertices) for o in [body]+[e[0] for e in extras]),'bones':len(bones),'morphs':['Breath'],'clips':['idle','head_lower']}
 (WORK/'manifest.json').write_text(json.dumps(manifest,indent=2))
 print('HOUSEHOLD COW BUILD',json.dumps(manifest))

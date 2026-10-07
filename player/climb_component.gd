@@ -90,6 +90,7 @@ func try_start() -> bool:
 	waiting_for_move = false
 	releasing = false
 	if window.try_start(actor):
+		window_committed = true
 		active = true
 		return true
 	var forward: Vector3 = actor.visual_root.global_basis.z

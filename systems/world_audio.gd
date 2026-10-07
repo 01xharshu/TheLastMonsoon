@@ -30,12 +30,16 @@ func _ready() -> void:
  var environment:=preload('res://systems/environment_audio.gd').new();environment.name='EnvironmentAudio';add_child(environment)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
-func play_at(key: String, at: Vector3, db: float = -18.0) -> void:
- if not streams.has(key):return
+func play_at(key: String, at: Vector3, db: float = -18.0) -> bool:
+ if not streams.has(key):return false
  for voice in voices:
   if voice.playing:continue
+  # Broad canopy calls must cover the same 40 m radius used by the scheduler.
+  voice.max_distance=45.0 if key=='sparrow' else 28.0
+  voice.unit_size=8.0 if key=='sparrow' else 1.0
   voice.stream=step_variants[key].pick_random() if step_variants.has(key) else streams[key];voice.global_position=at;voice.volume_db=db
-  voice.pitch_scale=randf_range(.94,1.06);voice.play();events+=1;event_counts[key]=int(event_counts.get(key,0))+1;return
+  voice.pitch_scale=randf_range(.94,1.06);voice.play();events+=1;event_counts[key]=int(event_counts.get(key,0))+1;return true
+ return false
 func interaction(target: Node3D) -> void:
  if not is_instance_valid(target):return
  var label := (str(target.name)+' '+str(target.get('interaction_text'))).to_lower()
@@ -73,13 +77,11 @@ func _physics_process(_delta: float) -> void:
   if state.distance<.95:continue
   state.distance=0.0
   var key := 'splash' if actor.is_swimming else 'step_dirt'
-  var query := PhysicsRayQueryParameters3D.create(at+Vector3.UP,at-Vector3.UP*2)
-  query.exclude=[actor.get_rid()]
-  var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
-  if not hit.is_empty():
-   var surface := str(hit.collider.name).to_lower()
-   if 'floor' in surface or 'pier' in surface or 'timber' in surface:key='step_wood'
-   elif 'stone' in surface or 'stair' in surface or 'pav' in surface:key='step_stone'
+  if not actor.is_swimming:
+   var query := PhysicsRayQueryParameters3D.create(at+Vector3.UP,at-Vector3.UP*2,1)
+   query.exclude=[actor.get_rid()]
+   var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
+   if not hit.is_empty():key=surface_key(hit.collider)
   play_at(key,at,-23.0)
 
 func _npc_steps() -> void:
@@ -90,6 +92,8 @@ func _npc_steps() -> void:
   if actor==null:npc_tracks.erase(id);continue
   var at := actor.global_position
   var travel: float=at.distance_to(state.position);state.position=at
+  if actor.get_meta('dead',false) or actor.get_meta('knocked_out',false) or not (actor.is_processing() or actor.is_physics_processing()):
+   state.distance=0.0;state.side='';continue
   if camera==null or camera.global_position.distance_squared_to(at)>625.0 or travel>2.0:
    state.distance=0.0;continue
   state.distance+=travel

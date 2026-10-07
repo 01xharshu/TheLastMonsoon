@@ -158,10 +158,12 @@ func _staff(home:Node3D,job:String,at:Vector3,slug:String,axis:Vector3) -> Node3
 	actor.set("movement_profile",&"female" if slug=="village_woman" else &"male")
 	actor.set_meta("household",str(home.name));actor.set_meta("job",job)
 	actor.add_to_group("household_staff")
-	var document:=GLTFDocument.new();var state:=GLTFState.new()
 	var path:="res://characters/npcs/households/%s.glb"%("staff_woman" if slug=="village_woman" else "staff_farmer")
-	if document.append_from_file(ProjectSettings.globalize_path(path),state)!=OK:return null
-	actor.add_child(document.generate_scene(state));add_child(actor)
+	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	if figure == null:
+		actor.free()
+		return null
+	actor.add_child(figure);add_child(actor)
 	if job=="WaterBearer":
 		var pot:=MeshInstance3D.new();pot.name="CarriedWaterPot"
 		var mesh:=_carried_pot_mesh()

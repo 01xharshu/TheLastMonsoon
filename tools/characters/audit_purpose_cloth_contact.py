@@ -7,7 +7,7 @@ import argparse,hashlib
 parser=argparse.ArgumentParser()
 parser.add_argument('role',nargs='?',default='all',choices=['all','dock_porter','boatman','record_clerk'])
 parser.add_argument('--source',type=Path)
-parser.add_argument('--output',type=Path,default=ROOT/'docs/characters/npcs/purpose_cloth_contact.json')
+parser.add_argument('--output',type=Path,default=None)
 parser.add_argument('--clip',choices=['idle','walk','seat_entry'],default='walk')
 parser.add_argument('--substeps',type=int,default=1)
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
@@ -21,7 +21,7 @@ for role in roles:
  sources[role]={'path':str(source),'sha256':hashlib.sha256(source.read_bytes()).hexdigest()}
  bpy.ops.wm.open_mainfile(filepath=str(source))
  rig=bpy.data.objects[role+'_rig'];body=bpy.data.objects[role+'_MakeHuman_body'];rig.animation_data.action=bpy.data.actions[clip];rig.data.pose_position='POSE'
- names=['Fitted cotton upper base','Knee length wrapped dhoti','Dhoti woven border','Wide madder waist sash','Narrow indigo waist binding','Porter fitted short work trousers','Clerk full length trousers','Clerk buttoned sleeveless waistcoat']
+ names=['Opaque fitted underwear foundation','Fitted cotton upper base','Knee length wrapped dhoti','Dhoti woven border','Wide madder waist sash','Narrow indigo waist binding','Porter fitted short work trousers','Clerk full length trousers','Clerk buttoned sleeveless waistcoat']
  cloth=[bpy.data.objects[n] for n in names if n in bpy.data.objects]
  corrected=[o for o in cloth if o.data.shape_keys and o.data.shape_keys.key_blocks.get(('Seat' if clip=='seat_entry' else 'Walk')+' cloth 00')] if clip!='idle' else []
  for obj in cloth:
@@ -67,6 +67,7 @@ for role in roles:
  print('CLOTH_CONTACT',role,json.dumps(result),flush=True)
 output=args.output
 passed=all(v['penetrating_samples']==0 for actor in report.values() for v in actor.values())
-output.write_text(json.dumps({'sources':sources,'passed':passed,'substeps_per_frame':substeps,'clip':clip,'scope':'source '+clip+' vertex and polygon-center surface sampling; not full continuous mesh or renderer approval','actors':report},indent=2)+'\n')
+payload=json.dumps({'sources':sources,'passed':passed,'substeps_per_frame':substeps,'clip':clip,'scope':'source '+clip+' vertex and polygon-center surface sampling; not full continuous mesh or renderer approval','actors':report},indent=2)+'\n'
+if output:output.write_text(payload)
 
 raise SystemExit(0 if passed else 1)

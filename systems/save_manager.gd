@@ -20,10 +20,12 @@ var options: Dictionary = DEFAULTS.duplicate(true)
 var pending_slot := -1
 var save_root := SAVE_DIR
 var settings_path := SETTINGS_FILE
+var _quitting := false
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().auto_accept_quit = false
 	load_options()
 	_add_combat_actions()
 	_cache_input_events()
@@ -403,8 +405,7 @@ func apply_options(world: Node = null) -> void:
 		AudioServer.set_bus_volume_db(index,linear_to_db(maxf(amount,0.001)))
 	if DisplayServer.get_name()!="headless":
 		var requested_mode := DisplayServer.WINDOW_MODE_FULLSCREEN if options.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
-		# Re-entering WINDOWED on macOS can resize the backing viewport on each
-		# settings/scene application. Only perform a real mode transition.
+		# Settings/scene applications need a mode transition only when it changed.
 		if DisplayServer.window_get_mode() != requested_mode:
 			DisplayServer.window_set_mode(requested_mode)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if options.vsync else DisplayServer.VSYNC_DISABLED)
@@ -430,7 +431,9 @@ static func render_scale_for_size(pixels: Vector2i, quality: int) -> float:
 	return minf(1.0, minf(budget.x / maxf(pixels.x,1), budget.y / maxf(pixels.y,1)))
 
 func _apply_render_budget(viewport: Viewport, quality: int) -> void:
-	var pixels: Vector2i = viewport.get_texture().get_size()
+	# Window texture metadata includes the canvas stretch transform on macOS;
+	# Window.size is the render target's actual size (also confirmed by readback).
+	var pixels: Vector2i = viewport.size if viewport is Window or viewport is SubViewport else Vector2i(viewport.get_visible_rect().size)
 	viewport.scaling_3d_scale = render_scale_for_size(pixels,quality)
 
 func _update_render_budget() -> void:
@@ -520,3 +523,24 @@ func bind_key(action: String, keycode: int) -> bool:
 	_set_active_input_device(active_input_device)
 	set_option("key_bindings",options.key_bindings)
 	return true
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		quit_game()
+
+func quit_game(exit_code: int = 0) -> void:
+	if _quitting:
+		return
+	_quitting = true
+	# Stop simulation before draining voices: wind/ambience must not restart them.
+	get_tree().paused = true
+	for kind in ["AudioStreamPlayer", "AudioStreamPlayer2D", "AudioStreamPlayer3D"]:
+		for voice in get_tree().root.find_children("*", kind, true, false):
+			voice.stop()
+			voice.stream = null
+	get_tree().root.get_node("ControllerFeedback").stop()
+	# AudioServer retires playback references on its next mix, not at Node.free().
+	var deadline := Time.get_ticks_msec() + 150
+	while Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	get_tree().quit(exit_code)

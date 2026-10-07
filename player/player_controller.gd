@@ -553,7 +553,9 @@ func _update_weapon_camera(delta: float) -> void:
 	climb_camera_blend = move_toward(climb_camera_blend,1.0 if get_meta("climbing",false) or ($ClimbComponent.catch_seconds>0 and not is_on_floor()) else 0.0,delta*3.0)
 	var travel_distance := lerpf(third_person_distance,maxf(third_person_distance,2.8),climb_camera_blend)
 	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
-	arm.position.x = lerpf(lerpf(.6,.35,climb_camera_blend), .50, aim_blend)
+	var camera_clearance: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+	camera_clearance.desired_shoulder_offset = lerpf(lerpf(.6,.35,climb_camera_blend), .50, aim_blend)
+	arm.position.x = camera_clearance.desired_shoulder_offset * camera_clearance.shoulder_scale
 	var stance_height: float = $StealthStance.camera_height()
 	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
@@ -624,6 +626,9 @@ func _handle_movement(
 	# SPEED
 	# -----------------------------------------------------
 
+	var river_current: Vector3=get_meta('river_current',Vector3.ZERO) if is_swimming else Vector3.ZERO
+	velocity-=river_current
+
 	var current_speed := swim_speed if is_swimming else walk_speed
 	if $StealthStance.is_low(): current_speed = $StealthStance.move_speed()
 
@@ -690,6 +695,8 @@ func _handle_movement(
 			deceleration
 			* delta
 		)
+
+	velocity+=river_current
 
 
 # =========================================================

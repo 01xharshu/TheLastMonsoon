@@ -12,7 +12,7 @@ The prior five-weapon render showed an upright bow penetrating the upper shelf, 
 
 Each model is laid on its side, measured in store coordinates, centered into its assigned slot, and placed 15 mm above the support surface. The allowance prevents surface flicker; it is not a claim of exact wood/weapon contact. Display scales follow the equipped weapon scales; shelf placement is measured after scaling. Pickup collision widths use the measured weapon width and a minimum 0.4 m target; a standing player can reach both levels.
 
-Evidence: [fresh Metal capture](captures/23_company_weapon_rack.png), inspected. `tools/world/validate_weapon_store.gd` passes on Metal and headless: unarmed start, shelf containment/support bounds, no weapon-bound overlaps, standing room-side line of sight from the gameplay ray height, acquisition of all five weapons, and partial/full loot restoration in a fresh scene. The partial save retains the four uncollected Company weapons; unrelated civic pickups remain available. It uses an isolated save directory and removes both test saves.
+Evidence: fresh Metal capture (historical test output unavailable), inspected. `tools/world/validate_weapon_store.gd` passes on Metal and headless: unarmed start, shelf containment/support bounds, no weapon-bound overlaps, standing room-side line of sight from the gameplay ray height, acquisition of all five weapons, and partial/full loot restoration in a fresh scene. The partial save retains the four uncollected Company weapons; unrelated civic pickups remain available. It uses an isolated save directory and removes both test saves.
 
 ## Persistence
 
@@ -26,11 +26,11 @@ Company pickups now use stable IDs such as `company_armoury/enfield`. Room furni
 
 Town Hall and District Police now store their three weapons flat on a 2.4 × 5 m timber shelf, supported by four posts. Model bounds determine placement, with the same 15 mm support allowance used in Company stores. Original civic persistence identities are retained so existing saves still recognize collected weapons.
 
-`tools/world/validate_civic_weapon_shelves.gd` passes headless and Metal: all six weapon bounds fit the shelves, are separated, meet the support height and can be targeted from the room side. Render evidence: [Town Hall](captures/civic_weapon_TownHall.png), [Police](captures/civic_weapon_DistrictPolice.png). This verifies placement and pickup access; exact shelf construction and the appropriateness of each weapon in each civic store remain historically provisional.
+`tools/world/validate_civic_weapon_shelves.gd` passes headless and Metal: all six weapon bounds fit the shelves, are separated, meet the support height and can be targeted from the room side. Render evidence: Town Hall (historical test output unavailable), Police (historical test output unavailable). This verifies placement and pickup access; exact shelf construction and the appropriateness of each weapon in each civic store remain historically provisional.
 
 ## Player-driven civic access
 
-`tools/world/validate_civic_weapon_walk.gd` drives the actual player through each civic armoury doorway, turns into the shelf aisle and walks to all three weapon positions: ten segments across Town Hall and District Police. No jumps are injected. It collects the first rifle and talwar, checks duplicate shelf weapons remain available, then saves to an isolated test slot and restores a fresh world. Expected restoration is one spare Town Hall rifle and all three Police weapons, with Arjun retaining his rifle and talwar. Evidence: [route results](civic_weapon_walk_validation.json). This checks the ground-floor room approach; exterior entry, hand-contact motion and historical approval remain separate.
+`tools/world/validate_civic_weapon_walk.gd` drives the actual player through each civic armoury doorway, turns into the shelf aisle and walks to all three weapon positions: ten segments across Town Hall and District Police. No jumps are injected. It collects the first rifle and talwar, checks duplicate shelf weapons remain available, then saves to an isolated test slot and restores a fresh world. Expected restoration is one spare Town Hall rifle and all three Police weapons, with Arjun retaining his rifle and talwar. Evidence: route results (test output deleted). This checks the ground-floor room approach; exterior entry, hand-contact motion and historical approval remain separate.
 
 ## Display/equipment size consistency — 2026-09-27
 
@@ -44,12 +44,12 @@ Fresh Metal Company pickup/save and civic support/access checks PASS after scale
 
 Enfield scale is now `1.39065 / 1.41`, matching the Smithsonian specimen's recorded overall length (54¾ inches / 139.065 cm) against the audited 1.41 m source. See [Smithsonian collection measurement](https://collections.si.edu/search/results.htm?q=%22London+Armoury+Company%22). This replaces the 0.82 runtime scale. Stored and held instances share the constant. Existing sockets and palm targets incorporate the scale automatically.
 
-Fresh Metal [side view](../characters/arjun/longgun_enfield_side.png) inspected; both palm targets reach the weapon (~0.17 mm right, ~0.15 mm left). Finger wrap, shoulder seating, exact model profile and final character approval remain open. `tools/weapons/validate_rifle.gd` and the Metal Company weapon-store pickup/support/save check PASS. The length audit now checks runtime length as well as source bounds.
+Fresh Metal side view (test output deleted) inspected; both palm targets reach the weapon (~0.17 mm right, ~0.15 mm left). Finger wrap, shoulder seating, exact model profile and final character approval remain open. `tools/weapons/validate_rifle.gd` and the Metal Company weapon-store pickup/support/save check PASS. The length audit now checks runtime length as well as source bounds.
 
 ## Upstairs sidearm table support — 2026-09-27
 
 Pistol, knife and ammunition packets in both civic buildings now sit 15 mm above the actual meeting-table top (upper floor + 0.91 m). Each rotated/scaled model is centered at its pickup location and fitted by visible mesh bounds, replacing a fixed origin offset. The table and source models are preserved. Pickup targets remain above the tabletop rather than embedded in it.
 
-`tools/world/validate_sidearm_display.gd` checks all six displays: model support height, containment, non-overlap, a downward physics ray onto the supporting table, and a room-side ray onto the pickup. Render evidence: [Town Hall table](captures/sidearm_table_TownHall.png), [Police table](captures/sidearm_table_DistrictPolice.png). This repairs physical placement, with historical form and hand-contact approval still open.
+`tools/world/validate_sidearm_display.gd` checks all six displays: model support height, containment, non-overlap, a downward physics ray onto the supporting table, and a room-side ray onto the pickup. Render evidence: Town Hall table (historical test output unavailable), Police table (historical test output unavailable). This repairs physical placement, with historical form and hand-contact approval still open.
 
 All six support/containment/non-overlap/table-hit/pickup-ray checks PASS headless (`/tmp/tlm_sidearm_table_headless.log`). Town Hall and separate Police Metal views inspected; Police Metal checks PASS (`/tmp/tlm_sidearm_police.log`). Use `-- --police` to capture the Police table in a separate renderer run.

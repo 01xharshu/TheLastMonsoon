@@ -4,9 +4,9 @@ Town Hall, District Police, and Government House are instantiated at their surve
 
 | Building | Plot center (X, Z) | Plot grade | Approach endpoint (X, Z) | World review |
 | --- | ---: | ---: | ---: | --- |
-| Town Hall | (-320, -470) | 8 m | town_hall: (-320, -432) | [capture](captures/building_site_town_hall.png) |
-| District Police | (320, 120) | 10 m | east_bridge: (320, 150) | [capture](captures/building_site_district_police.png) |
-| Government House | (-390, -110) | 8.5 m | government_house_avenue: (-390, -123) | [capture](captures/building_site_government_house.png) |
+| Town Hall | (-320, -470) | 8 m | town_hall: (-320, -432) | capture (test output deleted) |
+| District Police | (320, 120) | 10 m | east_bridge: (320, 150) | capture (test output deleted) |
+| Government House | (-390, -110) | 8.5 m | government_house_avenue: (-390, -123) | capture (test output deleted) |
 
 The fort trail grading had raised a corner of the Police plot by 1.266 m. `landscape_layout.gd` now fades that grading outside the Police plot; its sampled grade spread is 0 m. The affected landscape tiles were rebaked. In the fresh Metal views, Town Hall and Police entrance ramps visibly join their roads, and the Government House avenue aligns with its estate approach. No foundation gap or terrain intrusion is visible in these views.
 
@@ -43,7 +43,7 @@ The full `tools/world/audit_civic_layout.gd` still reports the Old Fort's uneven
 /Applications/Godot.app/Contents/MacOS/Godot --rendering-driver metal --path . res://tools/world/validate_government_gate.tscn
 ```
 
-Results: [gate validation](government_gate_validation.json). Native Forward+/Metal also exited 0 with all checks passing and no error lines. Inspected views: [open gate](captures/government_gate_open.png), [night latch](captures/government_gate_night_locked.png). The open leaves leave the central route clear; the closed leaves span the entrance. Night darkness limits inspection of fine timber details. Metal log: `/tmp/tlm_government_gate_metal_20261001.log`.
+Results: gate validation (test output deleted). Native Forward+/Metal also exited 0 with all checks passing and no error lines. Inspected views: open gate (historical test output unavailable), night latch (historical test output unavailable). The open leaves leave the central route clear; the closed leaves span the entrance. Night darkness limits inspection of fine timber details. Metal log: `/tmp/tlm_government_gate_metal_20261001.log`.
 
 Next: normal-camera room walkthroughs and furniture/doorway clearance refinement across the three buildings. Gate behavior requires no production-code correction from this check; continuous character hand contact and owner play approval remain open.
 

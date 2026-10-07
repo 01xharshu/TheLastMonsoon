@@ -4,24 +4,25 @@
   "garments": {
     "Fitted cotton upper base": {
       "vertices": 1613,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Knee length wrapped dhoti": {
       "vertices": 480,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Dhoti woven border": {
       "vertices": 192,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Kurta loose lower panel": {
       "vertices": 480,
-      "pose_keys": 98
+      "pose_keys": 194
     }
   },
   "body_preserved": true,
+  "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_farmer/village_farmer_clothing_fitted.blend",
   "runtime": "characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb",
-  "runtime_sha256": "6ce906ac276ac0c1d64bf4604c5c744f6a3cd5016de1c17ee7247f4129fc81be",
+  "runtime_sha256": "f024ed871235563e668ad45088d9c6b9012644331c3605f35b8211fed33141ba",
   "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
 }

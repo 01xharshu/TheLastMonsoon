@@ -9,7 +9,7 @@ Checked 2026-09-27 against the live Suryagarh scene. This uses the actual player
 | Government House, first flight | PASS | PASS | 1.24 → 5.50 m |
 | Government House, second flight | PASS | PASS | 5.50 → 10.10 m |
 
-All eight routes reached the expected landing without jump input. Descents showed no large falling velocity. Headless and native Forward+/Metal runs completed; final native run exited successfully. Durable measurements: [validation JSON](player_world_stairs_validation.json). Inspected native mid-ascent view: [Government House stairs](captures/29_player_world_stairs.png). Final run log: `/tmp/tlm_world_stairs_final_20260927.log`.
+All eight routes reached the expected landing without jump input. Descents showed no large falling velocity. Headless and native Forward+/Metal runs completed; final native run exited successfully. Durable measurements: validation JSON (test output deleted). Inspected native mid-ascent view: Government House stairs (historical test output unavailable). Final run log: `/tmp/tlm_world_stairs_final_20260927.log`.
 
 ## Failure found and correction
 
@@ -41,11 +41,11 @@ The existing solid Government House entrance and compound wall-walk treads expos
 - Ground snap is 0.45 m. Walking step height remains capped at 0.38 m.
 - The compound staircase now has a 4.4 × 3 m upper landing at 4.8 m height, connected to the wall walkway. Its front edge overlaps the last tread without burying the preceding riser. This provides room for the horse to stop at the top.
 
-Arjun exterior checks: straight/left/right entrance ascent, entrance descent, straight and angled compound ascent, compound descent and connection to the wall walkway. [Exterior measurements](exterior_stairs_validation.json). The original eight indoor up/down checks were rerun after the movement changes and passed.
+Arjun exterior checks: straight/left/right entrance ascent, entrance descent, straight and angled compound ascent, compound descent and connection to the wall walkway. Exterior measurements (test output deleted). The original eight indoor up/down checks were rerun after the movement changes and passed.
 
 The ridden horse now has the same bounded step and descent checks, using its own capsule offset. On detected stair contacts, pace is limited to 2.8 m/s. Stair-supported contact keeps its walk animation and hoof cadence instead of briefly switching to the jump clip. Normal jump input still lifts the horse, selects its jump clip and lands successfully.
 
-Horse checks: up/down the Government House entrance, its first indoor flight, and the compound staircase: six routes passed with forward input and no jump input. [Horse measurements](horse_stairs_validation.json). Native Metal images inspected: [Arjun compound steps](captures/arjun_compound_stairs.png), [horse on the new landing](captures/horse_compound_stairs.png). Final logs: `/tmp/tlm_exterior_stairs_complete.log`, `/tmp/tlm_horse_stairs_complete.log`; indoor regression: `/tmp/tlm_internal_stairs_regression.log`.
+Horse checks: up/down the Government House entrance, its first indoor flight, and the compound staircase: six routes passed with forward input and no jump input. Horse measurements (test output deleted). Native Metal images inspected: Arjun compound steps (historical test output unavailable), horse on the new landing (historical test output unavailable). Final logs: `/tmp/tlm_exterior_stairs_complete.log`, `/tmp/tlm_horse_stairs_complete.log`; indoor regression: `/tmp/tlm_internal_stairs_regression.log`.
 
 Run the real-world scenes:
 

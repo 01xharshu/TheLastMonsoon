@@ -2,7 +2,7 @@
 
 Four original reusable candidates in `objects/obstacles/`. No world placements, interaction prompts or existing gate behavior changed.
 
-![Fence, barricade, cover and gate](obstacle_overview.png)
+Fence, barricade, cover and gate (test output deleted)
 
 | Scene | Geometry and references | Final animation requirements |
 | --- | --- | --- |

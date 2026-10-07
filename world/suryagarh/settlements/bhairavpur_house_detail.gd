@@ -141,13 +141,13 @@ func _openings(house_node: Node3D,extent: Vector2,index: int) -> void:
 	house_node.set_meta("window_access", "open" if accessible else ("iron grille" if grille else "wood shutter"))
 	for side in [-1.0,1.0]:
 		_window_frame(house_node,Vector3(side*w*.5,1.34,0),Vector2(2.2,1.15),side*PI*.5,accessible,not grille and not accessible)
-		if accessible:
+		if accessible or not grille:
 			var portal := Node3D.new()
 			portal.name = "OpenWindowTraversal"
 			portal.position = Vector3(side*w*.5,1.34,0)
 			house_node.add_child(portal)
 			portal.add_to_group("climbable_windows")
-			continue
+			if accessible: continue
 		if grille:
 			for bar in 8:
 				_piece(house_node,"SideWindowIronBar",Vector3(side*w*.5,1.915,-.96+bar*.275),Vector3(.07,1.15,.055),settlement.iron,false)

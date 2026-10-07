@@ -64,10 +64,11 @@ upper.data.materials.clear();upper.data.materials.append(cotton)
 vertices=[];faces=[];source_indices=[]
 def accepted(v):
     x,y,z=v.co
-    top=.995<z<1.17 and y<-.025 and abs(x)<.19
-    band=.785<z<.825
+    top=.995<z<1.17 and abs(x)<.19
+    straps=1.15<z<1.36 and .10<abs(x)<.14
+    band=.785<z<.825 and abs(x)<.19
     bottom=.64<z<.825 and ((y<-.025 and abs(x)<.105) or (y>=-.025 and abs(x)<.035))
-    return top or band or bottom
+    return top or straps or band or bottom
 for poly in body.data.polygons:
     if all(accepted(body.data.vertices[i]) for i in poly.vertices) and all(any(g.group==body_group and g.weight>.5 for g in body.data.vertices[i].groups) for i in poly.vertices):
         face=[]
@@ -77,7 +78,7 @@ for poly in body.data.polygons:
             source_indices.append(index);face.append(len(vertices)-1)
         faces.append(face)
 mesh=bpy.data.meshes.new('Native body opaque foundation');mesh.from_pydata(vertices,[],faces);mesh.update()
-foundation=bpy.data.objects.new('Opaque fitted bra and brief foundation',mesh);bpy.context.collection.objects.link(foundation)
+foundation=bpy.data.objects.new('Opaque fitted bra and thong foundation',mesh);bpy.context.collection.objects.link(foundation)
 foundation.parent=rig
 foundation.modifiers.new('Armature deformation','ARMATURE').object=rig
 material=bpy.data.materials.new('Opaque undyed foundation cotton');material.diffuse_color=(.3,.24,.17,1);material.use_nodes=True
@@ -112,6 +113,6 @@ bpy.context.view_layer.objects.active=rig
 runtime=ROOT/'characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb'
 runtime.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_frame_range=False,export_cameras=False,export_lights=False,export_yup=True,export_skins=True,export_apply=False)
-report=dict(status='RIVER_CLOTHING_DEFORMATION_STUDY',source=str(source.relative_to(ROOT)),runtime=str(runtime.relative_to(ROOT)),source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),foundation_faces=len(faces),donor='village_woman_motion_candidate.blend',visual_approved=False,motion_approved=False,in_world=False)
+report=dict(status='RIVER_ROUTINE_RUNTIME',source=str(source.relative_to(ROOT)),runtime=str(runtime.relative_to(ROOT)),source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),foundation_faces=len(faces),donor='village_woman_motion_candidate.blend',visual_approved=False,motion_approved=False,in_world=True,corrective_samples=97,foundation_in_runtime=True)
 (OUT/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')
 print('RIVER_SOURCE',json.dumps(report))

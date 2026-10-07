@@ -5,9 +5,21 @@ var rendered := false
 var completed_routes := 0
 var airborne_frames := 0
 var max_settled_palm := 0.0
-var folder := "res://docs/characters/arjun/leap_climb_2026-10-05"
+var folder := ""
 
 func _run() -> void:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--output-dir="): folder = argument.trim_prefix("--output-dir=")
+	var temporary_root := OS.get_environment("TMPDIR")
+	if temporary_root.is_empty(): temporary_root = "/tmp"
+	temporary_root = temporary_root.simplify_path().trim_suffix("/")
+	if folder.is_empty(): folder = temporary_root.path_join("tlm-climb-%d" % OS.get_process_id())
+	folder = folder.simplify_path().trim_suffix("/")
+	if folder.get_base_dir() != temporary_root or not (folder.get_file().begins_with("tlm-climb-review-") or folder.get_file().begins_with("tlm-climb-")):
+		push_error("Review output must use a dedicated directory inside the OS temporary directory")
+		folder = ""
+		get_tree().quit(1)
+		return
 	var time := Node.new()
 	time.name = "GameTimeSystem"
 	time.set_script(load("res://world/suryagarh/systems/game_time_system.gd"))
@@ -45,7 +57,7 @@ func _run() -> void:
 		get_window().mode = Window.MODE_WINDOWED
 		DisplayServer.window_set_size(Vector2i(960,540))
 		get_viewport().scaling_3d_scale = .55
-		DirAccess.make_dir_recursive_absolute("/tmp/tlm_leap_frames")
+		DirAccess.make_dir_recursive_absolute(folder)
 	for record in [{"height":.75,"z":0.0,"id":"low_wall"},{"height":4.8,"z":8.0,"id":"wall"},{"height":12.8,"z":16.0,"id":"tower"},{"height":8.8,"z":24.0,"id":"building"},{"height":3.2,"z":32.0,"id":"house"},{"height":3.1,"z":40.0,"id":"house_sloped"}]:
 		if OS.get_cmdline_user_args().has("--house-only") and not record.id.begins_with("house"): continue
 		if OS.get_cmdline_user_args().has("--sloped-only") and record.id != "house_sloped": continue
@@ -85,6 +97,7 @@ func _run() -> void:
 			for row in range(0,rows,2):
 				for col in [1,2]:
 					_box("Stone",Vector3(-.08,.42+row*.4,record.z-.72+col*.48+(row%2)*.08),Vector3(.2,.14,.42),Color(.58,.57,.46),false)
+		if OS.get_cmdline_user_args().has("--security-only"): continue
 		_check(not climb.active,"previous route restores movement")
 		await _launch(record.z)
 		_check(climb.active,"physical jump catches "+record.id)
@@ -114,6 +127,12 @@ func _run() -> void:
 						visual._process(1.0/30.0)
 						_sample()
 						await _capture("lateral_edge_end")
+					var supported_landing: Vector3 = climb.landing
+					climb.landing += Vector3.UP*3.0
+					Input.action_press("move_left")
+					_check(not climb.request_move() and climb.leap.phase == "hang","visible edge rejects transfer without supported roof exit")
+					Input.action_release("move_left")
+					climb.landing = supported_landing
 					Input.action_press("move_right")
 					_check(not climb.request_move() and climb.leap.phase == "hang","edge end rejects unsupported sideways jump")
 					Input.action_release("move_right")
@@ -185,6 +204,7 @@ func _run() -> void:
 	firearm.target = actor
 	pursuer.add_child(firearm)
 	firearm.set_process(false)
+	pursuer.set_process(false)
 	for tick in 3: await get_tree().physics_frame
 	firearm._process(1.0)
 	_check(firearm.shots == 0,"non-hostile armed observer does not shoot")
@@ -197,10 +217,16 @@ func _run() -> void:
 	await get_tree().physics_frame
 	var before_hit: float = actor.health
 	for tick in 12:
+		pursuer._process(.1)
 		firearm._process(.1)
 		visual._process(1.0/30.0)
 		await _capture("armed_pursuer")
 	_check(firearm.shots == 1 and actor.health == before_hit-18 and climb.releasing,"armed pursuer shoots exposed climber and breaks grip")
+	for side in ["r","l"]:
+		var gun_target: Vector3=firearm.gun.to_global(Vector3(-.09,-.045,0) if side=="r" else firearm.loading_left)
+		print("PURSUER PALM ",side," gap=",pursuer.palm_world(side).distance_to(gun_target))
+		_check(pursuer.palm_world(side).distance_to(gun_target)<.02,"armed pursuer "+side+" palm grips rifle")
+	_check(firearm.cooldown>0.0 and firearm.gun.global_basis.x.y>.5,"pursuer raises muzzle for visible loading gesture")
 	_check(firearm.cartridges == 3 and firearm.cooldown > 0.0,"Enfield consumes cartridge and respects shared reload timing")
 	actor.set_meta("climbing",false)
 	_check(firearm.can_engage(),"roof and airborne escape remain targetable after releasing grip")
@@ -221,12 +247,14 @@ func _run() -> void:
 	firearm.cooldown=0.0
 	var roof_health: float=actor.health
 	for tick in 12:
+		pursuer._process(.1)
 		firearm._process(.1)
 		visual._process(1.0/30.0)
 		await _capture("roof_firearm_hit")
 	_check(firearm.shots==2 and actor.health==roof_health-18,"armed pursuer can hit an exposed grounded roof escape target")
 	_check(visual.hit_phase>=0.0,"roof hit produces body impact reaction")
-	_check(airborne_frames > 0,"leaps release palms and boots in flight")
+	if not OS.get_cmdline_user_args().has("--security-only"):
+		_check(airborne_frames > 0,"leaps release palms and boots in flight")
 	_check(max_settled_palm < .04,"caught palms reach visible layers")
 	print("LEAP CLIMB ","PASS" if failures == 0 else "FAIL"," routes=",completed_routes," flight_frames=",airborne_frames," settled_palm=",max_settled_palm," frames=",frame_number)
 	await _finish(1 if failures else 0)
@@ -284,17 +312,21 @@ func _sample() -> void:
 func _capture(label: String) -> void:
 	camera.global_position = actor.global_position+Vector3(-3.6,1.0,3.3)
 	camera.look_at(actor.global_position+Vector3.UP*.3)
+	if label in ["armed_pursuer","roof_firearm_hit"]:
+		camera.global_position=Vector3(actor.global_position.x-7,2.5,actor.global_position.z+5)
+		camera.look_at(actor.global_position.lerp(Vector3(-4,1.3,actor.global_position.z),.5))
 	if rendered:
 		await get_tree().process_frame
 		RenderingServer.force_draw(false)
 		var pixels := get_viewport().get_texture().get_image()
 		pixels.resize(960,540)
-		pixels.save_png("/tmp/tlm_leap_frames/frame_%04d.png"%frame_number)
+		pixels.save_png(folder+"/frame_%04d.png"%frame_number)
 		if frame_number%30 == 0: pixels.save_png(folder+"/"+label+".png")
 	frame_number += 1
 	await get_tree().physics_frame
 
 func _finish(code: int) -> void:
+	_clear_output()
 	for node in get_tree().root.get_children(): node.process_mode = Node.PROCESS_MODE_DISABLED
 	for type_name in ["AudioStreamPlayer","AudioStreamPlayer3D"]:
 		for voice in get_tree().root.find_children("*",type_name,true,false):
@@ -304,3 +336,11 @@ func _finish(code: int) -> void:
 	await get_tree().create_timer(.15).timeout
 	for tick in 3: await get_tree().physics_frame
 	get_tree().quit(code)
+
+func _clear_output() -> void:
+	if folder.is_empty() or not DirAccess.dir_exists_absolute(folder): return
+	for filename in DirAccess.get_files_at(folder): DirAccess.remove_absolute(folder.path_join(filename))
+	DirAccess.remove_absolute(folder)
+
+func _exit_tree() -> void:
+	_clear_output()

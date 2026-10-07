@@ -8,7 +8,7 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 
-def _fit_pose(rig, obj, tree, key):
+def _fit_pose(rig, obj, tree, key, vertex_priority=False):
     clearance = .010 if rig.name.startswith('boatman_') else .005
     transforms=[]
     for v in obj.data.vertices:
@@ -28,7 +28,9 @@ def _fit_pose(rig, obj, tree, key):
        for i in polygon.vertices:shifts[i]+=shift;counts[i]+=1
      for v in mesh.vertices:
       point=ev.matrix_world@v.co;near,normal,_,dist=tree.find_nearest(point);depth=(near-point).dot(normal)
-      if dist<.10 and depth > -(clearance - .001):shifts[v.index]+=normal*min(depth+clearance,.012);counts[v.index]+=1
+      if dist<.10 and depth > -(clearance - .001):
+       if vertex_priority:shifts[v.index]=normal*min(depth+clearance,.012);counts[v.index]=1
+       else:shifts[v.index]+=normal*min(depth+clearance,.012);counts[v.index]+=1
      ev.to_mesh_clear()
      for i,shift in enumerate(shifts):
       if counts[i]:key.data[i].co+=transforms[i].inverted_safe()@(shift/counts[i])

@@ -10,8 +10,8 @@ Seven military men are placed in the Company compound. The civil official and ei
 
 Male and female walk profiles use different cycle lengths (0.85 and 1.05 seconds) and stride/arm amplitudes. Every actor owns a separate sampled animation resource. Base behavior is a short out-and-back walk with idle pauses and individual timing offsets. Setting movement_enabled to false stops that actor and plays its idle.
 
-- [Runtime validation](candidates/roster_runtime_validation.json): PASS, 16 independent animation players, 8 male and 8 female profiles, actual thigh pose changes, relaxed downward arms and forward travel facing on all 16, independent stop test PASS.
-- [World validation](candidates/roster_world_validation.json): PASS, 16 models loaded with one skeleton each and positions inside surveyed plots.
+- Runtime validation (test output deleted): PASS, 16 independent animation players, 8 male and 8 female profiles, actual thigh pose changes, relaxed downward arms and forward travel facing on all 16, independent stop test PASS.
+- World validation (test output deleted): PASS, 16 models loaded with one skeleton each and positions inside surveyed plots.
 - These are preview patrols. Navigation, collision avoidance, dialogue, combat and story behavior are not implemented by this actor.
 
 ## Rendered review
@@ -22,46 +22,46 @@ The earlier capture encountered a concurrent landscape load failure. The subsequ
 
 ### Private Man walk phases
 
-![private_man phase 00](candidates/private_man_walk_00.png)
+private_man phase 00 (test output deleted)
 
-![private_man phase 25](candidates/private_man_walk_25.png)
+private_man phase 25 (test output deleted)
 
-![private_man phase 50](candidates/private_man_walk_50.png)
+private_man phase 50 (test output deleted)
 
-![private_man phase 75](candidates/private_man_walk_75.png)
+private_man phase 75 (test output deleted)
 
 ### Private Woman walk phases
 
-![private_woman phase 00](candidates/private_woman_walk_00.png)
+private_woman phase 00 (test output deleted)
 
-![private_woman phase 25](candidates/private_woman_walk_25.png)
+private_woman phase 25 (test output deleted)
 
-![private_woman phase 50](candidates/private_woman_walk_50.png)
+private_woman phase 50 (test output deleted)
 
-![private_woman phase 75](candidates/private_woman_walk_75.png)
+private_woman phase 75 (test output deleted)
 
 ### Official Man walk phases
 
-![official_man phase 00](candidates/official_man_walk_00.png)
+official_man phase 00 (test output deleted)
 
-![official_man phase 25](candidates/official_man_walk_25.png)
+official_man phase 25 (test output deleted)
 
-![official_man phase 50](candidates/official_man_walk_50.png)
+official_man phase 50 (test output deleted)
 
-![official_man phase 75](candidates/official_man_walk_75.png)
+official_man phase 75 (test output deleted)
 
 ## Asset inventory
 
 | Concept source | Editable source | Turnaround | Separate runtime models |
 | --- | --- | --- | --- |
-| Private | [Blender](../../../WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend) | [Front](candidates/private_pair_front.png), [side](candidates/private_pair_side.png), [back](candidates/private_pair_back.png) | private_man.glb / private_woman.glb |
-| Corporal | [Blender](../../../WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend) | [Front](candidates/corporal_pair_front.png), [side](candidates/corporal_pair_side.png), [back](candidates/corporal_pair_back.png) | corporal_man.glb / corporal_woman.glb |
-| Sergeant | [Blender](../../../WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend) | [Front](candidates/sergeant_pair_front.png), [side](candidates/sergeant_pair_side.png), [back](candidates/sergeant_pair_back.png) | sergeant_man.glb / sergeant_woman.glb |
-| Lieutenant | [Blender](../../../WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend) | [Front](candidates/lieutenant_pair_front.png), [side](candidates/lieutenant_pair_side.png), [back](candidates/lieutenant_pair_back.png) | lieutenant_man.glb / lieutenant_woman.glb |
-| Captain | [Blender](../../../WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend) | [Front](candidates/captain_pair_front.png), [side](candidates/captain_pair_side.png), [back](candidates/captain_pair_back.png) | captain_man.glb / captain_woman.glb |
-| Major | [Blender](../../../WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend) | [Front](candidates/major_pair_front.png), [side](candidates/major_pair_side.png), [back](candidates/major_pair_back.png) | major_man.glb / major_woman.glb |
-| Colonel | [Blender](../../../WorkingAssets/NPCs/british/colonel_pair/colonel_pair_mpfb_candidate.blend) | [Front](candidates/colonel_pair_front.png), [side](candidates/colonel_pair_side.png), [back](candidates/colonel_pair_back.png) | colonel_man.glb / colonel_woman.glb |
-| Official | [Blender](../../../WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend) | [Front](candidates/official_pair_front.png), [side](candidates/official_pair_side.png), [back](candidates/official_pair_back.png) | official_man.glb / official_woman.glb |
+| Private | [Blender](../../../WorkingAssets/NPCs/british/private_pair/private_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | private_man.glb / private_woman.glb |
+| Corporal | [Blender](../../../WorkingAssets/NPCs/british/corporal_pair/corporal_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | corporal_man.glb / corporal_woman.glb |
+| Sergeant | [Blender](../../../WorkingAssets/NPCs/british/sergeant_pair/sergeant_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | sergeant_man.glb / sergeant_woman.glb |
+| Lieutenant | [Blender](../../../WorkingAssets/NPCs/british/lieutenant_pair/lieutenant_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | lieutenant_man.glb / lieutenant_woman.glb |
+| Captain | [Blender](../../../WorkingAssets/NPCs/british/captain_pair/captain_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | captain_man.glb / captain_woman.glb |
+| Major | [Blender](../../../WorkingAssets/NPCs/british/major_pair/major_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | major_man.glb / major_woman.glb |
+| Colonel | [Blender](../../../WorkingAssets/NPCs/british/colonel_pair/colonel_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | colonel_man.glb / colonel_woman.glb |
+| Official | [Blender](../../../WorkingAssets/NPCs/british/official_pair/official_pair_mpfb_candidate.blend) | Front (test output deleted), side (test output deleted), back (test output deleted) | official_man.glb / official_woman.glb |
 
 ## Later realism and motion pass
 
@@ -81,7 +81,7 @@ Live locomotion now uses sixteen independent AnimationTrees with a 0.2-second id
 
 ## 28 September base follow-up
 
-All eight editable women now have a fitted six-ring bodice-to-skirt transition, with its lower edge sampled from the skirt top. [Seam checks](candidates/waist_validation.json) report zero source edge mismatch; all sixteen GLBs and pair turnarounds were refreshed. Representative [Private](candidates/private_woman_waist_back.png), [Captain](candidates/captain_woman_waist_back.png), and [Official](candidates/official_woman_waist_back_wide.png) Metal rear views show the gap closed but a visible hard band. Official Woman now stands on the open Government House path so the garden border does not hide her skirt. Both patrol endpoints have 0.5 s stationary turns, and all current world, tree, turn, cadence and flat-grade foot-target checks pass. See [animation details](animation_tree.md); costume finish, sole contact and normal-speed movement remain open.
+All eight editable women now have a fitted six-ring bodice-to-skirt transition, with its lower edge sampled from the skirt top. Seam checks (test output deleted) report zero source edge mismatch; all sixteen GLBs and pair turnarounds were refreshed. Representative Private (test output deleted), Captain (test output deleted), and Official (test output deleted) Metal rear views show the gap closed but a visible hard band. Official Woman now stands on the open Government House path so the garden border does not hide her skirt. Both patrol endpoints have 0.5 s stationary turns, and all current world, tree, turn, cadence and flat-grade foot-target checks pass. See [animation details](animation_tree.md); costume finish, sole contact and normal-speed movement remain open.
 
 ## 30 September full-world body check
 
@@ -89,4 +89,4 @@ PrivateMan and OfficialWoman block the actual Player during both a long sweep an
 
 ## Headwear fit and waist shape — 30 September
 
-The oversized caps and bonnets are now fitted to each actual scalp, centered on the head and fully skinned to its head bone. Eight male hats/caps and three female bonnets pass [exported attachment checks](candidates/headwear_validation.json). All pair sources, runtime exports and turnarounds were refreshed. The Private pair's [updated Metal patrol recording](candidates/private_pair_patrol_2026-09-30.mp4) shows the fitted headwear through both turns. Waist fullness now gathers near the skirt edge; a visible seam remains. The Official's donor hair still protrudes around his hat. See [current evidence and remaining contact review](animation_tree.md).
+The oversized caps and bonnets are now fitted to each actual scalp, centered on the head and fully skinned to its head bone. Eight male hats/caps and three female bonnets pass exported attachment checks (test output deleted). All pair sources, runtime exports and turnarounds were refreshed. The Private pair's updated Metal patrol recording (test output deleted) shows the fitted headwear through both turns. Waist fullness now gathers near the skirt edge; a visible seam remains. The Official's donor hair still protrudes around his hat. See [current evidence and remaining contact review](animation_tree.md).

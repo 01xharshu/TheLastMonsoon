@@ -41,7 +41,7 @@ func _run() -> void:
    var distance: float = arm.global_position.distance_to(camera.global_position)
    var max_open_distance := arm.spring_length + 0.1
    # Close-wall retraction can reach the pivot; verify clearance and body hiding.
-   var clear: bool = distance >= 0.0 and distance <= max_open_distance
+   var clear: bool = distance > camera.BODY_HIDE_DISTANCE and distance <= max_open_distance
    if distance <= camera.BODY_HIDE_DISTANCE:
     clear = clear and not player.visual_root.visible
    var sphere := SphereShape3D.new()
@@ -58,12 +58,13 @@ func _run() -> void:
    var camera_hit := world.get_world_3d().direct_space_state.intersect_ray(query)
    clear = clear and camera_hit.is_empty()
    if not clear: failures += 1
-   print("WORLD CAMERA ", "PASS" if clear else "FAIL", " ", location[0], " distance=", distance, " wall=", wall_hit.collider, " camera_hit=", camera_hit.get("collider", null), " hit_pos=", camera_hit.get("position", Vector3.ZERO), " pivot=", arm.global_position, " camera=", camera.global_position)
-   if DisplayServer.get_name() != "headless":
+   print("WORLD CAMERA ", "PASS" if clear else "FAIL", " ", location[0], " distance=", distance, " shoulder=", arm.position.x, " wall=", wall_hit.collider, " camera_hit=", camera_hit.get("collider", null))
+   var capture_dir := OS.get_environment("TLM_CAMERA_OUTPUT_DIR")
+   if DisplayServer.get_name() != "headless" and capture_dir != "":
     camera.make_current()
     for i in 3: await process_frame
     await RenderingServer.frame_post_draw
-    print("WORLD CAMERA CAPTURE ", root.get_texture().get_image().save_png("/tmp/tlm_camera_" + location[0] + ".png"))
+    print("WORLD CAMERA CAPTURE ", root.get_texture().get_image().save_png(capture_dir.path_join("tlm_camera_" + location[0] + ".png")))
    found = true
    break
   if not found:

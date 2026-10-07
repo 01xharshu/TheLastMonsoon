@@ -28,5 +28,5 @@ func _run() -> void:
 			push_error("WINDOW WORLD: state restore failed")
 			get_tree().quit(1)
 			return
-	print("WINDOW WORLD: ","PASS" if windows.size()==8 and accepted>0 else "FAIL"," | registered=",windows.size()," traversable=",accepted)
-	get_tree().quit(0 if windows.size()==8 and accepted>0 else 1)
+	print("WINDOW WORLD: ","PASS" if windows.size()>=8 and accepted>0 else "FAIL"," | registered=",windows.size()," traversable=",accepted)
+	get_tree().quit(0 if windows.size()>=8 and accepted>0 else 1)

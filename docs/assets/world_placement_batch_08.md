@@ -13,8 +13,8 @@ Earlier absent candidates are now instantiated by `world/suryagarh/settlements/a
 
 Roti and spare pouch have stable IDs in `household_pickups`. SaveManager serializes remaining IDs, removes collected objects on restore, and accepts older saves without the field. Both pickup scripts reject another call once queued for deletion, preventing duplicate same-frame rewards. All tested rewards still occur immediately; final visible transfer timing and hero animation remain open. An additional pouch increases capacity through existing inventory rules (two bags = 4 L); this pass does not change those rules.
 
-![Rest dressing in Arjun's home](placed_arjun_rest_dressing.png)
-![Cooking corner in the courtyard](placed_courtyard_cooking.png)
+Rest dressing in Arjun's home (test output deleted)
+Cooking corner in the courtyard (test output deleted)
 
 Validation: `tools/world/validate_asset_first_placement.gd`; `placement_validation_headless.json` and `placement_validation_metal.json`. PASS for placement support gaps within 7 cm, empty capsule overlap at approach markers and sampled final 0.8 m approach strips, once-only roti/pouch grants, indoor pot filling, actual JSON save serialization before/after collection, restoration removal and legacy-save compatibility. The short approach checks are not full player routes or step-up approval at the grain-store platform. First fence/gate references overlapped storage bins; moved boundary outside the bins and approach references to the outside face.
 

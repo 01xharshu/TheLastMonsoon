@@ -95,7 +95,7 @@ func _physics_process(delta: float) -> void:
 			clearance_target=door.to_global(Vector3(0,local.y,-door.swing_direction*.9))
 			return
 		if not door.opened:
-			door.swing_direction=1.0 if door.get_parent().to_local(actor.global_position).z<door.position.z else -1.0
+			door.swing_direction=1.0 if door.is_inside(actor.global_position) else -1.0
 		door.set_open(not door.opened)
 		actor.set_meta("door_latch_released",door.moving)
 	if elapsed>=.9: finish()

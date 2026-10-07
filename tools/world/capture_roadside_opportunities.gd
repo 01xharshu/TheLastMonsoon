@@ -1,10 +1,11 @@
 extends SceneTree
+const Output=preload("res://tools/animals/disposable_review.gd")
 var viewport:SubViewport
 var camera:Camera3D
 var world:Node3D
 var jobs:Node3D
 var actor:CharacterBody3D
-var folder:="res://docs/world/captures/roadside/"
+var folder:="roadside/"
 func _initialize() -> void:run.call_deferred()
 func still(label:String,at:Vector3,target:Vector3) -> void:
  camera.global_position=at;camera.look_at(target)
@@ -12,7 +13,7 @@ func still(label:String,at:Vector3,target:Vector3) -> void:
   jobs.roadside._physics_process(1.0/60.0)
   await process_frame
  await RenderingServer.frame_post_draw
- viewport.get_texture().get_image().save_png(folder+label+".png")
+ Output.save_png(viewport.get_texture().get_image(),folder+label+".png")
  print("ROADSIDE_CAPTURE ",label)
 func run() -> void:
  root.size=Vector2i(960,540);root.disable_3d=true
@@ -25,7 +26,6 @@ func run() -> void:
  world.get_node("GameTimeSystem").clock_paused=true
  jobs=world.get_node("ErrandSystem");jobs.roadside.set_physics_process(false);jobs.expanded.set_physics_process(false)
  camera=Camera3D.new();camera.fov=48;viewport.add_child(camera);camera.make_current()
- DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
  var road:Node=jobs.roadside
  road.locations.road_letter=Vector3(-245,7.2,225);road._spawn("road_letter")
  var person:Node3D=jobs.targets.road_letter_caller.person
@@ -60,14 +60,12 @@ func run() -> void:
  var cart:Node3D=jobs.expanded.borrowed;cart.global_position=person.global_position+Vector3(-2,0,0)
  jobs.expanded.use_endpoint("road_injured_caller")
  cart=jobs.expanded.cart
- DirAccess.make_dir_recursive_absolute("/tmp/tlm_roadside_boarding")
- DirAccess.make_dir_recursive_absolute("/tmp/tlm_roadside_exit")
  for frame in 90:
   jobs.expanded._physics_process(1.0/30.0)
   if frame in [20,45,89]:await still("injured_boarding_%03d"%frame,cart.to_global(Vector3(-5,3,4)),cart.to_global(Vector3(0,1.5,2)))
   await process_frame
   await RenderingServer.frame_post_draw
-  viewport.get_texture().get_image().save_png("/tmp/tlm_roadside_boarding/%04d.png"%frame)
+  Output.save_png(viewport.get_texture().get_image(),"roadside_boarding/%04d.png"%frame)
  cart.global_position=jobs.targets.road_hospital.person.global_position+Vector3(-3,0,4)
  var hospital_ground:=world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(cart.global_position+Vector3.UP*2,cart.global_position-Vector3.UP*3,1,cart.boarding._vehicle_exclusions()))
  if not hospital_ground.is_empty():cart.global_position.y=hospital_ground.position.y
@@ -79,7 +77,7 @@ func run() -> void:
   if frame in [20,45,89]:await still("hospital_exit_%03d"%frame,cart.to_global(Vector3(-6,3,4)),cart.to_global(Vector3(0,1.5,2)))
   await process_frame
   await RenderingServer.frame_post_draw
-  viewport.get_texture().get_image().save_png("/tmp/tlm_roadside_exit/%04d.png"%frame)
+  Output.save_png(viewport.get_texture().get_image(),"roadside_exit/%04d.png"%frame)
  await still("hospital_receiving_context",cart.global_position+Vector3(-10,5,10),jobs.targets.road_hospital.person.global_position+Vector3.UP)
  print("ROADSIDE_CAPTURE COMPLETE | native Metal stills plus 90-frame 30 Hz transfer sequences for 1x playback; whole-game performance separate")
  quit()

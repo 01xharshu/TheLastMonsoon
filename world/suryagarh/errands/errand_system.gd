@@ -95,12 +95,12 @@ func _person(id: String, label: String, at: Vector3, model: String) -> void:
 	actor.movement_enabled = false
 	actor.process_mode = Node.PROCESS_MODE_PAUSABLE
 	actor.movement_profile = &"female" if model == "village_woman" else &"male"
-	var document := GLTFDocument.new(); var state := GLTFState.new()
 	var path := "res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [model,model]
 	if model == "errand_passenger": path = "res://characters/npcs/motion/errand_passenger/errand_passenger.glb"
-	if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
+	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	if figure == null:
 		actor.free(); push_error("Errand actor could not load: " + path); return
-	actor.add_child(document.generate_scene(state))
+	actor.add_child(figure)
 	add_child(actor)
 	var target := Target.new(); target.name = label + "Conversation"
 	target.manager = self; target.endpoint = id; target.person = actor

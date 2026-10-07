@@ -2,8 +2,8 @@
 
 Five reusable tool visuals in `objects/household/craft/`, plus two table assemblies in `objects/household/sets/`. Original editable Godot geometry, rebuilt by `tools/assets/build_craft_batch.gd`. No world placements, NPCs, crafting prompts or rewards added. Existing village context is carpenter house 25 and weaver house 27 in `bhairavpur_house_detail.gd`; their current furniture and loom remain intact.
 
-![Craft tools](craft_tools.png)
-![Carpenter and weaver work surfaces](craft_work_surfaces.png)
+Craft tools (test output deleted)
+Carpenter and weaver work surfaces (test output deleted)
 
 | Visual | Construction / references | Final action requirements if usable |
 | --- | --- | --- |

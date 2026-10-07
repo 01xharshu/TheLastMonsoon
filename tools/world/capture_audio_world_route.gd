@@ -1,4 +1,5 @@
 extends SceneTree
+var output_dir := ""
 var world: Node3D
 var camera: Camera3D
 var actor: CharacterBody3D
@@ -20,15 +21,18 @@ func hold(label: String,seconds: float) -> void:
    next_capture+=250
    await RenderingServer.frame_post_draw
    var frame:=root.get_texture().get_image();frame.resize(1280,720)
-   frame.save_png('/tmp/monsoon_audio_route_frames/%04d.png'%frame_index)
+   frame.save_png(output_dir+'/%04d.png'%frame_index)
    timestamps.append(Time.get_ticks_msec()-recording_start);frame_index+=1
  await RenderingServer.frame_post_draw
  var image:=root.get_texture().get_image();image.resize(1280,720)
- image.save_png('res://docs/world/audio_route_'+label+'.png')
+ image.save_png(output_dir+'/audio_route_'+label+'.png')
  print('AUDIO ROUTE '+label)
 func view(at: Vector3,target: Vector3) -> void:
  camera.global_position=at;camera.look_at(target);camera.current=true
 func run() -> void:
+ output_dir=OS.get_environment('TLM_AUDIO_TEST_OUTPUT')
+ if output_dir.is_empty():
+  push_error('Run via tools/world/run_audio_checks.py --native-route for disposable output cleanup');quit(1);return
  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
  root.size=Vector2i(1280,720)
  world=load('res://world/suryagarh/suryagarh_world.tscn').instantiate();root.add_child(world);current_scene=world
@@ -40,7 +44,7 @@ func run() -> void:
  clock.advance_minutes(fposmod(600-fmod(clock.total_game_minutes,1440),1440))
  record=AudioEffectRecord.new();AudioServer.add_bus_effect(0,record);AudioServer.set_bus_mute(0,false);AudioServer.set_bus_volume_db(0,0)
  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);root.size=Vector2i(1280,720)
- DirAccess.make_dir_recursive_absolute('/tmp/monsoon_audio_route_frames')
+ DirAccess.make_dir_recursive_absolute(output_dir)
  record.set_recording_active(true);recording_start=Time.get_ticks_msec()
  var layout:=preload('res://world/suryagarh/landscape_layout.gd').new()
  actor.global_position=Vector3(-335,layout.height(-335,230)+.91,230)
@@ -63,8 +67,8 @@ func run() -> void:
  clock.advance_minutes(fposmod(600-fmod(clock.total_game_minutes,1440),1440))
  view(flag.global_position+Vector3(2,1.3,3),flag.global_position+Vector3.UP*1.5);await hold('wind',5)
  record.set_recording_active(false)
- var sound: AudioStreamWAV=record.get_recording();sound.save_to_wav('res://docs/world/audio_world_listening.wav')
- var timing:=FileAccess.open('/tmp/monsoon_audio_route_frames/timing.json',FileAccess.WRITE);timing.store_string(JSON.stringify(timestamps));timing.close()
+ var sound: AudioStreamWAV=record.get_recording();sound.save_to_wav(output_dir+'/audio_world_listening.wav')
+ var timing:=FileAccess.open(output_dir+'/timing.json',FileAccess.WRITE);timing.store_string(JSON.stringify(timestamps));timing.close()
  print('NATIVE AUDIO WORLD ROUTE: PASS | six live locations | recorded master mix')
  AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
  preload('res://tools/test_audio_cleanup.gd').stop(root);await preload('res://tools/test_audio_cleanup.gd').settle(self);quit()

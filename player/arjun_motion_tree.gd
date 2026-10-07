@@ -51,6 +51,9 @@ func configure(model: Node3D) -> bool:
 		library.add_animation(name, clip)
 	library.add_animation("longgun_ready", _longgun_pose_clip(skeleton, source.get_animation("idle"), false))
 	library.add_animation("longgun_aim", _longgun_pose_clip(skeleton, source.get_animation("idle"), true))
+	var rest_clips := preload("res://player/arjun_rest_clips.gd")
+	library.add_animation("lie_down", rest_clips.make(skeleton, source.get_animation("sit_idle"), source.get_animation("idle"), false))
+	library.add_animation("rise_from_lie", rest_clips.make(skeleton, source.get_animation("sit_idle"), source.get_animation("idle"), true))
 	for beat in ["reach", "hang", "load", "leap", "catch", "pull_left", "pull_right", "mantle", "mantle_press", "mantle_step", "recover"]:
 		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
 	for beat in ["jump_rise", "jump_fall"]:
@@ -101,7 +104,11 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("sit_idle", _clip("motion/sit_idle"))
 	graph.add_node("sit", AnimationNodeBlend2.new())
 	graph.add_node("rest", AnimationNodeBlend2.new())
-	graph.add_node("sleep_pose", _clip("motion/idle"))
+	graph.add_node("lie_down", _clip("motion/lie_down"))
+	graph.add_node("rise_from_lie", _clip("motion/rise_from_lie"))
+	graph.add_node("lie_down_seek", AnimationNodeTimeSeek.new())
+	graph.add_node("rise_from_lie_seek", AnimationNodeTimeSeek.new())
+	graph.add_node("sleep_motion", AnimationNodeBlend2.new())
 	graph.add_node("sleep", AnimationNodeBlend2.new())
 	var climb := AnimationNodeBlendSpace1D.new()
 	climb.min_space = 0.0
@@ -127,7 +134,11 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("sit", 1, "sit_idle")
 	graph.connect_node("rest", 1, "sit")
 	graph.connect_node("sleep", 0, "rest")
-	graph.connect_node("sleep", 1, "sleep_pose")
+	graph.connect_node("lie_down_seek", 0, "lie_down")
+	graph.connect_node("rise_from_lie_seek", 0, "rise_from_lie")
+	graph.connect_node("sleep_motion", 0, "lie_down_seek")
+	graph.connect_node("sleep_motion", 1, "rise_from_lie_seek")
+	graph.connect_node("sleep", 1, "sleep_motion")
 	graph.connect_node("climb", 0, "sleep")
 	graph.connect_node("climb", 1, "climb_pose")
 	graph.add_node("detention_pose", AnimationNodeBlend2.new())
@@ -327,7 +338,11 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend) * (1.0 - air_blend), weight)
 
 func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false) -> void:
-	set("parameters/sleep/blend_amount", smoothstep(0.38, 0.9, progress))
+	var recline := clampf((progress - 0.38) / 0.52, 0.0, 1.0)
+	set("parameters/sleep/blend_amount", smoothstep(0.36, 0.42, progress))
+	set("parameters/sleep_motion/blend_amount", 1.0 if waking else 0.0)
+	set("parameters/lie_down_seek/seek_request", recline * 0.52)
+	set("parameters/rise_from_lie_seek/seek_request", (1.0 - recline) * 0.36)
 	rest_blend = clampf(seated_weight, 0.0, 1.0)
 	longgun_ready_blend = 0.0
 	longgun_aim_blend = 0.0

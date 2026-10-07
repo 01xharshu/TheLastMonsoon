@@ -2,7 +2,7 @@
 
 Three reusable assembly candidates in `objects/household/sets/`. No existing world placement is replaced.
 
-![Rest, market and armoury arrangements](activity_sets_b_overview.png)
+Rest, market and armoury arrangements (test output deleted)
 
 | Set | Included assets and current behavior | Final animation/contact checklist |
 | --- | --- | --- |

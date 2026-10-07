@@ -118,7 +118,7 @@ func _evaluate(delta: float) -> void:
 	var figure := animation_player.get_node(animation_player.root_node) as Node3D
 	if action == "deliver": crouch = sin(PI*blend)
 	if action == "pickup_pot": crouch = sin(PI*pickup_progress)
-	figure.position.y = -.66 * crouch - .64 * seated - (.02 if walking else 0.0)
+	figure.position.y = -.69 * crouch - .64 * seated - (.07 if walking else 0.0)
 	figure.position.z = -.18*crouch
 	var facing := home-bank if action in ["return", "deliver", "home"] else bank-home
 	if walking and travel_override: facing = travel_direction
@@ -142,7 +142,12 @@ func _evaluate(delta: float) -> void:
 		if ground_height.is_valid(): target.y += float(ground_height.call(target.x,target.z))-global_position.y
 		var pole := global_position + global_basis * Vector3(rest.origin.x, .35, -1.0)
 		foot_errors[side] = Contact.reach(skeleton, "thigh_"+side, "calf_"+side, "foot_"+side, target, pole)
-		Contact.orient(skeleton, "foot_"+side, global_basis*rest.basis)
+		var foot_basis := global_basis*rest.basis
+		if ground_height.is_valid():
+			var hx := float(ground_height.call(target.x-.06,target.z))-float(ground_height.call(target.x+.06,target.z))
+			var hz := float(ground_height.call(target.x,target.z-.06))-float(ground_height.call(target.x,target.z+.06))
+			foot_basis=Basis(Quaternion(Vector3.UP,Vector3(hx,.12,hz).normalized()))*foot_basis
+		Contact.orient(skeleton, "foot_"+side, foot_basis)
 	# Pot follows a continuous, externally defined path; hands reach its handles.
 	var carry := Vector3(0, .88, -.30)
 	var dip := Vector3(0, .09+water_level-.01-bank.y, -.62)
@@ -260,13 +265,11 @@ func _rotate_bone(label: String, axis: Vector3, angle: float) -> void:
 	skeleton.set_bone_pose_rotation(index, skeleton.get_bone_pose_rotation(index) * Quaternion(local_axis.normalized(), angle))
 
 func _load_river_motion() -> void:
-	var document := GLTFDocument.new()
-	var state := GLTFState.new()
 	var path := "res://characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb"
-	if document.append_from_file(ProjectSettings.globalize_path(path), state) != OK:
+	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	if figure == null:
 		push_error("Cannot load Indian motion candidate: " + path)
 		return
-	var figure := document.generate_scene(state)
 	add_child(figure)
 	animation_player = figure.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if animation_player == null:

@@ -1,8 +1,0 @@
-{
-  "errors": [],
-  "overlap_count": 0,
-  "owner_house": "/root/Suryagarh/Settlement/BhairavpurHouse27",
-  "passed": true,
-  "scope": "household link, body clearance, supports and resource conservation; cow art, caretaker, feeding/grazing motion open; care-state snapshot round trip PASS",
-  "support_error_m": 0.00000095367431640625
-}

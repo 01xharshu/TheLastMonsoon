@@ -11,13 +11,11 @@ var cloth_meshes: Array[MeshInstance3D] = []
 var purpose_feet: RefCounted
 
 func _ready() -> void:
-	var document := GLTFDocument.new()
-	var state := GLTFState.new()
 	var path := "res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [candidate_slug, candidate_slug]
-	if document.append_from_file(ProjectSettings.globalize_path(path), state) != OK:
+	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	if figure == null:
 		push_error("Cannot load Indian motion candidate: " + path)
 		return
-	var figure := document.generate_scene(state)
 	add_child(figure)
 	if candidate_slug in ["boatman", "dock_porter", "record_clerk"]:
 		purpose_feet = preload("res://characters/npcs/indian/purpose_foot_contact.gd").new()

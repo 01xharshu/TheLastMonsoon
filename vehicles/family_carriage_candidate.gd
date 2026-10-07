@@ -45,17 +45,16 @@ func _ready() -> void:
 func _create_coachman() -> void:
 	# Occupied household coaches already supply their own MakeHuman driver.
 	if is_in_group("household_coach"): return
-	var document := GLTFDocument.new()
-	var state := GLTFState.new()
 	var path := "res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb"
-	if document.append_from_file(ProjectSettings.globalize_path(path),state) != OK:
+	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	if figure == null:
 		push_error("MakeHuman coachman source failed to load: "+path)
 		return
 	var actor := preload("res://vehicles/seated_coachman.gd").new()
 	actor.name = "CoachmanMakeHuman"
 	actor.coach = self
 	actor.set_meta("human_source",path)
-	actor.add_child(document.generate_scene(state))
+	actor.add_child(figure)
 	visual_root.add_child(actor)
 
 func _build_audio() -> void:

@@ -3,19 +3,39 @@ render_mode blend_mix, depth_draw_never, cull_disabled, diffuse_burley;
 uniform sampler2D depth_texture : hint_depth_texture, filter_nearest;
 uniform bool exclude_moored_ship = false;
 uniform vec2 moored_ship_center = vec2(-85.0,680.0);
+uniform bool distant_surface = false;
+uniform float flow_time = 0.0;
+uniform bool boat_present = false;
+uniform vec2 boat_center;
+uniform float boat_heading = 0.0;
+uniform float boat_speed = 0.0;
 varying vec3 world_position;
 varying float wave_crest;
+float river_center(float z){ return 60.0+76.0*sin(z*.0045)+22.0*sin(z*.011); }
+float river_half_width(float z){ return 55.0+8.0*sin(z*.008+1.0)+340.0*smoothstep(500.0,850.0,z)+5600.0*smoothstep(850.0,1600.0,z); }
+float waves(vec2 p){
+ float cross=p.x-river_center(p.y);
+ float edge=1.0-smoothstep(.75,1.05,abs(cross)/river_half_width(p.y));
+ float travel=p.y-flow_time*1.25;
+ return edge*(sin(travel*.52+cross*.16)*.065+sin(travel*.93-cross*.33)*.028);
+}
 void vertex(){
  vec3 p=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;
- float long_wave=sin(p.z*.34-TIME*1.35+p.x*.10)*.045;
- float crossed=sin(p.x*.81+TIME*1.7+p.z*.17)*.024;
- VERTEX.y+=long_wave+crossed;
- p.y+=long_wave+crossed;
- world_position=p;
- wave_crest=long_wave+crossed;
+ float h=waves(p.xz);
+ VERTEX.y+=h;p.y+=h;world_position=p;wave_crest=h;
+ // Analytic finite difference surface normals, including near-bank damping.
+ float dx=(waves(p.xz+vec2(.15,0.0))-waves(p.xz-vec2(.15,0.0)))/.3;
+ float dz=(waves(p.xz+vec2(0.0,.15))-waves(p.xz-vec2(0.0,.15)))/.3;
+ NORMAL=normalize(vec3(-dx,1.0,-dz));
 }
 void fragment(){
  vec2 xz=world_position.xz;
+ if(distant_surface && xz.y>=-864.0 && xz.y<864.0) discard;
+ vec2 boat_local=xz-boat_center;
+ boat_local=vec2(cos(boat_heading)*boat_local.x-sin(boat_heading)*boat_local.y,sin(boat_heading)*boat_local.x+cos(boat_heading)*boat_local.y);
+ // Preserve the small boat's sealed interior as it heaves with the surface.
+ if(boat_present && abs(boat_local.y)<1.95 && abs(boat_local.x)<.40*(1.0-.65*pow(abs(boat_local.y)/1.95,3.0))) discard;
+
  // Dry, sealed hull: water continues around it instead of rendering through
  // the below-water cargo deck. Matches the fixed merchant hull stations.
  vec2 local_ship=xz-moored_ship_center;
@@ -33,30 +53,36 @@ void fragment(){
   else ship_beam=mix(4.2,3.4,(z-20.0)/4.0);
  }
  if(exclude_moored_ship && ship_beam>0.0 && abs(local_ship.x)<ship_beam*.955) discard;
- float u=sin(xz.x*.62+TIME*1.3+xz.y*.22+sin(xz.y*.14)*1.3);
- float v=sin(xz.y*.38-TIME*1.05-xz.x*.23+sin(xz.x*.12)*.8);
- float small=sin(xz.x*2.7+xz.y*1.8-TIME*2.7);
- float detail=sin(xz.x*5.1-TIME*3.1+xz.y*2.2)*sin(xz.y*4.3+TIME*2.4);
- NORMAL_MAP=normalize(vec3(u*.047+small*.01+detail*.008,v*.045+detail*.006,1.0))*.5+.5;
- NORMAL_MAP_DEPTH=.75;
+ float cross=xz.x-river_center(xz.y);
+ float travel=xz.y-flow_time*1.25;
+ float broad=sin(travel*.52+cross*.16);
+ float fine=sin(travel*2.5-cross*1.9+sin(cross*.25));
+ float detail=sin(travel*5.1+cross*3.2)*sin(cross*4.3-travel*1.7);
+ NORMAL_MAP=normalize(vec3(fine*.075+detail*.025,broad*.09+detail*.025,1.0))*.5+.5;
+ NORMAL_MAP_DEPTH=.8;
  float scene_depth=texture(depth_texture,SCREEN_UV).r;
  vec4 scene_view=INV_PROJECTION_MATRIX*vec4(SCREEN_UV*2.0-1.0,scene_depth,1.0);
  scene_view.xyz/=max(scene_view.w,.00001);
  float water_depth=max(0.0,-scene_view.z+VERTEX.z);
- float shallow=clamp(water_depth/5.5,0.0,1.0);
- vec3 shallow_color=vec3(.15,.33,.27);
- vec3 deep_color=vec3(.025,.105,.105);
- float foam=(1.0-smoothstep(.02,.35,water_depth))*(.2+.15*max(u*v,0.0));
- float current=sin(xz.y*.12-TIME*.7+sin(xz.x*.07)*2.0);
- float glint=pow(max(0.0,small*.55+detail*.3+current*.15),6.0);
- ALBEDO=mix(shallow_color,deep_color,shallow)+vec3(.12,.14,.11)*foam+vec3(.025)*max(small,0.0)+vec3(.035,.045,.04)*glint;
- ALPHA=mix(.26,.71,shallow)+foam*.25;
- // The fresh river stays translucent. Deep tidal water gradually becomes
- // opaque toward the scenic sea, avoiding a visible tiled bed at the horizon.
+ float shallow=1.0-exp(-water_depth*.38);
+ // Silt-tinted fresh water, with broken moving foam only along shallow contact.
+ float shore=(1.0-smoothstep(.05,.65,water_depth));
+ float broken=smoothstep(.25,.8,sin(travel*1.8+cross*2.2)*.5+.5);
+ float foam=shore*broken*.6;
+ float bank_band=1.0-smoothstep(.0,.15,abs(abs(cross)/river_half_width(xz.y)-.9));
+ float streak=pow(max(0.0,sin(cross*1.1+sin(travel*.1)*.5)),14.0)*bank_band*.07;
+ // A restrained V wake follows a moving hull; idle/moored hulls make no trail.
+ float wake_span=abs(boat_local.y)*.34+.5;
+ float wake=boat_present ? (1.0-smoothstep(.08,.35,abs(abs(boat_local.x)-wake_span)))*(1.0-smoothstep(2.0,12.0,boat_local.y))*smoothstep(1.5,3.0,boat_local.y)*clamp(boat_speed/3.0,0.0,1.0) : 0.0;
+ foam+=wake*.28+streak;
+ float glint=pow(max(0.0,fine*.55+detail*.45),8.0);
+ ALBEDO=mix(vec3(.19,.28,.20),vec3(.035,.12,.105),shallow);
+ ALBEDO=mix(ALBEDO,vec3(.64,.69,.55),clamp(foam,0.0,.65))+vec3(.025)*glint;
+ ALPHA=mix(.35,.88,shallow)+foam*.18;
  float sea_weight=smoothstep(560.0,850.0,xz.y);
- ALPHA=mix(ALPHA,mix(.42,.98,shallow),sea_weight);
- ALBEDO=mix(ALBEDO,vec3(.035,.105,.125)+vec3(.02)*glint,sea_weight*shallow);
- ROUGHNESS=.19;
- SPECULAR=.8;
+ ALPHA=mix(ALPHA,mix(.48,.98,shallow),sea_weight);
+ ALBEDO=mix(ALBEDO,vec3(.035,.105,.125),sea_weight*shallow);
+ ROUGHNESS=mix(.24,.34,shore);
+ SPECULAR=.65;
  METALLIC=0.0;
 }

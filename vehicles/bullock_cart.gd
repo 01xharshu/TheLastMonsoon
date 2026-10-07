@@ -38,10 +38,10 @@ func _ready() -> void:
  var reins:=preload("res://vehicles/flexible_cart_reins.gd").new();reins.name="FlexibleReins";reins.configure(self);add_child(reins)
  _add_driver.call_deferred()
 func _add_driver() -> void:
- var document:=GLTFDocument.new();var state:=GLTFState.new()
  var source:="res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb"
- if document.append_from_file(ProjectSettings.globalize_path(source),state)!=OK:return
- driver=preload("res://vehicles/bullock_driver.gd").new();driver.name="MPFBBullockDriver";driver.coach=self;driver.set_meta("human_source",source);driver.add_child(document.generate_scene(state));visual_root.add_child(driver)
+ var figure := preload("res://characters/human_scene.gd").instantiate(source)
+ if figure == null:return
+ driver=preload("res://vehicles/bullock_driver.gd").new();driver.name="MPFBBullockDriver";driver.coach=self;driver.set_meta("human_source",source);driver.add_child(figure);visual_root.add_child(driver)
 func set_forward_motion(speed:float,delta:float) -> void:
  super.set_forward_motion(speed,delta)
  if last_draft_position.is_finite() and global_position.distance_to(last_draft_position)>2:
@@ -53,6 +53,7 @@ func set_forward_motion(speed:float,delta:float) -> void:
  for index in solvers.size():
   if combat.horses[index].dead:continue
   var solver:Node=solvers[index]
+  solver.update_breathing(delta,absf(speed)>.03)
   var rig:Skeleton3D=solver.rig
   for bone in solver.rest:rig.set_bone_pose_rotation(bone,solver.rest[bone])
   rig.set_bone_pose_position(rig.find_bone("Body"),solver.body_rest_position+Vector3.DOWN*.025)

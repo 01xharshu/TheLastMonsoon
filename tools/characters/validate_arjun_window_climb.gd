@@ -64,8 +64,8 @@ func _run() -> void:
     climb.set_physics_process(false)
     visual.set_process(false)
     var captures := [12,30,48,66,88]
-    var folder := "res://docs/characters/arjun/window_climb"
-    DirAccess.make_dir_recursive_absolute(folder)
+    var folder := OS.get_environment("TMPDIR").path_join("tlm_window_climb")
+    if DisplayServer.get_name()!="headless": DirAccess.make_dir_recursive_absolute(folder)
     var movie := OS.get_cmdline_user_args().has("--movie")
     if movie: DirAccess.make_dir_recursive_absolute("/tmp/tlm_window_frames")
     for frame in 97:
@@ -114,6 +114,30 @@ func _run() -> void:
         print("FAIL blocked landing accepted")
     obstacle.queue_free()
     await get_tree().physics_frame
+    var shutter := preload("res://objects/hinged_door.gd").new()
+    shutter.width = 2.2
+    shutter.height = 1.15
+    shutter.opened = false
+    shutter.position = Vector3(-1.1,1.34,0)
+    shutter.build(StandardMaterial3D.new())
+    shutter.rotation.y = PI*.5
+    add_child(shutter)
+    await get_tree().physics_frame
+    if climb.window.try_start(actor):
+        failures += 1
+        print("FAIL closed hinged shutter accepted")
+    shutter.restore_state(true)
+    await get_tree().physics_frame
+    if not climb.window.try_start(actor):
+        failures += 1
+        print("FAIL opened hinged shutter traversal")
+    else:
+        for i in 97: climb.window.advance(actor,1.0/30.0)
+        if climb.window.active: failures += 1
+    shutter.queue_free()
+    await get_tree().physics_frame
+    actor.global_position = Vector3(-.9,.94,0)
+    actor.visual_root.global_rotation.y = PI/2
     _box("ClosedShutter",Vector3(0,1.9,0),Vector3(.15,1.15,2.2),Color(.3,.2,.1))
     await get_tree().physics_frame
     if climb.window.try_start(actor):

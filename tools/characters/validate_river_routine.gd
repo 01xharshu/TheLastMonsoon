@@ -47,7 +47,5 @@ func run() -> void:
 		if not woman.delivered: issues.append("Continuous sequence never delivered")
 	if scene.women[0].animation_tree == scene.women[1].animation_tree: issues.append("Shared animation owner")
 	var report := {"passed": issues.is_empty(), "issues": issues, "members": scene.women.size(), "samples": samples, "continuous_target_maxima": maxima, "visual_approved": false, "contact_approved": false, "in_world": false}
-	var file := FileAccess.open("res://docs/characters/npcs/river_routine_validation.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify(report, "\t") + "\n")
 	print("RIVER_ROUTINE ", JSON.stringify(report))
 	quit(0 if issues.is_empty() else 1)

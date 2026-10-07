@@ -177,7 +177,7 @@ func hours_allow_entry(hour: int) -> bool:
 func _time_changed(_day: int,hour: int,_minute: int) -> void:
 	var night := not hours_allow_entry(hour)
 	locked = night and night_lock and not always_open
-	if night != last_night or (locked and opened):
+	if night != last_night:
 		last_night = night
 		if locked or auto_open_at_dawn: set_open(not locked)
 	_label()
@@ -202,14 +202,17 @@ func _physics_process(_delta: float) -> void:
 		motion.kill()
 		swing = last_safe_swing
 		moving = false
-		opened = swing > .5
+		opened = swing > .001
 		_label()
 	else:
 		last_safe_swing = swing
 
+func is_inside(at: Vector3) -> bool:
+	return to_local(at).z < 0.0
+
 func interact(player: CharacterBody3D) -> void:
 	if moving: return
-	var inside: bool = get_parent().to_local(player.global_position).z < position.z
+	var inside: bool = is_inside(player.global_position)
 	if (locked or inside_only) and not inside: return
 	var action = player.get_node_or_null("DoorLatchAction")
 	if action == null:
@@ -241,7 +244,15 @@ func set_open(value: bool) -> void:
 	var target := 1.0 if value else 0.0
 	# Check the whole swept path before moving, then check again during the swing.
 	for sample in 13:
-		if _character_in_leaf(lerpf(swing,target,float(sample)/12.0)): return
+		if _character_in_leaf(lerpf(swing,target,float(sample)/12.0)):
+			if value and is_zero_approx(swing):
+				swing_direction *= -1.0
+				var clear := true
+				for retry in 13:
+					if _character_in_leaf(lerpf(swing,target,float(retry)/12.0)): clear = false; break
+				if clear: break
+				swing_direction *= -1.0
+			return
 	opened = value
 	moving = true
 	WorldAudio.play_at("door",global_position)
@@ -253,7 +264,7 @@ func set_open(value: bool) -> void:
 	_label()
 
 func _label() -> void:
-	interaction_text = "Latched for the night" if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))
+	interaction_text = "Latched for the night · opens from inside" if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))
 
 func restore_state(value: bool) -> void:
 	if motion != null and motion.is_valid(): motion.kill()

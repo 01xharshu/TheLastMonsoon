@@ -19,9 +19,9 @@ Run from repository root:
 /Applications/Godot.app/Contents/MacOS/Godot --path . --script res://tools/world/validate_civil_lines.gd -- --capture-only
 ```
 
-Reports: [current route/terrain/tree checks](civil_lines_validation.json), [initial tree repair](tree_grounding_validation.json). Logs: `/tmp/civil_lines_2026_10_05_final.log`, `/tmp/civil_lines_2026_10_05_close_views.log`.
+Reports: current route/terrain/tree checks (test output deleted), initial tree repair (test output deleted). Logs: `/tmp/civil_lines_2026_10_05_final.log`, `/tmp/civil_lines_2026_10_05_close_views.log`.
 
-Latest screenshots replace earlier versions of the same view. Inspected fresh native images confirm enclosed ceilings, room framing, complete shutter faces/casing, furnishings, grounded district trees and open approaches. Evidence: [district](captures/civil_lines_overview.png), [bungalow exterior](captures/collector_bungalow.png), [veranda](captures/collector_veranda.png), [office](captures/collector_office.png), [bedroom](captures/officer_bedroom.png), [Collector room connection](captures/collector_interior.png), [officer room connection](captures/officer_interior.png), [bazaar](captures/cantonment_bazaar.png), [bazaar at player height](captures/bazaar_player_height.png).
+Latest screenshots replace earlier versions of the same view. Inspected fresh native images confirm enclosed ceilings, room framing, complete shutter faces/casing, furnishings, grounded district trees and open approaches. Evidence: district (test output deleted), bungalow exterior (test output deleted), veranda (test output deleted), office (test output deleted), bedroom (test output deleted), Collector room connection (test output deleted), officer room connection (test output deleted), bazaar (test output deleted), bazaar at player height (test output deleted).
 
 `git diff --check` PASS. Latest `python3 tools/check_agent_docs.py` FAIL: shared handoff exceeds 60 lines/6000 characters; all current index links resolve. Other active task entries were preserved. Diagnostic log `/tmp/civil_lines_docs_gate_2026_10_05.log`. Missing unrelated screenshots reported at first resume were restored by concurrent work, so that earlier index failure no longer remains.
 

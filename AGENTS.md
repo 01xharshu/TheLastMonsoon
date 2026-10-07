@@ -13,10 +13,13 @@
 - Do not pause another chat, interrupt its work, or repeatedly request status. Send a message only to the specific owner when an actionable dependency, shared-file conflict, required decision or integration handoff makes it necessary. Do not request acknowledgements or routine replies to coordination messages.
 - Preserve existing ownership and concurrent changes. Status/coordination chats must not take over another owner's files merely to make progress; resolve their own assigned scope and contact an owner only when needed.
 
-## Evidence and source retention
+## Test output and source retention
 
-- Keep the latest screenshots needed to demonstrate current work and unresolved defects. Replace superseded captures for the same view; retain distinct evidence that is still needed. Update evidence links when removing a capture.
-- Keep useful editable Blender sources, active candidates and source assets required by exports or rebuild scripts. Delete established obsolete or unused sources and redundant Blender backups after checking references and recording the retained replacement. Age alone does not establish that a file is unused.
+- User policy (2026-10-07): do not retain test screenshots, videos, recordings, logs or generated test reports. Prefer a concise result in chat and exact instructions for the user to test in-game. Keep reusable test code.
+- Use an OS temporary directory for test output and delete it in a finally/exit cleanup after success, failure or interruption. If legacy tools write into the checkout, run `python3 tools/maintenance/clean_test_artifacts.py --apply` afterward and remove any other output created by that run. Do not commit generated test artifacts.
+- Existing documentation may describe historical checks; removed captures/reports do not provide current evidence or final approval. Record unresolved defects honestly in concise text.
+- Keep useful editable Blender sources, active candidates, textures, references and rebuild inputs. Remove established obsolete copies and redundant backups only after checking dependencies and retained replacements. Never ignore all `.blend` files: a recoverable clone needs its editable sources.
+- Do not use Git history as a backup for disposable output. History migration and asset storage changes must preserve a verified fresh-clone rebuild; see `docs/assets/repository_storage.md`.
 
 ## Universal human creation rule
 

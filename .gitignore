@@ -46,3 +46,62 @@ __pycache__/
 # ── Logs ──────────────────────────────────────────────────────
 *.log
 logs/
+
+# Disposable test output (user policy: 2026-10-07)
+/test-output/
+/artifacts/
+/docs/**/*.png
+/docs/**/*.jpg
+/docs/**/*.jpeg
+/docs/**/*.webp
+/docs/**/*validation*.json
+*.mp4
+*.mov
+*.webm
+*.avi
+/environment/forest/review/*.png
+/WorkingAssets/NPCs/**/*_front.png
+/WorkingAssets/NPCs/**/*_profile.png
+/WorkingAssets/NPCs/**/front.png
+/WorkingAssets/NPCs/**/profile.png
+/WorkingAssets/NPCs/**/side.png
+/WorkingAssets/NPCs/**/back.png
+/WorkingAssets/NPCs/**/three_quarter.png
+/WorkingAssets/NPCs/**/face.png
+/WorkingAssets/NPCs/**/body_*.png
+/WorkingAssets/NPCs/**/face_*.png
+/WorkingAssets/Horse/candidates/**/side_review.png
+/WorkingAssets/Horse/candidates/**/game_side_*.png
+/docs/**/*.png.import
+/docs/**/*.jpg.import
+/docs/**/*.jpeg.import
+/docs/**/*.webp.import
+/environment/forest/review/*.png.import
+
+# Required authoring references are recoverable source assets.
+!/docs/**/references/
+!/docs/**/references/**
+!/docs/characters/arjun/weapon_set_reference_2026-09-23.png
+!/docs/characters/arjun/weapon_set_reference_2026-09-23.png.import
+
+# Preview import sidecars are disposable too.
+/WorkingAssets/NPCs/**/*_front.png.import
+/WorkingAssets/NPCs/**/*_profile.png.import
+/WorkingAssets/NPCs/**/front.png.import
+/WorkingAssets/NPCs/**/profile.png.import
+/WorkingAssets/NPCs/**/side.png.import
+/WorkingAssets/NPCs/**/back.png.import
+/WorkingAssets/NPCs/**/three_quarter.png.import
+/WorkingAssets/NPCs/**/face.png.import
+/WorkingAssets/NPCs/**/body_*.png.import
+/WorkingAssets/NPCs/**/face_*.png.import
+/WorkingAssets/Horse/candidates/**/side_review.png.import
+/WorkingAssets/Horse/candidates/**/game_side_*.png.import
+
+# Preview naming must never hide texture or reference inputs.
+!/WorkingAssets/**/textures/*.png
+!/WorkingAssets/**/textures/*.png.import
+!/WorkingAssets/**/references/*.png
+!/WorkingAssets/**/references/*.png.import
+!/WorkingAssets/**/source/*.png
+!/WorkingAssets/**/source/*.png.import

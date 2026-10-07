@@ -6,6 +6,7 @@ func check(ok:bool,label:String) -> void:
  if not ok:errors.append(label)
 func run() -> void:
  var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
+ paused=true;PhysicsServer3D.set_active(true)
  await physics_frame
  # Keep real world geometry/physics; advance only the draft fixture explicitly.
  world.process_mode=Node.PROCESS_MODE_DISABLED
@@ -81,5 +82,4 @@ func run() -> void:
  Input.action_release("move_forward")
  check(public_cart.boarding.speed>0 and public_cart.boarding.speed<=2.4,"player-driven draft acceleration respects cattle pace")
  check(public_cart.solvers[0].rig.global_transform.is_finite(),"draft skeleton remains finite through steering and driving")
- FileAccess.open("res://docs/world/bullock_mud_validation.json",FileAccess.WRITE).store_string(JSON.stringify({"passed":errors.is_empty(),"errors":errors,"scope":"actual world geometry/physics with unrelated routines frozen and draft stepped explicitly; bullock integration, source/yoke clearance, road motion, collision, saves, cargo pause, wet/idle/dry guards, player boarding/pace; native and full motion/cloth/performance approval separate"},"  ")+"\n")
  print("BULLOCK MUD ","PASS" if errors.is_empty() else "FAIL",errors);quit(0 if errors.is_empty() else 1)

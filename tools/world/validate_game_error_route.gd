@@ -9,7 +9,7 @@ func _initialize() -> void: _run.call_deferred()
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://docs/world/captures/error_route_"+label+".png")
+	print("RENDER REVIEW ",label," | viewport ",root.size," scale ",root.scaling_3d_scale)
 func _run() -> void:
 	var saves = root.get_node("SaveManager")
 	saves.start_new_game()
@@ -47,10 +47,8 @@ func _run() -> void:
 		frames.sort()
 		routes[spec[0]]={"movement_m":actor.global_position.distance_to(before),"frame_ms_p50":frames[frames.size()/2],"frame_ms_p95":frames[int(frames.size()*.95)],"cpu_process_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"cpu_physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000}
 		await capture(spec[0])
-	var pixels: Vector2i=root.get_texture().get_size()
-	var file:=FileAccess.open("res://docs/world/game_error_route_validation.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify({"status":"FAIL" if failed else "PASS","renderer":RenderingServer.get_current_rendering_method(),"physical_viewport":str(pixels),"scale_3d":root.scaling_3d_scale,"render_3d_pixels":str(Vector2(pixels)*root.scaling_3d_scale),"routes":routes,"limit":"short native smoke route; shared desktop contention; no controlled FPS comparison"},"\t"))
-	file.close()
+	var pixels: Vector2i=root.size
+	print(JSON.stringify({"status":"FAIL" if failed else "PASS","renderer":RenderingServer.get_current_rendering_method(),"physical_viewport":str(pixels),"scale_3d":root.scaling_3d_scale,"render_3d_pixels":str(Vector2(pixels)*root.scaling_3d_scale),"routes":routes,"limit":"short native smoke route; shared desktop contention; no controlled FPS comparison"}))
 	print("GAME ERROR ROUTE: ","FAIL" if failed else "PASS")
 	preload("res://tools/test_audio_cleanup.gd").stop(root)
 	await preload("res://tools/test_audio_cleanup.gd").settle(self)

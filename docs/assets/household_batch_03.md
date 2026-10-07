@@ -33,4 +33,4 @@ Limitations: source/model appearance is still subject to owner art review; exact
 
 Next asset batch: small paper/clue/supply props. Character animation work stays in the final pass per owner direction.
 
-![Furniture and storage review](storage_overview.png)
+Furniture and storage review (test output deleted)

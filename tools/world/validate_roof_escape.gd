@@ -6,7 +6,7 @@ var failures: Array[String] = []
 var camera: Camera3D
 var frames := 0
 var rendered := false
-var folder := "res://docs/characters/arjun/roof_escape_2026-10-06"
+var folder := ""
 func _initialize() -> void: call_deferred("run")
 func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
@@ -25,6 +25,18 @@ func save_view(label: String) -> void:
 	root.get_texture().get_image().save_png(folder+"/"+label+".png")
 	await physics_frame
 func run() -> void:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--output-dir="): folder = argument.trim_prefix("--output-dir=")
+	var temporary_root := OS.get_environment("TMPDIR")
+	if temporary_root.is_empty(): temporary_root = "/tmp"
+	temporary_root = temporary_root.simplify_path().trim_suffix("/")
+	if folder.is_empty(): folder = temporary_root.path_join("tlm-roof-%d" % OS.get_process_id())
+	folder = folder.simplify_path().trim_suffix("/")
+	if folder.get_base_dir() != temporary_root or not (folder.get_file().begins_with("tlm-climb-review-") or folder.get_file().begins_with("tlm-roof-")):
+		push_error("Review output must use a dedicated directory inside the OS temporary directory")
+		folder = ""
+		quit(1)
+		return
 	world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world); current_scene = world
 	actor = world.get_node("Player")
@@ -44,7 +56,6 @@ func run() -> void:
 		root.mode=Window.MODE_WINDOWED; root.size=Vector2i(960,540)
 		root.scaling_3d_scale=.55
 		root.show()
-		DirAccess.make_dir_recursive_absolute("/tmp/tlm_roof_escape")
 	world.get_node("GameTimeSystem").advance_hours(6)
 	var source: Node3D = world.get_node("Settlement/BhairavpurHouse2")
 	var target: Node3D = world.get_node("Settlement/BhairavpurHouse10")
@@ -117,11 +128,18 @@ func run() -> void:
 	await finish()
 func finish() -> void:
 	var result := {"result":"PASS" if failures.is_empty() else "FAIL","failures":failures,"renderer":RenderingServer.get_current_rendering_method(),"frames":frames,"position":str(actor.global_position)}
-	var file := FileAccess.open(folder+"/validation.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify(result,"\t")); file.close()
 	print("WORLD ROOF ESCAPE ",JSON.stringify(result))
 	for type_name in ["AudioStreamPlayer","AudioStreamPlayer3D"]:
 		for voice in root.find_children("*",type_name,true,false): voice.stop(); voice.stream=null
 	world.queue_free()
 	for tick in 3: await process_frame
+	_clear_output()
 	quit(0 if failures.is_empty() else 1)
+
+func _clear_output() -> void:
+	if folder.is_empty() or not DirAccess.dir_exists_absolute(folder): return
+	for filename in DirAccess.get_files_at(folder): DirAccess.remove_absolute(folder.path_join(filename))
+	DirAccess.remove_absolute(folder)
+
+func _finalize() -> void:
+	_clear_output()

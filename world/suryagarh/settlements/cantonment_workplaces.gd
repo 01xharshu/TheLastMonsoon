@@ -1,7 +1,6 @@
 extends Node3D
 ## Five anchored service attendants; shared audited MPFB model, bounded nearby idles.
 const Staff = preload("res://characters/npcs/households/fort_staff.gd")
-static var shared_staff: PackedScene
 var workers: Array[Node3D] = []
 var elapsed := 0.0
 var update_usec := 0
@@ -55,14 +54,6 @@ func configure(b, district: Node3D) -> void:
 		marker.name = "Workplace"
 		marker.position = spec[2]
 		room.add_child(marker)
-		if shared_staff == null:
-			var document := GLTFDocument.new()
-			var state := GLTFState.new()
-			assert(document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb"),state)==OK)
-			var imported := document.generate_scene(state)
-			shared_staff = PackedScene.new()
-			assert(shared_staff.pack(imported)==OK)
-			imported.free()
 		var actor = Staff.new()
 		actor.name = spec[1]
 		actor.household_job = "Steward"
@@ -72,7 +63,7 @@ func configure(b, district: Node3D) -> void:
 		actor.set_meta("service_role",spec[1])
 		actor.set_meta("workplace",marker.get_path())
 		actor.set_meta("visual_status","shared MPFB attendant candidate; role acting/contact open")
-		actor.add_child(shared_staff.instantiate())
+		actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/motion/fort_staff/fort_staff_rigged_candidate.glb"))
 		actor.add_to_group("cantonment_service_workers")
 		room.add_child(actor)
 		for mesh in actor.find_children("*","MeshInstance3D",true,false):
@@ -113,6 +104,3 @@ func _process(delta: float) -> void:
 	elapsed = 0
 	var player := get_tree().current_scene.get_node_or_null("Player") as Node3D
 	if player != null: update_activity(player.global_position)
-
-func _exit_tree() -> void:
-	shared_staff = null

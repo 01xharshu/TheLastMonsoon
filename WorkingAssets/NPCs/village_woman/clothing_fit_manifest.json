@@ -4,24 +4,26 @@
   "garments": {
     "Fitted cotton upper base": {
       "vertices": 1311,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Wrapped sari lower drape": {
       "vertices": 768,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Sari lower border": {
       "vertices": 192,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Woven sari pallu over blouse": {
       "vertices": 703,
-      "pose_keys": 98
+      "pose_keys": 194
     }
   },
   "body_preserved": true,
+  "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_woman/village_woman_clothing_fitted.blend",
+  "fitted_source_sha256": "43c77f32ebb17c34eb93a5711fbdc8c2ccd3e0f0aacaf2c3ff4f9d08fa28b401",
   "runtime": "characters/npcs/motion/village_woman/village_woman_rigged_candidate.glb",
-  "runtime_sha256": "685cbf4e10c3f86d0546f50cf4ebf8f7191574094c03143efa1513c1c2470fb8",
+  "runtime_sha256": "1ed2dfdb39b2a420959a76d1b4b91a8acc57f7f0e771f2c9b12baa9df103a7e7",
   "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
 }

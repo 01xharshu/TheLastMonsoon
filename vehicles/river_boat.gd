@@ -187,7 +187,8 @@ func _physics_process(delta: float) -> void:
 	speed = clampf(speed+row_drive*stroke_power*8.5*delta,-4.2,4.2)
 	speed = move_toward(speed,0.0,delta*(.18+absf(speed)*.18))
 	rotation.y += steer*delta*0.7*clampf(absf(speed),0,1)
-	velocity = -global_basis.z*speed
+	var current:=preload('res://world/suryagarh/river_dynamics.gd').current_at(global_position)
+	velocity = -global_basis.z*speed+(current if rider!=null else Vector3.ZERO)
 	var next: Vector3 = position+velocity*delta
 	var safe := absf(next.z)<Layout.HALF-10
 	# Check the bow, stern and beam draft, not only the centre, before entering shallow water.
@@ -198,7 +199,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		speed = 0
 		velocity = Vector3.ZERO
-	position.y = 0.03
+	var river:=get_parent().get_node_or_null('RiverDynamics')
+	var seconds: float=float(river.get_meta('flow_seconds',0.0)) if river!=null else 0.0
+	position.y = .03+preload('res://world/suryagarh/river_dynamics.gd').surface_height(global_position,seconds)*.45
 	if rider != null: _sync_rider()
 
 func _paddle_splash(point: Vector3) -> void:

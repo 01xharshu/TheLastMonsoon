@@ -19,11 +19,19 @@ var contact_seconds:=0.0
 var elapsed:=0.0
 var ground_override:=NAN
 var enabled:=true
+var breathing_mesh:MeshInstance3D
+var breath_index:=-1
+var breath_phase:=0.0
+var breath_rate:=.28
 const ORDER=["Hind.L","Front.L","Hind.R","Front.R"]
 const OFFSETS={"Hind.L":0.0,"Front.L":.25,"Hind.R":.5,"Front.R":.75}
 func configure(owner_yard:Node3D,animal:Node3D)->void:yard=owner_yard;cow=animal
 func _ready()->void:
 	process_priority=100
+	breathing_mesh=cow.find_child("Continuous cow skin",true,false)
+	if breathing_mesh!=null:
+		for index in breathing_mesh.mesh.get_blend_shape_count():
+			if breathing_mesh.mesh.get_blend_shape_name(index)=="Breath":breath_index=index
 	rig=cow.find_children("*","Skeleton3D",true,false)[0]
 	var anim:=cow.find_child("AnimationPlayer",true,false) as AnimationPlayer
 	if anim:anim.stop()
@@ -37,6 +45,11 @@ func _ready()->void:
 		feet[tag]=[rig.find_bone(end+"Upper."+side),rig.find_bone(end+"Lower."+side),rig.find_bone(end+"Foot."+side)]
 func _physics_process(delta:float)->void:
 	if enabled:tick(delta)
+func update_breathing(delta:float,walking:bool=false)->void:
+	if breath_index<0 or breathing_mesh==null:return
+	breath_rate=lerpf(breath_rate,.36 if walking else .28,1.0-exp(-delta*2.0))
+	breath_phase=fmod(breath_phase+delta*breath_rate*TAU,TAU)
+	breathing_mesh.set_blend_shape_value(breath_index,.5+.5*sin(breath_phase))
 func floor_y(at:Vector3)->float:
 	return ground_override if is_finite(ground_override) else yard.layout.height(at.x,at.z)
 func mouth_world()->Vector3:
@@ -95,6 +108,7 @@ func _destination()->Vector3:
 	return yard.to_global(p)
 func tick(delta:float)->void:
 	time+=delta;elapsed+=delta
+	update_breathing(delta,state=="walk")
 	for bone in rest:rig.set_bone_pose_rotation(bone,rest[bone])
 	var previous_yaw:=cow.rotation.y
 	var previous_position:=cow.global_position

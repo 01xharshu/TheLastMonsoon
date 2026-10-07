@@ -47,12 +47,16 @@ func validate() -> void:
 	assert(is_equal_approx(clock.total_game_minutes, before), "Time jumped before the sitting animation")
 	await create_timer(0.32).timeout
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://docs/world/captures/charpai_sitting.png")
+	var output_dir := OS.get_environment("TLM_TEST_OUTPUT_DIR")
+	if output_dir != "":
+		DirAccess.make_dir_recursive_absolute(output_dir)
+		root.get_texture().get_image().save_png(output_dir.path_join("charpai_sitting.png"))
 	await create_timer(0.68).timeout
 	assert(float(player.get_meta("rest_progress", 0.0)) > 0.9, "Sleep pose did not complete")
 	assert(is_equal_approx(clock.total_game_minutes, before), "Time jumped before fade-out")
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://docs/world/captures/charpai_sleeping.png")
+	if output_dir != "":
+		root.get_texture().get_image().save_png(output_dir.path_join("charpai_sleeping.png"))
 	await create_timer(0.85).timeout
 	assert(bed.get_meta("sleep_fade_covered", false), "Clock advanced without covered fade")
 	assert(is_equal_approx(clock.total_game_minutes - before, 480.0))
@@ -61,6 +65,7 @@ func validate() -> void:
 	assert(survival.energy > 20.0)
 	var report = {"position":str(bed.position), "leg_contacts":contacts, "collision":true, "sleep_hours":8, "energy_after_sleep":survival.energy}
 	print("CHARPAI CHECK PASS ", JSON.stringify(report))
-	var file = FileAccess.open("res://docs/world/charpai_validation.json", FileAccess.WRITE)
-	file.store_string(JSON.stringify(report,"\t") + "\n")
+	if output_dir != "":
+		var file := FileAccess.open(output_dir.path_join("charpai_validation.json"), FileAccess.WRITE)
+		file.store_string(JSON.stringify(report,"\t") + "\n")
 	quit()

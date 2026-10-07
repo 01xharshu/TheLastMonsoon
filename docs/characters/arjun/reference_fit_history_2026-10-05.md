@@ -62,4 +62,4 @@ Boot successor also tapers outer moustache height; close-up shows a narrower out
 
 ## Source retention — 2026-10-05
 
-The superseded `arjun_drape_boot_candidate.blend`, `arjun_continuous_drape_candidate.blend`, and `arjun_hair_clump_candidate.blend` files were removed after the source audit. Their unsuccessful visual findings above remain historical results. The builders and their retained residual/projected-drape inputs remain available to reproduce these studies; the later sculpted/material/eye/boot source chain is retained. Inventory and removal hashes: `docs/assets/source_retention_2026-10-02.json`.
+The superseded `arjun_drape_boot_candidate.blend`, `arjun_continuous_drape_candidate.blend`, and `arjun_hair_clump_candidate.blend` files were removed after the source audit. Their unsuccessful visual findings above remain historical results. The rejected-study builders were retired on 2026-10-07; their retained residual/projected-drape inputs and the later sculpted/material/eye/boot source chain remain. Inventory and removal hashes: `docs/assets/source_retention_2026-10-02.json`.

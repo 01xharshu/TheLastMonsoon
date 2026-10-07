@@ -93,7 +93,7 @@ func _build_main_panel() -> void:
 	main_panel.add_child(continuation)
 	main_panel.add_child(_title_action("Load Game", func(): show_slots()))
 	main_panel.add_child(_title_action("Settings", func(): show_settings()))
-	main_panel.add_child(_title_action("Quit", func(): get_tree().quit()))
+	main_panel.add_child(_title_action("Quit", func(): SaveManager.quit_game()))
 	_focus_when_ready.call_deferred(play_button)
 
 func _title_action(value: String, action: Callable) -> Button:

@@ -8,8 +8,10 @@ var sources: Dictionary={}
 var actors: Dictionary={}
 var birds: Dictionary={}
 var timer:=0.0
-var bird_wait:=8.0
+var bird_wait:=2.0
 var river_voice: AudioStreamPlayer3D
+var shore_voice: AudioStreamPlayer3D
+var water_seconds:=0.0
 var emissions: Dictionary={}
 func _ready() -> void:
  for key in ['fire','river','cow','sparrow']:
@@ -17,10 +19,12 @@ func _ready() -> void:
   if key in ['fire','river']:
    clips[key].loop_mode=AudioStreamWAV.LOOP_FORWARD;clips[key].loop_end=clips[key].data.size()/2
  for i in 8:
-  var voice:=AudioStreamPlayer3D.new();voice.max_distance=28;voice.volume_db=-24
+  var voice:=AudioStreamPlayer3D.new();voice.max_distance=28;voice.unit_size=6;voice.volume_db=-3
   add_child(voice);loops.append(voice)
- river_voice=AudioStreamPlayer3D.new();river_voice.max_distance=110;river_voice.unit_size=10;river_voice.volume_db=-20
+ river_voice=AudioStreamPlayer3D.new();river_voice.max_distance=110;river_voice.unit_size=10;river_voice.volume_db=-2
  river_voice.stream=clips.river;add_child(river_voice)
+ shore_voice=AudioStreamPlayer3D.new();shore_voice.max_distance=32;shore_voice.unit_size=7
+ shore_voice.stream=clips.river;shore_voice.pitch_scale=.92;shore_voice.volume_db=-10;add_child(shore_voice)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
 func _added(node: Node) -> void:
@@ -32,35 +36,46 @@ func _added(node: Node) -> void:
   actors[node.get_instance_id()]={'ref':weakref(node),'path':path,'wait':randf_range(8,17),'phase':-1,'last':Vector3.ZERO,'last_stage':'','transfers':0}
 func day_at(hour: int) -> bool:return hour>=6 and hour<18
 func emit(key: String, at: Vector3, db: float) -> void:
- get_parent().play_at(key,at,db)
- emissions[key]=int(emissions.get(key,0))+1
+ if get_parent().play_at(key,at,db):
+  emissions[key]=int(emissions.get(key,0))+1
 func _process(delta: float) -> void:
  timer-=delta
  if timer>0:return
  var step:=.25;timer=step
  var camera:=get_viewport().get_camera_3d()
  if camera==null:
-  river_voice.stop()
+  river_voice.stop();shore_voice.stop()
   for voice in loops:voice.stop()
   return
  var scene:=get_tree().current_scene
  if scene==null or scene.get_node_or_null('GameTimeSystem')==null:
-  river_voice.stop()
+  river_voice.stop();shore_voice.stop()
   for voice in loops:voice.stop()
   return
  var clock: Node=scene.get_node('GameTimeSystem')
  tick(camera.global_position,int(clock.current_hour),step)
 func tick(listener: Vector3,hour: int,delta: float) -> void:
+ water_seconds+=delta
  # A river's broad source follows the nearest bank, rather than the player's feet.
  var z:=clampf(listener.z,-820,820)
  var centre: float=layout.river_x(z)
  var width: float=layout.river_width(z)
  var x:=clampf(listener.x,centre-width,centre+width)
- river_voice.global_position=Vector3(x,0,z)
- river_voice.volume_db=-20+linear_to_db(maxf(.12,get_tree().root.get_node("WindSystem").exposure))
+ river_voice.global_position=Vector3(x,Layout.WATER_LEVEL,z)
+ var exposure: float=get_tree().root.get_node('WindSystem').exposure
+ var upstream:=1.0-smoothstep(350.0,750.0,z)
+ river_voice.volume_db=-4+upstream*3+linear_to_db(maxf(.12,exposure))
+ river_voice.pitch_scale=lerpf(.95,1.08,upstream)
  if listener.distance_to(river_voice.global_position)<110:
   if not river_voice.playing:river_voice.play()
  else:river_voice.stop()
+ # A close, separately phased bank wash adds gentle lapping beneath the current.
+ var side: float=-1.0 if listener.x<centre else 1.0
+ shore_voice.global_position=Vector3(centre+side*width,Layout.WATER_LEVEL,z)
+ shore_voice.volume_db=-7+linear_to_db(maxf(.12,exposure))+sin(water_seconds*.8)*2
+ if listener.distance_to(shore_voice.global_position)<32:
+  if not shore_voice.playing:shore_voice.play(clips.river.get_length()*.43)
+ else:shore_voice.stop()
  var active: Array[Node3D]=[]
  for id in sources.keys():
   var light: OmniLight3D=sources[id].get_ref()
@@ -74,14 +89,18 @@ func tick(listener: Vector3,hour: int,delta: float) -> void:
   if not voice.playing:voice.stream=clips.fire;voice.play(randf_range(0,clips.fire.get_length()))
  bird_wait-=delta
  if bird_wait<=0:
-  bird_wait=randf_range(18,35)
+  bird_wait=randf_range(9,18)
   if day_at(hour) and get_tree().root.get_node('WindSystem').exposure>.6:
+   var nearest: MeshInstance3D=null
+   var nearest_distance:=1600.0
    for id in birds.keys():
-    var tree: Node3D=birds[id].get_ref()
+    var tree: MeshInstance3D=birds[id].get_ref()
     if tree==null:birds.erase(id);continue
     var distance:=listener.distance_squared_to(tree.global_position)
-    if distance<1600 and distance>36:
-     emit('sparrow',tree.to_global(tree.get_aabb().get_center()),-25);break
+    if distance<nearest_distance:
+     nearest=tree;nearest_distance=distance
+   if nearest!=null:
+    emit('sparrow',nearest.to_global(nearest.get_aabb().get_center()),-3)
  for id in actors.keys():
   var state: Dictionary=actors[id];var node: Node=state.ref.get_ref()
   if node==null:actors.erase(id);continue

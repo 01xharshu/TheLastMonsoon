@@ -17,7 +17,7 @@ Five zones rise approximately 8 m from approach to keep. Central, west and east 
 
 `tools/world/validate_fort_features.gd`: **PASS** for 28 ground-level markers, supported climb landing and 240 grass instances. `tools/world/bake_fort_navigation.gd`: **PASS**, 1,224 polygons. These checks do not establish normal-speed jump/catch/mantle contact or full flank traversal.
 
-[Main-world Metal/Forward+ overview](captures/ruined_fort_in_world.png) freshly captured and inspected on 2026-10-06. It confirms hillside placement and grounded peripheral scenery. The fort still visibly reads as a sparse blockout; masonry remains rectangular and peripheral boulders too rounded. The screenshot predates the final crate board additions in this batch.
+Main-world Metal/Forward+ overview (test output deleted) freshly captured and inspected on 2026-10-06. It confirms hillside placement and grounded peripheral scenery. The fort still visibly reads as a sparse blockout; masonry remains rectangular and peripheral boulders too rounded. The screenshot predates the final crate board additions in this batch.
 
 The capture reached `SURYAGARH READY` and saved successfully, but shared-world errors were logged in `systems/world_audio.gd`, `cantonment_workplaces.gd`, `civic_missions.gd` and `cart_mud_effects.gd`. This is not a clean full-world runtime pass.
 

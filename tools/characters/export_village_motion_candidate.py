@@ -227,3 +227,14 @@ report = dict(status='MOTION_CANDIDATE_NOT_APPROVED', source=str(source.relative
     garment_repair='Restored female arm skin by deform weights; waist-anchored lower drapes with up to 30% smooth thigh influence; no cloth simulation')
 (OUT / 'motion_manifest.json').write_text(json.dumps(report, indent=2) + '\n')
 print('VILLAGE_MOTION', json.dumps(report))
+
+# Village rebuilds must preserve the fitted body/garment baseline as well as
+# the original editable motion source. Purpose roles retain their own pipeline.
+if gait is None:
+    import runpy
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = ['repair_village_clothing.py', '--', SLUG]
+        runpy.run_path(str(ROOT / 'tools/characters/repair_village_clothing.py'), run_name='__main__')
+    finally:
+        sys.argv = original_argv

@@ -4,7 +4,8 @@ Updated 2026-10-05 IST. Parking and rendering-work reduction implemented; whole-
 
 ## Storage and documentation
 
-Evidence cleanup removed five exact, unreferenced clean duplicates (2,795,038 bytes), with retained replacements in `../assets/workspace_evidence_retention.json`. `tools/assets/audit_workspace_evidence.py` protects dirty files and distinct views. Replace captures of the same view in place, retain active defects and necessary motion evidence, and avoid age-based deletion of editable sources. The Godot import cache remains because clearing it increases next startup/import cost. No additional screenshot/video purge was performed during this continuation.
+Earlier duplicate-evidence cleanup is historical. The user’s 2026-10-07 policy now requires deleting disposable test output after each run; `tools/maintenance/clean_test_artifacts.py` supersedes the retired duplicate-only cleanup tool. Useful editable sources and rebuild inputs remain protected. See `../assets/repository_storage.md`.
+
 
 ## Parking and return
 

@@ -10,8 +10,8 @@ During the mantle, each palm follows its own sampled height and surface normal. 
 
 The Forward+/Metal fixture covers a rock tilted approximately 10.3 degrees and a broken rim with 1.20 m and 1.45 m front stones plus a separate 1.40 m rear platform. Fresh reach, transfer and recovery captures were inspected. Both routes complete with collision restored; the sampled palm targets at frames 18 and 36 are within 1 mm. This is bone-target evidence, not mesh-level contact approval.
 
-- [Sloped rock motion](rock_climb_2026-10-01/sloped_rock.mp4), [reach](rock_climb_2026-10-01/sloped_rock_18.png), [transfer](rock_climb_2026-10-01/sloped_rock_36.png).
-- [Broken edge motion](rock_climb_2026-10-01/broken_edge.mp4), [unequal rim grip](rock_climb_2026-10-01/broken_edge_18.png), [transfer](rock_climb_2026-10-01/broken_edge_36.png), [recovery](rock_climb_2026-10-01/broken_edge_50.png).
+- Sloped rock motion (test output deleted), reach (test output deleted), transfer (test output deleted).
+- Broken edge motion (test output deleted), unequal rim grip (test output deleted), transfer (test output deleted), recovery (test output deleted).
 
 The videos preserve route timing (approximately 2.13 s and 2.27 s) from 61 deterministic samples. They are fixture playback, not live-world input footage. The crouched transfer still looks compact and stiff; the waist pouch also needs its separate attachment refinement.
 

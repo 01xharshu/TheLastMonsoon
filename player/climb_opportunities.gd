@@ -123,6 +123,14 @@ func side_grip(component: Node, direction: float) -> Dictionary:
 		if absf(edge_y+.03-held.y) > .10 or absf(front-held.dot(component.wall_normal)) > .06: continue
 		if target.dot(tangent) < low+.30 or target.dot(tangent) > high-.30: continue
 		var landing: Vector3 = component.landing+target-held
+		# A continuous visible grip does not guarantee a roof beneath its exit.
+		var support_ray := PhysicsRayQueryParameters3D.create(landing+Vector3.UP*.4,landing-Vector3.UP*1.25)
+		support_ray.exclude = [component.actor.get_rid()]
+		support_ray.collision_mask = component.actor.collision_mask
+		var support: Dictionary = component.actor.get_world_3d().direct_space_state.intersect_ray(support_ray)
+		if support.is_empty() or support.normal.y < .65: continue
+		var supported_height: float = support.position.y+.94+(.12 if support.normal.y < .99 else 0.0)
+		if absf(supported_height-landing.y) > .15: continue
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = component.solid.original_shape
 		query.transform = Transform3D(Basis.IDENTITY,landing)

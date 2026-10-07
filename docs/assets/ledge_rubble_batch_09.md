@@ -2,7 +2,7 @@
 
 Three original reusable scenes in `objects/obstacles/`. No world placement or hero animation changed in this batch.
 
-![Current low ledge, waist ledge and rubble](ledge_rubble_overview.png)
+Current low ledge, waist ledge and rubble (test output deleted)
 
 | Scene | Model and collision | Required final animation/contact work |
 | --- | --- | --- |
