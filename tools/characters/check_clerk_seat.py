@@ -12,6 +12,8 @@ def main():
   data=json.loads(report.read_text())
   for name,item in data['actors']['record_clerk'].items():
    print(name+': '+str(round(item['max_penetration_m']*1000,3))+' mm maximum, '+str(item['penetrating_samples'])+' penetrating samples',flush=True)
+   if item['penetrating_samples']:print('Worst sample: '+json.dumps(item['worst_point'])+'; vertices='+str(item['vertex_samples'])+', faces='+str(item['face_center_samples']),flush=True)
+  subprocess.run(['/Applications/Godot.app/Contents/MacOS/Godot','--headless','--path',str(ROOT),'--script','res://tools/characters/validate_clerk_seated_actor.gd'],check=True)
   env=os.environ.copy();env['TLM_REVIEW_DIR']=folder;env['TLM_REVIEW_REALTIME']='1'
   subprocess.run(['/Applications/Godot.app/Contents/MacOS/Godot','--path',str(ROOT),'--rendering-driver','metal','--script','res://tools/characters/capture_clerk_seat_study.gd'],env=env,check=True)
   print('Seat clothing sample check: '+('PASS' if data['passed'] else 'FAIL')+'; outputs discarded. Full motion/live approval remains separate.')

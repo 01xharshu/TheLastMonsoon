@@ -1,6 +1,10 @@
 extends SceneTree
 ## Run with the Metal renderer (without --headless) for repeatable visual review.
 func _initialize() -> void:
+	if OS.get_environment("FOREST_REVIEW_DIR").is_empty():
+		push_error("Set FOREST_REVIEW_DIR to an OS temporary directory")
+		quit(1)
+		return
 	call_deferred("capture")
 
 func capture() -> void:
@@ -30,6 +34,6 @@ func capture() -> void:
 		await RenderingServer.frame_post_draw
 		var image := root.get_texture().get_image()
 		image.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
-		image.save_png("res://environment/forest/review/" + view[0] + ".png")
+		image.save_png(OS.get_environment("FOREST_REVIEW_DIR").path_join("") + view[0] + ".png")
 		print("FOREST_CAPTURE ", view[0])
 	quit()

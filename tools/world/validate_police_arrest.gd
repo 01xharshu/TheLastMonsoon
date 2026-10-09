@@ -40,7 +40,8 @@ func run() -> void:
 	police=world.get_node("Settlement/DistrictPolice")
 	coordinator=police.get_node_or_null("ThanaStaff/ArrestCoordinator")
 	if coordinator==null: print("POLICE ARREST FAIL missing coordinator");quit(1);return
-	captures=DisplayServer.get_name()!="headless"
+	coordinator.cinematic_transfers = false
+	captures=false # Historical physical escort regression; no retained captures.
 	if captures:
 		root.size=Vector2i(1280,720)
 		root.content_scale_size=root.size
@@ -130,7 +131,6 @@ func run() -> void:
 	check(coordinator.officer.get_meta("thana_role","")=="burkundaz","Nearest Sikh guard was not selected")
 	coordinator.abort()
 	var report: Dictionary={"passed":errors.is_empty(),"errors":errors,"phases":phases,"escort_distance_m":coordinator.escort_distance,"max_player_step_m":max_step,"officer_palm_error_m":max_contact,"renderer":RenderingServer.get_current_rendering_method()}
-	FileAccess.open("res://docs/characters/arjun/arrest_sequence_validation%s.json"%("_metal" if captures else ""),FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
 	print("POLICE ARREST ","PASS" if errors.is_empty() else "FAIL"," ",JSON.stringify(report))
 	world.queue_free()
 	current_scene=null

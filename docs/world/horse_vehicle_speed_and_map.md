@@ -51,3 +51,13 @@ All human assets remain under the [complete-body standard](../characters/npcs/wh
 Assertions pass for all three variants: 600 near updates, 100 medium-distance updates, zero far rebuilds, near visibility recovery, and full-rate occupied updates at 260 m with both rein endpoints pinned. Existing shared horse/driver assets are retained; no human mesh or clothing/foundation topology is edited. Logs: `/tmp/tlm_cart_visual_baseline.log`, `/tmp/tlm_cart_visual_after.log`. Native contact runner: `tools/horses/capture_cart_rein_grip.gd`, `/tmp/tlm_cart_rein_lod_metal.log`. The capture runner explicitly selects its review camera. All four native grip/sag checks PASS with zero rein endpoint residual; the refreshed turning view (test output deleted) was inspected and shows the driver and reins clearly. A separate `climb_opportunities.gd` Vector3 inference error was corrected to unblock the rerun. Numerical contact and this still do not approve human/cloth appearance or continuous motion.
 
 Remaining performance ownership stays with the runtime task: horse/driver AnimationTree cost, larger-fleet bounds and stable-source full-world render profiling. Mounted-police behavior stays with the combat owner.
+
+## Steering follow-up — 2026-10-08
+
+The current manual controller filters steering input and yaw acceleration, reduces turn limits at speed, and reverses steering when backing. Three live-cart fixture variants pass sustained left/right input, steering reversal, release, full stop, obstacle stop and 10/15 m/s speed checks. Reusable check: `Godot --headless --fixed-fps 60 --path . --script tools/horses/validate_cart_speed.gd`. This is a behavior check, not continuous visual approval. The test no longer writes a report into the checkout.
+
+Gradual paid-route braking failed the isolated route check (stall/refund around 50 m), so that change was withdrawn; paid coaches retain immediate stop-before-alignment safety. Isolated bridge mode lacks the complete bridge/world terrain and cannot certify the bridge route. Full-world paid-route and normal-speed horse/rider/rein/cloth review remain open. Test outputs are temporary and deleted; no retained captures or historical report links establish current approval.
+
+In-game check: board each cart as driver, hold forward, engage sprint, steer continuously left then right, release steering, release forward to stop, and repeat backing slowly. Check that reins remain in the hands and the rider/horse follow the cart without a heading jump. Book a coach, ride through corners, then repeat using the skip button and confirm arrival with one fare. Open Escape → map and select the named infrastructure sites.
+
+Bridge widening/lanes and current checks: [two-carriage crossing](two_lane_timber_bridge.md).

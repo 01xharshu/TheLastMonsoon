@@ -24,6 +24,9 @@ static func tangent_array(arrays: Array, primitive: int) -> PackedFloat32Array:
 	if uvs != null and uvs.size() == normals.size() and primitive == Mesh.PRIMITIVE_TRIANGLES:
 		var tool := SurfaceTool.new()
 		tool.create_from_arrays(arrays, primitive)
+		var bones = arrays[Mesh.ARRAY_BONES]
+		if bones != null and bones.size() == normals.size() * 8:
+			tool.set_skin_weight_count(SurfaceTool.SKIN_8_WEIGHTS)
 		tool.generate_tangents()
 		var generated: Array = tool.commit_to_arrays()
 		# Copy tangents alone: never reindex vertices, weights or morph targets.

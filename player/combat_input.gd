@@ -93,6 +93,10 @@ func _process(delta: float) -> void:
 
 func single_attack() -> void:
 	if not available() or punch_time >= 0 or kick_time >= 0 or dodge_time >= 0:return
+	var kit: Node = actor.get_node_or_null("ChachaKit")
+	if kit != null and kit.active:
+		kit.strike()
+		return
 	var gear: Node3D = visual.equipment
 	if gear == null: return
 	if gear.stowed or not gear.owns(gear.selected):

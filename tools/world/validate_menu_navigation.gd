@@ -45,6 +45,7 @@ func validate() -> void:
 	var continue_button := button_with_text(menu.main_panel,"Continue")
 	check(continue_button != null and not continue_button.disabled,"Title Continue was unavailable")
 	if continue_button: continue_button.pressed.emit()
+	await create_timer(0.4).timeout
 	for i in 5: await process_frame
 	var loaded: Node = current_scene
 	check(loaded != null and loaded.name == "Suryagarh","Continue did not load the world")
@@ -54,7 +55,5 @@ func validate() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.slot_path(1)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.save_root))
 	var report := {"status":"PASS" if failures.is_empty() else "FAIL","expected":expected,"failures":failures}
-	var file := FileAccess.open("res://docs/world/menu_navigation_validation.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify(report,"\t")+"\n")
 	print("MENU NAVIGATION VALIDATION ",JSON.stringify(report))
 	quit(0 if failures.is_empty() else 1)

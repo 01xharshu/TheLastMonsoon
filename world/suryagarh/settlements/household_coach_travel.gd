@@ -13,6 +13,8 @@ var distance_travelled:=0.0
 var completed_trips:=0
 var blocked_frames:=0
 var driver_lean:=.4
+var estate_gate:Node3D
+var gate_wait_frames:=0
 
 func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachman:Node3D) -> void:
 	coach=vehicle;residents=people;route=points;driver=coachman
@@ -100,10 +102,26 @@ func _office_walk(journey:Node,returning:bool) -> Array[Vector3]:
 func _phase(next:String) -> void:
 	phase=next;dwell=0;actions[phase]=true
 
+func _estate_gate_ready() -> bool:
+	if coach.name!="LandownerHouseholdCoach" or phase not in ["departing","returning","turning"]:return true
+	if not is_instance_valid(estate_gate):
+		estate_gate=get_tree().current_scene.get_node_or_null("Settlement/BhairavpurLandownerEstate/EstateGateFrame/EntranceGate")
+	if estate_gate==null:return true
+	var gap:=Vector2(coach.global_position.x-estate_gate.global_position.x,coach.global_position.z-estate_gate.global_position.z).length()
+	if gap>18:return true
+	# Household access uses the existing animated/swept gate. Explicit player lock wins.
+	if estate_gate.manual_locked:return false
+	estate_gate.open_idle_seconds=0.0
+	estate_gate.set_open(true)
+	return estate_gate.opened and not estate_gate.moving
+
 func step(delta:float) -> void:
 	if driver.get_meta("dead",false) or not coach.can_move():
 		coach.set_forward_motion(0.0,delta)
 		coach.set_meta("travel_disabled",true)
+		return
+	if not _estate_gate_ready():
+		gate_wait_frames+=1;coach.set_forward_motion(0,delta)
 		return
 	for journey in journeys:journey.tick(delta)
 	if phase=="home":

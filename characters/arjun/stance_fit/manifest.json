@@ -1,0 +1,19 @@
+{
+	"construction": "Existing garment vertices fitted and weighted against the complete MPFB body; body retained unchanged.",
+	"fingerprint": "a81bb6f8581b09dae0b9241ec399c90979b00e29663bcddfd51e07e131ae438c",
+	"garments": [
+		"Arjun_Boot_1",
+		"Arjun_Boot_-1",
+		"Arjun_DrapedTrousers_1",
+		"Arjun_DrapedTrousers_-1",
+		"Boot outsole 1",
+		"Boot outsole -1"
+	],
+	"inputs": [
+		"res://characters/arjun/arjun.glb",
+		"res://characters/arjun/arjun_riding_cloth.glb",
+		"res://player/arjun_clothing.gd",
+		"res://player/arjun_trouser_fit.gd",
+		"res://player/arjun_stance_garment_fit.gd"
+	]
+}

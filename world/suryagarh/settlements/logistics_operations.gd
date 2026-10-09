@@ -22,7 +22,7 @@ func configure(scene: Node3D) -> void:
 		var bridge: Node3D = world.get_node("TimberBridge")
 		gate = Door.new()
 		gate.name = "RevenueCrossingGate"
-		gate.width = 6
+		gate.width = bridge.WIDTH + 2.0
 		gate.height = 1.25
 		gate.opened = false
 		gate.locked = true
@@ -37,7 +37,7 @@ func configure(scene: Node3D) -> void:
 		# build() resets yaw and adds half-width to local X. Centre the gate on the road.
 		gate.position = bridge.ramp_point(-1,1)+Vector3(0,.03,0)
 		gate.rotation.y = PI/2
-		station("crossing","Pay crossing toll · 1 rupee",bridge,bridge.ramp_point(-1,1)+Vector3(-2,.1,3.8))
+		station("crossing","Pay crossing toll · 1 rupee",bridge,bridge.ramp_point(-1,1)+Vector3(-2,.1,bridge.WIDTH*.5+2.0))
 
 func station(id: String,label: String,parent: Node3D,at: Vector3) -> void:
 	var prompt := Prompt.new()

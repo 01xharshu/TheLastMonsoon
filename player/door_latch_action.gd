@@ -41,7 +41,7 @@ func _physics_process(delta: float) -> void:
 	actor.velocity=Vector3.ZERO
 	var horizontal := pull.global_position-actor.global_position
 	horizontal.y=0
-	if phase == "clearance":
+	if phase == "clearance" or phase == "opening_clearance":
 		elapsed+=delta
 		amount=1.0-smoothstep(0.0,.3,elapsed)
 		var retreat := clearance_target-actor.global_position
@@ -51,7 +51,7 @@ func _physics_process(delta: float) -> void:
 			actor.velocity.y=-3.0
 			_move_with_steps(delta)
 		if elapsed>.3:
-			door.set_open(false)
+			door.set_open(phase == "opening_clearance")
 			if door.moving: actor.set_meta("door_latch_released",true); finish(); return
 		if elapsed>3.0:
 			actor.set_meta("door_latch_failure","closing sweep occupied")
@@ -93,6 +93,12 @@ func _physics_process(delta: float) -> void:
 			elapsed=0.0
 			var local := door.to_local(actor.global_position)
 			clearance_target=door.to_global(Vector3(0,local.y,-door.swing_direction*.9))
+			return
+		if not door.opened and door.outside_latch_access:
+			phase="opening_clearance"
+			elapsed=0.0
+			var local_open := door.to_local(actor.global_position)
+			clearance_target=door.to_global(Vector3(local_open.x,local_open.y,1.2 if local_open.z >= 0.0 else -1.2))
 			return
 		if not door.opened:
 			door.swing_direction=1.0 if door.is_inside(actor.global_position) else -1.0

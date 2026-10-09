@@ -10,6 +10,7 @@ from mathutils.bvhtree import BVHTree
 
 def _fit_pose(rig, obj, tree, key, vertex_priority=False):
     clearance = .010 if rig.name.startswith('boatman_') else .005
+    if vertex_priority and obj.name=='Clerk full length trousers':clearance=.007
     transforms=[]
     for v in obj.data.vertices:
      blend=Matrix.Identity(4)*0;total=0
@@ -17,6 +18,34 @@ def _fit_pose(rig, obj, tree, key, vertex_priority=False):
       bone=rig.pose.bones.get(obj.vertex_groups[g.group].name)
       if bone:blend+=(bone.matrix@bone.bone.matrix_local.inverted())*g.weight;total+=g.weight
      transforms.append((rig.matrix_world @ (blend*(1/total) if total else Matrix.Identity(4)) @ rig.matrix_world.inverted() @ obj.matrix_world).to_3x3())
+    if vertex_priority:
+     # The study uses linear skinning. Cache posed points and inverse skin
+     # transforms, then project cloth constraints without re-evaluating the
+     # entire Blender scene for every solver iteration.
+     bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get();ev=obj.evaluated_get(dg);mesh=ev.to_mesh()
+     points=[ev.matrix_world@v.co for v in mesh.vertices]
+     faces=[tuple(p.vertices) for p in mesh.polygons];ev.to_mesh_clear()
+     inverse=[transform.inverted_safe() for transform in transforms]
+     for iteration in range(128):
+      shifts=[Vector() for _ in points];counts=[0]*len(points);hits=0
+      for face in faces:
+       point=sum((points[i] for i in face),Vector())/len(face)
+       near,normal,_,dist=tree.find_nearest(point);depth=(near-point).dot(normal)
+       if dist<.1 and depth>-(clearance-.001):
+        hits+=1;shift=normal*min(depth+clearance,.02)
+        for i in face:shifts[i]+=shift;counts[i]+=1
+      for i in range(len(points)):
+       if counts[i]:
+        shift=shifts[i]/counts[i]*.35;points[i]+=shift;key.data[i].co+=inverse[i]@shift
+      # Direct vertex projection follows the face correction so penetrating
+      # corners cannot be averaged away by neighbouring triangle constraints.
+      for i,point in enumerate(points):
+       near,normal,_,dist=tree.find_nearest(point);depth=(near-point).dot(normal)
+       if dist<.1 and depth>-(clearance-.001):
+        hits+=1;shift=normal*min(depth+clearance+.001,.02)
+        points[i]+=shift;key.data[i].co+=inverse[i]@shift
+      if hits==0:break
+     return
     for iteration in range(20 if rig.name.startswith('record_clerk_') else 12):
      bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get();ev=obj.evaluated_get(dg);mesh=ev.to_mesh()
      shifts=[Vector() for _ in obj.data.vertices];counts=[0]*len(shifts)

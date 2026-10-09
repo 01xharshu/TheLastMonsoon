@@ -149,7 +149,9 @@ func _process(delta: float) -> void:
 		if hit_phase>=1:hit_phase=-1
 	if actor.get_meta("detention_action","")=="": detention_contacts.update(self)
 	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
-	var special_pose: bool = actor.get_meta("river_action", "") != "" or mounted or actor.get_meta("stealth_stance", "") != ""
+	# Keep locomotion advancing under low stances; StealthStance blends its
+	# body layer after the tree, including recovery into walking/running.
+	var special_pose: bool = actor.get_meta("river_action", "") != "" or mounted
 	if motion_tree != null:
 		motion_tree.active = not special_pose
 		var combat := actor.get_node("CombatInput")
@@ -301,7 +303,8 @@ func _process(delta: float) -> void:
 				duration = preload("res://player/enfield_loading_sequence.gd").RELOAD_SECONDS
 			Equipment.Selection.PISTOL:
 				reload_node = actor.get_node_or_null("PistolCombat")
-				duration = 3.8
+				duration = reload_node.reload_duration
+				equipment.pistol_reload_charges = reload_node.reload_charges
 			Equipment.Selection.DOUBLE_GUN:
 				reload_node = actor.get_node_or_null("DoubleGunCombat")
 				duration = preload("res://player/rifle_combat.gd").DOUBLE_RELOAD_SECONDS
@@ -310,13 +313,15 @@ func _process(delta: float) -> void:
 	if motion_tree != null:
 		var pistol_equipped: bool = not equipment.stowed and equipment.selected == Equipment.Selection.PISTOL
 		motion_tree.update_pistol_motion(delta, pistol_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
-		if pistol_equipped:
-			pose("spine_02", Vector3(-0.035 * motion_tree.pistol_aim_blend + 0.045 * motion_tree.pistol_recoil_blend, -0.035 * motion_tree.pistol_aim_blend, 0.0), 0.35)
+		equipment.pistol_aim_weight = motion_tree.pistol_aim_blend
+		equipment.pistol_reload_weight = motion_tree.pistol_reload_blend
 		var longgun_equipped: bool = not equipment.stowed and equipment.selected in [Equipment.Selection.ENFIELD, Equipment.Selection.DOUBLE_GUN]
 		motion_tree.update_longgun_motion(delta, longgun_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
 		if longgun_equipped:
 			pose("spine_02", Vector3(-0.025 * motion_tree.longgun_aim_blend + 0.035 * motion_tree.longgun_recoil_blend - 0.025 * motion_tree.longgun_reload_blend, -0.025 * motion_tree.longgun_aim_blend, 0.0), 0.4)
-	equipment.apply_rifle_grip((armed and slash_phase >= 0.0) or knife_phase >= 0.0)
+	var stance_layer: Node = actor.get_node("StealthStance")
+	if actor.get_meta("stealth_stance", "") == "" and stance_layer.blend <= .001:
+		equipment.apply_rifle_grip((armed and slash_phase >= 0.0) or knife_phase >= 0.0)
 	var interaction: Node = actor.get_node_or_null("InteractionPoseComponent")
 	var reaching: bool = actor.get_meta("interaction_reach", false) or (interaction != null and (interaction.amount > 0.0 or interaction.ground_pickup))
 	var door_action = actor.get_node_or_null("DoorLatchAction")
@@ -351,7 +356,7 @@ func _pose_rest(delta: float) -> void:
 	for solver in climb_ik.values(): solver.influence = 0.0
 	if equipment != null: equipment.set_swimming(false)
 	var progress: float = clampf(actor.get_meta("rest_progress", 0.0), 0.0, 1.0)
-	var lie := smoothstep(0.38, 0.9, progress)
+	var lie := smoothstep(0.38, 0.82, progress)
 	var weight := 1.0 - exp(-12.0 * delta)
 	# Turn the body's width across the cot, keeping both legs at the same
 	# height. A roll around Z instead stacks left/right limbs vertically.
@@ -384,7 +389,7 @@ func _pose_rest(delta: float) -> void:
 		skeleton.force_update_all_bone_transforms()
 		var hand_index := skeleton.find_bone("hand_r")
 		var current_hand := skeleton.get_bone_global_pose(hand_index).origin
-		var cot_hand := skeleton.to_local(actor.to_global(Vector3(0.12, -0.18, -0.27)))
+		var cot_hand := skeleton.to_local(actor.to_global(Vector3(0.12, -0.25, -0.27)))
 		equipment._solve_arm("r", current_hand.lerp(cot_hand, brace_weight))
 	for side in ["l", "r"]:
 		if progress < 0.98:
@@ -671,13 +676,18 @@ func _pose_climb(delta: float) -> void:
 		component.window.pose(self,delta)
 		return
 	var t: float = clampf(component.progress,0.0,1.0)
-	if motion_tree != null: motion_tree.update_climb(delta, component.tree_pose_progress())
+	if motion_tree != null:
+		motion_tree.update_climb(delta,component.tree_pose_progress(),component.leap.phase if component.leap_active else "",component.leap.clock)
 	var weight := 1.0-exp(-15.0*delta)
 	# The climb tree already bends the pelvis and spine for the mantle.
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
-	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
+	# Keep the shoulders low over the coping while the hips rise; otherwise
+	# the root clearance lifts a sloped-roof handhold beyond the arm's reach.
+	var press_depth := (.40 if component.layers.is_empty() else .25)*sin(PI*smoothstep(.78,.97,t)) if t >= .78 else 0.0
+	model.position = model.position.lerp(Vector3(0,-.9-press_depth,0),weight)
 	# Four beats: reach, alternating handholds, a two-handed mantle, then recovery.
 	var ledge_y: float = component.landing.y-.94
+	if not component.layers.is_empty(): ledge_y = maxf(ledge_y,component.layers[-1].y-.03)
 	# Keep the animated torso and head outside the solid face until they clear
 	# the coping. The bent rig can reach beyond its collision capsule.
 	keep_climb_body_outside(component.wall_normal,component.wall_point,ledge_y)
@@ -686,16 +696,19 @@ func _pose_climb(delta: float) -> void:
 	if component.leap_active and component.leap.phase != "mantle": contact_blend = component.leap.weight()
 	var wall_tangent: Vector3 = Vector3.UP.cross(component.wall_normal).normalized()
 	for side in ["l","r"]:
-		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds else (-.42 if side=="l" else .42)
+		var side_offset: float = (-.24 if side=="l" else .24) if component.has_holds or t >= .78 else (-.42 if side=="l" else .42)
 		var row: int = clampi(roundi((actor.global_position.y+.75-base_y)/.55),0,7)
 		var hand_y: float = base_y+row*.55+.07
 		hand_y = minf(ledge_y+.08,hand_y)
 		var face: Vector3 = component.wall_point+component.wall_normal*.18
 		face.y = hand_y
 		face += wall_tangent*(side_offset+(.08 if component.has_holds and row%2==1 else 0.0))
-		var top_target: Vector3=component.wall_point+component.wall_normal*.14
-		top_target.y=ledge_y+.08
+		var top_target: Vector3=component.wall_point-component.wall_normal*.06
+		top_target.y=ledge_y+.02
 		top_target+=wall_tangent*side_offset
+		if not component.layers.is_empty():
+			top_target = component.layers[-1]+wall_tangent*side_offset-component.wall_normal*.06
+			top_target.y -= .01
 		var hold: Vector3 = face.lerp(top_target,smoothstep(.68,.82,t))
 		if component.has_holds and t < .78:
 			hold = component.step_contact(side,false)
@@ -782,9 +795,10 @@ func _pose_climb(delta: float) -> void:
 		elif t >= .78:
 			var lead: bool = side == "l"
 			var lift: float = smoothstep(.78,.88,t) if lead else smoothstep(.84,.91,t)
-			foot_target = component.wall_point+component.wall_normal*.32+wall_tangent*(-.22 if lead else .22)
+			var mantle_face: Vector3 = component.layers[-1] if not component.layers.is_empty() else component.wall_point
+			foot_target = mantle_face+component.wall_normal*.22+wall_tangent*(-.22 if lead else .22)
 			foot_target.y = lerpf(ledge_y-(.60 if lead else .90),ledge_y+.10,lift)
-			foot_target.y = minf(foot_target.y,actor.global_position.y-.55)
+			foot_target.y = minf(foot_target.y,actor.global_position.y-.25)
 			foot_target -= component.wall_normal*(.55*smoothstep(.90,.97,t))
 			support = 1.0-smoothstep(.97,1.0,t)
 			climb_foot_targets[side] = foot_target

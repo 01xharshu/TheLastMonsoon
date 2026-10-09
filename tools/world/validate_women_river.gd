@@ -19,6 +19,10 @@ func run() -> void:
 	routine.set_physics_process(false)
 	var clock=world.get_node("GameTimeSystem");clock.clock_paused=true;clock.current_hour=6;clock.current_day=1
 	check(routine.women.size()==3,"three independently rigged adult women")
+	check(routine.SPEED>=1.0 and routine.SPEED<=1.4,"ordinary walking pace")
+	check(not routine.has_node("RiverWashingLanding"),"no shared sitting or boarding platform at collection point")
+	check(absf(routine.shore.z-235.0)>20.0,"collection clear of boat boarding route")
+	check(absf(routine.journeys[0].path[5].z-routine.journeys[2].path[5].z)>1.5,"separate companion walking lanes")
 	check(routine.shore.y<.06,"water access ramp ends at river level")
 	var reached := {};var max_hand := 0.0;var max_ankle := 0.0;var worst := {}
 	for step in 8000:
@@ -29,7 +33,7 @@ func run() -> void:
 			for error in woman.hand_errors.values():
 				if error>max_hand: worst["hand"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed};max_hand=error
 			for error in woman.foot_errors.values():
-				if error>max_ankle: worst["ankle"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed};max_ankle=error
+				if error>max_ankle: worst["ankle"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed,"slope":woman.travel_slope,"heading":woman.rotation.y,"direction":woman.travel_direction,"figure":woman.animation_player.get_node(woman.animation_player.root_node).position,"ankles":[woman.skeleton.to_global(woman.Contact.point(woman.skeleton,"foot_l")),woman.skeleton.to_global(woman.Contact.point(woman.skeleton,"foot_r"))]};max_ankle=error
 		if step%1000==0: print("RIVER_ROUTE_PROGRESS ",step," ",routine.mode," ",routine.journeys[0].position)
 		if step%100==0: await physics_frame
 		if routine.mode=="visit" and routine.visit_seconds>17 and routine.visit_seconds<18:

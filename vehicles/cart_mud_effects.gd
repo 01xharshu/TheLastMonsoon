@@ -29,13 +29,14 @@ func _ready() -> void:
   effect.mesh=mesh;effect.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;add_child(effect);particles.append(effect)
  previous=cart.global_position
 func _physics_process(delta:float) -> void:
- if cart==null:return
+ if not is_instance_valid(cart):return
  elapsed+=delta
  if previous.is_finite():measured_speed=cart.global_position.distance_to(previous)/maxf(delta,.001)
  previous=cart.global_position
  if elapsed<.08:return
  elapsed=0;active_emission=false;wet_contacts=0
- var player:=get_tree().current_scene.get_node_or_null("Player") as Node3D
+ var world: Node=preload("res://systems/world_context.gd").find_world(self)
+ var player: Node3D=world.get_node_or_null("Player") as Node3D if world!=null else null
  var near:=player==null or player.global_position.distance_to(cart.global_position)<110
  var moving:=measured_speed>.35 and measured_speed<25 and near
  for index in particles.size():

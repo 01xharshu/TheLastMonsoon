@@ -23,7 +23,7 @@ func run() -> void:
     if world.get_world_3d().direct_space_state.intersect_ray(query).is_empty():camera.global_position=candidate;break
    camera.look_at(aim);camera.current=true
    await process_frame;RenderingServer.force_draw(false)
-   root.get_texture().get_image().save_png("res://docs/characters/npcs/purpose_world_"+expected[endpoint]+".png")
+   var folder:=OS.get_environment("TLM_REVIEW_DIR")
+   if not folder.is_empty():root.get_texture().get_image().save_png(folder.path_join("purpose_world_"+expected[endpoint]+".png"))
  var report:Dictionary={"passed":errors.is_empty(),"actors":actors,"errors":errors,"scope":"actual world role placement, tree and cloth binding; terrain/cloth motion/art acceptance separate"}
- FileAccess.open("res://docs/characters/npcs/purpose_world_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
  print("PURPOSE_WORLD ",JSON.stringify(report));quit(0 if errors.is_empty() else 1)

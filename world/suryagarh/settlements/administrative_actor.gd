@@ -60,7 +60,8 @@ func _ready() -> void:
 		fabric.set_shader_parameter("cloth_color",Color(.70,.65,.54) if office_role != "judge" else Color(.075,.085,.09))
 		fabric.set_shader_parameter("work_stains",.018)
 		for surface in mesh.mesh.get_surface_count(): mesh.set_surface_override_material(surface,fabric)
-	player = get_tree().current_scene.get_node_or_null("Player")
+	var world: Node = preload("res://systems/world_context.gd").find_world(self)
+	player = world.get_node_or_null("Player") as Node3D if world != null else null
 	office_ready = true
 	_process(0.0)
 	if office_role != "judge":

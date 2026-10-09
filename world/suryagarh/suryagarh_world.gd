@@ -23,6 +23,7 @@ func _ready() -> void:
 	player_camera.far = 2200.0
 	$LandscapeUI/Location.visible = false
 	$LandscapeUI/ReviewHelp.visible = false
+	_repair_tree_trunks.call_deferred()
 	move_to_review_point(0)
 	last_safe_position = player.position
 	var river_dynamics:=preload('res://world/suryagarh/river_dynamics.gd').new()
@@ -34,8 +35,12 @@ func _ready() -> void:
 	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
 	combat_encounters.name="CombatEncounters"
 	add_child(combat_encounters)
+	add_child(preload("res://world/suryagarh/city_route_population.gd").new())
 	var muddy_roads:=preload("res://world/suryagarh/muddy_road_travel.gd").new()
 	muddy_roads.name="MuddyRoadTravel";add_child(muddy_roads)
+	add_child(preload("res://world/suryagarh/sky_birds.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/chacha_house.gd").new())
+	add_child(preload("res://story/dev_inquiry.gd").new())
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 
@@ -78,3 +83,7 @@ func _physics_process(_delta: float) -> void:
 	var entry_height := 0.65 if player.is_swimming else 0.3
 	player.set_meta('river_current',preload('res://world/suryagarh/river_dynamics.gd').current_at(p) if deep_enough else Vector3.ZERO)
 	player.set_water_state(deep_enough and p.y < Layout.WATER_LEVEL + entry_height, Layout.WATER_LEVEL)
+
+func _repair_tree_trunks() -> void:
+	await get_tree().physics_frame
+	preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($Landscape)

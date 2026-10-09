@@ -14,7 +14,7 @@ var stone := _masonry(Color("a79b84"))
 var pale := _masonry(Color("c1b49a"))
 var dark_stone := _rock_material(Color("817e72"))
 var soil := _mat(Color("968875"))
-var rubble_mat := _mat(Color("918b7d"))
+var rubble_mat := _masonry(Color("b2a38d"))
 var wood := _mat(Color("715940"))
 var cloth := _mat(Color("aaa08a"))
 var grass := _mat(Color("777b54"))
@@ -64,16 +64,23 @@ func _ready() -> void:
 	if not embedded_in_world: $Gameplay/Player.position = Vector3(0, height_at(0, 47) + 1.1, 47)
 	print("RUINED FORT BLOCKOUT READY | 120 x 100 m | three routes | 8 m ascent")
 
-func _masonry(color: Color) -> ShaderMaterial:
-	var result := ShaderMaterial.new()
-	result.shader = preload("res://world/ruined_fort/fort_masonry.gdshader")
-	result.set_shader_parameter("stone_color", color)
-	return result
+func _masonry(color: Color) -> StandardMaterial3D:
+	return _weathered_stone(color,0.38)
 
-func _rock_material(color: Color) -> ShaderMaterial:
-	var result := ShaderMaterial.new()
-	result.shader = preload("res://world/ruined_fort/fort_rock.gdshader")
-	result.set_shader_parameter("rock_color", color)
+func _rock_material(color: Color) -> StandardMaterial3D:
+	return _weathered_stone(color,0.62)
+
+func _weathered_stone(color: Color, normal_strength: float) -> StandardMaterial3D:
+	var result := StandardMaterial3D.new()
+	result.albedo_color = color
+	result.albedo_texture = preload("res://assets/nature/materials/rock_boulder_dry_diff_1k.jpg")
+	result.normal_enabled = true
+	result.normal_texture = preload("res://assets/nature/materials/rock_boulder_dry_nor_gl_1k.jpg")
+	result.normal_scale = normal_strength
+	result.uv1_triplanar = true
+	result.uv1_world_triplanar = true
+	result.uv1_scale = Vector3.ONE*.72
+	result.roughness = .97
 	return result
 
 func _mat(color: Color) -> StandardMaterial3D:
@@ -146,8 +153,8 @@ func _build_cliffs() -> void:
 			var world_site := to_global(Vector3(x,0,z))
 			ground = landscape.height(world_site.x,world_site.z)-global_position.y
 		_block("SceneryRidge", "Terrain", Vector3(x,ground+size.y*0.32,z),size,dark_stone,rng.randf_range(-0.45,0.45),false)
-func _block(label: String, group: String, at: Vector3, size: Vector3, material: Material, yaw: float = 0.0, collides: bool = true) -> StaticBody3D:
-	var body := StaticBody3D.new()
+func _block(label: String, group: String, at: Vector3, size: Vector3, material: Material, yaw: float = 0.0, collides: bool = true) -> Node3D:
+	var body: Node3D = StaticBody3D.new() if collides else Node3D.new()
 	body.name = label
 	body.position = at
 	body.rotation.y = yaw
@@ -156,6 +163,9 @@ func _block(label: String, group: String, at: Vector3, size: Vector3, material: 
 	var is_rock: bool = label in ["BoundaryCliff", "SceneryRidge", "RockyRidge", "RockCover"]
 	if is_rock:
 		visual.mesh = rock_mesh_shared
+		visual.scale = size
+	elif label in ["Rubble","FallenMasonry","FallenVoussoir","BrokenFloorSlab","ClimbingStone"]:
+		visual.mesh = stone_mesh_shared
 		visual.scale = size
 	else:
 		var mesh := BoxMesh.new()
@@ -266,10 +276,11 @@ func _build_architecture() -> void:
 	for column_x in [-5.0,5.0]:
 		_block("WatchtowerPier", "Architecture", Vector3(column_x,height_at(column_x,-47)+4.1,-47),Vector3(1.5,8.2,1.5),stone)
 	_build_climb_route()
-	for step in range(4):
-		var zz: float = -40.8-step*0.6
-		var top: float = height_at(0,-47)+0.175*(step+1)
-		_block("KeepAccessStep", "Architecture",Vector3(0,top-0.15,zz),Vector3(4.0,0.3,0.65),pale)
+	var keep_top: float = height_at(0,-47)+.7
+	for step in range(12):
+		var zz: float = -37.7-step*.48
+		var top: float = keep_top-.25*(11-step)
+		_block("KeepAccessStep", "Architecture",Vector3(2,top-.15,zz),Vector3(3.4,.3,.5),pale)
 	_block("WatchtowerBase", "Architecture", Vector3(0,height_at(0,-47)+0.35,-47), Vector3(13,0.7,8), pale)
 
 func _cover_piece(x: float, z: float, kind: String, yaw: float) -> void:
@@ -303,6 +314,9 @@ func _cover_piece(x: float, z: float, kind: String, yaw: float) -> void:
 				strap.material_override = rubble_mat
 				strap.position = Vector3(corner*0.65,0,side*0.91)
 				body.add_child(strap)
+	if kind in ["full","low"]:
+		body.get_child(0).hide()
+		_stone_section(Vector3(x,0,z),h,size.x,size.y,yaw,size.z)
 	body.set_meta("cover_type", "full" if kind in ["full","rock"] else "low")
 	for side in [-1.0,1.0]:
 		var marker := Marker3D.new()
@@ -325,11 +339,21 @@ func _build_cover() -> void:
 		[-4,17,"low",0.8],[13,15,"crate",-0.5],[-22,13,"rock",0.1],[3,10,"rock",-0.6],[-12,7,"crate",0.3],[20,4,"low",0.4],
 		[-3,1,"low",-0.2],[-27,-2,"full",0.4],[12,-4,"rock",0.3],[-11,-8,"rock",-0.4],[1,-11,"crate",0.6],[25,-13,"low",-0.3],
 		[-18,-17,"low",0.2],[9,-19,"full",-0.4],[-2,-23,"rock",0.5],[-31,-24,"crate",0.1],[23,-27,"rock",-0.5],
-		[-13,-30,"crate",0.5],[3,-33,"low",-0.3],[-27,-36,"rock",0.2],[18,-37,"low",0.5],[-5,-42,"full",-0.2]
+		[-13,-30,"crate",0.5],[3,-33,"low",-0.3],[-27,-36,"rock",0.2],[18,-37,"low",0.5],[-5,-42,"full",-0.2],
+		[-36,35,"full",-.4],[-38,27,"low",.15],[-34,18,"rock",.7],[-38,9,"crate",.2],[-36,-1,"low",-.4],[-38,-10,"rock",.3],[-35,-20,"low",-.4],[-37,-29,"low",.2],
+		[34,35,"low",.2],[36,26,"rock",-.5],[33,17,"crate",.25],[35,8,"low",-.3],[37,-1,"rock",.1],[33,-10,"low",-.3],[36,-19,"crate",.2],[36,-32,"low",.3]
 	]
 	for p in layout: _cover_piece(p[0],p[1],p[2],p[3])
 
 func _build_props() -> void:
+	for site in [Vector2(-28,35),Vector2(28,-18)]:
+		var cart := preload("res://world/ruined_fort/fort_abandoned_cart.gd").new()
+		cart.show_horse = false
+		cart.variant = 1
+		cart.name = "AbandonedGoodsCart"
+		cart.position = Vector3(site.x,height_at(site.x,site.y),site.y)
+		cart.rotation.y = -.45
+		nodes.Props.add_child(cart)
 	var assets := ["storage/crate","grain_sack","storage/basket","water_pot_visual","storage/barrel","storage/bench"]
 	for index in range(18):
 		var site: Vector2 = [Vector2(-24,23),Vector2(25,8),Vector2(-26,-5),Vector2(24,-25),Vector2(-19,-30),Vector2(18,-40)][index/3]
@@ -414,7 +438,7 @@ func _build_navigation() -> void:
 	var nav := NavigationMesh.new()
 	nav.agent_height = 2.0
 	nav.agent_radius = 0.5
-	nav.agent_max_climb = 0.5
+	nav.agent_max_climb = 0.25
 	nav.agent_max_slope = 44.0
 	nav.cell_size = 0.25
 	nav.cell_height = 0.25
@@ -428,7 +452,7 @@ func _build_navigation() -> void:
 	region.navigation_mesh = nav
 	print("FORT NAVIGATION POLYGONS: ", nav.get_polygon_count())
 
-func _stone_section(site: Vector3, ground: float, width: float, tall: float, yaw: float) -> void:
+func _stone_section(site: Vector3, ground: float, width: float, tall: float, yaw: float, thickness: float = .82) -> void:
 	var rows: int = maxi(1,ceili(tall/0.43))
 	var columns: int = maxi(2,ceili(width/0.85))
 	var course: float = tall/rows
@@ -440,7 +464,7 @@ func _stone_section(site: Vector3, ground: float, width: float, tall: float, yaw
 			x = clampf(x+stagger,-width*0.5+brick*0.45,width*0.5-brick*0.45)
 			var center := site+Vector3(x,0,0).rotated(Vector3.UP,yaw)
 			center.y = ground+(row+0.5)*course
-			var basis := Basis(Vector3.UP,yaw+rng.randf_range(-.018,.018)).scaled(Vector3(brick*1.03,course*1.03,rng.randf_range(.85,.95)))
+			var basis := Basis(Vector3.UP,yaw+rng.randf_range(-.018,.018)).scaled(Vector3(brick*1.03,course*1.03,thickness*rng.randf_range(1.03,1.13)))
 			masonry_transforms.append(Transform3D(basis,center))
 
 func _finish_masonry() -> void:
@@ -456,8 +480,7 @@ func _finish_masonry() -> void:
 	var visual := MultiMeshInstance3D.new()
 	visual.name = "ModularChippedMasonry"
 	visual.multimesh = batch
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("b2a68e")
+	var material := _weathered_stone(Color("d5c6a9"),.38)
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 1
 	visual.material_override = material

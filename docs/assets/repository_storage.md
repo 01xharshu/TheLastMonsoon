@@ -1,5 +1,13 @@
 # Repository storage — 2026-10-07
 
+## Current commit/push size readiness — 2026-10-09
+
+User requires no paid storage. The landscape is stored in regular Git, with no LFS tracking or upload hook. Lossless Godot RSCC recompression changed its Zstandard block size from 4 KiB to 1 MiB, reducing `world/suryagarh/generated/landscape.scn` from 114,524,059 bytes (109.22 MiB) to 61,244,508 bytes (58.41 MiB). The decompressed resource bytes are identical: SHA256 `4b46c3911586a2565abafa68bf839caae2356574f137d89f913f1ac0bee7f326`. Nothing was removed from the landscape. No LFS asset was uploaded, no history was rewritten, and no commit or branch push was made.
+
+`tools/world/bake_landscape.gd` now recompresses each saved landscape with `tools/maintenance/recompress_godot_resource.gd`, using Godot's own codec. Future outputs still over 100 MiB fail the bake's size gate; split required resources if the landscape grows beyond that limit. Run `python3 tools/maintenance/check_push_sizes.py` before staging and with `--index` afterward. The local pre-commit hook checks staged blob sizes. Fresh clones need no LFS installation for these assets.
+
+Verification: Godot 4.7.2 loaded both original and recompressed scenes and preserved 17,449 stored nodes, 11,378 MultiMeshes, 2,543,940 grass instances across both layers, and 2,929 other instances. Recompression checks each decoded block byte for byte. The baker passes Godot's parser check. Godot reported two ObjectDB leaks at test exit; no parse/load errors. All working files and a temporary fully staged snapshot pass the regular Git size check. Temporary candidates, test projects and output were deleted. This certifies storage equivalence, not new gameplay/appearance approval or a fresh-clone Blender rebuild. The older history-size migration below remains separate.
+
 User policy: test output is disposable. Keep reusable test code and concise status/defects, but delete screenshots, recordings, logs and generated test reports after each run. Prefer user play testing with an exact scene/action checklist. This supersedes earlier capture-retention guidance.
 
 Applied cleanup removed approximately 1.15 GB: 1588 tracked artifacts/source copies, 18 ignored Blender backups and 74 ignored bytecode/log files. The redundant Blender copies include 18 automatic backups and three historical Leela review snapshots. Current replacements are the same-name `.blend` files beside each backup, plus `WorkingAssets/NPCs/leela/body_study/leela_body_study.blend` and `WorkingAssets/NPCs/leela/costume_study/leela_costume_study.blend`. Blender successfully read each retained replacement's library and confirmed objects exist. This is source-read verification, not visual approval.

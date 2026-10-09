@@ -70,21 +70,26 @@ func prepare_forest_area() -> void:
 			var original: MultiMesh = _original_grass_batches[batch]
 			var source := original.buffer
 			var retained := PackedFloat32Array()
-			# Baked batches have transform-only buffers, twelve floats per instance.
-			if source.size() != original.instance_count * 12: continue
+			# Preserve the living-world colour/custom-data channels as well as transforms.
+			var stride := 12
+			if original.use_colors: stride += 4
+			if original.use_custom_data: stride += 4
+			if source.size() != original.instance_count * stride: continue
 			for i in original.instance_count:
-				var offset := i * 12
+				var offset := i * stride
 				var local := Vector3(source[offset + 3], source[offset + 7], source[offset + 11])
 				var world_point: Vector3 = batch.global_transform * local
 				if absf(world_point.x - center.x) < size.x * 0.5 and absf(world_point.z - center.z) < size.y * 0.5:
 					removed += 1
 					continue
-				retained.append_array(source.slice(offset, offset + 12))
+				retained.append_array(source.slice(offset, offset + stride))
 			if retained.size() == source.size(): continue
 			var replacement := MultiMesh.new()
 			replacement.transform_format = MultiMesh.TRANSFORM_3D
 			replacement.mesh = original.mesh
-			replacement.instance_count = int(retained.size() / 12)
+			replacement.use_colors = original.use_colors
+			replacement.use_custom_data = original.use_custom_data
+			replacement.instance_count = int(retained.size() / stride)
 			replacement.buffer = retained
 			batch.multimesh = replacement
 	get_parent().set_meta("replaced_baked_grass_instances", removed)

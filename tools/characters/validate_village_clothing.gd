@@ -40,5 +40,15 @@ func run() -> void:
       errors.append(slug+": cloth weight/clip synchronization failed");break
   print("VILLAGE_CLOTH_TRACKS ",slug," body_vertices=",body_vertices," foundations=",foundations," garments=",garments.size())
   stage.remove_child(actor);actor.free()
+ var pair: Node3D = load("res://characters/npcs/indian_peasant_pair.tscn").instantiate()
+ stage.add_child(pair)
+ for child_name in ["VillageFarmer", "VillageWoman"]:
+  var resident: Node3D = pair.get_node(child_name)
+  if resident.get("animation_tree") == null:
+   errors.append(child_name + ": placed pair lacks fitted animation tree")
+  elif resident.find_children("Foundation*", "MeshInstance3D", true, false).is_empty():
+   errors.append(child_name + ": placed pair lacks foundation garment")
+ stage.remove_child(pair)
+ pair.free()
  print("VILLAGE_CLOTHING_RUNTIME ","PASS" if errors.is_empty() else "FAIL"," ",errors)
  quit(0 if errors.is_empty() else 1)

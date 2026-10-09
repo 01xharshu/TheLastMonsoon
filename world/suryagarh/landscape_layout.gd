@@ -4,7 +4,7 @@ const FortShape = preload("res://world/ruined_fort/fort_shape.gd")
 const FORT_CENTER := Vector2(520.0, -350.0)
 const FORT_BASE_HEIGHT := 120.0
 const FORT_ACCESS_GRADES := [109.8, 112.1, 117.5, 120.0]
-const FORT_TRAIL_GRADES := [10.5, 13.7, 31.3, 38.0, 42.0, 46.0, 56.0, 68.0, 76.0, 79.5, 82.0, 89.0, 93.0, 98.5, 109.8]
+const FORT_TRAIL_GRADES := [10.5, 13.7, 31.3, 38.0, 42.0, 46.0, 56.0, 68.0, 76.0, 79.5, 84.5, 94.0, 100.0, 108.0, 109.8]
 ## Metres, Y-up. Stable deterministic source shared by baking, runtime and validation.
 const SIZE: float = 1728.0
 const HALF: float = SIZE / 2.0
@@ -79,12 +79,29 @@ const SITES: Dictionary = {
 	"Hooghly Reach Port": PORT_CENTER,
 }
 var noise := FastNoiseLite.new()
+const GRADED_LANES: Array[String] = ["civil_lines_avenue","collector_bungalow_drive","officer_bungalow_drive","cantonment_bazaar_lane"]
+var graded_lane_bounds: Array[Rect2] = []
+var graded_plot_bounds: Array[Rect2] = []
+var graded_plot_shapes: Array[Vector4] = []
+var graded_plot_heights: Array[float] = []
 
 func _init() -> void:
 	noise.seed = 1857
 	noise.frequency = 0.005
 	noise.fractal_octaves = 4
 	noise.fractal_gain = 0.46
+	for id in GRADED_LANES:
+		var lane: Array = ROUTES[id]
+		var bounds := Rect2(lane[0],Vector2.ZERO)
+		for point: Vector2 in lane: bounds = bounds.expand(point)
+		graded_lane_bounds.append(bounds.grow(9.0))
+	for plot in PLOTS.values():
+		if plot.center == PLOTS["Bhairavpur"].center or plot.center == FORT_CENTER: continue
+		var center: Vector2 = plot.center
+		var half_extent: Vector2 = plot.half
+		graded_plot_bounds.append(Rect2(center-half_extent,half_extent*2).grow(22.0))
+		graded_plot_shapes.append(Vector4(center.x,center.y,half_extent.x,half_extent.y))
+		graded_plot_heights.append(plot.grade)
 
 func river_x(z: float) -> float:
 	return 60.0 + 76.0 * sin(z * 0.0045) + 22.0 * sin(z * 0.011)
@@ -143,7 +160,16 @@ func height(x: float, z: float) -> float:
 		var police: Dictionary = PLOTS["DistrictPolice"]
 		var police_edge: float = maxf(absf(x-police.center.x)-police.half.x,absf(z-police.center.y)-police.half.y)
 		var clear_of_police: float = smoothstep(0.0,8.0,maxf(0.0,police_edge))
-		h = lerpf(h,trail_target,(1.0-smoothstep(3.0,14.0,nearest_trail))*clear_of_police)
+		# Adjacent switchbacks must keep their own full-width walking grade.
+		# The descending trail used to overwrite the higher access strip here.
+		var clear_of_access := 1.0
+		if x > 438.0 and x < 587.0 and z > -273.0 and z < -228.0:
+			var access_distance := INF
+			var access: Array = ROUTES["fort_access"]
+			for i in range(access.size()-1):
+				access_distance = minf(access_distance,segment_distance(trail_point,access[i],access[i+1]))
+			clear_of_access = smoothstep(3.5,8.0,access_distance)
+		h = lerpf(h,trail_target,(1.0-smoothstep(3.0,14.0,nearest_trail))*clear_of_police*clear_of_access)
 	if z > 492.0 and z < 658.0 and x > -218.0 and x < -170.0:
 		var route: Array = ROUTES["port_approach"]
 		var point := Vector2(x,z)
@@ -160,10 +186,15 @@ func height(x: float, z: float) -> float:
 		h = lerpf(h,target,1.0-smoothstep(3.0,9.0,nearest))
 	# Surveyed residential avenue cuts through the ridge at the office grade.
 	# Market access meets the military terrace without a step in the saved terrain.
-	for id in ["civil_lines_avenue","collector_bungalow_drive","officer_bungalow_drive","cantonment_bazaar_lane"]:
+	var sample := Vector2(x,z)
+	for lane_index in GRADED_LANES.size():
+		# Outside the expanded route bounds, every segment is at least 9 m
+		# away and the original smoothstep grading weight is exactly zero.
+		if not graded_lane_bounds[lane_index].has_point(sample): continue
+		var id: String = GRADED_LANES[lane_index]
 		var lane: Array = ROUTES[id]
 		var lane_distance := INF
-		for i in range(lane.size()-1): lane_distance = minf(lane_distance,segment_distance(Vector2(x,z),lane[i],lane[i+1]))
+		for i in range(lane.size()-1): lane_distance = minf(lane_distance,segment_distance(sample,lane[i],lane[i+1]))
 		h = lerpf(h,8.5 if id == "cantonment_bazaar_lane" else 10.0,1.0-smoothstep(3.0,9.0,lane_distance))
 	return h
 
@@ -185,10 +216,14 @@ func base_height(x: float, z: float) -> float:
 	var village_edge: float = maxf(absf(x-village_plot.center.x)-village_plot.half.x, absf(z-village_plot.center.y)-village_plot.half.y)
 	var village: float = 1.0 - smoothstep(0.0, 30.0, village_edge)
 	h = lerpf(h, 7.2, village)
-	for plot in PLOTS.values():
-		if plot.center == village_plot.center or plot.center == FORT_CENTER: continue
-		var edge: float = maxf(absf(x-plot.center.x)-plot.half.x, absf(z-plot.center.y)-plot.half.y)
-		h = lerpf(h, plot.grade, 1.0-smoothstep(0.0, 22.0, edge))
+	var point := Vector2(x,z)
+	for plot_index in graded_plot_bounds.size():
+		# Preserve survey order where plots overlap. A point outside these
+		# bounds has exactly zero grading weight in the original sampler.
+		if not graded_plot_bounds[plot_index].has_point(point): continue
+		var shape: Vector4 = graded_plot_shapes[plot_index]
+		var edge: float = maxf(absf(x-shape.x)-shape.z,absf(z-shape.y)-shape.w)
+		h = lerpf(h,graded_plot_heights[plot_index],1.0-smoothstep(0.0,22.0,edge))
 	# The residence's east-west carriage road eases into its surveyed terrace.
 	if x > -294.0 and x <= -214.0 and absf(z+18.0) < 11.0:
 		var t := (x+294.0)/80.0

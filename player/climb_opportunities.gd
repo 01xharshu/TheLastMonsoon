@@ -5,7 +5,20 @@ const FEATURES := ["ledge","sill","beam","coping","cornice","balcony","lintel","
 var cached_owner: Node
 var cached_meshes: Array[Dictionary] = []
 
+static func fixed_architecture(mesh: MeshInstance3D, root: Node) -> bool:
+	var part: Node = mesh
+	while part != null:
+		if part is RigidBody3D or part is AnimatableBody3D or part is CharacterBody3D: return false
+		if part is Node3D and not part.visible: return false
+		var label := str(part.name).to_lower()
+		for moving_part in ["shutter","hinge","doorleaf","windowleaf"]:
+			if moving_part in label: return false
+		if part == root: break
+		part = part.get_parent()
+	return true
+
 static func retain_edge(root: Node3D, mesh: MeshInstance3D) -> void:
+	if not fixed_architecture(mesh,root): return
 	var label := (str(mesh.name)+" "+str(mesh.get_parent().name)+" "+str(mesh.get_parent().get_parent().name)).to_lower()
 	for feature in FEATURES:
 		if feature in label:
@@ -29,6 +42,7 @@ func survey(actor: CharacterBody3D, hit: Dictionary) -> Dictionary:
 			cached_meshes.append({"label":record.label,"bounds":record.bounds,"transform":owner.global_transform*record.transform})
 		for mesh in owner.find_children("*","MeshInstance3D",true,false):
 			if cached_meshes.size() >= 1500: break
+			if not fixed_architecture(mesh,owner): continue
 			var label: String = (str(mesh.name)+" "+str(mesh.get_parent().name)+" "+str(mesh.get_parent().get_parent().name)).to_lower()
 			for feature in FEATURES:
 				if feature in label:

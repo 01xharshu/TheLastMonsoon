@@ -15,7 +15,9 @@ static func install(b, district: Node3D) -> void:
 	manager.call_deferred("install_operations",district)
 
 func install_operations(district: Node3D) -> void:
-	if get_tree().current_scene.get_meta("service_geometry_fixture",false): return
+	if not is_instance_valid(district): return
+	var world: Node = preload("res://systems/world_context.gd").find_world(district)
+	if world == null or world.get_meta("service_geometry_fixture",false): return
 	var operations = preload("res://world/suryagarh/settlements/cantonment_operations.gd").new()
 	operations.name = "Operations"
 	district.add_child(operations)
@@ -26,8 +28,8 @@ func install_operations(district: Node3D) -> void:
 	duties.configure(district)
 	var logistics = preload("res://world/suryagarh/settlements/logistics_operations.gd").new()
 	logistics.name = "LogisticsOperations"
-	get_tree().current_scene.add_child(logistics)
-	logistics.configure(get_tree().current_scene)
+	world.add_child(logistics)
+	logistics.configure(world)
 
 func configure(b, district: Node3D) -> void:
 	var started := Time.get_ticks_usec()
@@ -102,5 +104,6 @@ func _process(delta: float) -> void:
 	elapsed += delta
 	if elapsed < .25: return
 	elapsed = 0
-	var player := get_tree().current_scene.get_node_or_null("Player") as Node3D
+	var world: Node = preload("res://systems/world_context.gd").find_world(self)
+	var player: Node3D = world.get_node_or_null("Player") as Node3D if world != null else null
 	if player != null: update_activity(player.global_position)

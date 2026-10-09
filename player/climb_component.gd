@@ -69,9 +69,12 @@ func release_grip() -> void:
 	if not active: return
 	if window.active:
 		wall_normal = window.normal
+		if window.profile == "window" and (actor.global_position-window.sill).dot(wall_normal) < 0.0:
+			wall_normal = -wall_normal
 		solid = window.solid
 		saved_mask = actor.collision_mask
 		window.active = false
+		window.clothing_fit.restore()
 	releasing = true
 	waiting_for_move = false
 	release_velocity = wall_normal * 1.8
@@ -81,7 +84,7 @@ func release_grip() -> void:
 var window := preload("res://player/window_climb.gd").new()
 
 func try_start() -> bool:
-	if active or actor.is_swimming or actor.has_meta("mounted_vehicle"): return false
+	if active or actor.is_swimming or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	# All entry profiles require actual takeoff, including low walls and windows.
 	if actor.is_on_floor() or catch_seconds <= 0.0 or actor.global_position.y-launch_y < .06: return false
 	leap_active = false
@@ -91,6 +94,7 @@ func try_start() -> bool:
 	releasing = false
 	if window.try_start(actor):
 		window_committed = true
+		catch_seconds = 0.0
 		active = true
 		return true
 	var forward: Vector3 = actor.visual_root.global_basis.z
@@ -120,6 +124,7 @@ func try_start() -> bool:
 		if surface.survey(actor,hit):
 			if not window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9)): return false
 			window.surface = surface
+			catch_seconds = 0.0
 			active = true
 			return true
 		discovered = opportunities.survey(actor,hit)
@@ -175,6 +180,7 @@ func try_start() -> bool:
 		var ledge_height: float = top-(actor.global_position.y-.9)
 		if ledge_height>2.15: return false
 		if not window.start_ledge(actor,Vector3(hit.position.x,top,hit.position.z),wall_normal,landing,ledge_height): return false
+		catch_seconds = 0.0
 		active = true
 		return true
 	start = actor.global_position

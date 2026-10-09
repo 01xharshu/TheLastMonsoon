@@ -215,6 +215,8 @@ func _physics_process(delta: float) -> void:
 			var control: Vector2 = travel.controls(delta)
 			throttle = control.x
 			steer = control.y
+			# Preserve road alignment safety while the route planner requests a stop.
+			if throttle == 0.0: speed = 0.0
 		if cart.get_meta("errand_transfer",false):
 			throttle = 0; steer = 0; speed = 0
 		var previous_speed := speed
@@ -222,6 +224,11 @@ func _physics_process(delta: float) -> void:
 		speed = move_toward(speed, throttle * target_speed, delta * float(cart.get_meta("draft_acceleration",ACCELERATION)))
 		rider_acceleration = lerpf(rider_acceleration, (speed - previous_speed) / maxf(delta, 0.001), 1.0 - exp(-6.0 * delta))
 		var yaw_step := steering_step(steer, delta, travel.payer != null and throttle == 0.0)
+		if travel.payer != null:
+			# Keep the existing road controller's alignment response until its
+			# waypoint geometry supports continuous cornering without leaving roads.
+			turning_rate = steer * (.35 if throttle == 0.0 else .42 * clampf(absf(speed), 0.0, 1.0))
+			yaw_step = turning_rate * delta
 		rider_turn = lerpf(rider_turn, turning_rate / .42 * clampf(absf(speed) / FAST_SPEED, 0.0, 1.0), 1.0 - exp(-6.0 * delta))
 		var old_heading: float = cart.rotation.y
 		cart.rotation.y += yaw_step
@@ -259,6 +266,7 @@ func steering_step(input: float, delta: float, docking: bool = false) -> float:
 	steering = move_toward(steering, clampf(input, -1.0, 1.0), delta * 3.0)
 	var pace := absf(speed)
 	var limit := lerpf(.60, .42, clampf(pace / FAST_SPEED, 0.0, 1.0))
+	if travel != null and travel.payer != null: limit = .42
 	var target := steering * limit * clampf(pace, 0.0, 1.0) * (-1.0 if speed < 0.0 else 1.0)
 	# A coach may align at rest only after braking; no instantaneous pivot at speed.
 	if docking and pace < .05: target = steering * .35

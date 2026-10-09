@@ -21,6 +21,26 @@ func attach(node: Node, parent: Node) -> void:
 func save_resource(resource: Resource, file: String) -> void:
 	var err: Error = ResourceSaver.save(resource, OUT + file, ResourceSaver.FLAG_COMPRESS)
 	assert(err == OK, "Failed to save " + file)
+	if file == "landscape.scn" and err == OK:
+		# Larger Zstandard blocks retain identical resource bytes while keeping the
+		# dense grass bake below GitHub's regular Git limit without Git LFS.
+		var temporary := OS.get_temp_dir().path_join("tlm-landscape-%d.scn" % OS.get_process_id())
+		var result: Dictionary = preload("res://tools/maintenance/recompress_godot_resource.gd").recompress(OUT + file, temporary)
+		if result.is_empty():
+			DirAccess.remove_absolute(temporary)
+			push_error("Lossless landscape recompression failed; original bake retained.")
+			quit(1)
+			return
+		if int(result.after_bytes) >= 100 * 1024 * 1024:
+			DirAccess.remove_absolute(temporary)
+			push_error("Landscape still exceeds regular Git limit; split resources before committing.")
+			quit(1)
+			return
+		# Copy works when OS temp and the checkout are on different filesystems.
+		err = DirAccess.copy_absolute(temporary, ProjectSettings.globalize_path(OUT + file))
+		DirAccess.remove_absolute(temporary)
+		assert(err == OK, "Failed to install recompressed landscape")
+		print("LANDSCAPE LOSSLESS COMPRESSION ", result)
 
 func bake() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -31,6 +51,9 @@ func bake() -> void:
 	DirAccess.make_dir_recursive_absolute(OUT)
 	rng.seed = 1857
 	world.name = "Landscape"
+	if "--fort-road-patch" in OS.get_cmdline_user_args():
+		refresh_fort_road(start)
+		return
 	if "--grass-only" in OS.get_cmdline_user_args():
 		refresh_grass(start)
 		return
@@ -260,17 +283,24 @@ func bake_grass(origin: Vector2,tx: int,tz: int,tile: Node3D) -> void:
 	for gz in 8:
 		for gx in 8:
 			var grass: Array[Transform3D] = []
-			for i in 128:
+			for i in 384:
 				var p := origin + Vector2(gx*18+grass_rng.randf_range(0,18),gz*18+grass_rng.randf_range(0,18))
 				var h: float = layout.height(p.x,p.y)
-				if layout.built_area(p.x,p.y): continue
-				if h < 1.8 or h > 95 or layout.road_distance(p.x,p.y) < 5.5: continue
-				if p.distance_to(Vector2(-310,230)) < 70: continue
-				# Macro variation makes gaps and clumps; do not fill every square uniformly.
-				var cover := .72+.18*sin(p.x*.11+sin(p.y*.09))
+				var road_distance: float = layout.road_distance(p.x,p.y)
+				var grass_rules = preload("res://world/suryagarh/grass_blades.gd")
+				if not grass_rules.placement_allowed(layout,p,h,road_distance): continue
+				var cover: float = grass_rules.habitat_density(layout,p,road_distance)
 				if grass_rng.randf() > cover: continue
 				var size := Vector3(grass_rng.randf_range(.85,1.2),grass_rng.randf_range(.7,1.25),grass_rng.randf_range(.85,1.2))
+				var habitat: float = preload("res://world/suryagarh/grass_blades.gd").habitat_height(layout,p,road_distance)
+				size.y *= habitat
+				# Long growth spreads into wider, bending tussocks rather than thin poles.
+				var spread: float = 1.0+(habitat-1.0)*.65
+				size.x *= spread
+				size.z *= spread
 				var frame := preload("res://world/suryagarh/grass_blades.gd").baked_frame(ground_vertices,origin,p,sampling_step,Layout.TILE)
+				var ground_normal: Vector3 = frame.basis.z.cross(frame.basis.x).normalized()
+				if ground_normal.y < .78: continue # Bare steep cuts and rock faces.
 				frame.origin -= Vector3(origin.x,.018,origin.y)
 				frame.basis = frame.basis*Basis(Vector3.UP,grass_rng.randf_range(0,TAU)).scaled(size)
 				grass.append(frame)
@@ -340,8 +370,61 @@ func refresh_grass(start: int) -> void:
 	assert(packed.pack(world)==OK)
 	save_resource(packed,"landscape.scn")
 	var report := {"tufts":grass_count,"core_blades":6,"near_detail_blades":18,"batch_width_m":18,"core_fade_m":[48,70],"detail_fade_m":[18,30],"simulation_nodes":0,"root_burial_m":.018,"bake_seconds":(Time.get_ticks_msec()-start)/1000.0,"scope":"grass-only; other landscape content retained"}
-	FileAccess.open("res://docs/world/grass_bake_2026-10-05.json",FileAccess.WRITE).store_string(JSON.stringify(report,"	")+"
-")
 	print("GRASS BAKE PASS ",JSON.stringify(report))
+	world.free()
+	quit()
+
+func refresh_fort_road(start: int) -> void:
+	# Grade edits are confined to tile 9,4. Retain every other world tile/site.
+	world.free()
+	world = load(OUT+"landscape.scn").instantiate()
+	terrain_material = load(OUT+"terrain_material.tres")
+	for batch in world.get_node("NatureTiles").find_children("*","MultiMeshInstance3D",true,false):
+		if str(batch.name).begins_with("GrassCore"): nature_meshes["grass_bermuda_01"] = batch.multimesh.mesh
+		elif str(batch.name).begins_with("GrassDetail"): nature_meshes["grass_detail"] = batch.multimesh.mesh
+		if nature_meshes.has("grass_bermuda_01") and nature_meshes.has("grass_detail"): break
+	var origin := Vector2(-Layout.HALF+9*Layout.TILE,-Layout.HALF+4*Layout.TILE)
+	var old_tile: MeshInstance3D = world.get_node("TerrainTiles/Terrain_09_04")
+	var old_vertices: PackedVector3Array = old_tile.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var step := old_vertices[1].x-old_vertices[0].x
+	old_tile.free()
+	bake_tile(origin,9,4,world.get_node("TerrainTiles"))
+	var new_tile: MeshInstance3D = world.get_node("TerrainTiles/Terrain_09_04")
+	var vertices: PackedVector3Array = new_tile.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var boundary_error := 0.0
+	for i in old_vertices.size():
+		var point: Vector3 = old_vertices[i]
+		if point.x==0 or point.x==Layout.TILE or point.z==0 or point.z==Layout.TILE:
+			boundary_error = maxf(boundary_error,absf(vertices[i].y-point.y))
+	assert(boundary_error < .0001,"Road patch changed an external tile edge")
+	var nature: Node3D = world.get_node("NatureTiles/Nature_09_04")
+	var shifted := 0
+	var max_shift := 0.0
+	for node in nature.get_children():
+		if str(node.name).begins_with("Grass"):
+			node.free()
+			continue
+		if node is MultiMeshInstance3D:
+			for i in node.multimesh.instance_count:
+				var pose: Transform3D = node.multimesh.get_instance_transform(i)
+				var point := origin+Vector2(pose.origin.x,pose.origin.z)
+				var old_y: float = preload("res://world/suryagarh/grass_blades.gd").baked_frame(old_vertices,origin,point,step,Layout.TILE).origin.y
+				var new_y: float = preload("res://world/suryagarh/grass_blades.gd").baked_frame(vertices,origin,point,step,Layout.TILE).origin.y
+				pose.origin.y += new_y-old_y
+				node.multimesh.set_instance_transform(i,pose)
+				max_shift = maxf(max_shift,absf(new_y-old_y))
+				if absf(new_y-old_y) > .00001: shifted += 1
+		elif node is StaticBody3D:
+			var point := origin+Vector2(node.position.x,node.position.z)
+			var old_y: float = preload("res://world/suryagarh/grass_blades.gd").baked_frame(old_vertices,origin,point,step,Layout.TILE).origin.y
+			var new_y: float = preload("res://world/suryagarh/grass_blades.gd").baked_frame(vertices,origin,point,step,Layout.TILE).origin.y
+			node.position.y += new_y-old_y
+	bake_grass(origin,9,4,nature)
+	var packed := PackedScene.new()
+	assert(packed.pack(world)==OK)
+	save_resource(packed,"landscape.scn")
+	var report := {"tile":"09_04","boundary_height_change_m":boundary_error,"shifted_nature_instances":shifted,"maximum_nature_height_adjustment_m":max_shift,"grass_tufts_in_tile":grass_count,"bake_seconds":(Time.get_ticks_msec()-start)/1000.0,"scope":"one existing terrain tile/collision and its rooted vegetation; all other tiles and sites retained"}
+	FileAccess.open("res://docs/world/fort_road_patch_2026-10-08.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t")+"\n")
+	print("FORT ROAD PATCH ",JSON.stringify(report))
 	world.free()
 	quit()

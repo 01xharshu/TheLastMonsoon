@@ -24,6 +24,13 @@ func _run() -> void:
 	await process_frame
 	encounter.activate()
 	assert(encounter.guards.is_empty() and encounter.is_cleared(),"Defeated guards respawned after restore")
+	encounter.player.set_physics_process(false)
+	encounter.player.global_position = encounter.chest.global_position+Vector3(0,.94,1.5)
+	var before: int = encounter.player.inventory.get_item_count("rupees")
+	encounter.chest.interact(encounter.player)
+	assert(encounter.completed and encounter.player.inventory.get_item_count("rupees") == before+26,"Objective did not award supplies")
+	encounter.chest.interact(encounter.player)
+	assert(encounter.player.inventory.get_item_count("rupees") == before+26,"Duplicate objective reward")
 	encounter.restore_state({"completed":true})
 	assert(encounter.chest.opened and not encounter.chest.interaction_available(),"Completed objective paid again")
 	print("FORT ENCOUNTER PASS | 4 MPFB rigs/trees | lethal/nonlethal clearance | chest gating | save restore")

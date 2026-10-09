@@ -29,6 +29,12 @@ for role in roles:
    for key in obj.data.shape_keys.key_blocks:
     if key.name.startswith(('Walk cloth','Seat cloth')):key.value=0
  result={o.name:{'max_penetration_m':0,'penetrating_samples':0,'worst_point':None,'vertex_samples':0,'face_center_samples':0,'nearest_body_regions':{}} for o in cloth}
+ topology=None
+ if clip=='seat_entry':
+  sys.path.insert(0,str(ROOT/'tools/characters'))
+  from purpose_seat_topology import native_triangles
+  from purpose_cloth_volume import inside_surface,VolumeSurface
+  topology=native_triangles(rig,[body]+cloth,ROOT/'characters/npcs/review/record_clerk_seat.glb')
  for sample_index in range((36 if clip=='walk' else 60)*substeps+1):
   frame=1+sample_index/substeps
   phase=(frame-1)/(36 if clip=='walk' else 60)
@@ -38,11 +44,12 @@ for role in roles:
    sample=phase*(samples-1 if clip=='seat_entry' else samples);first=min(int(sample),samples-1) if clip=='seat_entry' else int(sample)%samples;fraction=sample-math.floor(sample)
    for i in range(samples):obj.data.shape_keys.key_blocks[prefix+'%02d'%i].value=(1-fraction if i==first else fraction if i==(min(first+1,samples-1) if clip=='seat_entry' else (first+1)%samples) else 0)
   bpy.context.scene.frame_set(int(frame),subframe=frame%1);bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get();ev=body.evaluated_get(dg);mesh=ev.to_mesh()
-  tree=BVHTree.FromPolygons([ev.matrix_world@v.co for v in mesh.vertices],[list(p.vertices) for p in mesh.polygons]);body_regions=[]
+  body_faces=topology[body.name] if topology else [list(p.vertices) for p in mesh.polygons]
+  tree=(VolumeSurface if topology else BVHTree).FromPolygons([ev.matrix_world@v.co for v in mesh.vertices],body_faces,all_triangles=topology is not None);body_regions=[]
   group_names={g.index:g.name for g in body.vertex_groups}
-  for polygon in mesh.polygons:
+  for face in body_faces:
    weights={}
-   for index in polygon.vertices:
+   for index in face:
     for group in mesh.vertices[index].groups:
      name=group_names.get(group.group,'unknown')
      if name in rig.data.bones:weights[name]=weights.get(name,0)+group.weight
@@ -50,10 +57,13 @@ for role in roles:
   ev.to_mesh_clear()
   for obj in cloth:
    ev=obj.evaluated_get(dg);mesh=ev.to_mesh();points=[ev.matrix_world@v.co for v in mesh.vertices]
-   points += [ev.matrix_world@p.center for p in mesh.polygons]
+   if topology:
+    from mathutils import Vector
+    points += [sum((points[i] for i in face),Vector())/3 for face in topology[obj.name]]
+   else:points += [ev.matrix_world@p.center for p in mesh.polygons]
    for sample_index,point in enumerate(points):
     nearest,normal,polygon,distance=tree.find_nearest(point)
-    depth=-(point-nearest).dot(normal)
+    depth=(distance if inside_surface(tree,point) else -distance) if topology else -(point-nearest).dot(normal)
     if depth>.002:
      result[obj.name]['penetrating_samples']+=1
      kind='vertex_samples' if sample_index<len(mesh.vertices) else 'face_center_samples'

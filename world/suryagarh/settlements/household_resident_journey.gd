@@ -120,6 +120,7 @@ func tick(delta:float) -> void:
  elif state=="work":
   actor.call("_set_animation",&"idle",delta)
   for suffix in ["l","r"]:_pitch("thigh_"+suffix,-1.5);_pitch("calf_"+suffix,1.5)
+  _plant_seated_feet(travel.office.global_position.y+.24)
   _pitch("spine_02",.35)
   var paper: Vector3 = travel.office.to_global(Vector3(office_side*1.6+.08,1.12,-.08))
   _solve_work_hand(paper+Vector3(sin(elapsed*2)*.025,0,0))
@@ -171,12 +172,29 @@ func _desk_transition(delta:float,amount:float) -> void:
  actor.global_rotation.y=rotate_toward(actor.global_rotation.y,PI,delta*3)
  actor.call("_set_animation",&"idle",delta)
  for suffix in ["l","r"]:_pitch("thigh_"+suffix,-1.5*amount);_pitch("calf_"+suffix,1.5*amount)
+ _plant_seated_feet(travel.office.global_position.y+.24,amount)
+
+func _plant_seated_feet(floor_y:float,amount:float=1.0) -> void:
+ var rig:Skeleton3D=actor.get("_skeleton")
+ var plant=actor.get("foot_plant")
+ var worst:=0.0
+ for suffix in ["l","r"]:
+  if not plant.legs.has(suffix):continue
+  var foot:=rig.find_bone("foot_"+suffix)
+  var current:=rig.to_global(rig.get_bone_global_pose(foot).origin)
+  var target:=current
+  target.y=floor_y+(rig.transform*rig.get_bone_global_rest(foot).origin).y
+  var blended:=current.lerp(target,clampf(amount,0,1))
+  plant._solve(plant.legs[suffix],rig.to_local(blended))
+  worst=maxf(worst,rig.to_global(rig.get_bone_global_pose(foot).origin).distance_to(blended))
+ actor.set_meta("desk_feet_error_m",worst)
 
 func _step_pose(duration:float) -> void:
  var t:=clampf(elapsed/duration,0,1)
  var rig:Skeleton3D=actor.get("_skeleton")
  # Lead foot reaches the next tread before the pelvis rises; rear foot follows.
- actor.global_position=start_at.lerp(transition_target,smoothstep(.45,1,t))
+ var pelvis_t:=smoothstep(0,.55,t) if transition_target.y<start_at.y else smoothstep(.45,1,t)
+ actor.global_position=start_at.lerp(transition_target,pelvis_t)
  for suffix in ["l","r"]:
   var bone:=rig.find_bone("foot_"+suffix)
   var rest:=rig.get_bone_global_rest(bone).origin
@@ -186,25 +204,8 @@ func _step_pose(duration:float) -> void:
   _solve_leg(suffix,rig.to_local(foot))
 
 func _solve_leg(suffix:String,target:Vector3) -> void:
- var rig:Skeleton3D=actor.get("_skeleton")
- var upper:=rig.find_bone("thigh_"+suffix);var lower:=rig.find_bone("calf_"+suffix);var tip:=rig.find_bone("foot_"+suffix)
- var origin:=rig.get_bone_global_pose(upper).origin
- var a:=rig.get_bone_global_rest(upper).origin.distance_to(rig.get_bone_global_rest(lower).origin)
- var b:=rig.get_bone_global_rest(lower).origin.distance_to(rig.get_bone_global_rest(tip).origin)
- var direction:=(target-origin).normalized();var distance:=clampf(origin.distance_to(target),absf(a-b)+.001,a+b-.001)
- var pole:=Vector3.BACK-direction*Vector3.BACK.dot(direction)
- var along:=(a*a-b*b+distance*distance)/(2*distance)
- var knee:=origin+direction*along+pole.normalized()*sqrt(maxf(0,a*a-along*along))
- _aim(upper,lower,knee);_aim(lower,tip,origin+direction*distance)
-
-func _aim(index:int,child:int,target:Vector3) -> void:
- var rig:Skeleton3D=actor.get("_skeleton")
- var pose:=rig.get_bone_global_pose(index)
- var old:=(rig.get_bone_global_pose(child).origin-pose.origin).normalized()
- var desired:=Basis(Quaternion(old,(target-pose.origin).normalized()))*pose.basis
- var parent:=rig.get_bone_parent(index)
- if parent>=0:desired=rig.get_bone_global_pose(parent).basis.inverse()*desired
- rig.set_bone_pose_rotation(index,desired.orthonormalized().get_rotation_quaternion());rig.force_update_all_bone_transforms()
+ var plant=actor.get("foot_plant")
+ if plant.legs.has(suffix):plant._solve(plant.legs[suffix],target)
 
 func _solve_work_hand(target_world:Vector3) -> void:
  var rig:Skeleton3D=actor.get("_skeleton");var hand:=rig.find_bone("hand_r")

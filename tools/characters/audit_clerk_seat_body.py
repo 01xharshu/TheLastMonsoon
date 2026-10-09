@@ -1,5 +1,5 @@
 """Compare isolated seated clerk body against live complete body; stdout only."""
-import hashlib,json,struct
+import hashlib,json,struct,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def inspect(path):
@@ -16,6 +16,6 @@ def inspect(path):
  assert all(doc['materials'][p['material']].get('alphaMode','OPAQUE')=='OPAQUE' for p in doc['meshes'][foundation['mesh']]['primitives'])
  return count,digest.hexdigest()
 live=inspect(ROOT/'characters/npcs/motion/record_clerk/record_clerk_rigged_candidate.glb')
-study=inspect(ROOT/'characters/npcs/review/record_clerk_seat.glb')
+study=inspect(Path(sys.argv[sys.argv.index('--candidate')+1]) if '--candidate' in sys.argv else ROOT/'characters/npcs/review/record_clerk_seat.glb')
 assert live==study,(live,study)
 print('CLERK_SEAT_BODY PASS: same complete body positions,',study[0],'vertices; separate opaque skinned foundation retained')

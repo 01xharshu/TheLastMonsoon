@@ -21,6 +21,7 @@ SaveManager="*res://systems/save_manager.gd"
 ControllerFeedback="*res://systems/controller_feedback.gd"
 WorldAudio="*res://systems/world_audio.gd"
 WindSystem="*res://systems/wind_system.gd"
+GrassMotion="*res://systems/grass_motion.gd"
 
 [display]
 
@@ -149,6 +150,7 @@ look_down={
 [physics]
 
 3d/physics_engine="Jolt Physics"
+jolt_physics_3d/limits/max_bodies=16384
 
 [rendering]
 
@@ -160,4 +162,24 @@ lights_and_shadows/directional_shadow/size=2048
 world_wind={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
+}
+
+grass_vehicle_0={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+
+grass_vehicle_1={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+
+grass_vehicle_2={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+
+grass_vehicle_3={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
 }

@@ -18,13 +18,17 @@ const ISLAND_TREE = preload("res://assets/nature/models/island_tree_02.glb")
 const MANGO_TREE = preload("res://environment/vegetation/mango_tree/mango_tree_01.glb")
 const BOULDER = preload("res://assets/nature/models/boulder_01.glb")
 const PLACEHOLDER_PLANTS = preload("res://environment/forest/vegetation/placeholder_plants.gd")
-const LAYERS := ["hero", "canopy", "canopy_broad", "small_tree", "dead_tree", "fallen_log", "shrub", "broadleaf", "tall_grass", "short_grass", "floor", "rock", "debris"]
-const BASE_RATE := {"hero": 0.012, "canopy": 0.085, "canopy_broad": 0.025, "small_tree": 0.07, "dead_tree": 0.006, "fallen_log": 0.006, "shrub": 0.24, "broadleaf": 0.20, "tall_grass": 0.30, "short_grass": 0.55, "floor": 0.32, "rock": 0.025, "debris": 0.05}
+const LAYERS := ["hero", "canopy", "canopy_broad", "small_tree", "dead_tree", "fallen_log", "fern", "shrub", "broadleaf", "tall_grass", "short_grass", "floor", "rock", "debris"]
+const BASE_RATE := {"hero": 0.012, "canopy": 0.085, "canopy_broad": 0.025, "small_tree": 0.07, "dead_tree": 0.018, "fallen_log": 0.025, "fern": 0.22, "shrub": 0.24, "broadleaf": 0.20, "tall_grass": 0.30, "short_grass": 0.55, "floor": 0.32, "rock": 0.025, "debris": 0.05}
 const TREE_LAYERS := ["hero", "canopy", "canopy_broad", "small_tree", "dead_tree"]
 
 var _noise := FastNoiseLite.new()
+var _floor_patch: MeshInstance3D
 var _chunks: Node3D
 var _meshes: Dictionary = {}
+var _species: Dictionary = {}
+var _lod_meshes: Dictionary = {}
+var _layer_points: Dictionary = {}
 var _terrain: Node
 var _tree_positions: Array[Vector2] = []
 var _counts: Dictionary = {}
@@ -35,6 +39,9 @@ func _ready() -> void:
 
 func regenerate() -> void:
 	if config == null: return
+	if is_instance_valid(_floor_patch):
+		remove_child(_floor_patch)
+		_floor_patch.queue_free()
 	if is_instance_valid(_chunks):
 		remove_child(_chunks)
 		_chunks.queue_free()
@@ -52,6 +59,7 @@ func regenerate() -> void:
 		for point in _terrain.call("sample_forest_existing_tree_points"):
 			_tree_positions.append(point)
 	_counts.clear()
+	_layer_points.clear()
 	_make_meshes()
 	var buckets: Dictionary = {}
 	var x0 := floori(-forest_size.x * 0.5)
@@ -68,7 +76,12 @@ func regenerate() -> void:
 				var height := _height(p)
 				if height < config.min_height or height > config.max_height: continue
 				if _slope(p) > config.max_slope: continue
+				var definition: ForestSpecies = _species.get(layer)
+				if definition != null:
+					if height < definition.height_range.x or height > definition.height_range.y: continue
+					if _slope(p) > definition.max_slope: continue
 				var density := _density(p, layer) * _layer_density(layer)
+				if definition != null: density *= definition.density_multiplier
 				if rng.randf() >= minf(1.0, BASE_RATE[layer] * density): continue
 				if layer in TREE_LAYERS:
 					var separated := true
@@ -78,6 +91,8 @@ func regenerate() -> void:
 							break
 					if not separated: continue
 					_tree_positions.append(p)
+				if definition != null and definition.minimum_separation > 0.0:
+					if not _has_space(layer, p, definition.minimum_separation): continue
 				var transform := _placement_transform(layer, p, height, rng)
 				var cx := floori((p.x + forest_size.x * 0.5) / config.chunk_size)
 				var cz := floori((p.y + forest_size.y * 0.5) / config.chunk_size)
@@ -86,13 +101,25 @@ func regenerate() -> void:
 				if not buckets[key].has(layer): buckets[key][layer] = []
 				buckets[key][layer].append(transform)
 				_counts[layer] = _counts.get(layer, 0) + 1
-				if layer in ["hero", "canopy", "canopy_broad"] and rng.randf() < config.shelf_fungus_probability:
+				if layer in ["hero", "canopy", "canopy_broad"] and (definition == null or definition.receives_attachments) and rng.randf() < config.shelf_fungus_probability:
 					if not buckets[key].has("shelf_fungus"): buckets[key]["shelf_fungus"] = []
 					var attachment := _fungus_transform(transform, rng)
 					buckets[key]["shelf_fungus"].append(attachment)
 					_counts["shelf_fungus"] = _counts.get("shelf_fungus", 0) + 1
+	var signature := PackedStringArray()
+	for key in buckets:
+		for layer in buckets[key]:
+			for placement in buckets[key][layer]: signature.append(layer + str(placement))
+	signature.sort()
+	set_meta("placement_signature", hash(signature))
 	for key in buckets:
 		_make_chunk(key, buckets[key])
+	if config.terrain_floor_overlay and _terrain != null:
+		_floor_patch = MeshInstance3D.new()
+		_floor_patch.set_script(preload("res://environment/forest/scripts/forest_floor_patch.gd"))
+		_floor_patch.name = "ForestFloor_Runtime"
+		add_child(_floor_patch)
+		_floor_patch.rebuild(self)
 	set_meta("forest_counts", _counts.duplicate())
 	generated.emit()
 
@@ -108,6 +135,8 @@ func _density(p: Vector2, layer: String = "") -> float:
 	if _terrain != null and _terrain.has_method("sample_forest_biome_mask"):
 		mask = clampf(_terrain.call("sample_forest_biome_mask", p.x, p.y), 0.0, 1.0)
 	var clearance := config.tree_path_clearance if layer in TREE_LAYERS else (1.2 if layer == "fallen_log" else 0.0)
+	var definition: ForestSpecies = _species.get(layer)
+	if definition != null: clearance = maxf(clearance, definition.extra_path_clearance)
 	return cluster * mask * _corridor_density(p, clearance) * config.overall_density
 
 func _layer_density(layer: String) -> float:
@@ -118,6 +147,7 @@ func _layer_density(layer: String) -> float:
 		"small_tree": return config.small_tree_density
 		"dead_tree": return config.dead_tree_density
 		"fallen_log": return config.fallen_log_density
+		"fern": return config.fern_density
 		"shrub": return config.shrub_density
 		"broadleaf": return config.broadleaf_density
 		"tall_grass": return config.tall_grass_density
@@ -150,21 +180,51 @@ func _slope(p: Vector2) -> float:
 	var gradient := Vector2(_height(p + Vector2(0.5, 0)) - h, _height(p + Vector2(0, 0.5)) - h).length() * 2.0
 	return 1.0 - 1.0 / sqrt(1.0 + gradient * gradient)
 
+func _has_space(layer: String, p: Vector2, separation: float) -> bool:
+	if not _layer_points.has(layer): _layer_points[layer] = {}
+	var grid: Dictionary = _layer_points[layer]
+	var cell := Vector2i(floori(p.x / separation), floori(p.y / separation))
+	for x in range(-1, 2):
+		for z in range(-1, 2):
+			for previous in grid.get(cell + Vector2i(x, z), []):
+				if p.distance_to(previous) < separation: return false
+	if not grid.has(cell): grid[cell] = []
+	grid[cell].append(p)
+	return true
+
+func _normal(p: Vector2) -> Vector3:
+	if _terrain != null and _terrain.has_method("sample_forest_normal"):
+		return (_terrain.call("sample_forest_normal", p.x, p.y) as Vector3).normalized()
+	return Vector3.UP
+
 func _placement_transform(layer: String, p: Vector2, height: float, rng: RandomNumberGenerator) -> Transform3D:
+	var definition: ForestSpecies = _species.get(layer)
 	var scales := config.tree_scale_range if layer in TREE_LAYERS else config.plant_scale_range
+	if definition != null:
+		# Global scale controls multiply species-specific authored scale.
+		scales *= definition.scale_range
 	var size := rng.randf_range(scales.x, scales.y)
-	if layer == "hero": size *= 1.0
-	if layer == "canopy": size *= 2.5 # Existing island tree is only 3.4 m tall.
-	if layer == "canopy_broad": size *= 0.75
-	if layer == "small_tree": size *= 1.3
-	if layer == "dead_tree": size *= 1.0
-	if layer == "tall_grass": size *= 2.2
+	if definition == null:
+		if layer == "canopy": size *= 2.5
+		if layer == "canopy_broad": size *= 0.75
+		if layer == "small_tree": size *= 1.3
+		if layer == "tall_grass": size *= 2.2
+	var normal := _normal(p)
 	var basis := Basis(Vector3.UP, rng.randf_range(0.0, TAU))
+	if definition != null and definition.align_to_ground:
+		basis = Basis(Quaternion(Vector3.UP, normal)) * basis
 	if layer in ["fallen_log", "debris"]:
-		basis = basis.rotated(Vector3.FORWARD, PI * 0.5)
-		if layer == "fallen_log": size *= 1.8
-	var origin := Vector3(p.x, height, p.y)
-	return Transform3D(basis.scaled(Vector3.ONE * size), origin)
+		basis = basis * Basis(Vector3.FORWARD, PI * 0.5)
+	if definition != null:
+		height += definition.ground_offset * size
+		if definition.root_radius > 0.0:
+			# Embed the root apron to its lowest sampled terrain contact.
+			var lowest := height
+			for i in 8:
+				var angle := TAU * i / 8.0
+				lowest = minf(lowest, _height(p + Vector2(cos(angle), sin(angle)) * definition.root_radius * size))
+			height = lowest - 0.06 * size
+	return Transform3D(basis.scaled(Vector3.ONE * size), Vector3(p.x, height, p.y))
 
 func _fungus_transform(tree: Transform3D, rng: RandomNumberGenerator) -> Transform3D:
 	var tree_scale := tree.basis.get_scale().x
@@ -177,34 +237,62 @@ func _fungus_transform(tree: Transform3D, rng: RandomNumberGenerator) -> Transfo
 func _make_chunk(key: Vector2i, layers: Dictionary) -> void:
 	var chunk := Node3D.new()
 	chunk.name = "Chunk_%02d_%02d" % [key.x, key.y]
+	var corner := Vector2(key) * config.chunk_size - forest_size * 0.5
+	var extent := Vector2(minf(config.chunk_size, forest_size.x * 0.5 - corner.x), minf(config.chunk_size, forest_size.y * 0.5 - corner.y))
+	var center := corner + extent * 0.5
+	chunk.position = Vector3(center.x, _height(center), center.y)
 	_chunks.add_child(chunk)
 	for layer in layers:
 		var transforms: Array = layers[layer]
-		for mesh_index in _meshes[layer].size():
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = _meshes[layer][mesh_index]
-			mm.instance_count = transforms.size()
-			for i in transforms.size(): mm.set_instance_transform(i, transforms[i])
-			var batch := MultiMeshInstance3D.new()
-			batch.name = "%s_Part%d" % [layer.capitalize().replace(" ", ""), mesh_index]
-			batch.multimesh = mm
-			batch.visibility_range_end = _visibility_distance(layer)
-			chunk.add_child(batch)
+		var lods: Array = _lod_meshes.get(layer, [_meshes[layer]])
+		var maximum := _visibility_distance(layer)
+		for band in lods.size():
+			var begin := 0.0 if band == 0 else (config.near_distance if band == 1 else config.medium_distance)
+			if begin >= maximum: continue
+			var end := maximum
+			if band < lods.size() - 1: end = minf(maximum, config.near_distance if band == 0 else config.medium_distance)
+			for mesh_index in lods[band].size():
+				var mm := MultiMesh.new()
+				mm.transform_format = MultiMesh.TRANSFORM_3D
+				mm.mesh = lods[band][mesh_index]
+				mm.instance_count = transforms.size()
+				for i in transforms.size():
+					var local: Transform3D = transforms[i]
+					local.origin -= chunk.position
+					mm.set_instance_transform(i, local)
+				var batch := MultiMeshInstance3D.new()
+				batch.name = "%s_LOD%d_Part%d" % [layer.capitalize().replace(" ", ""), band, mesh_index]
+				batch.multimesh = mm
+				batch.visibility_range_begin = begin
+				batch.visibility_range_end = end
+				batch.visibility_range_begin_margin = config.lod_fade_margin if band > 0 else 0.0
+				batch.visibility_range_end_margin = config.lod_fade_margin
+				batch.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+				chunk.add_child(batch)
 		if config.enable_collisions and layer in TREE_LAYERS + ["rock", "fallen_log"]:
-			for transform in transforms: _add_collision(chunk, layer, transform)
+			for transform in transforms:
+				var local: Transform3D = transform
+				local.origin -= chunk.position
+				_add_collision(chunk, layer, local)
 
 func _visibility_distance(layer: String) -> float:
 	if layer in ["floor", "short_grass", "debris"]: return config.near_distance
-	if layer in ["tall_grass", "broadleaf", "shrub"]: return config.medium_distance
+	if layer in ["tall_grass", "broadleaf", "shrub", "fern"]: return config.medium_distance
 	return config.far_distance
 
 func _add_collision(chunk: Node3D, layer: String, transform: Transform3D) -> void:
 	var body := StaticBody3D.new()
-	body.position = transform.origin
+	body.transform = transform
+	var definition: ForestSpecies = _species.get(layer)
 	var shape := CollisionShape3D.new()
-	var scale_value := transform.basis.get_scale().x
-	if layer == "rock":
+	var scale_value := 1.0 # Body transform already carries the instance scale.
+	if definition != null and definition.collision_radius > 0.0:
+		var capsule := CapsuleShape3D.new()
+		capsule.radius = definition.collision_radius
+		capsule.height = maxf(definition.collision_height, capsule.radius * 2.0)
+		shape.shape = capsule
+		shape.position.y = capsule.height * 0.5
+	elif layer == "rock":
 		var sphere := SphereShape3D.new()
 		sphere.radius = 0.55 * scale_value
 		shape.shape = sphere
@@ -213,7 +301,6 @@ func _add_collision(chunk: Node3D, layer: String, transform: Transform3D) -> voi
 		var box := BoxShape3D.new()
 		box.size = Vector3(3.0, 0.55, 0.7) * scale_value
 		shape.shape = box
-		shape.rotation.y = transform.basis.get_euler().y
 		shape.position.y = 0.3 * scale_value
 	else:
 		var cylinder := CylinderShape3D.new()
@@ -226,12 +313,15 @@ func _add_collision(chunk: Node3D, layer: String, transform: Transform3D) -> voi
 
 func _make_meshes() -> void:
 	_meshes.clear()
+	_species.clear()
+	_lod_meshes.clear()
 	_meshes["hero"] = _scene_meshes(MANGO_TREE)
 	_meshes["canopy"] = _scene_meshes(ISLAND_TREE)
 	_meshes["canopy_broad"] = _meshes["hero"]
 	_meshes["small_tree"] = _meshes["canopy"]
 	_meshes["dead_tree"] = [_placeholder_cylinder(Color(0.31, 0.27, 0.22), 4.2, 0.28)]
 	_meshes["fallen_log"] = [_placeholder_cylinder(Color(0.27, 0.23, 0.19), 3.5, 0.28)]
+	_meshes["fern"] = [PLACEHOLDER_PLANTS.make_cluster(16, 0.55, 0.1, 0.5, Color(0.18, 0.30, 0.10), config.wind_strength)]
 	_meshes["shrub"] = [PLACEHOLDER_PLANTS.make_cluster(18, 0.68, 0.13, 0.55, Color(0.20, 0.34, 0.13), config.wind_strength)]
 	_meshes["broadleaf"] = [PLACEHOLDER_PLANTS.make_cluster(7, 0.34, 0.24, 0.35, Color(0.30, 0.42, 0.16), config.wind_strength)]
 	_meshes["tall_grass"] = [PLACEHOLDER_PLANTS.make_cluster(14, 0.72, 0.05, 0.24, Color(0.30, 0.42, 0.17), config.wind_strength)]
@@ -246,12 +336,53 @@ func _make_meshes() -> void:
 	fungus.rings = 3
 	fungus.material = _material(Color(0.68, 0.59, 0.42))
 	_meshes["shelf_fungus"] = [fungus]
+	for resource in config.species:
+		var definition := resource as ForestSpecies
+		if definition == null or definition.near_scene == null: continue
+		_species[definition.layer] = definition
+		var near := _scene_meshes(definition.near_scene)
+		var medium := _scene_meshes(definition.medium_scene) if definition.medium_scene != null else near
+		var far := _scene_meshes(definition.far_scene) if definition.far_scene != null else medium
+		_meshes[definition.layer] = near
+		_lod_meshes[definition.layer] = [near, medium, far]
 
 func _scene_meshes(scene: PackedScene) -> Array[Mesh]:
 	var root := scene.instantiate()
 	var result: Array[Mesh] = []
 	for child in root.find_children("*", "MeshInstance3D", true, false):
-		result.append((child as MeshInstance3D).mesh)
+		var instance := child as MeshInstance3D
+		var baked := Transform3D.IDENTITY
+		var cursor: Node = instance
+		while cursor != null:
+			if cursor is Node3D: baked = (cursor as Node3D).transform * baked
+			if cursor == root: break
+			cursor = cursor.get_parent()
+		for surface_index in instance.mesh.get_surface_count():
+			var surface := SurfaceTool.new()
+			surface.append_from(instance.mesh, surface_index, baked)
+			var material := instance.get_active_material(surface_index)
+			if material is StandardMaterial3D and "Leaves" in str(material.resource_name):
+				var foliage := ShaderMaterial.new()
+				foliage.shader = preload("res://environment/forest/shaders/foliage.gdshader")
+				foliage.set_shader_parameter("wind_strength", config.wind_strength)
+				foliage.set_shader_parameter("wind_uv_reversed", true)
+				foliage.set_shader_parameter("albedo_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_color.png"))
+				foliage.set_shader_parameter("use_albedo_texture", true)
+				foliage.set_shader_parameter("normal_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_normal.png"))
+				foliage.set_shader_parameter("use_normal_texture", true)
+				foliage.set_shader_parameter("roughness_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_roughness.png"))
+				foliage.set_shader_parameter("use_roughness_texture", true)
+				material = foliage
+			elif material is StandardMaterial3D and "Forest_Bark" in str(material.resource_name):
+				var bark := (material as StandardMaterial3D).duplicate() as StandardMaterial3D
+				bark.albedo_color = Color.WHITE
+				bark.albedo_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_color.png")
+				bark.normal_enabled = true
+				bark.normal_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_normal.png")
+				bark.roughness_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_roughness.png")
+				material = bark
+			surface.set_material(material)
+			result.append(surface.commit())
 	root.free()
 	return result
 

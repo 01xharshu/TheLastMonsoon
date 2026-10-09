@@ -20,22 +20,24 @@ func _run() -> void:
 	var map: RID = fort.get_node("Navigation/FortWalkableRoutes").get_navigation_map()
 	await create_timer(.3).timeout
 	NavigationServer3D.map_force_update(map)
-	var region: NavigationRegion3D = fort.get_node("Navigation/FortWalkableRoutes")
-	print("NAV REGION enabled ",region.enabled," polygons ",region.navigation_mesh.get_polygon_count()," verts ",region.navigation_mesh.vertices.size()," first ",region.navigation_mesh.vertices[0])
-	print("NAV ACTIVE ",NavigationServer3D.map_is_active(map)," closest ",NavigationServer3D.map_get_closest_point(map,Vector3(0,1,40)))
-	print("NAV MAP ",NavigationServer3D.map_get_iteration_id(map)," regions ",NavigationServer3D.map_get_regions(map).size())
 	var start := Vector3(0,fort.height_at(0,40),40)
-	var finish := Vector3(0,fort.height_at(0,-42),-42)
+	var finish := Vector3(2,fort.height_at(0,-47)+.7,-46)
 	for route in [[Vector2(0,17),Vector2(-7,4),Vector2(8,-21)],[Vector2(-37,17),Vector2(-37,-14),Vector2(-30,-34)],[Vector2(35,20),Vector2(35,-6),Vector2(34,-28)]]:
+		actor.global_position = start+Vector3.UP*.94
+		for tick in range(4):
+			actor.velocity = Vector3.DOWN
+			actor.move_and_slide()
+			await physics_frame
 		var cursor: Vector3 = start
 		var total := 0.0
 		for site in route+[Vector2(finish.x,finish.z)]:
-			var target := Vector3(site.x,fort.height_at(site.x,site.y),site.y)
+			var target := finish if site == Vector2(finish.x,finish.z) else Vector3(site.x,fort.height_at(site.x,site.y),site.y)
 			var path := NavigationServer3D.map_get_path(map,cursor,target,true)
 			check(path.size() >= 2,"flank path missing")
 			if path.is_empty(): continue
 			check(path[-1].distance_to(target) < 2.0,"flank goal is isolated")
 			for index in range(1,path.size()): total += path[index].distance_to(path[index-1])
+			check(await walk_path(actor,path),"physical traversal stalled on flank")
 			cursor = path[-1]
 		print("FORT ROUTE LENGTH ",total)
 	# Real launch, grip transfer and mantle on the authored west wall.
@@ -52,7 +54,6 @@ func _run() -> void:
 	await process_frame
 	Input.action_press("jump")
 	actor._handle_jump()
-	print("CLIMB LAUNCH ",actor.global_position," velocity=",actor.velocity," catch=",climb.catch_seconds)
 	Input.action_release("jump")
 	for frame in range(40):
 		actor.velocity.y -= actor.gravity/60
@@ -61,7 +62,6 @@ func _run() -> void:
 		visual._process(1.0/60)
 		await physics_frame
 		if climb.active: break
-		if frame % 10 == 0: print("CLIMB AIR ",actor.global_position," launch=",climb.launch_y," facing=",actor.visual_root.global_basis.z)
 	check(climb.active,"real jump did not catch authored west wall")
 	if climb.active:
 		for frame in range(1200):
@@ -116,3 +116,27 @@ func _run() -> void:
 		check(float(guard.actor.get_meta("hand_contact_"+side,1)) < .03,"guard hand missed weapon contact")
 	print("FORT PLAYABILITY ","PASS" if failures == 0 else "FAIL"," | failures=",failures," | three routes, real jump/mantle, cover, occluded/exposed firearm")
 	quit(0 if failures == 0 else 1)
+
+func walk_path(actor: CharacterBody3D, path: PackedVector3Array) -> bool:
+	if path.size() < 2: return false
+	var index := 1
+	var stalled := 0
+	for frame in range(4000):
+		var offset: Vector3 = path[index]-actor.global_position
+		offset.y = 0
+		if offset.length() < .24:
+			index += 1
+			if index >= path.size(): return true
+			continue
+		var before: Vector3 = actor.global_position
+		var direction := offset.normalized()
+		actor.velocity.x = direction.x*3
+		actor.velocity.z = direction.z*3
+		actor.velocity.y = -1.0 if actor.is_on_floor() else actor.velocity.y-actor.gravity/60
+		actor.move_and_slide()
+		actor._try_walk_step(1.0/60,Vector3(direction.x,0,direction.z)*.05)
+		actor._try_walk_step_down()
+		stalled = stalled+1 if actor.global_position.distance_to(before) < .001 else 0
+		if stalled > 120: print("FORT WALK STALLED ",actor.global_position," toward ",path[index]); return false
+		if frame%120 == 0: await physics_frame
+	return false

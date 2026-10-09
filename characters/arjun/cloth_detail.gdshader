@@ -6,9 +6,17 @@ uniform vec4 cloth_color : source_color = vec4(0.035, 0.04, 0.05, 1.0);
 uniform float wetness : hint_range(0.0, 1.0) = 0.0;
 uniform int garment_kind = 0;
 uniform vec2 fabric_sway = vec2(0.0);
+uniform float rest_fold : hint_range(0.0, 1.0) = 0.0;
 varying vec3 cloth_position;
 void vertex() {
  cloth_position = VERTEX;
+ if (garment_kind == 1) {
+  // The split hem gathers at the waist when the thighs fold toward the torso.
+  // Keep the cloth attached while clearing the trouser front in seated poses.
+  float lower_hem = 1.0 - smoothstep(0.72, 1.015, VERTEX.y);
+  VERTEX.y += rest_fold * lower_hem * 0.20;
+  VERTEX.xz *= 1.0 - rest_fold * lower_hem * 0.20;
+ }
  float loose = garment_kind == 1 ? 1.0 - smoothstep(0.72, 1.015, VERTEX.y) : (garment_kind == 2 ? 1.0 - smoothstep(0.60, 1.025, VERTEX.y) : 0.0);
  loose *= loose;
  VERTEX.xz += fabric_sway * loose;

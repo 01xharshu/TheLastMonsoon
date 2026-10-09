@@ -18,6 +18,8 @@ func _run() -> void:
 	manager._update_render_budget()
 	print("RENDER SIZE | viewport ",root.size," scale ",root.scaling_3d_scale)
 	check(is_equal_approx(root.scaling_3d_scale,manager.render_scale_for_size(root.size,int(manager.options.graphics_quality))),"Root viewport ignored physical pixels")
+	var lod_pixels: float = ProjectSettings.get_setting("rendering/mesh_lod/lod_change/threshold_pixels",1.0)
+	check(is_equal_approx(root.mesh_lod_threshold*root.scaling_3d_scale,lod_pixels),"Mesh detail ignored the 3D render budget")
 	for spec in [[Vector2i(1280,720),2,1.0],[Vector2i(5120,2880),2,.375],[Vector2i(5120,2880),1,.25],[Vector2i(1920,1080),0,.5],[Vector2i(2560,1080),2,.75]]:
 		check(is_equal_approx(manager.render_scale_for_size(spec[0],spec[1]),spec[2]),"Wrong render budget: " + str(spec))
 	if DisplayServer.get_name() != "headless":
@@ -27,6 +29,7 @@ func _run() -> void:
 			manager.apply_options()
 			for frame in 4: await process_frame
 			check(is_equal_approx(root.scaling_3d_scale,manager.render_scale_for_size(root.size,int(manager.options.graphics_quality))),"Resize/fullscreen lost render budget")
+			check(is_equal_approx(root.mesh_lod_threshold*root.scaling_3d_scale,lod_pixels),"Resize/fullscreen lost mesh detail budget")
 			print("DISPLAY TRANSITION | fullscreen ",fullscreen," viewport ",root.size," scale ",root.scaling_3d_scale)
 	var opening = load("res://story/opening_sequence.gd").new()
 	root.add_child(opening)

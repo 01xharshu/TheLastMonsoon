@@ -18,6 +18,8 @@ var _pitch_axes: Dictionary = {}
 var _yaw_axes: Dictionary = {}
 var _finger_rest: Dictionary = {}
 var _finger_pitch: Dictionary = {}
+var _finger_relaxed: Dictionary = {}
+var _finger_strike: Dictionary = {}
 var animation_player: AnimationPlayer
 var animation_tree: AnimationTree
 var locomotion_blend: float = 0.0
@@ -31,6 +33,8 @@ var _walk_phase: float = 0.0
 var _last_facing: float = 0.0
 var body_collider: AnimatableBody3D
 var contact_blocked: bool = false
+static var _clip_templates: Dictionary = {}
+const CLIP_TEMPLATE_LIMIT := 32
 
 func _patrol_body_blocked(local_motion: Vector3) -> bool:
 	if body_collider == null or local_motion.length_squared() < 0.00000001:
@@ -106,6 +110,11 @@ func _ready() -> void:
 				_finger_rest[index] = _skeleton.get_bone_pose_rotation(index)
 				var inverse := _skeleton.get_bone_global_pose(index).basis.orthonormalized().inverse()
 				_finger_pitch[index] = (inverse * Vector3.RIGHT).normalized()
+				var curl:=0.22 if joint=="01" else (0.32 if joint=="02" else 0.18)
+				var strike_curl:=0.95
+				if finger=="thumb":curl*=0.55;strike_curl*=0.55
+				_finger_relaxed[index]=_finger_rest[index]*Quaternion(_finger_pitch[index],curl)
+				_finger_strike[index]=_finger_rest[index]*Quaternion(_finger_pitch[index],strike_curl)
 	animation_player = AnimationPlayer.new()
 	animation_player.name = "PersonalAnimationPlayer"
 	add_child(animation_player)
@@ -179,10 +188,13 @@ func _measure_stride(clip: Animation) -> void:
 	var foot := _skeleton.find_bone("foot_l")
 	var minimum := INF
 	var maximum := -INF
+	var track_bones := PackedInt32Array()
+	for track in clip.get_track_count():
+		var bone_name := str(clip.track_get_path(track)).get_slice(":", 1)
+		track_bones.append(_bones[bone_name])
 	for frame in 65:
 		for track in clip.get_track_count():
-			var bone_name := str(clip.track_get_path(track)).get_slice(":", 1)
-			_skeleton.set_bone_pose_rotation(_bones[bone_name], clip.track_get_key_value(track, frame))
+			_skeleton.set_bone_pose_rotation(track_bones[track], clip.track_get_key_value(track, frame))
 		var z := _skeleton.get_bone_global_pose(foot).origin.z
 		minimum = minf(minimum, z)
 		maximum = maxf(maximum, z)
@@ -192,6 +204,24 @@ func _measure_stride(clip: Animation) -> void:
 		_skeleton.set_bone_pose_rotation(_bones[bone_name], _base_rotations[bone_name])
 
 func _make_clip(walking: bool, turning: bool = false) -> Animation:
+	# Cache only exact rig/profile/path matches. Every actor receives a private
+	# clip so work, clothing and combat owners can still edit their animations.
+	var cache_key: Array = [movement_profile,walking,turning,str(get_path_to(_skeleton))]
+	for bone_name in _base_rotations:
+		cache_key.append(bone_name)
+		cache_key.append(_base_rotations[bone_name])
+		cache_key.append(_pitch_axes[bone_name])
+		cache_key.append(_yaw_axes[bone_name])
+	if _clip_templates.has(cache_key):
+		var template: Dictionary = _clip_templates[cache_key]
+		var copy := template.clip.duplicate(true) as Animation
+		# Animation duplication serialises key times through float32 arrays.
+		# Restore the original double-precision times, including fractional gait
+		# lengths, so caching does not subtly retime the owner's clips.
+		for track in copy.get_track_count():
+			for key: int in template.time_corrections:
+				copy.track_set_key_time(track,key,template.times[key])
+		return copy
 	var clip := Animation.new()
 	var female := movement_profile == &"female"
 	clip.length = (1.05 if female else 0.85) if walking else 3.5
@@ -236,6 +266,15 @@ func _make_clip(walking: bool, turning: bool = false) -> Animation:
 					"foot_r": angle = -0.23 * right_lift
 			var base: Quaternion = _base_rotations[bone_name]
 			clip.rotation_track_insert_key(track, fraction * clip.length, base * Quaternion(axis, angle))
+	if _clip_templates.size() >= CLIP_TEMPLATE_LIMIT: _clip_templates.clear()
+	var template_clip := clip.duplicate(true) as Animation
+	var times := PackedFloat64Array()
+	var corrections := PackedInt32Array()
+	if clip.get_track_count()>0:
+		for key in clip.track_get_key_count(0):
+			times.append(clip.track_get_key_time(0,key))
+			if template_clip.track_get_key_time(0,key)!=times[key]:corrections.append(key)
+	_clip_templates[cache_key] = {"clip":template_clip,"times":times,"time_corrections":corrections}
 	return clip
 
 func _process(delta: float) -> void:
@@ -317,18 +356,19 @@ func _set_animation(state: StringName, delta: float) -> void:
 	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
 		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))
-	for index in _finger_rest:
-		var finger_name := _skeleton.get_bone_name(index)
-		var curl := .95 if get_meta("combat_action","")=="strike" else (0.22 if "_01_" in finger_name else (0.32 if "_02_" in finger_name else 0.18))
-		if finger_name.begins_with("thumb"):
-			curl *= 0.55
-		_skeleton.set_bone_pose_rotation(index, _finger_rest[index] * Quaternion(_finger_pitch[index], curl))
+	_pose_fingers()
 	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
 		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
 		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:
 			foot_plant.clear()
 		_last_facing = rotation.y
 		foot_plant.update(_walk_phase, foot_plant_enabled and state == &"walk" and locomotion_blend > 0.95 and travel_speed > 0.001, locomotion_blend if foot_plant_enabled else 0.0, nominal_walk_speed * animation_player.get_animation("walk").length)
+
+func _pose_fingers() -> void:
+	# These rig-local rotations are constant; work/contact overlays still run
+	# afterward and can replace them just as before.
+	var poses:=_finger_strike if get_meta("combat_action","")=="strike" else _finger_relaxed
+	for index in _finger_rest:_skeleton.set_bone_pose_rotation(index,poses[index])
 
 func combat_react(action: String) -> void:
 	var motion := get_node_or_null("CombatMotion")

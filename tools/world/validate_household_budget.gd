@@ -26,5 +26,4 @@ func _run() -> void:
  if far.budget_pending>.100001:errors.append("stall accrued unbounded debt")
  if near.phase!="working" or far.completed_trips!=2:errors.append("budget reset journey state")
  var report:={"passed":errors.is_empty(),"near_steps":near.budget_steps,"far_steps_before_wake":60,"simulation_seconds":near.simulated,"errors":errors,"scope":"production distance scheduler with instrumented step; full-world route/contact checks remain separate"}
- FileAccess.open("res://docs/world/household_budget_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
  print("HOUSEHOLD_BUDGET ",JSON.stringify(report));quit(0 if errors.is_empty() else 1)

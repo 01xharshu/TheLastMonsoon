@@ -73,6 +73,8 @@ var first_person_view: Node3D
 var third_person_height: float
 var third_person_distance: float
 var aim_camera_distance: float = 0.55
+var camera_angle_offset := 0.0
+var aim_camera_angle_offset := 0.0
 var aim_blend := 0.0
 var climb_camera_blend := 0.0
 var aim_sound: AudioStreamPlayer
@@ -275,7 +277,7 @@ func _unhandled_input(
 					_begin_interaction_hold(selected,"interact")
 				else:
 					_try_primary_interaction()
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q and not has_meta("mounted_vehicle") and not get_meta("climbing",false):
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q and (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null) == null and not get_meta("climbing",false):
 		_try_secondary_interaction()
 
 
@@ -292,6 +294,8 @@ func _unhandled_input(
 			var selected := _find_interactable()
 			if selected != null and selected.hold_duration > 0.0:
 				_begin_interaction_hold(selected,"secondary_interact")
+			elif selected != null and selected.has_secondary_interaction():
+				_try_secondary_interaction()
 			else:
 				$RideComponent.try_toggle()
 
@@ -355,9 +359,11 @@ func _physics_process(
 		)
 
 
+		var water_drift: Vector3=get_meta('river_current',Vector3.ZERO) if is_swimming else Vector3.ZERO
+
 		velocity.x = move_toward(
 			velocity.x,
-			0.0,
+			water_drift.x,
 			deceleration
 			* delta
 		)
@@ -365,7 +371,7 @@ func _physics_process(
 
 		velocity.z = move_toward(
 			velocity.z,
-			0.0,
+			water_drift.z,
 			deceleration
 			* delta
 		)
@@ -542,6 +548,7 @@ func _process(delta: float) -> void:
 
 func _update_weapon_camera(delta: float) -> void:
 	if first_person:
+		$CameraPivot/SpringArm3D/Camera3D.rotation.x = 0.0
 		camera_pivot.position.y = maxf(.45,$StealthStance.camera_height()-.05)
 		return
 	var equipment: Node = $VisualRoot/CharacterVisual.equipment
@@ -560,6 +567,7 @@ func _update_weapon_camera(delta: float) -> void:
 	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
 	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 54.0, aim_blend)
+	$CameraPivot/SpringArm3D/Camera3D.rotation.x = deg_to_rad(lerpf(camera_angle_offset,aim_camera_angle_offset,aim_blend))
 
 
 # =========================================================
@@ -797,7 +805,7 @@ func _find_interactable() -> Interactable:
 		if not candidate.interaction_available(): continue
 		var distance := offset.length()
 		var screen_point := Vector2.ZERO
-		if view_camera != null and candidate.is_in_group("weapon_pickups"):
+		if view_camera != null and (candidate.is_in_group("weapon_pickups") or candidate.is_in_group("family_weapon_racks")):
 			if view_camera.is_position_behind(candidate.interaction_anchor()): continue
 			screen_point = view_camera.unproject_position(candidate.interaction_anchor())
 			if not view_rect.has_point(screen_point): continue
@@ -812,7 +820,7 @@ func _find_interactable() -> Interactable:
 			hit = get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider != candidate: continue
 		var score := alignment * 2.0 - distance * 0.25
-		if candidate.is_in_group("weapon_pickups") and view_camera != null:
+		if (candidate.is_in_group("weapon_pickups") or candidate.is_in_group("family_weapon_racks")) and view_camera != null:
 			score -= screen_point.distance_to(view_rect.size * 0.5) / maxf(view_rect.size.y, 1.0) * 1.5
 		if score > best_score:
 			best = candidate

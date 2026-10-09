@@ -17,7 +17,9 @@ func _sync_material() -> void:
 	if material == null: return
 	var points := PackedVector2Array()
 	for i in 8:
-		points.append(generator.path_points[i] if i < generator.path_points.size() else Vector2.ZERO)
+		var p: Vector2 = generator.path_points[i] if i < generator.path_points.size() else Vector2.ZERO
+		var world: Vector3 = generator.global_transform * Vector3(p.x, 0, p.y)
+		points.append(Vector2(world.x, world.z))
 	material.set_shader_parameter("path_points", points)
 	material.set_shader_parameter("path_point_count", mini(generator.path_points.size(), 8))
 	material.set_shader_parameter("path_radius", generator.config.path_exclusion_radius)

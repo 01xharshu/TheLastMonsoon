@@ -7,7 +7,7 @@ extends DirectionalLight3D
 @onready var game_time: GameTimeSystem = $"../GameTimeSystem"
 @onready var moon: DirectionalLight3D = $"../Moon"
 var environment: Environment
-var sky_material: ProceduralSkyMaterial
+var sky_material: ShaderMaterial
 const LIGHTING_INTERVAL := 0.1
 const CLOCK_JUMP_MINUTES := 2.88
 var lighting_elapsed := 0.0
@@ -19,8 +19,10 @@ func _ready() -> void:
 	if world_environment and world_environment.environment:
 		environment = world_environment.environment.duplicate(true)
 		world_environment.environment = environment
-		if environment.sky and environment.sky.sky_material is ProceduralSkyMaterial:
-			sky_material = environment.sky.sky_material
+		if environment.sky:
+			sky_material = ShaderMaterial.new()
+			sky_material.shader = preload("res://world/suryagarh/shaders/day_night_sky.gdshader")
+			environment.sky.sky_material = sky_material
 	shadow_enabled = true
 	_update_day_night_lighting()
 
@@ -57,7 +59,10 @@ func _update_day_night_lighting() -> void:
 		environment.fog_light_color = horizon
 		environment.fog_light_energy = lerpf(0.12, 0.65, daylight)
 	if sky_material:
-		sky_material.sky_top_color = Color(0.006, 0.012, 0.035).lerp(Color(0.24, 0.36, 0.43), daylight)
-		sky_material.sky_horizon_color = horizon
-		sky_material.ground_horizon_color = horizon
-		sky_material.ground_bottom_color = Color(0.012, 0.017, 0.026).lerp(Color(0.19, 0.22, 0.16), daylight)
+		sky_material.set_shader_parameter("sky_top_color", Color(0.006, 0.012, 0.035).lerp(Color(0.24, 0.36, 0.43), daylight))
+		sky_material.set_shader_parameter("sky_horizon_color", horizon)
+		sky_material.set_shader_parameter("ground_bottom_color", Color(0.012, 0.017, 0.026).lerp(Color(0.19, 0.22, 0.16), daylight))
+		sky_material.set_shader_parameter("sun_direction", global_basis.z)
+		sky_material.set_shader_parameter("moon_direction", moon.global_basis.z)
+		sky_material.set_shader_parameter("night_visibility", 1.0 - smoothstep(-0.3, 0.02, elevation))
+		sky_material.set_shader_parameter("sun_visibility", smoothstep(-0.02, 0.1, elevation))

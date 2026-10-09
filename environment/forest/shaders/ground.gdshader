@@ -7,6 +7,7 @@ uniform sampler2D grass_color : source_color, filter_linear_mipmap_anisotropic, 
 uniform sampler2D grass_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D rock_color : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D rock_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform bool overlay_cutout = false;
 uniform vec2 path_points[8];
 uniform int path_point_count = 0;
 uniform float path_radius = 3.0;
@@ -48,6 +49,7 @@ float corridor_distance(vec2 p) {
 
 void fragment() {
 	vec2 p = world_position.xz;
+	if (overlay_cutout && COLOR.a <= hash21(floor(p * 24.0))) { discard; }
 	float micro = value_noise(p * 0.38 + vec2(surface_seed * 0.001));
 	float macro = value_noise(p * 0.045 + vec2(surface_seed * 0.01));
 	float pockets = value_noise(p * 0.13 - vec2(surface_seed * 0.003));

@@ -13,7 +13,7 @@ def main():
         scripts=['tools/characters/validate_river_routine.gd','tools/world/validate_women_river.gd']
         if args.render:scripts.append('tools/world/capture_women_river.gd')
         for script in scripts:
-            command=[ENGINE,'--path',str(ROOT),'--script','res://'+script]
+            command=[ENGINE,'--path',str(ROOT),'--log-file',str(Path(folder)/(Path(script).stem+'.log')),'--script','res://'+script]
             if 'capture_' in script:command+=['--','--focused']
             else:command.insert(1,'--headless')
             result=subprocess.run(command,cwd=ROOT,env=env,text=True,capture_output=True,timeout=120)
@@ -22,7 +22,7 @@ def main():
             for line in output.splitlines():
                 if line.startswith(('RIVER_ROUTINE ','RIVER_WORLD ')):
                     data=json.loads(line.split(' ',1)[1]);print(script, 'PASS' if data['passed'] else 'FAIL',
-                        'issues=',data['issues'], 'ankle_m=',data.get('max_ankle_m'), 'wrist_m=',data.get('max_hand_m'))
+                        'issues=',data['issues'], 'ankle_m=',data.get('max_ankle_m'), 'wrist_m=',data.get('max_hand_m'), 'planted_drift_m=',data.get('planted_drift_m'), 'walk_cycle_seconds=',data.get('walk_cycle_seconds'))
                     failed=failed or not data['passed']
             if failed:
                 print('\n'.join(output.splitlines()[-12:]));return 1

@@ -1,6 +1,13 @@
 extends SceneTree
+var output_dir := ""
 
 func _initialize() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--output-dir="): output_dir = arg.trim_prefix("--output-dir=")
+	if not output_dir.is_empty() and not (output_dir.begins_with(OS.get_temp_dir()) or output_dir.begins_with("/tmp/")):
+		push_error("Stance review output must use an OS temporary directory")
+		quit(1)
+		return
 	_run.call_deferred()
 
 func _run() -> void:
@@ -42,6 +49,7 @@ func _run() -> void:
 
 func _shot(name: String) -> void:
 	await RenderingServer.frame_post_draw
-	var path := "res://docs/world/captures/"+name+".png"
+	if output_dir.is_empty(): return
+	var path := output_dir+"/"+name+".png"
 	assert(root.get_texture().get_image().save_png(path) == OK)
 	print("STANCE CAPTURE ",path)

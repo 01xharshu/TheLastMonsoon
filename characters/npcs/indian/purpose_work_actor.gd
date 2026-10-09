@@ -2,6 +2,7 @@ extends "res://characters/npcs/households/household_npc_actor.gd"
 ## Work NPC uses its original baked gait and pose-fitted clothes together.
 @export_enum("dock_porter","boatman","record_clerk") var purpose_role:String="record_clerk"
 var purpose_cloth:Array[MeshInstance3D]=[]
+var purpose_walk_indices:Dictionary={}
 var purpose_phase:=0.0
 var purpose_feet:RefCounted
 
@@ -9,7 +10,12 @@ func _ready() -> void:
  household_job=purpose_role
  foot_plant_enabled=false
  for mesh in find_children("*","MeshInstance3D",true,false):
-  if mesh.mesh!=null and mesh.mesh.get_blend_shape_count()>0 and mesh.mesh.get_blend_shape_name(0)=="Walk cloth 00":purpose_cloth.append(mesh)
+  if mesh.mesh==null:continue
+  var indices:Array[int]=[]
+  for index in mesh.mesh.get_blend_shape_count():
+   if String(mesh.mesh.get_blend_shape_name(index)).begins_with("Walk cloth "):indices.append(index)
+  if not indices.is_empty():
+   purpose_cloth.append(mesh);purpose_walk_indices[mesh]=indices
  super._ready()
  purpose_feet=preload("res://characters/npcs/indian/purpose_foot_contact.gd").new()
  purpose_feet.setup(_skeleton)
@@ -47,10 +53,11 @@ func _set_animation(state:StringName,delta:float) -> void:
  purpose_phase+=maxf(delta,0.0)*walk_playback_rate/animation_player.get_animation("walk").length
  if purpose_cloth.is_empty():return
  for mesh in purpose_cloth:
-  var samples:int=mesh.mesh.get_blend_shape_count()
+  var indices:Array[int]=purpose_walk_indices[mesh]
+  var samples:int=indices.size()
   var phase:=fposmod(purpose_phase,1.0)*float(samples)
   var first:int=int(floorf(phase))%samples
   var fraction:float=phase-floorf(phase)
   for index in samples:
    var weight:float=1.0-fraction if index==first else fraction if index==(first+1)%samples else 0.0
-   mesh.set_blend_shape_value(index,weight*locomotion_blend*(1.0-turn_blend))
+   mesh.set_blend_shape_value(indices[index],weight*locomotion_blend*(1.0-turn_blend))

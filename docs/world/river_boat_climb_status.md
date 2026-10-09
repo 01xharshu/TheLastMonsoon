@@ -26,3 +26,7 @@ The west compound wall has a visible handhold route. Space while facing that rou
 - The renderer run recorded about 550 MB maximum resident process memory on an M4 Mac with 16 GB RAM. This is useful budget evidence, not an 8 GB device certification. No 8 GB device test has been run.
 
 All new built forms and fish are original project geometry. The terrain's external CC0 assets and hashes remain listed in `docs/world/ASSET_LICENSES.md` and `docs/world/asset_manifest.json`. The source MakeHuman/MPFB skin image used by the provisional runtime shader comes from the existing Arjun working asset; its source is preserved. The runtime copy and working source share SHA-256 `862a26e335e958b70534cb5f0d7c47ef30ab148a56c42b3e9da969cf76f12963`.
+
+## River flow continuation — 2026-10-07
+
+Waves/current, irregular ripples, bank wash/current audio and swimming/boat flow are integrated. Current verification and remaining gates: [river flow realism](river_flow_realism.md). Retired historical captures above are not current acceptance evidence.

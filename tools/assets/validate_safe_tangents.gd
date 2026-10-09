@@ -2,6 +2,9 @@ extends SceneTree
 ## Assert that selective tangent import preserves all source geometry and morphs.
 const Tangents = preload("res://addons/safe_mesh_tangents/tangent_importer.gd")
 const ASSETS := [
+	"res://characters/npcs/review/record_clerk_seat.glb",
+	"res://characters/npcs/motion/village_fruit_seller/village_fruit_seller_rigged_candidate.glb",
+	"res://characters/npcs/motion/village_weaver_assistant/village_weaver_assistant_rigged_candidate.glb",
 	"res://characters/npcs/british/corporal_woman.glb",
 	"res://characters/npcs/british/sergeant_woman.glb",
 	"res://characters/npcs/british/private_woman.glb",

@@ -41,12 +41,16 @@ sky_material = SubResource("ForestSkyMaterial")
 [sub_resource type="Environment" id="ForestEnvironment"]
 background_mode = 2
 sky = SubResource("ForestSky")
-ambient_light_source = 1
+ambient_light_source = 2
 ambient_light_color = Color(0.64, 0.72, 0.62, 1)
-ambient_light_energy = 0.82
-fog_enabled = true
+ambient_light_energy = 0.72
+fog_enabled = false
 fog_light_color = Color(0.65, 0.72, 0.66, 1)
-fog_density = 0.0012
+fog_density = 0.0006
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.001
+volumetric_fog_length = 100.0
+volumetric_fog_albedo = Color(0.76, 0.81, 0.76, 1)
 ssao_enabled = true
 ssao_radius = 0.85
 ssao_intensity = 0.68
@@ -80,7 +84,7 @@ light_color = Color(0.94, 0.91, 0.81, 1)
 light_energy = 1.1
 shadow_enabled = true
 shadow_blur = 3.0
-shadow_normal_bias = 0.8
+shadow_normal_bias = 0.35
 directional_shadow_max_distance = 90.0
 
 [node name="Player" parent="." instance=ExtResource("3")]

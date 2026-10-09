@@ -1,0 +1,190 @@
+{
+	"defects": [],
+	"routes": {
+		"administrative_approach": {
+			"max_cross_grade": 0.177469253540039,
+			"max_longitudinal_grade": 0.190552711486816,
+			"maximum_render_collision_difference_m": 0.000011444091796875,
+			"samples": 414,
+			"worst_cross_point": "(425.0, 150.0)",
+			"worst_grade_point": "(438.0, 175.0)"
+		},
+		"cantonment_approach": {
+			"max_cross_grade": 0.387300372123718,
+			"max_longitudinal_grade": 0.275835037231445,
+			"maximum_render_collision_difference_m": 0.000019073486328125,
+			"samples": 1797,
+			"worst_cross_point": "(425.0, 345.0)",
+			"worst_grade_point": "(425.0, 222.0)"
+		},
+		"cantonment_bazaar_lane": {
+			"max_cross_grade": 0.00892543792724609,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000476837158203125,
+			"samples": 477,
+			"worst_cross_point": "(582.0, 470.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"civil_lines_avenue": {
+			"max_cross_grade": 0.0608046054840088,
+			"max_longitudinal_grade": 0.00136756896972656,
+			"maximum_render_collision_difference_m": 0.0000095367431640625,
+			"samples": 1047,
+			"worst_cross_point": "(580.0, 199.0)",
+			"worst_grade_point": "(580.0, 285.0)"
+		},
+		"collector_bungalow_drive": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.0,
+			"samples": 114,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"compound_court": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 150,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"compound_stores": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 120,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"east_bridge": {
+			"max_cross_grade": 0.0932111740112305,
+			"max_longitudinal_grade": 0.148210525512695,
+			"maximum_render_collision_difference_m": 0.00000762939453125,
+			"samples": 162,
+			"worst_cross_point": "(300.0, 165.0)",
+			"worst_grade_point": "(274.0, 165.0)"
+		},
+		"fort_access": {
+			"max_cross_grade": 0.103507995605469,
+			"max_longitudinal_grade": 0.0750961303710938,
+			"maximum_render_collision_difference_m": 0.00002288818359375,
+			"samples": 831,
+			"worst_cross_point": "(527.4312, -265.0183)",
+			"worst_grade_point": "(485.0459, -276.3211)"
+		},
+		"fort_trail": {
+			"max_cross_grade": 0.276954650878906,
+			"max_longitudinal_grade": 0.3004150390625,
+			"maximum_render_collision_difference_m": 0.0114898681640625,
+			"samples": 1893,
+			"worst_cross_point": "(481.875, -179.375)",
+			"worst_grade_point": "(508.125, -170.625)"
+		},
+		"government_house_avenue": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0213251113891602,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 318,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(-390.0, -18.0)"
+		},
+		"government_house_road": {
+			"max_cross_grade": 0.0716599225997925,
+			"max_longitudinal_grade": 0.0262508392333984,
+			"maximum_render_collision_difference_m": 0.0000109672546386719,
+			"samples": 534,
+			"worst_cross_point": "(-214.0, -18.0)",
+			"worst_grade_point": "(-277.0, -18.0)"
+		},
+		"officer_bungalow_drive": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.0,
+			"samples": 120,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"police_to_compound": {
+			"max_cross_grade": 0.128633499145508,
+			"max_longitudinal_grade": 0.185878753662109,
+			"maximum_render_collision_difference_m": 0.00000667572021484375,
+			"samples": 324,
+			"worst_cross_point": "(337.8977, 210.1364)",
+			"worst_grade_point": "(342.7273, 226.3636)"
+		},
+		"port_approach": {
+			"max_cross_grade": 0.00781810283660889,
+			"max_longitudinal_grade": 0.0602807998657227,
+			"maximum_render_collision_difference_m": 0.00000619888305664062,
+			"samples": 468,
+			"worst_cross_point": "(-199.7581, 559.0322)",
+			"worst_grade_point": "(-198.0312, 580.6719)"
+		},
+		"town_hall": {
+			"max_cross_grade": 0.107681334018707,
+			"max_longitudinal_grade": 0.0301604270935059,
+			"maximum_render_collision_difference_m": 0.00000476837158203125,
+			"samples": 297,
+			"worst_cross_point": "(-318.0, -432.0)",
+			"worst_grade_point": "(-264.2308, -443.6923)"
+		},
+		"village_estate_approach": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 57,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_market_lane": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.000000476837158203125,
+			"samples": 594,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_north_lane": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 489,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_south_lane": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 495,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_spine": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000143051147460938,
+			"samples": 726,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_west_lane": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.00000095367431640625,
+			"samples": 453,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		},
+		"village_west_link": {
+			"max_cross_grade": 0.0,
+			"max_longitudinal_grade": 0.0,
+			"maximum_render_collision_difference_m": 0.000000476837158203125,
+			"samples": 123,
+			"worst_cross_point": "(0.0, 0.0)",
+			"worst_grade_point": "(0.0, 0.0)"
+		}
+	},
+	"scope": "baked triangle/terrain collision at road centre and +/-2 m shoulders; >45% longitudinal grade flagged for transition review, not final player acceptance"
+}

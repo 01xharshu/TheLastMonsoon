@@ -20,7 +20,11 @@ var chapel_phase := "closed"
 func configure(site: Node3D) -> void:
 	district = site
 	add_to_group("institution_operations")
-	clock = get_tree().current_scene.get_node("GameTimeSystem")
+	var world: Node = preload("res://systems/world_context.gd").find_world(site)
+	if world == null:
+		push_error("Cantonment operations require their owning world's clock")
+		return
+	clock = world.get_node("GameTimeSystem")
 	stock_day = clock.current_day
 	clock.time_changed.connect(_time_changed)
 	var workers := district.get_node("ServiceWorkplaces")

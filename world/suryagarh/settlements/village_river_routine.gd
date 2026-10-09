@@ -13,7 +13,8 @@ var visit_seconds := 0.0
 var blocked_frames := 0
 var ramp: Array[Vector3] = []
 var shore := Vector3.ZERO
-const SPEED := .4
+const SPEED := 1.15
+const ROUTE_VERSION := 3
 
 func _ready() -> void:
 	name = "VillageRiverRoutine"
@@ -41,17 +42,19 @@ func _ready() -> void:
 		collision.name="BodyShape";collision.shape=capsule;collision.position.y=.8
 		collider.add_child(collision);woman.add_child(collider)
 		var path: Array[Vector3] = [woman.home]
-		for p in [Vector2(start.x,203),Vector2(-250,203),Vector2(-250,210),Vector2(-230,180),Vector2(-230,160+12*sin(-230*.017))]:
+		var lane := (index-1)*1.1
+		for p in [Vector2(start.x,203+lane),Vector2(-250+lane,203+lane),Vector2(-250+lane,210+lane),Vector2(-230,180+lane),Vector2(-230,160+12*sin(-230*.017)+lane)]:
 			path.append(Vector3(p.x,layout.height(p.x,p.y),p.y))
 		var ramp_start := ramp[0]
 		for step in 40:
 			var x := lerpf(-230.0,ramp_start.x,float(step+1)/40.0)
-			var z := 160+12*sin(x*.017)
+			var bank_z := 160+12*sin(x*.017)
+			var z := lerpf(bank_z,ramp_start.z,smoothstep(.65,1.0,float(step+1)/40.0))+lane+.12*sin(float(step)*.32+index)
 			path.append(Vector3(x,layout.height(x,z),z))
 		for point in ramp: path.append(point+Vector3(0,0,(index-1)*1.1))
 		path.append(woman.bank)
 		women.append(woman)
-		journeys.append({"path":path,"goal":1,"position":woman.home,"walk_seconds":0.0,"arrived":false})
+		journeys.append({"path":path,"goal":1,"position":woman.home,"walk_seconds":index*.31,"delay":index*.65,"arrived":false})
 
 func _physics_process(delta: float) -> void:
 	if clock != null and clock.clock_paused: return
@@ -62,7 +65,7 @@ func tick(delta: float) -> void:
 		if clock == null or clock.current_hour<6 or clock.current_hour>=9 or clock.current_day<=completed_day: return
 		departure_day=clock.current_day;mode="depart";visit_seconds=0
 		for journey in journeys:
-			journey.goal=1;journey.arrived=false;journey.walk_seconds=0.0
+			journey.goal=1;journey.arrived=false;journey.walk_seconds=float(journeys.find(journey))*.31;journey.delay=float(journeys.find(journey))*.65
 	if mode in ["depart","return"]:
 		var all_arrived := true
 		for index in women.size():
@@ -73,18 +76,23 @@ func tick(delta: float) -> void:
 			woman.travel_position=journey.position
 			var path: Array = journey.path
 			var target: Vector3 = path[journey.goal]
-			if target.distance_to(journey.position)>.001: woman.travel_direction=(target-journey.position).normalized()
+			var facing_offset: Vector3=target-journey.position
+			facing_offset.y=0.0
+			if facing_offset.length()>.01: woman.travel_direction=facing_offset.normalized()
 			woman.elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journey.walk_seconds,9.6)
-			if journey.arrived: woman.sample(11.0 if mode=="depart" else 65.0)
-			else: woman._evaluate(delta)
+			woman.travel_gait_time=journey.walk_seconds
+			woman.travel_speed=0.0 if journey.arrived or journey.get("delay",0.0)>0.0 else _walking_speed(index)
+			if journey.arrived: woman.elapsed=11.0 if mode=="depart" else 65.0
+			woman._evaluate(delta)
 		if all_arrived:
 			mode="visit" if mode=="depart" else "deliver"
 			visit_seconds=10.0 if mode=="visit" else 65.0
 	elif mode in ["visit","deliver"]:
 		visit_seconds+=delta
-		for woman in women:
-			woman.elapsed=visit_seconds-delta;woman.tick_routine(delta)
-		if mode=="visit" and visit_seconds>=55:
+		for index in women.size():
+			var woman=women[index]
+			woman.elapsed=visit_seconds-delta-(index*.7 if mode=="visit" else 0.0);woman.tick_routine(delta)
+		if mode=="visit" and visit_seconds>=56.4:
 			mode="return"
 			for journey in journeys:
 				journey.goal=journey.path.size()-2;journey.arrived=false;journey.walk_seconds=0.0
@@ -95,10 +103,14 @@ func tick(delta: float) -> void:
 func _move(index: int, delta: float) -> void:
 	var journey = journeys[index]
 	if journey.arrived: return
+	if journey.get("delay",0.0)>0.0:
+		journey.delay=maxf(0.0,float(journey.delay)-delta)
+		return
 	var woman = women[index]
 	var target: Vector3 = journey.path[journey.goal]
 	var offset: Vector3 = target-journey.position
-	var motion := offset.limit_length(SPEED*delta)
+	offset.y=0.0
+	var motion := offset.limit_length(_walking_speed(index)*delta)
 	var next := Vector3(journey.position)+motion
 	next.y=_ground_height(next.x,next.z)
 	motion=next-journey.position
@@ -117,11 +129,15 @@ func _move(index: int, delta: float) -> void:
 			query.transform.origin+=motion
 			for hit in get_world_3d().direct_space_state.intersect_shape(query,8): print("RIVER_OBSTACLE ",hit.collider.get_path())
 		return
-	journey.position+=motion;journey.walk_seconds+=delta
+	journey.position+=motion;journey.walk_seconds+=Vector2(motion.x,motion.z).length()/.4
 	if Vector2(journey.position.x,journey.position.z).distance_to(Vector2(target.x,target.z))<.001:
 		var end: int = journey.path.size()-1 if mode=="depart" else 0
 		if journey.goal==end: journey.arrived=true
 		else: journey.goal+=1 if mode=="depart" else -1
+
+func _walking_speed(index: int) -> float:
+	# Small individual changes keep companions together without marching in lockstep.
+	return SPEED*(1.0+.035*sin(float(journeys[index].walk_seconds)*.13+index*2.1))
 
 func _ground_height(x: float,z: float) -> float:
 	if x>=ramp[0].x and x<=shore.x+.5 and absf(z-shore.z)<2.3:
@@ -140,41 +156,54 @@ func _ground_height(x: float,z: float) -> float:
 	return expected
 
 func _build_ghat() -> void:
-	var z := 166.0
+	var z := 185.0
 	var edge := layout.river_x(z)-layout.river_width(z)
 	var start := edge-43
-	var finish := edge+8
+	var finish := edge+2
+	# End where the existing bank actually meets water, before the boating channel.
+	for step in 100:
+		var candidate := start+float(step)*.5
+		var bank_height := maxf(layout.height(candidate,z-2.2),layout.height(candidate,z+2.2))
+		if bank_height<=-.03:
+			finish=candidate
+			break
 	for i in 65:
 		var x := lerpf(start,finish,float(i)/64)
 		var y := maxf(.03,layout.height(x,z)+.06)
 		for dz in [-2.2,2.2]: y=maxf(y,layout.height(x,z+dz)+.06)
 		ramp.append(Vector3(x,y,z))
-	var max_drop := (finish-start)/64*.24
+	var max_drop := (finish-start)/64*.45
 	for i in range(63,-1,-1): ramp[i].y=maxf(ramp[i].y,ramp[i+1].y-max_drop)
 	for i in range(1,65): ramp[i].y=maxf(ramp[i].y,ramp[i-1].y-max_drop)
 	shore=ramp[-1]
 	var material := StandardMaterial3D.new();material.albedo_color=Color(.43,.39,.30);material.roughness=.97
-	for i in 64:
-		var a: Vector3=ramp[i];var b: Vector3=ramp[i+1]
-		var slab := StaticBody3D.new();slab.name="GhatSlab%02d"%i
-		slab.position=(a+b)*.5-Vector3.UP*.1;slab.rotation.z=atan2(b.y-a.y,b.x-a.x)
-		var size := Vector3(a.distance_to(b)+.03,.2,4.4)
-		var mesh := MeshInstance3D.new();var box := BoxMesh.new();box.size=size
-		mesh.mesh=box;mesh.material_override=material;slab.add_child(mesh)
-		var collider := CollisionShape3D.new();var shape := BoxShape3D.new();shape.size=size
-		collider.shape=shape;slab.add_child(collider);add_child(slab)
-	var landing := StaticBody3D.new();landing.name="RiverWashingLanding";landing.position=shore+Vector3(-.35,-.1,0)
-	var landing_mesh := MeshInstance3D.new();var landing_box := BoxMesh.new();landing_box.size=Vector3(1.6,.2,4.4)
-	landing_mesh.mesh=landing_box;landing_mesh.material_override=material;landing.add_child(landing_mesh)
-	var landing_collision := CollisionShape3D.new();var landing_shape := BoxShape3D.new();landing_shape.size=landing_box.size
-	landing_collision.shape=landing_shape;landing.add_child(landing_collision);add_child(landing)
+	# A continuous earth surface with shoulders meeting the surveyed terrain.
+	# No rectangular seating deck at the collection point.
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var widths := [-4.0,-2.2,0.0,2.2,4.0]
+	# Support the forward toes as well as the actor origin at the shore endpoint.
+	var surface_points: Array[Vector3]=ramp.duplicate()
+	surface_points.append(shore+Vector3(.5,0,0))
+	for i in surface_points.size()-1:
+		for strip in 4:
+			for corner in [Vector2i(0,0),Vector2i(0,1),Vector2i(1,0),Vector2i(0,1),Vector2i(1,1),Vector2i(1,0)]:
+				var point: Vector3=surface_points[i+corner.x]
+				var side: float=widths[strip+corner.y]
+				point.z+=side
+				if absf(side)>2.2: point.y=layout.height(point.x,point.z)+.025
+				surface.add_vertex(point)
+	surface.generate_normals()
+	var earth := MeshInstance3D.new();earth.name="ShoreEarthAccess"
+	earth.mesh=surface.commit();earth.material_override=material
+	add_child(earth);earth.create_trimesh_collision()
 
 func export_state() -> Dictionary:
 	var members := []
 	for journey in journeys:
 		var p: Vector3=journey.position
-		members.append({"goal":journey.goal,"position":[p.x,p.y,p.z],"walk_seconds":journey.walk_seconds,"arrived":journey.arrived})
-	return {"mode":mode,"completed_day":completed_day,"departure_day":departure_day,"visit_seconds":visit_seconds,"members":members}
+		members.append({"goal":journey.goal,"position":[p.x,p.y,p.z],"walk_seconds":journey.walk_seconds,"arrived":journey.arrived,"delay":journey.get("delay",0.0)})
+	return {"route_version":ROUTE_VERSION,"mode":mode,"completed_day":completed_day,"departure_day":departure_day,"visit_seconds":visit_seconds,"members":members}
 
 func restore_state(state: Dictionary) -> void:
 	if state.is_empty(): return
@@ -183,8 +212,15 @@ func restore_state(state: Dictionary) -> void:
 		var saved: Dictionary=state.members[i];var p: Array=saved.position
 		journeys[i].position=Vector3(p[0],p[1],p[2]);journeys[i].goal=clampi(int(saved.goal),0,journeys[i].path.size()-1)
 		journeys[i].walk_seconds=float(saved.walk_seconds);journeys[i].arrived=bool(saved.arrived)
+		journeys[i].delay=float(saved.get("delay",0.0))
+		if int(state.get("route_version",1))<ROUTE_VERSION and (mode=="visit" or (mode=="return" and journeys[i].position.x>shore.x)):
+			# Old visits used the removed platform; bring them onto the shore route.
+			journeys[i].position=women[i].bank
+			journeys[i].goal=journeys[i].path.size()-2
+		women[i].travel_speed=_walking_speed(i)
+		women[i].travel_gait_time=journeys[i].walk_seconds
 		women[i].travel_position=journeys[i].position
 		var direction: Vector3=journeys[i].path[journeys[i].goal]-journeys[i].position
 		if direction.length()>.001: women[i].travel_direction=direction.normalized()
-		women[i].elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journeys[i].walk_seconds,9.6) if mode in ["depart","return"] else visit_seconds
+		women[i].elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journeys[i].walk_seconds,9.6) if mode in ["depart","return"] else visit_seconds-(i*.7 if mode=="visit" else 0.0)
 		women[i].sample(women[i].elapsed if mode!="home" else 72.0)

@@ -10,13 +10,29 @@ func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
 	print("RENDER REVIEW ",label," | viewport ",root.size," scale ",root.scaling_3d_scale)
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--review-dir="):
+			var directory := argument.trim_prefix("--review-dir=")
+			# Only the runner's disposable OS directory may receive review views.
+			if not directory.is_absolute_path() or not directory.get_file().begins_with("tlm-performance-"):
+				push_error("Review output requires a disposable performance directory")
+				return
+			var pixels := root.get_texture().get_image()
+			pixels.resize(1280,720,Image.INTERPOLATE_LANCZOS)
+			check(pixels.save_png(directory.path_join(label+".png"))==OK,"Temporary review view could not be written")
 func _run() -> void:
 	var saves = root.get_node("SaveManager")
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--quality="):
+			saves.options.graphics_quality = clampi(argument.trim_prefix("--quality=").to_int(),0,2)
+	var started := Time.get_ticks_msec()
 	saves.start_new_game()
 	for frame in 3: await process_frame
+	print("GAME ERROR ROUTE READY | ",Time.get_ticks_msec()-started," ms | quality ",saves.options.graphics_quality)
 	var world: Node3D = current_scene
 	var opening = world.get_node("OpeningSequence")
 	var actor: CharacterBody3D = world.get_node("Player")
+	print("PHYSICS BODY BUDGET | limit ",ProjectSettings.get_setting("physics/jolt_physics_3d/limits/max_bodies"))
 	for moment in [5.0,16.0,27.0]:
 		while opening.elapsed < moment: await process_frame
 		await capture("intro_"+str(int(moment)))

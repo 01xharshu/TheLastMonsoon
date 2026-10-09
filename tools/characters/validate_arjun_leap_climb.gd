@@ -5,11 +5,16 @@ var rendered := false
 var completed_routes := 0
 var airborne_frames := 0
 var max_settled_palm := 0.0
+var max_mantle_palm := 0.0
+var mantle_boot_penetrations := 0
 var folder := ""
+var inspected_climb: Array[String] = []
+var selected_route := ""
 
 func _run() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--output-dir="): folder = argument.trim_prefix("--output-dir=")
+		if argument.begins_with("--route="): selected_route = argument.trim_prefix("--route=")
 	var temporary_root := OS.get_environment("TMPDIR")
 	if temporary_root.is_empty(): temporary_root = "/tmp"
 	temporary_root = temporary_root.simplify_path().trim_suffix("/")
@@ -20,6 +25,21 @@ func _run() -> void:
 		folder = ""
 		get_tree().quit(1)
 		return
+	var moving_frame := Node3D.new()
+	moving_frame.name = "WindowFrame"
+	add_child(moving_frame)
+	var shutter := Node3D.new()
+	shutter.name = "ShutterHinge"
+	moving_frame.add_child(shutter)
+	var moving_rail := MeshInstance3D.new()
+	moving_rail.name = "WindowRail"
+	moving_rail.mesh = BoxMesh.new()
+	shutter.add_child(moving_rail)
+	var discovery = preload("res://player/climb_opportunities.gd")
+	discovery.retain_edge(moving_frame,moving_rail)
+	_check(not moving_frame.has_meta("climb_architecture"),"moving shutter cannot become cached architectural grip")
+	_check(not discovery.fixed_architecture(moving_rail,moving_frame),"live survey rejects hinged window rail")
+	moving_frame.queue_free()
 	var time := Node.new()
 	time.name = "GameTimeSystem"
 	time.set_script(load("res://world/suryagarh/systems/game_time_system.gd"))
@@ -59,6 +79,7 @@ func _run() -> void:
 		get_viewport().scaling_3d_scale = .55
 		DirAccess.make_dir_recursive_absolute(folder)
 	for record in [{"height":.75,"z":0.0,"id":"low_wall"},{"height":4.8,"z":8.0,"id":"wall"},{"height":12.8,"z":16.0,"id":"tower"},{"height":8.8,"z":24.0,"id":"building"},{"height":3.2,"z":32.0,"id":"house"},{"height":3.1,"z":40.0,"id":"house_sloped"}]:
+		if not selected_route.is_empty() and record.id != selected_route: continue
 		if OS.get_cmdline_user_args().has("--house-only") and not record.id.begins_with("house"): continue
 		if OS.get_cmdline_user_args().has("--sloped-only") and record.id != "house_sloped": continue
 		if OS.get_cmdline_user_args().has("--lateral-only") and record.id != "building": continue
@@ -160,8 +181,11 @@ func _run() -> void:
 			if rendered:
 				get_viewport().get_texture().get_image().save_png(folder+"/"+record.id+"_roof_walk.png")
 		print("ROUTE ",record.id," root=",actor.global_position)
-	if OS.get_cmdline_user_args().has("--house-only") or OS.get_cmdline_user_args().has("--sloped-only") or OS.get_cmdline_user_args().has("--lateral-only"):
+	if not selected_route.is_empty() or OS.get_cmdline_user_args().has("--house-only") or OS.get_cmdline_user_args().has("--sloped-only") or OS.get_cmdline_user_args().has("--lateral-only"):
 		_check(max_settled_palm < .04,"house caught palms reach architectural edges")
+		_check(max_mantle_palm < .05,"mantle palms press actual coping")
+		_check(mantle_boot_penetrations==0,"tucked boots clear solid parapet during crossing")
+		print("MANTLE CONTACT palm=",max_mantle_palm," boot_penetrations=",mantle_boot_penetrations)
 		print("HOUSE CLIMB ","PASS" if failures == 0 else "FAIL"," routes=",completed_routes," frames=",frame_number," palm=",max_settled_palm)
 		await _finish(1 if failures else 0)
 		return
@@ -228,6 +252,30 @@ func _run() -> void:
 		_check(pursuer.palm_world(side).distance_to(gun_target)<.02,"armed pursuer "+side+" palm grips rifle")
 	_check(firearm.cooldown>0.0 and firearm.gun.global_basis.x.y>.5,"pursuer raises muzzle for visible loading gesture")
 	_check(firearm.cartridges == 3 and firearm.cooldown > 0.0,"Enfield consumes cartridge and respects shared reload timing")
+	var reload_gap := 0.0
+	var showed_paper := false
+	var shots_before_reload: int = firearm.shots
+	for tick in 45:
+		firearm.cooldown = firearm.RELOAD*(1.0-float(tick)/45.0)
+		pursuer._process(1.0/30.0)
+		firearm._process(0.0)
+		for side in ["r","l"]:
+			var contact: Vector3 = firearm.gun.to_global(Vector3(-.09,-.045,0) if side=="r" else firearm.loading_left)
+			var gap: float = pursuer.palm_world(side).distance_to(contact)
+			if gap > .025: print("RELOAD CONTACT tick=",tick," side=",side," gap=",gap)
+			reload_gap = maxf(reload_gap,gap)
+		showed_paper = showed_paper or firearm.cartridge.visible
+		await _capture("pursuer_reload")
+		if tick == 16 and OS.get_cmdline_user_args().has("--debug-contact"):
+			print("RELOAD GUN ",firearm.gun.global_transform," palm ",pursuer.palm_world("l"))
+			for part in firearm.gun.find_children("*","MeshInstance3D",true,false):
+				print("RELOAD MESH ",part.name," visible=",part.is_visible_in_tree()," bounds=",part.global_transform*part.get_aabb())
+		if tick == 16 and rendered and OS.get_cmdline_user_args().has("--inspect-reload"):
+			print("TEMPORARY RELOAD REVIEW ",folder,"/frame_%04d.png"%(frame_number-1))
+			await get_tree().create_timer(15.0).timeout
+	_check(reload_gap < .04,"loading palms follow rifle and cartridge throughout gesture")
+	print("PURSUER RELOAD maximum palm gap=",reload_gap)
+	_check(showed_paper and firearm.shots==shots_before_reload,"reload shows paper cartridge and cannot fire")
 	actor.set_meta("climbing",false)
 	_check(firearm.can_engage(),"roof and airborne escape remain targetable after releasing grip")
 	actor.set_meta("climbing",true)
@@ -256,6 +304,9 @@ func _run() -> void:
 	if not OS.get_cmdline_user_args().has("--security-only"):
 		_check(airborne_frames > 0,"leaps release palms and boots in flight")
 	_check(max_settled_palm < .04,"caught palms reach visible layers")
+	_check(max_mantle_palm < .05,"mantle palms press actual coping")
+	_check(mantle_boot_penetrations==0,"tucked boots clear solid edges during crossing")
+	print("MANTLE CONTACT palm=",max_mantle_palm," boot_penetrations=",mantle_boot_penetrations)
 	print("LEAP CLIMB ","PASS" if failures == 0 else "FAIL"," routes=",completed_routes," flight_frames=",airborne_frames," settled_palm=",max_settled_palm," frames=",frame_number)
 	await _finish(1 if failures else 0)
 
@@ -301,6 +352,23 @@ func _sample() -> void:
 	if climb.leap_active and climb.leap.phase == "flight":
 		airborne_frames += 1
 		if climb.leap.weight() != 0.0 or climb.leap.weight(true) != 0.0: failures += 1
+	if climb.leap_active and climb.leap.phase == "mantle":
+		for side in ["l","r"]:
+			if climb.progress >= .82 and climb.progress <= .87:
+				var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_"+side))
+				var palm: Vector3 = visual.skeleton.to_global(hand*visual.equipment.palm_offsets[side])
+				var gap: float = palm.distance_to(visual.climb_targets[side].global_position)
+				if OS.get_cmdline_user_args().has("--debug-contact") and gap>.06 and frame_number%5==0: print("MANTLE PALM gap=",gap," t=",climb.progress," side=",side," palm=",palm," target=",visual.climb_targets[side].global_position," root=",actor.global_position," model=",visual.model.global_position," lip=",climb.layers[-1] if not climb.layers.is_empty() else climb.landing-Vector3.UP*.94)
+				max_mantle_palm = maxf(max_mantle_palm,gap)
+			if climb.progress >= .90 and climb.progress <= .96:
+				var foot: int = visual.skeleton.find_bone("foot_"+side)
+				var rest: Transform3D = visual.skeleton.get_bone_global_rest(foot)
+				var sole_offset: Vector3 = rest.basis.inverse()*Vector3(0,-.085,.06)
+				var sole: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot)*sole_offset)
+				var point_query := PhysicsPointQueryParameters3D.new()
+				point_query.position = sole+Vector3.UP*.03
+				point_query.exclude = [actor.get_rid()]
+				if not get_world_3d().direct_space_state.intersect_point(point_query,1).is_empty(): mantle_boot_penetrations += 1
 	if climb.leap_active and climb.leap.phase == "hang":
 		for side in ["l","r"]:
 			var hand: Transform3D = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_"+side))
@@ -312,9 +380,12 @@ func _sample() -> void:
 func _capture(label: String) -> void:
 	camera.global_position = actor.global_position+Vector3(-3.6,1.0,3.3)
 	camera.look_at(actor.global_position+Vector3.UP*.3)
-	if label in ["armed_pursuer","roof_firearm_hit"]:
+	if label in ["armed_pursuer","roof_firearm_hit","pursuer_reload"]:
 		camera.global_position=Vector3(actor.global_position.x-7,2.5,actor.global_position.z+5)
 		camera.look_at(actor.global_position.lerp(Vector3(-4,1.3,actor.global_position.z),.5))
+	if label == "pursuer_reload":
+		camera.global_position = Vector3(-2,1.65,actor.global_position.z+1.4)
+		camera.look_at(Vector3(-4,1.3,actor.global_position.z))
 	if rendered:
 		await get_tree().process_frame
 		RenderingServer.force_draw(false)
@@ -322,6 +393,14 @@ func _capture(label: String) -> void:
 		pixels.resize(960,540)
 		pixels.save_png(folder+"/frame_%04d.png"%frame_number)
 		if frame_number%30 == 0: pixels.save_png(folder+"/"+label+".png")
+		if (OS.get_cmdline_user_args().has("--inspect-climb") or OS.get_cmdline_user_args().has("--inspect-mantle")) and climb.leap_active:
+			var phase: String = climb.leap.phase
+			var ready_phase: bool = phase == "hang" or (phase == "flight" and climb.leap.clock >= .28) or (phase == "mantle" and climb.progress >= .85)
+			if ready_phase and not phase in inspected_climb and (not OS.get_cmdline_user_args().has("--inspect-mantle") or phase=="mantle"):
+				inspected_climb.append(phase)
+				pixels.save_png(folder+"/inspect_"+phase+".png")
+				print("TEMPORARY CLIMB REVIEW ",phase," ",folder)
+				await get_tree().create_timer(10.0).timeout
 	frame_number += 1
 	await get_tree().physics_frame
 

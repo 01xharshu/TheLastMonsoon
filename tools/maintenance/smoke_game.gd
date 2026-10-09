@@ -48,6 +48,25 @@ func _run() -> void:
 				await physics_frame
 			Input.action_release("move_forward")
 			require(actor.global_position.is_finite(), "Finite player movement")
+		var inventory: Node = actor.get_node("InventoryComponent")
+		inventory.add_item("enfield", 1)
+		var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
+		equipment.select_weapon(1)
+		Input.action_press("aim")
+		for frame in 12:
+			await physics_frame
+		Input.action_release("aim")
+		var rifle: Node = actor.get_node("RifleCombat")
+		rifle.rounds = 0
+		inventory.add_item(rifle.ammo_id(), 2)
+		rifle.start_reload()
+		require(rifle.reload_remaining > 0, "Rifle reload starts")
+		for frame in 150:
+			if rifle.reload_remaining <= 0:
+				break
+			await process_frame
+		require(rifle.rounds == 1 and rifle.reload_remaining <= 0, "Rifle reload completes")
+		equipment.toggle_stowed()
 		require(saves.save_game(world, 1), "Save slot writes")
 		require(not saves.read_slot(1).is_empty(), "Save slot reads")
 		# Restore in-place, exercising the same apply path without rebuilding the world.

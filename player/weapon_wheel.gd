@@ -2,9 +2,9 @@ extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const SERIF = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
-const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "STOW WEAPONS"]
-const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Hands free · weapons carried"]
-const STOW_INDEX := 6
+const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "SPEAR", "SMOKE POUCH", "STOW WEAPONS"]
+const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Chacha’s spear", "Throw escape smoke · B", "Hands free · weapons carried"]
+const STOW_INDEX := 8
 const IVORY := Color(0.93, 0.89, 0.78)
 const BRASS := Color(0.67, 0.51, 0.29)
 var actor: CharacterBody3D
@@ -27,7 +27,7 @@ func open() -> void:
 	if actor.get_meta("detention_action", "") != "": return
 	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
 	if not actor.is_physics_processing(): return
-	selected = int(equipment.selected)
+	selected = 6 if actor.has_node("ChachaKit") and actor.get_node("ChachaKit").active else int(equipment.selected)
 	previous_mouse_mode = Input.mouse_mode
 	previous_mouse_position = get_viewport().get_mouse_position()
 	actor.set_meta("weapon_wheel_open", true)
@@ -43,8 +43,13 @@ func close(commit: bool) -> void:
 	if commit:
 		if selected == STOW_INDEX:
 			equipment.stowed = true
+			if actor.has_node("ChachaKit"):actor.get_node("ChachaKit").active=false
 			equipment._refresh()
-		elif equipment.owns(selected):
+		elif selected == 6 and owns_slot(selected):
+			actor.get_node("ChachaKit").equip("spear")
+		elif selected == 7 and owns_slot(selected):
+			actor.get_node("ChachaKit").call_deferred("throw_smoke")
+		elif owns_slot(selected):
 			equipment.select_weapon(selected)
 			# Swimming always wins over a wheel selection; selection is remembered.
 			equipment.stowed = equipment.swimming or actor.is_swimming
@@ -55,6 +60,11 @@ func close(commit: bool) -> void:
 	Input.mouse_mode = previous_mouse_mode
 	if previous_mouse_mode == Input.MOUSE_MODE_VISIBLE:
 		Input.warp_mouse(previous_mouse_position)
+
+func owns_slot(slot: int) -> bool:
+	if slot == STOW_INDEX:return true
+	if slot in [6,7]:return actor.has_node("ChachaKit") and actor.inventory.has_item("spear" if slot==6 else "smoke_bomb")
+	return equipment.owns(slot)
 
 func _cancel() -> void:
 	close(false)
@@ -132,6 +142,12 @@ func _icon(slot: int, centre: Vector2, color: Color) -> void:
 		draw_line(centre+Vector2(-34,-11),centre+Vector2(34,-11),color,3,true)
 		draw_line(centre+Vector2(-34,-5),centre+Vector2(34,-5),color,3,true)
 		draw_line(centre+Vector2(-24,-3),centre+Vector2(-34,13),BRASS,6,true)
+	elif slot == 6:
+		draw_line(centre+Vector2(-25,25),centre+Vector2(20,-20),BRASS,4,true)
+		draw_colored_polygon(PackedVector2Array([centre+Vector2(17,-12),centre+Vector2(30,-30),centre+Vector2(12,-17)]),color)
+	elif slot == 7:
+		draw_circle(centre,15,BRASS)
+		draw_arc(centre+Vector2(10,-20),10,PI,TAU,12,color,3,true)
 	else:
 		draw_arc(centre,25,0,TAU,48,color,2,true)
 		draw_line(centre+Vector2(-17,17),centre+Vector2(17,-17),BRASS,3,true)
@@ -157,13 +173,13 @@ func _draw() -> void:
 		draw_polyline(polygon,IVORY if slot==selected else BRASS,2 if slot==selected else 1,true)
 		var point := centre + Vector2.from_angle(angle)*(inner+outer)*.5
 		_icon(slot,point-Vector2(0,9),IVORY if slot==selected else Color(0.64,0.65,0.57))
-		var available: bool = slot == STOW_INDEX or equipment.owns(slot)
+		var available: bool = slot == STOW_INDEX or owns_slot(slot)
 		_text(LABELS[slot],point+Vector2(0,40),18,IVORY if available else BRASS,true)
 		if not available: _text("FIND IN STORES",point+Vector2(0,59),11,BRASS)
 	draw_circle(centre,inner-4,Color(0.027,0.038,0.030,0.98))
 	_text(LABELS[selected],centre+Vector2(0,-6),19,IVORY,true)
 	_text("RELEASE TO SELECT",centre+Vector2(0,17),10,BRASS)
-	_text(DESCRIPTIONS[selected] if selected == STOW_INDEX or equipment.owns(selected) else "Find this weapon in a guarded store",centre+Vector2(0,outer+32),17)
+	_text(DESCRIPTIONS[selected] if selected == STOW_INDEX or owns_slot(selected) else "Find this weapon in a guarded store",centre+Vector2(0,outer+32),17)
 	_text("Hold ~   ·   Move pointer or use arrow keys   ·   Esc cancels",centre+Vector2(0,outer+62),14)
 	if actor.is_swimming:
 		_text("Swimming — weapons stay stowed",centre+Vector2(0,outer+86),14,BRASS)

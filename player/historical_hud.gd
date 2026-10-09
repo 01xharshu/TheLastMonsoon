@@ -14,6 +14,7 @@ var heading: float = 0.0
 var health: float = 100.0
 var health_trail: float = 100.0
 var sight_pulse := 0.0
+var sight_recoil := 0.0
 var human_target := false
 
 func box(color: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
@@ -153,6 +154,10 @@ func _update_gun_sight(delta: float) -> void:
 					break
 				node = node.get_parent()
 	sight_pulse = move_toward(sight_pulse, 1.0 if human_target else 0.0, delta * 5.0)
+	sight_recoil = move_toward(sight_recoil,clampf(gear.recoil/0.075,0.0,1.0) if aiming_gun else 0.0,delta*20.0)
+
+func gun_sight_radius(pistol_sight: bool) -> float:
+	return lerpf(17.0 if pistol_sight else 12.0,9.0 if pistol_sight else 6.5,sight_pulse)+sight_recoil*(6.0 if pistol_sight else 4.0)
 
 func diamond(center: Vector2, radius: float, color: Color) -> void:
 	draw_polyline(PackedVector2Array([center+Vector2(0,-radius),center+Vector2(radius,0),center+Vector2(0,radius),center+Vector2(-radius,0),center+Vector2(0,-radius)]),color,1.0,true)
@@ -211,7 +216,7 @@ func _draw() -> void:
 	if gun_aim:
 		var pistol_sight: bool = gear != null and gear.selected == 3
 		var center := size * .5
-		var radius: float = lerpf(17.0 if pistol_sight else 12.0, 9.0 if pistol_sight else 6.5, sight_pulse)
+		var radius := gun_sight_radius(pistol_sight)
 		var color := Color(0.85,0.57,0.32) if human_target else IVORY
 		for angle in [0.0, PI*.5, PI, PI*1.5]:
 			var axis := Vector2.from_angle(angle)

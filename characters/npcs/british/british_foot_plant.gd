@@ -40,15 +40,15 @@ func _required_drop(bones: Array, target_world: Vector3) -> float:
 	return maxf(0.008, hip.y-target_world.y-vertical)
 
 func update(phase: float, enabled: bool, pose_weight: float, distance_per_cycle: float) -> void:
+	if not enabled:
+		skeleton.set_bone_pose_position(pelvis, pelvis_position + pelvis_down * hip_drop * pose_weight)
+		clear()
+		return
 	var side := "l" if cos(phase * TAU) < 0.0 else "r"
 	var swing_side := "r" if side == "l" else "l"
 	var swing: Array = legs[swing_side]
 	var swing_target := skeleton.to_global(skeleton.get_bone_global_pose(swing[2]).origin)
 	swing_target.y = maxf(swing_target.y, float(ankle_height[swing_side]) + 0.035 * absf(cos(phase * TAU)))
-	if not enabled:
-		skeleton.set_bone_pose_position(pelvis, pelvis_position + pelvis_down * hip_drop * pose_weight)
-		clear()
-		return
 	var bones: Array = legs[side]
 	if side != planted_side:
 		planted_side = side

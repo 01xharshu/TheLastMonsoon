@@ -29,6 +29,23 @@ func _run() -> void:
 		push_error("ARJUN MOTION TREE: climb pull pose did not engage")
 		quit(1)
 		return
+	var arm := skeleton.find_bone("upperarm_r")
+	tree.update_climb(.2,.28,"settle",.13)
+	var settled_arm := skeleton.get_bone_pose_rotation(arm)
+	var reference_arm := pair_reference(tree,skeleton,arm,"catch","hang",.5)
+	if settled_arm.angle_to(reference_arm)>.01:
+		push_error("ARJUN MOTION TREE: settling passed through unrelated pull/leap poses")
+		quit(1)
+		return
+	tree.update_climb(.2,.50,"flight",.435)
+	var airborne_arm := skeleton.get_bone_pose_rotation(arm)
+	var flight_weight: float = preload("res://player/climb_animation.gd").position("flight",.435)-3.0
+	reference_arm = pair_reference(tree,skeleton,arm,"leap","catch",flight_weight)
+	if airborne_arm.angle_to(reference_arm)>.01:
+		push_error("ARJUN MOTION TREE: airborne reach passed through alternating pull pose")
+		quit(1)
+		return
+	print("PASS dedicated leap and settle bone poses exclude alternating pulls")
 	var spine := skeleton.find_bone("spine_01")
 	tree.update_climb(0.2,.78)
 	var hanging_spine := skeleton.get_bone_pose_rotation(spine)
@@ -143,3 +160,25 @@ func _run() -> void:
 		return
 	print("ARJUN MOTION TREE: PASS | idle, walk, run, swim, sit entry/exit and long gun envelopes")
 	quit()
+
+func pair_reference(tree: AnimationTree, rig: Skeleton3D, bone: int, first: String, second: String, weight: float) -> Quaternion:
+	# Compare the resulting rig to an independent engine blend of only the two
+	# intended clips; engine quaternion mixing differs from a direct slerp.
+	var graph := tree.tree_root as AnimationNodeBlendTree
+	for pair in [{"name":"reference_a","clip":first},{"name":"reference_b","clip":second}]:
+		var pose := AnimationNodeAnimation.new()
+		pose.animation = "motion/climb_"+pair.clip
+		graph.add_node(pair.name,pose)
+	graph.add_node("reference_pair",AnimationNodeBlend2.new())
+	graph.connect_node("reference_pair",0,"reference_a")
+	graph.connect_node("reference_pair",1,"reference_b")
+	graph.disconnect_node("climb_selector",0)
+	graph.connect_node("climb_selector",0,"reference_pair")
+	tree.set("parameters/climb_selector/blend_amount",0.0)
+	tree.set("parameters/reference_pair/blend_amount",weight)
+	tree.advance(0.0)
+	var result := rig.get_bone_pose_rotation(bone)
+	graph.disconnect_node("climb_selector",0)
+	graph.connect_node("climb_selector",0,"climb_pose")
+	for name in ["reference_pair","reference_a","reference_b"]: graph.remove_node(name)
+	return result

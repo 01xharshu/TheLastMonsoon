@@ -1,12 +1,14 @@
 {
-  "status": "RIVER_CLOTHING_DEFORMATION_STUDY",
+  "status": "RIVER_ROUTINE_RUNTIME",
   "source": "WorkingAssets/NPCs/river_woman/river_woman_motion.blend",
   "runtime": "characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb",
-  "source_sha256": "1bd7b18bfaca942ca05322561878a060c70433a58e3bc1fe913bd18f6f47bb6e",
-  "runtime_sha256": "a9bc3d1cbbc3d9042b396a10b654df75964c8eebee948474eb20f20c468507d6",
-  "foundation_faces": 606,
+  "source_sha256": "4544f4ef1239d9dc659da45451d15a346c5a03601ff89d6b1b0b6322b8162fd6",
+  "runtime_sha256": "cb597e845a0c89604d07f90164f362ed5a879a875c38b7141379c3d9dec253a6",
+  "foundation_faces": 894,
   "donor": "village_woman_motion_candidate.blend",
   "visual_approved": false,
   "motion_approved": false,
-  "in_world": false
+  "in_world": true,
+  "corrective_samples": 0,
+  "foundation_in_runtime": true
 }

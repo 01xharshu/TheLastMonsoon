@@ -4,7 +4,7 @@ Status: broad action/ambience implementation retained; 2026-10-07 bounded asset/
 
 ## Sound and contact
 
-`systems/world_audio.gd` caches 25 action keys, six recorded footstep variants and caps simultaneous one-shot voices at 24. `systems/environment_audio.gd` uses eight positional fire-loop voices and one river voice; `systems/wind_system.gd` uses one wind player. Environment loops retire or mute when their scene/location is unavailable. Failed or voice-capped dispatch does not count as an emitted ambience event.
+`systems/world_audio.gd` caches 25 action keys, six recorded footstep variants and caps simultaneous one-shot voices at 24. `systems/environment_audio.gd` uses eight positional fire-loop voices and two bounded river/current-bank voices; `systems/wind_system.gd` uses one wind player. Environment loops retire or mute when their scene/location is unavailable. Failed or voice-capped dispatch does not count as an emitted ambience event.
 
 Arjun footsteps now trigger from newly accepted stance contacts in the existing locomotion foot solver, with a per-foot duplicate guard that rearms only after visible sole clearance. Distance timing remains for unsupported low stances and swimming; grounded fallback now uses the same tagged/ancestor material lookup and swimming retains its splash sound. Nearby Indian, British, household and purpose actors use planted-side changes when their solver supplies them, with distance fallback. Cattle hoof contacts follow their actual stance acquisition. Collider/ancestor surface names and explicit `audio_surface` tags select material sounds; untagged ambiguous surfaces retain a dirt fallback. Inactive, dead and knocked-out NPCs do not emit movement sounds. These sounds do not approve clothing or sole fit.
 
@@ -42,3 +42,5 @@ To review in-game:
 4. Watch grass, mango leaves and roadside flags for at least a minute. Poles should stay rooted while cloth direction gradually follows the breeze and flutter speed changes with gusts. Enter an office then return outdoors: wind sound and Arjun's existing cloth response should ease under the roof and recover outside.
 
 Open gates: owner listening/mix/naturalness acceptance; final character/clothing/contact art; exact local cattle/water asset preference; seated writing and active workshop animations owned by their character/work scopes; wall occlusion/underwater acoustics and species-specific night ambience. Do not represent structural checks or sample levels as those approvals.
+
+River follow-up: [river flow realism](river_flow_realism.md) adds stronger upper-reach current sound and shoreline wash tied to the actual bank, plus current/wave gameplay. Full Suryagarh environment-audio regression now PASS; the earlier startup timeout is superseded for that check.

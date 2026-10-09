@@ -47,5 +47,4 @@ func run() -> void:
   report.actors[role]={"role_idle_duration":idle.length,"head_observation":head_motion,"authored_walk_duration":walk.length,"cloth_gait_phase_aligned":phase_ok,"cloth_meshes":shapes,"corrective_weight_sum":peak,"nominal_speed":actor.nominal_walk_speed}
   actor.free()
  report["passed"]=errors.is_empty()
- FileAccess.open("res://docs/characters/npcs/purpose_work_actor_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
  print("PURPOSE_WORK_ACTORS ",JSON.stringify(report));quit(0 if errors.is_empty() else 1)

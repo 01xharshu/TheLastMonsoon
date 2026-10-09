@@ -1,6 +1,10 @@
 extends SceneTree
 ## Capture the integrated forest under the main world's existing lighting.
 func _initialize() -> void:
+	if OS.get_environment("FOREST_REVIEW_DIR").is_empty():
+		push_error("Set FOREST_REVIEW_DIR to an OS temporary directory")
+		quit(1)
+		return
 	call_deferred("capture")
 
 func capture() -> void:
@@ -34,6 +38,6 @@ func capture() -> void:
 		await RenderingServer.frame_post_draw
 		var captured := root.get_texture().get_image()
 		captured.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
-		captured.save_png("res://environment/forest/review/" + view[0] + ".png")
+		captured.save_png(OS.get_environment("FOREST_REVIEW_DIR").path_join("") + view[0] + ".png")
 		print("FOREST_WORLD_CAPTURE ", view[0])
 	quit()

@@ -15,8 +15,9 @@ var water_seconds:=0.0
 var emissions: Dictionary={}
 func _ready() -> void:
  for key in ['fire','river','cow','sparrow']:
-  clips[key]=AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/ambience/'+key+'.wav'))
+  clips[key]=(load('res://audio/ambience/'+key+'.wav') as AudioStreamWAV)
   if key in ['fire','river']:
+   clips[key]=clips[key].duplicate()
    clips[key].loop_mode=AudioStreamWAV.LOOP_FORWARD;clips[key].loop_end=clips[key].data.size()/2
  for i in 8:
   var voice:=AudioStreamPlayer3D.new();voice.max_distance=28;voice.unit_size=6;voice.volume_db=-3
@@ -24,7 +25,7 @@ func _ready() -> void:
  river_voice=AudioStreamPlayer3D.new();river_voice.max_distance=110;river_voice.unit_size=10;river_voice.volume_db=-2
  river_voice.stream=clips.river;add_child(river_voice)
  shore_voice=AudioStreamPlayer3D.new();shore_voice.max_distance=32;shore_voice.unit_size=7
- shore_voice.stream=clips.river;shore_voice.pitch_scale=.92;shore_voice.volume_db=-10;add_child(shore_voice)
+ shore_voice.stream=clips.river;shore_voice.pitch_scale=.92;shore_voice.volume_db=-3;add_child(shore_voice)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
 func _added(node: Node) -> void:
@@ -54,6 +55,16 @@ func _process(delta: float) -> void:
   return
  var clock: Node=scene.get_node('GameTimeSystem')
  tick(camera.global_position,int(clock.current_hour),step)
+func bank_x(z: float, side: float) -> float:
+ # Follow the actual terrain/water intersection rather than the channel-width marker.
+ var centre: float=layout.river_x(z)
+ var low: float=layout.river_width(z)-9.0
+ var high: float=layout.river_width(z)+37.0
+ for i in 9:
+  var offset: float=(low+high)*.5
+  if layout.height(centre+side*offset,z)>Layout.WATER_LEVEL:high=offset
+  else:low=offset
+ return centre+side*(low+high)*.5
 func tick(listener: Vector3,hour: int,delta: float) -> void:
  water_seconds+=delta
  # A river's broad source follows the nearest bank, rather than the player's feet.
@@ -71,8 +82,8 @@ func tick(listener: Vector3,hour: int,delta: float) -> void:
  else:river_voice.stop()
  # A close, separately phased bank wash adds gentle lapping beneath the current.
  var side: float=-1.0 if listener.x<centre else 1.0
- shore_voice.global_position=Vector3(centre+side*width,Layout.WATER_LEVEL,z)
- shore_voice.volume_db=-7+linear_to_db(maxf(.12,exposure))+sin(water_seconds*.8)*2
+ shore_voice.global_position=Vector3(bank_x(z,side),Layout.WATER_LEVEL,z)
+ shore_voice.volume_db=-3+linear_to_db(maxf(.12,exposure))+sin(water_seconds*.8)*2
  if listener.distance_to(shore_voice.global_position)<32:
   if not shore_voice.playing:shore_voice.play(clips.river.get_length()*.43)
  else:shore_voice.stop()

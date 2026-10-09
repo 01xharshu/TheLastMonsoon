@@ -3,25 +3,30 @@
   "source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_motion_candidate.blend",
   "garments": {
     "Fitted cotton upper base": {
-      "vertices": 1613,
-      "pose_keys": 98
+      "vertices": 1539,
+      "pose_keys": 194
     },
     "Knee length wrapped dhoti": {
       "vertices": 480,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Dhoti woven border": {
       "vertices": 192,
-      "pose_keys": 98
+      "pose_keys": 194
     },
     "Kurta loose lower panel": {
       "vertices": 480,
-      "pose_keys": 98
+      "pose_keys": 194
     }
   },
   "body_preserved": true,
+  "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_weaver_assistant/village_weaver_assistant_clothing_fitted.blend",
+  "fitted_source_sha256": "1c9a154295017b52e65cbfcdb741a237578a6e019dd4dd5c7460c187cd9f3b41",
   "runtime": "characters/npcs/motion/village_weaver_assistant/village_weaver_assistant_rigged_candidate.glb",
-  "runtime_sha256": "880148f2c9ff364559dc7d74c340b142cc4b91f650ac82263a43517fb04b9278",
-  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
+  "runtime_sha256": "3701971d9e4c59fd607dc616bb6f1854262fe633c83b6f326dfa350000157f8f",
+  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER",
+  "interpolation_repairs": 3,
+  "export_all_bone_influences": true,
+  "transition_repairs": 3
 }

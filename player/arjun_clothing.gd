@@ -14,6 +14,7 @@ var previous_velocity := Vector3.ZERO
 var shoulder_stitches: MeshInstance3D
 var thread: StandardMaterial3D
 var tailored_meshes := 0
+var rest_fold := 0.0
 
 func setup(model: Node3D, skeleton: Skeleton3D) -> void:
  rig = skeleton
@@ -181,6 +182,7 @@ func mount_item(item: Node3D, point: String, local_fit: Transform3D = Transform3
 
 func _process(delta: float) -> void:
  var actor = get_parent().actor
+ rest_fold = move_toward(rest_fold, 1.0 if actor.get_meta("rest_action", "") == "sleep" else 0.0, delta * 6.0)
  var wet: bool = actor.is_swimming if actor != null else false
  moisture = move_toward(moisture, 1.0 if wet else 0.0, delta * (0.65 if wet else 0.025))
  var local_velocity: Vector3 = rig.global_basis.orthonormalized().inverse() * actor.velocity
@@ -200,6 +202,7 @@ func _process(delta: float) -> void:
  for material in materials:
   material.set_shader_parameter("wetness", moisture)
   material.set_shader_parameter("fabric_sway", fabric_sway)
+  material.set_shader_parameter("rest_fold", rest_fold)
  shoulder.visible = sockets.back_upper.get_child_count() > 0
  shoulder_stitches.visible = shoulder.visible
 

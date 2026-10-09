@@ -22,8 +22,10 @@
   "body_preserved": true,
   "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_woman/village_woman_clothing_fitted.blend",
-  "fitted_source_sha256": "43c77f32ebb17c34eb93a5711fbdc8c2ccd3e0f0aacaf2c3ff4f9d08fa28b401",
+  "fitted_source_sha256": "f0593350b21b3b2eee49a07e80a43ab764911f4ba70bedd142f73f77077db9f6",
   "runtime": "characters/npcs/motion/village_woman/village_woman_rigged_candidate.glb",
-  "runtime_sha256": "1ed2dfdb39b2a420959a76d1b4b91a8acc57f7f0e771f2c9b12baa9df103a7e7",
-  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
+  "runtime_sha256": "2b7b408424ddff58022bd46c1f1229f49e834492649894d29cf45c47985e3058",
+  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER",
+  "interpolation_repairs": 12,
+  "export_all_bone_influences": true
 }

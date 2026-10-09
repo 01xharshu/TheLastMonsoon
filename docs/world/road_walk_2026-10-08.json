@@ -1,0 +1,37 @@
+{
+	"errors": [],
+	"passed": true,
+	"routes": [
+		{
+			"airborne_frames": 0,
+			"finish": "(500.212, 111.5576, -251.8067)",
+			"frames": 267,
+			"jump_input": false,
+			"minimum_vertical_velocity": 0.0,
+			"reached": true,
+			"route": "switchback",
+			"start": "(479.0, 111.0242, -250.7)"
+		},
+		{
+			"airborne_frames": 0,
+			"finish": "(465.7483, 110.7179, -249.8506)",
+			"frames": 304,
+			"jump_input": false,
+			"minimum_vertical_velocity": 0.0,
+			"reached": true,
+			"route": "uphill_join",
+			"start": "(488.0, 109.7809, -239.8)"
+		},
+		{
+			"airborne_frames": 0,
+			"finish": "(487.2511, 109.8076, -239.9156)",
+			"frames": 303,
+			"jump_input": false,
+			"minimum_vertical_velocity": 0.0,
+			"reached": true,
+			"route": "downhill_join",
+			"start": "(465.0, 110.7011, -250.0)"
+		}
+	],
+	"scope": "real controller forward input at 1x physics; other actors paused; clothing/animation untouched"
+}

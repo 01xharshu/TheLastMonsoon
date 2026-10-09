@@ -1,0 +1,61 @@
+# Current handoff — Updated: 2026-10-08 IST
+- CHACHA — PLAY / ART REVIEW NEXT: `docs/world/chacha_house.md`.
+- **CAMERA — ROOM/CONTROLS PASS; PLAY OPEN**. Next: movement/mounted review. `docs/world/camera_clearance.md`
+- **STORAGE — HISTORY OPEN**. Cleanup committed; recoverable migration next. `docs/assets/repository_storage.md`
+- **GAME ERRORS — ROUTES PASS**. Next: play/loading. `docs/world/game_error_cleanup_2026-10-07.md`
+- **SKY — INTEGRATED; CLOCK/FLIGHT PASS**. Gameplay/fog/performance/exit open. `docs/world/sky_birds.md`, `docs/world/night_sky.md`
+- **LIVING WORLD — GRASS INTEGRATED / OPEN**. `docs/world/living_world_requirements_2026-10-05.md`
+- **BRITISH MILITARY SITES — ART_OPEN**. `docs/world/cantonment_service_realism.md`
+- **CIVIL LINES — IN_PROGRESS**. `docs/world/civil_lines.md`
+- Households: PASS; Metal timeout. `docs/world/household_daily_journeys.md`
+- **HOUSE ACCESS — BODY/LATCH/NEAR-FAR PASS; ART_OPEN**. `docs/world/staff_clothing_and_latch_motion.md`
+- **BUILDING REALISM — ART_OPEN**. `docs/world/building_realism_2026-10-01.md`
+- **ARJUN / DEV HOUSE — IN_PROGRESS**. `docs/world/arjun_dev_home.md`
+- **ASSET-FIRST — IN_PROGRESS**. `docs/assets/craft_batch_10.md`
+- **MOUNTED RIDER REALISM — IN_PROGRESS**. `docs/world/paid_coach_travel_2026-10-02.md`
+- **TITLE MENU — VISUAL POLISH INTEGRATED**. 10-08: Metal title/aspect/settings + focus/back/new-journey + Save/Continue PASS; controller/device feel open. `docs/world/title_menu_design.md`
+- **BHAIRAVPUR — IN_PROGRESS**. `docs/world/village_period_life.md`
+- **HOOGHLY PORT REALISM — COMPLETE / ART OPEN**. `docs/world/hooghly_port.md`
+- **THANA POLICE NPCS — REFERENCE DETAIL CANDIDATE**. `docs/characters/npcs/thana_staff.md`
+- **DEV — CANDIDATE**. `docs/characters/npcs/arjun_brother.md`
+- **TREES / CLIMB — FIXES PASS; ART OPEN**. `docs/world/tree_solidity_2026-10-08.md`.
+- **LONG-WEAPON — IN_PROGRESS**. `docs/characters/arjun/firearm_aim_camera.md`
+- **AIM HAND — IN_PROGRESS**. `docs/characters/arjun/reload_cartridge_contact_2026-09-30.md`
+- **CHARPAI SIT — IN_PROGRESS**. Lie/wake, waist hem and middle support refined; native Metal player-input sequence PASS. Placed world startup timed out before bed; continuous world motion/art review open. `docs/world/charpai_rest_transition.md`
+- **ARJUN PRONE — CONTACT PASS / ART OPEN**. Waist/soles/pouch and armed prone Metal PASS; live review next. `docs/characters/arjun/stealth_stance.md`
+- **ARJUN ANIMATIONTREE — IN_PROGRESS**. Lie/wake clips wired and focused check PASS; rest world motion review open. `docs/characters/arjun/animation_tree.md`
+- **ARJUN MULTI-VIEW — NOT_EXACT**. `docs/characters/arjun/reference_fit_status.md`
+- Errand transfer/save PASS; contact/route next: `docs/world/errands_and_paid_work.md`
+- **ALL HUMAN BODIES — IN_PROGRESS**. `docs/characters/npcs/whole_body_standard.md`
+- **PURPOSE NPC BATCH — IN_PROGRESS**, 2026-10-08 22:58 IST/root. Restored/re-exported dense single-sheet clerk candidate;14517 exactbody positions+opaquefoundationPASS. Native878contacts/1058stretch and6.173mmchairpenetration remain. Anchortrial rejected/rolledback; tempviews andbyte-identicalbackup removed. Next replace inner-thigh correction with shared fabric constraints; check `python3 tools/characters/check_clerk_runtime_contact.py --candidate characters/npcs/review/record_clerk_seat_physics_candidate.glb`, then Metal1x. No live seatingpromotion. Details: `docs/characters/npcs/purpose_npcs.md`
+- **INDIAN NPCS — VISUAL_REVIEW_FAILED**. `docs/characters/npcs/other_indian_npcs.md`
+- **BRITISH NPC — IN_PROGRESS**. `docs/characters/british/sergeant_uniform_realism.md`
+- **VICEREGAL RESIDENCE — IN_PROGRESS**. `docs/world/horse_stable.md`
+- **ADMINISTRATIVE OFFICES — OPERATIONS PASS / ART OPEN**. `docs/world/administrative_operations_2026-10-01.md`
+- **CIVIC — IN_PROGRESS**. `docs/characters/arjun/combat_motion_2026-09-24.md`
+- **ANIMAL TOOLS — IN_PROGRESS**. `docs/world/animal_tools_and_controller.md`
+- **CATTLE — IN_PROGRESS**. `docs/world/cow_and_resident_motion_2026-10-05.md`
+- **POLICE — LOGIC PASS / ART OPEN**, 10-08. Road custody/interruption checks PASS; world play/contact next. `docs/characters/arjun/police_custody_transfers.md`
+- **ARJUN COMBAT — IN_PROGRESS**. `docs/characters/arjun/combat_rescue_2026-10-05.md`
+- **WOMEN RIVER — PACE/SHORE PASS; CLOTH/WORLD OPEN**. `docs/characters/npcs/women_river_routine.md`
+- **RUNTIME / INTRO — CACHE/LOD/SPAWN PASS; FPS OPEN**. `docs/world/intro_performance_repair.md`
+- **ESCAPE MAP — COMPLETE**. `docs/world/escape_map.md`
+- **WORKSPACE / HOURS / CART PARKING — BEHAVIOUR PASS / PERFORMANCE OPEN**. `docs/world/workspace_optimisation.md`
+- **HORSE / BRIDGE — PASS; WORLD/ART OPEN**. `docs/world/horse_vehicle_speed_and_map.md`
+- **DAY / STAMINA / FORAGE — MOTION + DAY PASS**. `docs/world/day_survival_forage.md`
+- **ORDERED COMPLETION — IN_PROGRESS**. `docs/characters/npcs/ordered_completion_2026-10-06.md`
+- **MOBILE TOUCH — BASIC LAYER INTEGRATED**, 10-08. Shared Android/iOS player overlay; isolated input + Metal layout checks PASS. Device builds/performance and whole-game touch routes OPEN. `docs/world/mobile_touch_controls.md`
+- **HUD — COMPLETE**. `docs/world/hud_health_spacing.md`
+- Fort loop PASS/art open: `docs/world/ruined_fort_blockout.md`
+- **INDIAN NPC CLOTHING REPAIR — IN_PROGRESS**, 2026-10-08 10:48 IST/root. Four source120Hz + native idle/walk/return/blend contact PASS (1,193,904 checks, >2mm tolerance); complete bodies/foundations/tracks/placed pair PASS. Sources/exports retained, outputs cleaned. Next: updated Metal capture for reliable1.0x review, reshape rigid drape/sleeve edges, then generated work/seated/combat consumers. `docs/characters/npcs/indian_clothing_repair_2026-10-07.md`.
+- **RIVER/AUDIO — ART/LISTENING OPEN**. Current/waves + world/Metal PASS. Next: play/listen. `docs/world/river_flow_realism.md`
+- **GATE / WINDOW — BEHAVIOR PASS / ART OPEN**. Fresh-world Continue lock/reopen/auto-close PASS. Two-way fold/contact/restoration PASS; final cloth silhouette and populated-world play review remain. `docs/characters/arjun/window_climb.md`
+
+Earlier commands, ownership notes and failures: `docs/agent/history/2026-10-07-before-error-cleanup-compact.md`.
+
+- **TITLE MENU CROSS-COPY INTEGRATION — IN_PROGRESS**, 2026-10-08 IST, root/chat 01a116e8-393f-7201-8923-7d1d422f6d73 (worktree9746). User requests fixing absent revised menu and shutdown warning. Main startup/return already target `ui/main_menu.tscn`, but its newer dirty menu differs from worktree revision. Scope: merge only stacked title/alignment/scrim/compact focus into main, preserve transitions/hints/new-journey confirmation, verify configured startup/return and diagnose exit warning. No broad syncing or asset overwrite. Next: targeted presentation merge and temporary native verification; discard generated test artifacts per main policy.
+  - Merged presentation corrections into existing main menu only; newer transitions/hints/confirmation retained. Startup and GameMenu return already use correct scene. Worktree WAV playback warning traced; main's existing `quit_game` cleanup retained and ported to worktree. Next: configured startup/return callback native validation, title regression, and concise docs with no retained output.
+
+- **TITLE MENU CROSS-COPY / EXIT — COMPLETE**, 2026-10-08 IST, root/chat 01a116e8-393f-7201-8923-7d1d422f6d73. Main presentation merged preserving newer features. Worktree SaveManager quit drains WAV audio; title Quit/test exits use it. Title regression both PASS; configured startup + actual Return callback fixture both headless PASS/main native Metal PASS/pixels inspected. Completed verbose checks zero script errors/ObjectDB warnings. Reusable `tools/world/validate_menu_integration.gd`; commands Godot --headless --verbose --path <project> --script tools/world/{validate_title_menu,validate_menu_integration}.gd; omit --headless for native. Temporary output removed. Details docs/world/title_menu_design.md. Next: user F5 main project/controller review; populated-city route and external export rebuild not covered.
+
+- **CITY ROUTE POPULATION — IN_PROGRESS**, 2026-10-08 23:03 IST/root, user requests more people/police/carts moving on city routes. Existing two village general walkers, three city patrols, five public carts/one short freight run found. Scope: additive route population, existing MPFB actors/police custody AI/boardable carts; preserve dirty owners. Next: implement distributed/staggered route traffic, collision/LOD and real-world movement checks. Details: `docs/world/city_route_population.md`.

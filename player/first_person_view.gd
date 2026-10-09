@@ -7,6 +7,7 @@ var skeleton: Skeleton3D
 var equipment: Node3D
 var arm_mesh_count := 0
 var carried_mango: MeshInstance3D
+var chacha_spear: Node3D
 
 func setup(character: Node3D) -> void:
 	source = character
@@ -23,6 +24,8 @@ func setup(character: Node3D) -> void:
 	add_child(equipment)
 	equipment.inventory = source.actor.inventory
 	equipment.setup(skeleton)
+	chacha_spear=equipment.attach_at_rest("hand_r",preload("res://environment/weapons/period_spear/period_spear.glb"),Transform3D.IDENTITY,"ChachaSpearView")
+	chacha_spear.hide()
 	# Update after the world animation has applied its weapon grip.
 	process_priority = 12
 
@@ -74,6 +77,9 @@ func _process(_delta: float) -> void:
 	for i in skeleton.get_bone_count():
 		skeleton.set_bone_pose_rotation(i, source.skeleton.get_bone_pose_rotation(i))
 		skeleton.set_bone_pose_position(i, source.skeleton.get_bone_pose_position(i))
+	var kit: Node=source.actor.get_node_or_null("ChachaKit")
+	chacha_spear.visible=kit != null and kit.active and kit.spear.visible
+	if chacha_spear.visible:chacha_spear.transform=kit.spear.transform
 	equipment.selected = source.equipment.selected
 	equipment.stowed = source.equipment.stowed
 	equipment._refresh()

@@ -144,7 +144,7 @@ script = ExtResource("7_bridge")
 [node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=1695742296]
 stream = ExtResource("8_odqov")
 volume_db = -20.195
-autoplay = true
+autoplay = false
 
 [node name="RoadsideFlags" type="Node3D" parent="." unique_id=2043706952]
 script = ExtResource("20_flags")

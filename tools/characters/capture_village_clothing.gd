@@ -1,7 +1,9 @@
 extends SceneTree
 func _initialize() -> void: call_deferred("capture")
 func capture() -> void:
- root.size=Vector2i(1280,720)
+ DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+ DisplayServer.window_set_size(Vector2i(960,540))
+ root.size=Vector2i(960,540)
  var stage:=Node3D.new();root.add_child(stage)
  var env:=WorldEnvironment.new();env.environment=Environment.new()
  env.environment.background_mode=Environment.BG_COLOR;env.environment.background_color=Color(.16,.17,.19)
@@ -13,7 +15,14 @@ func capture() -> void:
  var folder:=OS.get_environment("TLM_CLOTHING_TEST_OUTPUT")
  if folder.is_empty(): push_error("Set TLM_CLOTHING_TEST_OUTPUT to a temporary directory");quit(1);return
  DirAccess.make_dir_recursive_absolute(folder)
+ actor.process_mode=Node.PROCESS_MODE_ALWAYS
  actor.set_process(true)
+ paused=false
+ print("VILLAGE_CAPTURE_TREE paused=",paused)
+ await process_frame
+ DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+ DisplayServer.window_set_size(Vector2i(960,540))
+ root.size=Vector2i(960,540)
  for clip in ["idle","walk","idle"]:
   actor.set("walking",clip=="walk")
   for sample in 5:

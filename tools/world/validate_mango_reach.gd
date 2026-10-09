@@ -11,7 +11,9 @@ func capture(name: String) -> void:
 	await process_frame
 	if DisplayServer.get_name() != "headless":
 		RenderingServer.force_draw(false)
-		root.get_texture().get_image().save_png("res://docs/world/captures/mango_reach_" + name + ".png")
+		var output := OS.get_environment("TLM_TEST_OUTPUT")
+		if not output.is_empty():
+			root.get_texture().get_image().save_png(output.path_join("mango_reach_" + name + ".png"))
 # Independent wrist/forearm clearance sample; rendered cloth remains the visual check.
 func arm_leg_clearance(rig: Skeleton3D) -> float:
 	var wrist := rig.get_bone_global_pose(rig.find_bone("hand_r")).origin
@@ -438,6 +440,5 @@ func validate() -> void:
 	player.survival.hydration = 100.0
 	check(not player.consumables.eat_fresh_mango(),"Full player ate fruit")
 	check(not component.carried_mango.visible,"Rejected eating showed fruit")
-	FileAccess.open("res://docs/world/mango_reach_validation.json",FileAccess.WRITE).store_string(JSON.stringify({"passed":failures.is_empty(),"failures":failures,"samples":samples,"rendered":DisplayServer.get_name() != "headless"},"\t"))
 	print("MANGO REACH: ","PASS" if failures.is_empty() else "FAIL")
 	quit(0 if failures.is_empty() else 1)

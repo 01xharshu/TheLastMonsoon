@@ -6,7 +6,8 @@ const SHOT = preload("res://audio/weapons/adams_shot.wav")
 const RELOAD_CLICK = preload("res://audio/weapons/aim_click.wav")
 var shot_sound: AudioStreamPlayer3D
 var reload_sound: AudioStreamPlayer3D
-const RELOAD_SECONDS := 3.8
+const LoadingSequence = preload("res://player/pistol_loading_sequence.gd")
+const RELOAD_SECONDS := 16.0
 const MUZZLE := Vector3(.175,.064,0)
 var rounds := CAPACITY
 var reload_remaining := 0.0
@@ -14,6 +15,8 @@ var aiming := false
 var shots_fired := 0
 var recoil := 0.0
 var reload_clicks := 0
+var reload_charges := 1
+var reload_duration := RELOAD_SECONDS
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -33,7 +36,8 @@ func available() -> bool:
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	var equipment: Node3D = visual.equipment
-	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == 3
+	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
+	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not mounted and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == 3
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not available(): return
@@ -49,11 +53,11 @@ func _process(delta: float) -> void:
 		return
 	recoil = move_toward(recoil, 0.0, delta * 0.38)
 	if reload_remaining > 0.0:
-		var previous_step := int(floor((RELOAD_SECONDS - reload_remaining) / (RELOAD_SECONDS / 5.0)))
+		var previous_step: int = LoadingSequence.state(1.0-reload_remaining/reload_duration,reload_charges).inserted
 		reload_remaining = maxf(0.0,reload_remaining-delta)
-		var current_step := int(floor((RELOAD_SECONDS - reload_remaining) / (RELOAD_SECONDS / 5.0)))
-		if current_step > previous_step and current_step <= 5:
-			reload_clicks += 1
+		var current_step: int = LoadingSequence.state(1.0-reload_remaining/reload_duration,reload_charges).inserted
+		if current_step > previous_step:
+			reload_clicks += current_step-previous_step
 			reload_sound.play()
 		if reload_remaining == 0.0: _finish_reload()
 	aiming = available() and reload_remaining == 0.0 and Input.is_action_pressed("aim")
@@ -97,19 +101,22 @@ func cancel_reload() -> void:
 	# Balls are consumed only at completion, so there is no reservation to refund.
 	reload_remaining = 0.0
 	aiming = false
+	visual.equipment.pistol_charge.hide()
 	if reload_sound: reload_sound.stop()
 
 func start_reload() -> bool:
 	if actor.get_meta("item_use", "") != "": return false
 	if not available() or reload_remaining > 0.0 or rounds >= CAPACITY or actor.inventory.get_item_count("pistol_ball") <= 0: return false
-	reload_remaining = RELOAD_SECONDS
+	reload_charges = mini(CAPACITY-rounds,actor.inventory.get_item_count("pistol_ball"))
+	reload_duration = LoadingSequence.duration(reload_charges)
+	reload_remaining = reload_duration
 	recoil = 0.0
 	reload_clicks = 0
 	reload_sound.play()
 	return true
 
 func _finish_reload() -> void:
-	var amount := mini(CAPACITY-rounds,actor.inventory.get_item_count("pistol_ball"))
+	var amount := mini(reload_charges,mini(CAPACITY-rounds,actor.inventory.get_item_count("pistol_ball")))
 	if amount > 0 and actor.inventory.remove_item("pistol_ball",amount): rounds += amount
 
 func get_hud_text() -> String:

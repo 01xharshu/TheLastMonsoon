@@ -47,7 +47,7 @@ func run() -> void:
 			player.move_and_slide()
 			steps += 1
 			if player.is_on_floor(): grounded += 1
-	var report := {"date": "2026-09-30", "center": [370, -105], "size_metres": [60, 60],
+	var report := {"date": Time.get_date_string_from_system(), "center": [370, -105], "size_metres": [60, 60],
 		"chunks": chunks.get_child_count(), "counts": counts, "existing_tree_points": existing.size(),
 		"replaced_baked_grass_instances": forest.get_meta("replaced_baked_grass_instances", 0),
 		"corridor_segments_reached": reached, "corridor_segments": forest.path_points.size() - 1,
@@ -55,9 +55,6 @@ func run() -> void:
 		"final_position": [player.position.x, player.position.y, player.position.z],
 		"passed": reached == forest.path_points.size() - 1,
 		"limitation": "Manual capsule physics sweep at 3 m/s. Player controls, camera clearance, foot contact and rendered appearance require separate review."}
-	var output := FileAccess.open("res://environment/forest/review/world_patch_validation.json", FileAccess.WRITE)
-	output.store_string(JSON.stringify(report, "\t") + "\n")
-	output.close()
 	print("FOREST_WORLD_CORRIDOR ", JSON.stringify(report))
 	world.queue_free()
 	await process_frame

@@ -9,6 +9,8 @@ static func exclusions(tree: SceneTree, initial: Array[RID]) -> Array[RID]:
 	return result
 
 static func sight(space: PhysicsDirectSpaceState3D, tree: SceneTree, from: Vector3, to: Vector3, initial: Array[RID]) -> Dictionary:
+	if preload("res://combat/escape_smoke.gd").obscures(tree,from,to):
+		return {"collider":tree.get_first_node_in_group("escape_smoke"),"position":from,"normal":Vector3.ZERO}
 	var query := PhysicsRayQueryParameters3D.create(from,to)
 	query.exclude = exclusions(tree,initial)
 	for pane in tree.get_nodes_in_group("carriage_glass"):

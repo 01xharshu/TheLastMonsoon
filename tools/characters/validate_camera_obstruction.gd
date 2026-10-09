@@ -43,9 +43,10 @@ func _run() -> void:
  wall.add_child(wall_mesh)
  for i in 12: await physics_frame
  var blocked_distance: float = arm.global_position.distance_to(camera.global_position)
- if DisplayServer.get_name() != "headless":
+ var capture_dir := OS.get_environment("TLM_CAMERA_OUTPUT_DIR")
+ if DisplayServer.get_name() != "headless" and capture_dir != "":
   await RenderingServer.frame_post_draw
-  print("CAMERA CAPTURE: ", root.get_texture().get_image().save_png("/tmp/tlm_camera_obstruction.png"))
+  print("CAMERA CAPTURE: ", root.get_texture().get_image().save_png(capture_dir.path_join("tlm_camera_obstruction.png")))
  ok = ok and blocked_distance < 0.8 and blocked_distance > 0.1
  wall.collision_layer = 16
  for i in 12: await physics_frame
@@ -68,5 +69,10 @@ func _run() -> void:
   camera._process(1.0 / 60.0)
  var shoulder_distance: float = arm.global_position.distance_to(camera.global_position)
  ok = ok and camera.shoulder_scale == 0.0 and shoulder_distance > camera.BODY_HIDE_DISTANCE and player.visual_root.visible
+ wall.position = Vector3(4.0, 1.5, 0.3)
+ for i in 30:
+  await physics_frame
+  camera._process(1.0 / 60.0)
+ ok = ok and is_equal_approx(camera.shoulder_scale, 1.0)
  print("CAMERA OBSTRUCTION: ", "PASS" if ok else "FAIL", " | open=", open_distance, " blocked=", blocked_distance, " tight=", tight_distance, " restored=", restored_distance, " shoulder=", shoulder_distance)
  quit(0 if ok else 1)

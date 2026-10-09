@@ -71,7 +71,7 @@ func validate() -> void:
 	assert(pistol.fire())
 	assert(pistol.shots_fired == 1 and pistol.rounds == rounds_before-1)
 	assert(pistol.start_reload())
-	pistol._process(4.0)
+	pistol._process(pistol.reload_duration+0.1)
 	assert(pistol.rounds == 5 and actor.inventory.get_item_count("pistol_ball") == 5)
 	print("LIVE WEAPONS: PASS | bow hold/draw/fire/hit, pistol hold/aim/fire/reload")
 	quit()

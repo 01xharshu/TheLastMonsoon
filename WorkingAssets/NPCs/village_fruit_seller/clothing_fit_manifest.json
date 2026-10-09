@@ -22,8 +22,10 @@
   "body_preserved": true,
   "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_fruit_seller/village_fruit_seller_clothing_fitted.blend",
-  "fitted_source_sha256": "b0a694b50231cb0c3964cdf47a6c5c4d38aa25ac156fd352f628c8ebcb104a39",
+  "fitted_source_sha256": "805636b79913be0d278ab5bc9991046a742d42c187b1ed6751111f479b00f9f6",
   "runtime": "characters/npcs/motion/village_fruit_seller/village_fruit_seller_rigged_candidate.glb",
-  "runtime_sha256": "67fc80f006079c5d7947562bb5f29e364094b0cbeb6db807b883d729ca292f78",
-  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
+  "runtime_sha256": "08cb9644090b0c8efaab4a8c6adbd9ac277bfc18ef69552a4ff29833ecf54662",
+  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER",
+  "interpolation_repairs": 569,
+  "export_all_bone_influences": true
 }

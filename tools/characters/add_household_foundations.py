@@ -53,4 +53,4 @@ for body in bodies:
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
 if role!='official':
  bpy.ops.export_scene.gltf(filepath=str(ROOT/f'characters/npcs/households/{role}.glb'),export_format='GLB',export_skins=True,export_animations=False,export_cameras=False,export_lights=False)
-(ROOT/f'docs/world/household_foundation_{role}.json').write_text(json.dumps({'source':str(source.relative_to(ROOT)),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'bodies':report,'scope':'source full-body masks disabled and separate opaque foundations; clothing fit requires rendered review'},indent=2)+'\n')
+print('HOUSEHOLD_FOUNDATION',json.dumps({'source':str(source.relative_to(ROOT)),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'bodies':report}))

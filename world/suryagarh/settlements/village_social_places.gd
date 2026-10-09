@@ -52,6 +52,9 @@ func _estate() -> void:
 	gate.name="EntranceGate"
 	gate.width=3.8
 	gate.height=2.9
+	gate.outside_latch_access=true
+	gate.auto_close_delay=12.0
+	gate.label_name="gate"
 	gate.position.x=-1.9
 	gate.build(builder.wood)
 	gate_frame.add_child(gate)
@@ -70,4 +73,3 @@ func _estate() -> void:
 		piece(field,"CultivatedBed",Vector3(0,.035,0),Vector3(9,.07,8),village.earth,false)
 		for row in 6:
 			piece(field,"CropRow",Vector3(0,.23,-3+row*1.1),Vector3(8,.38,.25),village.crop_material,false)
-

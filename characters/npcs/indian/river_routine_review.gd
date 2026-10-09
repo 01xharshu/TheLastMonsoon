@@ -10,6 +10,7 @@ func _ready() -> void:
 		woman.home = Vector3((index - 1) * 1.4, 0, 2)
 		woman.bank = Vector3((index - 1) * 1.4, 0, -2)
 		add_child(woman)
+		woman.sample(float(index)*.31)
 		women.append(woman)
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()

@@ -9,7 +9,11 @@ var budget_elapsed := 0.0
 
 func configure(site: Node3D) -> void:
 	district = site
-	clock = get_tree().current_scene.get_node("GameTimeSystem")
+	var world: Node = preload("res://systems/world_context.gd").find_world(site)
+	if world == null:
+		push_error("Cantonment duties require their owning world's clock")
+		return
+	clock = world.get_node("GameTimeSystem")
 	for i in 4:
 		var actor = Sepoy.new()
 		actor.name = "Sepoy%02d" % (i+1)
@@ -54,7 +58,8 @@ func _process(delta: float) -> void:
 	budget_elapsed += delta
 	if budget_elapsed < .25: return
 	budget_elapsed = 0
-	var player := get_tree().current_scene.get_node_or_null("Player") as Node3D
+	var world: Node = preload("res://systems/world_context.gd").find_world(self)
+	var player: Node3D = world.get_node_or_null("Player") as Node3D if world != null else null
 	if player == null: return
 	for actor in actors:
 		var active: bool = actor.global_position.distance_squared_to(player.global_position) < 100*100

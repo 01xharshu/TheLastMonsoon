@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ForestSpecies" load_steps=5 format=3]
+[ext_resource type="Script" path="res://environment/forest/scripts/forest_species.gd" id="1"]
+[ext_resource type="PackedScene" path="res://environment/forest/assets/shrub_lod0.glb" id="2"]
+[ext_resource type="PackedScene" path="res://environment/forest/assets/shrub_lod1.glb" id="3"]
+[ext_resource type="PackedScene" path="res://environment/forest/assets/shrub_lod2.glb" id="4"]
+[resource]
+script = ExtResource("1")
+layer = "shrub"
+near_scene = ExtResource("2")
+medium_scene = ExtResource("3")
+far_scene = ExtResource("4")
+collision_radius = 0
+collision_height = 0
+root_radius = 0
+ground_offset = 0
+align_to_ground = true
+receives_attachments = false
+minimum_separation = 0.45

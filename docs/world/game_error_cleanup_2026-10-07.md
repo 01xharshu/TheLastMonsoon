@@ -1,0 +1,25 @@
+# Game error cleanup — 2026-10-07
+
+Updated 2026-10-08. OBSERVED ERRORS FIXED / VERIFIED ROUTES PASS; loading/performance and broader play review remain. Scope: eliminate observed clean-import, startup, gameplay and shutdown diagnostics while preserving MakeHuman bodies, clothing, rigs and editable sources. Complete visual/gameplay approval is separate.
+
+The safe mesh-tangent editor plugin repairs missing tangent frames before LOD/shadow generation. Fourteen exports with UV-less clothing morphs opt out of the built-in tangent pass. Source geometry, normals, weights, indices and morph positions remain unchanged; mapped surfaces retain proper UV tangent frames. The plugin must remain enabled alongside these import settings.
+
+`characters/human_scene.gd` loads imported PackedScenes instead of decoding GLBs during play. NPC/driver consumers keep independent skeletons and mutable animation libraries, sharing immutable geometry. This removes repeated parsing and buffer-stride diagnostics. No human geometry is created or removed by this code.
+
+Menu Quit and window close use `SaveManager.quit_game`: pause simulation, stop voices, release streams, allow the audio mixer to retire playback, then exit. Wind cleanup also stops its stream. Menu navigation and graceful shutdown passed without the previous playback leak.
+
+Seated-clothing clearance now searches an exact triangle hierarchy within the original cell neighborhood and retains original tie ordering. A 128-query comparison against the earlier exhaustive search matched every returned contact dictionary; measured query time was 850359 → 41199 microseconds in the focused run. This is subsystem evidence, not a whole-game FPS or clothing-fit approval.
+
+Use `python3 tools/maintenance/check_game.py`. It creates a disposable project and uniquely named temporary user-data directory, checks import, tangent/source preservation, human-instance independence, contact-search parity, menu and world startup/movement/save/load, and deletes output after completion/failure/interruption. Generated logs, screenshots, recordings and JSON reports are not retained. After hierarchy acceleration, headless and normal Metal smoke routes both passed without errors or warnings. The latest native run reached the tested scene after 47.079 seconds and completed in 53.5 seconds; loading/performance still needs work. Latest tangent preservation covered 14 assets, 140 surfaces and 4171 morph surfaces; human cache covered eight models and clearance parity covered 128 queries.
+
+Removed six obsolete Python tools: the completed dated source audit, the superseded duplicate-evidence audit and unused helper, plus three rejected Arjun-study builders whose outputs had already been retired and had no downstream builder inputs. Active builders/exports/fitting tools remain.
+
+Verbose Metal logs report automatic RGB8-to-RGBA8 compatibility conversions; a focused native title-texture check preserved every RGB pixel. Normal game mode emits no such warning. The ineffective alpha-remap experiment was reverted; binary image assets remain unchanged. The importer now also preserves eight-influence skin weights when generating tangents.
+
+Packaged audio now uses imported AudioStreamWAV resources rather than physical WAV paths. Wind/fire/river loops duplicate streams before changing loop settings. This fixes missing audio and null-stream errors that appeared only when running without the source folders.
+
+Final `--native --packed` run passed every gate with exit 0 and no errors or warnings: import, 14 tangent-preservation assets, eight human-instance models, 128 clearance comparisons, menu navigation, native world startup, intro skip, movement in three districts, aiming/reload, save/load, shutdown, resource-pack export and isolated packed-world smoke. Native scene readiness took 45.19 s (world route 56.5 s); isolated packed readiness took 28.674 s (route 31.6 s). These are diagnostic timings on this shared host, not an agreed performance budget.
+
+Next: user play review and loading/performance work. Untested gameplay paths and visual/clothing/contact realism are not certified by these smoke checks. User play review: Play Game → Escape to morning → press a movement key to rise → walk in the village, Civil Lines and cantonment → save/load → Quit and window close. Source assets belonging to the concurrent village clothing repair remain untouched by this cleanup.
+
+2026-10-08 integration rerun: normal Metal import/preservation/cache/contact/menu/world checks passed after preserving eight-influence skins. Tree grounding also exposed MultiMesh buffer assignment during generic duplication; an explicit layout-first copy now preserves transforms, per-instance colors/custom data, metadata and interpolation settings. The native world rerun passed after that repair. Pack export fixture configuration was corrected; the final isolated pack run passed after audio-resource loading was repaired. All temporary projects, packs, caches, logs and user-data folders were deleted.

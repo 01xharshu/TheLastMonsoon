@@ -190,14 +190,14 @@ func run() -> void:
 	check(not pistol.start_reload(),"Pistol reloaded without ammunition")
 	actor.inventory.add_item("pistol_ball",5)
 	check(pistol.start_reload(),"Pistol reload did not start")
-	pistol.reload_remaining = 3.4
-	visual._process(1.0/60.0)
+	pistol.reload_remaining = pistol.reload_duration-0.4
+	for i in 15: visual._process(1.0/60.0)
 	var pistol_early: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
-	pistol.reload_remaining = 1.5
-	visual._process(1.0/60.0)
+	pistol.reload_remaining = pistol.reload_duration-2.1
+	for i in 15: visual._process(1.0/60.0)
 	var pistol_loading: Vector3 = visual.skeleton.get_bone_global_pose(visual.skeleton.find_bone("hand_l")).origin
 	check(pistol_early.distance_to(pistol_loading) > 0.04,"Pistol loading hand did not move")
-	pistol._process(4.0)
+	pistol._process(pistol.reload_duration+0.1)
 	check(pistol.rounds==5 and actor.inventory.get_item_count("pistol_ball")==0,"Pistol ammunition was not consumed")
 	# Sidearm consumes balls at completion, not at reload start.
 	pistol.rounds = 3
@@ -209,7 +209,7 @@ func run() -> void:
 	check(pistol.rounds == 3,"Cancelled sidearm reload completed in background")
 	visual.equipment.toggle_stowed()
 	check(pistol.start_reload(),"Pistol did not reload after cancellation")
-	pistol._process(4.0)
+	pistol._process(pistol.reload_duration+0.1)
 	check(pistol.rounds == 5 and actor.inventory.get_item_count("pistol_ball") == 0,"Pistol restart lost ammunition")
 	print("FIREARMS TEST ","FAIL" if failed else "PASS")
 	quit(1 if failed else 0)

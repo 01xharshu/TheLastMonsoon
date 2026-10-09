@@ -19,7 +19,9 @@ func run() -> void:
  for id in ["road_letter","road_office_bag","road_warehouse_crate","road_injured"]:
   check(jobs.JOBS.has(id),"catalogue "+id)
  actor.get_node("VisualRoot/CharacterVisual").equipment.stowed=true
- var inv:InventoryComponent=actor.get_node("InventoryComponent");inv.items.erase("rupees")
+ # Resolve this world-wired inventory after autoloads have started. Referencing
+ # its global class while the standalone script loads compiles WorldAudio too early.
+ var inv:Variant=actor.get_node("InventoryComponent");inv.items.erase("rupees")
  for id in ["road_letter","road_office_bag"]:
   road.locations[id]=Vector3(-245,7.2,225);road.location_days[id]=jobs.current_job_day();road._spawn(id)
   var endpoint:String=id+"_caller"
@@ -103,5 +105,5 @@ func run() -> void:
    if jobs.targets.has(request+"_caller"):live+=1;discoveries+=1
   check(live<=2,"bounded route caller population")
  check(discoveries>=3,"road callers discovered across multiple route regions")
- FileAccess.open("res://docs/world/roadside_opportunities_validation.json",FileAccess.WRITE).store_string(JSON.stringify({"passed":errors.is_empty(),"errors":errors,"scope":"actual world offer/collect/delivery/pay/save and original family binding; motion/route/art acceptance separate"},"  ")+"\n")
- print("ROADSIDE OPPORTUNITIES ","PASS" if errors.is_empty() else "FAIL",errors);quit(0 if errors.is_empty() else 1)
+ print("ROADSIDE OPPORTUNITIES ","PASS" if errors.is_empty() else "FAIL",errors)
+ await root.get_node("SaveManager").quit_game(0 if errors.is_empty() else 1)

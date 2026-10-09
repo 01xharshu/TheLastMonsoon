@@ -17,6 +17,8 @@ var climb_blend := 0.0
 var pistol_aim_blend := 0.0
 var pistol_reload_blend := 0.0
 var pistol_recoil_blend := 0.0
+var pistol_aim_phase := 0.0
+var pistol_reload_phase := 0.0
 var longgun_aim_blend := 0.0
 var longgun_ready_blend := 0.0
 var longgun_reload_blend := 0.0
@@ -116,6 +118,7 @@ func configure(model: Node3D) -> bool:
 	for beat in [{"name":"reach","at":0.0},{"name":"hang","at":0.14},{"name":"load","at":0.18},{"name":"leap","at":0.40},{"name":"catch","at":0.65},{"name":"pull_left","at":0.28},{"name":"pull_right","at":0.56},{"name":"mantle","at":0.78},{"name":"mantle_press","at":0.86},{"name":"mantle_step","at":0.90},{"name":"recover","at":1.0}]:
 		climb.add_blend_point(_clip("motion/climb_" + beat.name), beat.at, -1, beat.name)
 	graph.add_node("climb_pose", climb)
+	preload("res://player/climb_animation.gd").configure(graph)
 	graph.add_node("climb", AnimationNodeBlend2.new())
 	graph.connect_node("air", 0, "ground")
 	graph.connect_node("air", 1, "air_pose")
@@ -125,7 +128,8 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("longgun_ready", 1, "longgun_ready_pose")
 	graph.connect_node("longgun_aim", 0, "longgun_ready")
 	graph.connect_node("longgun_aim", 1, "longgun_aim_pose")
-	graph.connect_node("rest", 0, "longgun_aim")
+	preload("res://player/pistol_motion_layer.gd").configure(graph,library,skeleton,source.get_animation("idle"))
+	graph.connect_node("rest", 0, "pistol_recoil")
 	graph.connect_node("sit_down_seek", 0, "sit_down")
 	graph.connect_node("stand_up_seek", 0, "stand_up")
 	graph.connect_node("sit_transition", 0, "sit_down_seek")
@@ -140,7 +144,7 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("sleep_motion", 1, "rise_from_lie_seek")
 	graph.connect_node("sleep", 1, "sleep_motion")
 	graph.connect_node("climb", 0, "sleep")
-	graph.connect_node("climb", 1, "climb_pose")
+	graph.connect_node("climb", 1, "climb_selector")
 	graph.add_node("detention_pose", AnimationNodeBlend2.new())
 	graph.add_node("detention_arrest", _clip("motion/detention_arrest"))
 	graph.add_node("detention_wait", _clip("motion/detention_wait"))
@@ -219,7 +223,8 @@ func _climb_pose_clip(rig: Skeleton3D, idle: Animation, beat: String) -> Animati
 		clip.rotation_track_insert_key(track, clip.length, rotation)
 	return clip
 
-func update_climb(delta: float, progress: float) -> void:
+func update_climb(delta: float, progress: float, leap_phase: String = "", phase_clock: float = 0.0) -> void:
+	preload("res://player/climb_animation.gd").update(self,leap_phase,phase_clock)
 	climb_blend = minf(1.0, climb_blend + delta * 10.0)
 	set("parameters/climb/blend_amount", climb_blend)
 	set("parameters/climb_pose/blend_position", clampf(progress, 0.0, 1.0))
@@ -338,6 +343,12 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend) * (1.0 - air_blend), weight)
 
 func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false) -> void:
+	preload("res://player/pistol_motion_layer.gd").clear(self)
+	pistol_aim_blend = 0.0
+	pistol_reload_blend = 0.0
+	pistol_recoil_blend = 0.0
+	pistol_aim_phase = 0.0
+	pistol_reload_phase = 0.0
 	var recline := clampf((progress - 0.38) / 0.52, 0.0, 1.0)
 	set("parameters/sleep/blend_amount", smoothstep(0.36, 0.42, progress))
 	set("parameters/sleep_motion/blend_amount", 1.0 if waking else 0.0)
@@ -362,9 +373,14 @@ func update_pistol_motion(delta: float, equipped: bool, aiming: bool, reload_fra
 	# The grip solver consumes these after the tree advances, so contact follows
 	# the final blended skeleton rather than a stale idle pose.
 	var weight := 1.0 - exp(-14.0 * delta)
-	pistol_aim_blend = lerpf(pistol_aim_blend, 1.0 if equipped and aiming and reload_fraction < 0.0 else 0.0, weight)
-	pistol_reload_blend = lerpf(pistol_reload_blend, 1.0 if equipped and reload_fraction >= 0.0 else 0.0, weight)
+	pistol_aim_phase = move_toward(pistol_aim_phase,1.0 if equipped and aiming and reload_fraction < 0.0 else 0.0,delta*3.5)
+	pistol_reload_phase = move_toward(pistol_reload_phase,1.0 if equipped and reload_fraction >= 0.0 else 0.0,delta*3.5)
+	pistol_aim_blend = smoothstep(0.0,1.0,pistol_aim_phase)
+	pistol_reload_blend = smoothstep(0.0,1.0,pistol_reload_phase)
 	pistol_recoil_blend = lerpf(pistol_recoil_blend, clampf(shot_recoil / 0.075, 0.0, 1.0) if equipped else 0.0, weight)
+	set("parameters/pistol_aim/blend_amount",pistol_aim_blend)
+	set("parameters/pistol_reload/blend_amount",pistol_reload_blend)
+	set("parameters/pistol_recoil/blend_amount",pistol_recoil_blend)
 
 func update_longgun_motion(delta: float, equipped: bool, aiming: bool, reload_fraction: float, shot_recoil: float) -> void:
 	# These weights follow the same manual tree advance as locomotion. The
@@ -422,6 +438,7 @@ func _detention_clip(idle: Animation, restrained: bool) -> Animation:
 	return clip
 
 func update_detention(delta: float, amount: float, arrested: bool, speed: float = 0.0) -> void:
+	preload("res://player/pistol_motion_layer.gd").clear(self)
 	set("parameters/ground/blend_position", clampf(speed/4.0,0,1))
 	set("parameters/air/blend_amount", 0.0)
 	set("parameters/swim/blend_amount", 0.0)

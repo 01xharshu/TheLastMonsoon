@@ -30,8 +30,12 @@ func _run() -> void:
 		require(first_rig != second_rig and first_rig.get_bone_count() == second_rig.get_bone_count(), "Independent intact skeletons")
 		var first_player: AnimationPlayer = first.find_child("AnimationPlayer", true, false)
 		var second_player: AnimationPlayer = second.find_child("AnimationPlayer", true, false)
-		require(first_player != null and second_player != null, "Animations preserved")
-		for library_name in first_player.get_animation_library_list():
+		var bytes := FileAccess.get_file_as_bytes(path)
+		var source: Dictionary = JSON.parse_string(bytes.slice(20, 20 + bytes.decode_u32(12)).get_string_from_utf8())
+		var has_animation: bool = not source.get("animations", []).is_empty()
+		require(not has_animation or (first_player != null and second_player != null), "Animations preserved: " + path)
+		require((first_player == null) == (second_player == null), "Equivalent animation capability")
+		for library_name in first_player.get_animation_library_list() if first_player != null else []:
 			var a := first_player.get_animation_library(library_name)
 			var b := second_player.get_animation_library(library_name)
 			require(a != b, "Independent animation libraries")

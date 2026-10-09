@@ -60,7 +60,9 @@ func _run() -> void:
 	print("FORT TRAIL MAX GRADE ",trail_max_grade," | connected to east bridge")
 	var start := Vector3(Layout.FORT_CENTER.x, layout.height(Layout.FORT_CENTER.x,Layout.FORT_CENTER.y+40),Layout.FORT_CENTER.y+40)
 	var finish := Vector3(Layout.FORT_CENTER.x, layout.height(Layout.FORT_CENTER.x,Layout.FORT_CENTER.y-42),Layout.FORT_CENTER.y-42)
+	await create_timer(.3).timeout
+	NavigationServer3D.map_force_update(region.get_navigation_map())
 	var path := NavigationServer3D.map_get_path(region.get_navigation_map(),start,finish,true)
 	assert(path.size() >= 2, "No entry-to-keep path in main world")
 	print("FORT IN WORLD PASS | polygons=",region.navigation_mesh.get_polygon_count()," | path=",path.size()," | no duplicate terrain | access grade=",max_grade)
-	quit()
+	await root.get_node("SaveManager").quit_game()

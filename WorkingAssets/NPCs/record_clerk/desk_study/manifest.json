@@ -5,5 +5,14 @@
   "live_source_sha256": "6e939061d1f970c9614d69bc24794a0c510e8fd4cb343b05f9104ee801cae737",
   "seat_cloth_samples": 121,
   "body_vertices": 13380,
-  "scope": "seat entry and garment fit study; hand/seat/floor contact and renderer approval required"
+  "scope": "Complete unchanged MPFB physique and opaque foundation; seated garment silhouette/interpolation and furniture/hand contact remain open. No live seating approval.",
+  "runtime_body_position_vertices": 14517,
+  "physics_candidate": {
+    "source": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/WorkingAssets/NPCs/record_clerk/desk_study/record_clerk_seat_physics_candidate.blend",
+    "runtime": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/characters/npcs/review/record_clerk_seat_physics_candidate.glb",
+    "status": "ISOLATED_UNAPPROVED",
+    "construction": "Single MPFB trouser fabric sheet, one subdivision, tapered dropped-crotch ease; complete original body and separate opaque brief foundation.",
+    "rebuild": "Blender --background --python-exit-code 1 --python tools/characters/simulate_clerk_seat_cloth.py -- --single-surfaces --wider-stance --candidate-source <source> --candidate-runtime <runtime>",
+    "open_work": "Inner-thigh deformation, fabric stretching, chair clearance and upper garment fit. No live integration approval."
+  }
 }

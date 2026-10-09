@@ -2,8 +2,11 @@
 import bpy,sys,json,math
 from pathlib import Path
 from mathutils.bvhtree import BVHTree
+from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[2]
 import argparse,hashlib
+sys.path.insert(0,str(ROOT/"tools/characters"))
+from village_cloth_fit import sample_faces
 parser=argparse.ArgumentParser()
 parser.add_argument('role',nargs='?',default='all',choices=['all','village_farmer','village_woman','village_fruit_seller','village_weaver_assistant'])
 parser.add_argument('--source',type=Path)
@@ -45,19 +48,22 @@ for role in roles:
     index=int(key.name.rsplit(' ',1)[1]) if key.name.startswith(clip+' fit ') else -100
     key.value=(1-fraction if index==first else fraction if index==first+1 else 0)
   bpy.context.scene.frame_set(int(frame),subframe=frame%1);bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get();ev=body.evaluated_get(dg);mesh=ev.to_mesh()
-  tree=BVHTree.FromPolygons([ev.matrix_world@v.co for v in mesh.vertices],[list(p.vertices) for p in mesh.polygons]);body_regions=[]
+  tree=BVHTree.FromPolygons([ev.matrix_world@v.co for v in mesh.vertices],[list(p.vertices) for p in mesh.polygons])
+  body_mesh=mesh;body_ev=ev;body_regions={}
   group_names={g.index:g.name for g in body.vertex_groups}
-  for polygon in mesh.polygons:
-   weights={}
-   for index in polygon.vertices:
-    for group in mesh.vertices[index].groups:
-     name=group_names.get(group.group,'unknown')
-     if name in rig.data.bones:weights[name]=weights.get(name,0)+group.weight
-   body_regions.append(max(weights,key=weights.get) if weights else 'unknown')
-  ev.to_mesh_clear()
+  def body_region(polygon_index):
+   if polygon_index not in body_regions:
+    weights={}
+    for index in body_mesh.polygons[polygon_index].vertices:
+     for group in body_mesh.vertices[index].groups:
+      name=group_names.get(group.group,'unknown')
+      if name in rig.data.bones:weights[name]=weights.get(name,0)+group.weight
+    body_regions[polygon_index]=max(weights,key=weights.get) if weights else 'unknown'
+   return body_regions[polygon_index]
   for obj in cloth:
    ev=obj.evaluated_get(dg);mesh=ev.to_mesh();points=[ev.matrix_world@v.co for v in mesh.vertices]
-   points += [ev.matrix_world@p.center for p in mesh.polygons]
+   mesh.calc_loop_triangles()
+   points += [ev.matrix_world@(sum((mesh.vertices[i].co for i in p),Vector())/len(p)) for p in sample_faces(mesh)]
    for sample_index,point in enumerate(points):
     nearest,normal,polygon,distance=tree.find_nearest(point)
     depth=-(point-nearest).dot(normal)
@@ -65,11 +71,12 @@ for role in roles:
      result[obj.name]['penetrating_samples']+=1
      kind='vertex_samples' if sample_index<len(mesh.vertices) else 'face_center_samples'
      result[obj.name][kind]+=1
-     region=body_regions[polygon]
+     region=body_region(polygon)
      regions=result[obj.name]['nearest_body_regions'];regions[region]=regions.get(region,0)+1
      if depth>result[obj.name]['max_penetration_m']:
       result[obj.name]['max_penetration_m']=depth;result[obj.name]['worst_point']={'frame':frame,'point':list(point),'sample_kind':kind,'nearest_body_region':region,'nearest_body_point':list(nearest)}
    ev.to_mesh_clear()
+  body_ev.to_mesh_clear()
  report[role]=result
  print('CLOTH_CONTACT',role,clip,'max_mm=',{name:round(value['max_penetration_m']*1000,3) for name,value in result.items()},'penetrating_samples=',sum(value['penetrating_samples'] for value in result.values()),flush=True)
 output=args.output

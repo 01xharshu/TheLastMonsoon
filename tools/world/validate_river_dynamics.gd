@@ -24,7 +24,7 @@ func run() -> void:
  var environment:=WorldEnvironment.new();var settings:=Environment.new()
  settings.background_mode=Environment.BG_SKY
  var sky:=Sky.new();sky.sky_material=ProceduralSkyMaterial.new();settings.sky=sky
- settings.ambient_light_source=Environment.AMBIENT_SOURCE_SKY;settings.ambient_light_energy=.7
+ settings.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;settings.ambient_light_color=Color(.7,.75,.8);settings.ambient_light_energy=.8
  settings.reflected_light_source=2
  environment.environment=settings;world.add_child(environment)
  var sun:=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-40,-25,0);world.add_child(sun)
@@ -35,7 +35,7 @@ func run() -> void:
  check(river.get_child_count()==18,'18 culled water strips cover playable river')
  var vertices:=0
  for child in river.get_children():vertices+=child.mesh.surface_get_array_len(0)
- check(vertices<25000 and vertices>8000,'bounded subdivided water geometry: '+str(vertices)+' vertices')
+ check(vertices<100000 and vertices>40000,'bounded subdivided water geometry: '+str(vertices)+' vertices')
  for z in [-600.0,165.0,680.0]:
   var at:=Vector3(layout.river_x(z),0,z)
   var flow: Vector3=River.current_at(at)
@@ -51,8 +51,44 @@ func run() -> void:
  check(env.river_voice.playing and not env.shore_voice.playing,'mid-channel current sound plays without bank layer')
  env.tick(at+Vector3(layout.river_width(165),2,0),12,.25)
  check(env.shore_voice.playing,'close bank wash layer plays')
+ check(absf(layout.height(env.shore_voice.position.x,env.shore_voice.position.z)-Layout.WATER_LEVEL)<.06,'bank wash follows terrain shoreline')
  env.tick(Vector3(-650,8,165),12,.25)
  check(not env.shore_voice.playing and not env.river_voice.playing,'both water voices stop inland')
+ var actor: CharacterBody3D=load('res://player/player.tscn').instantiate()
+ world.add_child(actor);actor.set_physics_process(false);actor.set_process(false)
+ actor.get_node('UI').hide();actor.get_node('CameraPivot').rotation.y=0
+ actor.global_position=Vector3(layout.river_x(165),.2,165)
+ actor.is_swimming=true;var flow:=River.current_at(actor.global_position)
+ actor.set_meta('river_current',flow);actor.velocity=Vector3.ZERO
+ for i in 90:actor._handle_movement(1.0/60)
+ check(actor.velocity.distance_to(flow)<.01,'idle swimmer drifts with current')
+ Input.action_press('move_forward')
+ for i in 90:actor._handle_movement(1.0/60)
+ var upstream_speed: float=absf(actor.velocity.z)
+ Input.action_release('move_forward');Input.action_press('move_backward')
+ for i in 120:actor._handle_movement(1.0/60)
+ var downstream_speed: float=actor.velocity.z
+ Input.action_release('move_backward')
+ check(downstream_speed>upstream_speed+.5,'downstream swimming is faster than upstream')
+ actor.velocity=Vector3.ZERO;actor.set_meta('map_open',true)
+ for i in 60:actor._physics_process(1.0/60)
+ check(actor.velocity.z>.5,'current remains active while a swimming player opens the map')
+ actor.set_meta('map_open',false)
+ actor.is_swimming=false;actor.velocity=Vector3.ZERO;actor._handle_movement(1.0/60)
+ check(actor.velocity.length()<.01,'dry actor receives no current')
+ actor.global_position=boat.position+Vector3(-1,1,0)
+ check(boat.board(actor),'existing player boards boat with river changes')
+ boat.position=Vector3(layout.river_x(165),.03,165)
+ var before:=boat.position
+ for i in 60:boat._physics_process(1.0/60)
+ check(boat.position.z>before.z+.4,'occupied idle boat drifts downstream')
+ check(actor.global_position.distance_to(boat.seat_world())<.2,'rider remains attached while drifting')
+ boat.rider=null;actor.remove_meta('mounted_vehicle')
+ before=boat.position
+ for i in 60:boat._physics_process(1.0/60)
+ check(Vector2(boat.position.x-before.x,boat.position.z-before.z).length()<.01,'unoccupied moored boat stays in place')
+ actor.hide();actor.get_node('VisualRoot/CharacterVisual').set_process(false)
+ camera.make_current()
  var out: String=''
  for arg in OS.get_cmdline_user_args():
   if arg.begins_with('--output='):out=arg.trim_prefix('--output=')
@@ -63,7 +99,7 @@ func run() -> void:
   root.size=Vector2i(960,540)
   for z in [-500.0,235.0,650.0]:
    terrain_patch(world,z)
-   var edge:=layout.river_x(z)-layout.river_width(z)
+   var edge:=layout.river_x(z)-layout.river_width(z)-22
    camera.position=Vector3(edge-7,maxf(3.2,layout.height(edge-7,z+12)+1.7),z+12);camera.look_at(Vector3(edge+35,-.2,z-12))
    if z==235:boat.position=Vector3(edge+6,.03,z)
    env.tick(camera.position,12,.25)

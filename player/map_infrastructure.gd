@@ -2,7 +2,7 @@ extends RefCounted
 ## Read actual authored nodes so map markers follow placement changes.
 const NAMED := {
  "CustomsWarehouse":"Port Customs Warehouse", "MerchantShip":"Merchant Ship",
- "BhairavpurHouse0":"Arjun and Dev’s Home",
+ "BhairavpurHouse0":"Arjun and Dev’s Home", "ChachaHouse":"Chacha’s House",
  "LandownerHousehold":"Landowner Residence", "MerchantHousehold":"Merchant Residence", "BritishHousehold":"British Household",
  "CollectorBungalowServiceQuarters":"Collector Service Quarters", "OfficerBungalowServiceQuarters":"Officer Service Quarters",
  "TownHall":"Town Hall", "DistrictPolice":"Police Thana",

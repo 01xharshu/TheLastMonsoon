@@ -400,6 +400,8 @@ func _release() -> void:
 	set_process_input(false)
 	set_process(false)
 	# Keep the lamp/table in the home; discard transient cinematic overlays.
+	var inquiry: Node=world.get_node_or_null("DevInquiry")
+	if inquiry!=null:inquiry.begin()
 	for child in get_children(): child.queue_free()
 
 func _interior_window_shot(t: float) -> void:

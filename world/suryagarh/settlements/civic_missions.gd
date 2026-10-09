@@ -12,7 +12,11 @@ var claimant: CharacterBody3D
 
 func configure(site: Node3D) -> void:
 	district = site
-	clock = get_tree().current_scene.get_node("GameTimeSystem")
+	var world: Node = preload("res://systems/world_context.gd").find_world(site)
+	if world == null:
+		push_error("Civic missions require their owning world's clock")
+		return
+	clock = world.get_node("GameTimeSystem")
 	add_to_group("institution_operations")
 	station("evidence","Review disputed account",site.get_node("Collectorate"),Vector3(-1.7,.24,-1.5),site.get_node("Collectorate/PetitionClerk"))
 	station("hearing","Present petition at hearing",site.get_node("BritishCourthouse"),Vector3(0,.42,-4.6),site.get_node("BritishCourthouse/PresidingOfficer"))

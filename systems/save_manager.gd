@@ -8,6 +8,7 @@ const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "mouse": 1.0,
 	"camera_distance": 1.25, "aim_camera_distance": 0.55,
+	"camera_angle": 0.0, "aim_camera_angle": 0.0,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
 	"graphics_quality": 2, "key_bindings": {},
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
@@ -19,6 +20,7 @@ var _original_input_events: Dictionary = {}
 var options: Dictionary = DEFAULTS.duplicate(true)
 var pending_slot := -1
 var save_root := SAVE_DIR
+var last_error := ""
 var settings_path := SETTINGS_FILE
 var _quitting := false
 
@@ -158,11 +160,25 @@ func slot_label(slot: int) -> String:
 	var minutes := int(data.get("game_minutes",0))
 	return "Slot %d  ·  Day %d, %02d:%02d" % [slot,minutes/1440+1,(minutes%1440)/60,minutes%60]
 
+func police_case_active(actor: Node) -> bool:
+	if actor.get_meta("detention_action","") != "": return true
+	for observer in get_tree().get_nodes_in_group("police_crime_observers"):
+		if observer.has_method("has_pending_police_case") and observer.has_pending_police_case(actor): return true
+	return false
+
 func save_game(world: Node3D, slot: int) -> bool:
+	last_error = "Save failed"
 	if slot < 1 or slot > SLOT_COUNT: return false
-	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(save_root))!=OK: return false
 	var actor: CharacterBody3D = world.get_node("Player")
 	if not actor.is_inside_tree(): return false
+	var inquiry: Node=world.get_node_or_null("DevInquiry")
+	if inquiry!=null and (not inquiry.dialogue.is_empty() or inquiry.stage=="summoning"):
+		last_error="Cannot save during the inquiry conversation"
+		return false
+	if police_case_active(actor):
+		last_error = "Cannot save during pursuit or custody"
+		return false
+	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(save_root))!=OK: return false
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	var survival: SurvivalComponent = actor.get_node("SurvivalComponent")
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
@@ -173,13 +189,15 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"camera_pitch": actor.camera_pitch,
 		"game_minutes": world.get_node("GameTimeSystem").total_game_minutes,
 		"items": inventory.items.duplicate(true),
+		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
+		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"health": actor.health,
 		"water_liters": inventory.stored_water_liters,
 		"survival": {
 			"hydration":survival.hydration,"satiety":survival.satiety,
 			"energy":survival.energy,"warmth":survival.warmth,"stamina":survival.stamina,
 		},
-		"weapon": {"selected":int(equipment.selected),"stowed":equipment.stowed,
+		"weapon": {"chacha_spear":actor.has_node("ChachaKit") and actor.get_node("ChachaKit").active,"selected":int(equipment.selected),"stowed":equipment.stowed,
 			"rifle_rounds":actor.get_node("RifleCombat").rounds,
 			"rifle_reload":actor.get_node("RifleCombat").reload_remaining,
 			"rifle_pending":actor.get_node("RifleCombat").pending_rounds,
@@ -259,6 +277,9 @@ func apply_pending(world: Node3D) -> void:
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	actor.health = clampf(float(data.get("health",actor.MAX_HEALTH)),0.0,actor.MAX_HEALTH)
 	inventory.items = data.get("items",{}).duplicate(true)
+	if world.has_node("ChachaHouse"):world.get_node("ChachaHouse").set_meta("advice_given",bool(data.get("chacha_advice_given",false)))
+	if world.has_node("DevInquiry"):
+		world.get_node("DevInquiry").restore_state(data.get("dev_inquiry",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
 		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
 	var fame := actor.get_node_or_null("FameComponent")
@@ -284,6 +305,10 @@ func apply_pending(world: Node3D) -> void:
 	equipment.selected = clampi(int(weapon.get("selected",0)),0,5)
 	equipment.stowed = bool(weapon.get("stowed",true))
 	equipment._refresh()
+	if actor.has_node("ChachaKit"):
+		var kit: Node=actor.get_node("ChachaKit")
+		kit.active=false;kit.spear.hide()
+		if bool(weapon.get("chacha_spear",false)) and inventory.has_item("spear"):kit.equip("spear")
 	actor.get_node("RifleCombat").rounds = clampi(int(weapon.get("rifle_rounds",1)),0,1)
 	actor.get_node("RifleCombat").loaded = actor.get_node("RifleCombat").rounds > 0
 	actor.get_node("PistolCombat").rounds = clampi(int(weapon.get("pistol_rounds",5)),0,5)
@@ -414,6 +439,8 @@ func apply_options(world: Node = null) -> void:
 		player.mouse_sensitivity = 0.0025*clampf(float(options.mouse),0.3,2.0)
 		player.third_person_distance = clampf(float(options.camera_distance),1.25,4.0)
 		player.aim_camera_distance = clampf(float(options.aim_camera_distance),0.5,2.0)
+		player.camera_angle_offset = clampf(float(options.camera_angle),-10.0,10.0)
+		player.aim_camera_angle_offset = clampf(float(options.aim_camera_angle),-10.0,10.0)
 		var quality := clampi(int(options.graphics_quality),0,2)
 		_apply_render_budget(world.get_viewport(), quality)
 		world.get_viewport().msaa_3d = [Viewport.MSAA_DISABLED,Viewport.MSAA_2X,Viewport.MSAA_4X][quality]
@@ -435,6 +462,11 @@ func _apply_render_budget(viewport: Viewport, quality: int) -> void:
 	# Window.size is the render target's actual size (also confirmed by readback).
 	var pixels: Vector2i = viewport.size if viewport is Window or viewport is SubViewport else Vector2i(viewport.get_visible_rect().size)
 	viewport.scaling_3d_scale = render_scale_for_size(pixels,quality)
+	# Godot's mesh LOD threshold uses the output viewport width, while our
+	# 3D budget renders fewer pixels. Keep its tolerance at one rendered pixel
+	# (or the project's configured tolerance), including on Retina displays.
+	var lod_pixels: float = ProjectSettings.get_setting("rendering/mesh_lod/lod_change/threshold_pixels",1.0)
+	viewport.mesh_lod_threshold = lod_pixels / viewport.scaling_3d_scale
 
 func _update_render_budget() -> void:
 	_apply_render_budget(get_viewport(),clampi(int(options.graphics_quality),0,2))
@@ -449,10 +481,11 @@ func _remaining_medical_ids(world: Node3D) -> Array[String]:
 func _door_states(world: Node3D) -> Dictionary:
 	var states := {}
 	for door in world.get_tree().get_nodes_in_group("house_doors"):
-		if world.is_ancestor_of(door): states[String(world.get_path_to(door))]={"opened":door.opened,"swing_direction":door.swing_direction}
+		if world.is_ancestor_of(door): states[String(world.get_path_to(door))]={"opened":door.opened,"swing_direction":door.swing_direction,"manual_locked":door.manual_locked if "manual_locked" in door else false}
 	return states
 
 func _restore_door_states(world: Node3D,states: Dictionary) -> void:
+	var clock: GameTimeSystem = world.get_node("GameTimeSystem") as GameTimeSystem
 	for path in states:
 		var value = states[path]
 		if not (value is bool or (value is Dictionary and value.get("opened") is bool)): continue
@@ -460,6 +493,9 @@ func _restore_door_states(world: Node3D,states: Dictionary) -> void:
 		if node != null and node.is_in_group("house_doors") and node.has_method("restore_state"):
 			if value is Dictionary:
 				node.swing_direction=-1.0 if float(value.get("swing_direction",1.0))<0 else 1.0
+				if "manual_locked" in node:
+					node.manual_locked=bool(value.get("manual_locked",false))
+					node.locked=node.manual_locked or (node.night_lock and not node.always_open and not node.hours_allow_entry(clock.current_hour))
 				node.restore_state(value.opened)
 			else: node.restore_state(value)
 

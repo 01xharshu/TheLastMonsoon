@@ -48,7 +48,7 @@ func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool
 	if actor.get_meta("knocked_out",false) and kind in ["punch","kick","takedown","abuse"]:return false
 	if attacker != null and attacker.name == "Player" and actor.get_meta("combat_faction","indian") == "indian": return false
 	if attacker != null and attacker.name == "Player":
-		get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",actor)
+		get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",actor,attacker)
 	actor.set_meta("last_attacker",attacker)
 	actor.set_meta("last_hit_kind",kind)
 	health = maxf(0.0,health-amount)

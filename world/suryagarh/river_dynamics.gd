@@ -37,14 +37,14 @@ func _ready() -> void:
     material.set_shader_parameter('exclude_moored_ship',source.get_shader_parameter('exclude_moored_ship'))
     material.set_shader_parameter('moored_ship_center',source.get_shader_parameter('moored_ship_center'))
 func build_surface() -> void:
- # Short strips allow frustum culling; maximum 6 m across the freshwater channel.
+ # Short strips allow frustum culling; maximum 3 m across the freshwater channel.
  for start in range(-864,864,96):
   var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
-  var rows:=16
-  var columns:=maxi(24,int(ceil((layout.river_width(start+48)+36)*2/6)))
-  columns=mini(columns,160)
+  var rows:=32
+  var columns:=maxi(48,int(ceil((layout.river_width(start+48)+36)*2/3)))
+  columns=mini(columns,320)
   for row in range(rows+1):
-   var z:=float(start)+row*6.0
+   var z:=float(start)+row*3.0
    for col in range(columns+1):
     var side:=float(col)/columns*2.0-1.0
     var x:=layout.river_x(z)+side*(layout.river_width(z)+36)
@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
   if boat!=null:
    material.set_shader_parameter('boat_center',Vector2(boat.global_position.x,boat.global_position.z))
    material.set_shader_parameter('boat_heading',boat.global_rotation.y)
-   material.set_shader_parameter('boat_speed',boat.velocity.length())
+   material.set_shader_parameter('boat_speed',boat.velocity.dot(-boat.global_basis.z))
    material.set_shader_parameter('boat_present',true)
  # The same wave clock is available to watercraft without changing bank collision.
  set_meta('flow_seconds',elapsed)

@@ -9,7 +9,7 @@ static func chipped_stone(seed_value: int = 1857) -> ArrayMesh:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for face in [[0,3,2,1],[4,5,6,7],[0,4,7,3],[1,2,6,5],[0,1,5,4],[3,7,6,2]]:
-		for index in [0,1,2,0,2,3]: surface.add_vertex(corners[face[index]])
+		for index in [0,2,1,0,3,2]: surface.add_vertex(corners[face[index]])
 	surface.generate_normals()
 	return surface.commit()
 
@@ -31,6 +31,9 @@ static func fractured_rock() -> ArrayMesh:
 	for level in range(4):
 		for segment in range(9):
 			var next: int = (segment+1)%9
-			for vertex in [rings[level][segment],rings[level+1][segment],rings[level][next],rings[level][next],rings[level+1][segment],rings[level+1][next]]: surface.add_vertex(vertex)
+			for vertex in [rings[level][segment],rings[level][next],rings[level+1][segment],rings[level][next],rings[level+1][next],rings[level+1][segment]]: surface.add_vertex(vertex)
+	for segment in range(9):
+		var next: int = (segment+1)%9
+		for vertex in [Vector3(0,.5,0),rings[4][segment],rings[4][next],Vector3(0,-.5,0),rings[0][next],rings[0][segment]]: surface.add_vertex(vertex)
 	surface.generate_normals()
 	return surface.commit()

@@ -41,6 +41,10 @@ func activate() -> void:
 		actor.set_meta("combat_faction","british")
 		var site: Vector2 = SITES[index]
 		actor.position = Vector3(site.x,fort.height_at(site.x,site.y),site.y)
+		var spawn_world: Vector3 = to_global(actor.position)
+		var ground_query := PhysicsRayQueryParameters3D.create(spawn_world+Vector3.UP*1.0,spawn_world-Vector3.UP*1.0,1)
+		var ground_hit := get_world_3d().direct_space_state.intersect_ray(ground_query)
+		if not ground_hit.is_empty(): actor.position = to_local(ground_hit.position)+Vector3.UP*.015
 		actor.add_child(preload("res://characters/npcs/british/private_man.glb").instantiate())
 		add_child(actor)
 		actor.rotation.y = 0
@@ -50,7 +54,7 @@ func activate() -> void:
 		weapon.target = player
 		weapon.cartridges = clampi(int(state.get("cartridges",4)),0,4)
 		actor.add_child(weapon)
-		guards.append({"id":index,"actor":actor,"weapon":weapon,"aware":false,"last_seen":actor.global_position,"lost":0.0,"path":PackedVector3Array(),"waypoint":0,"repath":0.0,"strike":0.0,"strike_hit":false})
+		guards.append({"id":index,"actor":actor,"weapon":weapon,"aware":false,"last_seen":actor.global_position,"lost":0.0,"path":PackedVector3Array(),"waypoint":0,"repath":0.0,"strike":0.0,"strike_hit":false,"cover_marker":null,"cover_age":0.0})
 
 func is_cleared() -> bool:
 	if completed: return true
@@ -65,7 +69,9 @@ func _physics_process(delta: float) -> void:
 	if player == null: return
 	var distance: float = player.global_position.distance_to(fort.global_position)
 	if not activated and distance < 105: activate()
-	if not activated or distance > 150: return
+	if not activated: return
+	for guard in guards: guard.actor.process_mode = Node.PROCESS_MODE_DISABLED if distance > 150 else Node.PROCESS_MODE_INHERIT
+	if distance > 150: return
 	sense_age += delta
 	var sense: bool = sense_age >= .25
 	if sense: sense_age = 0
@@ -84,11 +90,12 @@ func _physics_process(delta: float) -> void:
 				if seen: guard.last_seen = player.global_position
 			if guard.lost > 12: guard.aware = false
 			weapon.hostile = guard.aware and seen
+		guard.cover_age += delta
 		guard.repath = maxf(0,float(guard.repath)-delta)
 		var separation: float = actor.global_position.distance_to(player.global_position)
-		if guard.aware and (not weapon.hostile or separation > 22 or weapon.cartridges == 0):
+		if guard.aware and (not weapon.hostile or separation > 22 or weapon.cartridges == 0 or weapon.cooldown > .6):
 			if guard.repath <= 0:
-				var goal: Vector3 = player.global_position if weapon.cartridges == 0 else _cover_goal(actor,guard.last_seen)
+				var goal: Vector3 = player.global_position if weapon.cartridges == 0 else _cover_goal(actor,guard.last_seen,guard)
 				guard.path = NavigationServer3D.map_get_path(fort.get_node("Navigation/FortWalkableRoutes").get_navigation_map(),actor.global_position,goal,true)
 				guard.waypoint = 1
 				guard.repath = 2.0
@@ -107,15 +114,19 @@ func _visible(actor: Node3D) -> bool:
 	var target: Vector3 = stance.sight_target() if stance != null else player.global_position
 	var limit: float = stance.visible_range(origin,36) if stance != null else 36
 	if origin.distance_to(target) > limit: return false
+	var toward := target-origin
+	toward.y = 0
+	if toward.length() > 4 and not actor.has_meta("last_attacker") and toward.normalized().dot(actor.global_basis.z) < -.1: return false
 	var excluded: Array[RID] = [actor.body_collider.get_rid()]
 	var vitality := actor.get_node_or_null("Vitality")
 	if vitality != null: excluded.append(vitality.hit_body.get_rid())
 	var hit := Trace.sight(get_world_3d().direct_space_state,get_tree(),origin,target,excluded)
 	return not hit.is_empty() and hit.collider == player
 
-func _cover_goal(actor: Node3D, target: Vector3) -> Vector3:
+func _cover_goal(actor: Node3D, target: Vector3, guard: Dictionary) -> Vector3:
 	var best: Vector3 = target
 	var score := INF
+	var best_marker: Marker3D
 	for marker in get_tree().get_nodes_in_group("fort_cover_points"):
 		if not fort.is_ancestor_of(marker): continue
 		var point: Vector3 = marker.global_position
@@ -127,7 +138,15 @@ func _cover_goal(actor: Node3D, target: Vector3) -> Vector3:
 		query.exclude = [player.get_rid(),actor.body_collider.get_rid()]
 		if get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 		best = point
+		best_marker = marker
 		score = candidate
+	if best_marker != null:
+		if guard.cover_marker != best_marker:
+			guard.cover_marker = best_marker
+			guard.cover_age = 0.0
+		if guard.cover_age > 1.3 and guard.weapon.cooldown < .6:
+			var peek: Marker3D = best_marker.get_parent().get_node("PeekLeft" if int(guard.id)%2 == 0 else "PeekRight")
+			best = peek.global_position
 	return best
 
 func _move(guard: Dictionary, delta: float) -> void:

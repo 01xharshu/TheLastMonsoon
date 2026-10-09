@@ -1,5 +1,13 @@
 # Charpai rest transition
 
+## Current state — 2026-10-07
+
+Waist cloth follow-up: the broad near-black area in the close rest views came from the skinned `Arjun_Kurta_SplitHem`, not missing MPFB body or a hole in the trouser yoke. The cloth shader now gathers that hem toward the belt during `rest_action=sleep` and releases it on waking; no source body or garment mesh was replaced. Fresh Forward+/Metal sit, middle and lie views show the dark panel reduced to a narrow tunic hem with continuous cream trouser coverage. Temporary screenshots were deleted after inspection.
+
+The rest branch uses separate rig-space `lie_down` (0.52 s) and `rise_from_lie` (0.36 s) clips in the AnimationTree. The middle recline now turns the torso sooner and places the right brace lower. At progress 0.65, the head bone moved from about 1.14 m to 1.04 m and the bracing wrist from about 0.68 m to 0.67 m; pelvis and both boots remain near cot height. Focused mid-entry and mid-wake contact checks, final lying contact, and the eight-hour fade/energy/control sequence pass. Fresh Metal middle view shows a more supported weight transfer, although continuous motion and final appearance approval remain open.
+
+The actual player interaction action now selects the charpai and completes the full entry/rest/wake sequence in an isolated native Forward+/Metal fixture at real elapsed time. The placed full-world validator still did not reach the charpai marker in a 70-second bounded start on 2026-10-07; startup stopped progressing after `WEALTHY HOUSEHOLDS READY`. Next: review continuous motion and the current Arjun garment in the playable world once it starts reliably. This fixture and sampled views do not substitute for world visual approval. Test output must stay in an OS temporary directory and be deleted after review.
+
 `objects/charpai.gd` now locks interaction and movement, stows the selected weapon, places Arjun at the charpai, animates a seated-to-reclining pose, fades to black, advances the shared world clock eight hours while fully covered, restores energy, fades back in, rises, and returns control. Repeated interaction is blocked until the sequence ends. The game clock and survival systems still receive the normal `advance_hours` event.
 
 `tools/world/validate_charpai.gd` passed in Forward+/Metal on 2026-09-27. It checks the four charpai feet, bed collision, that time does not jump during the first second of pose motion, the eight-hour change after fade-out, energy restoration, and the release of control. Captures: `captures/charpai_sitting.png` and `captures/charpai_sleeping.png`.

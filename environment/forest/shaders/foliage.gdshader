@@ -3,11 +3,14 @@ render_mode cull_disabled, depth_draw_opaque, diffuse_burley, specular_schlick_g
 
 uniform sampler2D albedo_texture : source_color, filter_linear_mipmap_anisotropic;
 uniform sampler2D normal_texture : hint_normal, filter_linear_mipmap_anisotropic;
+uniform sampler2D roughness_texture : filter_linear_mipmap_anisotropic;
+uniform bool use_roughness_texture = false;
 uniform bool use_albedo_texture = false;
 uniform bool use_normal_texture = false;
 uniform vec4 tint : source_color = vec4(1.0);
 uniform float roughness_value : hint_range(0.0, 1.0) = 0.88;
 uniform float alpha_cutoff : hint_range(0.0, 1.0) = 0.45;
+uniform bool wind_uv_reversed = false;
 uniform float wind_strength : hint_range(0.0, 2.0) = 0.25;
 uniform float wind_speed : hint_range(0.0, 4.0) = 0.7;
 uniform vec2 wind_direction = vec2(0.9, 0.4);
@@ -15,7 +18,8 @@ uniform vec2 wind_direction = vec2(0.9, 0.4);
 global uniform vec3 world_wind;
 void vertex() {
 	vec3 world_origin = MODEL_MATRIX[3].xyz;
-	float tip_weight = pow(clamp(UV.y, 0.0, 1.0), 2.0);
+	float height_weight = wind_uv_reversed ? 1.0 - UV.y : UV.y;
+	float tip_weight = pow(clamp(height_weight, 0.0, 1.0), 2.0);
 	float phase = dot(world_origin.xz, vec2(0.31, 0.47));
 	float broad = sin(world_wind.y * wind_speed + phase);
 	float fine = sin(world_wind.y * wind_speed * 1.83 + phase * 1.7 + VERTEX.y * 2.0);
@@ -34,7 +38,7 @@ void fragment() {
 	ALBEDO = surface_color.rgb;
 	ALPHA = surface_color.a;
 	ALPHA_SCISSOR_THRESHOLD = alpha_cutoff;
-	ROUGHNESS = roughness_value;
+	ROUGHNESS = use_roughness_texture ? texture(roughness_texture, UV).g : roughness_value;
 	SPECULAR = 0.18;
 	if (use_normal_texture) {
 		NORMAL_MAP = texture(normal_texture, UV).rgb;

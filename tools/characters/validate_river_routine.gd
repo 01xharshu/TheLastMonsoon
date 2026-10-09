@@ -46,6 +46,25 @@ func run() -> void:
 	for woman in scene.women:
 		if not woman.delivered: issues.append("Continuous sequence never delivered")
 	if scene.women[0].animation_tree == scene.women[1].animation_tree: issues.append("Shared animation owner")
-	var report := {"passed": issues.is_empty(), "issues": issues, "members": scene.women.size(), "samples": samples, "continuous_target_maxima": maxima, "visual_approved": false, "contact_approved": false, "in_world": false}
+	# During stance, the foot sweeps backward by exactly the travelled distance.
+	# This catches a fast foot cycle even when every ankle reaches its IK target.
+	first.travel_override=true;first.travel_speed=1.15;first.travel_direction=Vector3.FORWARD
+	var planted_drift := 0.0
+	for side in ["l","r"]:
+		var start_phase := .1+(.5 if side=="r" else 0.0)
+		first.travel_position=Vector3.ZERO
+		first.travel_gait_time=start_phase*first.WALK_STRIDE/.6/.4
+		first.sample(1.0)
+		var planted: Vector3=first.skeleton.to_global(first.Contact.point(first.skeleton,"foot_"+side))
+		for frame in 12:
+			var phase_delta := float(frame+1)/12.0*.2
+			first.travel_position=Vector3(0,0,-phase_delta*first.WALK_STRIDE/.6)
+			first.travel_gait_time=(start_phase+phase_delta)*first.WALK_STRIDE/.6/.4
+			first.sample(1.0)
+			planted_drift=maxf(planted_drift,planted.distance_to(first.skeleton.to_global(first.Contact.point(first.skeleton,"foot_"+side))))
+	if planted_drift>.001:issues.append("Planted foot slides during walking: "+str(planted_drift))
+	var cycle_seconds: float=first.WALK_STRIDE/.6/first.travel_speed
+	if cycle_seconds<.75 or cycle_seconds>1.15:issues.append("Walking cadence outside ordinary pace")
+	var report := {"passed": issues.is_empty(), "issues": issues, "members": scene.women.size(), "planted_drift_m": planted_drift, "walk_cycle_seconds": cycle_seconds, "samples": samples, "continuous_target_maxima": maxima, "visual_approved": false, "contact_approved": false, "in_world": false}
 	print("RIVER_ROUTINE ", JSON.stringify(report))
 	quit(0 if issues.is_empty() else 1)

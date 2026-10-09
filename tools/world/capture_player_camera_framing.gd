@@ -4,6 +4,11 @@ func _initialize() -> void:
  _run.call_deferred()
 
 func _run() -> void:
+ var capture_dir := OS.get_environment("TLM_CAMERA_OUTPUT_DIR")
+ if capture_dir == "":
+  push_error("Set TLM_CAMERA_OUTPUT_DIR to a disposable OS temporary directory")
+  quit(1)
+  return
  var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
  root.add_child(world)
  current_scene = world
@@ -24,6 +29,6 @@ func _run() -> void:
   for i in 20: await physics_frame
   for i in 3: await process_frame
   await RenderingServer.frame_post_draw
-  var path: String = "/tmp/tlm_camera_current_" + sample[0] + ".png"
+  var path: String = capture_dir.path_join("tlm_camera_current_" + sample[0] + ".png")
   print("CAMERA FRAMING ", sample[0], " ", root.get_texture().get_image().save_png(path), " camera=", camera.global_position, " pivot=", player.camera_pivot.global_position, " arm=", player.get_node("CameraPivot/SpringArm3D").spring_length)
  quit()

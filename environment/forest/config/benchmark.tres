@@ -1,4 +1,24 @@
-[gd_resource type="Resource" script_class="ForestConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ForestConfig" load_steps=16 format=3]
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_config.gd" id="1"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/hero.tres" id="species_0"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/canopy.tres" id="species_1"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/canopy_broad.tres" id="species_2"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/small_tree.tres" id="species_3"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/dead_tree.tres" id="species_4"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/fallen_log.tres" id="species_5"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/fern.tres" id="species_6"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/shrub.tres" id="species_7"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/broadleaf.tres" id="species_8"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/tall_grass.tres" id="species_9"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/short_grass.tres" id="species_10"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/floor.tres" id="species_11"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/debris.tres" id="species_12"]
+[ext_resource type="Resource" path="res://environment/forest/config/species/shelf_fungus.tres" id="species_13"]
 [resource]
 script = ExtResource("1")
+species = Array[Resource]([ExtResource("species_0"), ExtResource("species_1"), ExtResource("species_2"), ExtResource("species_3"), ExtResource("species_4"), ExtResource("species_5"), ExtResource("species_6"), ExtResource("species_7"), ExtResource("species_8"), ExtResource("species_9"), ExtResource("species_10"), ExtResource("species_11"), ExtResource("species_12"), ExtResource("species_13")])
+short_grass_density = 1.6
+tall_grass_density = 1.0
+fern_density = 0.9
+shrub_density = 1.05
+broadleaf_density = 0.9

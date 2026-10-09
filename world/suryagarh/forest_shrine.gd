@@ -53,6 +53,8 @@ func build_forest() -> void:
 	if mesh == null:
 		push_error("Forest tree mesh missing")
 		return
+	var trunks = preload("res://world/suryagarh/tree_trunk_collision.gd")
+	var segments: Array[Dictionary] = trunks.profile(mesh)
 	var transforms: Array[Transform3D] = []
 	for i in 850:
 		var p := CENTRE + Vector2(rng.randf_range(-155.0, 155.0), rng.randf_range(-165.0, 160.0))
@@ -65,7 +67,12 @@ func build_forest() -> void:
 		if p.distance_to(mouth) < 14.0 or layout.plot_clearance(p.x, p.y) < 60.0: continue
 		var scale := rng.randf_range(1.6, 3.5)
 		var basis := Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3(scale, scale * rng.randf_range(0.85, 1.2), scale))
-		transforms.append(Transform3D(basis, Vector3(p.x, layout.height(p.x, p.y) - 0.1, p.y)))
+		var transform := Transform3D(basis,Vector3(p.x,0,p.y))
+		var base: Vector3 = segments[0].centre
+		base.y -= float(segments[0].height)*.5
+		var woody_root := transform*base
+		transform.origin.y = layout.height(woody_root.x,woody_root.z)-.1-woody_root.y
+		transforms.append(transform)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = mesh
@@ -77,6 +84,7 @@ func build_forest() -> void:
 	grove.visibility_range_end = 550.0
 	add_child(grove)
 	set_meta("new_forest_trees", transforms.size())
+	_ground_forest.call_deferred(grove,segments)
 	source.free()
 
 func cave_centre(t: float) -> Vector2:
@@ -251,3 +259,9 @@ func build_idol() -> void:
 	crown.radial_segments = 16
 	part("CarvedCrown", crown, c + Vector3(0, 8.55, 0.25), stone, false)
 	set_meta("idol_status", "Original procedural stone blockout; sculpture and devotional visual review pending")
+
+func _ground_forest(grove: MultiMeshInstance3D, segments: Array[Dictionary]) -> void:
+	await get_tree().physics_frame
+	var trunks = preload("res://world/suryagarh/tree_trunk_collision.gd")
+	var transforms: Array[Transform3D] = trunks.ground_batch(grove,segments,.10)
+	trunks.add_batch(self,transforms,segments)

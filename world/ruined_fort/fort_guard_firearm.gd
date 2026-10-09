@@ -11,6 +11,8 @@ var cooldown := 0.0
 var aim_age := 0.0
 var shots := 0
 var recoil := 0.0
+var dropped := false
+var cartridge: Node3D
 var gun: Node3D
 var sound: AudioStreamPlayer3D
 @onready var owner_actor: Node3D = get_parent()
@@ -20,6 +22,10 @@ func _ready() -> void:
 	gun = preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate()
 	gun.name = "EnfieldHeld"
 	add_child(gun)
+	cartridge = preload("res://player/enfield_cartridge_visual.gd").new()
+	cartridge.name = "LoadingCartridge"
+	add_child(cartridge)
+	cartridge.setup(Vector3.ZERO,Basis.IDENTITY)
 	sound = AudioStreamPlayer3D.new()
 	sound.stream = preload("res://audio/weapons/enfield_shot.wav")
 	sound.max_distance = 180
@@ -29,13 +35,20 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	cooldown = maxf(0.0,cooldown-delta)
 	recoil = move_toward(recoil,0.0,delta*.4)
-	if owner_actor.get_meta("dead",false) or owner_actor.get_meta("knocked_out",false) or owner_actor.get_meta("grappled",false) or owner_actor.get_meta("combat_action","") == "hit":
-		aim_age = 0.0
+	cartridge.visible = false
+	if owner_actor.get_meta("dead",false) or owner_actor.get_meta("knocked_out",false):
+		if not dropped:
+			dropped = true
+			gun.global_transform = Transform3D(Basis(Vector3.UP,owner_actor.global_rotation.y).scaled(Vector3.ONE*SCALE),owner_actor.global_position+Vector3(.4,.12,.2))
+		aim_age = 0
+		return
+	if owner_actor.get_meta("grappled",false) or owner_actor.get_meta("combat_action","") == "hit":
+		aim_age = 0
 		return
 	var aiming: bool = can_engage()
 	if aiming:
 		var toward := target.global_position-owner_actor.global_position
-		owner_actor.global_rotation.y = atan2(toward.x,toward.z)
+		owner_actor.global_rotation.y = rotate_toward(owner_actor.global_rotation.y,atan2(toward.x,toward.z),delta*4)
 	var grip := owner_actor.to_global(Vector3(-.16,1.35,.13))
 	var aim_target: Vector3 = target.get_node("StealthStance").sight_target() if aiming and target.has_node("StealthStance") else (target.global_position if aiming else grip+owner_actor.global_basis.z)
 	var forward: Vector3 = (aim_target-grip).normalized() if aiming else owner_actor.global_basis.z
@@ -55,10 +68,13 @@ func _process(delta: float) -> void:
 		var reload_side := reload_forward.cross(Vector3.UP).normalized()
 		var reload_basis := Basis(reload_forward,reload_side.cross(reload_forward).normalized(),reload_side)
 		var loading_grip := owner_actor.to_global(Vector3(-.12,.86,.08))
-		gun.global_transform = Transform3D(reload_basis.scaled(Vector3.ONE*SCALE),loading_grip-reload_basis*(Vector3(-.09,-.045,0)*SCALE))
-		owner_actor.solve_hand_contact("l",gun.to_global(Vector3(.42,-.032,0)))
-		owner_actor.solve_hand_contact("r",gun.to_global(loading.contact))
+		var pose := Transform3D(reload_basis.scaled(Vector3.ONE*SCALE),loading_grip-reload_basis*(Vector3(-.09,-.045,0)*SCALE))
+		var loading_blend: float = preload("res://player/enfield_loading_sequence.gd").phase_ease(phase,0,.12)*(1-preload("res://player/enfield_loading_sequence.gd").phase_ease(phase,.82,1))
+		gun.global_transform = gun.global_transform.interpolate_with(pose,loading_blend)
+		owner_actor.solve_hand_contact("l",gun.to_global(Vector3(.20,-.032,0).lerp(Vector3(.42,-.032,0),loading_blend)))
+		owner_actor.solve_hand_contact("r",gun.to_global(Vector3(-.09,-.045,0).lerp(loading.contact,loading_blend)))
 		owner_actor.set_grip("r",loading.curl)
+		cartridge.update_loading(1,false,phase,gun)
 	if not aiming or cartridges <= 0 or cooldown > 0.0:
 		aim_age = 0.0
 		return

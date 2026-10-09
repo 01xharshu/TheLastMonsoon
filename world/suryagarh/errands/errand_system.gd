@@ -97,7 +97,9 @@ func _person(id: String, label: String, at: Vector3, model: String) -> void:
 	actor.movement_profile = &"female" if model == "village_woman" else &"male"
 	var path := "res://characters/npcs/motion/%s/%s_rigged_candidate.glb" % [model,model]
 	if model == "errand_passenger": path = "res://characters/npcs/motion/errand_passenger/errand_passenger.glb"
-	var figure := preload("res://characters/human_scene.gd").instantiate(path)
+	# These household actors generate private motion clips; their imported clips
+	# are read-only. Purpose actors still receive editable imported libraries.
+	var figure := preload("res://characters/human_scene.gd").instantiate(path,purpose)
 	if figure == null:
 		actor.free(); push_error("Errand actor could not load: " + path); return
 	actor.add_child(figure)

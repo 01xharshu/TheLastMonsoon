@@ -11,7 +11,7 @@ func _ready() -> void:
  get_tree().node_added.connect(_vegetation_added)
  for node in get_tree().root.find_children('*','MeshInstance3D',true,false):_vegetation_added(node)
  ambience=AudioStreamPlayer.new();add_child(ambience)
- var stream := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/world/wind.wav'))
+ var stream := (load('res://audio/world/wind.wav') as AudioStreamWAV).duplicate() as AudioStreamWAV
  stream.loop_mode=AudioStreamWAV.LOOP_FORWARD;stream.loop_end=stream.data.size()/2
  ambience.stream=stream;ambience.volume_db=-60;ambience.play()
 func sample(at: Vector3) -> Vector3:

@@ -72,10 +72,42 @@ func ground(point: Vector3) -> Vector3:
 	var hit:=get_world_3d().direct_space_state.intersect_ray(query)
 	return hit.position if not hit.is_empty() else Vector3(point.x,layout.height(point.x,point.z),point.z)
 
-func report_assault(victim: Node3D) -> void:
+func report_assault(victim: Node3D, attacker: Node = null) -> void:
+	if attacker == null and victim.has_meta("last_attacker"): attacker = victim.get_meta("last_attacker")
+	if attacker != player: return
 	if victim.get_meta("combat_faction","indian") in ["british","police"]:
 		wanted=true;unseen_age=0
 		if victim==aggressor and encounter_state in ["beating","waiting","fallen"]:rescue()
+
+func police_case_started(actor: Node) -> void:
+	if actor == player:
+		wanted = true
+		unseen_age = 0.0
+
+func report_crime(actor: CharacterBody3D, offence: String, location: Vector3) -> void:
+	if actor != player or player.health <= 0 or offence not in ["theft","assault"] or not location.is_finite(): return
+	if offence == "theft" and player.global_position.distance_to(location) > 3.0: return
+	for patrol in patrols:
+		var witness: Node3D = patrol.actor
+		if not is_instance_valid(witness): continue
+		if witness.get_meta("dead",false) or witness.get_meta("knocked_out",false): continue
+		if witness.global_position.distance_to(location) <= 28.0 and visible_to(witness):
+			police_case_started(player)
+			return
+
+func has_pending_police_case(actor: Node) -> bool:
+	return actor == player and (wanted or not escort.is_empty())
+
+func complete_custody(actor: Node) -> void:
+	if actor != player: return
+	wanted = false
+	unseen_age = 0.0
+	for patrol in patrols:
+		patrol.state = "patrol"
+		patrol.seen = false
+		patrol.attack_age = 0.0
+		patrol.hit = false
+		patrol.marker.visible = false
 
 func rescue() -> void:
 	encounter_state="rescued";encounter_age=0
@@ -87,6 +119,7 @@ func visible_to(actor: Node3D) -> bool:
 	var toward:=player.global_position-actor.global_position
 	var stance: Node = player.get_node("StealthStance")
 	var observer := actor.global_position+Vector3.UP*1.4
+	if preload("res://combat/escape_smoke.gd").obscures(get_tree(),observer,stance.sight_target()):return false
 	if toward.length()>stance.visible_range(observer,28.0):return false
 	if toward.normalized().dot(actor.global_basis.z)<.2 and toward.length()>3:return false
 	sense_ray_count+=1
@@ -132,8 +165,7 @@ func _physics_process(delta: float) -> void:
 	_tick(delta)
 	if cost_samples.size()<600:cost_samples.append(float(Time.get_ticks_usec()-start))
 
-func _tick(delta: float) -> void:
-	if not is_instance_valid(aggressor):return
+func update_rescue(delta: float) -> void:
 	encounter_age+=delta
 	if encounter_state=="waiting" and player.global_position.distance_to(peasant.global_position)<24:
 		encounter_state="beating";encounter_age=0;strike_age=1.5
@@ -157,14 +189,22 @@ func _tick(delta: float) -> void:
 		encounter_state="recovering"
 	if encounter_state in ["rescued","recovering"] and escort.is_empty() and player.get_meta("detention_action","")=="" and not aggressor.get_meta("dead",false) and not aggressor.get_meta("knocked_out",false) and not aggressor.get_meta("grappled",false):
 		fight_aggressor(delta)
+
+func _tick(delta: float) -> void:
+	if not is_instance_valid(player):
+		if not escort.is_empty(): release()
+		return
+	if is_instance_valid(aggressor) and is_instance_valid(peasant): update_rescue(delta)
 	if not escort.is_empty():update_capture(delta)
 	var seen:=false
 	for patrol in patrols:
 		var actor: Node3D=patrol.actor
+		if not is_instance_valid(actor): continue
 		var firearm := actor.get_node_or_null("ClimbingFirearm")
 		if firearm != null: firearm.hostile = wanted and patrol.state == "pursue"
 		if player.get_meta("detention_action","")!="" and (escort.is_empty() or escort.actor!=actor):
 			actor.travel_speed=0
+			patrol.marker.visible=false
 			continue
 		if actor.get_meta("combat_action","")=="hit":actor.travel_speed=0;patrol.attack_age=0;continue
 		if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false):
@@ -211,12 +251,25 @@ func _tick(delta: float) -> void:
 		if unseen_age>15:wanted=false
 
 func update_capture(delta: float) -> void:
-	var actor: Node3D=escort.actor
+	if escort.is_empty(): return
+	var actor: Node3D=escort.get("actor")
+	if not is_instance_valid(actor) or not is_instance_valid(player) or not is_instance_valid(station):
+		release()
+		return
 	escort.age+=delta
 	if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):release();return
 	if escort.state=="capture":
 		if escape_press>=4:release();return
 		if escort.age>=2.8:
+			var coordinator: Node = station.get_node("ThanaStaff/ArrestCoordinator")
+			if coordinator.cinematic_transfers:
+				actor.get_node("CombatMotion").state=""
+				actor.set_meta("combat_action","")
+				actor.animation_tree.set("parameters/combat/blend_amount",0.0)
+				if coordinator.accept_external_arrest(player,actor):
+					escort = {}
+				else: release()
+				return
 			actor.get_node("CombatMotion").state=""
 			actor.set_meta("combat_action","");actor.animation_tree.set("parameters/combat/blend_amount",0.0)
 			escort.route=road_path(player.global_position,Vector3(320,10,150))
@@ -238,7 +291,7 @@ func update_capture(delta: float) -> void:
 			coordinator.route_index=0;coordinator.officer.detainee=player;coordinator.officer.duty_state="escort"
 			actor.set_meta("city_custody",true)
 			coordinator.set_phase("escort")
-			escort={};wanted=false
+			escort={}
 			return
 		var goal: Vector3=escort.route[escort.index]+Vector3.UP*.9
 		var offset:=goal-player.global_position;offset.y=0
@@ -261,15 +314,18 @@ func update_capture(delta: float) -> void:
 		move_actor(actor,formation,1.6,delta)
 
 func release() -> void:
-	player.get_node("DetentionComponent").release_detention()
+	if is_instance_valid(player):
+		player.get_node("DetentionComponent").release_detention()
 	if not escort.is_empty():
-		var actor: Node3D=escort.actor
-		actor.get_node("CombatMotion").state=""
-		actor.set_meta("combat_action","")
-		actor.animation_tree.set("parameters/combat/blend_amount",0.0)
-		actor.detainee=null
-		actor.duty_state="idle"
-	escort={};wanted=false;unseen_age=0
+		var actor: Node3D=escort.get("actor")
+		if is_instance_valid(actor):
+			actor.get_node("CombatMotion").state=""
+			actor.set_meta("combat_action","")
+			actor.animation_tree.set("parameters/combat/blend_amount",0.0)
+			actor.detainee=null
+			actor.duty_state="idle"
+	escort={};unseen_age=0
+	if wanted and is_instance_valid(player): player.inventory.message_requested.emit("Arrest interrupted · Police are still searching")
 
 func road_path(from: Vector3, to: Vector3) -> PackedVector3Array:
 	var graph:=AStar3D.new()
@@ -292,7 +348,8 @@ func road_path(from: Vector3, to: Vector3) -> PackedVector3Array:
 
 func _process(_delta: float) -> void:
 	if escort.is_empty() or escort.state!="capture":return
-	var actor: Node3D=escort.actor
+	var actor: Node3D=escort.get("actor")
+	if not is_instance_valid(actor) or not is_instance_valid(player): return
 	var visual: Node3D=player.get_node("VisualRoot/CharacterVisual")
 	var rig: Skeleton3D=visual.skeleton
 	for side in ["l","r"]:

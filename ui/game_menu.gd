@@ -13,6 +13,7 @@ var overlay: Control
 var column: VBoxContainer
 var previous_mouse_mode: Input.MouseMode
 var previous_hud_visible := true
+var previous_layer := 1
 var page := "main"
 @onready var world: Node3D = get_parent()
 
@@ -78,6 +79,9 @@ func open() -> void:
 		return
 	if player.inventory_ui.is_open():
 		player.inventory_ui.close_inventory()
+	previous_layer = layer
+	var detained: bool = player.get_meta("detention_action","") != ""
+	if detained: layer = 130 # Pause/Quit must remain above the police transfer curtain.
 	previous_hud_visible = player.get_node("UI/HUDRoot").visible
 	player.get_node("UI/HUDRoot").hide()
 	previous_mouse_mode = Input.mouse_mode
@@ -85,13 +89,14 @@ func open() -> void:
 	overlay.show()
 	map.refresh_sites()
 	player.set_meta("map_open", true)
-	select_tab("map")
+	select_tab("game" if detained else "map")
 	get_tree().paused = true
 
 func close() -> void:
 	if not overlay.visible:
 		return
 	get_tree().paused = false
+	layer = previous_layer
 	overlay.hide()
 	map.hide()
 	world.get_node("Player").set_meta("map_open", false)
@@ -197,7 +202,7 @@ func show_slots(save_mode: bool, notice: String = "") -> void:
 				SaveManager.slot_label(selected),
 				func():
 					var success: bool = SaveManager.save_game(world, selected)
-					show_slots(true, "Saved to slot %d" % selected if success else "Save failed")
+					show_slots(true, "Saved to slot %d" % selected if success else SaveManager.last_error)
 			)
 		else:
 			btn = Style.button(

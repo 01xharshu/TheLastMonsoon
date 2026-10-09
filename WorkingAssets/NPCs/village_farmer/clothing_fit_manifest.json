@@ -3,7 +3,7 @@
   "source": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
   "garments": {
     "Fitted cotton upper base": {
-      "vertices": 1613,
+      "vertices": 1598,
       "pose_keys": 194
     },
     "Knee length wrapped dhoti": {
@@ -22,7 +22,11 @@
   "body_preserved": true,
   "fit_fps": 60,
   "fitted_source": "WorkingAssets/NPCs/village_farmer/village_farmer_clothing_fitted.blend",
+  "fitted_source_sha256": "68241d90ba1428b5759d656f684442383f955a247b8691c21c4a6422a13d5415",
   "runtime": "characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb",
-  "runtime_sha256": "f024ed871235563e668ad45088d9c6b9012644331c3605f35b8211fed33141ba",
-  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER"
+  "runtime_sha256": "2fe4fc61a4cdb89b1b24a3ee0e6f183f5887900f44b12e5e603546983c298917",
+  "status": "FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER",
+  "interpolation_repairs": 0,
+  "export_all_bone_influences": true,
+  "transition_repairs": 3
 }

@@ -13,6 +13,9 @@ func _run() -> void:
 	actor.global_position = chest.global_position+Vector3(0,1,1.1)
 	actor.get_node("CameraPivot").rotation.y = 0.0
 	for i in 8: await physics_frame
+	# The long prone capsule must not be inserted into the chest collision.
+	actor.global_position += Vector3(0,0,1.0)
+	for i in 6: await physics_frame
 	stance.enter_prone()
 	if stance.stance != "prone" or absf(actor.get_node("CollisionShape3D").rotation.x-PI*.5) > .01 or stance.move_speed() >= actor.walk_speed:
 		push_error("STANCE BLOCKED: prone shape or crawl movement failed")
@@ -22,7 +25,10 @@ func _run() -> void:
 		push_error("STANCE BLOCKED: cannot recover standing")
 		quit(1)
 		return
+	actor.global_position -= Vector3(0,0,1.0)
+	for i in 6: await physics_frame
 	stance.enter_crouch()
+	for i in 25: await physics_frame
 	if stance.stance != "crouch" or stance.camera_height() >= 1.2 or stance.sight_target().y >= actor.global_position.y+.4:
 		push_error("STANCE BLOCKED: free crouch shape/camera/sight failed")
 		quit(1)
@@ -49,6 +55,7 @@ func _run() -> void:
 		quit(1)
 		return
 	Input.action_press("aim")
+	for i in 30: await physics_frame
 	if stance.camera_height() < 1.35 or not actor.get_node("CombatInput").available():
 		push_error("STANCE BLOCKED: cannot aim and attack from cover")
 		quit(1)
@@ -56,8 +63,8 @@ func _run() -> void:
 	Input.action_release("aim")
 	actor.global_position += Vector3(0,0,3)
 	for i in 3: await physics_frame
-	if stance.stance != "":
-		push_error("STANCE BLOCKED: cover did not release after leaving")
+	if stance.stance != "crouch" or stance.cover_body != null:
+		push_error("STANCE BLOCKED: leaving cover must release contact and preserve crouch")
 		quit(1)
 		return
 	for kind in ["tree","cart"]:

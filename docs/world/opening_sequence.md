@@ -1,5 +1,7 @@
 # Arjun's opening — first playable cinematic
 
+2026-10-08 audio correction: the world scene's `BackgroundMusic` no longer autoplays when Game loads the world for the opening. The title scene has no playing score on launch. The track remains available for a later deliberate cue. A fresh headless and Forward+/Metal scene-state check passes; the final listening check in a normal new game remains open.
+
 Updated: 2026-10-01 IST. Functional prototype; final animation, audio, historical prop detail and owner approval remain open.
 
 Play Game creates the live opening through `SaveManager.apply_pending` only for a new game. Continue/load and direct world review retain their existing routes. The scene reuses Arjun and Dev's surveyed house, existing character, AnimationTree and charpai. No video playback is involved.

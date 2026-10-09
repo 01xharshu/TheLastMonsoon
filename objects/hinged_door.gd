@@ -7,6 +7,10 @@ var night_lock := true
 @export_range(0, 23) var closing_hour := 20
 var always_open := false
 var inside_only := false
+var outside_latch_access := false
+var auto_close_delay := 0.0
+var manual_locked := false
+var open_idle_seconds := 0.0
 var auto_open_at_dawn := true
 var label_name := "door"
 var opened := true
@@ -29,6 +33,7 @@ func build(material: Material) -> void:
 	# Callers specify the left jamb; place the prompt at the central latch.
 	position.x += width*.5
 	interaction_icon = "gate"
+	if outside_latch_access: secondary_interaction_text = "Lock or unlock gate"
 	interaction_max_distance = 3.0
 	marker_height = height*.18 if inside_only else minf(height*.50,1.22)
 	add_to_group("house_doors")
@@ -176,7 +181,7 @@ func hours_allow_entry(hour: int) -> bool:
 
 func _time_changed(_day: int,hour: int,_minute: int) -> void:
 	var night := not hours_allow_entry(hour)
-	locked = night and night_lock and not always_open
+	locked = (night and night_lock and not always_open) or manual_locked
 	if night != last_night:
 		last_night = night
 		if locked or auto_open_at_dawn: set_open(not locked)
@@ -196,8 +201,16 @@ func _character_in_leaf(amount: float) -> bool:
 				return true
 	return false
 
-func _physics_process(_delta: float) -> void:
-	if not moving: return
+func _physics_process(delta: float) -> void:
+	if not moving:
+		if opened and auto_close_delay > 0.0:
+			open_idle_seconds += delta
+			if open_idle_seconds >= auto_close_delay:
+				open_idle_seconds = 0.0
+				set_open(false)
+		else:
+			open_idle_seconds = 0.0
+		return
 	if _character_in_leaf(swing):
 		motion.kill()
 		swing = last_safe_swing
@@ -213,13 +226,20 @@ func is_inside(at: Vector3) -> bool:
 func interact(player: CharacterBody3D) -> void:
 	if moving: return
 	var inside: bool = is_inside(player.global_position)
-	if (locked or inside_only) and not inside: return
+	if (locked or inside_only) and not inside and not outside_latch_access: return
 	var action = player.get_node_or_null("DoorLatchAction")
 	if action == null:
 		action=preload("res://player/door_latch_action.gd").new()
 		action.name="DoorLatchAction"
 		player.add_child(action)
 	action.begin(self)
+
+func secondary_interact(player: CharacterBody3D) -> void:
+	if not outside_latch_access or moving: return
+	manual_locked = not manual_locked
+	locked = manual_locked or (not hours_allow_entry(clock.current_hour) and night_lock and not always_open if clock != null else false)
+	if manual_locked and opened: set_open(false)
+	_label()
 
 func interaction_anchor() -> Vector3:
 	if opened and is_inside_tree() and get_tree().current_scene != null:
@@ -254,6 +274,7 @@ func set_open(value: bool) -> void:
 				swing_direction *= -1.0
 			return
 	opened = value
+	open_idle_seconds = 0.0
 	moving = true
 	WorldAudio.play_at("door",global_position)
 	last_safe_swing = swing
@@ -264,12 +285,13 @@ func set_open(value: bool) -> void:
 	_label()
 
 func _label() -> void:
-	interaction_text = "Latched for the night · opens from inside" if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))
+	interaction_text = ("Unlatch and open "+label_name if outside_latch_access else "Latched for the night · opens from inside") if locked and not opened else ("Close "+label_name if opened else "Open "+label_name+(" · latch inside" if inside_only else ""))
 
 func restore_state(value: bool) -> void:
 	if motion != null and motion.is_valid(): motion.kill()
 	moving=false
 	opened=value
+	open_idle_seconds=0.0
 	swing=1.0 if value else 0.0
 	last_safe_swing=swing
 	_label()

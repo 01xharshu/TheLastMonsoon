@@ -21,6 +21,15 @@ for vertex in vest.data.vertices:
  for index in arm_groups:vest.vertex_groups[index].remove([vertex.index])
  if weight:torso.add([vertex.index],weight,'ADD')
 
+# Add fitting resolution to cloth only. Blender edit subdivision interpolates
+# every existing shape key and deform weight; the MPFB body is untouched.
+for name in ['Opaque fitted underwear foundation','Clerk full length trousers']:
+ obj=bpy.data.objects[name]
+ bpy.ops.object.select_all(action='DESELECT');obj.select_set(True);bpy.context.view_layer.objects.active=obj;obj.active_shape_key_index=0
+ bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.mesh.subdivide(number_cuts=1,smoothness=0);bpy.ops.object.mode_set(mode='OBJECT')
+ assert obj.data.shape_keys is None or all(len(key.data)==len(obj.data.vertices) for key in obj.data.shape_keys.key_blocks)
+ print('SEAT_CLOTH_RESOLUTION',name,len(obj.data.vertices),len(obj.data.polygons),flush=True)
+
 for obj in bpy.data.objects:
  if obj.type=='MESH' and obj.data.shape_keys:
   for key in obj.data.shape_keys.key_blocks:
@@ -56,6 +65,10 @@ for constraint in constraints:
   if constraint in list(bone.constraints):bone.constraints.remove(constraint);break
 for helper in helpers:bpy.data.objects.remove(helper,do_unlink=True)
 def depth(bone):return 0 if bone.parent is None else 1+depth(bone.parent)
+if '--reach' not in sys.argv:
+ from purpose_seat_footplant import plant_entry
+ captured=plant_entry(rig,captured,body)
+if '--pose-only' in sys.argv:raise SystemExit(0)
 for frame,matrices in captured:
  bpy.context.scene.frame_set(frame)
  for bone in sorted(rig.pose.bones,key=depth):
@@ -72,9 +85,19 @@ for sample in range(121):
  for obj in cloth:
   key=obj.shape_key_add(name='Seat cloth %02d'%sample);key.value=1;_fit_pose(rig,obj,tree,key,vertex_priority=True);key.value=0
  print('CLERK_SEAT_SAMPLE',sample,flush=True)
+from purpose_seat_layers import fit_outer_waistcoat
+fit_outer_waistcoat(rig,body,bpy.data.objects['Fitted cotton upper base'],vest)
+from purpose_seat_contact_repair import fit_seat_contacts
+fit_seat_contacts(rig,body,cloth,ROOT/'characters/npcs/review/record_clerk_seat.glb')
 rig.animation_data.action=clip;bpy.context.scene.frame_set(1)
 working=out/'record_clerk_seat.blend';bpy.ops.wm.save_as_mainfile(filepath=str(working))
 # Bake only helper exclusion in the exported skin; all human body surfaces remain.
+# The stationary runtime actor uses only seat correctives. Keep walk keys in
+# the saved editable source, but avoid loading their unused GPU payload here.
+for obj in bpy.data.objects:
+ if obj.type=='MESH' and obj.data.shape_keys:
+  for key in list(obj.data.shape_keys.key_blocks):
+   if key.name.startswith('Walk cloth '):obj.shape_key_remove(key)
 rig.data.pose_position='REST';bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get()
 mesh=bpy.data.meshes.new_from_object(body.evaluated_get(dg),preserve_all_data_layers=True,depsgraph=dg)
 skin=bpy.data.objects.new('record_clerk_export_full_body',mesh);bpy.context.collection.objects.link(skin)
@@ -85,7 +108,7 @@ for obj in bpy.data.objects:
  if obj.type=='MESH' and obj!=body:obj.select_set(True)
 bpy.context.view_layer.objects.active=rig
 runtime=ROOT/'characters/npcs/review/record_clerk_seat.glb';runtime.parent.mkdir(parents=True,exist_ok=True)
-bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_frame_range=False,export_cameras=False,export_lights=False,export_yup=True,export_skins=True,export_apply=False)
+bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_frame_range=False,export_cameras=False,export_lights=False,export_yup=True,export_skins=True,export_all_influences=True,export_apply=False)
 normalize_animation_times(runtime)
 import subprocess
 subprocess.run(['/usr/bin/python3',str(ROOT/'tools/characters/audit_clerk_seat_body.py')],check=True)

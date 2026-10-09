@@ -3,6 +3,8 @@ extends "res://characters/npcs/households/household_npc_actor.gd"
 var duty_state := "idle"
 var detainee: CharacterBody3D
 var hand_contact_error := 0.0
+var strike_progress := -1.0
+var strike_contact_error := INF
 func _ready() -> void:
 	movement_enabled = false
 	household_job = "Police"
@@ -32,6 +34,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if get_meta("dead",false) or get_meta("knocked_out",false) or animation_tree == null: return
 	_set_animation(&"walk" if travel_speed>.02 else &"idle",delta)
+	apply_fight_pose()
 	if is_instance_valid(detainee) and duty_state in ["restraint","escort"]:
 		if duty_state=="restraint":
 			_skeleton.set_bone_pose_rotation(_bones["spine_02"],_base_rotations["spine_02"]*Quaternion(_pitch_axes["spine_02"],.74))
@@ -44,5 +47,25 @@ func _process(delta: float) -> void:
 		solve_hand_contact("r",target)
 		set_grip("r",.25)
 		hand_contact_error = palm_world("r").distance_to(target)
+func strike_target() -> Vector3:
+	var outward := global_position-detainee.global_position
+	outward.y = 0.0
+	if outward.length_squared() < .001: outward = -global_basis.z
+	# Target the near torso surface, rather than the centre of the body.
+	return detainee.global_position + Vector3.UP*.35 + outward.normalized()*.25
+
+func apply_fight_pose() -> void:
+	if duty_state != "fight" or not is_instance_valid(detainee) or strike_progress < 0.0: return
+	var extension := sin(clampf(strike_progress,0,1)*PI)
+	_skeleton.set_bone_pose_rotation(_bones["spine_02"],_base_rotations["spine_02"]*Quaternion(_pitch_axes["spine_02"],.12*extension))
+	_skeleton.force_update_all_bone_transforms()
+	solve_hand_contact("l",global_position+global_basis*Vector3(.22,1.25,.30))
+	set_grip("l",1.0)
+	var guard := global_position + global_basis*Vector3(-.22,1.2,.25)
+	var hit := strike_target()
+	solve_hand_contact("r",guard.lerp(hit,extension))
+	set_grip("r",1.0)
+	strike_contact_error = palm_world("r").distance_to(hit)
+
 func take_damage(amount: float) -> void:
 	super.take_damage(amount)

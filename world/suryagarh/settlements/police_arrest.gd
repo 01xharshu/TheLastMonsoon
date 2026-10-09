@@ -2,7 +2,13 @@ extends Node
 ## Witnessed local offences -> approach -> restraint -> escort -> seated custody -> release.
 ## A gameplay prototype, not a reconstruction of historical police procedure.
 signal phase_changed(phase: String)
-@export var custody_seconds := 12.0
+@export var custody_seconds := 5.0
+@export var cinematic_transfers := true
+@export_range(1,30) var sentence_days := 3
+var transfer: RefCounted
+var fight_age := 0.0
+var strike_landed := false
+var approach_side := 1.0
 var phase := "idle"
 var phase_age := 0.0
 var suspect: CharacterBody3D
@@ -27,11 +33,40 @@ func _ready() -> void:
 	station = get_parent().get_parent()
 	process_physics_priority = 20
 	add_to_group("police_crime_observers")
-func report_assault(victim: Node3D) -> void:
+	transfer = preload("res://world/suryagarh/settlements/police_custody_transfer.gd").new()
+	transfer.setup(self)
+	transfer.sentence_days = sentence_days
+func report_assault(victim: Node3D, attacker: Node = null) -> void:
 	var player := get_tree().root.find_child("Player",true,false) as CharacterBody3D
-	if player != null: report_crime(player,"assault",victim.global_position)
+	if attacker == null and victim.has_meta("last_attacker"): attacker = victim.get_meta("last_attacker")
+	if player != null and attacker == player: report_crime(player,"assault",victim.global_position)
+
+func resolve_case() -> void:
+	for observer in get_tree().get_nodes_in_group("police_crime_observers"):
+		if observer.has_method("complete_custody"): observer.complete_custody(suspect)
+
+func has_pending_police_case(player: Node) -> bool:
+	return player == suspect and phase not in ["idle","return"]
+
+func accept_external_arrest(player: CharacterBody3D, guard: Node3D) -> bool:
+	if phase != "idle" or player.health <= 0 or not is_instance_valid(guard) or guard.get_meta("dead",false) or guard.get_meta("knocked_out",false): return false
+	var held: Node = player.get_node("DetentionComponent")
+	if held.mode.is_empty() and not held.begin_detention("arrest"): return false
+	if held.mode not in ["arrest","escort","waiting"]: return false
+	suspect = player
+	detention = held
+	officer = guard
+	home = station.to_global(Vector3(1,0,20))
+	reason = "wanted"
+	exclusions.assign([player.get_rid(),guard.body_collider.get_rid()])
+	officer.detainee = player
+	officer.duty_state = "restraint"
+	officer.travel_speed = 0.0
+	officer.set_meta("city_custody",true)
+	transfer.start()
+	return true
 func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -> bool:
-	if phase!="idle" or cooldown>0 or offence not in ["theft","assault"]: return false
+	if phase!="idle" or cooldown>0 or player.health <= 0 or not location.is_finite() or offence not in ["theft","assault"]: return false
 	var local := station.to_local(player.global_position)
 	if absf(local.y-.9)>.5 or absf(local.x)>18 or absf(local.z)>18: return false
 	var offence_local := station.to_local(location)
@@ -39,12 +74,13 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	var best := 31.0
 	var chosen: Node3D
 	for candidate in get_parent().get_children():
-		if candidate==self or candidate.get_meta("thana_role","")=="mohurrir" or candidate.get_meta("dead",false): continue
+		if candidate==self or candidate.get_meta("thana_role","")=="mohurrir" or candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): continue
 		if not candidate is Node3D: continue
 		var distance: float = candidate.global_position.distance_to(location)
 		if distance>=best: continue
 		var query := PhysicsRayQueryParameters3D.create(candidate.global_position+Vector3.UP*1.35,player.global_position+Vector3.UP*.4,1)
 		query.exclude = [player.get_rid(),candidate.body_collider.get_rid()]
+		if preload("res://combat/escape_smoke.gd").obscures(station.get_tree(),query.from,query.to):continue
 		if not station.get_world_3d().direct_space_state.intersect_ray(query).is_empty(): continue
 		chosen = candidate
 		best = distance
@@ -54,6 +90,7 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	officer = chosen
 	home = officer.global_position
 	reason = offence
+	approach_side = 1.0
 	exclusions = [player.get_rid()]
 	for candidate in get_parent().get_children():
 		if candidate is Node3D and candidate.has_method("palm_world"): exclusions.append(candidate.body_collider.get_rid())
@@ -66,8 +103,23 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	officer.detainee = suspect
 	officer.duty_state = "approach"
 	set_phase("approach")
+	for observer in get_tree().get_nodes_in_group("police_crime_observers"):
+		if observer.has_method("police_case_started"): observer.police_case_started(player)
 	player.inventory.message_requested.emit("Police witnessed " + offence)
 	return true
+func approach_goal() -> Vector3:
+	return suspect.global_position + suspect.get_node("VisualRoot").global_basis * Vector3(.72*approach_side,-.9,-.34)
+
+func resume_pursuit() -> void:
+	route = path(officer.global_position,approach_goal(),.29)
+	route_index = 0
+	last_chase_goal = suspect.global_position
+	chase_age = 0.0
+	officer.strike_progress = -1.0
+	officer.duty_state = "approach"
+	if route.is_empty(): abort(); return
+	set_phase("approach")
+
 func set_phase(value: String) -> void:
 	phase = value
 	phase_age = 0.0
@@ -93,11 +145,11 @@ func path(from: Vector3, to: Vector3, radius: float) -> PackedVector3Array:
 	var grid: AStarGrid2D = nav_cache.get(radius)
 	if grid == null:
 		grid = AStarGrid2D.new()
-		grid.region = Rect2i(0,0,89,87)
+		grid.region = Rect2i(0,0,89,94)
 		grid.cell_size = Vector2(.4,.4)
 		grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
 		grid.update()
-		for z in 87:
+		for z in 94:
 			for x in 89:
 				var point := station.to_global(Vector3(-17.6+x*.4,0,-16.8+z*.4))
 				grid.set_point_solid(Vector2i(x,z),not clear_at(point,radius))
@@ -113,7 +165,7 @@ func path(from: Vector3, to: Vector3, radius: float) -> PackedVector3Array:
 func nearest(grid: AStarGrid2D, point: Vector3) -> Vector2i:
 	var best := 2.0
 	var found := Vector2i(-1,-1)
-	for z in 87:
+	for z in 94:
 		for x in 89:
 			var id := Vector2i(x,z)
 			if grid.is_point_solid(id): continue
@@ -137,27 +189,86 @@ func _physics_process(delta: float) -> void:
 	cooldown = maxf(0,cooldown-delta)
 	if phase=="idle": return
 	phase_age+=delta
-	if not is_instance_valid(officer) or officer.get_meta("dead",false): abort(); return
+	if not is_instance_valid(suspect) or suspect.health <= 0: abort(); return
+	if not is_instance_valid(officer) or officer.get_meta("dead",false) or officer.get_meta("knocked_out",false): abort(); return
+	if cinematic_transfers and transfer.tick(): return
 	match phase:
 		"approach":
+			var smoke_hidden: bool=preload("res://combat/escape_smoke.gd").obscures(station.get_tree(),officer.global_position+Vector3.UP*1.3,suspect.global_position+Vector3.UP*.4)
+			if smoke_hidden and suspect.global_position.distance_to(officer.global_position)>2.0:
+				# Search the last known route instead of tracking through the cloud.
+				if suspect.global_position.distance_to(officer.global_position)>35 or phase_age>35:abort();return
+				if route_index<route.size():follow_officer(delta,3.8)
+				else:officer.travel_speed=0
+				return
 			chase_age+=delta
-			if chase_age>1.0 and suspect.global_position.distance_to(last_chase_goal)>1.5:
+			if chase_age>.25 and suspect.global_position.distance_to(last_chase_goal)>.35:
 				last_chase_goal=suspect.global_position
 				chase_age=0
-				var chase: Vector3=suspect.global_position+suspect.get_node("VisualRoot").global_basis*Vector3(.72,-.9,-.34)
+				var chase: Vector3=approach_goal()
 				route=path(officer.global_position,chase,.29)
 				route_index=0
 				if route.is_empty(): abort(); return
 			if suspect.global_position.distance_to(officer.global_position)>35 or phase_age>35: abort(); return
-			if follow_officer(delta,1.7):
-				if suspect.global_position.distance_to(officer.global_position)>1.8: abort(); return
-				if not detention.begin_detention("arrest"): abort(); return
+			if follow_officer(delta,3.8):
+				if suspect.global_position.distance_to(officer.global_position)>1.8: resume_pursuit(); return
+				var visual: Node = suspect.get_node("VisualRoot/CharacterVisual")
+				if suspect.health > 25.0 and (not visual.equipment.stowed or visual.punch_phase >= 0.0 or visual.kick_phase >= 0.0):
+					fight_age = 0.0
+					strike_landed = false
+					officer.duty_state = "fight"
+					set_phase("fight")
+					return
+				if not detention.begin_detention("arrest"): officer.travel_speed=0; phase_age=0; return
 				var face: Vector3=suspect.global_position-officer.global_position
 				officer.global_rotation.y=atan2(face.x,face.z)
 				officer.duty_state="restraint"
 				set_phase("restraint")
+		"fight":
+			if officer.get_meta("combat_action","") == "hit":
+				officer.strike_progress = -1.0
+				officer.travel_speed = 0.0
+				fight_age = 0.0
+				strike_landed = false
+				return
+			var distance: float = suspect.global_position.distance_to(officer.global_position)
+			if distance > 2.0:
+				resume_pursuit()
+				return
+			var obstruction := PhysicsRayQueryParameters3D.create(officer.global_position+Vector3.UP*1.3,officer.strike_target(),1)
+			obstruction.exclude = exclusions
+			if not station.get_world_3d().direct_space_state.intersect_ray(obstruction).is_empty():
+				approach_side *= -1.0
+				nav_cache.clear()
+				resume_pursuit()
+				return
+			var face: Vector3 = suspect.global_position-officer.global_position
+			officer.global_rotation.y = atan2(face.x,face.z)
+			officer.travel_speed = 0.0
+			var visual: Node = suspect.get_node("VisualRoot/CharacterVisual")
+			if suspect.health <= 25.0 or (visual.equipment.stowed and visual.punch_phase < 0.0 and visual.kick_phase < 0.0):
+				officer.strike_progress = -1.0
+				if not detention.begin_detention("arrest"): set_phase("approach"); return
+				officer.duty_state = "restraint"
+				set_phase("restraint")
+				return
+			fight_age += delta
+			if fight_age >= 1.2:
+				fight_age = 0.0
+				strike_landed = false
+			officer.strike_progress = clampf(fight_age/.9,0,1)
+			officer.apply_fight_pose()
+			if fight_age >= .45 and not strike_landed:
+				strike_landed = true
+				var ray := PhysicsRayQueryParameters3D.create(officer.global_position+Vector3.UP*1.3,officer.strike_target(),1)
+				ray.exclude = exclusions
+				if distance < 1.8 and officer.strike_contact_error < .10 and station.get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
+					suspect.receive_combat_hit(minf(8.0,maxf(0.0,suspect.health-20.0)),officer)
 		"restraint":
 			if phase_age<2.4: return
+			if cinematic_transfers:
+				transfer.start()
+				return
 			route=path(suspect.global_position-Vector3.UP*.9,station.to_global(Vector3(4,0,15.8)),1.05)
 			if route.is_empty(): abort(); return
 			route_index=0
@@ -210,6 +321,7 @@ func _physics_process(delta: float) -> void:
 			set_phase("leave_cell")
 		"leave_cell":
 			if route_index<route.size() and phase_age<15: move_suspect(delta,.9,false); return
+			resolve_case()
 			detention.release_detention()
 			suspect.inventory.message_requested.emit("Released from custody")
 			route=path(officer.global_position,home,.29)
@@ -254,8 +366,9 @@ func move_suspect(delta: float, speed: float, paired: bool) -> void:
 			if debug_contacts and not route_blocked:print("ESCORT SOLID ",station.to_local(next_officer)," BLOCKER ",last_clear_failure," SUPPORT ",support)
 			route_blocked=true
 func abort() -> void:
+	if transfer != null: transfer.abort()
 	if is_instance_valid(detention): detention.release_detention()
 	if is_instance_valid(gate): gate.set_locked(false)
-	if is_instance_valid(officer): officer.detainee=null; officer.duty_state="idle"; officer.travel_speed=0
+	if is_instance_valid(officer): officer.detainee=null; officer.duty_state="idle"; officer.travel_speed=0; officer.strike_progress=-1.0
 	set_phase("idle")
 	cooldown=5

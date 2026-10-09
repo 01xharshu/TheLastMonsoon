@@ -1,6 +1,6 @@
 # Station arrest sequence — 2026-10-01
 
-Status: gameplay candidate integrated; animation, costume and historical acceptance remain separate.
+Status: physical escort foundation. The current default cinematic custody/release behavior and current test results are in [police custody transfers](police_custody_transfers.md). Historical deleted captures below are not current evidence. Animation, costume and historical acceptance remain separate.
 
 ## Playable behavior
 

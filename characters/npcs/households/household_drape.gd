@@ -7,6 +7,7 @@ var female:=false
 var cotton:Material
 var border:Material
 var previous:Array[Vector3]=[]
+var waist_anchors:Array[Vector3]=[]
 var rebuilds:=0
 var max_rebuild_us:=0
 var measure_cost:=false
@@ -22,8 +23,9 @@ func configure(person:Node3D) -> bool:
    cotton=node.get_active_material(0);originals.append(node)
   elif "dhoti woven border" in label:
    border=node.get_active_material(0);originals.append(node)
-  elif female and "fitted waist transition" in label:originals.append(node)
+  # Keep the fitted waist transition as the original opaque waistband.
  if cotton==null:return false
+ waist_anchors=preload("res://characters/npcs/households/household_waist_fit.gd").anchors(actor,rig,SIDES)
  for node in originals:node.hide()
  garment=MeshInstance3D.new();garment.name="ContinuousOuterDrapeCandidate";add_child(garment)
  actor.set_meta("coach_dress",garment)
@@ -68,13 +70,17 @@ func update_pose() -> void:
   var cross:=right.cross(tangent).normalized()
   var width:float=.11+absf(spans[row].dot(right))*.5
   var depth:float=.115+absf(spans[row].dot(cross))*.5
-  if row==0:width=.205 if female else .215;depth=.18
-  elif female:width+=.09*t;depth+=.055*t
+  if row==0:width=.225 if female else .215;depth=.22 if female else .18
+  elif female:width+=.09*t;depth+=.055*t+.075*sin(t*PI)+.025
   else:width+=.025*t;depth+=.025*t
   for side in SIDES:
    var angle:=TAU*side/SIDES
    var fold:=1+.035*sin(angle*8)
-   points.append(centres[row]-hip+(right*cos(angle)*width+cross*sin(angle)*depth)*fold)
+   var at:=centres[row]-hip+(right*cos(angle)*width+cross*sin(angle)*depth)*fold
+   var waist:=actor.to_local(rig.to_global(rig.get_bone_global_pose(rig.find_bone("pelvis"))*waist_anchors[side]))-hip
+   if row==0:at=waist
+   elif row==1:at=waist.lerp(at,.45)
+   points.append(at)
    normals.append((right*cos(angle)/width+cross*sin(angle)/depth).normalized())
    uvs.append(Vector2(float(side)/SIDES,t))
  var result:=ArrayMesh.new()

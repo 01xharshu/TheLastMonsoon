@@ -1,5 +1,6 @@
 extends RefCounted
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
+const Bridge = preload("res://world/suryagarh/timber_bridge.gd")
 const STOPS := {"Bhairavpur":Vector2(-250,230),"Town Hall":Vector2(-320,-432),"Government House":Vector2(-390,-18),"Police Station":Vector2(320,150),"Company Compound":Vector2(345,252),"Hooghly Port":Vector2(-194,623)}
 static func build() -> AStar2D:
  var graph := AStar2D.new()
@@ -32,7 +33,7 @@ static func route(graph: AStar2D, start: Vector2, destination: String) -> Packed
  var id := graph.get_closest_point(start)
  if start.distance_to(graph.get_point_position(id)) > 40.0: return PackedVector2Array()
  var end := graph.get_closest_point(STOPS[destination])
- return graph.get_point_path(id,end)
+ return bridge_lanes(graph.get_point_path(id,end))
 
 static func route_to_point(graph: AStar2D, start: Vector2, goal: Vector2) -> PackedVector2Array:
  var first := graph.get_closest_point(start)
@@ -40,4 +41,19 @@ static func route_to_point(graph: AStar2D, start: Vector2, goal: Vector2) -> Pac
  if start.distance_to(graph.get_point_position(first)) > 40 or goal.distance_to(graph.get_point_position(last)) > 40: return PackedVector2Array()
  var points := graph.get_point_path(first,last)
  if not points.is_empty(): points.append(goal)
- return points
+ return bridge_lanes(points)
+
+static func bridge_lanes(points: PackedVector2Array) -> PackedVector2Array:
+ var lanes := points.duplicate()
+ var center := Layout.new().river_x(Bridge.CROSSING_Z)
+ for index in points.size():
+  var point := points[index]
+  if absf(point.y-Bridge.CROSSING_Z) > .1: continue
+  var along := absf(point.x-center)
+  if along > Bridge.HALF_SPAN+Bridge.RAMP+8.0: continue
+  var before := points[maxi(index-1,0)]
+  var after := points[mini(index+1,points.size()-1)]
+  var direction := signf(after.x-before.x)
+  var blend := clampf((Bridge.HALF_SPAN+Bridge.RAMP+8.0-along)/8.0,0.0,1.0)
+  lanes[index].y += direction*Bridge.LANE_OFFSET*blend
+ return lanes

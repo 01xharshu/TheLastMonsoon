@@ -1,5 +1,11 @@
 # Arjun locomotion AnimationTree — 2026-09-25
 
+Pistol aim/loading/recoil layers and current review limits: [2026-10-09 baseline](pistol_realism_2026-10-09.md).
+
+## Rest branch update — 2026-10-07
+
+`player/arjun_rest_clips.gd` builds two editable rig-space actions from the existing MPFB seated and idle clips. `player/arjun_motion_tree.gd` seeks separate entry and wake nodes from charpai progress, while `player/arjun_visual.gd` keeps root, feet, pelvis and brief hand contact aligned with the cot. The focused motion-tree test and isolated real-time charpai sequence pass with the current code. Four fresh Forward+/Metal close samples were inspected and deleted. The final lying hand is down; the middle recline still appears partially suspended and the current trouser waist shows dark gaps. A normal-speed player-input world pass and asset-owner clothing fit remain open. No generated test images, logs, or reports are retained.
+
 ## Current wall jump and catch — 2026-10-01
 
 Tall wall climbing now requires a physical jump, reachable catch, hanging pause and separate presses for pull/hold transfers/mantle. Backward input lets go; stamina runs down while hanging. See [controls, security constraints and Metal evidence](jump_grab_2026-10-01.md).

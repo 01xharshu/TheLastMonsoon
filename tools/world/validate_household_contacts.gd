@@ -19,7 +19,6 @@ func _run() -> void:
    for side in ["l","r"]:
     worst=maxf(worst,actor.get_meta("hand_contact_"+side));samples+=1
  var report:={"passed":worst<.015,"palm_target_samples":samples,"max_error_m":worst,"limit_m":.015,"scope":"bone-derived palm targets; visible finger grip and cloth require separate rendered review"}
- FileAccess.open("res://docs/world/household_contacts_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
  print("HOUSEHOLD_CONTACTS ",JSON.stringify(report))
  world.queue_free();await process_frame
  quit(0 if report.passed else 1)

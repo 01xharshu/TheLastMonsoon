@@ -10,23 +10,23 @@ var npc_tracks: Dictionary = {}
 var npc_timer := 0.0
 func _ready() -> void:
  for key in ['step_dirt','step_stone','step_wood','splash','impact','cloth','paper','door','wind','quill','wood_knock','metal_clink','wheel_creak','chew']:
-  streams[key] = AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/world/'+key+'.wav'))
+  streams[key] = (load('res://audio/world/'+key+'.wav') as AudioStreamWAV)
  for key in ['pickup','chest_open','water_fill','water_drink']:
-  streams[key]=AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/interaction/'+key+'.wav'))
+  streams[key]=(load('res://audio/interaction/'+key+'.wav') as AudioStreamWAV)
  for key in ['bow_loose','arrow_impact','blade_swoosh','knife_slash']:
-  streams[key]=AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/combat/'+key+'.wav'))
+  streams[key]=(load('res://audio/combat/'+key+'.wav') as AudioStreamWAV)
  streams['hoof_dirt']=streams.step_dirt
  for material in ['dirt','stone','wood']:
   step_variants['step_'+material]=[]
   var names: Array=['mud02','gravel'] if material=='dirt' else ['stone01'] if material=='stone' else ['wood01','wood02','wood03']
-  for name in names:step_variants['step_'+material].append(AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/ambience/step_'+name+'.wav')))
+  for name in names:step_variants['step_'+material].append((load('res://audio/ambience/step_'+name+'.wav') as AudioStreamWAV))
   streams['step_'+material]=step_variants['step_'+material][0]
  for i in 24:
   var voice := AudioStreamPlayer3D.new()
   voice.max_distance = 28.0
   add_child(voice);voices.append(voice)
  for key in ['cow','sparrow']:
-  streams[key]=AudioStreamWAV.load_from_file(ProjectSettings.globalize_path('res://audio/ambience/'+key+'.wav'))
+  streams[key]=(load('res://audio/ambience/'+key+'.wav') as AudioStreamWAV)
  var environment:=preload('res://systems/environment_audio.gd').new();environment.name='EnvironmentAudio';add_child(environment)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)

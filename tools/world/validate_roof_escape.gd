@@ -41,6 +41,10 @@ func run() -> void:
 	root.add_child(world); current_scene = world
 	actor = world.get_node("Player")
 	for tick in 12: await physics_frame
+	var landscape: Node3D = world.get_node("Landscape")
+	check(landscape.has_meta("tree_root_adjustments"),"normal world startup repairs trunk support")
+	check(not landscape.get_node("NatureTiles").find_children("*SolidTrunks","StaticBody3D",true,false).is_empty(),"normal world installs visible-trunk collision")
+	check(world.has_node("ForestShrine/SolidTreeTrunks"),"normal world shrine forest has solid trunks")
 	actor.set_physics_process(false)
 	actor.set_process_unhandled_input(false)
 	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE

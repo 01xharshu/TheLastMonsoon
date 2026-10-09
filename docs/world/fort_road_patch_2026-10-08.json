@@ -1,0 +1,9 @@
+{
+	"bake_seconds": 6.598,
+	"boundary_height_change_m": 0.0,
+	"grass_tufts_in_tile": 2348,
+	"maximum_nature_height_adjustment_m": 1.38921356201172,
+	"scope": "one existing terrain tile/collision and its rooted vegetation; all other tiles and sites retained",
+	"shifted_nature_instances": 5,
+	"tile": "09_04"
+}

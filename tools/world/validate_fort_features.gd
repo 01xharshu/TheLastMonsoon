@@ -8,7 +8,7 @@ func _run() -> void:
 	await physics_frame
 	await physics_frame
 	var points := get_nodes_in_group("fort_cover_points")
-	assert(points.size() == 28)
+	assert(points.size() == 44)
 	for point in points:
 		var local: Vector3 = fort.to_local(point.global_position)
 		assert(absf(local.y-fort.height_at(local.x,local.z)) < 0.65, "Cover marker is above ground")
@@ -20,5 +20,5 @@ func _run() -> void:
 	var support := fort.get_world_3d().direct_space_state.intersect_ray(query)
 	assert(not support.is_empty() and absf(support.position.y-float(wall.get_meta("top_y"))) < 0.15)
 	assert(fort.get_node("Vegetation/ClusteredDryGrass").multimesh.instance_count == 240)
-	print("FORT FEATURES PASS | 28 ground cover markers | supported climb landing | 240 grass tufts")
+	print("FORT FEATURES PASS | 44 ground cover markers | supported climb landing | 240 grass tufts")
 	quit()

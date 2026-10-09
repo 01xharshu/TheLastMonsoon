@@ -2,9 +2,13 @@ extends SceneTree
 var captured:Dictionary={}
 var work_only:=false
 var camera:Camera3D
-var folder:="res://docs/world/household_journeys_2026-10-01/"
+var folder:=""
 func _initialize() -> void:call_deferred("_run")
 func _run() -> void:
+ folder=OS.get_environment("TLM_HOUSEHOLD_REVIEW_TEMP")
+ if folder.is_empty():
+  push_error("Run with an externally managed temporary TLM_HOUSEHOLD_REVIEW_TEMP directory");quit(1);return
+ folder+="/"
  work_only="--work-only" in OS.get_cmdline_user_args()
  root.size=Vector2i(1280,720);root.content_scale_size=root.size;root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
  var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
@@ -42,5 +46,4 @@ func _run() -> void:
     captured[label]=true;print("JOURNEY_CAPTURE ",label," ",error," desk_error ",actor.get_meta("desk_hand_error_m",-1))
   await physics_frame
   if captured.size()>=(4 if work_only else 36):break
- FileAccess.open(folder+("work_manifest.json" if work_only else "manifest.json"),FileAccess.WRITE).store_string(JSON.stringify({"captures":captured.keys(),"scope":"Metal transition stills; continuous motion and garment contact remain review"},"  ")+"\n")
  quit()

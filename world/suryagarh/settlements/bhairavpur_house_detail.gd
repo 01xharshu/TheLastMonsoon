@@ -46,6 +46,9 @@ func house(house_node: Node3D,extent: Vector2,index: int) -> void:
 		gate.height=1.85
 		gate.position=Vector3(-1.25,.03,z)
 		gate.night_lock=index%5 != 0
+		gate.outside_latch_access=true
+		gate.auto_close_delay=12.0
+		gate.label_name="gate"
 		gate.always_open=WORKSHOPS.has(index)
 		gate.build(settlement.wood)
 		house_node.add_child(gate)

@@ -36,11 +36,14 @@ func _run() -> void:
 	var worst_contact:=0.0
 	var cloth_samples:=0
 	var worst_cloth_anchor:=0.0
+	var worst_desk_feet:=0.0
 	for frame in 4000:
 		for coach in coaches:coach.get_node("HouseholdTravel").step(.1)
 		await physics_frame
 		for actor in residents:
-			if actor.get_meta("household_action","")!="work" or actor.get("movement_profile")!=&"female":continue
+			if actor.get_meta("household_action","")!="work":continue
+			worst_desk_feet=maxf(worst_desk_feet,actor.get_meta("desk_feet_error_m",0.0))
+			if actor.get("movement_profile")!=&"female":continue
 			var garment:MeshInstance3D=actor.get_meta("coach_dress",null)
 			if garment==null or not garment.visible:
 				if not errors.has("office seated garment missing"):errors.append("office seated garment missing")
@@ -63,6 +66,7 @@ func _run() -> void:
 		if travel.blocked_frames>0:errors.append(str(coach.name)+": blocked coach route")
 		journeys.append({"coach":str(coach.name),"round_trips":travel.completed_trips,"distance_m":travel.distance_travelled,"blocked_frames":travel.blocked_frames,"phase":travel.phase,"actions":travel.actions,"resident_actions":travel.journeys.map(func(j):return {"actor":str(j.actor.name),"visited":j.visited,"state":j.state,"blocked_frames":j.blocked_frames,"position":str(j.actor.global_position),"obstacle":j.last_obstacle})})
 	if cloth_samples==0 or worst_cloth_anchor>.001:errors.append("office garment pelvis anchoring failed")
+	if worst_desk_feet>.015:errors.append("desk ankle targets exceed 15 mm")
 	var contacts:Array=[]
 	for actor in staff:
 		if actor.get("household_job") not in ["WaterBearer","Coachman"]:continue
@@ -71,7 +75,6 @@ func _run() -> void:
 			contacts.append({"actor":str(actor.name),"hand":side,"error_m":error})
 			if error>.015:errors.append(str(actor.name)+": "+side+" palm contact exceeds 15 mm")
 	if worst_contact>.015:errors.append("moving palm contact exceeds 15 mm")
-	var report:={"passed":errors.is_empty(),"office_cloth_samples":cloth_samples,"max_office_cloth_anchor_error_m":worst_cloth_anchor,"households":households.size(),"staff":staff.size(),"residents":residents.size(),"independent_trees":graphs.size(),"clear_new_home_entrances":entrances,"hand_contacts":contacts,"max_sampled_contact_error_m":worst_contact,"coaches":coaches.size(),"journeys":journeys,"errors":errors,"scope":"household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate"}
-	FileAccess.open("res://docs/world/wealthy_households_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
+	var report:={"passed":errors.is_empty(),"max_desk_ankle_error_m":worst_desk_feet,"office_cloth_samples":cloth_samples,"max_office_cloth_anchor_error_m":worst_cloth_anchor,"households":households.size(),"staff":staff.size(),"residents":residents.size(),"independent_trees":graphs.size(),"clear_new_home_entrances":entrances,"hand_contacts":contacts,"max_sampled_contact_error_m":worst_contact,"coaches":coaches.size(),"journeys":journeys,"errors":errors,"scope":"household walk/board/sit/office/home cycle; final rendered motion/contact approval remains separate"}
 	print("HOUSEHOLDS_VALIDATION ",JSON.stringify(report))
 	quit(0 if report.passed else 1)

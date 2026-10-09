@@ -45,7 +45,7 @@ if role in ['village_woman','village_fruit_seller']:
             for side,sign in [('l',1),('r',-1)]:
                 bone=rig.pose.bones['upperarm_'+side]
                 axis=bone.bone.matrix_local.to_3x3().inverted()@Vector((0,1,0))
-                bone.rotation_quaternion=pose[side]@Quaternion(axis,sign*math.radians(12))
+                bone.rotation_quaternion=pose[side]@Quaternion(axis,-sign*math.radians(12))
                 bone.keyframe_insert('rotation_quaternion',frame=frame,group=bone.name)
         for layer in rig.animation_data.action.layers:
             for strip in layer.strips:
@@ -185,26 +185,7 @@ for track in list(rig.animation_data.nla_tracks):rig.animation_data.nla_tracks.r
 for clip,duration in [('idle',120),('walk',72)]:
     track=rig.animation_data.nla_tracks.new();track.name=clip
     strip=track.strips.new(clip,1,bpy.data.actions[clip]);strip.action_frame_end=duration+1
-# Save a separate editable fitting source; original body and source remain recoverable.
-bpy.context.scene.frame_set(1)
-fitted=folder/(role+'_clothing_fitted.blend')
-bpy.ops.wm.save_as_mainfile(filepath=str(fitted))
-# Bake only MPFB helper exclusion on the body. Keep skin and rig weights intact.
-rig.data.pose_position='REST';bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get()
-mesh=bpy.data.meshes.new_from_object(body.evaluated_get(dg),preserve_all_data_layers=True,depsgraph=dg)
-export_body=bpy.data.objects.new(role+'_export_full_body',mesh);bpy.context.scene.collection.objects.link(export_body)
-for group in body.vertex_groups:export_body.vertex_groups.new(name=group.name)
-export_body.parent=rig;export_body.matrix_parent_inverse=body.matrix_parent_inverse.copy();export_body.matrix_basis=body.matrix_basis.copy()
-export_body.modifiers.new('Armature','ARMATURE').object=rig
-rig.data.pose_position='POSE'
-bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
-for obj in bpy.data.objects:
-    if obj.type=='MESH' and obj!=body:obj.select_set(True)
-bpy.context.view_layer.objects.active=rig
-runtime=ROOT/f'characters/npcs/motion/{role}/{role}_rigged_candidate.glb'
-bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,
-    export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,
-    export_frame_range=False,export_skins=True,export_apply=False,export_morph=True,
-    export_cameras=False,export_lights=False)
-report.update(fitted_source=str(fitted.relative_to(ROOT)),fitted_source_sha256=hashlib.sha256(fitted.read_bytes()).hexdigest(),runtime=str(runtime.relative_to(ROOT)),runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),status='FITTED_CANDIDATE_REQUIRES_AUDIT_RENDER')
-(folder/'clothing_fit_manifest.json').write_text(json.dumps(report,indent=2)+'\n')
+from village_interpolation_fit import refine
+report['interpolation_repairs']=refine(rig,body,objects)
+from village_clothing_export import export_fitted
+export_fitted(ROOT,role,rig,body,report)

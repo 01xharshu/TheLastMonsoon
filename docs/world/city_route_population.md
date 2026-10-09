@@ -1,0 +1,5 @@
+# City route population
+
+IN_PROGRESS / 2026-10-08 23:03 IST / root. User reports sparse pedestrians, police and carts on city routes. Add populated routes using existing MPFB actors, live police observer/pursuit/custody AI and real boardable vehicles. Preserve previous clothing task and concurrent world/vehicle changes. Implementation and world verification next; no density/performance/art approval yet.
+
+Implemented additive manager:72 pedestrians across9 existing surveyed route areas,10 additional officers registered with existing CombatEncounters patrol/witness/pursuit/custody logic,8 boardable ox carts/family carriages on long road sections. Walkers phase-spaced in opposing directions on road edges; setup staggered .06s, distant cadence .5s and mesh range190m. Cart clearance/grounding/player takeover retained plus rear-spacing stop. New files city_route_population.gd, city_street_journey.gd, city_cart_journey.gd; one additive install line in existing dirty world script. Parser checks PASS; actual full-world16s movement validation running.

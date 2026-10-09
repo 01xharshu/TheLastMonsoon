@@ -19,8 +19,13 @@ var pitch := 0.0
 var outward := 0.0
 var held := false
 var cloth_support := 0.0
-var cloth_samples: Array[Dictionary] = []
 var cloth_rig: Skeleton3D
+var contact_bones := PackedInt32Array()
+var contact_bind_poses: Array[Transform3D] = []
+var contact_offsets := PackedInt32Array([0])
+var contact_indices := PackedInt32Array()
+var contact_points := PackedVector3Array()
+var contact_weights := PackedFloat32Array()
 var contact_materials: Array[ShaderMaterial] = []
 var contact_usec := 0
 var mesh_rebuilds := 0
@@ -275,8 +280,40 @@ func _prepare_cloth_contact() -> void:
 				indices.append(bone_index)
 				binds.append(cloth.skin.get_bind_pose(bind))
 				amounts.append(weight)
-			cloth_samples.append({"point":vertices[index],"bones":indices,"binds":binds,"weights":amounts})
+			contact_points.append(vertices[index])
+			for slot in indices.size():
+				var palette_index := -1
+				for candidate in contact_bones.size():
+					if contact_bones[candidate]==indices[slot] and contact_bind_poses[candidate]==binds[slot]:
+						palette_index = candidate
+						break
+				if palette_index < 0:
+					palette_index = contact_bones.size()
+					contact_bones.append(indices[slot])
+					contact_bind_poses.append(binds[slot])
+				contact_indices.append(palette_index)
+				contact_weights.append(amounts[slot])
+			contact_offsets.append(contact_indices.size())
 	contact_ready = true
+
+func _cloth_contact_required() -> float:
+	# Compose each influencing bone/bind pair once instead of per vertex.
+	# Keep the original arithmetic order and dropped tiny-weight behaviour.
+	var inverse := pouch.global_transform.affine_inverse() * cloth_rig.global_transform
+	var palette: Array[Transform3D] = []
+	for index in contact_bones.size():
+		palette.append(cloth_rig.get_bone_global_pose(contact_bones[index]) * contact_bind_poses[index])
+	var required := 0.0
+	for sample in contact_offsets.size()-1:
+		var vertex := Vector3.ZERO
+		for slot in range(contact_offsets[sample],contact_offsets[sample+1]):
+			var pose := palette[contact_indices[slot]]
+			vertex += (pose * contact_points[sample]) * contact_weights[slot]
+		var point := inverse * vertex
+		if point.y < .005 or point.y > .285 or absf(point.x) > _radius_at(point.y)*.84+.018: continue
+		var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
+		required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
+	return required
 
 func _update_cloth_contact(delta: float) -> void:
 	if not contact_ready: _prepare_cloth_contact()
@@ -284,18 +321,7 @@ func _update_cloth_contact(delta: float) -> void:
 	var begin := Time.get_ticks_usec()
 	var required := 0.0
 	if not held:
-		var inverse := pouch.global_transform.affine_inverse() * cloth_rig.global_transform
-		var poses := {}
-		for sample in cloth_samples:
-			var vertex := Vector3.ZERO
-			for slot in sample.bones.size():
-				var index: int = sample.bones[slot]
-				if not poses.has(index): poses[index] = cloth_rig.get_bone_global_pose(index)
-				vertex += (poses[index] * sample.binds[slot] * sample.point) * sample.weights[slot]
-			var point: Vector3 = inverse * vertex
-			if point.y < .005 or point.y > .285 or absf(point.x) > _radius_at(point.y)*.84+.018: continue
-			var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
-			required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
+		required = _cloth_contact_required()
 	# Immediate outward response prevents one-frame penetration; slow recovery
 	# lets the leather settle against the cloth. No mesh allocations in motion.
 	cloth_support = required if required > cloth_support else move_toward(cloth_support,required,delta*.15)

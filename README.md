@@ -41,7 +41,13 @@ The project is in **pre-alpha**, focused on reusable gameplay architecture and a
 | **World** | 2.986 km² Suryagarh landscape, Bhairavpur, civic interiors, Government House | Traversal, visual quality, 8 GB perf |
 | **Play** | Movement, survival, river water, riding, combat, map, save/load | Animation, contact, balance |
 | **Characters** | Arjun runtime candidate; village + British NPC blockouts | Arjun appearance [rejected](docs/characters/arjun/rejection_2026-09-23.md); NPC motion unapproved |
-| **Input** | KB+M; DualSense mappings, settings, feedback | Physical controller playthrough |
+| **Input** | KB+M; DualSense mappings, settings, feedback; shared Android/iOS touch overlay | Physical controller playthrough; phone builds, touch usability and performance |
+
+### Mobile development update — 8 October 2026
+
+Work has started on bringing the same game to Android phones, iPhone and iPad through a separate touch interface. The first control layer is integrated into the player scene: a left movement joystick, camera dragging on the right, gameplay action buttons, and Bag, Map and Pause controls. The overlay appears automatically in Android/iOS builds and can be enabled for desktop preview. Keyboard and controller controls remain available.
+
+Isolated input checks passed for movement, simultaneous movement and jump, camera limits, button release, and held-input cleanup when menus open or focus is lost. The isolated overlay was also rendered and reviewed with Metal. **This is a control baseline, not a released or verified phone version:** Android/iOS packaging, real-device testing, mobile graphics and loading optimisation, and complete touch gameplay routes remain open. See the [mobile touch baseline](docs/world/mobile_touch_controls.md) for implementation details and remaining work.
 
 ### Implemented Systems
 
@@ -55,6 +61,7 @@ The project is in **pre-alpha**, focused on reusable gameplay architecture and a
 | Gravity + Player collision | ✅ Implemented |
 | Spring-arm camera with collision | ✅ Implemented |
 | Mouse camera control | ✅ Implemented |
+| Android/iOS touch controls | ✅ Basic overlay integrated; phone validation pending |
 | Interaction ray + dynamic prompts | ✅ Implemented |
 | Reusable interactable architecture | ✅ Implemented |
 | Health / Stamina / Hunger / Thirst | ✅ Prototype |
@@ -186,6 +193,18 @@ Save System · World Streaming · Developer Tools
 
 > [!TIP]
 > Settings offer Auto, Keyboard+Mouse, and PS5 DualSense input modes. See the [controller guide](docs/world/animal_tools_and_controller.md) for the full button map and hardware review status.
+
+### Touch controls and desktop preview
+
+Use the left joystick to move and drag the open right side to look. Buttons provide Jump, Use, Ride, Run, Aim, Attack, Reload, Crouch, Prone, Weapon, Stow and Water. Bag, Map and Pause sit at the top right. Hold Run, Aim or Use as needed; Weapon cycles the selected weapon.
+
+To preview the touch overlay from the project directory, launch Godot with:
+
+```sh
+godot --path . -- --touch-controls
+```
+
+On this Mac, use `/Applications/Godot.app/Contents/MacOS/Godot` if `godot` is not on your PATH. Start or continue the game to see the controls. Desktop mouse emulation supports one finger at a time; simultaneous touch requires a touch device. The preview does not verify phone performance.
 
 ---
 

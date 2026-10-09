@@ -3,6 +3,7 @@ extends RefCounted
 const CELL := .12
 var triangles: Array[Dictionary] = []
 var cells: Dictionary = {}
+var hierarchy: Array[Dictionary] = []
 func _cell(at: Vector3) -> Vector3i:
  return Vector3i(floori(at.x/CELL),floori(at.y/CELL),floori(at.z/CELL))
 static func closest(p: Vector3,a: Vector3,b: Vector3,c: Vector3) -> Vector3:
@@ -31,6 +32,7 @@ static func closest(p: Vector3,a: Vector3,b: Vector3,c: Vector3) -> Vector3:
 func build_body(actor: Node3D,coach: Node3D) -> void:
  triangles.clear()
  cells.clear()
+ hierarchy.clear()
  var skeleton: Skeleton3D = actor._skeleton
  for node in actor.find_children("*","MeshInstance3D",true,false):
   if node.skin == null: continue
@@ -78,27 +80,76 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
        var key := Vector3i(x,y,z)
        if not cells.has(key): cells[key] = []
        cells[key].append(id)
+ # Build once for this exact posed body; queries retain the old cell domain.
+ var ids: Array[int] = []
+ for index in triangles.size(): ids.append(index)
+ if not ids.is_empty(): _build_hierarchy(ids)
+
+func _build_hierarchy(ids: Array[int]) -> int:
+ var low: Vector3 = triangles[ids[0]].low
+ var high: Vector3 = triangles[ids[0]].high
+ for id in ids:
+  low = low.min(triangles[id].low)
+  high = high.max(triangles[id].high)
+ var index := hierarchy.size()
+ hierarchy.append({"low":low,"high":high,"cell_low":_cell(low),"cell_high":_cell(high)})
+ if ids.size() <= 8:
+  hierarchy[index]["ids"] = ids
+ else:
+  var extent := high-low
+  var axis := 0 if extent.x >= extent.y and extent.x >= extent.z else 1 if extent.y >= extent.z else 2
+  ids.sort_custom(func(a: int,b: int) -> bool:
+   return (triangles[a].low[axis]+triangles[a].high[axis]) < (triangles[b].low[axis]+triangles[b].high[axis]))
+  var middle: int = ids.size()/2
+  hierarchy[index]["left"] = _build_hierarchy(ids.slice(0,middle))
+  hierarchy[index]["right"] = _build_hierarchy(ids.slice(middle))
+ return index
+
+func _in_domain(low: Vector3i,high: Vector3i,key: Vector3i) -> bool:
+ return low.x <= key.x+1 and high.x >= key.x-1 and low.y <= key.y+1 and high.y >= key.y-1 and low.z <= key.z+1 and high.z >= key.z-1
+
+func _earlier(cell: Vector3i,id: int,previous: Vector3i,previous_id: int) -> bool:
+ if cell.x != previous.x: return cell.x < previous.x
+ if cell.y != previous.y: return cell.y < previous.y
+ if cell.z != previous.z: return cell.z < previous.z
+ return id < previous_id
+
 func nearest(at: Vector3) -> Dictionary:
+ if hierarchy.is_empty(): return {}
  var key := _cell(at)
  var distance := INF
  var result: Dictionary = {}
- var visited: Dictionary = {}
- for x in range(-1,2):
-  for y in range(-1,2):
-   for z in range(-1,2):
-    for id in cells.get(key+Vector3i(x,y,z),[]):
-     if visited.has(id): continue
-     visited[id] = true
-     var triangle: Dictionary = triangles[id]
-     # Exact lower bound: distant triangle boxes cannot beat the current hit.
-     # Keep the existing cell/triangle order and tie handling for contact parity.
-     var box_point: Vector3 = at.clamp(triangle.low, triangle.high)
-     if box_point.distance_squared_to(at) > distance + 0.0000000001: continue
-     var point := closest(at,triangle.a,triangle.b,triangle.c)
-     var squared := point.distance_squared_to(at)
-     if squared < distance:
-      distance = squared
-      result = {"distance":sqrt(squared),"signed":(at-point).dot(triangle.normal),"point":point,"normal":triangle.normal}
+ var best_cell := Vector3i.ZERO
+ var best_id := -1
+ var pending: Array[int] = [0]
+ while not pending.is_empty():
+  var node: Dictionary = hierarchy[pending.pop_back()]
+  if not _in_domain(node.cell_low,node.cell_high,key): continue
+  var box_point: Vector3 = at.clamp(node.low,node.high)
+  if box_point.distance_squared_to(at) > distance+0.0000000001: continue
+  if node.has("ids"):
+   for id in node.ids:
+    var triangle: Dictionary = triangles[id]
+    var cell_low := _cell(triangle.low)
+    if not _in_domain(cell_low,_cell(triangle.high),key): continue
+    box_point = at.clamp(triangle.low,triangle.high)
+    if box_point.distance_squared_to(at) > distance+0.0000000001: continue
+    var point := closest(at,triangle.a,triangle.b,triangle.c)
+    var squared := point.distance_squared_to(at)
+    var first_cell := cell_low.max(key-Vector3i.ONE)
+    if squared < distance or (squared == distance and _earlier(first_cell,id,best_cell,best_id)):
+     distance = squared
+     best_cell = first_cell
+     best_id = id
+     result = {"distance":sqrt(squared),"signed":(at-point).dot(triangle.normal),"point":point,"normal":triangle.normal}
+  else:
+   var left: Dictionary = hierarchy[node.left]
+   var right: Dictionary = hierarchy[node.right]
+   var left_at: Vector3 = at.clamp(left.low,left.high)
+   var right_at: Vector3 = at.clamp(right.low,right.high)
+   var left_first := left_at.distance_squared_to(at) <= right_at.distance_squared_to(at)
+   pending.append(node.right if left_first else node.left)
+   pending.append(node.left if left_first else node.right)
  return result
 
 func audit_garment(driver: Node3D,cart: Node3D) -> Dictionary:

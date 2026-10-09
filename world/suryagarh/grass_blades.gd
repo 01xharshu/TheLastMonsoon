@@ -1,6 +1,40 @@
 extends RefCounted
 ## Shared nested grass LOD: six core blades + eighteen nearby detail blades.
 ## No physics/process nodes or transparent foliage cards.
+static var habitat_noise: FastNoiseLite
+
+static func habitat_height(layout: RefCounted, point: Vector2, road_distance: float) -> float:
+	# Dry bank grass and uncultivated verge patches; paths/crops stay short.
+	var bank_distance: float = absf(point.x-layout.river_x(point.y))-layout.river_width(point.y)
+	var bank: float = smoothstep(5.0,16.0,bank_distance)*(1.0-smoothstep(42.0,72.0,bank_distance))
+	var verge: float = smoothstep(6.0,11.0,road_distance)*(1.0-smoothstep(30.0,55.0,road_distance))
+	var wild: float = 1.0-smoothstep(.15,.45,layout.field_mask(point.x,point.y))
+	if habitat_noise == null:
+		habitat_noise = FastNoiseLite.new()
+		habitat_noise.seed = 1857
+		habitat_noise.frequency = .035
+		habitat_noise.fractal_octaves = 3
+	var patch: float = smoothstep(-.32,.30,habitat_noise.get_noise_2d(point.x,point.y))
+	# Smaller variations break up the height of blades within the same patch.
+	patch *= .8+.2*smoothstep(-.4,.4,habitat_noise.get_noise_2d(point.x*3.7,point.y*3.7))
+	return 1.0+wild*patch*maxf(bank*4.0,verge*2.5)
+
+static func placement_allowed(layout: RefCounted, point: Vector2, height: float, road_distance: float) -> bool:
+	# Reserve whole surveyed plots, plus a buffer for tips, wind and vehicle bending.
+	if layout.plot_clearance(point.x,point.y) < 10.0 or layout.built_area(point.x,point.y): return false
+	if road_distance < 6.5 or height < 1.8 or height > 95.0: return false
+	# Crops occupy cultivated interiors; wild grass can grow only along field margins.
+	if layout.field_mask(point.x,point.y) > .45: return false
+	if point.distance_to(Vector2(-310,230)) < 70.0: return false
+	return true
+
+static func habitat_density(layout: RefCounted, point: Vector2, road_distance: float) -> float:
+	var growth: float = habitat_height(layout,point,road_distance)
+	var patch: float = smoothstep(-.4,.4,habitat_noise.get_noise_2d(point.x*1.8,point.y*1.8))
+	var field_edge: float = 1.0-smoothstep(.1,.45,layout.field_mask(point.x,point.y))
+	# Moist banks/verges fill out, with sparse edges rather than a uniform carpet.
+	return clampf((.50+.32*patch+.16*(growth-1.0)/4.0)*field_edge,.08,.98)
+
 static func make_mesh(detail := false) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)

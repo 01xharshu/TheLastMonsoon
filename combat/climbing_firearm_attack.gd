@@ -49,9 +49,10 @@ func _process(delta: float) -> void:
 	loading_left = Vector3(.20,-.032,0)
 	if cooldown > 0.0:
 		var lift := Loading.phase_ease(loading_progress,0.0,.1)*(1.0-Loading.phase_ease(loading_progress,.8,1.0))
-		grip = grip.lerp(owner_actor.to_global(Vector3(-.02,.80,.02)),lift)
-		forward = forward.lerp((Vector3.UP+owner_actor.global_basis.z*.05).normalized(),lift).normalized()
-		loading_left = loading_left.lerp(loading_pose.contact,lift)
+		grip = grip.lerp(owner_actor.to_global(Vector3(-.14,.85,.24)),lift)
+		forward = forward.lerp((Vector3.UP+owner_actor.global_basis.x*.65).normalized(),lift).normalized()
+		var loading_contact: Vector3 = loading_pose.contact.lerp(loading_left,Loading.phase_ease(loading_progress,.65,.8))
+		loading_left = loading_left.lerp(loading_contact,lift)
 	var side := forward.cross(Vector3.UP).normalized()
 	if side.length_squared() < .1: side = owner_actor.global_basis.x
 	var basis := Basis(forward,side.cross(forward).normalized(),side)

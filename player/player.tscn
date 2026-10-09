@@ -45,6 +45,8 @@
 
 [ext_resource type="Script" path="res://player/stair_foot_contact.gd" id="stair_contact"]
 
+[ext_resource type="Script" path="res://ui/mobile/touch_controls.gd" id="mobile_touch"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -453,3 +455,16 @@ script = ExtResource("field_telescope")
 
 [node name="StairFootContact" type="Node" parent="."]
 script = ExtResource("stair_contact")
+
+[node name="MobileControls" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="TouchControls" type="Control" parent="MobileControls"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("mobile_touch")
