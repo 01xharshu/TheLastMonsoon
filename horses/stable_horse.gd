@@ -445,7 +445,10 @@ func board(actor: CharacterBody3D) -> bool:
 	if not can_board(actor): return false
 	rider = actor
 	var first_take := not stolen
-	stolen = true
+	if first_take and actor.name=="Player":
+		for observer in get_tree().get_nodes_in_group("police_crime_observers"):
+			if observer.has_method("report_vehicle_theft"): observer.report_vehicle_theft(actor,self,"horse_theft")
+	stolen = get_meta("owner","") != "Arjun"
 	tack_player.play()
 	voice_player.stream = Neigh if first_take else Snort
 	voice_player.play()

@@ -12,7 +12,7 @@ var map: Control
 var overlay: Control
 var column: VBoxContainer
 var previous_mouse_mode: Input.MouseMode
-var previous_hud_visible := true
+var hidden_gameplay_ui: Array[Node] = []
 var previous_layer := 1
 var page := "main"
 @onready var world: Node3D = get_parent()
@@ -81,9 +81,8 @@ func open() -> void:
 		player.inventory_ui.close_inventory()
 	previous_layer = layer
 	var detained: bool = player.get_meta("detention_action","") != ""
-	if detained: layer = 130 # Pause/Quit must remain above the police transfer curtain.
-	previous_hud_visible = player.get_node("UI/HUDRoot").visible
-	player.get_node("UI/HUDRoot").hide()
+	layer = 130 # Keep every pause page above world overlays.
+	_hide_gameplay_ui(world)
 	previous_mouse_mode = Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	overlay.show()
@@ -100,11 +99,37 @@ func close() -> void:
 	overlay.hide()
 	map.hide()
 	world.get_node("Player").set_meta("map_open", false)
-	world.get_node("Player/UI/HUDRoot").visible = previous_hud_visible
+	for node in hidden_gameplay_ui:
+		if is_instance_valid(node):
+			node.show()
+	hidden_gameplay_ui.clear()
 	Input.mouse_mode = previous_mouse_mode
+
+func _hide_gameplay_ui(node: Node) -> void:
+	if node == self:
+		return
+	if node == map.get_parent():
+		# The shared map belongs to the pause menu; its gameplay siblings do not.
+		for child in node.get_children():
+			if child != map and (child is CanvasItem or child is CanvasLayer) and child.visible:
+				hidden_gameplay_ui.append(child)
+				child.hide()
+	elif node is CanvasLayer and node.visible:
+		hidden_gameplay_ui.append(node)
+		node.hide()
+		var touch := node.get_node_or_null("TouchControls")
+		if touch != null and touch.has_method("release_all"):
+			touch.release_all()
+	for child in node.get_children():
+		_hide_gameplay_ui(child)
 
 # ── Input ────────────────────────────────────────────────────
 func _input(event: InputEvent) -> void:
+	if overlay.visible and page=="settings" and (event.is_action_pressed("pause") or (event is InputEventJoypadButton and event.pressed and event.button_index==JOY_BUTTON_B)):
+		var settings:=column.find_child("SettingsPanel",true,false)
+		if settings!=null and settings.handle_back():
+			get_viewport().set_input_as_handled();return
+
 	if event.is_action_pressed("pause") and not event.is_echo():
 		toggle()
 		get_viewport().set_input_as_handled()

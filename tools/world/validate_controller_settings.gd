@@ -9,6 +9,8 @@ func _initialize() -> void:
 	await process_frame
 	var scroll: ScrollContainer = menu.column.get_child(0)
 	var panel: VBoxContainer = scroll.get_child(0)
+	panel.show_category("Controller")
+	await process_frame
 	var selectors := panel.find_children("*","OptionButton",true,false)
 	var buttons := panel.find_children("*","Button",true,false)
 	var height := scroll.get_combined_minimum_size().y

@@ -82,3 +82,5 @@ The [2026-09 handoff archive](agent/history/2026-09-23-pre-compact-handoff.md) p
 For a new feature, update the relevant source and focused docs. Keep the handoff to: status, material changes, evidence or failure, and one exact next action. Avoid copying console output or repeating milestones there.
 
 Ordered completion continuation: [fit, integration, route and performance](characters/npcs/ordered_completion_2026-10-06.md). Main authored grass: [integration and paired native evidence](world/grass_main_integration_2026-10-06.md).
+
+- [Witnessed theft and sight-based police pursuit](world/crime_sight_2026-10-09.md) — live horse/cart hooks, last-seen search, hidden decay and verification limits.

@@ -48,7 +48,7 @@ func can_move() -> bool:
 	return true
 
 func animation_dead(anim: AnimationPlayer) -> bool:
-	return horse_animations.has(anim) and horse_animations[anim].dead
+	return horse_animations.has(anim) and (horse_animations[anim].dead or (cart.has_node("DraftTeam") and not cart.get_node("DraftTeam").animal_attached(horse_animations[anim])))
 
 func _horse_died(horse: Node) -> void:
 	for player in cart.hoof_players: player.stop()

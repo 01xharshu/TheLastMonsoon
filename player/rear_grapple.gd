@@ -34,7 +34,10 @@ func begin() -> bool:
 	var closest:=1.05
 	var chosen: Node3D
 	for target in get_tree().get_nodes_in_group("combat_actors"):
-		if target.get_meta("combat_faction","indian") not in ["british","police"] or target.get_meta("dead",false) or target.get_meta("knocked_out",false):continue
+		if target.get_meta("combat_faction","indian") not in ["british","police","training"] or target.get_meta("dead",false) or target.get_meta("knocked_out",false):continue
+		if target.get_meta("training_partner",false):
+			var lesson: Node=get_tree().root.find_child("DevStory",true,false)
+			if lesson==null or not lesson.practice_allowed(target,"takedown"):continue
 		var offset: Vector3=actor.global_position-target.global_position
 		offset.y=0
 		var distance:=offset.length()
@@ -57,7 +60,8 @@ func begin() -> bool:
 	visual.equipment._refresh()
 	actor.set_meta("paired_combat",true)
 	actor.velocity=Vector3.ZERO
-	actor.get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",victim)
+	if not victim.get_meta("training_partner",false):
+		actor.get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",victim)
 	return true
 
 func _process(delta: float) -> void:

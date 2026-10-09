@@ -9,6 +9,13 @@ func check(value: bool,label: String) -> void:
 func settle(player: CharacterBody3D,at: Vector3) -> void:
 	player.global_position=at;player.velocity=Vector3.ZERO
 	for frame in 15:await physics_frame
+func interact_as_player(player: CharacterBody3D,prompt: Interactable) -> void:
+	player.set_first_person(true)
+	var offset:=prompt.global_position-player.global_position
+	player.camera_pivot.global_rotation.y=atan2(-offset.x,-offset.z)
+	await physics_frame
+	check(player._find_interactable()==prompt,"player can target inquiry interaction")
+	player._try_primary_interaction()
 func run() -> void:
 	var world:=FixtureWorld.new();root.add_child(world)
 	var clock=preload("res://world/suryagarh/systems/game_time_system.gd").new();clock.name="GameTimeSystem";world.add_child(clock)
@@ -31,7 +38,8 @@ func run() -> void:
 	check(inquiry.destination.global_position==inquiry.police_prompt.global_position,"marker follows actual inquiry point")
 	check(not inquiry.can_request("superior"),"superior cannot precede initial inquiry")
 	await settle(player,inquiry.police_prompt.global_position+Vector3(0,0,1))
-	check(inquiry.request("police",player),"police inquiry starts")
+	await interact_as_player(player,inquiry.police_prompt)
+	check(not inquiry.dialogue.is_empty(),"police inquiry starts through player interaction")
 	check(not player.is_physics_processing(),"dialogue contains movement")
 	check(inquiry.player_expression!=null and inquiry.player_expression.entries.size()>0,"Arjun expression reuses full body")
 	inquiry._process(30)
@@ -39,7 +47,8 @@ func run() -> void:
 	var state: Dictionary=inquiry.export_state();inquiry.restore_state(state)
 	check(inquiry.stage=="superior","inquiry stage restoration")
 	await settle(player,inquiry.office_prompt.global_position+Vector3(0,0,.25))
-	check(inquiry.request("superior",player),"chamber meeting starts")
+	await interact_as_player(player,inquiry.office_prompt)
+	check(not inquiry.dialogue.is_empty(),"chamber meeting starts through player interaction")
 	inquiry._process(11)
 	check(inquiry.line_index==2 and inquiry.officials[1].speaking,"first official mocks Dev")
 	inquiry._process(10)
@@ -70,7 +79,9 @@ func run() -> void:
 		# Finish the guard's return before normal saving is allowed.
 		for frame in 1200:
 			await physics_frame
-			if inquiry.coordinator.phase=="idle":break
+			if inquiry.coordinator.phase=="idle" and inquiry.second_return_path.is_empty():break
+		check(inquiry.guards[2].global_position.distance_to(station.to_global(inquiry.guards[2].get_meta("inquiry_post")))<.25,"custody guard returns to corridor post")
+		check(inquiry.guards[3].global_position.distance_to(station.to_global(inquiry.guards[3].get_meta("inquiry_post")))<.25,"second soldier returns to corridor post")
 		check(manager.save_game(world,1),"isolated story save")
 		inquiry.stage="dormant";manager.pending_slot=1;manager.apply_pending(world)
 		check(inquiry.stage=="released","save restores inquiry progress without replaying punishment")

@@ -66,6 +66,12 @@ func begin(slot: int) -> bool:
 	if not ResourceLoader.exists(world_path):
 		queue_free()
 		return false
+	# Compile script metadata on the main thread before the loader reads it.
+	# Godot 4.7.2 otherwise leaves zero-reference objects after this scene load.
+	var scripts_to_keep: Array[Script] = []
+	if not await _prepare_scene_scripts(world_path, scripts_to_keep):
+		queue_free()
+		return false
 	var error := ResourceLoader.load_threaded_request(world_path)
 	if error != OK:
 		queue_free()
@@ -80,6 +86,7 @@ func begin(slot: int) -> bool:
 		if state == ResourceLoader.THREAD_LOAD_LOADED: break
 		await get_tree().process_frame
 	var packed := ResourceLoader.load_threaded_get(world_path) as PackedScene
+	scripts_to_keep.clear()
 	if packed == null:
 		queue_free()
 		return false
@@ -111,4 +118,28 @@ func begin(slot: int) -> bool:
 	reveal.tween_property(panel, "modulate:a", 0.0, 0.65)
 	await reveal.finished
 	queue_free()
+	return true
+
+func _prepare_scene_scripts(path: String, scripts: Array[Script]) -> bool:
+	var pending: Array[String] = [path]
+	var seen: Dictionary = {}
+	while not pending.is_empty():
+		var current: String = pending.pop_back()
+		if seen.has(current): continue
+		seen[current] = true
+		for dependency in ResourceLoader.get_dependencies(current):
+			var fields := dependency.split("::")
+			var source: String = fields[fields.size()-1]
+			if source.begins_with("uid://"):
+				var uid := ResourceUID.text_to_id(source)
+				source = ResourceUID.get_id_path(uid) if ResourceUID.has_id(uid) else ""
+			if seen.has(source): continue
+			if source.get_extension() == "gd":
+				seen[source] = true
+				var script := ResourceLoader.load(source, "GDScript") as Script
+				if script == null: return false
+				scripts.append(script)
+				if scripts.size()%3 == 0: await get_tree().process_frame
+			elif source.get_extension() in ["tscn", "scn", "tres", "res"]:
+				pending.append(source)
 	return true

@@ -38,6 +38,7 @@ func _ready() -> void:
 	combat = preload("res://vehicles/cart_combat.gd").new()
 	combat.name = "CartCombat"
 	add_child(combat)
+	var draft_team=preload("res://vehicles/draft_team.gd").new();draft_team.name="DraftTeam";add_child(draft_team)
 	_add_boarding_point("CoachmanSeat", Vector3(0,1.7,.17), "driver")
 	_add_boarding_point("RearPassengerRight", Vector3(1.15,1.89,2.26), "passenger")
 	_add_boarding_point("RearPassengerLeft", Vector3(-1.15,1.89,2.26), "passenger")
@@ -333,7 +334,7 @@ func _build() -> void:
 		_beam("PoleStrap",Vector3(side*.54,1.25,-.60),Vector3(side*.53,1.63,-1.83),.025,leather)
 
 func can_move() -> bool:
-	return combat == null or combat.can_move()
+	return (combat == null or combat.can_move()) and (not has_node("DraftTeam") or get_node("DraftTeam").can_move())
 
 func set_forward_motion(speed: float, delta: float) -> void:
 	if not can_move(): speed = 0.0

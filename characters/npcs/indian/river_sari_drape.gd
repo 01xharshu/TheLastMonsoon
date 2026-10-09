@@ -67,12 +67,12 @@ func update() -> void:
 	var spheres := _capsules()
 	var floor_y := 0.0
 	var ground: Callable=actor.ground_height
-	if ground.is_valid():floor_y=float(ground.call(actor.global_position.x,actor.global_position.z))-actor.global_position.y
+	if ground.is_valid():floor_y=actor.to_local(Vector3(actor.global_position.x,float(ground.call(actor.global_position.x,actor.global_position.z)),actor.global_position.z)).y
 	var terrain_span := 0.0
 	if ground.is_valid():
 		for offset in [Vector3(.5,0,0),Vector3(-.5,0,0),Vector3(0,0,.5),Vector3(0,0,-.5)]:
 			var world := actor.to_global(offset)
-			terrain_span=maxf(terrain_span,absf(float(ground.call(world.x,world.z))-actor.global_position.y-floor_y))
+			terrain_span=maxf(terrain_span,absf(actor.to_local(Vector3(world.x,float(ground.call(world.x,world.z)),world.z)).y-floor_y))
 	var radii: Array[PackedFloat32Array]=[]
 	for row in rings+1:
 		var t := float(row)/rings
@@ -81,18 +81,20 @@ func update() -> void:
 		var support := PackedFloat32Array();support.resize(PLANE_COUNT)
 		var rx := lerpf(float(DIMENSIONS.waist_rx),float(DIMENSIONS.hem_radius),t)
 		var rz := lerpf(float(DIMENSIONS.waist_ry),float(DIMENSIONS.hem_radius),t)
+		var sections: Array[Vector3]=[]
+		for sphere in spheres:
+			var vertical: float=maxf(0.0,absf(sphere.y-y)-band)
+			if vertical>=sphere.w:continue
+			sections.append(Vector3(sphere.x-waist.x,sphere.z-waist.z,sqrt(maxf(0.0,sphere.w*sphere.w-vertical*vertical))+float(DIMENSIONS.clearance)))
+		var hip_vertical: float=maxf(0.0,absf(pelvis.y-y)-band)
+		var hip_scale: float=sqrt(maxf(0.0,1.0-pow(hip_vertical/float(DIMENSIONS.pelvis_height),2)))
 		for j in PLANE_COUNT:
 			var normal: Vector2=planes[j]
 			var extent: float=sqrt(pow(rx*normal.x,2)+pow(rz*normal.y,2))
-			for sphere in spheres:
-				var vertical: float=maxf(0.0,absf(sphere.y-y)-band)
-				if vertical>=sphere.w:continue
-				var radius: float=sqrt(maxf(0.0,sphere.w*sphere.w-vertical*vertical))
-				extent=maxf(extent,normal.dot(Vector2(sphere.x-waist.x,sphere.z-waist.z))+radius+float(DIMENSIONS.clearance))
-			var hip_vertical: float=maxf(0.0,absf(pelvis.y-y)-band)
+			for section in sections:
+				extent=maxf(extent,normal.dot(Vector2(section.x,section.y))+section.z)
 			if hip_vertical<float(DIMENSIONS.pelvis_height):
-				var scale: float=sqrt(maxf(0.0,1.0-pow(hip_vertical/float(DIMENSIONS.pelvis_height),2)))
-				var hip_extent: float=sqrt(pow(float(DIMENSIONS.pelvis_rx)*normal.x,2)+pow(float(DIMENSIONS.pelvis_ry)*normal.y,2))*scale
+				var hip_extent: float=sqrt(pow(float(DIMENSIONS.pelvis_rx)*normal.x,2)+pow(float(DIMENSIONS.pelvis_ry)*normal.y,2))*hip_scale
 				extent=maxf(extent,normal.dot(Vector2(pelvis.x-waist.x,pelvis.z-waist.z))+hip_extent+float(DIMENSIONS.clearance))
 			support[j]=extent
 		var radii_row := PackedFloat32Array();radii_row.resize(segments)
@@ -111,7 +113,7 @@ func update() -> void:
 		hem_heights[i]=floor_y+.018
 		if ground.is_valid():
 			var world := actor.to_global(point)
-			hem_heights[i]=float(ground.call(world.x,world.z))-actor.global_position.y+.018
+			hem_heights[i]=actor.to_local(Vector3(world.x,float(ground.call(world.x,world.z)),world.z)).y+.018
 	var drape := PackedVector3Array();drape.resize((rings+1)*segments)
 	for row in rings+1:
 		var t := float(row)/rings

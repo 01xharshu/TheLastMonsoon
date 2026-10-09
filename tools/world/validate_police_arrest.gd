@@ -136,4 +136,4 @@ func run() -> void:
 	current_scene=null
 	await process_frame
 	await process_frame
-	quit(0 if errors.is_empty() else 1)
+	root.get_node("SaveManager").quit_game(0 if errors.is_empty() else 1)

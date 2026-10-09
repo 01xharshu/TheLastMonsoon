@@ -6,7 +6,7 @@ const SETTINGS_FILE := "user://settings.cfg"
 const SLOT_COUNT := 3
 const VERSION := 1
 const DEFAULTS := {
-	"master": 0.8, "music": 0.55, "mouse": 1.0,
+	"master": 0.8, "music": 0.55, "ambient": 0.4, "mouse": 1.0,
 	"camera_distance": 1.25, "aim_camera_distance": 0.55,
 	"camera_angle": 0.0, "aim_camera_angle": 0.0,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
@@ -171,6 +171,9 @@ func save_game(world: Node3D, slot: int) -> bool:
 	if slot < 1 or slot > SLOT_COUNT: return false
 	var actor: CharacterBody3D = world.get_node("Player")
 	if not actor.is_inside_tree(): return false
+	var story: Node=world.get_node_or_null("DevStory")
+	if story!=null and (story.active or actor.get_meta("paired_combat",false)):
+		last_error="Cannot save during a cinematic or paired practice";return false
 	var inquiry: Node=world.get_node_or_null("DevInquiry")
 	if inquiry!=null and (not inquiry.dialogue.is_empty() or inquiry.stage=="summoning"):
 		last_error="Cannot save during the inquiry conversation"
@@ -190,6 +193,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"game_minutes": world.get_node("GameTimeSystem").total_game_minutes,
 		"items": inventory.items.duplicate(true),
 		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
+		"dev_story":world.get_node("DevStory").export_state() if world.has_node("DevStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"household_roles":world.get_node("WealthyHouseholds").export_role_state() if world.has_node("WealthyHouseholds") else {},
 		"health": actor.health,
@@ -216,12 +220,16 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"cart_states": preload("res://vehicles/cart_save_state.gd").collect(world),
 		"household_cattle": _cattle_states(world),
 		"river_routines": preload("res://world/suryagarh/settlements/river_routine_save.gd").collect(world),
+		"draft_yards": world.get_node("DraftAnimalYards").export_state() if world.has_node("DraftAnimalYards") else {},
+		"village_activities": world.get_node("VillageDailyActivities").export_state() if world.has_node("VillageDailyActivities") else {},
 		"collected_forage_ids": _collected_forage_ids(world),
 	}
 	if world.has_node("ErrandSystem"):
 		data["errands"] = world.get_node("ErrandSystem").export_state()
 	data["administrative_services"] = _administrative_service_states(world)
 	data["institution_operations"] = _institution_states(world)
+	if world.has_node("CombatEncounters"):
+		data["crime"] = world.get_node("CombatEncounters").export_crime_state()
 	var fame := actor.get_node_or_null("FameComponent")
 	if fame != null: data["fame"] = {"points":fame.points,"witnessed_deeds":fame.witnessed_deeds}
 	var map: Control = actor.get_node("UI/WorldMap")
@@ -284,8 +292,12 @@ func apply_pending(world: Node3D) -> void:
 		world.get_node("WealthyHouseholds").restore_role_state(data.get("household_roles",{}))
 	if world.has_node("DevInquiry"):
 		world.get_node("DevInquiry").restore_state(data.get("dev_inquiry",{}))
+	if world.has_node("DevStory"):
+		world.get_node("DevStory").restore_state(data.get("dev_story",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
 		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
+	if world.has_node("CombatEncounters") and data.get("crime",{}) is Dictionary:
+		world.get_node("CombatEncounters").restore_crime_state(data.get("crime",{}))
 	var fame := actor.get_node_or_null("FameComponent")
 	var saved_fame: Dictionary = data.get("fame",{})
 	if fame != null:
@@ -352,6 +364,8 @@ func apply_pending(world: Node3D) -> void:
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
 	_restore_cattle_states(world,data.get("household_cattle",{}))
 	preload("res://world/suryagarh/settlements/river_routine_save.gd").restore(world,data.get("river_routines",{}))
+	if world.has_node("DraftAnimalYards"):world.get_node("DraftAnimalYards").restore_state(data.get("draft_yards",{}))
+	if world.has_node("VillageDailyActivities"):world.get_node("VillageDailyActivities").restore_state(data.get("village_activities",{}))
 	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
 		if not world.is_ancestor_of(operations): continue
 		var key := str(world.get_path_to(operations))
@@ -427,7 +441,11 @@ func apply_options(world: Node = null) -> void:
 		music_bus = AudioServer.bus_count
 		AudioServer.add_bus(music_bus)
 		AudioServer.set_bus_name(music_bus,"Music")
-	for pair in [["Master","master"],["Music","music"]]:
+	if AudioServer.get_bus_index("Ambient")<0:
+		var ambient_bus:=AudioServer.bus_count
+		AudioServer.add_bus(ambient_bus);AudioServer.set_bus_name(ambient_bus,"Ambient")
+		AudioServer.set_bus_send(ambient_bus,"Master")
+	for pair in [["Master","master"],["Music","music"],["Ambient","ambient"]]:
 		var index := AudioServer.get_bus_index(pair[0])
 		var amount := clampf(float(options.get(pair[1],DEFAULTS[pair[1]])),0.0,1.0)
 		AudioServer.set_bus_mute(index,amount<=0.001)

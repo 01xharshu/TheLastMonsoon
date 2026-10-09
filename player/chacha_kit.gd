@@ -47,7 +47,12 @@ func _process(delta: float) -> void:
 		var raise: float=smoothstep(0,.12,thrust)*(1.0-smoothstep(.35,.5,thrust))
 		axis=Vector3.UP.slerp(direction,raise).normalized()
 		var extension: float=sin(minf(thrust/.5,1)*PI)*.35
-		gear._solve_arm("r",hand.origin+rig.global_basis.inverse()*(direction*extension+Vector3.UP*.15))
+		# Bring the shaft toward the player's aim line as it levels. Leaving
+		# the palm at its carry-side offset made centred human targets miss.
+		var carry_palm: Vector3=rig.to_global(hand*gear.palm_offsets["r"])
+		var across_aim: Vector3=camera.global_basis.x
+		var centre: Vector3=across_aim*clampf((actor.global_position-carry_palm).dot(across_aim),-.32,.32)*raise
+		gear._solve_arm("r",hand.origin+rig.global_basis.inverse()*(direction*extension+Vector3.UP*.15+centre))
 		if thrust>=.5:thrust=-1;axis=Vector3.UP
 	hand=rig.get_bone_global_pose(rig.find_bone("hand_r"))
 	var grip_contact: Vector3=hand*gear.palm_offsets["r"]

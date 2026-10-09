@@ -51,7 +51,7 @@ func set_forward_motion(speed:float,delta:float) -> void:
  var gait_speed:=maxf(absf(speed),minf(turn_rate*.72,.8))
  draft_phase=fmod(draft_phase+gait_speed*delta/.72,1.0)
  for index in solvers.size():
-  if combat.horses[index].dead:continue
+  if combat.horses[index].dead or (has_node("DraftTeam") and not get_node("DraftTeam").slots[index].attached):continue
   var solver:Node=solvers[index]
   solver.update_breathing(delta,absf(speed)>.03)
   var rig:Skeleton3D=solver.rig
@@ -74,3 +74,8 @@ func set_forward_motion(speed:float,delta:float) -> void:
    var ray:=get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(target.x,global_position.y+2,target.z),Vector3(target.x,global_position.y-2,target.z),1,boarding._vehicle_exclusions()))
    target.y=(ray.position.y if not ray.is_empty() else layout.height(target.x,target.z))+.085+lift
    solver._solve_leg(solver.feet[tag],target)
+
+func rebind_draft_slot(index:int,model:Node3D,_health:Node)->void:
+ if oxen[index]==model:return
+ solvers[index].queue_free();oxen[index]=model
+ var solver=preload("res://animals/cow_motion.gd").new();solver.configure(self,model);model.add_child(solver);solver.set_physics_process(false);solvers[index]=solver

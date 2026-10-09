@@ -13,8 +13,16 @@ func run() -> void:
 			saves.quit_game(1)
 			return
 		menu._begin_journey(slot)
+		var loading: Node
+		for child in root.get_children():
+			if child.get_script() == preload("res://ui/journey_loading.gd"):
+				loading = child
+				break
 		while current_scene == null or current_scene.scene_file_path != saves.WORLD:
 			await process_frame
+		# The world becomes current before the overlay's timer/tween completes.
+		# Let the real journey handoff finish before destroying its world.
+		while is_instance_valid(loading): await process_frame
 		var world: Node3D = current_scene
 		for frame in range(4): await process_frame
 		var flock: Node3D = world.get_node("SkyBirds")

@@ -23,6 +23,11 @@ func run() -> void:
 	check(current_scene.main_panel.get_child(0).text == "THE LAST\nMONSOON", "Startup does not use revised title")
 	current_scene.show_settings()
 	check(current_scene.page == "settings", "Settings unavailable")
+	var title_settings: Node=current_scene.column.find_child("SettingsPanel",true,false)
+	title_settings.show_category("Audio")
+	var cancel:=InputEventAction.new();cancel.action="ui_cancel";cancel.pressed=true
+	current_scene._input(cancel)
+	check(current_scene.page=="settings" and title_settings.category=="", "Title Back leaves submenu instead of returning to categories")
 	current_scene.show_main()
 	var old_scene := current_scene
 	current_scene = null
@@ -37,6 +42,14 @@ func run() -> void:
 	var hud := Control.new()
 	hud.name = "HUDRoot"
 	ui.add_child(hud)
+	var document := Control.new()
+	ui.add_child(document)
+	var hidden_prompt := Control.new()
+	hidden_prompt.hide()
+	ui.add_child(hidden_prompt)
+	var gameplay_overlay := CanvasLayer.new()
+	gameplay_overlay.layer = 80
+	world.add_child(gameplay_overlay)
 	var map := Control.new()
 	map.name = "WorldMap"
 	map.set_script(load("res://player/world_map.gd"))
@@ -48,6 +61,24 @@ func run() -> void:
 	menu.name = "GameMenu"
 	menu.set_script(load("res://ui/game_menu.gd"))
 	world.add_child(menu)
+	menu.open()
+	check(not hud.visible and not document.visible and not gameplay_overlay.visible, "Pause leaves gameplay UI visible")
+	check(ui.visible and map.visible and menu.overlay.visible, "Pause hides its own shared map or menu")
+	menu.select_tab("game")
+	check(not hud.visible and not gameplay_overlay.visible, "Game tab restores gameplay UI")
+	menu.select_tab("settings")
+	check(not hud.visible and not gameplay_overlay.visible, "Settings tab restores gameplay UI")
+	var pause_settings: Node=menu.column.find_child("SettingsPanel",true,false)
+	pause_settings.show_category("Audio")
+	var pause_cancel:=InputEventAction.new();pause_cancel.action="pause";pause_cancel.pressed=true
+	menu._input(pause_cancel)
+	check(menu.overlay.visible and pause_settings.category=="", "Pause Back closes game instead of returning to settings categories")
+	menu.close()
+	check(hud.visible and document.visible and gameplay_overlay.visible and not hidden_prompt.visible, "Resume does not preserve prior UI visibility")
+	hud.hide()
+	menu.open()
+	menu.close()
+	check(not hud.visible, "Resume shows a HUD that was already hidden")
 	menu.open()
 	menu.select_tab("game")
 	menu.show_return_confirmation()

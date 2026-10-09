@@ -1,0 +1,13 @@
+{
+  "identity": "workman_04",
+  "donor": "street_residents/landowner/landowner.blend",
+  "complete_body_vertices": 13380,
+  "facial_changes": {
+    "jaw": 0.17,
+    "nose": 0.002,
+    "cheek": -0.09
+  },
+  "runtime": "characters/npcs/street_residents/workman_04.glb",
+  "wardrobe": "plain working cotton",
+  "visual_approved": false
+}

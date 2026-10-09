@@ -78,6 +78,7 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 		if not candidate is Node3D: continue
 		var distance: float = candidate.global_position.distance_to(location)
 		if distance>=best: continue
+		if not can_see(candidate,player): continue
 		var query := PhysicsRayQueryParameters3D.create(candidate.global_position+Vector3.UP*1.35,player.global_position+Vector3.UP*.4,1)
 		query.exclude = [player.get_rid(),candidate.body_collider.get_rid()]
 		if preload("res://combat/escape_smoke.gd").obscures(station.get_tree(),query.from,query.to):continue
@@ -185,6 +186,24 @@ func follow_officer(delta: float, speed: float) -> bool:
 	officer.travel_speed=step.length()/maxf(delta,.001)
 	officer.body_collider.force_update_transform()
 	return false
+func can_see(candidate: Node3D, subject: CharacterBody3D) -> bool:
+	if not is_instance_valid(candidate) or not is_instance_valid(subject): return false
+	if candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): return false
+	var from := candidate.global_position+Vector3.UP*1.4
+	var stance := subject.get_node_or_null("StealthStance")
+	var target: Vector3=stance.sight_target() if stance!=null else subject.global_position+Vector3.UP*.4
+	var toward: Vector3=target-from
+	var visible_range: float=stance.visible_range(from,28.0) if stance!=null else 28.0
+	if toward.length()>visible_range: return false
+	if toward.length()>3.0 and toward.normalized().dot(candidate.global_basis.z)<.2: return false
+	var query := PhysicsRayQueryParameters3D.create(from,target,1)
+	query.exclude=[subject.get_rid(),candidate.body_collider.get_rid()]
+	if preload("res://combat/escape_smoke.gd").obscures(get_tree(),from,target):return false
+	return station.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+func officer_has_sight() -> bool:
+	return can_see(officer,suspect)
+
 func _physics_process(delta: float) -> void:
 	cooldown = maxf(0,cooldown-delta)
 	if phase=="idle": return
@@ -194,10 +213,10 @@ func _physics_process(delta: float) -> void:
 	if cinematic_transfers and transfer.tick(): return
 	match phase:
 		"approach":
-			var smoke_hidden: bool=preload("res://combat/escape_smoke.gd").obscures(station.get_tree(),officer.global_position+Vector3.UP*1.3,suspect.global_position+Vector3.UP*.4)
-			if smoke_hidden and suspect.global_position.distance_to(officer.global_position)>2.0:
-				# Search the last known route instead of tracking through the cloud.
-				if suspect.global_position.distance_to(officer.global_position)>35 or phase_age>35:abort();return
+			var crime := suspect.get_parent().get_node_or_null("CombatEncounters")
+			if crime!=null and not crime.wanted and crime.escort.is_empty():abort();return
+			if not officer_has_sight():
+				if phase_age>35:abort();return
 				if route_index<route.size():follow_officer(delta,3.8)
 				else:officer.travel_speed=0
 				return

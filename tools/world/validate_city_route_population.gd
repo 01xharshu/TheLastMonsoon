@@ -3,8 +3,11 @@ extends SceneTree
 var errors: Array[String] = []
 func _initialize() -> void:call_deferred("run")
 func run() -> void:
- var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
- root.add_child(world);current_scene=world
+ var saves:Node=root.get_node("SaveManager")
+ saves.start_new_game()
+ await scene_changed
+ for frame in 4:await process_frame
+ var world:Node3D=current_scene
  var population:Node=world.get_node("CityRoutePopulation")
  var opening:Node=world.get_node("OpeningSequence")
  var skip:=InputEventKey.new();skip.keycode=KEY_ESCAPE;skip.pressed=true

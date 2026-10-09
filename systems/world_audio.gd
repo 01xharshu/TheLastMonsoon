@@ -33,13 +33,14 @@ func _ready() -> void:
  var environment:=preload('res://systems/environment_audio.gd').new();environment.name='EnvironmentAudio';add_child(environment)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
-func play_at(key: String, at: Vector3, db: float = -18.0) -> bool:
+func play_at(key: String, at: Vector3, db: float = -18.0, bus: String = "") -> bool:
  if is_opening_quiet() or not streams.has(key):return false
  for voice in voices:
   if voice.playing:continue
   # Broad canopy calls must cover the same 40 m radius used by the scheduler.
   voice.max_distance=45.0 if key=='sparrow' else 28.0
   voice.unit_size=8.0 if key=='sparrow' else 1.0
+  voice.bus=bus if bus!="" else "Ambient" if key in ["cow","sparrow","chew"] else "Master"
   voice.stream=step_variants[key].pick_random() if step_variants.has(key) else streams[key];voice.global_position=at;voice.set_meta("base_db",db);voice.volume_db=db+linear_to_db(maxf(.0001,ambience_gain))
   voice.pitch_scale=randf_range(.94,1.06);voice.play();events+=1;event_counts[key]=int(event_counts.get(key,0))+1;return true
  return false

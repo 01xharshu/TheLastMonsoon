@@ -1,7 +1,7 @@
 extends Node3D
 ## Additive street traffic spread along existing surveyed roads.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
-const Actor = preload("res://characters/npcs/households/household_npc_actor.gd")
+const Actor = preload("res://characters/npcs/indian/indian_street_actor.gd")
 const ROUTE_COUNTS := {"village_spine":8,"village_market_lane":10,"village_west_lane":6,"civil_lines_avenue":10,"administrative_approach":8,"cantonment_bazaar_lane":10,"government_house_road":6,"town_hall":6,"port_approach":8}
 const POLICE_ROUTES := ["village_spine","village_market_lane","civil_lines_avenue","civil_lines_avenue","administrative_approach","cantonment_bazaar_lane","cantonment_approach","government_house_road","town_hall","port_approach"]
 const CART_ROUTES := ["village_west_lane","village_north_lane","government_house_road","civil_lines_avenue","cantonment_bazaar_lane","administrative_approach","port_approach","police_to_compound"]
@@ -82,11 +82,22 @@ func spawn_record(record: Dictionary) -> void:
   var actor:=Actor.new()
   actor.name="Street_%s_%02d"%[record.route,index]
   actor.movement_enabled=false;actor.patrol_distance=0;actor.cycle_offset=float(index)*.37
-  var source:="res://characters/npcs/street_residents/%s.glb"%("merchant" if index%2==0 else "landowner")
+  var route_index: int=ROUTE_COUNTS.keys().find(record.route)
+  var identity: int=(index+route_index*3)%8
+  var female: bool=identity%2==0
+  var work_route:bool=record.route in ["village_spine","village_market_lane","village_west_lane","cantonment_bazaar_lane","port_approach"]
+  var source:="res://characters/npcs/street_residents/%s_%02d.glb"%["female" if female else ("workman" if work_route else "male"),identity/2+1]
+  actor.movement_profile=&"female" if female else &"male"
+  actor.ground_height=layout.height
+  var stature: float=[.97,1.02,1.03,.98,1.0,1.05,1.04,1.0][identity]
+  actor.scale=Vector3.ONE*stature
   actor.add_child(preload("res://characters/human_scene.gd").instantiate(source))
   actor.position=Vector3(at.x,layout.height(at.x,at.y),at.y)
   add_child(actor);actor.add_to_group("city_route_pedestrians")
   actor.set_meta("population_route",record.route);actor.set_meta("human_source",source)
+  actor.set_meta("street_identity",identity);actor.set_meta("stature",stature)
+  var vocation: String="vendor" if "market" in record.route or "bazaar" in record.route else ("porter" if record.route=="port_approach" else ("clerk" if record.route in ["administrative_approach","government_house_road","town_hall"] else "villager"))
+  actor.set_meta("social_role",vocation);actor.set_meta("assigned_workplace",points[-1]);actor.set_meta("daily_activity","travel")
   var journey:=preload("res://world/suryagarh/city_street_journey.gd").new()
   journey.name="CityStreetJourney";journey.configure(actor,points,0);journey.goal=phase.goal
   journey.speed=.78+float(index%4)*.08;journey.viewer=player;actor.add_child(journey)
@@ -117,5 +128,22 @@ func spawn_record(record: Dictionary) -> void:
   add_child(cart);cart.add_to_group("live_travel_carts");cart.add_to_group("city_route_carts");cart.set_meta("booking_status","public");cart.set_meta("population_route",record.route)
   var journey:=preload("res://world/suryagarh/city_cart_journey.gd").new();journey.name="CityRoadJourney";journey.configure(cart);journey.route=[a,b];cart.add_child(journey)
   carts.append(cart)
+  if index in [0,1,3,6]:_passenger.call_deferred(cart,index)
   for mesh:GeometryInstance3D in cart.find_children("*","GeometryInstance3D",true,false):
    mesh.visibility_range_end=300;mesh.visibility_range_end_margin=20
+
+func _passenger(cart:Node3D,index:int)->void:
+ var socket:Node3D
+ if cart.has_method("show_coachman_blockout"):
+  socket=cart.seat_sockets.RearPassengerLeft
+  cart.set_meta("npc_occupied_seats",["RearPassengerLeft"])
+ else:
+  socket=Node3D.new();socket.name="VillagePassengerSeat";socket.position=Vector3(0,1.50,2.95);cart.visual_root.add_child(socket)
+  var bench:=MeshInstance3D.new();bench.name="VillagePassengerBench";var box:=BoxMesh.new();box.size=Vector3(1.2,.13,.45);bench.mesh=box
+  bench.position=Vector3(0,1.425,2.95);var wood:=StandardMaterial3D.new();wood.albedo_color=Color(.25,.16,.09);bench.material_override=wood;cart.visual_root.add_child(bench)
+  for node in cart.visual_root.get_children():
+   if str(node.get_meta("part_label",node.name)).begins_with("ProduceBundle"):node.hide()
+ var actor:=Actor.new();actor.name="VillageCartPassenger";actor.movement_enabled=false;actor.household_job="Traveller"
+ actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/street_residents/male_%02d.glb"%(index%4+1),false))
+ cart.visual_root.add_child(actor)
+ var journey:=preload("res://world/suryagarh/city_cart_passenger.gd").new();journey.name="VillagePassengerJourney";journey.cart=cart;journey.actor=actor;journey.socket=socket;journey.viewer=player;actor.add_child(journey)

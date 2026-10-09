@@ -131,12 +131,17 @@ func transition_hand_world() -> Vector3:
 	return cart.to_global(Vector3(transition_side * .85, step.y + 1.0, step.z + .30))
 
 func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
+	if seat in cart.get_meta("npc_occupied_seats",[]):return false
 	if is_instance_valid(cart) and cart.get_meta("booking_status", "public") != "public": return false
 	if kind == "passenger" and cart.has_meta("errand_passenger"): return false
 	if kind == "driver" and cart.has_method("can_move") and not cart.can_move(): return false
 	if rider != null or actor.get_meta("climbing", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	var socket: Node3D = cart.seat_sockets.get(seat)
 	if socket == null or actor.global_position.distance_to(socket.global_position) > 5.0: return false
+	if kind=="driver" and not cart.get_meta("crime_taken",false) and actor.name=="Player":
+		for observer in get_tree().get_nodes_in_group("police_crime_observers"):
+			if observer.has_method("report_vehicle_theft"): observer.report_vehicle_theft(actor,cart,"cart_theft")
+		cart.set_meta("crime_taken",true)
 	rider = actor
 	seat_name = seat
 	role = kind

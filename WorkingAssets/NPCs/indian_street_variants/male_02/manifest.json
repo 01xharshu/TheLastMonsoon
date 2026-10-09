@@ -1,0 +1,12 @@
+{
+  "identity": "male_02",
+  "donor": "street_residents/landowner/landowner.blend",
+  "complete_body_vertices": 13380,
+  "facial_changes": {
+    "jaw": 0.11,
+    "nose": -0.004,
+    "cheek": -0.055
+  },
+  "runtime": "characters/npcs/street_residents/male_02.glb",
+  "visual_approved": false
+}

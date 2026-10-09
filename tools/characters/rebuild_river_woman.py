@@ -7,7 +7,6 @@ BLENDER='/Applications/Blender.app/Contents/MacOS/Blender'
 def main():
     with tempfile.TemporaryDirectory(prefix='tlm_river_build_') as folder:
         commands=[
-            [GODOT,'--headless','--path',str(ROOT),'--log-file',str(Path(folder)/'poses.log'),'--script','res://tools/characters/export_river_poses.gd'],
             [BLENDER,'--background','--python-exit-code','1','--python',str(ROOT/'tools/characters/build_river_woman_candidate.py')],
             [GODOT,'--headless','--editor','--path',str(ROOT),'--log-file',str(Path(folder)/'import.log'),'--import'],
         ]

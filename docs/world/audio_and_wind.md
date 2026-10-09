@@ -44,3 +44,7 @@ To review in-game:
 Open gates: owner listening/mix/naturalness acceptance; final character/clothing/contact art; exact local cattle/water asset preference; seated writing and active workshop animations owned by their character/work scopes; wall occlusion/underwater acoustics and species-specific night ambience. Do not represent structural checks or sample levels as those approvals.
 
 River follow-up: [river flow realism](river_flow_realism.md) adds stronger upper-reach current sound and shoreline wash tied to the actual bank, plus current/wave gameplay. Full Suryagarh environment-audio regression now PASS; the earlier startup timeout is superseded for that check.
+
+## Quieter ambient mix and category Settings — 2026-10-09
+
+User rejected the continuous buzz. Filtered quieter wind, PCM loop-seam smoothing, independent saved Ambient volume (40% default), and shared Settings submenus are integrated. Current evidence and listening instructions: [ambient audio settings](ambient_audio_settings.md). This supersedes the earlier wind gain increase.

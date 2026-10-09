@@ -83,18 +83,9 @@ func _apply_lamp_state() -> void:
 		)
 
 
-		print(
-			"The oil lamp is burning."
-		)
-
 
 	else:
 
 		interaction_text = (
 			"Light Lamp"
-		)
-
-
-		print(
-			"The oil lamp has been extinguished."
 		)

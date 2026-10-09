@@ -35,9 +35,24 @@ def run_check(binary, project, directory, label, args, timeout, native=False, co
         display += ['--rendering-driver', 'metal']
     # Match normal native game output. Verbose Metal logging additionally emits
     # lossless RGB8 compatibility conversions; actual errors/leaks still report.
-    effective_args = [arg for arg in args if arg != '--verbose'] if native else args
+    effective_args = []
+    skip_next = False
+    for argument in args:
+        if skip_next:
+            skip_next = False
+            continue
+        if native and argument == '--verbose':
+            continue
+        if native and argument == '--fixed-fps':
+            # Native smoke follows normal wall-clock gameplay. A forced 1/60
+            # delta makes timers crawl when a large scene renders below 60 FPS.
+            skip_next = True
+            continue
+        effective_args.append(argument)
     command = [binary, *display, '--path', str(project), '--log-file', str(directory / (label + '.log')), *effective_args]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+    process_environment = os.environ.copy()
+    process_environment["TLM_EXPECT_USER_DATA"] = str(user_data_directory(directory.name))
+    process = subprocess.Popen(command, env=process_environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                                start_new_session=sys.platform != 'win32',
                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == 'win32' else 0)
     timed_out = False
@@ -61,7 +76,7 @@ def run_check(binary, project, directory, label, args, timeout, native=False, co
     if process.returncode not in (0, None) and not diagnostics:
         print('\n'.join(lines[-20:]), flush=True)
     for line in lines:
-        if line.startswith(('SURYAGARH READY', 'SAFE TANGENTS', 'Leaked instance:', 'GAME SMOKE', 'SMOKE scene', 'HUMAN CACHE', 'COACHMAN CLEARANCE', 'PASS mobile', 'MAIN SKY', 'CITY_POPULATION_RESULT', 'DEV INQUIRY:', 'ARJUN MOTION', 'GAME ERROR ROUTE', 'LIVE WEAPON', 'STARTUP INTEGRATION', 'CODE AUDIT')):
+        if line.startswith(('SURYAGARH READY', 'SAFE TANGENTS', 'Leaked instance:', 'GAME SMOKE', 'SMOKE scene', 'HUMAN CACHE', 'COACHMAN CLEARANCE', 'PASS mobile', 'MAIN SKY', 'CITY_POPULATION_RESULT', 'DEV INQUIRY:', 'ARJUN MOTION', 'GAME ERROR ROUTE', 'LIVE WEAPON', 'STARTUP INTEGRATION', 'CODE AUDIT', 'DRAFT_TEAM_RESULT')):
             print(line, flush=True)
     return not timed_out and process.returncode == 0 and not diagnostics
 
@@ -126,7 +141,7 @@ def main():
         shutil.copytree(ROOT, project, copy_function=copy_stable_file,
                         ignore=shutil.ignore_patterns('.git', '.godot', 'WorkingAssets', '__pycache__', 'node_modules', '.next'))
         config = project / 'project.godot'
-        config.write_text(config.read_text().replace('[application]', '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir="' + directory.name + '"'))
+        config.write_text(config.read_text().replace('[application]', '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="' + directory.name + '"'))
         print('Disposable project prepared; importing', flush=True)
         checks = [
             ('IMPORT', ['--import'], 240),
@@ -142,6 +157,7 @@ def main():
             for label, script, timeout in [
                 ('MOBILE', 'tools/world/validate_mobile_touch.gd', 45),
                 ('MOTION_TREE', 'tools/characters/validate_arjun_motion_tree.gd', 90),
+                ('DRAFT_TEAMS', 'tools/world/validate_draft_teams.gd', 90),
                 ('DEV_INQUIRY', 'tools/world/validate_dev_inquiry.gd', 180),
                 ('MAIN_SKY', 'tools/world/validate_main_sky_integration.gd', 180),
                 ('CITY_POPULATION', 'tools/world/validate_city_route_population.gd', 240),
@@ -153,7 +169,7 @@ def main():
                 fixed_fps = '20' if not args.native and label in {'CITY_POPULATION', 'INTRO_ROUTE'} else '60'
                 checks.append((label, ['--fixed-fps', fixed_fps, '--script', 'res://' + script], timeout))
         if args.pack_only:
-            checks = checks[:1]
+            checks = checks[:2]
         try:
             for label, command, timeout in checks:
                 ok = run_check(args.godot, project, directory, label, command, timeout,

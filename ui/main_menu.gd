@@ -333,7 +333,8 @@ func show_settings() -> void:
 func _input(event: InputEvent) -> void:
 	if transitioning: return
 	if page != "main" and (event.is_action_pressed("ui_cancel") or (event is InputEventJoypadButton and event.button_index == JOY_BUTTON_B and event.pressed)):
-		show_main()
+		var settings:=column.find_child("SettingsPanel",true,false)
+		if page!="settings" or settings==null or not settings.handle_back():show_main()
 		get_viewport().set_input_as_handled()
 
 # ── Helpers ──────────────────────────────────────────────────

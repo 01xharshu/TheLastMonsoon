@@ -45,6 +45,7 @@ func _ready() -> void:
 	combat = preload("res://vehicles/cart_combat.gd").new()
 	combat.name = "CartCombat"
 	add_child(combat)
+	var draft_team=preload("res://vehicles/draft_team.gd").new();draft_team.name="DraftTeam";add_child(draft_team)
 	_add_boarding_point("DriverSeat", Vector3(-1.0, 1.5, 1.7))
 	if variant == 0: _add_boarding_point("PassengerSeat", Vector3(1.0, 1.5, 2.6))
 
@@ -82,7 +83,7 @@ func _rein_grip_local(side: String) -> Vector3:
 	return Vector3(lateral if variant == 1 else -.43+lateral, 1.97 if variant == 1 else 1.90, 1.28 if variant == 1 else 2.14)
 
 func can_move() -> bool:
-	return combat == null or combat.can_move()
+	return (combat == null or combat.can_move()) and (not has_node("DraftTeam") or get_node("DraftTeam").can_move())
 
 func set_forward_motion(speed: float, delta: float) -> void:
 	if not can_move(): speed = 0.0

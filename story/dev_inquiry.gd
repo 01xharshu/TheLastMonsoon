@@ -91,6 +91,8 @@ func can_request(id: String) -> bool:
 	return not attendant.get_meta("dead",false) and not attendant.get_meta("knocked_out",false)
 func request(id: String,actor: CharacterBody3D) -> bool:
 	if actor!=player or not can_request(id) or not player.get_node("CombatInput").available():return false
+	var director: Node=world.get_node_or_null("DevStory")
+	if director!=null:return director.start_inquiry(id)
 	if get_tree().root.get_node("SaveManager").police_case_active(player):return false
 	if player.get_meta("detention_action","")!="" or player.get_meta("document_busy",false):return false
 	if not player.is_on_floor():return false
@@ -127,6 +129,10 @@ func _process(delta: float) -> void:
 	var hidden: bool=player.get_meta("opening_active",false) or player.get_meta("map_open",false) or player.inventory_ui.is_open()
 	objective.visible=not hidden and stage not in ["dormant","summoning","punishment"] and dialogue.is_empty()
 	objective_marker.visible=objective.visible and stage in ["police","superior"]
+	var director: Node=world.get_node_or_null("DevStory")
+	if director!=null and (director.active or director.state in ["farm","complete"]):
+		objective.hide()
+		objective_marker.visible=not director.active and not player.get_meta("map_open",false)
 	if objective_marker.visible:
 		var camera: Camera3D=player.get_node("CameraPivot/SpringArm3D/Camera3D")
 		var target:=destination.global_position+Vector3.UP*1.3

@@ -28,6 +28,9 @@ func interact(actor: CharacterBody3D) -> void:
 	if actor.global_position.distance_to(global_position)>3: return
 	if speaking:return
 	if actor.get_meta("document_busy",false) or actor.get_meta("opening_active",false):return
+	var director: Node=get_parent().get_parent().get_node_or_null("DevStory")
+	if director!=null and not director.first_chacha_seen:
+		if director.begin_optional():return
 	listener=actor
 	listener_expression.configure(actor.get_node("VisualRoot/CharacterVisual"))
 	speaking=true;line=0;elapsed=0;show_line();subtitle.show()

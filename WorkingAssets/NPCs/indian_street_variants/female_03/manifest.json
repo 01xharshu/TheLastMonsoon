@@ -1,0 +1,13 @@
+{
+  "identity": "female_03",
+  "donor": "river_woman/river_woman_motion.blend",
+  "complete_body_vertices": 19158,
+  "facial_changes": {
+    "jaw": -0.045,
+    "nose": 0.013,
+    "cheek": 0.13
+  },
+  "runtime": "characters/npcs/street_residents/female_03.glb",
+  "wardrobe": "street formal",
+  "visual_approved": false
+}

@@ -10,7 +10,12 @@ var encounter_state := "waiting"
 var encounter_age := 0.0
 var strike_age := 0.0
 var strike_hit := false
+var awareness_timer := 0.0
 var wanted := false
+var wanted_level := 0
+var crime_score := 0
+var evidence: Array[Dictionary] = []
+var last_known := Vector3.ZERO
 var unseen_age := 0.0
 var patrols: Array[Dictionary] = []
 var station: Node3D
@@ -73,27 +78,23 @@ func ground(point: Vector3) -> Vector3:
 	return hit.position if not hit.is_empty() else Vector3(point.x,layout.height(point.x,point.z),point.z)
 
 func report_assault(victim: Node3D, attacker: Node = null) -> void:
-	if attacker == null and victim.has_meta("last_attacker"): attacker = victim.get_meta("last_attacker")
-	if attacker != player: return
-	if victim.get_meta("combat_faction","indian") in ["british","police"]:
-		wanted=true;unseen_age=0
-		if victim==aggressor and encounter_state in ["beating","waiting","fallen"]:rescue()
+	if not is_instance_valid(victim): return
+	if attacker == null: attacker= victim.get_meta("last_attacker",null)
+	if attacker!=player or victim.get_meta("combat_faction","indian") not in ["british","police"]: return
+	var kind: String = victim.get_meta("last_hit_kind","weapon")
+	var severity := 10 if kind=="murder" and victim.get_meta("combat_faction","")=="police" else 5 if kind not in ["punch","kick","takedown"] else 2
+	record_incident(kind,victim.global_position,incident_witnesses(victim.global_position,victim),severity)
+	if victim==aggressor and encounter_state in ["beating","waiting","fallen"]:rescue()
 
 func police_case_started(actor: Node) -> void:
-	if actor == player:
-		wanted = true
-		unseen_age = 0.0
+	if actor==player and not wanted:
+		var witnesses: Array[String]=["station_officer"]
+		record_incident("police_report",player.global_position,witnesses,5)
 
 func report_crime(actor: CharacterBody3D, offence: String, location: Vector3) -> void:
-	if actor != player or player.health <= 0 or offence not in ["theft","assault"] or not location.is_finite(): return
-	if offence == "theft" and player.global_position.distance_to(location) > 3.0: return
-	for patrol in patrols:
-		var witness: Node3D = patrol.actor
-		if not is_instance_valid(witness): continue
-		if witness.get_meta("dead",false) or witness.get_meta("knocked_out",false): continue
-		if witness.global_position.distance_to(location) <= 28.0 and visible_to(witness):
-			police_case_started(player)
-			return
+	if actor!=player or not location.is_finite() or offence not in ["theft","assault"]: return
+	if actor.global_position.distance_to(location)>5.0: return
+	record_incident(offence,location,incident_witnesses(location),5)
 
 func has_pending_police_case(actor: Node) -> bool:
 	return actor == player and (wanted or not escort.is_empty())
@@ -101,6 +102,8 @@ func has_pending_police_case(actor: Node) -> bool:
 func complete_custody(actor: Node) -> void:
 	if actor != player: return
 	wanted = false
+	return_recruited_police()
+	crime_score=0;wanted_level=0
 	unseen_age = 0.0
 	for patrol in patrols:
 		patrol.state = "patrol"
@@ -108,6 +111,79 @@ func complete_custody(actor: Node) -> void:
 		patrol.attack_age = 0.0
 		patrol.hit = false
 		patrol.marker.visible = false
+
+func recruit_visible_police() -> void:
+	if not wanted: return
+	for actor in get_tree().get_nodes_in_group("combat_actors"):
+		if not actor is Node3D or actor.get_meta("combat_faction","")!="police": continue
+		var already := false
+		for patrol in patrols:
+			if patrol.actor==actor: already=true;break
+		if already or actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("city_custody",false): continue
+		if station.get_node("ThanaStaff/ArrestCoordinator").phase!="idle": continue
+		if not visible_to(actor): continue
+		var marker := Label3D.new();marker.text="!";marker.position.y=2.05;marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		actor.add_child(marker)
+		var home: Vector3=actor.global_position
+		patrols.append({"actor":actor,"points":PackedVector3Array([home,home]),"index":0,"step":1,"state":"pursue","sense":0.0,"attack_age":0.0,"hit":false,"marker":marker,"seen":true,"last_seen":player.global_position,"mount":null,"horse":null,"temporary":true,"movement":actor.movement_enabled,"external":actor.get_meta("external_combat_motion",false),"home":actor._home})
+		actor.movement_enabled=false;actor.set_meta("external_combat_motion",true)
+
+func return_recruited_police() -> void:
+	for index in range(patrols.size()-1,-1,-1):
+		var patrol: Dictionary=patrols[index]
+		if not patrol.get("temporary",false): continue
+		if is_instance_valid(patrol.actor):
+			patrol.actor.travel_speed=0.0
+			patrol.actor.movement_enabled=patrol.movement
+			patrol.actor.set_meta("external_combat_motion",patrol.external)
+			patrol.actor._home=patrol.home
+		if is_instance_valid(patrol.marker):patrol.marker.queue_free()
+		patrols.remove_at(index)
+
+func incident_witnesses(location: Vector3, victim: Node3D = null) -> Array[String]:
+	var result: Array[String] = []
+	for observer in get_tree().get_nodes_in_group("combat_actors"):
+		if not observer is Node3D or observer.get_meta("dead",false) or observer.get_meta("knocked_out",false): continue
+		if observer.global_position.distance_to(location)>30.0: continue
+		if visible_to(observer): result.append(str(observer.get_path()))
+	var recognized_police := false
+	for patrol in patrols:
+		if patrol.actor==victim and patrol.state=="pursue": recognized_police=true;break
+	# A conscious victim knows who struck them even at close range behind their back.
+	if is_instance_valid(victim) and not victim.get_meta("dead",false) and not victim.get_meta("knocked_out",false) and (victim.global_position.distance_to(player.global_position)<3.0 or recognized_police):
+		var identity := str(victim.get_path())
+		if identity not in result: result.append(identity)
+	return result
+
+func record_incident(kind: String, location: Vector3, witnesses: Array[String], severity: int) -> bool:
+	if witnesses.is_empty(): return false
+	crime_score=mini(25,crime_score+severity)
+	wanted_level=clampi(ceili(float(crime_score)/5.0),1,5)
+	wanted=true;unseen_age=0.0
+	# Reports identify a location, but never give police the suspect's hidden live position.
+	last_known=location
+	evidence.append({"kind":kind,"location":location,"witnesses":witnesses,"time":Time.get_ticks_msec()})
+	if evidence.size()>32: evidence.pop_front()
+	player.inventory.message_requested.emit("Crime reported · %d star%s" % [wanted_level,"s" if wanted_level!=1 else ""])
+	return true
+
+func report_vehicle_theft(actor: CharacterBody3D, vehicle: Node3D, kind: String) -> void:
+	if actor!=player or not is_instance_valid(vehicle) or vehicle.get_meta("player_owned",false): return
+	var location := player.global_position
+	if location.distance_to(vehicle.global_position)>7.0: return
+	record_incident(kind,location,incident_witnesses(location),5)
+
+func advance_wanted(delta: float, seen: bool) -> void:
+	if not wanted or not escort.is_empty() or player.get_meta("detention_action","")!="": return
+	unseen_age=0.0 if seen else unseen_age+delta
+	if unseen_age>=15.0+float(wanted_level)*8.0:
+		crime_score=maxi(0,crime_score-5)
+		wanted_level=ceili(float(crime_score)/5.0)
+		wanted=crime_score>0;unseen_age=0.0
+		if not wanted:
+			return_recruited_police()
+			for patrol in patrols:
+				patrol.state="patrol";patrol.seen=false;patrol.marker.visible=false
 
 func rescue() -> void:
 	encounter_state="rescued";encounter_age=0
@@ -196,7 +272,13 @@ func _tick(delta: float) -> void:
 		return
 	if is_instance_valid(aggressor) and is_instance_valid(peasant): update_rescue(delta)
 	if not escort.is_empty():update_capture(delta)
+	awareness_timer-=delta
+	if awareness_timer<=0.0:
+		awareness_timer=.25;recruit_visible_police()
 	var seen:=false
+	var coordinator: Node=station.get_node("ThanaStaff/ArrestCoordinator")
+	if coordinator.phase in ["approach","fight"] and coordinator.has_method("officer_has_sight"):
+		seen=coordinator.officer_has_sight()
 	for patrol in patrols:
 		var actor: Node3D=patrol.actor
 		if not is_instance_valid(actor): continue
@@ -218,7 +300,8 @@ func _tick(delta: float) -> void:
 		if patrol.sense<=0:
 			patrol.sense=.25
 			patrol.seen=wanted and visible_to(actor)
-			if patrol.seen:patrol.state="pursue";unseen_age=0
+			if patrol.seen:patrol.state="pursue";unseen_age=0;last_known=player.global_position;patrol["last_seen"]=player.global_position
+		seen=seen or patrol.seen
 		patrol.marker.visible=patrol.state=="pursue"
 		if patrol.state=="patrol":
 			var point: Vector3=patrol.points[patrol.index]
@@ -232,6 +315,9 @@ func _tick(delta: float) -> void:
 				actor.travel_speed = 0
 				continue
 			var offset:=player.global_position-actor.global_position;offset.y=0
+			if not patrol.seen:
+				move_actor(actor,patrol.get("last_seen",last_known),2.8,delta)
+				continue
 			if offset.length()>1.15:move_actor(actor,player.global_position,2.8,delta)
 			else:
 				actor.travel_speed=0
@@ -246,9 +332,7 @@ func _tick(delta: float) -> void:
 					if patrol.attack_age>=.28 and patrol.attack_age<=.60 and not patrol.hit and strike_hits_player(actor):
 						patrol.hit=true;player.receive_combat_hit(minf(8,maxf(0,player.health-1)),actor)
 			if not wanted:patrol.state="patrol"
-	if wanted and escort.is_empty():
-		unseen_age=0 if seen else unseen_age+delta
-		if unseen_age>15:wanted=false
+	advance_wanted(delta,seen)
 
 func update_capture(delta: float) -> void:
 	if escort.is_empty(): return
@@ -389,3 +473,28 @@ func fight_aggressor(delta: float) -> void:
 	if strike_age>=1.2:strike_age=0;strike_hit=false;aggressor.combat_react("strike")
 	if strike_age>=.28 and strike_age<=.60 and not strike_hit and strike_hits_player(aggressor):
 		strike_hit=true;player.receive_combat_hit(minf(8,maxf(0,player.health-1)),aggressor)
+
+func export_crime_state() -> Dictionary:
+	var records: Array[Dictionary]=[]
+	for item in evidence:
+		var record: Dictionary=item.duplicate(true)
+		var at: Vector3=record.location
+		record.location=[at.x,at.y,at.z]
+		records.append(record)
+	return {"score":crime_score,"unseen":unseen_age,"last_known":[last_known.x,last_known.y,last_known.z],"evidence":records}
+
+func restore_crime_state(data: Dictionary) -> void:
+	crime_score=clampi(int(data.get("score",0)),0,25)
+	wanted_level=ceili(float(crime_score)/5.0);wanted=crime_score>0
+	unseen_age=clampf(float(data.get("unseen",0)),0,55)
+	var at: Array=data.get("last_known",[0,0,0])
+	if at.size()==3:last_known=Vector3(float(at[0]),float(at[1]),float(at[2]))
+	evidence.clear()
+	for value in data.get("evidence",[]):
+		if not value is Dictionary:continue
+		var record: Dictionary=value.duplicate(true)
+		var coords: Array=record.get("location",[0,0,0])
+		if coords.size()!=3:continue
+		record.location=Vector3(float(coords[0]),float(coords[1]),float(coords[2]))
+		evidence.append(record)
+		if evidence.size()>=32:break

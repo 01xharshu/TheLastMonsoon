@@ -1,0 +1,13 @@
+{
+  "identity": "workman_01",
+  "donor": "street_residents/merchant/merchant.blend",
+  "complete_body_vertices": 13380,
+  "facial_changes": {
+    "jaw": -0.15,
+    "nose": 0.009,
+    "cheek": 0.07
+  },
+  "runtime": "characters/npcs/street_residents/workman_01.glb",
+  "wardrobe": "plain working cotton",
+  "visual_approved": false
+}

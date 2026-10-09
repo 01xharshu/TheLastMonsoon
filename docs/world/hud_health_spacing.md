@@ -1,5 +1,7 @@
 # HUD health and spacing
 
+2026-10-09 — Pause UI isolation: `ui/game_menu.gd` now hides gameplay CanvasLayers (including story, telescope and mobile overlays) and the player UI's non-map siblings while paused. Resume restores only previously visible nodes; touch inputs release on opening. Shared pause map remains available. Expanded `tools/world/validate_menu_integration.gd` passes headless with no failures across map/game/settings, visibility restoration, already-hidden HUD and return-to-title. Scoped diff check PASS. No test artifacts retained. Native visual review remains open: restart the editor game, press Escape, inspect all three tabs, then resume and confirm HUD restoration.
+
 2026-10-06 20:53 IST — COMPLETE, root.
 
 Owner reference implemented: four solid survival symbols arranged as a diamond cross at bottom left, thin framed health bar alongside, circular nearby minimap at bottom right. Diamond interiors fill bottom-up from actual water, food, stamina and rest values. Fine aged-brass outer frames, ivory highlights and dark ink grounds match the existing historical UI. Removed large health blocks, panel and survival labels. Health follows actual player health, with a delayed damage trail and amber/red warning states. Ammunition sits above the radar; horse stamina above the survival cluster.

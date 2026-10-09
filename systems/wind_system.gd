@@ -10,7 +10,7 @@ var ambience: AudioStreamPlayer
 func _ready() -> void:
  get_tree().node_added.connect(_vegetation_added)
  for node in get_tree().root.find_children('*','MeshInstance3D',true,false):_vegetation_added(node)
- ambience=AudioStreamPlayer.new();add_child(ambience)
+ ambience=AudioStreamPlayer.new();ambience.bus="Ambient";add_child(ambience)
  var stream := preload('res://systems/audio_edges.gd').prepare(load('res://audio/world/wind.wav'),true)
  ambience.stream=stream;ambience.volume_db=-60
 func sample(at: Vector3) -> Vector3:
@@ -39,7 +39,7 @@ func _process(delta: float) -> void:
   sheltered=not camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
  exposure=move_toward(exposure,.12 if sheltered else 1.0,delta*.8)
  var gain: float = audio.ambience_gain if audio != null else 1.0
- ambience.volume_db=linear_to_db(maxf(.0001,speed/5.0*exposure*.45*gain))
+ ambience.volume_db=linear_to_db(maxf(.0001,speed/5.0*exposure*.12*gain))
 
 func _update_flags(delta: float) -> void:
  for animator in get_tree().get_nodes_in_group('wind_flags'):

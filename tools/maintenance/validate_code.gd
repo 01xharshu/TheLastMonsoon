@@ -23,6 +23,11 @@ func _scan(path: String) -> void:
 	for name in directory.get_directories():
 		if not name.begins_with("."): _scan(path.path_join(name))
 func _run() -> void:
+	var expected := OS.get_environment("TLM_EXPECT_USER_DATA")
+	if not expected.is_empty() and OS.get_user_data_dir() != expected:
+		push_error("Code-check user-data directory differs from the disposable runner directory")
+		root.get_node("SaveManager").quit_game(1)
+		return
 	_scan("res://")
 	print("CODE AUDIT scripts=", checked, " shaders=", shaders, " failures=", failures)
 	root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

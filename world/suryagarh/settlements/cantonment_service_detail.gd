@@ -106,7 +106,7 @@ static func cemetery(b, district: Node3D) -> void:
 	district.add_child(yard)
 	yard.add_to_group("military_cemetery")
 	var stone := Detail.surface(Color(.57,.56,.49))
-	for x in [-6.0,6.0]: b.piece(yard,"BoundaryWall",Vector3(x,.6,0),Vector3(.35,1.2,21),stone)
+	for x in [-6.0,6.0]: b.piece(yard,"BoundaryWall",Vector3(x,1.05,0),Vector3(.35,2.1,21),stone)
 	b.piece(yard,"RearWall",Vector3(0,.6,-10.5),Vector3(12,1.2,.35),stone)
 	for x in [-3.7,3.7]: b.piece(yard,"GateWall",Vector3(x,.6,10.5),Vector3(4.6,1.2,.35),stone)
 	for x in [-1.35,1.35]: b.piece(yard,"GatePier",Vector3(x,.9,10.5),Vector3(.45,1.8,.45),stone)

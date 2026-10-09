@@ -22,11 +22,11 @@ func _ready() -> void:
    clips[key]=preload('res://systems/audio_edges.gd').prepare(clips[key],true)
  for i in 8:
   var voice:=AudioStreamPlayer3D.new();voice.max_distance=28;voice.unit_size=6;voice.volume_db=-3
-  add_child(voice);loops.append(voice)
+  voice.bus="Ambient";add_child(voice);loops.append(voice)
  river_voice=AudioStreamPlayer3D.new();river_voice.max_distance=110;river_voice.unit_size=10;river_voice.volume_db=-2
- river_voice.stream=clips.river;add_child(river_voice)
+ river_voice.bus="Ambient";river_voice.stream=clips.river;add_child(river_voice)
  shore_voice=AudioStreamPlayer3D.new();shore_voice.max_distance=32;shore_voice.unit_size=7
- shore_voice.stream=clips.river;shore_voice.pitch_scale=.92;shore_voice.volume_db=-3;add_child(shore_voice)
+ shore_voice.bus="Ambient";shore_voice.stream=clips.river;shore_voice.pitch_scale=.92;shore_voice.volume_db=-3;add_child(shore_voice)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
 func _added(node: Node) -> void:
@@ -38,7 +38,7 @@ func _added(node: Node) -> void:
   actors[node.get_instance_id()]={'ref':weakref(node),'path':path,'wait':randf_range(8,17),'phase':-1,'last':Vector3.ZERO,'last_stage':'','transfers':0}
 func day_at(hour: int) -> bool:return hour>=6 and hour<18
 func emit(key: String, at: Vector3, db: float) -> void:
- if get_parent().play_at(key,at,db):
+ if get_parent().play_at(key,at,db,"Ambient"):
   emissions[key]=int(emissions.get(key,0))+1
 func _process(delta: float) -> void:
  timer-=delta

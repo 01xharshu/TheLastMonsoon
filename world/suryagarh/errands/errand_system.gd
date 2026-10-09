@@ -15,6 +15,8 @@ var JOBS := {
 var pending_passenger: Dictionary = {}
 var roadside: Node
 var pending_roadside: Dictionary = {}
+var delivery:Node3D
+var pending_delivery:Dictionary={}
 var expanded: Node
 var stages: Dictionary = {}
 # Last paid day remains even when a new shift is accepted or cancelled.
@@ -80,6 +82,8 @@ func _build_world() -> void:
 	roadside.name="RoadsideOpportunities";add_child(roadside);roadside.configure(self,pending_roadside)
 	pending_roadside.clear()
 	expanded.restore_trip(pending_passenger); pending_passenger.clear()
+	delivery=preload("res://world/suryagarh/errands/delivery_handover.gd").new();delivery.name="DeliveryHandover";add_child(delivery);delivery.configure(self)
+	delivery.restore_state(pending_delivery);pending_delivery.clear()
 	for id in ["board","work"]:
 		var post := MeshInstance3D.new()
 		var mesh := BoxMesh.new(); mesh.size = Vector3(.12,1.4,.12)
@@ -133,6 +137,7 @@ func use_endpoint(id: String, actor: CharacterBody3D) -> void:
 		var job: Dictionary = JOBS[active]
 		var stage: String = stages.get(active, "")
 		if id == str(job.get("pickup","parcel")) and job.kind == "delivery" and stage == "accepted":
+			if delivery!=null and not delivery.pickup(active):return
 			_clear_job_waypoint()
 			stages[active] = "carrying"; _message("Collected: " + job.title + ". " + objective(active)); return
 		if id == "work" and job.kind == "work" and stage == "accepted":
@@ -175,9 +180,11 @@ func accept(id: String) -> bool:
 	close_panel(); _message("Job accepted: " + job.title + ". " + objective(id))
 	return true
 
-func _finish(id: String) -> void:
+func _finish(id: String, handed_over:=false) -> void:
 	# The caller verifies real progress, receiver and range before payment.
 	if active != id or not job_available(id): return
+	if JOBS[id].kind=="delivery" and not handed_over and delivery!=null:
+		delivery.begin(id);return
 	_clear_job_waypoint()
 	if roadside!=null: roadside.completed(id)
 	completed_days[id] = current_job_day()
@@ -190,6 +197,7 @@ func cancel() -> void:
 	if active.is_empty(): return
 	_clear_job_waypoint()
 	if expanded != null: expanded.release_passenger()
+	if delivery!=null:delivery.clear()
 	if roadside!=null: roadside.cancelled(active)
 	stages.erase(active); active = ""
 	close_panel(); _message("Job cancelled. Entrusted goods returned; no wage paid.")
@@ -208,9 +216,11 @@ func objective(id: String) -> String:
 	return "Return to the market receiver for payment." if stages.get(id, "") == "worked" else "Hold the interaction at the sorting table for three seconds."
 
 func export_state() -> Dictionary:
-	return {"roadside":roadside.export_state() if roadside!=null else pending_roadside.duplicate(true), "active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true), "passenger_trip":expanded.export_trip() if expanded != null else pending_passenger.duplicate(true)}
+	return {"delivery":delivery.export_state() if delivery!=null else pending_delivery.duplicate(true), "roadside":roadside.export_state() if roadside!=null else pending_roadside.duplicate(true), "active":active, "stages":stages.duplicate(true), "completed_days":completed_days.duplicate(true), "passenger_trip":expanded.export_trip() if expanded != null else pending_passenger.duplicate(true)}
 
 func restore_state(data: Dictionary) -> void:
+	if delivery!=null:delivery.clear()
+	pending_delivery=data.get("delivery",{}).duplicate(true) if data.get("delivery",{}) is Dictionary else {}
 	if expanded != null: expanded.release_passenger()
 	pending_roadside=data.get("roadside",{}).duplicate(true) if data.get("roadside",{}) is Dictionary else {}
 	if roadside!=null: roadside.restore_state(pending_roadside)
@@ -238,6 +248,7 @@ func restore_state(data: Dictionary) -> void:
 	if active=="family_cart" and expanded!=null: expanded.bind_passenger(active,"passenger","family_home")
 	if expanded != null:
 		expanded.restore_trip(pending_passenger); pending_passenger.clear()
+	if delivery!=null:delivery.restore_state(pending_delivery);pending_delivery.clear()
 
 func _message(value: String) -> void:
 	toast.text = value; toast_seconds = 5.0; toast.show()
@@ -336,6 +347,7 @@ func next_endpoint() -> String:
 
 func tracked_objective() -> String:
 	if active.is_empty(): return ""
+	if delivery!=null and not delivery.phase.is_empty():return "Wait for the receiver to finish unloading"
 	if active == "family_cart" and expanded != null:
 		if expanded.transfer == "boarding": return "Wait for your passenger to board the cart"
 		if expanded.transfer == "exiting": return "Let your passenger step down safely"

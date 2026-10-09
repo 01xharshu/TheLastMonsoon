@@ -1,0 +1,12 @@
+{
+  "identity": "male_03",
+  "donor": "street_residents/merchant/merchant.blend",
+  "complete_body_vertices": 13380,
+  "facial_changes": {
+    "jaw": -0.045,
+    "nose": 0.013,
+    "cheek": 0.13
+  },
+  "runtime": "characters/npcs/street_residents/male_03.glb",
+  "visual_approved": false
+}

@@ -11,6 +11,7 @@ var status_label: Label
 var money_label: Label
 var player: CharacterBody3D
 var heading: float = 0.0
+var wanted_level := 0
 var health: float = 100.0
 var health_trail: float = 100.0
 var sight_pulse := 0.0
@@ -108,6 +109,8 @@ func _layout() -> void:
 	place($PickupMessageLabel,Vector2(size.x/2-280,size.y*0.18),Vector2(560,40))
 
 func _process(delta: float) -> void:
+	var crime := player.get_parent().get_node_or_null("CombatEncounters")
+	wanted_level = crime.wanted_level if crime != null and crime.wanted else 0
 	_update_gun_sight(delta)
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)

@@ -31,7 +31,7 @@ func build(builder: Node3D) -> void:
 			b.piece(lines,"CompoundSide",Vector3(spec[1]+side*32,0.55,-8),Vector3(0.4,1.1,68),b.plaster)
 			b.piece(lines,"GateReturn",Vector3(spec[1]+side*18,0.55,26),Vector3(28,1.1,0.4),b.plaster)
 		for side in [-1.0,1.0]:
-			b.piece(lines,"RearBoundary",Vector3(spec[1]+side*18,0.55,-42),Vector3(28,1.1,0.4),b.plaster)
+			b.piece(lines,"RearBoundary",Vector3(spec[1]+side*18,1.05,-42),Vector3(28,2.1,0.4),b.plaster)
 		for side in [-1.0,1.0]:
 			b.piece(lines,"GardenBed",Vector3(spec[1]+side*22,0.12,7),Vector3(7,0.24,22),b.ochre)
 		var quarters: Node3D = architecture.room(spec[0]+"ServiceQuarters",Vector3(spec[1],0,-51),Vector2(14,6),"")

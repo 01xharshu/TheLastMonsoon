@@ -36,11 +36,16 @@ func _ready() -> void:
 	combat_encounters.name="CombatEncounters"
 	add_child(combat_encounters)
 	add_child(preload("res://world/suryagarh/city_route_population.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/village_daily_activities.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/civic_resident_posts.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/draft_animal_yards.gd").new())
 	var muddy_roads:=preload("res://world/suryagarh/muddy_road_travel.gd").new()
 	muddy_roads.name="MuddyRoadTravel";add_child(muddy_roads)
 	add_child(preload("res://world/suryagarh/sky_birds.gd").new())
 	add_child(preload("res://world/suryagarh/settlements/chacha_house.gd").new())
 	add_child(preload("res://story/dev_inquiry.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/story_community.gd").new())
+	add_child(preload("res://story/dev_story.gd").new())
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 

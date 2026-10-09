@@ -102,8 +102,8 @@ func _household_detail(house: Node3D, extent: Vector2, index: int) -> void:
 	# A physical sideyard boundary gives selected homes a readable courtyard.
 	if index >= 8 and index % 3 == 0:
 		for side in [-1.0, 1.0]:
-			_piece(house, "CourtyardSide", Vector3(side*(w*.5+.4), .35, d*.5+3.4), Vector3(.22,.7,3.7), settlement.ochre)
-			_piece(house, "CourtyardFront", Vector3(side*(w*.25+.75), .3, d*.5+5.2), Vector3(w*.5-1.1,.6,.22), settlement.ochre)
+			_piece(house, "CourtyardSide", Vector3(side*(w*.5+.4), .95, d*.5+3.4), Vector3(.28,1.9,3.7), settlement.ochre)
+			_piece(house, "CourtyardFront", Vector3(side*(w*.25+.75), .95, d*.5+5.2), Vector3(w*.5-1.1,1.9,.28), settlement.ochre)
 	if index % 4 == 0:
 		_piece(house, "FirewoodStack", Vector3(w*.5-.6,.18,-d*.5-.5), Vector3(1.25,.36,.55), settlement.wood)
 		for layer in 3:
