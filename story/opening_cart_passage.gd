@@ -129,7 +129,7 @@ func _stage_gathering() -> void:
 		people.append({"actor":person,"transform":person.global_transform,"activity":activity,"physics":activity.is_physics_processing(),"speed":person.travel_speed,"member":member,"work_blend":person.animation_tree.get("parameters/daily_work/blend_amount")})
 		activity.set_physics_process(false)
 		person.animation_tree.set("parameters/daily_work/blend_amount",0.0)
-		var angle := .35+index*PI*.5
+		var angle: float = .35+index*PI*.5
 		var center: Vector3 = gathering.fire.global_position
 		var point := center+Vector3(cos(angle)*2.3,0,sin(angle)*2.3)
 		point.y = layout.height(point.x,point.z)

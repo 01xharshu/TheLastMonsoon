@@ -58,3 +58,11 @@
 - **CITY ROUTE POPULATION — IN_PROGRESS**. `docs/world/city_route_population.md`.
 - Static-mesh fix complete; all-code audit **stopped by user**, final city/intro/pack gates unfinished. `docs/agent/history/2026-10-09-error-audit-before-morning-tutorial.md`.
 Next: review new Bhairavpur cart passage on native renderer when shared render jobs finish; historical detail: `docs/agent/history/2026-10-09-handoff-before-tutorial-compaction.md`.
+
+## Startup loading error — updated 2026-10-09 IST — current chat
+- Status: COMPLETE. Objective: reproduce and fix the error preventing game loading in the main checkout.
+- Completed: fixed explicit float typing for `angle` in `story/opening_cart_passage.gd:132`. Dynamic gathering iteration broke inference, preventing opening sequence and SaveManager compilation.
+- Files changed: `story/opening_cart_passage.gd`, this ledger. Preserved both pre-existing untracked .gd.uid files.
+- Verification: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/world/validate_opening_cart_passage.gd` PASS (exit 0; travel/camera/room/skip/restoration/audio). Native Metal `tools/maintenance/smoke_game.gd` MENU PASS (exit 0; configured studio intro → title, 8.496s). Native WORLD loads successfully (91.902s), but broader smoke FAIL: its 120-frame wait ends before current morning departure completes, so control/reload assertions run while opening controls are locked. `git diff --check` PASS.
+- Limits: full gameplay smoke is not certified. Forced headless `--quit-after 600` emits two ObjectDB leaks; graceful native menu shutdown and cart validator emit none. No retained test captures/logs/reports; disposable project and custom test user data removed.
+- Exact next action: user F5 → New journey, optionally Esc twice to skip → allow dawn/stand/walk-to-gate sequence to finish → verify controls. Future maintenance: update smoke fixture's opening wait to follow elapsed dawn/departure rather than 120 frames and account for tutorial locks.
