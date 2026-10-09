@@ -44,7 +44,7 @@ func tick(delta: float) -> void:
 		actor.set("travel_speed",0.0);actor.call("_set_animation",&"idle",delta)
 		return
 	var next: Vector2=route[goal]
-	var target:=Vector3(next.x,layout.height(next.x,next.y),next.y)
+	var target:=route_target(next)
 	var offset:=target-actor.global_position
 	var desired:=atan2(offset.x,offset.z)
 	var remaining:=absf(angle_difference(actor.global_rotation.y,desired))
@@ -56,21 +56,27 @@ func tick(delta: float) -> void:
 		actor.foot_plant.clear();actor.get_node("BodyCollider").force_update_transform()
 		return
 	turn_angle=0
-	var amount:=minf(offset.length(),speed*delta)
-	var motion:=offset.normalized()*amount
+	var motion:=travel_motion(target,delta)
+	var amount:=motion.length()
 	var shape:CollisionShape3D=actor.get_node("BodyCollider/BodyShape")
 	var query:=PhysicsShapeQueryParameters3D.new()
 	query.shape=shape.shape;query.transform=shape.global_transform
 	query.transform.origin+=Vector3.UP*.025
 	query.motion=motion;query.margin=.008;query.collision_mask=1
-	query.exclude=[actor.get_node("BodyCollider").get_rid()]
+	query.exclude=motion_exclusions()
 	var safe:=actor.get_world_3d().direct_space_state.cast_motion(query)
 	if safe[0]<.99:
 		blocked_frames+=1
+		query.transform.origin+=motion*minf(1.0,safe[0]+.05)
+		query.motion=Vector3.ZERO
+		var hits:=actor.get_world_3d().direct_space_state.intersect_shape(query,4)
+		last_obstacle=str(hits[0].collider.get_path()) if not hits.is_empty() else "swept collision"
 		actor.set("travel_speed",0.0);actor.call("_set_animation",&"idle",delta)
 		actor.set_meta("street_action","waiting_for_clear_path")
+		on_blocked(target,delta)
 		return
 	actor.global_position+=motion
+	last_obstacle=""
 	actor.global_rotation.y=rotate_toward(actor.global_rotation.y,desired,delta*2.8)
 	actor.set("travel_speed",amount/maxf(delta,.001))
 	for side in ["l","r"]:actor.foot_plant.ankle_height[side]=actor.global_position.y+ankle_offsets[side]
@@ -79,10 +85,26 @@ func tick(delta: float) -> void:
 	distance_walked+=amount
 	actor.set_meta("street_action","walking_to_market" if direction>0 else "walking_home")
 	if actor.global_position.distance_to(target)<.035:
-		if goal==route.size()-1 or goal==0:
-			visits+=1
-			if goal==0 and closing:
-				wait=0;return
-			direction=-direction;wait=6.0
-			actor.set_meta("street_action","market_visit" if goal>0 else "home_pause")
-		goal+=direction
+		arrive()
+
+func route_target(point:Vector2) -> Vector3:
+	return Vector3(point.x,layout.height(point.x,point.y),point.y)
+
+func travel_motion(target:Vector3,delta:float) -> Vector3:
+	var offset:=target-actor.global_position
+	return offset.normalized()*minf(offset.length(),speed*delta)
+
+func motion_exclusions() -> Array[RID]:
+	return [actor.get_node("BodyCollider").get_rid()]
+
+func on_blocked(_target:Vector3,_delta:float) -> void:
+	pass
+
+func arrive() -> void:
+	if goal==route.size()-1 or goal==0:
+		visits+=1
+		if goal==0 and closing:
+			wait=0;return
+		direction=-direction;wait=6.0
+		actor.set_meta("street_action","market_visit" if goal>0 else "home_pause")
+	goal+=direction

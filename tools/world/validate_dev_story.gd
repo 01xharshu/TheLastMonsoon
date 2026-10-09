@@ -75,13 +75,7 @@ func run() -> void:
  player.global_position=partner.global_position+Vector3(0,.9,-1.05);player.get_node("CameraPivot").global_rotation.y=PI
  for frame in 15:await physics_frame
  print("SPEAR START ",player.get_node("ChachaKit").strike()," active ",player.get_node("ChachaKit").active," stowed ",gear.stowed)
- for frame in 20:
-  await physics_frame
-  if frame==12:
-   var spear: Node3D=player.get_node("ChachaKit").spear
-   var palm: Vector3=spear.to_global(Vector3(0,.8,0));var tip: Vector3=spear.to_global(Vector3(0,1.91,0))
-   var query:=PhysicsRayQueryParameters3D.create(palm,tip);query.exclude=[player.get_rid()]
-   print("SPEAR CONTACT ",player.global_position," target ",partner.global_position," palm ",palm," tip ",tip," ray ",player.get_world_3d().direct_space_state.intersect_ray(query))
+ for frame in 20:await physics_frame
  for frame in 70:await physics_frame
  print("SPEAR PRACTICE ",story.lesson," hit ",partner.get_meta("training_hit",""))
  check(story.lesson==5,"physical spear contact advances lesson")

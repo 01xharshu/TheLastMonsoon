@@ -33,7 +33,7 @@ func _run() -> void:
  var clothing = load("res://player/arjun_clothing.gd").new()
  model.add_child(clothing)
  clothing.set_process(false)
- clothing.setup(model, model.find_children("*", "Skeleton3D", true, false)[0])
+ await clothing.setup(model, model.find_children("*", "Skeleton3D", true, false)[0])
  var tree: AnimationTree = load("res://player/arjun_motion_tree.gd").new()
  model.add_child(tree)
  if not tree.configure(model):

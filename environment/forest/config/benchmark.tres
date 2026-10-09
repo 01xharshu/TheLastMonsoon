@@ -24,3 +24,5 @@ shrub_density = 1.05
 broadleaf_density = 0.9
 chunk_size = 15.0
 wind_strength = 0.12
+path_exclusion_radius = 1.8
+path_feather = 2.6

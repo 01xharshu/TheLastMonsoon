@@ -1,4 +1,5 @@
 extends Node
+const Startup = preload("res://systems/world_startup.gd")
 ## Paired rear restraint; range/heading/obstacle checks precede any control lock.
 var actor: CharacterBody3D
 var visual: Node3D
@@ -10,6 +11,8 @@ var victim_movement := false
 var neck_bone := -1
 var palms: Dictionary = {}
 func _ready() -> void:
+	var startup_task := Startup.begin("Player contacts")
+	await Startup.wait_for(self, "Player appearance")
 	actor=get_parent()
 	visual=actor.get_node("VisualRoot/CharacterVisual")
 	for side in ["l", "r"]:
@@ -22,6 +25,7 @@ func _ready() -> void:
 		InputMap.add_action("rear_grapple")
 		var key:=InputEventKey.new();key.physical_keycode=KEY_B
 		InputMap.action_add_event("rear_grapple",key)
+	Startup.finish(startup_task)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("rear_grapple"):return

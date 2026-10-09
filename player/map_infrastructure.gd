@@ -16,7 +16,7 @@ const NAMED := {
  "BhairavpurVillageWell":"Village Well", "BhairavpurGrainStore":"Village Grain Store",
  "BhairavpurHarvestYard":"Harvest Yard", "GovernmentHouse":"Government House",
  "HooghlyPort":"Hooghly Reach Port", "OldFort":"Ruined Indian Fort",
- "ForestShrine":"Forest Shrine", "TimberBridge":"Timber Bridge",
+ "WorldForestPatch":"Forest grove", "ForestShrine":"Forest Shrine", "TimberBridge":"Timber Bridge",
  "Collectorate":"Collectorate", "DistrictTreasury":"District Treasury",
  "BritishCourthouse":"British Courthouse", "CollectorBungalow":"Collector Bungalow",
  "OfficerBungalow":"Officer Bungalow", "CantonmentBazaar":"Cantonment Bazaar",

@@ -52,6 +52,10 @@ func _run() -> void:
 			Input.action_release("move_forward")
 			require(actor.global_position.is_finite(), "Finite player movement")
 		var inventory: Node = actor.get_node("InventoryComponent")
+		# Weapon controls require captured input, even when another desktop app was
+		# focused during the route. Re-enter that ordinary gameplay context.
+		if DisplayServer.get_name() != "headless": root.grab_focus()
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		inventory.add_item("enfield", 1)
 		var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 		equipment.select_weapon(1)
@@ -62,13 +66,23 @@ func _run() -> void:
 		var rifle: Node = actor.get_node("RifleCombat")
 		rifle.rounds = 0
 		inventory.add_item(rifle.ammo_id(), 2)
+		if not rifle.available() or actor.get_meta("item_use", "") != "":
+			print("RIFLE SMOKE CONTEXT ", {"available":rifle.available(), "physics":actor.is_physics_processing(), "swimming":actor.is_swimming, "selected":equipment.selected, "stowed":equipment.stowed, "mouse_mode":Input.mouse_mode, "detention":actor.get_meta("detention_action", ""), "item_use":actor.get_meta("item_use", ""), "paused":paused})
 		rifle.start_reload()
 		require(rifle.reload_remaining > 0, "Rifle reload starts")
-		for frame in 150:
-			if rifle.reload_remaining <= 0:
-				break
+		# Use the actual reload duration, rather than assuming 150 render frames
+		# represent enough elapsed gameplay time on every renderer or machine.
+		var reload_deadline := Time.get_ticks_msec() + maxi(90000, int((rifle.reload_duration() + 5.0) * 1000.0))
+		var reload_frames := 0
+		var reload_simulated := 0.0
+		while rifle.reload_remaining > 0 and Time.get_ticks_msec() < reload_deadline:
 			await process_frame
-		require(rifle.rounds == 1 and rifle.reload_remaining <= 0, "Rifle reload completes")
+			reload_frames += 1
+			reload_simulated += rifle.get_process_delta_time()
+		if rifle.rounds != 1 or rifle.reload_remaining > 0:
+			print("RIFLE SMOKE RESULT ", {"rounds":rifle.rounds, "remaining":rifle.reload_remaining, "pending":rifle.pending_rounds, "available":rifle.available(), "physics":actor.is_physics_processing(), "swimming":actor.is_swimming, "selected":equipment.selected, "stowed":equipment.stowed, "mouse_mode":Input.mouse_mode, "detention":actor.get_meta("detention_action", ""), "item_use":actor.get_meta("item_use", ""), "paused":paused})
+		print("RIFLE SMOKE TIMING ", {"frames":reload_frames,"simulation_seconds":reload_simulated,"rounds":rifle.rounds,"remaining":rifle.reload_remaining})
+		require(rifle.rounds == 1 and rifle.reload_remaining <= 0, "Rifle reload completes | " + str({"rounds":rifle.rounds,"remaining":rifle.reload_remaining,"pending":rifle.pending_rounds,"available":rifle.available(),"process":rifle.is_processing(),"can_process":rifle.can_process(),"selected":equipment.selected,"stowed":equipment.stowed,"mouse_mode":Input.mouse_mode,"physics":actor.is_physics_processing(),"swimming":actor.is_swimming,"detention":actor.get_meta("detention_action",""),"paused":paused,"time_scale":Engine.time_scale}))
 		equipment.toggle_stowed()
 		require(saves.save_game(world, 1), "Save slot writes")
 		require(not saves.read_slot(1).is_empty(), "Save slot reads")

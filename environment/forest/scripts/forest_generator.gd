@@ -14,6 +14,7 @@ signal generated
 		regeneration_key = value
 		if is_inside_tree() and (not Engine.is_editor_hint() or generate_in_editor): regenerate()
 
+@export var startup_provider: Script # Optional begin/checkpoint/finish loading-session protocol.
 const BOULDER = preload("res://environment/forest/assets/rock_reused.glb")
 const PLACEHOLDER_PLANTS = preload("res://environment/forest/vegetation/placeholder_plants.gd")
 const LAYERS := ["hero", "canopy", "canopy_broad", "small_tree", "dead_tree", "fallen_log", "fern", "shrub", "broadleaf", "tall_grass", "short_grass", "floor", "rock", "debris"]
@@ -33,7 +34,10 @@ var _counts: Dictionary = {}
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and not generate_in_editor: return
-	regenerate()
+	var startup_task: int = startup_provider.begin("Forest") if startup_provider != null else -1
+	if startup_provider != null: await startup_provider.wait_for(self, "Landscape scenery")
+	await regenerate()
+	if startup_provider != null: startup_provider.finish(startup_task)
 
 func regenerate() -> void:
 	if config == null: return
@@ -51,7 +55,7 @@ func regenerate() -> void:
 	_noise.frequency = config.biome_noise_scale
 	_noise.fractal_octaves = 3
 	if _terrain != null and _terrain.has_method("prepare_forest_area"):
-		_terrain.call("prepare_forest_area")
+		await _terrain.call("prepare_forest_area")
 	_tree_positions.clear()
 	if _terrain != null and _terrain.has_method("sample_forest_existing_tree_points"):
 		for point in _terrain.call("sample_forest_existing_tree_points"):
@@ -59,13 +63,14 @@ func regenerate() -> void:
 	_counts.clear()
 	_layer_points.clear()
 	_ensure_wind()
-	_make_meshes()
+	await _make_meshes()
 	var buckets: Dictionary = {}
 	var x0 := floori(-forest_size.x * 0.5)
 	var x1 := ceili(forest_size.x * 0.5)
 	var z0 := floori(-forest_size.y * 0.5)
 	var z1 := ceili(forest_size.y * 0.5)
 	for gx in range(x0, x1):
+		if startup_provider != null: await startup_provider.checkpoint(self, "Preparing the forest…")
 		for gz in range(z0, z1):
 			for layer_index in LAYERS.size():
 				var layer: String = LAYERS[layer_index]
@@ -113,6 +118,7 @@ func regenerate() -> void:
 	set_meta("placement_signature", hash(signature))
 	for key in buckets:
 		_make_chunk(key, buckets[key])
+		if startup_provider != null: await startup_provider.checkpoint(self, "Preparing the forest…")
 	if config.terrain_floor_overlay and _terrain != null:
 		_floor_patch = MeshInstance3D.new()
 		_floor_patch.set_script(preload("res://environment/forest/scripts/forest_floor_patch.gd"))
@@ -280,6 +286,10 @@ func _make_chunk(key: Vector2i, layers: Dictionary) -> void:
 				var batch := MultiMeshInstance3D.new()
 				batch.name = "%s_LOD%d_Part%d" % [layer.capitalize().replace(" ", ""), band, mesh_index]
 				batch.multimesh = mm
+				batch.extra_cull_margin = config.wind_strength * 0.8
+				if layer not in TREE_LAYERS + ["rock", "fallen_log"]:
+					if not config.groundcover_shadows or band > 0:
+						batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				batch.visibility_range_begin = begin
 				batch.visibility_range_end = end
 				batch.visibility_range_begin_margin = config.lod_fade_margin if band > 0 else 0.0
@@ -354,6 +364,7 @@ func _make_meshes() -> void:
 	fungus.material = _material(Color(0.68, 0.59, 0.42))
 	_meshes["shelf_fungus"] = [fungus]
 	for resource in config.species:
+		if startup_provider != null: await startup_provider.checkpoint(self, "Preparing the forest…")
 		var definition := resource as ForestSpecies
 		if definition == null or definition.near_scene == null: continue
 		_species[definition.layer] = definition

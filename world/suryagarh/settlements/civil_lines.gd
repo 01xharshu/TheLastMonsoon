@@ -1,4 +1,5 @@
 extends RefCounted
+const Startup = preload("res://systems/world_startup.gd")
 ## Separated residential plots and military service market; construction candidates.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 var b: Node3D
@@ -7,10 +8,12 @@ var architecture = preload("res://world/suryagarh/settlements/administrative_dis
 func build(builder: Node3D) -> void:
 	b = builder
 	var original := {"plaster":b.plaster,"wood":b.wood,"tile":b.tile}
+	await Startup.checkpoint(b, "Preparing Civil Lines…")
 	b.plaster = surface("clay_plaster",Color(.84,.81,.71),false)
 	b.wood = surface("dark_wood",Color(.64,.51,.38),true)
 	b.tile = b.material(Color(.43,.23,.14))
 	var lines := anchor("CivilLines")
+	await Startup.checkpoint(b, "Preparing Civil Lines…")
 	lines.add_to_group("civil_lines")
 	lines.set_meta("location_numbers",[9,10])
 	architecture.b = b
@@ -18,6 +21,7 @@ func build(builder: Node3D) -> void:
 	architecture.shell_builder.b = b
 	architecture.shell_builder.district = lines
 	for spec in [["CollectorBungalow",-40.0,Vector2(24,16)], ["OfficerBungalow",40.0,Vector2(20,14)]]:
+		await Startup.checkpoint(b, "Preparing Civil Lines…")
 		var home: Node3D = architecture.room(spec[0],Vector3(spec[1],0,-10),spec[2],"")
 		home.remove_from_group("administrative_buildings")
 		home.add_to_group("civil_lines_bungalows")
@@ -28,11 +32,14 @@ func build(builder: Node3D) -> void:
 		refine_home(home,spec[2])
 		# Broad separate compounds with open carriage gates and no wall across the drive.
 		for side in [-1.0,1.0]:
+			await Startup.checkpoint(b, "Preparing Civil Lines…")
 			b.piece(lines,"CompoundSide",Vector3(spec[1]+side*32,0.55,-8),Vector3(0.4,1.1,68),b.plaster)
 			b.piece(lines,"GateReturn",Vector3(spec[1]+side*18,0.55,26),Vector3(28,1.1,0.4),b.plaster)
 		for side in [-1.0,1.0]:
+			await Startup.checkpoint(b, "Preparing Civil Lines…")
 			b.piece(lines,"RearBoundary",Vector3(spec[1]+side*18,1.05,-42),Vector3(28,2.1,0.4),b.plaster)
 		for side in [-1.0,1.0]:
+			await Startup.checkpoint(b, "Preparing Civil Lines…")
 			b.piece(lines,"GardenBed",Vector3(spec[1]+side*22,0.12,7),Vector3(7,0.24,22),b.ochre)
 		var quarters: Node3D = architecture.room(spec[0]+"ServiceQuarters",Vector3(spec[1],0,-51),Vector2(14,6),"")
 		quarters.remove_from_group("administrative_buildings")
@@ -41,8 +48,10 @@ func build(builder: Node3D) -> void:
 		b.piece(lines,"RearServiceGate",Vector3(spec[1]+25,0.03,-44),Vector3(5,0.06,8),b.ochre,false)
 	# Avenue has a clear centre, with seating and planting kept on its edges.
 	for x in [-70.0,-10.0,10.0,70.0]:
+		await Startup.checkpoint(b, "Preparing Civil Lines…")
 		architecture.bench(lines,Vector3(x,0,48))
 	for child in lines.get_children():
+		await Startup.checkpoint(b, "Preparing Civil Lines…")
 		if child is Node3D: b.merge_visuals(child)
 	bazaar()
 	b.plaster = original.plaster

@@ -4,6 +4,7 @@ var failures: Array[String] = []
 var fixture_path: String
 var save_path: String
 var original_save_root: String
+var held_frames := 0
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -21,9 +22,39 @@ func _run() -> void:
 	var file := FileAccess.open(saves.slot_path(1), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"version": saves.VERSION, "position": [0,0,0], "saved_at": 1}))
 	file.close()
-	file = FileAccess.open(fixture_path, FileAccess.WRITE)
-	file.store_string('[gd_scene load_steps=2 format=3]\n[sub_resource type="GDScript" id="Fixture"]\nscript/source = "extends Node3D\nfunc _ready():\n\tfinish.call_deferred()\nfunc finish():\n\tset_meta(\\"slot\\",get_tree().root.get_node(\\"SaveManager\\").pending_slot)\n\tget_tree().root.get_node(\\"SaveManager\\").pending_slot = -1\n"\n[node name="LoadingFixture" type="Node3D"]\nscript = SubResource("Fixture")\n[node name="Camera" type="Camera3D" parent="."]\ncurrent = true\n')
-	file.close()
+	var fixture := Node3D.new()
+	fixture.name = "LoadingFixture"
+	var source := GDScript.new()
+	source.source_code = """extends Node3D
+class Opening extends Node:
+ var state = "night"
+ var elapsed = 0.0
+ var waiting_for_reveal = false
+ func _process(delta):
+  if not waiting_for_reveal: elapsed += delta
+func _ready():
+ finish.call_deferred()
+func finish():
+ var saves = get_tree().root.get_node("SaveManager")
+ set_meta("slot",saves.pending_slot)
+ if saves.pending_slot == 0:
+  var opening = Opening.new()
+  opening.name = "OpeningSequence"
+  add_child(opening)
+ saves.pending_slot = -1
+"""
+	check(source.reload() == OK,"Loading fixture script failed")
+	fixture.set_script(source)
+	var camera := Camera3D.new()
+	camera.name = "Camera"
+	fixture.add_child(camera)
+	camera.owner = fixture
+	camera.current = true
+	var packed := PackedScene.new()
+	check(packed.pack(fixture) == OK,"Loading fixture pack failed")
+	check(ResourceSaver.save(packed,fixture_path) == OK,"Loading fixture save failed")
+	fixture.free()
+	process_frame.connect(_observe_opening_hold)
 	for slot in [0, 1]:
 		change_scene_to_file("res://ui/main_menu.tscn")
 		await scene_changed
@@ -36,6 +67,10 @@ func _run() -> void:
 		var result: bool = await overlay.begin(slot)
 		check(result and current_scene != menu, "Journey did not switch scenes")
 		check(current_scene.get_meta("slot", -2) == slot, "New/save route lost pending slot")
+		if slot == 0:
+			var opening := current_scene.get_node("OpeningSequence")
+			check(held_frames > 2,"Cinematic was not held while loading artwork cleared")
+			check(not opening.waiting_for_reveal and opening.elapsed < .2,"Loading consumed the match-strike timeline")
 		await process_frame
 		check(not is_instance_valid(overlay), "Loading overlay did not clean up")
 	var rejected = load("res://ui/journey_loading.gd").new()
@@ -62,3 +97,10 @@ func _finalize() -> void:
 		DirAccess.remove_absolute(save_path.path_join("slot_1.json"))
 		DirAccess.remove_absolute(save_path)
 	if not fixture_path.is_empty(): DirAccess.remove_absolute(fixture_path)
+
+func _observe_opening_hold() -> void:
+	if current_scene == null: return
+	var opening := current_scene.get_node_or_null("OpeningSequence")
+	if opening != null and opening.waiting_for_reveal:
+		held_frames += 1
+		check(opening.elapsed == 0.0,"Timeline advanced behind loading artwork")

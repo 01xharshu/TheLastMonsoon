@@ -1,18 +1,25 @@
 extends Node3D
 ## Base landscape runtime. Player, inventory and survival continue using their existing scene.
+const Startup = preload("res://systems/world_startup.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const REVIEW_POINTS: Array[Vector2] = [Vector2(-230,180), Vector2(12,155), Vector2(470,-250), Vector2(-440,-200), Vector2(520,-300), Vector2(344,-105), Vector2(-167,642)]
 const REVIEW_NAMES: Array[String] = ["Bhairavpur approach", "Riverbank", "Eastern wooded hills", "Agricultural plains", "Old fort approach", "Forest biome patch", "Hooghly Reach Port"]
 var layout = Layout.new()
 var review_index: int = 0
 var overview: bool = false
+var startup_tree_task := -1
 var last_safe_position := Vector3.ZERO
 @onready var player: CharacterBody3D = $Player
 @onready var player_camera: Camera3D = $Player/CameraPivot/SpringArm3D/Camera3D
 @onready var survey_camera: Camera3D = $SurveyCamera
 @onready var location_label: Label = $LandscapeUI/Location
 
+func _enter_tree() -> void:
+	if Startup.current != null: hide()
+
 func _ready() -> void:
+	var startup_task := Startup.begin("World")
+	await Startup.wait_others(self, startup_task)
 	# Default budget: 8 GB total device memory, 720p; measured validation in docs/world.
 	get_viewport().msaa_3d = Viewport.MSAA_DISABLED
 	get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
@@ -23,29 +30,46 @@ func _ready() -> void:
 	player_camera.far = 2200.0
 	$LandscapeUI/Location.visible = false
 	$LandscapeUI/ReviewHelp.visible = false
+	startup_tree_task = Startup.begin("Terrain supports")
 	_repair_tree_trunks.call_deferred()
 	move_to_review_point(0)
 	last_safe_position = player.position
 	var river_dynamics:=preload('res://world/suryagarh/river_dynamics.gd').new()
 	add_child(river_dynamics)
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	var errands := preload("res://world/suryagarh/errands/errand_system.gd").new()
 	errands.name = "ErrandSystem"
 	add_child(errands)
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	preload("res://world/suryagarh/settlements/asset_first_placement.gd").new().integrate(self)
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
 	combat_encounters.name="CombatEncounters"
 	add_child(combat_encounters)
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/city_route_population.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/village_daily_activities.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/civic_resident_posts.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/draft_animal_yards.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	var muddy_roads:=preload("res://world/suryagarh/muddy_road_travel.gd").new()
 	muddy_roads.name="MuddyRoadTravel";add_child(muddy_roads)
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/sky_birds.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/chacha_house.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://story/dev_inquiry.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/story_community.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://story/dev_story.gd").new())
+	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
+	await Startup.wait_others(self, startup_task)
+	Startup.finish(startup_task)
 	SaveManager.call_deferred("apply_pending",self)
 	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
 
@@ -90,5 +114,7 @@ func _physics_process(_delta: float) -> void:
 	player.set_water_state(deep_enough and p.y < Layout.WATER_LEVEL + entry_height, Layout.WATER_LEVEL)
 
 func _repair_tree_trunks() -> void:
+	await Startup.wait_for(self, "Terrain collision")
 	await get_tree().physics_frame
-	preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($Landscape)
+	await preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($Landscape)
+	Startup.finish(startup_tree_task)

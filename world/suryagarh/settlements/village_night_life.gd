@@ -1,5 +1,5 @@
 extends Node3D
-## Clock-linked lamps and gathering fires; resident animation is a separate gate.
+## Clock-linked lamps, gathering fires and existing village residents.
 const OilLamp = preload("res://objects/oil_lamp.tscn")
 var lamps: Array[Node] = []
 var fires: Array[Node3D] = []
@@ -72,7 +72,13 @@ func build(builder: Node3D) -> void:
 			place.rotation.y = -angle+PI*.5
 			site.add_child(place)
 			builder.piece(site,"GatheringMat",place.position,Vector3(.8,.025,1.0),builder.material(Color(.30,.24,.16)),false).rotation.y = place.rotation.y
+		var smoke := preload("res://world/suryagarh/settlements/village_combustion.gd").make_smoke(site)
+		smoke.position.y=.65
 		fires.append(site)
+	var gathering := preload("res://world/suryagarh/settlements/village_fire_gathering.gd").new()
+	gathering.name = "FireGatheringResidents"
+	gathering.fire = fires[1]
+	add_child(gathering)
 	call_deferred("_connect_clock")
 
 func _flame(parent: Node3D,position_: Vector3,size: Vector3) -> MeshInstance3D:
@@ -114,6 +120,11 @@ func _process(delta: float) -> void:
 	for i in fires.size():
 		var site := fires[i]
 		site.get_node("FireLight").visible = night
+		site.get_node("FireSmoke").emitting = night
+		var wind := get_tree().root.get_node_or_null("WindSystem")
+		if wind != null:
+			var drift: Vector3 = wind.sample(site.global_position)*.22
+			site.get_node("FireSmoke").gravity=Vector3(drift.x,.12,drift.z)
 		site.get_node("FireLight").light_energy = 2.2*(1+.075*sin(elapsed*5+i)+.04*sin(elapsed*8.7))
 		for child in site.get_children():
-			if child is MeshInstance3D: child.visible = night
+			if child is MeshInstance3D and child.is_in_group("village_fire_flame"): child.visible = night

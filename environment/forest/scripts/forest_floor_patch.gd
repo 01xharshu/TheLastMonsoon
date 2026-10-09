@@ -3,6 +3,9 @@ extends MeshInstance3D
 func rebuild(generator: Node3D) -> void:
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://environment/forest/shaders/ground.gdshader")
+	material.set_shader_parameter("litter_color", preload("res://environment/forest/assets/textures/forest_leaves_02_diff_2k.jpg"))
+	material.set_shader_parameter("litter_normal", preload("res://environment/forest/assets/textures/forest_leaves_02_nor_gl_2k.jpg"))
+	material.set_shader_parameter("litter_roughness", preload("res://environment/forest/assets/textures/forest_leaves_02_rough_2k.jpg"))
 	material.set_shader_parameter("soil_roughness", preload("res://environment/forest/assets/textures/forest_ground_04_rough_2k.jpg"))
 	material.set_shader_parameter("soil_color", preload("res://environment/forest/assets/textures/forest_ground_04_diff_2k.jpg"))
 	material.set_shader_parameter("soil_normal", preload("res://environment/forest/assets/textures/forest_ground_04_nor_gl_2k.jpg"))

@@ -1,4 +1,5 @@
 extends Node3D
+const Startup = preload("res://systems/world_startup.gd")
 ## Secluded, walkable forest shrine. All geometry is original and deterministic.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const TREE = preload("res://assets/nature/models/island_tree_02.glb")
@@ -7,14 +8,21 @@ var layout = Layout.new()
 var rng := RandomNumberGenerator.new()
 var stone: StandardMaterial3D
 var dark_stone: StandardMaterial3D
+var startup_support_task := -1
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Shrine")
+	await Startup.checkpoint(self, "Preparing the countryside…", true)
 	rng.seed = 18570924
 	stone = material(Color(0.36, 0.34, 0.30), 0.94)
 	dark_stone = material(Color(0.19, 0.19, 0.17), 1.0)
 	build_forest()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	build_cave()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	build_idol()
+	await Startup.checkpoint(self, "Preparing the countryside…")
+	Startup.finish(startup_task)
 
 func material(tint: Color, rough: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -84,6 +92,7 @@ func build_forest() -> void:
 	grove.visibility_range_end = 550.0
 	add_child(grove)
 	set_meta("new_forest_trees", transforms.size())
+	startup_support_task = Startup.begin("Shrine supports")
 	_ground_forest.call_deferred(grove,segments)
 	source.free()
 
@@ -262,6 +271,8 @@ func build_idol() -> void:
 
 func _ground_forest(grove: MultiMeshInstance3D, segments: Array[Dictionary]) -> void:
 	await get_tree().physics_frame
+	await Startup.checkpoint(self, "Preparing the grove’s tree roots…", true)
 	var trunks = preload("res://world/suryagarh/tree_trunk_collision.gd")
-	var transforms: Array[Transform3D] = trunks.ground_batch(grove,segments,.10)
+	var transforms: Array[Transform3D] = await trunks.ground_batch(grove,segments,.10)
 	trunks.add_batch(self,transforms,segments)
+	Startup.finish(startup_support_task)

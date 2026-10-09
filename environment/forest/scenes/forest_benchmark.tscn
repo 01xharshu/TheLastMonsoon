@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="1"]
 [ext_resource type="Resource" path="res://environment/forest/config/benchmark.tres" id="2"]
@@ -15,8 +15,15 @@
 
 [ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_ground_04_rough_2k.jpg" id="13"]
 
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_leaves_02_diff_2k.jpg" id="14"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_leaves_02_nor_gl_2k.jpg" id="15"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_leaves_02_rough_2k.jpg" id="16"]
+
 [sub_resource type="ShaderMaterial" id="GroundMaterial"]
 shader = ExtResource("11")
+shader_parameter/litter_color = ExtResource("14")
+shader_parameter/litter_normal = ExtResource("15")
+shader_parameter/litter_roughness = ExtResource("16")
 shader_parameter/soil_roughness = ExtResource("13")
 shader_parameter/soil_color = ExtResource("4")
 shader_parameter/soil_normal = ExtResource("5")

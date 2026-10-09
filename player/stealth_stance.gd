@@ -1,4 +1,5 @@
 extends Node
+const Startup = preload("res://systems/world_startup.gd")
 ## Ground stances layered after locomotion. Cover requires a real solid surface.
 const STAND := ""
 const COVER := "cover"
@@ -26,6 +27,8 @@ var fitted_garments := 0
 var low_waist: Array[Dictionary] = []
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Player stances")
+	await Startup.wait_for(self, "Player appearance")
 	process_priority = 20
 	base_height = actor.get_node("CameraPivot").position.y
 	collider.shape = collider.shape.duplicate()
@@ -35,6 +38,7 @@ func _ready() -> void:
 	var carry := actor.get_node("VisualRoot/EquipmentVisuals")
 	carry.process_priority = 21
 	carry.get_node("WaterBagVisual").process_priority = 22
+	Startup.finish(startup_task)
 
 func is_low() -> bool:
 	return stance != STAND or blend > .01

@@ -1,5 +1,6 @@
 extends Node3D
 ## Owner-made EIC flag markers, outside the road surface and rooted in live collision.
+const Startup = preload("res://systems/world_startup.gd")
 const FLAG = preload("res://assets/props/flags/eic/prop_eic_checkpoint_flag_01.glb")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const CuttableFlag = preload("res://world/suryagarh/cuttable_flag.gd")
@@ -9,6 +10,8 @@ var placements: Array[Node3D] = []
 var ready_for_review := false
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Roadside flags")
+	await Startup.wait_for(self, "Terrain collision")
 	# Wait for the baked terrain and bridge collision to enter the physics space.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -18,6 +21,7 @@ func _ready() -> void:
 	place_flag(Vector2(river-146.0,171.0),"WestBridgeApproach")
 	place_flag(Vector2(river+146.0,171.0),"EastBridgeApproach")
 	ready_for_review = true
+	Startup.finish(startup_task)
 
 func place_flag(point: Vector2, label: String) -> void:
 	var query := PhysicsRayQueryParameters3D.create(Vector3(point.x,200,point.y),Vector3(point.x,-20,point.y))

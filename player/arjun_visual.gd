@@ -1,5 +1,6 @@
 extends Node3D
 ## Rest-relative, model-space procedural animation for the MPFB game rig.
+const Startup = preload("res://systems/world_startup.gd")
 const Equipment = preload("res://player/arjun_equipment.gd")
 const WeaponWheel = preload("res://player/weapon_wheel.gd")
 const MotionTree = preload("res://player/arjun_motion_tree.gd")
@@ -32,12 +33,14 @@ var motion_tree: AnimationTree
 @onready var actor: CharacterBody3D = get_parent().get_parent()
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Player appearance")
 	model = preload("res://characters/arjun/arjun.glb").instantiate()
 	add_child(model)
 	model.position.y = -0.9
 	var rigs := model.find_children("*", "Skeleton3D", true, false)
 	if rigs.is_empty():
 		push_error("Arjun model has no skeleton")
+		Startup.finish(startup_task)
 		return
 	# The exported atlas stays authoritative; a tiny procedural pore/skin response
 	# adds surface detail at close range without another high-resolution texture.
@@ -52,11 +55,14 @@ func _ready() -> void:
 				skin.set_shader_parameter("source_skin",preload("res://characters/arjun/skin_source_makehuman.png"))
 				surface.set_surface_override_material(surface_index,skin)
 	skeleton = rigs[0]
+	await Startup.checkpoint(self, "Preparing Arjun’s journey…", true)
 	var clothing := preload("res://player/arjun_clothing.gd").new()
 	clothing.name = "Clothing"
 	add_child(clothing)
-	clothing.setup(model, skeleton)
+	await clothing.setup(model, skeleton)
+	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	preload("res://player/combat_trouser_yoke.gd").apply(model,skeleton)
+	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	var foot_contacts:=preload("res://player/locomotion_foot_contact.gd").new()
 	foot_contacts.name="LocomotionFootContact"
 	add_child(foot_contacts)
@@ -71,6 +77,7 @@ func _ready() -> void:
 	if not motion_tree.configure(model):
 		motion_tree.queue_free()
 		motion_tree = null
+	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	for side in ["l","r"]:
 		var target := Marker3D.new()
 		target.name = "ClimbPalm_"+side
@@ -90,11 +97,13 @@ func _ready() -> void:
 	add_child(equipment)
 	equipment.inventory = actor.get_node("InventoryComponent")
 	equipment.setup(skeleton)
+	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	weapon = equipment.talwar_hand
 	var wheel := WeaponWheel.new()
 	wheel.actor = actor
 	wheel.equipment = equipment
 	actor.get_node("UI").add_child.call_deferred(wheel)
+	Startup.finish(startup_task)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if actor.get_meta("detention_action","")!="": return

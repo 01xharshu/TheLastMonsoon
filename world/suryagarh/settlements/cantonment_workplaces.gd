@@ -1,23 +1,31 @@
 extends Node3D
 ## Five anchored service attendants; shared audited MPFB model, bounded nearby idles.
+const Startup = preload("res://systems/world_startup.gd")
 const Staff = preload("res://characters/npcs/households/fort_staff.gd")
 var workers: Array[Node3D] = []
 var elapsed := 0.0
 var update_usec := 0
 var active_workers := 0
 var garment_materials: Dictionary = {}
+var startup_task := -1
 
 static func install(b, district: Node3D) -> void:
 	var manager = load("res://world/suryagarh/settlements/cantonment_workplaces.gd").new()
 	manager.name = "ServiceWorkplaces"
 	district.add_child(manager)
-	manager.configure(b,district)
+	await manager.configure(b,district)
+	manager.startup_task = Startup.begin("Cantonment operations")
 	manager.call_deferred("install_operations",district)
 
 func install_operations(district: Node3D) -> void:
-	if not is_instance_valid(district): return
+	await Startup.wait_for(self, "Settlement")
+	if not is_instance_valid(district):
+		Startup.finish(startup_task)
+		return
 	var world: Node = preload("res://systems/world_context.gd").find_world(district)
-	if world == null or world.get_meta("service_geometry_fixture",false): return
+	if world == null or world.get_meta("service_geometry_fixture",false):
+		Startup.finish(startup_task)
+		return
 	var operations = preload("res://world/suryagarh/settlements/cantonment_operations.gd").new()
 	operations.name = "Operations"
 	district.add_child(operations)
@@ -30,6 +38,7 @@ func install_operations(district: Node3D) -> void:
 	logistics.name = "LogisticsOperations"
 	world.add_child(logistics)
 	logistics.configure(world)
+	Startup.finish(startup_task)
 
 func configure(b, district: Node3D) -> void:
 	var started := Time.get_ticks_usec()
@@ -50,6 +59,7 @@ func configure(b, district: Node3D) -> void:
 		["MilitaryCemetery","GroundsKeeper",Vector3(-4.5,0,8.8),0.0]
 	]
 	for spec in specs:
+		await Startup.checkpoint(self, "Preparing the cantonment’s staff…")
 		var room: Node3D = district.get_node(spec[0])
 		room.set_meta("workplace_role",spec[1])
 		var marker := Marker3D.new()

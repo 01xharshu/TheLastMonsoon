@@ -49,7 +49,7 @@ func run() -> void:
 	var landscape: Node3D = load("res://world/suryagarh/generated/landscape.scn").instantiate()
 	scene.add_child(landscape)
 	for tick in 3: await physics_frame
-	var count := Trunks.repair_landscape(landscape)
+	var count := await Trunks.repair_landscape(landscape)
 	check(count>1800,"saved landscape repairs existing broadleaf trunks")
 	for tick in 3: await physics_frame
 	var terrain_ray := PhysicsRayQueryParameters3D.new()
@@ -89,7 +89,7 @@ func run() -> void:
 	print("TREE ROOT SUPPORT floating=",floating_roots," max_gap=",maximum_root_gap," adjusted=",landscape.get_meta("tree_root_adjustments",0))
 	check(floating_roots==0 and absf(maximum_root_gap+.12)<.025,"actual woody roots settle on resident terrain")
 	check(verified==count and misplaced==0,"every repaired saved tree has physics at its visible trunk")
-	check(Trunks.repair_landscape(landscape)==0,"tree collision repair is idempotent")
+	check(await Trunks.repair_landscape(landscape)==0,"tree collision repair is idempotent")
 	var forest := preload("res://world/suryagarh/forest_shrine.gd").new()
 	scene.add_child(forest)
 	for tick in 4: await physics_frame
@@ -158,4 +158,4 @@ func run() -> void:
 	print("TREE SOLIDITY ","PASS" if failures==0 else "FAIL"," repaired=",count," failures=",failures)
 	scene.queue_free()
 	for tick in 3: await physics_frame
-	quit(1 if failures else 0)
+	await root.get_node("SaveManager").quit_game(1 if failures else 0)

@@ -23,7 +23,7 @@ func _process(_delta: float) -> void:
 func refresh() -> void:
 	var actor: CharacterBody3D = manager.player
 	destination = manager.destination()
-	visible = not destination.is_empty() and not get_tree().paused and actor.health > 0
+	visible = not actor.get_meta("morning_tutorial_active",false) and not destination.is_empty() and not get_tree().paused and actor.health > 0
 	visible = visible and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.inventory_ui.is_open()
 	if not visible: return
 	var camera := get_viewport().get_camera_3d()
@@ -69,8 +69,8 @@ func _draw() -> void:
 	_text(p+Vector2(0,-25),distance_text,22,GOLD)
 	if destination.get("endpoint","") == "": return
 	# Matching sub-marker explains the active goal without covering the destination.
-	draw_line(Vector2(36,86),Vector2(36,119),Color(.6,.6,.52,.75),2)
-	_symbol(Vector2(62,102),.78)
+	draw_line(Vector2(24,28),Vector2(24,61),Color(.6,.6,.52,.75),2)
+	_symbol(Vector2(50,44),.78)
 	var words := objective_text.split(" ")
 	var lines: Array[String] = [""]
 	for word in words:
@@ -78,7 +78,7 @@ func _draw() -> void:
 		if FONT.get_string_size(candidate,HORIZONTAL_ALIGNMENT_LEFT,-1,19).x > 430 and not lines[-1].is_empty(): lines.append(word)
 		else: lines[-1] = candidate
 	for index in lines.size():
-		var at := Vector2(85,109+index*24)
+		var at := Vector2(73,51+index*24)
 		draw_string(FONT,at+Vector2(2,2),lines[index],HORIZONTAL_ALIGNMENT_LEFT,-1,19,Color.BLACK)
 		draw_string(FONT,at,lines[index],HORIZONTAL_ALIGNMENT_LEFT,-1,19,GOLD)
 

@@ -40,22 +40,20 @@ func update(scene, t: float) -> void:
 	var rig: Skeleton3D = scene.visual.skeleton
 	var equipment = scene.visual.equipment
 	if equipment == null or t >= 9.0: return
-	var lean := smoothstep(.4,2.1,t)*(1.0-smoothstep(8.2,9.0,t))
+	var lean := smoothstep(3.0,5.0,t)*(1.0-smoothstep(6.0,6.8,t))
 	var bend := smoothstep(6.7,8.0,t)*(1.0-smoothstep(8.3,9.0,t))
-	var low_wick := smoothstep(.4,2.1,t)*(1.0-smoothstep(5.9,6.6,t))
-	scene.actor.global_position = scene.home.to_global(Vector3(-2.6,1.14-.065*bend-.09*low_wick,1.27))
-	scene.visual.pose("spine_01",Vector3(.22*lean,0,0),1.0)
-	scene.visual.pose("spine_02",Vector3(.18*lean,0,0),1.0)
-	scene.visual.pose("head",Vector3(.18*lean,0,0),1.0)
+	var low_wick := smoothstep(3.0,5.0,t)*(1.0-smoothstep(5.9,6.6,t))
+	scene.actor.global_position = scene.home.to_global(Vector3(-2.6,1.14-.065*bend-.22*low_wick,1.27))
+	scene.visual.pose("spine_01",Vector3(.30*lean,0,0),1.0)
+	scene.visual.pose("spine_02",Vector3(.25*lean,0,0),1.0)
+	scene.visual.pose("head",Vector3(.10+.08*lean,.10,0),1.0)
 	# The open diya remains stationary; the free hand stays in its idle pose.
 	carry_gap = 0.0
 	var wick: Vector3 = scene.lamp.get_node("WickContact").global_position
-	var strike: Vector3 = scene.home.get_node("StrikeContact").global_position
-	var tip := strike
-	if t < 2.5:
-		tip += scene.home.global_basis*Vector3(.055*(smoothstep(2.1,2.5,t)-.5),0,0)
-	elif t < 5.0:
-		tip = strike.lerp(wick,smoothstep(2.5,5.0,t))
+	var held: Vector3 = scene.home.to_global(Vector3(-2.51,1.64,.94))
+	var tip: Vector3 = held
+	if t < 5.0:
+		tip = held.lerp(wick,smoothstep(3.0,5.0,t))
 	elif t < 5.9:
 		tip = wick
 	else:
@@ -63,7 +61,8 @@ func update(scene, t: float) -> void:
 	# Keep the spent match visible: lower it onto the table before releasing.
 	var put_down := smoothstep(6.7,8.1,t)
 	tip = tip.lerp(scene.home.to_global(Vector3(-2.43,.958,.93)),put_down)
-	var axis: Vector3 = (scene.home.global_basis*Vector3(0,-.5,-.866)).normalized()
+	# Burning head sits above the thumb/index pinch, never pointing down.
+	var axis: Vector3 = (scene.home.global_basis*Vector3(0,.94,-.342)).normalized()
 	axis = axis.lerp((scene.home.global_basis*Vector3.RIGHT).normalized(),put_down).normalized()
 	# Choose a perpendicular axis even when the stick lies along the table.
 	var across: Vector3 = (scene.home.global_basis*Vector3.UP).cross(axis).normalized()
@@ -112,7 +111,7 @@ func _hand(scene, side: String, target: Vector3, amount: float, curl: float) -> 
 	# solve: its parent rotates, so retaining a local wrist angle loses contact.
 	var palm_world: Basis = scene.home.global_basis*Basis(Vector3.LEFT,Vector3.FORWARD,Vector3.DOWN)
 	if side == "r":
-		var forward := Vector3(0,-.35,-.93675).normalized()
+		var forward := Vector3(0,.08,-.9968).normalized()
 		palm_world = scene.home.global_basis*Basis(Vector3.RIGHT,forward,Vector3.RIGHT.cross(forward))
 	var desired: Basis = rig.global_basis.inverse()*palm_world*(equipment.palm_axes[side] as Basis).inverse()
 	for iteration in 4:

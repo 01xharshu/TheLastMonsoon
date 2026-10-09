@@ -3,10 +3,13 @@ extends Node3D
 
 const ACTOR = preload("res://characters/npcs/british/british_npc_actor.gd")
 const PRIVATE_SKIRT_ACTOR = preload("res://characters/npcs/british/candidates/private_skirt_actor.gd")
+const Startup = preload("res://systems/world_startup.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const MODEL_DIR := "res://characters/npcs/british/"
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Roster")
+	await Startup.checkpoint(self, "Preparing Suryagarh’s travellers…", true)
 	var compound_y: float = Layout.PLOTS["CompanyCompound"].grade + 0.08
 	var residence_y: float = Layout.PLOTS["GovernmentHouse"].grade + 0.04
 	# GovernmentHouse.GardenWalk: centre +0.085, half-height 0.045.
@@ -29,11 +32,13 @@ func _ready() -> void:
 		Vector3(-338, garden_walk_y, -95), Vector3(-390, residence_y, -95),
 	]
 	for i in range(placements.size()):
+		await Startup.checkpoint(self, "Preparing Suryagarh’s travellers…")
 		var record: Dictionary = placements[i]
 		var rank: String = record["rank"]
 		var origin: Vector3 = record["position"]
 		_spawn(rank, "man", origin, float(i) * 1.1, 0.9 if rank != "official" else 0.5)
 		_spawn(rank, "woman", female_positions[i], 4.0 + float(i) * 1.1, 0.9)
+	Startup.finish(startup_task)
 
 func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance: float) -> void:
 	var path := MODEL_DIR + rank + "_" + kind + ".glb"

@@ -1,4 +1,5 @@
 extends Node3D
+const Startup = preload("res://systems/world_startup.gd")
 ## Fictional compact Hooghly anchorage; original explorable merchant ship at berth.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const SHIP = preload("res://assets/vehicles/ships/hooghly_merchant/hooghly_merchant_1850s.glb")
@@ -17,6 +18,8 @@ var iron: StandardMaterial3D
 var rope_material: StandardMaterial3D
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Port")
+	await Startup.checkpoint(self, "Preparing the countryside…", true)
 	add_to_group("hooghly_port")
 	wood = aged_surface(Color(0.43,0.34,0.23),0.0)
 	stone = aged_surface(Color(0.40,0.37,0.30),4.0)
@@ -25,14 +28,18 @@ func _ready() -> void:
 	iron = material(Color(0.09,0.10,0.09))
 	rope_material = material(Color(0.25,0.22,0.15))
 	build_quay()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	build_ship()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	build_boundary()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	# Water is a continuous surface outside the hull, including beyond the limit.
 	var river: MeshInstance3D = get_parent().get_node("Landscape/RiverSurface")
 	var water: ShaderMaterial = river.mesh.surface_get_material(0)
 	water.set_shader_parameter("exclude_moored_ship",true)
 	water.set_shader_parameter("moored_ship_center",Vector2(SHIP_AT.x,SHIP_AT.z))
 	print("HOOGHLY PORT READY | 51m ship | deck/cabin/hold | sea limit z=",Layout.SEA_LIMIT_Z)
+	Startup.finish(startup_task)
 
 func material(color: Color) -> StandardMaterial3D:
 	var value := StandardMaterial3D.new()

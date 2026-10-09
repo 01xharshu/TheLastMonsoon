@@ -48,14 +48,18 @@ func run() -> void:
   var label:String=person.get_meta("population_route")
   if distance>1:
    moved+=1;moving_routes[label]=int(moving_routes.get(label,0))+1
-  else:blocked[str(person.name)]={"distance":distance,"obstacle":person.get_node("CityStreetJourney").last_obstacle}
+  else:
+   var journey:Node=person.get_node("CityStreetJourney")
+   blocked[str(person.name)]={"distance":distance,"walked":journey.distance_walked,"obstacle":journey.last_obstacle,"blocked_frames":journey.blocked_frames,"action":person.get_meta("street_action",""),"position":str(person.global_position),"goal":journey.goal,"target":str(journey.route[journey.goal]),"wait":journey.wait,"clock_hour":journey.clock.current_hour if journey.clock!=null else -1}
   if not person.global_position.is_finite():errors.append(str(person.name)+": invalid position")
  for label:String in population.ROUTE_COUNTS:
   if int(moving_routes.get(label,0))<2:errors.append(label+": fewer than two walkers made progress")
  var moved_carts:=0;var stopped_carts:Array[String]=[]
  for cart:Node3D in population.carts:
   if cart.global_position.distance_to(cart_origins[cart])>2:moved_carts+=1
-  else:stopped_carts.append(str(cart.name))
+  else:
+   var journey:Node=cart.get_node("CityRoadJourney")
+   stopped_carts.append(str(cart.name)+" | at="+str(cart.global_position)+" goal="+str(journey.route[journey.direction])+" blocked="+str(journey.blocked_seconds)+" wait="+str(journey.wait)+" can_move="+str(cart.can_move()))
  var moved_police:=0
  for officer:Node3D in population.patrols:
   if officer.global_position.distance_to(police_origins[officer])>1:moved_police+=1

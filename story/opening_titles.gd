@@ -6,8 +6,8 @@ const CARDS := [
 	["They had lost their parents as children.\nSince then, they had only each other.", 7.0],
 	["Dev served as a sepoy,\nbut his heart belonged to his country.\nArjun remained at home.", 8.0],
 	["Three months had passed\nwithout a letter or any news from Dev.", 7.0],
-	["Something had happened.\nArjun did not know what.\nEach night, he waited for his brother to return.", 8.0],
-	["Hiarshu Creative Studio presents", 5.5],
+	["Something had happened. Arjun did not know what.\nEach night, he waited for his brother to return.\nStill, there was no news from Dev.", 8.0],
+	["HeyaHarshu Creative Studio Presents", 5.5],
 	["", 7.0]]
 const DURATION := 56.0
 const CHALK := preload("res://assets/ui/fonts/FrederickatheGreat-Regular.ttf")

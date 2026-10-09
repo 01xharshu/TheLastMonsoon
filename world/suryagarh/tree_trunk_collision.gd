@@ -1,5 +1,18 @@
 extends RefCounted
 ## Lower woody trunk profiles, shared by saved and runtime instanced broadleaf trees.
+const Startup = preload("res://systems/world_startup.gd")
+const TERRAIN_SUPPORT_LAYER := 1 << 30
+
+static func configure_terrain_support(node: Node) -> void:
+	# This is exactly the old allowed set: GroundCollision bodies only.
+	# Keep layer 1 intact for gameplay; a spare layer avoids thousands of excludes.
+	var world := node
+	while world.get_parent() != null and world.get_parent() != node.get_tree().root:
+		world = world.get_parent()
+	if world.has_meta("terrain_support_configured"): return
+	for body in world.find_children("*", "CollisionObject3D", true, false):
+		if body.name == "GroundCollision": body.collision_layer |= TERRAIN_SUPPORT_LAYER
+	world.set_meta("terrain_support_configured", true)
 
 static func copy_instances(source: MultiMesh) -> MultiMesh:
 	# Allocate the destination layout before assigning packed instance data.
@@ -30,6 +43,22 @@ static func copy_instances(source: MultiMesh) -> MultiMesh:
 			if source.use_custom_data: copy.set_instance_custom_data(index,source.get_instance_custom_data(index))
 	for key in source.get_meta_list(): copy.set_meta(key,source.get_meta(key))
 	return copy
+
+static func instance_transforms(source: MultiMesh) -> Array[Transform3D]:
+	var result: Array[Transform3D] = []
+	var stride := 12 + (4 if source.use_colors else 0) + (4 if source.use_custom_data else 0)
+	var buffer := source.buffer
+	if source.transform_format != MultiMesh.TRANSFORM_3D or buffer.size() != source.instance_count * stride:
+		for index in source.instance_count: result.append(source.get_instance_transform(index))
+		return result
+	for index in source.instance_count:
+		var offset := index*stride
+		result.append(Transform3D(Basis(
+			Vector3(buffer[offset],buffer[offset+4],buffer[offset+8]),
+			Vector3(buffer[offset+1],buffer[offset+5],buffer[offset+9]),
+			Vector3(buffer[offset+2],buffer[offset+6],buffer[offset+10])),
+			Vector3(buffer[offset+3],buffer[offset+7],buffer[offset+11])))
+	return result
 
 static func profile(mesh: Mesh) -> Array[Dictionary]:
 	var bounds := mesh.get_aabb()
@@ -89,13 +118,12 @@ static func repair_landscape(landscape: Node3D) -> int:
 	var repaired := 0
 	var adjusted_roots := 0
 	var profiles: Dictionary = {}
-	var exclusions: Array[RID] = []
-	for collider in landscape.get_tree().root.find_children("*","CollisionObject3D",true,false):
-		if collider.name != "GroundCollision": exclusions.append(collider.get_rid())
+	configure_terrain_support(landscape)
 	var terrain_ray := PhysicsRayQueryParameters3D.new()
-	terrain_ray.collision_mask = 1
+	terrain_ray.collision_mask = TERRAIN_SUPPORT_LAYER
 	var space := landscape.get_world_3d().direct_space_state
 	for candidate in nature.find_children("*","MultiMeshInstance3D",true,false):
+		await Startup.checkpoint(landscape, "Preparing the landscape’s tree roots…")
 		var batch := candidate as MultiMeshInstance3D
 		if not ("BroadleafTrees" in str(batch.name)): continue
 		var parent := batch.get_parent() as Node3D
@@ -105,12 +133,13 @@ static func repair_landscape(landscape: Node3D) -> int:
 		if not profiles.has(mesh_id): profiles[mesh_id] = profile(batch.multimesh.mesh)
 		var segments: Array[Dictionary] = profiles[mesh_id]
 		if segments.is_empty(): continue
+		var instances := instance_transforms(batch.multimesh)
 		var copy: MultiMesh = copy_instances(batch.multimesh)
-		terrain_ray.exclude = exclusions
 		var transforms: Array[Transform3D] = []
 		var original_roots: Dictionary = {}
 		for index in batch.multimesh.instance_count:
-			var tree := batch.transform*batch.multimesh.get_instance_transform(index)
+			if index % 16 == 0: await Startup.checkpoint(landscape, "Preparing the landscape’s tree roots…")
+			var tree := batch.transform*instances[index]
 			if is_zero_approx(tree.basis.determinant()): continue
 			# Root support belongs beneath the woody base, not the canopy origin.
 			var base: Vector3 = segments[0].centre
@@ -137,23 +166,23 @@ static func repair_landscape(landscape: Node3D) -> int:
 					child.queue_free()
 					break
 		batch.multimesh = copy
-		var solid := add_batch(parent,transforms,segments,label)
-		exclusions.append(solid.get_rid())
+		add_batch(parent,transforms,segments,label)
 		repaired += transforms.size()
 	if repaired > 0: landscape.set_meta("tree_root_adjustments",adjusted_roots)
 	return repaired
 
 static func ground_batch(batch: MultiMeshInstance3D, segments: Array[Dictionary], embed: float = .12) -> Array[Transform3D]:
-	var exclusions: Array[RID] = []
-	for collider in batch.get_tree().root.find_children("*","CollisionObject3D",true,false):
-		if collider.name != "GroundCollision": exclusions.append(collider.get_rid())
+	await Startup.wait_for(batch, "Terrain collision")
+	configure_terrain_support(batch)
 	var ray := PhysicsRayQueryParameters3D.new()
-	ray.exclude = exclusions
+	ray.collision_mask = TERRAIN_SUPPORT_LAYER
 	var space := batch.get_world_3d().direct_space_state
+	var instances := instance_transforms(batch.multimesh)
 	var copy: MultiMesh = copy_instances(batch.multimesh)
 	var transforms: Array[Transform3D] = []
 	for index in copy.instance_count:
-		var tree := batch.transform*copy.get_instance_transform(index)
+		if index % 16 == 0: await Startup.checkpoint(batch, "Preparing the grove’s tree roots…")
+		var tree := batch.transform*instances[index]
 		if is_zero_approx(tree.basis.determinant()): continue
 		var base: Vector3 = segments[0].centre
 		base.y -= float(segments[0].height)*.5

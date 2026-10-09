@@ -29,6 +29,7 @@ func _ready() -> void:
 	actor.call_deferred("add_child",grapple)
 
 func available() -> bool:
+	if actor.get_meta("tutorial_reading",false): return false
 	if actor.get_meta("paired_combat",false): return false
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false

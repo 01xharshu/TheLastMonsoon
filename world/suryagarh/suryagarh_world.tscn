@@ -26,6 +26,7 @@
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="forest_generator"]
 [ext_resource type="Script" path="res://environment/forest/adapters/suryagarh_terrain_adapter.gd" id="forest_adapter"]
 [ext_resource type="Resource" path="res://environment/forest/config/suryagarh_patch.tres" id="forest_config"]
+[ext_resource type="Script" path="res://systems/world_startup.gd" id="forest_startup"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 sky_top_color = Color(0.24, 0.36, 0.43, 1)
@@ -76,6 +77,7 @@ script = ExtResource("forest_shrine")
 position = Vector3(370, 0, -105)
 script = ExtResource("forest_generator")
 config = ExtResource("forest_config")
+startup_provider = ExtResource("forest_startup")
 terrain_source = NodePath("TerrainAdapter")
 path_points = PackedVector2Array(-27, 0, -10, 2, 7, 3, 27, 5)
 

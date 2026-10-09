@@ -19,8 +19,14 @@ func run() -> void:
  check(story.configured and inquiry.stage=="dormant","story waits for main opening")
  var event:=InputEventKey.new();event.keycode=KEY_SPACE;event.pressed=true;opening._input(event)
  await create_timer(.9).timeout;check(inquiry.stage=="dormant","morning seat precedes story")
- event.keycode=KEY_W;opening._input(event);await create_timer(1.7).timeout
- check(opening.state=="done" and inquiry.stage=="police","morning release starts police objective")
+ # The opening now owns the complete dawn rise and walk out of the house.
+ opening._process(25.0);await process_frame
+ check(opening.state=="done","morning releases control")
+ var tutorial: Node=player.get_node_or_null("UI/HUDRoot/MorningTutorial")
+ if tutorial!=null:
+  # Onboarding owns the new-game interval before the police objective.
+  while tutorial.step<11:tutorial.advance()
+ check(inquiry.stage=="police","completed morning onboarding starts police objective")
  # Relocate once from home, then approach the gate using the real controller.
  player.global_position=inquiry.station.to_global(Vector3(0,.9,24));player.velocity=Vector3.ZERO
  player.get_node("CameraPivot").global_rotation.y=0

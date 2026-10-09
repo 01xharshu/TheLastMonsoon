@@ -226,7 +226,7 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "" or get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
+	if get_meta("tutorial_reading",false) or inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "" or get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
 		return
 
 
@@ -318,6 +318,10 @@ func _unhandled_input(
 func _physics_process(
 	delta: float
 ) -> void:
+	if get_meta("tutorial_reading",false):
+		velocity = Vector3.ZERO
+		survival.set_sprinting(false)
+		return
 	if get_meta("door_latch_active",false):
 		survival.set_sprinting(false)
 		return

@@ -6,10 +6,11 @@ import urllib.request, shutil
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'environment/forest/assets/textures'
 OUT.mkdir(parents=True, exist_ok=True)
-for asset in ['bark_brown_02','forest_ground_04']:
+for asset in ['bark_brown_02','forest_ground_04','forest_leaves_02']:
     for channel in ['diff','nor_gl','rough']:
         name = f'{asset}_{channel}_2k.jpg'
-        url = f'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/{asset}/{name}'
+        remote_channel = 'diffuse' if asset=='forest_leaves_02' and channel=='diff' else channel
+        url = f'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/{asset}/{asset}_{remote_channel}_2k.jpg'
         destination = OUT / name
         if not destination.exists():
             request = urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})

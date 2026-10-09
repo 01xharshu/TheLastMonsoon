@@ -1,5 +1,6 @@
 extends "res://characters/npcs/households/household_npc_actor.gd"
 ## Reuses the existing Blender MPFB farmer; no primitive human geometry.
+const Startup = preload("res://systems/world_startup.gd")
 var coach: Node3D
 var driver_lean := .18
 var driver_turn := 0.0
@@ -17,6 +18,15 @@ func _ready() -> void:
  body_collider.get_node("BodyShape").set_deferred("disabled",true)
  process_priority = 110
  seated_cloth.configure(self,coach)
+ seated_cloth.use_startup_cache = not coach.get_meta("rebuild_startup_cloth",false)
+ if Startup.current != null:
+  var task := Startup.begin("Seated driver")
+  _prepare_startup_clothing.call_deferred(task)
+func _prepare_startup_clothing(task: int) -> void:
+ var started := Time.get_ticks_usec()
+ await _process(0.0)
+ set_meta("startup_cloth_usec",Time.get_ticks_usec()-started)
+ Startup.finish(task)
 func _process(delta: float) -> void:
  if not visible or coach == null or _skeleton == null or foot_plant.legs.is_empty(): return
  super._process(delta)
@@ -26,7 +36,7 @@ func _process(delta: float) -> void:
  driver_lean = lerpf(driver_lean,.18+load+sin(driving_phase*1.8)*.004,blend)
  driver_turn = lerpf(driver_turn,clampf(coach.boarding.rider_turn,-1.0,1.0)*.055,blend)
  _seat(self,"CoachmanSeat",delta)
- seated_cloth.update()
+ await seated_cloth.update()
 func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
  if actor.get_meta("dead",false): return
  actor.set_meta("seated_coach",coach)

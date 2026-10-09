@@ -10,6 +10,7 @@ var arrows_fired := 0
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
 
 func available() -> bool:
+	if actor.get_meta("tutorial_reading",false): return false
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	var equipment: Node3D = visual.equipment

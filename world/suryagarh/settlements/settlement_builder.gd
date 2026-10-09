@@ -1,5 +1,6 @@
 extends Node3D
 ## Original modular architecture for fictional 1857 Suryagarh. Shared materials and merged visible geometry.
+const Startup = preload("res://systems/world_startup.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Gate = preload("res://world/suryagarh/settlements/compound_gate.gd")
 const Pickup = preload("res://world/suryagarh/settlements/weapon_pickup.gd")
@@ -21,6 +22,7 @@ func material(color: Color, masonry := false) -> Material:
 	return m
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Settlement")
 	plaster = material(Color(.76,.70,.56))
 	ochre = material(Color(.55,.40,.24))
 	brick = material(Color(.44,.24,.16),true)
@@ -28,25 +30,41 @@ func _ready() -> void:
 	tile = material(Color(.43,.19,.105),true)
 	stone = material(Color(.42,.40,.33),true)
 	iron = material(Color(.13,.14,.13))
-	preload("res://world/suryagarh/settlements/bhairavpur_village.gd").new().build(self)
+	await preload("res://world/suryagarh/settlements/bhairavpur_village.gd").new().build(self)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	add_child(preload("res://world/suryagarh/settlements/village_street_life.gd").new())
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	add_civic("TownHall",Layout.PLOTS["TownHall"].center,false)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	add_civic("DistrictPolice",Layout.PLOTS["DistrictPolice"].center,true)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	var compound_center: Vector2 = Layout.PLOTS["CompanyCompound"].center
 	make_building("DistrictJail",compound_center+Vector2(2,13),Vector2(21,18),true,true,true)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	make_building("CompanyArmoury",compound_center+Vector2(31,8),Vector2(17,13),true,true)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	compound()
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	place_new_props()
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	place_period_props()
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	var notice_board := preload("res://interaction/market_notice_board.gd").new()
 	notice_board.position = Vector3(-347,layout.height(-347,271),271)
 	add_child(notice_board)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	landing()
-	preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
-	preload("res://world/suryagarh/settlements/administrative_district.gd").new().build(self)
-	preload("res://world/suryagarh/settlements/civil_lines.gd").new().build(self)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
+	await preload("res://world/suryagarh/settlements/cantonment.gd").new().build(self)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
+	await preload("res://world/suryagarh/settlements/administrative_district.gd").new().build(self)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
+	await preload("res://world/suryagarh/settlements/civil_lines.gd").new().build(self)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
 	var residence: Node3D = load("res://world/suryagarh/settlements/government_house.gd").new()
 	add_child(residence)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s neighbourhoods…")
+	Startup.finish(startup_task)
 
 func place_new_props() -> void:
 	# One artillery display in the open west court, clear of the jail and stores.

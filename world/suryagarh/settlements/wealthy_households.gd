@@ -5,8 +5,10 @@ const Coach = preload("res://vehicles/family_carriage_candidate.gd")
 const Travel = preload("res://world/suryagarh/settlements/household_coach_travel.gd")
 var homes: Dictionary = {}
 var roles:Node
+var startup_task := -1
 
 func _ready() -> void:
+	startup_task = Startup.begin("Households")
 	plaster=material(Color(.83,.77,.64)); wood=material(Color(.25,.14,.08))
 	stone=material(Color(.52,.47,.38)); tile=material(Color(.47,.24,.14))
 	iron=material(Color(.15,.15,.14)); ochre=material(Color(.61,.42,.24))
@@ -25,6 +27,8 @@ func _anchor(label: String, at: Vector3, kind: String) -> Node3D:
 	return home
 
 func _build_households() -> void:
+	await Startup.wait_for(self, "Settlement")
+	await Startup.wait_for(self, "Roster")
 	# Preserve twelve village crop beds while clearing the new house/drive footprint.
 	var moved:=0
 	for garden in get_tree().get_nodes_in_group("bhairavpur_garden"):
@@ -36,26 +40,39 @@ func _build_households() -> void:
 	_furniture(landlord,Vector3(-13,.24,4),false)
 	_furniture(landlord,Vector3(13,.24,6),true)
 	_service(landlord,Vector3(28,0,-21))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_shelter(landlord,Vector3(39,0,-21),"CoachHouse",Vector2(9,7))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	var merchant:=_anchor("MerchantHousehold",Vector3(-413,7.2,282),"wealthy_indian")
 	_house(merchant,false)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_service(merchant,Vector3(-11,0,-16))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_shelter(merchant,Vector3(-9,0,24),"CoachHouse",Vector2(9,7))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	piece(merchant,"DriveCourt",Vector3(3,.025,20),Vector3(27,.05,10),stone,false)
 	piece(merchant,"LaneConnection",Vector3(23,.025,30),Vector3(33,.05,6),stone,false)
 	var british:=_anchor("BritishHousehold",Vector3(-455,8.5,-184),"british")
 	_house(british,true)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_service(british,Vector3(130,0,4))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_shelter(british,Vector3(-20,0,-10),"CoachHouse",Vector2(9,6))
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	piece(british,"CarriageSideAvenue",Vector3(-20,.03,36),Vector3(8,.06,58),stone,false)
 	piece(british,"VerandaCoachWalk",Vector3(-10,.03,10),Vector3(24,.06,3),stone,false)
 	for home in homes.values():
 		var kitchen:Vector3=home.get_meta("kitchen_position")
 		_staff(home,"Cook",kitchen+Vector3(1,.12,-1.9),"village_woman",Vector3.BACK)
+		await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 		_staff(home,"WaterBearer",kitchen+Vector3(4.8,0,2),"village_farmer",Vector3.FORWARD)
+		await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 		merge_visuals(home)
+		await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	var landowner:=_person(landlord,"Landowner",Vector3(-12,.24,1),"res://characters/npcs/households/landowner.glb")
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	var trader:=_person(merchant,"Merchant",Vector3(3,.24,1),"res://characters/npcs/households/merchant.glb")
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	var roster:=get_parent().get_node("BritishNpcRosterCandidate")
 	var couple:Array[Node3D]=[]
 	for label in ["OfficialMan","OfficialWoman"]:
@@ -67,9 +84,13 @@ func _build_households() -> void:
 	roles.bind(couple[0],"official",str(british.name));roles.bind(couple[1],"host",str(british.name))
 	# Centre the parked coach in the court so its return/departure turn clears both arcades.
 	_coach(landlord,[landowner],[Vector3(-321,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-410,7.24,330),Vector3(-379,7.24,330)])
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
+	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 3 household coaches")
+	Startup.finish(startup_task)
 
 func _house(home:Node3D,british:bool) -> void:
 	var wall:Material=plaster if british else material(Color(.72,.57,.39))

@@ -106,6 +106,27 @@ func run() -> void:
   var animator: AnimationPlayer=animators[0]
   var expected: float=clampf(wind.sample(animator.get_parent().global_position).length()/2.5,.15,1.8)
   check(animator.is_playing() and is_equal_approx(animator.speed_scale,expected),'flutter clip speed follows local gust')
+ var saves: Node=root.get_node('SaveManager')
+ var ambient_bus:=AudioServer.get_bus_index('Ambient')
+ check(ambient_bus>=0,'actual world has independent ambient bus')
+ check(env.river_voice.bus=='Ambient' and env.shore_voice.bus=='Ambient' and wind.ambience.bus=='Ambient','world water/wind use ambient volume')
+ var saved_ambient: float=float(saves.options.ambient)
+ saves.options.ambient=0.0;saves.apply_options(world)
+ check(AudioServer.is_bus_mute(ambient_bus),'ambient zero mutes live world sound')
+ saves.options.ambient=saved_ambient;saves.apply_options(world)
+ check(AudioServer.is_bus_mute(ambient_bus)==(saved_ambient<=.001),'restored ambient value restores bus state')
+ for key in ['river','fire']:
+  check(env.clips[key].loop_mode==AudioStreamWAV.LOOP_FORWARD,'world '+key+' has smoothed continuous loop')
+ var wind_stream: AudioStreamWAV=wind.ambience.stream
+ check(wind_stream.format==AudioStreamWAV.FORMAT_16_BITS and wind_stream.loop_mode==AudioStreamWAV.LOOP_FORWARD,'world wind uses PCM crossfade')
+ var seam: float=absf(wind_stream.data.decode_s16(0)-wind_stream.data.decode_s16(wind_stream.data.size()-2))/32768.0
+ var step_energy:=0.0
+ var sample_count:=mini(4096,wind_stream.data.size()/2-1)
+ for i in sample_count:
+  var step: float=(wind_stream.data.decode_s16(i*2+2)-wind_stream.data.decode_s16(i*2))/32768.0
+  step_energy+=step*step
+ var normal_step:=sqrt(step_energy/maxf(1,sample_count))
+ check(seam<maxf(.005,normal_step*4),'wind seam stays within normal texture transitions')
  evidence['renderer']=str(RenderingServer.get_rendering_device().get_device_name()) if RenderingServer.get_rendering_device()!=null else 'headless'
  evidence['passed']=failures.is_empty();evidence['listening_approved']=false
  # Disposable results are printed only; no checkout reports are retained.

@@ -1,4 +1,9 @@
 extends RefCounted
+const CACHE_PATH := "res://vehicles/generated/coachman_startup_cloth.res"
+const CACHE_REVISION := 2
+var use_startup_cache := true
+var startup_signature := ""
+const Startup = preload("res://systems/world_startup.gd")
 ## Reforms only the existing exported garments; the MakeHuman body stays skinned.
 var actor: Node3D
 var coach: Node3D
@@ -28,6 +33,9 @@ func update() -> void:
   knee += coach.to_local(skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("calf_"+side)).origin))*.5
  if knee.distance_to(last_knee) < .0005: return
  last_knee = knee
+ if Startup.current != null and use_startup_cache:
+  startup_signature = source_signature()
+  if _restore_startup_cache(): return
  skin_fit.build_body(actor,coach)
  skin_corrections = 0
  fit_cache.clear()
@@ -49,13 +57,14 @@ func update() -> void:
    var tool := SurfaceTool.new()
    tool.begin(Mesh.PRIMITIVE_TRIANGLES)
    for triangle in range(0,indices.size(),3):
+    if triangle % 24 == 0: await Startup.checkpoint(actor, "Preparing the carriages…")
     var ids := [indices[triangle],indices[triangle+1],indices[triangle+2]]
     _split_triangle(tool,node,[source[ids[0]],source[ids[1]],source[ids[2]]],[uv[ids[0]],uv[ids[1]],uv[ids[2]]],2,hip,knee)
    tool.index()
    tool.generate_normals()
    tool.set_material(surface.material)
    tool.commit(result)
-  node.mesh = _relax(result,node)
+  node.mesh = await _relax(result,node)
  updates += 1
 
 func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Array,level: int,hip: Vector3,knee: Vector3) -> void:
@@ -116,6 +125,7 @@ func _relax(mesh: ArrayMesh,node: MeshInstance3D) -> ArrayMesh:
   for iteration in 2:
    var next := positions.duplicate()
    for index in positions.size():
+    if index % 32 == 0: await Startup.checkpoint(actor, "Preparing the carriages…")
     if neighbors[index].is_empty(): continue
     var average := Vector3.ZERO
     for other in neighbors[index]: average += positions[other]
@@ -177,3 +187,39 @@ func _refine_contact(mesh: ArrayMesh,node: MeshInstance3D) -> ArrayMesh:
   tool.set_material(mesh.surface_get_material(surface))
   tool.commit(refined)
  return refined
+
+func source_signature() -> String:
+ # Validate complete body/garment inputs and the actual seated bone pose.
+ var digest := HashingContext.new()
+ digest.start(HashingContext.HASH_SHA256)
+ for piece in pieces:
+  digest.update(var_to_bytes(piece.node.transform))
+  for surface in piece.surfaces: digest.update(var_to_bytes(surface.arrays))
+ for node in actor.find_children("*","MeshInstance3D",true,false):
+  if node.skin == null: continue
+  for surface in node.mesh.get_surface_count():
+   var arrays: Array = node.mesh.surface_get_arrays(surface)
+   if arrays[Mesh.ARRAY_VERTEX].size() >= 14000: digest.update(var_to_bytes(arrays))
+ var rig: Skeleton3D = actor._skeleton
+ var pose := PackedFloat32Array()
+ var relative: Transform3D = coach.global_transform.affine_inverse()*rig.global_transform
+ for index in rig.get_bone_count():
+  var transform: Transform3D = relative*rig.get_bone_global_pose(index)
+  for axis in [transform.basis.x,transform.basis.y,transform.basis.z,transform.origin]:
+   for component in [axis.x,axis.y,axis.z]: pose.append(snappedf(component,.001))
+ digest.update(var_to_bytes(pose))
+ return digest.finish().hex_encode()
+
+func _restore_startup_cache() -> bool:
+ if not ResourceLoader.exists(CACHE_PATH): return false
+ var cached := load(CACHE_PATH)
+ if cached.get_meta("revision",0) != CACHE_REVISION or cached.get_meta("signature","") != startup_signature: return false
+ var meshes: Dictionary = cached.get_meta("meshes",{})
+ for piece in pieces:
+  if not meshes.has(str(piece.node.name)): return false
+ for piece in pieces:
+  piece.node.mesh = meshes[str(piece.node.name)]
+  for surface in piece.surfaces.size(): piece.node.set_surface_override_material(surface,piece.surfaces[surface].material)
+ actor.set_meta("startup_cloth_cache",true)
+ updates += 1
+ return true

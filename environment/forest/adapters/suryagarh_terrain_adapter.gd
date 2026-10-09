@@ -73,6 +73,7 @@ func _exit_tree() -> void:
 	_restore_grass()
 
 func prepare_forest_area() -> void:
+	var provider: Script = get_parent().startup_provider
 	_surface_cache.clear()
 	_restore_grass()
 	if not replace_baked_grass_in_patch:
@@ -90,6 +91,7 @@ func prepare_forest_area() -> void:
 	for tile in containers:
 		if absf(tile.global_position.x - center.x) > 190.0 or absf(tile.global_position.z - center.z) > 190.0: continue
 		for batch in tile.get_children():
+			if provider != null: await provider.checkpoint(self, "Preparing the countryside’s grass…")
 			if not batch is MultiMeshInstance3D or not batch.name.begins_with("Grass"): continue
 			if not _original_grass_batches.has(batch): _original_grass_batches[batch] = batch.multimesh
 			var original: MultiMesh = _original_grass_batches[batch]
@@ -101,6 +103,7 @@ func prepare_forest_area() -> void:
 			if original.use_custom_data: stride += 4
 			if source.size() != original.instance_count * stride: continue
 			for i in original.instance_count:
+				if i % 256 == 0 and provider != null: await provider.checkpoint(self, "Preparing the countryside’s grass…")
 				var offset := i * stride
 				var local := Vector3(source[offset + 3], source[offset + 7], source[offset + 11])
 				var world_point: Vector3 = batch.global_transform * local

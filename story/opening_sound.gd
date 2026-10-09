@@ -7,7 +7,7 @@ var played: Dictionary = {}
 var previous := 0.0
 var last_steps: Dictionary = {}
 var step_count := 0
-var cues := [[2.12,"match_strike"],[5.5,"wick_catch"],[6.12,"match_exhale"],
+var cues := [[.12,"match_strike"],[5.5,"wick_catch"],[6.12,"match_exhale"],
 	[.7,"cloth_rustle"],[6.0,"cloth_rustle"],[24.3,"cloth_rustle"],[26.0,"cloth_rustle"],
 	[24.5,"cot_creak"],[26.3,"cot_creak"]]
 

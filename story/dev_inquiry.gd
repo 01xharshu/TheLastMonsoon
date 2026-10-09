@@ -73,7 +73,7 @@ func configure() -> void:
 	subtitle.offset_left=90;subtitle.offset_right=-90;subtitle.offset_top=-135;subtitle.offset_bottom=-45
 	subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;subtitle.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	subtitle.add_theme_font_size_override("font_size",23);subtitle.add_theme_constant_override("outline_size",6);subtitle.hide()
-	objective=Label.new();layer.add_child(objective);objective.position=Vector2(32,105)
+	objective=Label.new();layer.add_child(objective);objective.position=Vector2(24,32)
 	objective.add_theme_font_size_override("font_size",21);objective.add_theme_constant_override("outline_size",5)
 	objective_marker=Label.new();layer.add_child(objective_marker);objective_marker.add_theme_font_size_override("font_size",20);objective_marker.add_theme_constant_override("outline_size",5)
 	configured=true;refresh_objective()
@@ -126,13 +126,13 @@ func _process(delta: float) -> void:
 	if stage=="released" and not return_started:
 		return_started=true
 		second_return_path=coordinator.path(guards[3].global_position,station.to_global(guards[3].get_meta("inquiry_post")),.29)
-	var hidden: bool=player.get_meta("opening_active",false) or player.get_meta("map_open",false) or player.inventory_ui.is_open()
+	var hidden: bool=player.get_meta("morning_tutorial_active",false) or player.get_meta("opening_active",false) or player.get_meta("map_open",false) or player.inventory_ui.is_open()
 	objective.visible=not hidden and stage not in ["dormant","summoning","punishment"] and dialogue.is_empty()
 	objective_marker.visible=objective.visible and stage in ["police","superior"]
 	var director: Node=world.get_node_or_null("DevStory")
 	if director!=null and (director.active or director.state in ["farm","complete"]):
 		objective.hide()
-		objective_marker.visible=not director.active and not player.get_meta("map_open",false)
+		objective_marker.visible=not hidden and not director.active
 	if objective_marker.visible:
 		var camera: Camera3D=player.get_node("CameraPivot/SpringArm3D/Camera3D")
 		var target:=destination.global_position+Vector3.UP*1.3

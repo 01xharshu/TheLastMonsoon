@@ -1,4 +1,5 @@
 extends Node
+const Startup = preload("res://systems/world_startup.gd")
 ## Additional family weapons; ownership uses the normal saved inventory.
 var actor: CharacterBody3D
 var gear: Node3D
@@ -9,10 +10,14 @@ var thrust := -1.0
 var rest := Transform3D.IDENTITY
 var landed := false
 func _ready() -> void:
+	var startup_task := Startup.begin("Player family equipment")
+	await Startup.wait_for(self, "Player appearance")
 	process_priority=10
 	actor=get_parent();gear=actor.get_node("VisualRoot/CharacterVisual").equipment
 	spear=gear.attach_at_rest("hand_r",preload("res://environment/weapons/period_spear/period_spear.glb"),Transform3D(Basis(Vector3.RIGHT,PI/2),Vector3(0,-.8,0)),"ChachaSpear")
 	rest=spear.transform;spear.hide()
+	Startup.finish(startup_task)
+
 func equip(id: String) -> void:
 	active=id=="spear"
 	if active:

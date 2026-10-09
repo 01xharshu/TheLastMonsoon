@@ -1,4 +1,5 @@
 extends Node3D
+const Startup = preload("res://systems/world_startup.gd")
 ## Main-world 120 x 100 m ruined hill fort; standalone scene remains available. Z+ is the approach; Z- climbs to the keep.
 const WIDTH := 120.0
 const DEPTH := 100.0
@@ -28,6 +29,8 @@ var rng := RandomNumberGenerator.new()
 var landscape = Landscape.new()
 
 func _ready() -> void:
+	var startup_task := Startup.begin("Fort")
+	await Startup.checkpoint(self, "Preparing the countryside…", true)
 	rng.seed = 1857
 	rock_mesh_shared = Modules.fractured_rock()
 	stone_mesh_shared = Modules.chipped_stone()
@@ -51,18 +54,26 @@ func _ready() -> void:
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	if not embedded_in_world: $Lighting/WorldEnvironment.environment = environment
 	_build_terrain()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_build_architecture()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_build_cover()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_build_props()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_build_vegetation()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_finish_masonry()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	_build_navigation()
+	await Startup.checkpoint(self, "Preparing the countryside…")
 	if not force_navigation_rebake:
 		var encounter := preload("res://world/ruined_fort/fort_encounter.gd").new()
 		encounter.name = "FortEncounter"
 		nodes.Gameplay.add_child(encounter)
 	if not embedded_in_world: $Gameplay/Player.position = Vector3(0, height_at(0, 47) + 1.1, 47)
 	print("RUINED FORT BLOCKOUT READY | 120 x 100 m | three routes | 8 m ascent")
+	Startup.finish(startup_task)
 
 func _masonry(color: Color) -> StandardMaterial3D:
 	return _weathered_stone(color,0.38)

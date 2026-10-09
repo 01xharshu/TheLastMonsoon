@@ -1,5 +1,6 @@
 extends Node3D
 ## Cloth surface response and named carrying points, independent of item art.
+const Startup = preload("res://systems/world_startup.gd")
 const CLOTH_SHADER = preload("res://characters/arjun/cloth_detail.gdshader")
 var rig: Skeleton3D
 var materials: Array[ShaderMaterial] = []
@@ -20,6 +21,7 @@ func setup(model: Node3D, skeleton: Skeleton3D) -> void:
  rig = skeleton
  process_priority = 15
  preload("res://player/arjun_trouser_fit.gd").apply(model)
+ await Startup.checkpoint(self, "Preparing Arjun’s clothing…")
  for node in model.find_children("*", "MeshInstance3D", true, false):
   for index in node.mesh.get_surface_count():
    var original = node.mesh.surface_get_material(index)
@@ -35,6 +37,7 @@ func setup(model: Node3D, skeleton: Skeleton3D) -> void:
    node.set_surface_override_material(index, cloth)
    materials.append(cloth)
  _tailor_hem(model)
+ await Startup.checkpoint(self, "Preparing Arjun’s clothing…")
  thread = StandardMaterial3D.new()
  thread.albedo_color = Color(.25,.16,.085)
  thread.roughness = .96
@@ -63,6 +66,7 @@ func setup(model: Node3D, skeleton: Skeleton3D) -> void:
  waist.add_child(belt)
  belt.transform = rig.get_bone_global_rest(rig.find_bone("pelvis")).affine_inverse()
  belt.mesh = _belt_mesh()
+ await Startup.checkpoint(self, "Preparing Arjun’s clothing…")
  var stitches := MeshInstance3D.new()
  stitches.name = "BeltSaddleStitch"
  waist.add_child(stitches)

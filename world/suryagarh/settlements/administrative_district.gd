@@ -1,4 +1,5 @@
 extends RefCounted
+const Startup = preload("res://systems/world_startup.gd")
 ## Fictional district offices; construction candidate, staffed service and physical door prototype.
 var b: Node3D
 var district: Node3D
@@ -13,28 +14,38 @@ func build(builder: Node3D) -> void:
 	shell_builder.b = b
 	shell_builder.district = district
 	var collector := room("Collectorate",Vector3(0,0,-25),Vector2(30,14),"COLLECTORATE")
+	await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 	for x in [-10.0,0.0,10.0]:
+		await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 		desk(collector,Vector3(x,0.24,-3))
 	for x in [-5.0,5.0]: b.piece(collector,"OfficePartition",Vector3(x,1.5,-3),Vector3(0.18,2.5,7),b.plaster)
 	for x in [-11.0,11.0]: bench(collector,Vector3(x,0.24,4))
 	var treasury := room("DistrictTreasury",Vector3(-43,0,12),Vector2(22,18),"DISTRICT TREASURY")
+	await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 	for x in [-6.0,6.0]: desk(treasury,Vector3(x,0.24,2))
 	for side in [-1,1]:
+		await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 		b.piece(treasury,"StrongroomPartition",Vector3(side*6.25,1.9,-3),Vector3(9.5,3.35,0.35),b.brick)
 		for x in [-7.0,-4.0,4.0,7.0]:
+			await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 			if signf(x) != side: continue
 			var crate: Node3D = load("res://objects/household/storage/crate.tscn").instantiate()
 			treasury.add_child(crate)
 			crate.position = Vector3(x,0.24,-6)
 	var court := room("BritishCourthouse",Vector3(39,0,10),Vector2(32,22),"DISTRICT COURTHOUSE")
+	await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 	b.piece(court,"JudgesDais",Vector3(0,0.33,-7.5),Vector3(12,0.18,4.5),b.wood)
 	desk(court,Vector3(0,0.42,-7.5))
 	for x in [-7.0,7.0]:
+		await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 		for z in [-2.0,2.0,6.0]: bench(court,Vector3(x,0.24,z))
 	desk(court,Vector3(11,0.24,-7))
 	preload("res://world/suryagarh/settlements/administrative_finish.gd").new().build(b,district)
+	await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 	preload("res://world/suryagarh/settlements/administrative_operations.gd").new().build(b,district)
+	await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 	for node in district.get_children():
+		await Startup.checkpoint(b, "Preparing Suryagarh’s offices…")
 		if node is Node3D: b.merge_visuals(node)
 func room(id: String, at: Vector3, size: Vector2, title: String) -> Node3D:
 	var node: Node3D = shell_builder.shell(id,at,size,title)

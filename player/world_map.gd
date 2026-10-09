@@ -16,6 +16,9 @@ var previous_hud_visible := true
 var zoom := 1.0
 var map_center := Vector2.ZERO
 var waypoint := Vector2(INF,INF)
+var follow_story := true
+var story_site := ""
+var story_target := Vector2(INF,INF)
 var dragging := false
 var dragged := false
 var drag_start := Vector2.ZERO
@@ -153,6 +156,7 @@ func set_open(open: bool) -> void:
 	queue_redraw()
 
 func _process(_delta: float) -> void:
+	if follow_story: _sync_story_destination()
 	if not visible: return
 	if SaveManager.active_input_device == "controller":
 		var pan := Input.get_vector("move_left","move_right","move_forward","move_backward")
@@ -162,6 +166,39 @@ func _process(_delta: float) -> void:
 		var scale := Input.get_axis("look_down","look_up")
 		if absf(scale) > 0.1: zoom = clampf(zoom + scale * _delta * 2.0,1.0,8.0)
 		queue_redraw()
+
+func follow_story_destination() -> void:
+	follow_story = true
+	story_site = ""
+	story_target = Vector2(INF,INF)
+	waypoint = Vector2(INF,INF)
+	selected_site = ""
+	_sync_story_destination()
+
+func _sync_story_destination() -> void:
+	if player.get_meta("opening_active",false) or player.get_meta("morning_tutorial_active",false): return
+	var inquiry := player.get_parent().get_node_or_null("DevInquiry")
+	if inquiry == null or not inquiry.configured or inquiry.stage == "dormant": return
+	var destination: Node3D = inquiry.destination
+	var label := str(destination.get_meta("parking_label",""))
+	if story_site.is_empty() and waypoint.is_finite() and selected_site != label:
+		follow_story = false # Preserve a custom waypoint restored from a save.
+		return
+	if label.is_empty():
+		if selected_site == story_site:
+			waypoint = Vector2(INF,INF)
+			selected_site = ""
+		story_site = ""
+		story_target = Vector2(INF,INF)
+		return
+	var target := Vector2(destination.global_position.x,destination.global_position.z)
+	if label == story_site and target.is_equal_approx(story_target): return
+	story_site = label
+	story_target = target
+	refresh_sites()
+	selected_site = label
+	waypoint = target
+	queue_redraw()
 
 func _travel_pressed() -> void:
 	var boarding: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
@@ -228,6 +265,7 @@ func site_kind(label: String) -> String:
 	return "house"
 
 func select_point(screen: Vector2) -> void:
+	follow_story = false # A player-selected destination takes priority.
 	selected_site = ""
 	var nearest := 16.0
 	for site in sites:

@@ -118,7 +118,7 @@ func start(which: String,list: Array[Dictionary]) -> void:
  visual.slash_phase=-1;visual.knife_phase=-1
  prior_chacha_process=chacha.is_processing();chacha.set_process(false);chacha.route.clear();chacha.travel_speed=0
  hud.clear();hidden_hud.clear()
- for path in ["HUD","LandscapeUI","Player/InteractionUI"]:
+ for path in ["HUD","LandscapeUI","Player/UI/HUDRoot","Player/InteractionUI"]:
   var node: Node=get_parent().get_node_or_null(path)
   if node is CanvasItem:hud.append(node);hidden_hud.append(node.visible);node.hide()
  for bar in bars:bar.show()
@@ -130,6 +130,10 @@ func enter_beat() -> void:
  var place: Node3D=inquiry.station if record.place=="station" else get_parent().get_node("ChachaHouse") if record.place=="house" else community.farm
  camera_start=place.to_global(record.at);camera_end=camera_start+place.global_basis.x*.22
  camera_target=place.to_global(record.target)
+ if cue=="optional":
+  camera_target=(player.global_position+chacha.global_position)*.5+Vector3.UP*.65
+  camera_start=camera_target+chacha.global_basis.x*2.2+chacha.global_basis.z*2.5+Vector3.UP*.35
+  camera_end=camera_start+chacha.global_basis.x*.22
  if cue!=previous:
   shade.color.a=1;create_tween().tween_property(shade,"color:a",0,.65)
   stage_action(cue)
@@ -145,7 +149,7 @@ func stage_action(action: String) -> void:
  elif action=="chamber":player.global_position=station.to_global(Vector3(-9.5,.9,-5.2));face(player,inquiry.officials[0].global_position)
  elif action=="collar":
   inquiry.officials[0].global_position=station.to_global(Vector3(-7.8,0,-5.3));inquiry.officials[0].rotation.y=0
-  player.global_position=station.to_global(Vector3(-7.8,.9,-4.6));face(player,inquiry.officials[0].global_position)
+  start_position=player.global_position;finish_position=station.to_global(Vector3(-7.8,.9,-4.6));face(player,inquiry.officials[0].global_position)
  elif action=="guards":
   entrance_paths.clear()
   for i in 4:
@@ -181,6 +185,7 @@ func _process(delta: float) -> void:
   age+=delta;swing_age+=delta
   var record: Dictionary=beats[beat_index];var t:=clampf(age/float(record.seconds),0,1)
   camera.global_position=camera_start.lerp(camera_end,smoothstep(0,1,t));camera.look_at(camera_target)
+  if age>float(record.seconds)-.45:shade.color.a=smoothstep(float(record.seconds)-.45,float(record.seconds),age)
   update_acting(delta,t)
   if age>=float(record.seconds):
    beat_index+=1
@@ -214,7 +219,8 @@ func update_acting(delta: float,t: float) -> void:
  var amount:=1.0 if not action.is_empty() else 0.0
  if cue=="rise":action="down";amount=1-smoothstep(.15,.9,t)
  pose.apply(action,amount,delta)
- if cue in ["collar","guards"]:
+ if cue=="collar":player.global_position=start_position.lerp(finish_position,smoothstep(0,1,clampf(age/1.2,0,1)))
+ if cue in ["collar","guards"] and (cue=="guards" or age>=1.0):
   var official: Node3D=inquiry.officials[0]
   for side in ["l","r"]:
    var target:=official.to_global(Vector3(.10 if side=="l" else -.10,1.45,.11))
@@ -296,8 +302,13 @@ func animate_demo(t: float) -> void:
  var swing:=sin(t*TAU)*.30 if lesson not in [0,3] else .04*sin(t*TAU)
  var contact:=chacha.to_global(Vector3(-.25,1.0,.24+swing))
  chacha.solve_hand_contact("r",contact);chacha.set_grip("r",.45)
- demonstration_weapon.global_position=contact
- demonstration_weapon.global_basis=chacha.global_basis*Basis(Vector3.RIGHT,PI/2 if lesson not in [3,4,5] else 0)
+ var spear: bool=lesson in [3,4,5]
+ var direction: Vector3=chacha.global_basis.y if spear and lesson==3 else (chacha.global_basis.z+Vector3.UP*sin(t*TAU)*.7).normalized() if spear else (chacha.global_basis.z+Vector3.UP*(sin(t*TAU)*1.2 if lesson!=0 else -.8)).normalized()
+ var across: Vector3=chacha.global_basis.x
+ var weapon_basis: Basis=Basis(across,direction,across.cross(direction)).orthonormalized() if spear else Basis(direction,Vector3.UP.cross(direction).normalized(),direction.cross(Vector3.UP.cross(direction).normalized())).orthonormalized()
+ var grip: Vector3=Vector3(0,.8,0) if spear else Vector3(-.045,0,0) if lesson==6 else Vector3(-.095,-.002,0)
+ demonstration_weapon.global_basis=weapon_basis
+ demonstration_weapon.global_position=contact-weapon_basis*grip
  if lesson in [2,5]:chacha.global_position.y=community.farm.global_position.y+sin(t*PI)*.45
 func practice_allowed(member: Node3D,hit: String) -> bool:
  if active or state!="farm" or player.global_position.distance_to(community.farm.global_position)>12:return false

@@ -44,4 +44,7 @@ func capture() -> void:
 		image.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
 		image.save_png(OS.get_environment("FOREST_REVIEW_DIR").path_join("") + view[0] + ".png")
 		print("FOREST_CAPTURE ", view[0])
+	current_scene = null
+	benchmark.queue_free()
+	for i in 3: await process_frame
 	quit()

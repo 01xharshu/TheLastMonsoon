@@ -10,8 +10,13 @@ func _initialize() -> void:
 func capture() -> void:
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
+	for body in world.find_children("*", "CollisionObject3D", true, false):
+		body.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	world.process_mode = Node.PROCESS_MODE_DISABLED # Fixed forest art fixture; other actors are frozen.
 	root.add_child(world)
 	current_scene = world
+	for body in world.find_children("*", "CollisionObject3D", true, false):
+		body.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
 	world.get_node("GameTimeSystem").clock_paused = true
 	var player: Node3D = world.get_node("Player")
 	player.process_mode = Node.PROCESS_MODE_DISABLED
@@ -41,4 +46,7 @@ func capture() -> void:
 		captured.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
 		captured.save_png(OS.get_environment("FOREST_REVIEW_DIR").path_join("") + view[0] + ".png")
 		print("FOREST_WORLD_CAPTURE ", view[0])
+	current_scene = null
+	world.queue_free()
+	for i in 3: await process_frame
 	quit()

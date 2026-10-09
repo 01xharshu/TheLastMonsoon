@@ -39,3 +39,5 @@ extends Resource
 @export_range(0.0, 10.0, 0.5) var lod_fade_margin: float = 3.0
 
 @export var terrain_floor_overlay: bool = false
+
+@export var groundcover_shadows: bool = false

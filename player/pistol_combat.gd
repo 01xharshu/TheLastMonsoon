@@ -33,6 +33,7 @@ func _ready() -> void:
 	actor.add_child.call_deferred(reload_sound)
 
 func available() -> bool:
+	if actor.get_meta("tutorial_reading",false): return false
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	var equipment: Node3D = visual.equipment

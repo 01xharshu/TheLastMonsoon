@@ -187,6 +187,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var p: Vector3 = actor.global_position
 	var data := {
+		"morning_tutorial": actor.get_node("UI/HUDRoot/MorningTutorial").step,
 		"version": VERSION, "saved_at": int(Time.get_unix_time_from_system()),
 		"position": [p.x,p.y,p.z], "rotation_y": actor.rotation.y,
 		"camera_pitch": actor.camera_pitch,
@@ -241,8 +242,19 @@ func save_game(world: Node3D, slot: int) -> bool:
 	if file == null: return false
 	file.store_string(JSON.stringify(data,"\t")+"\n")
 	file.flush()
+	var write_error := file.get_error()
 	file.close()
-	return DirAccess.rename_absolute(ProjectSettings.globalize_path(temp),ProjectSettings.globalize_path(slot_path(slot)))==OK
+	if write_error != OK:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp))
+		last_error = "Could not finish writing the save"
+		return false
+	var committed := DirAccess.rename_absolute(ProjectSettings.globalize_path(temp),ProjectSettings.globalize_path(slot_path(slot))) == OK
+	if not committed:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp))
+		last_error = "Could not replace the save slot"
+		return false
+	last_error = ""
+	return true
 
 func start_new_game() -> void:
 	WorldAudio.set_opening_quiet(true)
@@ -292,6 +304,7 @@ func apply_pending(world: Node3D) -> void:
 		world.get_node("WealthyHouseholds").restore_role_state(data.get("household_roles",{}))
 	if world.has_node("DevInquiry"):
 		world.get_node("DevInquiry").restore_state(data.get("dev_inquiry",{}))
+	actor.get_node("UI/HUDRoot/MorningTutorial").restore_step(int(data.get("morning_tutorial",11)))
 	if world.has_node("DevStory"):
 		world.get_node("DevStory").restore_state(data.get("dev_story",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:

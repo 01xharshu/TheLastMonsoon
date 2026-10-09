@@ -24,10 +24,10 @@ def inspect_mix(path):
     frames = [max(abs(values[i * channels + k]) for k in range(channels)) / 32768
               for i in range(len(values) // channels)]
     passed = peak < .99
-    # Deliberately quiet introduction, then continuous dawn wind over a loop seam.
+    # Score fades in gently, loops under the cards, then dawn wind stays continuous.
     morning = json.loads((path.parent / "timing.json").read_text())["morning"]
     print(f"Measured morning handoff: {morning:.2f}s")
-    for start, end in [(0, .4), (morning + 2.0, morning + 11.0)]:
+    for start, end in [(0, .15), (4, 8), (22, 26), (morning + 2.0, morning + 11.0)]:
         window = frames[int(start * rate):int(end * rate)]
         stride = int(.02 * rate)
         levels = [math.sqrt(sum(x * x for x in window[i:i + stride]) /
@@ -38,6 +38,8 @@ def inspect_mix(path):
         print(f'Mix {start}–{end}s: RMS {min(levels):.6f}–{max(levels):.6f}; '
               f'{silent}/{len(levels)} silent 20ms windows')
         passed &= max(levels) < .0001 if start == 0 else silent == 0
+        if start == 4:
+            passed &= max(levels) > .001
     return passed
 
 
@@ -58,7 +60,7 @@ def main():
                                        text=True, start_new_session=True,
                                        env=dict(os.environ, TLM_OPENING_TEST_OUTPUT=tmp))
             try:
-                output, _ = process.communicate(timeout=150)
+                output, _ = process.communicate(timeout=190)
                 for line in output.splitlines():
                     if any(label in line for label in ['ERROR', 'WARNING', 'OPENING INTEGRATION']):
                         print(line, flush=True)

@@ -1,4 +1,6 @@
 # Dev inquiry — morning, refusal and guarded chamber
+Main game now uses the cinematic director and playable farm continuation; see [current story integration](story_cinematics_and_training.md). The standalone legacy inquiry fixture remains a fallback check.
+
 
 2026-10-09. Playable narrative candidate. New conversations are subtitles only; no dialogue voice assets are added. Continuous expressions, acting, costume, firearm contact and historical/owner approval remain open.
 

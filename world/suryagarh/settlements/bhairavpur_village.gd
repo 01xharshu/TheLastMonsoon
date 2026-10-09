@@ -1,6 +1,7 @@
 extends RefCounted
 ## Connected residential quarters, market and small cultivated edge of Bhairavpur.
 ## Uses the settlement's original construction helpers and shared world survey.
+const Startup = preload("res://systems/world_startup.gd")
 const WaterSource = preload("res://objects/water_pot.gd")
 const Bucket = preload("res://assets/props/polyhaven/wooden_bucket_02/wooden_bucket_02_1k.gltf")
 const Pot = preload("res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf")
@@ -17,6 +18,7 @@ var fabric: Array[Material] = []
 var wall_palette: Array[Material] = []
 var produce_materials: Array[Material] = []
 var roots: Array[Node3D] = []
+var household_variety := preload("res://world/suryagarh/settlements/village_household_variety.gd").new()
 var house_detail := preload("res://world/suryagarh/settlements/bhairavpur_house_detail.gd").new()
 
 func build(builder) -> void:
@@ -27,17 +29,23 @@ func build(builder) -> void:
 	wall_palette = [builder.ochre, builder.material(Color(.68,.54,.36)), builder.material(Color(.57,.48,.34)), builder.material(Color(.73,.65,.48))]
 	produce_materials = [builder.material(Color(.37,.48,.14)), builder.material(Color(.71,.48,.13)), builder.material(Color(.47,.23,.10))]
 	house_detail.configure(builder,wall_palette)
-	_build_homes()
+	household_variety.configure(builder)
+	await _build_homes()
 	_build_well()
+	await Startup.checkpoint(settlement, "Preparing Bhairavpur…")
 	_build_market()
+	await Startup.checkpoint(settlement, "Preparing Bhairavpur…")
 	_build_farm_edge()
+	await Startup.checkpoint(settlement, "Preparing Bhairavpur…")
 	_build_shade_trees()
+	await Startup.checkpoint(settlement, "Preparing Bhairavpur…")
 	preload("res://world/suryagarh/settlements/village_social_places.gd").new().build(self)
 	preload("res://world/suryagarh/settlements/village_night_life.gd").new().build(builder)
 	# Keep visible procedural geometry in one mesh per root, with material surfaces.
 	# Physical pieces remain separate so openings and passage collision stay exact.
 	for node in roots:
 		_merge_static_geometry(node)
+		await Startup.checkpoint(settlement, "Preparing Bhairavpur…")
 	settlement.set_meta("bhairavpur_home_count", HOME_COUNT)
 	settlement.set_meta("bhairavpur_stall_count", STALL_COUNT)
 	settlement.set_meta("bhairavpur_garden_count", GARDEN_COUNT)
@@ -75,6 +83,7 @@ func _build_homes() -> void:
 		sites.append({"p": Vector2(x,166), "yaw": 0.0, "size": Vector2(9.0,7.0), "quarter": "south lane"})
 	assert(sites.size() == HOME_COUNT)
 	for i in sites.size():
+		await Startup.checkpoint(settlement, "Preparing Bhairavpur’s homes…")
 		var site: Dictionary = sites[i]
 		var house: Node3D = settlement.make_building("BhairavpurHouse%d"%i, site.p, site.size, false, false, false, true)
 		house.rotation.y = site.yaw
@@ -87,6 +96,7 @@ func _build_homes() -> void:
 				mesh.material_override = wall_palette[i % wall_palette.size()]
 		_household_detail(house, site.size, i)
 		house_detail.house(house,site.size,i)
+		household_variety.house(house,site.size,i)
 		if i == 0:
 			preload("res://world/suryagarh/settlements/arjun_house.gd").new().furnish(settlement, house)
 

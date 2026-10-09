@@ -17,6 +17,8 @@ var health_trail: float = 100.0
 var sight_pulse := 0.0
 var sight_recoil := 0.0
 var human_target := false
+var tutorial: Node
+var tutorial_reveal := 99
 
 func box(color: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -90,6 +92,9 @@ func _ready() -> void:
 		node.add_theme_constant_override("outline_size",6)
 	resized.connect(_layout)
 	_layout()
+	tutorial = preload("res://story/morning_tutorial.gd").new()
+	tutorial.name = "MorningTutorial"
+	add_child(tutorial)
 	queue_redraw()
 
 func place(node: Control, p: Vector2, extent: Vector2) -> void:
@@ -209,13 +214,13 @@ func _draw_ammo() -> void:
 		draw_string(font,Vector2(x+19,y+115),"RELOADING",HORIZONTAL_ALIGNMENT_LEFT,130,12,BRASS)
 
 func _draw() -> void:
-	_draw_ammo()
+	if tutorial_reveal >= 9: _draw_ammo()
 	var rifle := player.get_node_or_null("RifleCombat")
 	var bow: Node = player.get_node_or_null("BowCombat")
 	var pistol: Node = player.get_node_or_null("PistolCombat")
 	var double_gun: Node = player.get_node_or_null("DoubleGunCombat")
 	var gear: Node = player.get_node("VisualRoot/CharacterVisual").equipment
-	var gun_aim: bool = gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
+	var gun_aim: bool = tutorial_reveal >= 9 and gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
 	if gun_aim:
 		var pistol_sight: bool = gear != null and gear.selected == 3
 		var center := size * .5
@@ -224,33 +229,35 @@ func _draw() -> void:
 		for angle in [0.0, PI*.5, PI, PI*1.5]:
 			var axis := Vector2.from_angle(angle)
 			draw_line(center+axis*radius,center+axis*(radius+(10.0 if pistol_sight else 8.0)),color,2.5 if pistol_sight else 2.0,true)
-	elif bow and bow.aiming:
+	elif tutorial_reveal >= 9 and bow and bow.aiming:
 		var center := size*.5
 		for axis in [Vector2.RIGHT,Vector2.DOWN]:
 			draw_line(center-axis*8,center-axis*3,IVORY,2)
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
-	# Thin framed health strip follows the reference; delayed fill makes damage readable.
-	var track := Rect2(178,size.y-95,140,7)
-	draw_rect(track.grow(2),Color(0.025,0.03,0.025,0.8))
-	draw_rect(track.grow(1),Color(IVORY,0.42),false,1)
-	draw_rect(track,Color(0.10,0.12,0.10,0.8))
-	var fraction: float = clampf(health/player.MAX_HEALTH,0,1)
-	var trail: float = clampf(health_trail/player.MAX_HEALTH,0,1)
-	draw_rect(Rect2(track.position,Vector2(track.size.x*trail,track.size.y)),Color(0.65,0.44,0.22))
-	var health_color := IVORY if fraction>0.4 else (Color(0.84,0.61,0.31) if fraction>0.2 else Color(0.81,0.28,0.20))
-	draw_rect(Rect2(track.position,Vector2(track.size.x*fraction,track.size.y)),health_color)
-	for i in range(1,5):
-		var x: float = track.position.x+track.size.x*float(i)/5.0
-		draw_line(Vector2(x,track.position.y),Vector2(x,track.end.y),Color(0.045,0.05,0.04,0.7),1)
-	# The purse shares the health strip's alignment and engraved brass/ink treatment.
-	var purse := Rect2(178,size.y-76,140,28)
-	draw_style_box(box(Color(0.035,0.042,0.035,0.76),Color(BRASS,0.85)),purse)
-	draw_line(purse.position+Vector2(1,1),purse.position+Vector2(139,1),Color(IVORY,0.45),1,true)
-	var coin := purse.position+Vector2(14,14)
-	draw_circle(coin,7,Color(BRASS,0.22))
-	draw_arc(coin,7,0,TAU,32,IVORY,1,true)
-	draw_arc(coin,4.5,0,TAU,24,Color(BRASS,0.85),1,true)
-	draw_line(coin+Vector2(-1,-2),coin+Vector2(1,2),IVORY,1,true)
+	if tutorial_reveal >= 7 and (tutorial == null or tutorial.blink_on(7)):
+		# Thin framed health strip follows the reference; delayed fill makes damage readable.
+		var track := Rect2(178,size.y-95,140,7)
+		draw_rect(track.grow(2),Color(0.025,0.03,0.025,0.8))
+		draw_rect(track.grow(1),Color(IVORY,0.42),false,1)
+		draw_rect(track,Color(0.10,0.12,0.10,0.8))
+		var fraction: float = clampf(health/player.MAX_HEALTH,0,1)
+		var trail: float = clampf(health_trail/player.MAX_HEALTH,0,1)
+		draw_rect(Rect2(track.position,Vector2(track.size.x*trail,track.size.y)),Color(0.65,0.44,0.22))
+		var health_color := IVORY if fraction>0.4 else (Color(0.84,0.61,0.31) if fraction>0.2 else Color(0.81,0.28,0.20))
+		draw_rect(Rect2(track.position,Vector2(track.size.x*fraction,track.size.y)),health_color)
+		for i in range(1,5):
+			var x: float = track.position.x+track.size.x*float(i)/5.0
+			draw_line(Vector2(x,track.position.y),Vector2(x,track.end.y),Color(0.045,0.05,0.04,0.7),1)
+	if tutorial_reveal >= 8 and (tutorial == null or tutorial.blink_on(8)):
+		# The purse shares the health strip's alignment and engraved brass/ink treatment.
+		var purse := Rect2(178,size.y-76,140,28)
+		draw_style_box(box(Color(0.035,0.042,0.035,0.76),Color(BRASS,0.85)),purse)
+		draw_line(purse.position+Vector2(1,1),purse.position+Vector2(139,1),Color(IVORY,0.45),1,true)
+		var coin := purse.position+Vector2(14,14)
+		draw_circle(coin,7,Color(BRASS,0.22))
+		draw_arc(coin,7,0,TAU,32,IVORY,1,true)
+		draw_arc(coin,4.5,0,TAU,24,Color(BRASS,0.85),1,true)
+		draw_line(coin+Vector2(-1,-2),coin+Vector2(1,2),IVORY,1,true)
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
 		var horse_y: float = size.y-211
@@ -258,6 +265,7 @@ func _draw() -> void:
 		draw_string(SERIF,Vector2(34,horse_y+19),"HORSE STAMINA",HORIZONTAL_ALIGNMENT_LEFT,-1,17,IVORY)
 		draw_rect(Rect2(185,horse_y+13,128,6),Color(0.24,0.23,0.18))
 		draw_rect(Rect2(185,horse_y+13,128*clampf(mount.stamina/mount.MAX_STAMINA,0,1),6),Color(0.69,0.56,0.31))
+	if tutorial_reveal < 9 or (tutorial != null and not tutorial.blink_on(9)): return
 	var cx: float = size.x/2
 	draw_line(Vector2(cx-165,63),Vector2(cx+165,63),Color(BRASS,0.8),1,true)
 	diamond(Vector2(cx,63),4,IVORY)

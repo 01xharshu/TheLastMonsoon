@@ -47,6 +47,7 @@ func _ready() -> void:
 	mark_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 func available() -> bool:
+	if actor.get_meta("tutorial_reading",false): return false
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	var equipment = visual.equipment

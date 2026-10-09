@@ -1,8 +1,17 @@
 extends Node3D
-## Live opening prototype. One owner for input, timeline, skip and morning release.
+## Live opening: prologue cards, night scene, automatic dawn and gate handoff.
 const DURATION := 32.0
+const Titles = preload("res://story/opening_titles.gd")
+var cart_passage = preload("res://story/opening_cart_passage.gd").new()
+@export var prologue_music: AudioStream = preload("res://assets/audio/opening/prologue_tension_draft.wav")
 var elapsed := 0.0
-var state := "night"
+var waiting_for_reveal := false
+var state := "prologue"
+var prologue_elapsed := 0.0
+var morning_elapsed := 0.0
+var titles: Label
+var score: AudioStreamPlayer
+var footwear = preload("res://story/opening_footwear.gd").new()
 var world: Node3D
 var actor: CharacterBody3D
 var home: Node3D
@@ -12,6 +21,7 @@ var camera: Camera3D
 var shade: ColorRect
 var subtitle: Label
 var hint: Label
+var skip_requested := false
 var top_bar: ColorRect
 var bottom_bar: ColorRect
 var lamp: Node3D
@@ -51,6 +61,7 @@ func start(target_world: Node3D) -> void:
 	process_priority = 100
 	visual = actor.get_node("VisualRoot/CharacterVisual")
 	preload("res://player/arjun_complete_fit.gd").new().apply(visual)
+	footwear.barefoot(visual.model)
 	expression.configure(visual.model)
 	previous_physics = actor.is_physics_processing()
 	actor.set_physics_process(false)
@@ -87,6 +98,16 @@ func start(target_world: Node3D) -> void:
 	camera.make_current()
 	_build_lamp()
 	_build_overlay()
+	score = AudioStreamPlayer.new()
+	score.stream = prologue_music
+	if score.stream is AudioStreamWAV:
+		score.stream = score.stream.duplicate()
+		score.stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		score.stream.loop_begin = 0
+		score.stream.loop_end = score.stream.data.size()/2
+	score.volume_db = -60.0
+	add_child(score)
+	score.play()
 	sound = preload("res://story/opening_sound.gd").new()
 	add_child(sound)
 	sound.configure(actor,lamp)
@@ -141,9 +162,23 @@ func _build_overlay() -> void:
 	hint = Label.new()
 	hint.text = ""
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	hint.offset_left = -220
-	hint.offset_top = -45
+	hint.offset_left = -360
+	hint.offset_right = -24
+	hint.offset_top = -56
+	hint.offset_bottom = -20
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.add_theme_font_override("font",preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf"))
+	hint.add_theme_font_size_override("font_size",18)
+	hint.add_theme_color_override("font_color",Color(.95,.91,.80))
+	hint.add_theme_color_override("font_shadow_color",Color.BLACK)
+	hint.add_theme_constant_override("shadow_offset_x",1)
+	hint.add_theme_constant_override("shadow_offset_y",2)
+	hint.hide()
 	layer.add_child(hint)
+	titles = Titles.new()
+	layer.add_child(titles)
 
 func _build_lamp() -> void:
 	# Open oil-wick diya stays on the table throughout lighting.
@@ -271,25 +306,40 @@ func _input(event: InputEvent) -> void:
 	if state == "done": return
 	get_viewport().set_input_as_handled()
 	if not event.is_pressed() or event.is_echo(): return
-	if state == "night" and event is InputEventKey and event.keycode in [KEY_SPACE,KEY_ESCAPE]:
-		morning()
-	elif state == "seated" and (event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton):
-		state = "rising"
-		rise_time = 0
-		sound.rise()
-		actor.set_meta("rest_waking",true)
+	if state in ["prologue","cart_passage","night"] and event is InputEventKey and event.keycode in [KEY_SPACE,KEY_ESCAPE]:
+		if skip_requested:
+			morning()
+		else:
+			skip_requested = true
+			hint.text = "Press Esc or Space to Skip"
+			hint.show()
 
 func _process(delta: float) -> void:
-	if home == null or state == "done": return
-	if state == "seated": return
-	if state == "rising":
-		rise_time += delta
-		actor.set_meta("rest_progress", lerpf(0.38,0.0,clampf(rise_time/1.5,0,1)))
-		actor.global_position = bed.to_global(Vector3(0,0.83,0)).lerp(home.to_global(Vector3(-2.35,1.14,-0.60)),smoothstep(0.3,1.5,rise_time))
-		if rise_time >= 1.5: _release()
+	if home == null or state == "done" or waiting_for_reveal: return
+	if state == "prologue":
+		prologue_elapsed += delta
+		titles.update(prologue_elapsed)
+		shade.color = Color.BLACK
+		score.volume_db = lerpf(-60.0,-14.0,smoothstep(.3,3.0,prologue_elapsed))
+		if prologue_elapsed >= Titles.DURATION:
+			titles.hide()
+			elapsed = 0.0
+			state = "cart_passage" if cart_passage.begin(self) else "night"
+		return
+	if state == "cart_passage":
+		cart_passage.update(delta)
+		if cart_passage.age >= cart_passage.DURATION:
+			cart_passage.finish()
+			state = "night"
+			elapsed = 0.0
+		return
+	if state in ["dawn","rising","departing"]:
+		_update_morning(delta)
 		return
 	elapsed += delta
 	var t := elapsed
+	score.volume_db = lerpf(-14.0,-60.0,smoothstep(0,2.0,t))
+	if t >= 2.0 and score.playing: score.stop()
 	# The day/night controller also writes ambient energy; override after it.
 	environment.ambient_light_energy = 0.0
 	for name in ["Sun","Moon"]:
@@ -303,21 +353,19 @@ func _process(delta: float) -> void:
 	if t >= 18.3 and t < 19.6 and not sigh_played:
 		sigh_played = true
 		sigh_audio.play()
-	shade.color = Color(0,0,0,1.0-smoothstep(.3,1.6,t))
-	hint.modulate.a = 1.0-smoothstep(6,8,t)
+	shade.color = Color(0,0,0,1.0-smoothstep(.12,.55,t))
 	match_prop.visible = true
-	match_prop.get_node("Flame").visible = t >= 2.5 and t < 6.5
-	match_light.light_energy = (.40+sin(t*31.0)*.035)*smoothstep(2.5,2.65,t) if t >= 2.5 and t < 6.5 else 0.0
+	match_prop.get_node("Flame").visible = t >= .12 and t < 6.5
+	match_light.light_energy = (.65+sin(t*31.0)*.035)*smoothstep(.12,.2,t) if t >= .12 and t < 6.5 else 0.0
 	var lit := t >= 5.5 and t < 29
 	lamp.get_node("Flame").visible = lit
 	light.light_energy = (0.85 + sin(t*17)*0.045)*smoothstep(5.5,6.2,t) if lit else 0.0
 	subtitle.text = "Still no word from Dev…" if t >= 15 and t < 19 else ""
 	if t < 9:
 		contact.update(self,t)
-		var pullback := smoothstep(5.9,8.7,t)
-		var focus := Vector3(-2.50,.958,.90).lerp(home.to_local(lamp.get_node("WickContact").global_position),smoothstep(2.5,5.0,t))
-		_shot(Vector3(-2.55,1.13,.18).lerp(Vector3(-1.2,1.7,2.65),pullback),focus.lerp(Vector3(-2.6,1.05,.95),pullback))
-		camera.fov = lerpf(48.0,60.0,pullback)
+		# Face, forward hand and table share a steady upper-body composition.
+		_shot(Vector3(-1.15,1.85,-.30),Vector3(-2.6,1.40,1.05))
+		camera.fov = 58.0
 		_update_strike_sparks(t)
 	elif t < 13:
 		_walk(Vector3(-2.6,1.14,1.27),Vector3(-3.35,1.14,2.8),(t-9.8)/3.2,delta)
@@ -355,7 +403,8 @@ func _process(delta: float) -> void:
 
 func _update_strike_sparks(t: float) -> void:
 	var sparks: Node3D = home.get_node("StrikeSparks")
-	var age := t-2.12
+	var age := t-.12
+	sparks.global_position = match_prop.to_global(Vector3(0,.038,0))
 	sparks.visible = age >= 0 and age < .16
 	if not sparks.visible: return
 	for i in sparks.get_child_count():
@@ -385,8 +434,12 @@ func _shot(at: Vector3, target: Vector3) -> void:
 	camera.look_at(home.to_global(target))
 
 func morning() -> void:
-	if state != "night": return
-	state = "seated"
+	if state not in ["prologue","cart_passage","night"]: return
+	cart_passage.finish()
+	state = "dawn"
+	morning_elapsed = 0.0
+	score.stop()
+	footwear.restore()
 	sound.morning()
 	get_tree().root.get_node("WorldAudio").begin_morning(home.to_global(Vector3(-3.35,2.3,3.7)))
 	expression.restore()
@@ -407,18 +460,62 @@ func morning() -> void:
 	match_light.light_energy = 0
 	subtitle.text = ""
 	hint.text = ""
+	hint.hide()
+	skip_requested = false
 	actor.velocity = Vector3.ZERO
 	actor.global_position = bed.to_global(Vector3(0,0.83,0))
 	actor.global_basis = bed.global_basis
 	actor.set_meta("rest_action","opening")
 	actor.set_meta("rest_progress",0.38)
 	actor.remove_meta("rest_waking")
-	world.player_camera.make_current()
-	actor.get_node("CameraPivot").rotation = Vector3(-0.12,0,0)
-	create_tween().tween_property(shade,"color:a",0.0,0.8)
-	var bars := create_tween().set_parallel(true)
-	bars.tween_property(top_bar,"anchor_bottom",0.0,0.8)
-	bars.tween_property(bottom_bar,"anchor_top",1.0,0.8)
+	titles.show()
+	titles.next_morning(0.0)
+	_shot(Vector3(-.9,2.0,0),Vector3(-2.35,1.10,-1.4))
+	var door := home.get_node_or_null("EntranceDoor")
+	if door != null:
+		door.opened = true
+		door.swing = 1.0
+
+func _update_morning(delta: float) -> void:
+	morning_elapsed += delta
+	var t := morning_elapsed
+	if t < 4.0:
+		shade.color = Color.BLACK
+		titles.next_morning(t)
+		return
+	titles.hide()
+	shade.color.a = 1.0-smoothstep(4.0,5.2,t)
+	if t < 6.0: return
+	if t < 8.0:
+		if state != "rising":
+			state = "rising"
+			sound.rise()
+			actor.set_meta("rest_waking",true)
+		rise_time = t-6.0
+		actor.set_meta("rest_progress",lerpf(.38,0.0,smoothstep(.0,1.8,rise_time)))
+		actor.global_position = bed.to_global(Vector3(0,.83,0)).lerp(home.to_global(Vector3(-2.35,1.14,-.60)),smoothstep(.3,1.8,rise_time))
+		actor.global_basis = bed.global_basis.slerp(home.global_basis*Basis(Vector3.UP,PI/2),smoothstep(.3,1.8,rise_time))
+		return
+	state = "departing"
+	actor.set_meta("rest_action", "")
+	actor.set_meta("rest_progress",0.0)
+	actor.remove_meta("rest_waking")
+	var path := [Vector3(-2.35,1.14,-.60),Vector3(.85,1.14,-.75),Vector3(.85,1.14,3.0),Vector3(0,.94,5.2),Vector3(0,.94,8.2)]
+	var segment_times := [3.2,3.75,2.4,3.0]
+	var walk_time := t-8.0
+	var total := 0.0
+	for i in segment_times.size():
+		var duration: float = segment_times[i]
+		if walk_time < total+duration:
+			_walk(path[i],path[i+1],(walk_time-total)/duration,delta)
+			var at: Vector3 = home.to_local(actor.global_position)
+			var shots := [Vector3(-1.1,2.0,.2),Vector3(2.8,2.1,2.2),Vector3(1.5,2.0,5.5),Vector3(2.2,2.0,6.0)]
+			_shot(shots[i],at+Vector3(0,.45,.2))
+			camera.fov = 58.0
+			return
+		total += duration
+	_place(path[-1],0.0)
+	_release()
 
 func _release() -> void:
 	state = "done"
@@ -428,7 +525,8 @@ func _release() -> void:
 	actor.set_meta("rest_action", "")
 	actor.set_meta("rest_progress",0.0)
 	actor.remove_meta("rest_waking")
-	_place(Vector3(-2.35,1.14,-0.60),0)
+	world.player_camera.make_current()
+	actor.get_node("CameraPivot").rotation = Vector3(-.12,0,0)
 	actor.velocity = Vector3.ZERO
 	clock.clock_paused = previous_clock_pause
 	actor.set_physics_process(previous_physics)
@@ -445,7 +543,13 @@ func _release() -> void:
 	# Keep the lamp/table in the home; discard transient cinematic overlays.
 	# Let the last cot/cloth cue decay naturally across control release.
 	var inquiry: Node = world.get_node_or_null("DevInquiry")
-	if inquiry != null: inquiry.begin()
+	var tutorial := actor.get_node_or_null("UI/HUDRoot/MorningTutorial")
+	if tutorial != null:
+		tutorial.begin()
+	elif inquiry != null:
+		inquiry.begin()
+		var map := actor.get_node("UI/WorldMap")
+		if map.has_method("follow_story_destination"): map.follow_story_destination()
 	for child in get_children():
 		if child != sound: child.queue_free()
 
@@ -456,5 +560,7 @@ func _interior_window_shot(t: float) -> void:
 	camera.fov = 52.0
 
 func _exit_tree() -> void:
+	cart_passage.finish()
 	var audio := get_tree().root.get_node_or_null("WorldAudio")
-	if audio != null and state == "night": audio.set_opening_quiet(false)
+	footwear.restore()
+	if audio != null and state in ["prologue","cart_passage","night"]: audio.set_opening_quiet(false)
