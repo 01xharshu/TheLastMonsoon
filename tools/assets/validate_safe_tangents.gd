@@ -1,22 +1,7 @@
 extends SceneTree
 ## Assert that selective tangent import preserves all source geometry and morphs.
 const Tangents = preload("res://addons/safe_mesh_tangents/tangent_importer.gd")
-const ASSETS := [
-	"res://characters/npcs/review/record_clerk_seat.glb",
-	"res://characters/npcs/motion/village_fruit_seller/village_fruit_seller_rigged_candidate.glb",
-	"res://characters/npcs/motion/village_weaver_assistant/village_weaver_assistant_rigged_candidate.glb",
-	"res://characters/npcs/british/corporal_woman.glb",
-	"res://characters/npcs/british/sergeant_woman.glb",
-	"res://characters/npcs/british/private_woman.glb",
-	"res://characters/npcs/british/candidates/corporal_woman_skirt_candidate.glb",
-	"res://characters/npcs/british/candidates/sergeant_woman_skirt_candidate.glb",
-	"res://characters/npcs/british/candidates/private_woman_skirt_candidate.glb",
-	"res://characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb",
-	"res://characters/npcs/motion/errand_passenger/errand_passenger.glb",
-	"res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb",
-	"res://characters/npcs/motion/boatman/boatman_rigged_candidate.glb",
-	"res://characters/npcs/motion/village_woman/village_woman_rigged_candidate.glb",
-]
+var assets: Array[String] = []
 var failed := false
 var failures: Dictionary = {}
 var surfaces := 0
@@ -33,7 +18,12 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
-	for path in ASSETS:
+	# Discover opt-out assets instead of keeping a list that misses new exports.
+	for folder in ["res://characters", "res://assets", "res://environment"]:
+		find_safe_imports(folder)
+	assets.sort()
+	require(not assets.is_empty(), "Safe tangent import assets discovered")
+	for path in assets:
 		var state := GLTFState.new()
 		var document := GLTFDocument.new()
 		require(document.append_from_file(path, state, 0) == OK, path + " parses")
@@ -55,12 +45,27 @@ func _run() -> void:
 		var instance: Node = load(path).instantiate()
 		check_imported(instance)
 		instance.free()
-	print("SAFE TANGENTS ", "FAIL" if failed else "PASS", " | assets=", ASSETS.size(), " surfaces=", surfaces, " morph surfaces=", morphs)
+	print("SAFE TANGENTS ", "FAIL" if failed else "PASS", " | assets=", assets.size(), " surfaces=", surfaces, " morph surfaces=", morphs)
 	var save_manager := root.get_node_or_null("SaveManager")
 	if save_manager != null:
 		save_manager.quit_game(1 if failed else 0)
 	else:
 		quit(1 if failed else 0)
+
+func find_safe_imports(folder: String) -> void:
+	var directory := DirAccess.open(folder)
+	if directory == null:
+		return
+	for child in directory.get_directories():
+		if not child.begins_with("."):
+			find_safe_imports(folder.path_join(child))
+	for file in directory.get_files():
+		if not file.ends_with(".glb"):
+			continue
+		var path := folder.path_join(file)
+		var settings := ConfigFile.new()
+		if settings.load(path + ".import") == OK and not bool(settings.get_value("params", "meshes/ensure_tangents", true)):
+			assets.append(path)
 
 func compare_arrays(before: Array, after: Array) -> void:
 	for attribute in Mesh.ARRAY_MAX:

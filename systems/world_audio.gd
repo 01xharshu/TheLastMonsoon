@@ -1,5 +1,8 @@
 extends Node
 ## Bounded spatial voices. All clips in audio/world are original synthesis.
+var opening_quiet := false
+var ambience_gain := 1.0
+var morning_fade := false
 var streams: Dictionary = {}
 var step_variants: Dictionary = {}
 var voices: Array[AudioStreamPlayer3D] = []
@@ -26,18 +29,18 @@ func _ready() -> void:
   voice.max_distance = 28.0
   add_child(voice);voices.append(voice)
  for key in ['cow','sparrow']:
-  streams[key]=(load('res://audio/ambience/'+key+'.wav') as AudioStreamWAV)
+  streams[key]=preload('res://systems/audio_edges.gd').prepare(load('res://audio/ambience/'+key+'.wav'))
  var environment:=preload('res://systems/environment_audio.gd').new();environment.name='EnvironmentAudio';add_child(environment)
  get_tree().node_added.connect(_added)
  for node in get_tree().root.find_children('*','',true,false):_added(node)
 func play_at(key: String, at: Vector3, db: float = -18.0) -> bool:
- if not streams.has(key):return false
+ if is_opening_quiet() or not streams.has(key):return false
  for voice in voices:
   if voice.playing:continue
   # Broad canopy calls must cover the same 40 m radius used by the scheduler.
   voice.max_distance=45.0 if key=='sparrow' else 28.0
   voice.unit_size=8.0 if key=='sparrow' else 1.0
-  voice.stream=step_variants[key].pick_random() if step_variants.has(key) else streams[key];voice.global_position=at;voice.volume_db=db
+  voice.stream=step_variants[key].pick_random() if step_variants.has(key) else streams[key];voice.global_position=at;voice.set_meta("base_db",db);voice.volume_db=db+linear_to_db(maxf(.0001,ambience_gain))
   voice.pitch_scale=randf_range(.94,1.06);voice.play();events+=1;event_counts[key]=int(event_counts.get(key,0))+1;return true
  return false
 func interaction(target: Node3D) -> void:
@@ -128,3 +131,32 @@ func foot_contact(actor: Node3D, side: String, at: Vector3, db: float=-23.0) -> 
  var hit:=actor.get_world_3d().direct_space_state.intersect_ray(query)
  if hit.is_empty():return
  play_at('hoof_dirt' if animal_body!=null else surface_key(hit.collider),hit.position,db)
+
+func is_opening_quiet() -> bool:
+ var saves := get_tree().root.get_node_or_null("SaveManager")
+ return opening_quiet or (saves != null and saves.pending_slot == 0)
+
+func set_opening_quiet(quiet: bool) -> void:
+ opening_quiet = quiet
+ morning_fade = false
+ ambience_gain = 0.0 if quiet else 1.0
+ if quiet:
+  for voice in voices: voice.stop()
+  get_node("EnvironmentAudio").stop_loops()
+  var wind := get_tree().root.get_node_or_null("WindSystem")
+  if wind != null and wind.ambience != null: wind.ambience.stop()
+
+func begin_morning(at: Vector3) -> void:
+ opening_quiet = false
+ ambience_gain = 0.0
+ morning_fade = true
+ get_node("EnvironmentAudio").morning_bird_position = at
+ get_node("EnvironmentAudio").morning_bird_wait = 0.8
+
+func _process(delta: float) -> void:
+ if morning_fade:
+  ambience_gain = move_toward(ambience_gain,1.0,delta/1.6)
+  morning_fade = ambience_gain < 1.0
+ for voice in voices:
+  if voice.playing:
+   voice.volume_db = float(voice.get_meta("base_db",-18.0))+linear_to_db(maxf(.0001,ambience_gain))

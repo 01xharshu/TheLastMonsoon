@@ -18,7 +18,10 @@ func _run() -> void:
 	if world_mode:
 		saves.start_new_game()
 	else:
-		require(change_scene_to_file("res://ui/main_menu.tscn") == OK, "Title scene loads")
+		var title: Node = await preload("res://tools/maintenance/startup_fixture.gd").open_title(self)
+		if title == null:
+			saves.quit_game(1)
+			return
 	for frame in 4:
 		await process_frame
 	print("SMOKE scene ready in ", (Time.get_ticks_msec() - started) / 1000.0, "s")

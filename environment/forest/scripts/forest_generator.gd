@@ -14,9 +14,7 @@ signal generated
 		regeneration_key = value
 		if is_inside_tree() and (not Engine.is_editor_hint() or generate_in_editor): regenerate()
 
-const ISLAND_TREE = preload("res://assets/nature/models/island_tree_02.glb")
-const MANGO_TREE = preload("res://environment/vegetation/mango_tree/mango_tree_01.glb")
-const BOULDER = preload("res://assets/nature/models/boulder_01.glb")
+const BOULDER = preload("res://environment/forest/assets/rock_reused.glb")
 const PLACEHOLDER_PLANTS = preload("res://environment/forest/vegetation/placeholder_plants.gd")
 const LAYERS := ["hero", "canopy", "canopy_broad", "small_tree", "dead_tree", "fallen_log", "fern", "shrub", "broadleaf", "tall_grass", "short_grass", "floor", "rock", "debris"]
 const BASE_RATE := {"hero": 0.012, "canopy": 0.085, "canopy_broad": 0.025, "small_tree": 0.07, "dead_tree": 0.018, "fallen_log": 0.025, "fern": 0.22, "shrub": 0.24, "broadleaf": 0.20, "tall_grass": 0.30, "short_grass": 0.55, "floor": 0.32, "rock": 0.025, "debris": 0.05}
@@ -60,6 +58,7 @@ func regenerate() -> void:
 			_tree_positions.append(point)
 	_counts.clear()
 	_layer_points.clear()
+	_ensure_wind()
 	_make_meshes()
 	var buckets: Dictionary = {}
 	var x0 := floori(-forest_size.x * 0.5)
@@ -103,7 +102,7 @@ func regenerate() -> void:
 				_counts[layer] = _counts.get(layer, 0) + 1
 				if layer in ["hero", "canopy", "canopy_broad"] and (definition == null or definition.receives_attachments) and rng.randf() < config.shelf_fungus_probability:
 					if not buckets[key].has("shelf_fungus"): buckets[key]["shelf_fungus"] = []
-					var attachment := _fungus_transform(transform, rng)
+					var attachment := _fungus_transform(transform, rng, definition)
 					buckets[key]["shelf_fungus"].append(attachment)
 					_counts["shelf_fungus"] = _counts.get("shelf_fungus", 0) + 1
 	var signature := PackedStringArray()
@@ -122,6 +121,20 @@ func regenerate() -> void:
 		_floor_patch.rebuild(self)
 	set_meta("forest_counts", _counts.duplicate())
 	generated.emit()
+
+func _ensure_wind() -> void:
+	if Engine.is_editor_hint(): return
+	var scene_root := get_tree().root
+	if scene_root.get_node_or_null("WindSystem") != null or scene_root.get_node_or_null("ForestWindFallback") != null: return
+	if scene_root.has_meta("forest_wind_fallback_created"): return
+	scene_root.set_meta("forest_wind_fallback_created", true)
+	# Inspect the local project setting, never query all renderer globals at runtime.
+	if not ProjectSettings.has_setting("shader_globals/world_wind"):
+		RenderingServer.global_shader_parameter_add("world_wind", RenderingServer.GLOBAL_VAR_TYPE_VEC3, Vector3(1.3, 0, 0.52))
+	var driver := Node.new()
+	driver.set_script(preload("res://environment/forest/scripts/forest_wind_fallback.gd"))
+	driver.name = "ForestWindFallback"
+	scene_root.add_child.call_deferred(driver)
 
 func _cell_rng(gx: int, gz: int, layer_index: int) -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
@@ -224,15 +237,19 @@ func _placement_transform(layer: String, p: Vector2, height: float, rng: RandomN
 				var angle := TAU * i / 8.0
 				lowest = minf(lowest, _height(p + Vector2(cos(angle), sin(angle)) * definition.root_radius * size))
 			height = lowest - 0.06 * size
-	return Transform3D(basis.scaled(Vector3.ONE * size), Vector3(p.x, height, p.y))
+	var origin := Vector3(p.x, height, p.y)
+	if layer == "fallen_log" and definition != null:
+		origin -= basis.y * definition.collision_height * size * 0.5
+	return Transform3D(basis.scaled(Vector3.ONE * size), origin)
 
-func _fungus_transform(tree: Transform3D, rng: RandomNumberGenerator) -> Transform3D:
+func _fungus_transform(tree: Transform3D, rng: RandomNumberGenerator, definition: ForestSpecies = null) -> Transform3D:
 	var tree_scale := tree.basis.get_scale().x
 	var angle := rng.randf_range(0.0, TAU)
-	var offset := Vector3(cos(angle), 0.0, sin(angle)) * (0.38 * tree_scale)
+	var radius := definition.collision_radius * 0.76 if definition != null else 0.3
+	var offset := Vector3(cos(angle), 0.0, sin(angle)) * (radius * tree_scale) + Vector3(0.1, 0, 0) * tree_scale
 	var size := rng.randf_range(0.22, 0.45) * tree_scale
 	var origin := tree.origin + offset + Vector3.UP * rng.randf_range(0.7, 2.2) * tree_scale
-	return Transform3D(Basis(Vector3.UP, angle).scaled(Vector3.ONE * size), origin)
+	return Transform3D(Basis(Vector3.UP, -angle - PI * 0.5).scaled(Vector3.ONE * size), origin)
 
 func _make_chunk(key: Vector2i, layers: Dictionary) -> void:
 	var chunk := Node3D.new()
@@ -315,8 +332,8 @@ func _make_meshes() -> void:
 	_meshes.clear()
 	_species.clear()
 	_lod_meshes.clear()
-	_meshes["hero"] = _scene_meshes(MANGO_TREE)
-	_meshes["canopy"] = _scene_meshes(ISLAND_TREE)
+	_meshes["hero"] = [_placeholder_cylinder(Color(0.3, 0.25, 0.18), 9.0, 0.6)]
+	_meshes["canopy"] = [_placeholder_cylinder(Color(0.3, 0.25, 0.18), 3.4, 0.3)]
 	_meshes["canopy_broad"] = _meshes["hero"]
 	_meshes["small_tree"] = _meshes["canopy"]
 	_meshes["dead_tree"] = [_placeholder_cylinder(Color(0.31, 0.27, 0.22), 4.2, 0.28)]
@@ -366,20 +383,21 @@ func _scene_meshes(scene: PackedScene) -> Array[Mesh]:
 				foliage.shader = preload("res://environment/forest/shaders/foliage.gdshader")
 				foliage.set_shader_parameter("wind_strength", config.wind_strength)
 				foliage.set_shader_parameter("wind_uv_reversed", true)
-				foliage.set_shader_parameter("albedo_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_color.png"))
+				foliage.set_shader_parameter("foliage_uv_scale", Vector2(0.18, 0.36))
+				foliage.set_shader_parameter("foliage_uv_offset", Vector2(0.16, 0.02))
+				foliage.set_shader_parameter("albedo_texture", preload("res://environment/forest/assets/textures/leaves_albedo.png"))
 				foliage.set_shader_parameter("use_albedo_texture", true)
-				foliage.set_shader_parameter("normal_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_normal.png"))
+				foliage.set_shader_parameter("normal_texture", preload("res://environment/forest/assets/textures/leaves_normal.jpg"))
 				foliage.set_shader_parameter("use_normal_texture", true)
-				foliage.set_shader_parameter("roughness_texture", preload("res://environment/vegetation/mango_tree/textures/mango_leaf_roughness.png"))
+				foliage.set_shader_parameter("roughness_texture", preload("res://environment/forest/assets/textures/leaves_arm.jpg"))
 				foliage.set_shader_parameter("use_roughness_texture", true)
 				material = foliage
 			elif material is StandardMaterial3D and "Forest_Bark" in str(material.resource_name):
-				var bark := (material as StandardMaterial3D).duplicate() as StandardMaterial3D
-				bark.albedo_color = Color.WHITE
-				bark.albedo_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_color.png")
-				bark.normal_enabled = true
-				bark.normal_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_normal.png")
-				bark.roughness_texture = preload("res://environment/vegetation/mango_tree/textures/mango_bark_roughness.png")
+				var bark := ShaderMaterial.new()
+				bark.shader = preload("res://environment/forest/shaders/bark.gdshader")
+				bark.set_shader_parameter("bark_color", preload("res://environment/forest/assets/textures/bark_brown_02_diff_2k.jpg"))
+				bark.set_shader_parameter("bark_normal", preload("res://environment/forest/assets/textures/bark_brown_02_nor_gl_2k.jpg"))
+				bark.set_shader_parameter("bark_roughness", preload("res://environment/forest/assets/textures/bark_brown_02_rough_2k.jpg"))
 				material = bark
 			surface.set_material(material)
 			result.append(surface.commit())

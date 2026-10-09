@@ -215,7 +215,10 @@ func _process(delta: float) -> void:
 	var armed := talwar_equipped and swimming < 0.5
 	var tree_driven: bool = motion_tree != null and not special_pose
 	if tree_driven:
-		motion_tree.update_motion(delta, speed / maxf(actor.walk_speed, 0.01), speed / maxf(actor.swim_speed, 0.01), actor.is_swimming, actor.is_on_floor(), actor.velocity.y)
+		var cinematic: bool = actor.get_meta("opening_active",false)
+		motion_tree.cinematic_rate = clampf(speed/.95,.1,2.0) if cinematic and speed > .03 else -1.0
+		var ground_speed := (1.0 if speed > .03 else 0.0) if cinematic else speed/maxf(actor.walk_speed,.01)
+		motion_tree.update_motion(delta,ground_speed,speed/maxf(actor.swim_speed,.01),actor.is_swimming,actor.is_on_floor() or cinematic,actor.velocity.y)
 	# Pivot near the chest when leaning into the water, keeping the face above it.
 	# The imported swim clips already pitch the skeleton forward. Keep the
 	# previous model tilt only for the procedural fallback path.

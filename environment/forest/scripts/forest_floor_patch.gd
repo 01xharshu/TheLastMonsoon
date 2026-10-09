@@ -3,12 +3,13 @@ extends MeshInstance3D
 func rebuild(generator: Node3D) -> void:
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://environment/forest/shaders/ground.gdshader")
-	material.set_shader_parameter("soil_color", preload("res://assets/nature/materials/brown_mud_dry_diff_1k.jpg"))
-	material.set_shader_parameter("soil_normal", preload("res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg"))
-	material.set_shader_parameter("grass_color", preload("res://assets/nature/materials/aerial_grass_rock_diff_1k.jpg"))
-	material.set_shader_parameter("grass_normal", preload("res://assets/nature/materials/aerial_grass_rock_nor_gl_1k.jpg"))
-	material.set_shader_parameter("rock_color", preload("res://assets/nature/materials/rock_boulder_dry_diff_1k.jpg"))
-	material.set_shader_parameter("rock_normal", preload("res://assets/nature/materials/rock_boulder_dry_nor_gl_1k.jpg"))
+	material.set_shader_parameter("soil_roughness", preload("res://environment/forest/assets/textures/forest_ground_04_rough_2k.jpg"))
+	material.set_shader_parameter("soil_color", preload("res://environment/forest/assets/textures/forest_ground_04_diff_2k.jpg"))
+	material.set_shader_parameter("soil_normal", preload("res://environment/forest/assets/textures/forest_ground_04_nor_gl_2k.jpg"))
+	material.set_shader_parameter("grass_color", preload("res://environment/forest/assets/textures/moss_grass_albedo.jpg"))
+	material.set_shader_parameter("grass_normal", preload("res://environment/forest/assets/textures/moss_grass_normal.jpg"))
+	material.set_shader_parameter("rock_color", preload("res://environment/forest/assets/textures/rock_albedo.jpg"))
+	material.set_shader_parameter("rock_normal", preload("res://environment/forest/assets/textures/rock_normal.jpg"))
 	material.set_shader_parameter("overlay_cutout", true)
 	material.set_shader_parameter("path_point_count", mini(8, generator.path_points.size()))
 	var points := PackedVector2Array()
@@ -27,7 +28,7 @@ func rebuild(generator: Node3D) -> void:
 	var nz := ceili(size.y)
 	for x in nx:
 		for z in nz:
-			for offset in [Vector2(0, 0), Vector2(0, 1), Vector2(1, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+			for offset in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]:
 				var p: Vector2 = (Vector2(x, z) + offset) * size / Vector2(nx, nz) - size * 0.5
 				var edge := minf(size.x * 0.5 - absf(p.x), size.y * 0.5 - absf(p.y))
 				var weight := smoothstep(0.0, 4.0, edge)
@@ -37,6 +38,7 @@ func rebuild(generator: Node3D) -> void:
 				surface.set_uv(p / 3.2)
 				surface.set_normal(generator._normal(p))
 				surface.add_vertex(Vector3(p.x, generator._height(p) + 0.045, p.y))
+	surface.index()
 	surface.generate_tangents()
 	surface.set_material(material)
 	mesh = surface.commit()

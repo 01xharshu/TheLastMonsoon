@@ -63,8 +63,19 @@ static func recompress(input_path: String, output_path: String) -> Dictionary:
 	for block in blocks: target.store_32(block.size())
 	for block in blocks: target.store_buffer(block)
 	target.store_buffer("RSCC".to_ascii_buffer())
+	target.flush()
+	var write_error := target.get_error()
 	target.close()
+	var expected_bytes := 20 + blocks.size() * 4
+	for block in blocks: expected_bytes += block.size()
+	var written := FileAccess.open(output_path, FileAccess.READ)
+	if write_error != OK or written == null or written.get_length() != expected_bytes:
+		push_error("Incomplete compressed resource write; output rejected.")
+		if written != null: written.close()
+		DirAccess.remove_absolute(output_path)
+		return {}
+	written.close()
 	var hash := HashingContext.new()
 	hash.start(HashingContext.HASH_SHA256)
 	hash.update(payload)
-	return {"before_bytes": before_bytes, "after_bytes": FileAccess.get_file_as_bytes(output_path).size(), "payload_sha256": hash.finish().hex_encode()}
+	return {"before_bytes": before_bytes, "after_bytes": expected_bytes, "payload_sha256": hash.finish().hex_encode()}

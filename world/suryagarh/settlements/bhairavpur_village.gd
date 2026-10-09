@@ -320,7 +320,7 @@ func _merge_static_geometry(node: Node3D) -> void:
 				var surface := SurfaceTool.new()
 				surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 				surfaces[mat] = surface
-			surfaces[mat].append_from(mesh.mesh,i,transform)
+			preload("res://systems/static_mesh_source.gd").append(surfaces[mat],mesh.mesh,i,transform)
 		preload("res://player/climb_opportunities.gd").retain_edge(node,mesh)
 		mesh.free()
 	var merged := ArrayMesh.new()

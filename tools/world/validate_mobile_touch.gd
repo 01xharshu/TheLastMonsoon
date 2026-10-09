@@ -71,4 +71,4 @@ func run() -> void:
 		root.get_texture().get_image().save_png(args[args.find("--review-output") + 1])
 	actor.free()
 	print("PASS mobile movement, simultaneous buttons, camera, release, menu and focus cleanup")
-	quit()
+	preload("res://tools/test_audio_cleanup.gd").finish(self)

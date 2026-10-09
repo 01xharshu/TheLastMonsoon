@@ -2,17 +2,16 @@ extends SceneTree
 ## Runs the actual title-menu journey callback. Reads existing saves; writes none.
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
-	var startup: String = ProjectSettings.get_setting("application/run/main_scene")
-	assert(startup == "res://ui/main_menu.tscn")
 	var saves: Node = root.get_node("SaveManager")
 	assert(saves.WORLD == "res://world/suryagarh/suryagarh_world.tscn")
 	var existing_slot: int = saves.newest_slot()
 	var slots: Array[int] = [0]
 	if existing_slot > 0: slots.append(existing_slot)
 	for slot in slots:
-		change_scene_to_file(startup)
-		for frame in range(5): await process_frame
-		var menu: Control = current_scene
+		var menu: Node = await preload("res://tools/maintenance/startup_fixture.gd").open_title(self)
+		if menu == null:
+			saves.quit_game(1)
+			return
 		menu._begin_journey(slot)
 		while current_scene == null or current_scene.scene_file_path != saves.WORLD:
 			await process_frame
@@ -34,5 +33,4 @@ func run() -> void:
 		current_scene = null
 		await process_frame
 	if existing_slot == 0: print("Continue runtime not exercised: no existing save; shared WORLD destination verified")
-	await preload("res://tools/test_audio_cleanup.gd").settle(self)
-	quit()
+	preload("res://tools/test_audio_cleanup.gd").finish(self)

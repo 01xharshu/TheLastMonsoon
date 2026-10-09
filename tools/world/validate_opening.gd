@@ -15,6 +15,10 @@ func run() -> void:
 	root.get_node("SaveManager").pending_slot = 0
 	root.get_node("SaveManager").apply_pending(world)
 	var opening = world.get_node("OpeningSequence")
+	print("OPENING WORLD: new game started")
+	check(root.get_node("WorldAudio").is_opening_quiet(),"World ambience leaked into intro")
+	check(opening.lamp.scale.is_equal_approx(Vector3.ONE*.35),"World uses old large diya")
+	check(opening.lamp.get_child_count() == 9,"World uses lantern case")
 	check(opening.shade.color == Color.BLACK,"Opening fade must be black before its first update")
 	check(is_equal_approx(opening.top_bar.anchor_bottom,0.12) and is_equal_approx(opening.bottom_bar.anchor_top,0.88),"Letterbox bars missing")
 	check(is_equal_approx(opening.subtitle.anchor_top,0.88),"Captions outside lower bar")
@@ -37,15 +41,18 @@ func run() -> void:
 			opening.elapsed = t
 		await create_timer(0.15).timeout
 		check(not paused,"Cinematic input paused game")
-		if DisplayServer.get_name() != "headless":
+		if DisplayServer.get_name() != "headless" and OS.get_environment("TLM_OPENING_TEST_OUTPUT") != "":
 			await RenderingServer.frame_post_draw
-			root.get_texture().get_image().save_png("res://docs/world/captures/opening_%02d.png" % int(t))
+			root.get_texture().get_image().save_png(OS.get_environment("TLM_OPENING_TEST_OUTPUT")+"/opening_%02d.png" % int(t))
 	if OS.get_environment("TLM_OPENING_REALTIME") == "1":
 		while opening.state == "night": await process_frame
 	else:
 		opening.elapsed = 31.95
 	await create_timer(0.2).timeout
 	check(opening.state == "seated","Natural completion did not seat Arjun")
+	check(world.get_node("WorldEnvironment").environment.ambient_light_energy >= .3,"World morning remains dark")
+	check(not root.get_node("WorldAudio").is_opening_quiet(),"Morning world audio stayed muted")
+	print("OPENING WORLD: morning reached")
 	check(opening.expression.entries.is_empty(),"Face mesh did not restore after cinematic")
 	check(not opening.murmur.playing,"Voice continued into morning")
 	check(opening.clock.current_hour == 6 and opening.clock.current_day == 2,"Wrong morning clock")
@@ -62,6 +69,10 @@ func run() -> void:
 	check(not paused,"Game remained paused")
 	world.queue_free()
 	await process_frame
+	if OS.get_environment("TLM_OPENING_SINGLE") == "1":
+		print("OPENING WORLD: ","FAIL" if failed else "PASS"," | actual new-game world, night/morning, fresh W, control release")
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1 if failed else 0)
+		return
 	for key in [KEY_SPACE,KEY_ESCAPE]:
 		world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 		root.add_child(world)
@@ -79,9 +90,9 @@ func run() -> void:
 		check(opening.clock.total_game_minutes == minutes,"Repeated skip advanced clock twice")
 		await create_timer(0.9).timeout
 		check(opening.state == "seated","Skip also stood Arjun up")
-		if DisplayServer.get_name() != "headless":
+		if DisplayServer.get_name() != "headless" and OS.get_environment("TLM_OPENING_TEST_OUTPUT") != "":
 			await RenderingServer.frame_post_draw
-			root.get_texture().get_image().save_png("res://docs/world/captures/opening_morning.png")
+			root.get_texture().get_image().save_png(OS.get_environment("TLM_OPENING_TEST_OUTPUT")+"/opening_morning.png")
 		event.keycode = KEY_W
 		opening._input(event)
 		await create_timer(1.7).timeout

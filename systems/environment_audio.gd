@@ -9,6 +9,8 @@ var actors: Dictionary={}
 var birds: Dictionary={}
 var timer:=0.0
 var bird_wait:=2.0
+var morning_bird_wait := -1.0
+var morning_bird_position := Vector3.ZERO
 var river_voice: AudioStreamPlayer3D
 var shore_voice: AudioStreamPlayer3D
 var water_seconds:=0.0
@@ -17,8 +19,7 @@ func _ready() -> void:
  for key in ['fire','river','cow','sparrow']:
   clips[key]=(load('res://audio/ambience/'+key+'.wav') as AudioStreamWAV)
   if key in ['fire','river']:
-   clips[key]=clips[key].duplicate()
-   clips[key].loop_mode=AudioStreamWAV.LOOP_FORWARD;clips[key].loop_end=clips[key].data.size()/2
+   clips[key]=preload('res://systems/audio_edges.gd').prepare(clips[key],true)
  for i in 8:
   var voice:=AudioStreamPlayer3D.new();voice.max_distance=28;voice.unit_size=6;voice.volume_db=-3
   add_child(voice);loops.append(voice)
@@ -65,7 +66,20 @@ func bank_x(z: float, side: float) -> float:
   if layout.height(centre+side*offset,z)>Layout.WATER_LEVEL:high=offset
   else:low=offset
  return centre+side*(low+high)*.5
+func stop_loops() -> void:
+ river_voice.stop();shore_voice.stop()
+ for voice in loops:voice.stop()
+
 func tick(listener: Vector3,hour: int,delta: float) -> void:
+ if get_parent().is_opening_quiet():
+  stop_loops()
+  return
+ var gain_db := linear_to_db(maxf(.0001,get_parent().ambience_gain))
+ if morning_bird_wait >= 0.0:
+  morning_bird_wait -= delta
+  if morning_bird_wait < 0.0 and day_at(hour):
+   emit('sparrow',morning_bird_position,-12)
+   bird_wait = randf_range(4.0,7.0)
  water_seconds+=delta
  # A river's broad source follows the nearest bank, rather than the player's feet.
  var z:=clampf(listener.z,-820,820)
@@ -75,7 +89,7 @@ func tick(listener: Vector3,hour: int,delta: float) -> void:
  river_voice.global_position=Vector3(x,Layout.WATER_LEVEL,z)
  var exposure: float=get_tree().root.get_node('WindSystem').exposure
  var upstream:=1.0-smoothstep(350.0,750.0,z)
- river_voice.volume_db=-4+upstream*3+linear_to_db(maxf(.12,exposure))
+ river_voice.volume_db=gain_db-4+upstream*3+linear_to_db(maxf(.12,exposure))
  river_voice.pitch_scale=lerpf(.95,1.08,upstream)
  if listener.distance_to(river_voice.global_position)<110:
   if not river_voice.playing:river_voice.play()
@@ -83,7 +97,7 @@ func tick(listener: Vector3,hour: int,delta: float) -> void:
  # A close, separately phased bank wash adds gentle lapping beneath the current.
  var side: float=-1.0 if listener.x<centre else 1.0
  shore_voice.global_position=Vector3(bank_x(z,side),Layout.WATER_LEVEL,z)
- shore_voice.volume_db=-3+linear_to_db(maxf(.12,exposure))+sin(water_seconds*.8)*2
+ shore_voice.volume_db=gain_db-3+linear_to_db(maxf(.12,exposure))+sin(water_seconds*.8)*2
  if listener.distance_to(shore_voice.global_position)<32:
   if not shore_voice.playing:shore_voice.play(clips.river.get_length()*.43)
  else:shore_voice.stop()
@@ -96,6 +110,7 @@ func tick(listener: Vector3,hour: int,delta: float) -> void:
  for i in loops.size():
   var voice:=loops[i]
   if i>=active.size():voice.stop();continue
+  voice.volume_db = -3+gain_db
   voice.global_position=active[i].global_position
   if not voice.playing:voice.stream=clips.fire;voice.play(randf_range(0,clips.fire.get_length()))
  bird_wait-=delta

@@ -1,0 +1,33 @@
+{
+  "disabled_clothing_masks": [
+    "Conservative clothing occlusion"
+  ],
+  "body_vertices": 19158,
+  "body_coordinate_sha256": "968ba4d4cdf7b506a5c950034a9dba7e2274f5c16697e48868ecdb3c2fa815fc",
+  "foundation": "Arjun_Foundation_FittedShorts",
+  "foundation_visible": true,
+  "helpers_only_mask": "Hide helpers",
+  "source": "WorkingAssets/Arjun/candidate/arjun_animated_candidate.blend",
+  "source_sha256": "1c6983ff43366832f34344c1783f7c35c88f941cc2f4f94f9cc6f1462249efe9",
+  "candidate": "WorkingAssets/Arjun/opening_fit/arjun_opening_fitted.blend",
+  "asset": "characters/arjun/arjun_opening_fit.glb",
+  "garments": [
+    {
+      "mesh": "Arjun_DrapedTrousers_-1",
+      "vertices_fitted": 1321,
+      "maximum_ease_m": 0.13199403605952548
+    },
+    {
+      "mesh": "Arjun_DrapedTrousers_1",
+      "vertices_fitted": 1315,
+      "maximum_ease_m": 0.13199403605952548
+    },
+    {
+      "mesh": "Arjun_Kurta_SplitHem",
+      "vertices_fitted": 149,
+      "maximum_ease_m": 0.012065908882518322
+    }
+  ],
+  "shared_source_changed": false,
+  "visual_approval": false
+}

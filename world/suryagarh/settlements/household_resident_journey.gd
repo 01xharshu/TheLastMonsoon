@@ -29,6 +29,8 @@ func configure(person:Node3D,owner_travel:Node,index:int) -> void:
 func change(next:String) -> void:
  state=next;elapsed=0;start_at=actor.global_position;visited[state]=true
  actor.set_meta("household_action",state)
+ var conversation:=actor.get_node_or_null("HouseholdConversation")
+ if conversation!=null:conversation.position.z=-.55 if state=="work" else .55
  if state in ["climb_step","enter_coach","climb_down","step_to_ground"]:
   var rig:Skeleton3D=actor.get("_skeleton")
   for suffix in ["l","r"]:step_feet[suffix]=rig.to_global(rig.get_bone_global_pose(rig.find_bone("foot_"+suffix)).origin)

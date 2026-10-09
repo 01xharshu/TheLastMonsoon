@@ -1,20 +1,23 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_generator.gd" id="1"]
 [ext_resource type="Resource" path="res://environment/forest/config/benchmark.tres" id="2"]
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="3"]
 [ext_resource type="Script" path="res://world/suryagarh/systems/game_time_system.gd" id="6"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/brown_mud_dry_diff_1k.jpg" id="4"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg" id="5"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/aerial_grass_rock_diff_1k.jpg" id="7"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/aerial_grass_rock_nor_gl_1k.jpg" id="8"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/rock_boulder_dry_diff_1k.jpg" id="9"]
-[ext_resource type="Texture2D" path="res://assets/nature/materials/rock_boulder_dry_nor_gl_1k.jpg" id="10"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_ground_04_diff_2k.jpg" id="4"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_ground_04_nor_gl_2k.jpg" id="5"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/moss_grass_albedo.jpg" id="7"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/moss_grass_normal.jpg" id="8"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/rock_albedo.jpg" id="9"]
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/rock_normal.jpg" id="10"]
 [ext_resource type="Shader" path="res://environment/forest/shaders/ground.gdshader" id="11"]
 [ext_resource type="Script" path="res://environment/forest/scripts/forest_ground.gd" id="12"]
 
+[ext_resource type="Texture2D" path="res://environment/forest/assets/textures/forest_ground_04_rough_2k.jpg" id="13"]
+
 [sub_resource type="ShaderMaterial" id="GroundMaterial"]
 shader = ExtResource("11")
+shader_parameter/soil_roughness = ExtResource("13")
 shader_parameter/soil_color = ExtResource("4")
 shader_parameter/soil_normal = ExtResource("5")
 shader_parameter/grass_color = ExtResource("7")

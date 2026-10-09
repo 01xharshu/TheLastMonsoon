@@ -4,7 +4,7 @@ Start with [current handoff](../CODEX_HANDOFF.md) for what is active, what faile
 
 | Work area | Source of truth | Focused evidence |
 | --- | --- | --- |
-| Game errors and startup | [current fixes and remaining checks](world/game_error_cleanup_2026-10-07.md) | Native and isolated pack routes PASS; loading and broader play review remain |
+| Game errors and startup | [current integration gate](world/repository_integration_2026-10-09.md), [earlier fixes](world/game_error_cleanup_2026-10-07.md) | Clean import/menu PASS; current Metal household startup timeout, expanded gameplay/pack checks pending |
 | Repository size and disposable tests | [storage policy and remaining history migration](assets/repository_storage.md) | Test output deleted; sources retained, Git history migration pending |
 | World sound and wind | [coverage and remaining gates](world/audio_and_wind.md) | world route with sound (test output deleted); behaviour/contact audio PASS, owner listening and performance open |
 | Project audit, unfinished scope and owner continuation | [2026-10-05 audit](agent/project_audit_2026-10-05.md) | Current chat dispatch, missing/unverified locations, storage and performance priorities |

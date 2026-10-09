@@ -76,4 +76,4 @@ func run() -> void:
 		check(inquiry.stage=="released","save restores inquiry progress without replaying punishment")
 	print("DEV INQUIRY: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
 	world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1)
-func finish(status: int) -> void:quit(status)
+func finish(status: int) -> void:preload("res://tools/test_audio_cleanup.gd").finish(self,status)

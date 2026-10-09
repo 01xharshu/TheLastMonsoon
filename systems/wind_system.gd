@@ -11,9 +11,8 @@ func _ready() -> void:
  get_tree().node_added.connect(_vegetation_added)
  for node in get_tree().root.find_children('*','MeshInstance3D',true,false):_vegetation_added(node)
  ambience=AudioStreamPlayer.new();add_child(ambience)
- var stream := (load('res://audio/world/wind.wav') as AudioStreamWAV).duplicate() as AudioStreamWAV
- stream.loop_mode=AudioStreamWAV.LOOP_FORWARD;stream.loop_end=stream.data.size()/2
- ambience.stream=stream;ambience.volume_db=-60;ambience.play()
+ var stream := preload('res://systems/audio_edges.gd').prepare(load('res://audio/world/wind.wav'),true)
+ ambience.stream=stream;ambience.volume_db=-60
 func sample(at: Vector3) -> Vector3:
  var gust := .78+.22*sin(elapsed*.71-at.x*.015-at.z*.011)
  return Vector3(direction.x,0,direction.y)*speed*gust
@@ -26,7 +25,12 @@ func _process(delta: float) -> void:
  RenderingServer.global_shader_parameter_set('world_wind',Vector3(direction.x*speed,elapsed,direction.y*speed))
  _update_flags(delta)
  var camera := get_viewport().get_camera_3d()
- if camera==null:ambience.volume_db=-60;return
+ var audio := get_tree().root.get_node_or_null("WorldAudio")
+ var scene := get_tree().current_scene
+ if camera == null or scene == null or scene.get_node_or_null("GameTimeSystem") == null or (audio != null and audio.is_opening_quiet()):
+  ambience.stop()
+  return
+ if not ambience.playing: ambience.play()
  shelter_timer-=delta
  if shelter_timer<=0:
   shelter_timer=.25
@@ -34,7 +38,8 @@ func _process(delta: float) -> void:
   query.collision_mask=1
   sheltered=not camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
  exposure=move_toward(exposure,.12 if sheltered else 1.0,delta*.8)
- ambience.volume_db=linear_to_db(maxf(.001,speed/5.0*exposure*.45))
+ var gain: float = audio.ambience_gain if audio != null else 1.0
+ ambience.volume_db=linear_to_db(maxf(.0001,speed/5.0*exposure*.45*gain))
 
 func _update_flags(delta: float) -> void:
  for animator in get_tree().get_nodes_in_group('wind_flags'):

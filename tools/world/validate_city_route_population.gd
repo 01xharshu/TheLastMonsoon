@@ -6,16 +6,25 @@ func run() -> void:
  var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
  root.add_child(world);current_scene=world
  var population:Node=world.get_node("CityRoutePopulation")
+ var opening:Node=world.get_node("OpeningSequence")
+ var skip:=InputEventKey.new();skip.keycode=KEY_ESCAPE;skip.pressed=true
+ opening._input(skip)
+ for frame in 2:await process_frame
+ opening._input(skip)
+ var clock:Node=world.get_node("GameTimeSystem")
+ clock.current_hour=10;clock.total_game_minutes=10*60;clock.clock_paused=true
+ clock._update_readable_time(true)
+ var player:Node3D=world.get_node("Player")
+ player.set_physics_process(false)
  var start:=Time.get_ticks_msec()
  while not population.ready_population and Time.get_ticks_msec()-start<90000:
   await process_frame
- if not population.ready_population:errors.append("population did not finish spawning")
- var clock:Node=root.find_child("GameTimeSystem",true,false)
- if clock!=null:
-  clock.current_hour=10;clock.set_process(false)
+ if not population.ready_population:
+  print("CITY_POPULATION_RESULT ",JSON.stringify({"passed":false,"pending":population.pending.size(),"errors":["population did not finish spawning within 90 seconds"]}))
+  root.get_node("SaveManager").quit_game(1)
+  return
  paused=false
- var player:Node3D=world.get_node("Player")
- player.set_physics_process(false)
+ population.set_process(false)
  var origins:Dictionary={};var route_counts:Dictionary={}
  for person:Node3D in population.pedestrians:
   origins[person]=person.global_position

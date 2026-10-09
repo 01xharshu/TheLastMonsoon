@@ -21,17 +21,18 @@ var match_light: OmniLight3D
 var visual: Node3D
 var disabled_inputs: Array[Node] = []
 var disabled_physics: Array[Node] = []
+var disabled_processes: Array[Node] = []
 var hidden_layers: Array[CanvasLayer] = []
 var previous_clock_pause := false
 var previous_physics := true
 var rise_time := 0.0
-var previous_position := Vector3.ZERO
 var environment: Environment
 var ambient_energy := 0.0
 var murmur: AudioStreamPlayer3D
 var murmur_played := false
 var sigh_audio: AudioStreamPlayer3D
 var sigh_played := false
+var sound: Node
 var contact = preload("res://story/opening_contact.gd").new()
 var expression = preload("res://story/opening_expression.gd").new()
 
@@ -46,8 +47,10 @@ func start(target_world: Node3D) -> void:
 		push_error("Opening requires the furnished Arjun home")
 		queue_free()
 		return
+	get_tree().root.get_node("WorldAudio").set_opening_quiet(true)
 	process_priority = 100
 	visual = actor.get_node("VisualRoot/CharacterVisual")
+	preload("res://player/arjun_complete_fit.gd").new().apply(visual)
 	expression.configure(visual.model)
 	previous_physics = actor.is_physics_processing()
 	actor.set_physics_process(false)
@@ -62,6 +65,9 @@ func start(target_world: Node3D) -> void:
 			node.hide()
 	for node in actor.find_children("*", "Node", true, false):
 		if visual.is_ancestor_of(node) or node == visual: continue
+		if str(node.name) in ["StairFootContact","CameraClearance","StealthStance"] and node.is_processing():
+			disabled_processes.append(node)
+			node.set_process(false)
 		if node.is_physics_processing():
 			disabled_physics.append(node)
 			node.set_physics_process(false)
@@ -71,7 +77,7 @@ func start(target_world: Node3D) -> void:
 	clock._update_readable_time(true)
 	environment = world.get_node("WorldEnvironment").environment
 	ambient_energy = environment.ambient_light_energy
-	environment.ambient_light_energy = 0.015
+	environment.ambient_light_energy = 0.0
 	if visual.equipment != null:
 		visual.equipment.stowed = true
 		visual.equipment._refresh()
@@ -81,20 +87,22 @@ func start(target_world: Node3D) -> void:
 	camera.make_current()
 	_build_lamp()
 	_build_overlay()
+	sound = preload("res://story/opening_sound.gd").new()
+	add_child(sound)
+	sound.configure(actor,lamp)
 	murmur = AudioStreamPlayer3D.new()
-	murmur.stream = load("res://assets/audio/opening/arjun_murmur_draft.wav")
+	murmur.stream = preload("res://systems/audio_edges.gd").prepare(load("res://assets/audio/opening/arjun_murmur_draft.wav"))
 	murmur.volume_db = -12.0
 	murmur.max_distance = 8.0
 	actor.add_child(murmur)
 	murmur.position = Vector3(0,0.70,0)
 	sigh_audio = AudioStreamPlayer3D.new()
-	sigh_audio.stream = load("res://assets/audio/opening/arjun_sigh_draft.wav")
+	sigh_audio.stream = preload("res://systems/audio_edges.gd").prepare(load("res://assets/audio/opening/arjun_sigh_draft.wav"))
 	sigh_audio.volume_db = -6.0
 	sigh_audio.max_distance = 8.0
 	actor.add_child(sigh_audio)
 	sigh_audio.position = Vector3(0,.70,0)
-	_place(Vector3(-2.6, 1.14, 1.50), PI)
-	previous_position = actor.global_position
+	_place(Vector3(-2.6, 1.14, 1.27), PI)
 
 func _build_overlay() -> void:
 	var layer := CanvasLayer.new()
@@ -138,11 +146,12 @@ func _build_overlay() -> void:
 	layer.add_child(hint)
 
 func _build_lamp() -> void:
-	# Oil-wick burner inside an original simple framed lantern candidate.
+	# Open oil-wick diya stays on the table throughout lighting.
 	lamp = preload("res://objects/household/oil_lamp_visual.tscn").instantiate()
 	home.add_child(lamp)
 	lamp.name = "OpeningOilLamp"
 	lamp.position = Vector3(-2.6, 0.96, 0.70)
+	lamp.scale = Vector3.ONE*.35
 	var table := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.65, 0.08, 0.55)
@@ -161,50 +170,40 @@ func _build_lamp() -> void:
 			leg.material_override = wood
 			table.add_child(leg)
 			leg.position = Vector3(x,-0.35,z)
-	var metal := StandardMaterial3D.new()
-	metal.albedo_color = Color(0.23,0.16,0.08)
-	metal.metallic = 0.65
-	metal.roughness = 0.55
-	for x in [-0.22,0.22]:
-		for z in [-0.10,0.30]:
-			var upright := MeshInstance3D.new()
-			var upright_mesh := BoxMesh.new()
-			upright_mesh.size = Vector3(0.015,0.43,0.015)
-			upright.mesh = upright_mesh
-			upright.material_override = metal
-			lamp.add_child(upright)
-			upright.position = Vector3(x,0.23,z)
-	var cap := MeshInstance3D.new()
-	var cap_mesh := BoxMesh.new()
-	cap_mesh.size = Vector3(0.48,0.025,0.44)
-	cap.mesh = cap_mesh
-	cap.material_override = metal
-	lamp.add_child(cap)
-	cap.position = Vector3(0,0.45,0.10)
-	var handle := MeshInstance3D.new()
-	var handle_mesh := TorusMesh.new()
-	handle_mesh.inner_radius = .085
-	handle_mesh.outer_radius = .098
-	handle_mesh.rings = 12
-	handle_mesh.ring_segments = 6
-	handle.mesh = handle_mesh
-	handle.material_override = metal
-	lamp.add_child(handle)
-	handle.rotation.x = PI/2
-	handle.position = Vector3(-.15,.50,.10)
-	var glass := StandardMaterial3D.new()
-	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glass.albedo_color = Color(0.8,0.75,0.65,0.08)
-	glass.cull_mode = BaseMaterial3D.CULL_DISABLED
-	for z in [-0.10,0.30]:
-		var pane := MeshInstance3D.new()
-		var pane_mesh := PlaneMesh.new()
-		pane_mesh.size = Vector2(0.43,0.40)
-		pane.mesh = pane_mesh
-		pane.material_override = glass
-		lamp.add_child(pane)
-		pane.rotation.x = PI/2
-		pane.position = Vector3(0,0.23,z)
+	# Separate abrasive pad on the tabletop; the diya has no enclosure.
+	var strike_pad := MeshInstance3D.new()
+	strike_pad.name = "MatchStrikePad"
+	var pad_mesh := BoxMesh.new()
+	pad_mesh.size = Vector3(.065,.004,.03)
+	strike_pad.mesh = pad_mesh
+	var abrasive := StandardMaterial3D.new()
+	abrasive.albedo_color = Color(.12,.09,.065)
+	abrasive.roughness = 1.0
+	strike_pad.material_override = abrasive
+	table.add_child(strike_pad)
+	strike_pad.position = Vector3(.10,.042,.20)
+	var strike_contact := Marker3D.new()
+	strike_contact.name = "StrikeContact"
+	home.add_child(strike_contact)
+	strike_contact.position = Vector3(-2.50,.958,.90)
+	var sparks := Node3D.new()
+	sparks.name = "StrikeSparks"
+	home.add_child(sparks)
+	sparks.position = strike_contact.position
+	var spark_material := StandardMaterial3D.new()
+	spark_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	spark_material.albedo_color = Color(1,.66,.18)
+	spark_material.emission_enabled = true
+	spark_material.emission = Color(1,.4,.06)
+	spark_material.emission_energy_multiplier = 2.0
+	for i in 6:
+		var spark := MeshInstance3D.new()
+		var streak := BoxMesh.new()
+		streak.size = Vector3(.001,.001,.006)
+		spark.mesh = streak
+		spark.material_override = spark_material
+		sparks.add_child(spark)
+	sparks.hide()
 	var collider := StaticBody3D.new()
 	table.add_child(collider)
 	var shape_node := CollisionShape3D.new()
@@ -220,9 +219,6 @@ func _build_lamp() -> void:
 	light.shadow_enabled = true
 	light.light_energy = 0
 	lamp.get_node("Flame").hide()
-	var attachment := BoneAttachment3D.new()
-	attachment.bone_name = "hand_r"
-	visual.skeleton.add_child(attachment)
 	match_prop = MeshInstance3D.new()
 	var stick := CylinderMesh.new()
 	stick.top_radius = 0.002
@@ -236,8 +232,20 @@ func _build_lamp() -> void:
 	match_wood.roughness = .95
 	match_prop.material_override = match_wood
 	add_child(match_prop)
-	attachment.queue_free()
 	match_prop.position = Vector3(0,0.035,0)
+	var match_head := MeshInstance3D.new()
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = .003
+	head_mesh.height = .006
+	head_mesh.radial_segments = 8
+	head_mesh.rings = 4
+	match_head.mesh = head_mesh
+	var head_material := StandardMaterial3D.new()
+	head_material.albedo_color = Color(.17,.09,.045)
+	head_material.roughness = 1.0
+	match_head.material_override = head_material
+	match_prop.add_child(match_head)
+	match_head.position.y = .0275
 	var match_flame := MeshInstance3D.new()
 	var flame_mesh := SphereMesh.new()
 	flame_mesh.radius = 0.008
@@ -268,6 +276,7 @@ func _input(event: InputEvent) -> void:
 	elif state == "seated" and (event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton):
 		state = "rising"
 		rise_time = 0
+		sound.rise()
 		actor.set_meta("rest_waking",true)
 
 func _process(delta: float) -> void:
@@ -276,10 +285,17 @@ func _process(delta: float) -> void:
 	if state == "rising":
 		rise_time += delta
 		actor.set_meta("rest_progress", lerpf(0.38,0.0,clampf(rise_time/1.5,0,1)))
+		actor.global_position = bed.to_global(Vector3(0,0.83,0)).lerp(home.to_global(Vector3(-2.35,1.14,-0.60)),smoothstep(0.3,1.5,rise_time))
 		if rise_time >= 1.5: _release()
 		return
 	elapsed += delta
 	var t := elapsed
+	# The day/night controller also writes ambient energy; override after it.
+	environment.ambient_light_energy = 0.0
+	for name in ["Sun","Moon"]:
+		var daylight := world.get_node_or_null(name) as DirectionalLight3D
+		if daylight != null: daylight.light_energy = 0.0
+	sound.update(t)
 	expression.update(t)
 	if t >= 15.0 and t < 18.4 and not murmur_played:
 		murmur_played = true
@@ -287,20 +303,24 @@ func _process(delta: float) -> void:
 	if t >= 18.3 and t < 19.6 and not sigh_played:
 		sigh_played = true
 		sigh_audio.play()
-	shade.color = Color(0,0,0,1.0-smoothstep(1.5,3.5,t))
+	shade.color = Color(0,0,0,1.0-smoothstep(.3,1.6,t))
 	hint.modulate.a = 1.0-smoothstep(6,8,t)
-	match_prop.visible = t < 7
+	match_prop.visible = true
 	match_prop.get_node("Flame").visible = t >= 2.5 and t < 6.5
-	match_light.light_energy = 0.45 if t >= 2.5 and t < 6.5 else 0.0
+	match_light.light_energy = (.40+sin(t*31.0)*.035)*smoothstep(2.5,2.65,t) if t >= 2.5 and t < 6.5 else 0.0
 	var lit := t >= 5.5 and t < 29
 	lamp.get_node("Flame").visible = lit
-	light.light_energy = (0.85 + sin(t*17)*0.045) if lit else 0.0
+	light.light_energy = (0.85 + sin(t*17)*0.045)*smoothstep(5.5,6.2,t) if lit else 0.0
 	subtitle.text = "Still no word from Dev…" if t >= 15 and t < 19 else ""
 	if t < 9:
-		_shot(Vector3(-1.2,1.7,2.65),Vector3(-2.6,1.22,0.95))
 		contact.update(self,t)
+		var pullback := smoothstep(5.9,8.7,t)
+		var focus := Vector3(-2.50,.958,.90).lerp(home.to_local(lamp.get_node("WickContact").global_position),smoothstep(2.5,5.0,t))
+		_shot(Vector3(-2.55,1.13,.18).lerp(Vector3(-1.2,1.7,2.65),pullback),focus.lerp(Vector3(-2.6,1.05,.95),pullback))
+		camera.fov = lerpf(48.0,60.0,pullback)
+		_update_strike_sparks(t)
 	elif t < 13:
-		_walk(Vector3(-2.6,1.14,1.5),Vector3(-3.35,1.14,2.8),(t-9)/4,delta)
+		_walk(Vector3(-2.6,1.14,1.27),Vector3(-3.35,1.14,2.8),(t-9.8)/3.2,delta)
 		_interior_window_shot(t)
 	elif t < 20.8:
 		# Face remains the subject. Only Arjun turns; camera stays in the room.
@@ -309,7 +329,8 @@ func _process(delta: float) -> void:
 		actor.velocity = Vector3.ZERO
 		var lowered := smoothstep(18.1,19.4,t)
 		var sigh := sin(clampf((t-18.3)/1.2,0,1)*PI)
-		visual.pose("head",Vector3(0.03+0.15*lowered,lerpf(-0.1,-0.85,smoothstep(14.7,16.0,t)),0.035*lowered),0.9)
+		var search := .10*sin(clampf((t-13.5)/3.8,0,1)*TAU)*(1.0-lowered)
+		visual.pose("head",Vector3(0.03+0.15*lowered,-.10+search,0.035*lowered),0.9)
 		visual.pose("spine_02",Vector3(0.025+0.035*sigh,0,0),0.75)
 		visual.pose("upperarm_l",Vector3(0.015,0,-0.04*sigh),0.45)
 		visual.pose("upperarm_r",Vector3(0.015,0,0.04*sigh),0.45)
@@ -323,13 +344,25 @@ func _process(delta: float) -> void:
 		_shot(Vector3(-3.95,1.88,2.00).lerp(Vector3(-1.1,1.95,0.5),follow), Vector3(-3.30,1.56,2.8).lerp(Vector3(-2.35,1.0,-1.4),follow))
 	else:
 		actor.velocity = Vector3.ZERO
-		actor.global_position = bed.to_global(Vector3(0,0.83,0))
-		actor.global_basis = bed.global_basis
+		var sit_down := smoothstep(24.0,25.3,t)
+		actor.global_position = home.to_global(Vector3(-2.35,1.14,-0.60)).lerp(bed.to_global(Vector3(0,0.83,0)),sit_down)
+		actor.global_basis = (home.global_basis * Basis(Vector3.UP,PI/2)).slerp(bed.global_basis,sit_down)
 		actor.set_meta("rest_action","opening")
-		actor.set_meta("rest_progress",clampf((t-24)/4,0,1))
+		actor.set_meta("rest_progress",0.38*sit_down+0.62*smoothstep(25.3,28.0,t))
 		_shot(Vector3(-0.9,2.0,0),Vector3(-2.35,0.85,-1.4))
 		shade.color.a = smoothstep(28,30,t)
 	if t >= DURATION: morning()
+
+func _update_strike_sparks(t: float) -> void:
+	var sparks: Node3D = home.get_node("StrikeSparks")
+	var age := t-2.12
+	sparks.visible = age >= 0 and age < .16
+	if not sparks.visible: return
+	for i in sparks.get_child_count():
+		var streak: Node3D = sparks.get_child(i)
+		var direction := Vector3(cos(i*2.4),.6+float(i)*.12,sin(i*2.4)).normalized()
+		streak.position = direction*age*.25+Vector3.DOWN*age*age*.8
+		streak.scale = Vector3.ONE*(1.0-age/.16)
 
 func _place(local: Vector3, yaw: float) -> void:
 	actor.global_position = home.to_global(local)
@@ -339,11 +372,12 @@ func _place(local: Vector3, yaw: float) -> void:
 func _walk(from: Vector3, to: Vector3, fraction: float, delta: float) -> void:
 	var p := from.lerp(to,clampf(fraction,0,1))
 	var direction := to-from
+	var before := actor.global_position
+	var facing := actor.global_basis
 	_place(p,atan2(direction.x,direction.z))
-	actor.velocity = (actor.global_position-previous_position)/maxf(delta,0.001)
-	previous_position = actor.global_position
-	if visual.motion_tree != null:
-		visual.motion_tree.update_motion(delta,0.24,0,false,true,0)
+	actor.global_basis = facing.slerp(actor.global_basis,1.0-exp(-6.0*delta))
+	actor.velocity = (actor.global_position-before)/maxf(delta,0.001)
+	contact.update_walk(self,delta)
 
 func _shot(at: Vector3, target: Vector3) -> void:
 	camera.fov = 48
@@ -353,6 +387,8 @@ func _shot(at: Vector3, target: Vector3) -> void:
 func morning() -> void:
 	if state != "night": return
 	state = "seated"
+	sound.morning()
+	get_tree().root.get_node("WorldAudio").begin_morning(home.to_global(Vector3(-3.35,2.3,3.7)))
 	expression.restore()
 	if murmur != null: murmur.stop()
 	if sigh_audio != null: sigh_audio.stop()
@@ -360,8 +396,11 @@ func morning() -> void:
 	elapsed = DURATION
 	shade.color = Color.BLACK
 	clock.advance_minutes(8*60)
+	# Refresh the clock-driven sky/lights before revealing the paused morning.
+	var sun := world.get_node_or_null("Sun")
+	if sun != null and sun.has_method("_update_day_night_lighting"):
+		sun._update_day_night_lighting()
 	actor.get_node("SurvivalComponent").restore_energy(100.0)
-	environment.ambient_light_energy = ambient_energy
 	lamp.get_node("Flame").hide()
 	light.light_energy = 0
 	match_prop.hide()
@@ -383,6 +422,8 @@ func morning() -> void:
 
 func _release() -> void:
 	state = "done"
+	if murmur != null: murmur.queue_free()
+	if sigh_audio != null: sigh_audio.queue_free()
 	actor.remove_meta("opening_active")
 	actor.set_meta("rest_action", "")
 	actor.set_meta("rest_progress",0.0)
@@ -395,17 +436,25 @@ func _release() -> void:
 		if is_instance_valid(node): node.set_process_unhandled_input(true)
 	for node in disabled_physics:
 		if is_instance_valid(node): node.set_physics_process(true)
+	for node in disabled_processes:
+		if is_instance_valid(node): node.set_process(true)
 	for layer in hidden_layers:
 		if is_instance_valid(layer): layer.show()
 	set_process_input(false)
 	set_process(false)
 	# Keep the lamp/table in the home; discard transient cinematic overlays.
-	var inquiry: Node=world.get_node_or_null("DevInquiry")
-	if inquiry!=null:inquiry.begin()
-	for child in get_children(): child.queue_free()
+	# Let the last cot/cloth cue decay naturally across control release.
+	var inquiry: Node = world.get_node_or_null("DevInquiry")
+	if inquiry != null: inquiry.begin()
+	for child in get_children():
+		if child != sound: child.queue_free()
 
 func _interior_window_shot(t: float) -> void:
 	# On the room side of the front wall (z < 3.41); see his face in profile.
 	var push := smoothstep(13.0,18.0,t)
 	_shot(Vector3(-4.05,1.88,1.92).lerp(Vector3(-3.95,1.88,2.00),push),Vector3(-3.23,1.78,4.25))
 	camera.fov = 52.0
+
+func _exit_tree() -> void:
+	var audio := get_tree().root.get_node_or_null("WorldAudio")
+	if audio != null and state == "night": audio.set_opening_quiet(false)

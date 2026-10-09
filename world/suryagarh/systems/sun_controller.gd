@@ -45,10 +45,10 @@ func _update_day_night_lighting() -> void:
 	var elevation := sin((fraction - 0.25) * TAU)
 	rotation_degrees = Vector3(90.0 - fraction * 360.0, sun_azimuth_degrees, 0)
 	moon.rotation_degrees = Vector3(rotation_degrees.x + 180.0, sun_azimuth_degrees, 0)
-	light_energy = lerpf(nighttime_sun_energy, daytime_sun_energy, smoothstep(0.0, 0.65, elevation))
+	light_energy = lerpf(nighttime_sun_energy, daytime_sun_energy, smoothstep(-0.12, 0.65, elevation))
 	moon.light_energy = maximum_moon_energy * smoothstep(0.0, 0.5, -elevation)
 	light_color = Color(1.0, 0.52, 0.27).lerp(Color(1.0, 0.95, 0.84), smoothstep(0.0, 0.45, elevation))
-	var daylight := smoothstep(-0.18, 0.3, elevation)
+	var daylight := smoothstep(-0.22, 0.22, elevation)
 	var twilight := (1.0 - smoothstep(0.0, 0.3, absf(elevation))) * 0.6
 	var horizon := Color(0.035, 0.05, 0.095).lerp(Color(0.66, 0.7, 0.67), daylight)
 	horizon = horizon.lerp(Color(0.65, 0.32, 0.19), twilight)

@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode diffuse_burley;
 
 uniform sampler2D soil_color : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D soil_roughness : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D soil_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D grass_color : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D grass_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -69,7 +70,7 @@ void fragment() {
 	base = mix(base, soil * vec3(0.95, 0.87, 0.69), path * 0.72);
 	base *= 1.0 + (macro - 0.5) * macro_variation;
 	ALBEDO = base;
-	ROUGHNESS = clamp(0.86 + soil_patch * 0.07 - moss * 0.15 + (macro - 0.5) * 0.07, 0.65, 0.98);
+	ROUGHNESS = clamp(texture(soil_roughness, p / 3.2).r * 0.75 + 0.20 + soil_patch * 0.07 - moss * 0.12 + (macro - 0.5) * 0.07, 0.50, 0.98);
 	SPECULAR = 0.2;
 	vec3 soil_n = texture(soil_normal, p / 3.2).rgb;
 	vec3 grass_n = texture(grass_normal, p / 6.5).rgb;

@@ -18,7 +18,7 @@ func _setup() -> void:
  var files:=["households/merchant","households/landowner","british/official_woman"]
  for index in 3:
   var actor:Node3D=load("res://characters/npcs/households/household_npc_actor.gd").new()
-  actor.movement_profile=&"female" if index==2 else &"male";actor.movement_enabled=false;actor.foot_plant_enabled=false
+  actor.set_meta("drape_profile",files[index].get_file());actor.movement_profile=&"female" if index==2 else &"male";actor.movement_enabled=false;actor.foot_plant_enabled=false
   var document:=GLTFDocument.new();var state:=GLTFState.new()
   if document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/"+files[index]+".glb"),state)!=OK:errors.append("GLB failed "+files[index]);continue
   actor.add_child(document.generate_scene(state));actor.position.x=(index-1)*2.5;scene.add_child(actor);actor.set_process(false)

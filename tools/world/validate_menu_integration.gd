@@ -13,9 +13,12 @@ func check(value: bool, message: String) -> void:
 		push_error(message)
 func run() -> void:
 	var startup: String = ProjectSettings.get_setting("application/run/main_scene")
-	check(startup == "res://ui/main_menu.tscn", "Configured startup bypasses title")
+	check(startup == "res://ui/studio_intro.tscn", "Configured startup bypasses studio intro")
 	change_scene_to_file(startup)
 	for i in 4: await process_frame
+	check(current_scene.get_script().resource_path == "res://ui/studio_intro.gd", "Startup uses wrong studio script")
+	current_scene._finish()
+	await create_timer(0.75).timeout
 	check(current_scene.get_script().resource_path == "res://ui/main_menu.gd", "Startup uses wrong menu script")
 	check(current_scene.main_panel.get_child(0).text == "THE LAST\nMONSOON", "Startup does not use revised title")
 	current_scene.show_settings()

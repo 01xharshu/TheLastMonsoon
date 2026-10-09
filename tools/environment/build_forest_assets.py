@@ -9,7 +9,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'environment/forest/assets'
 SOURCE = ROOT / 'WorkingAssets/Environment/Forest'
-TEX = ROOT / 'environment/vegetation/mango_tree/textures'
+TEX = ROOT / 'environment/forest/assets/textures'
 OUT.mkdir(parents=True, exist_ok=True); SOURCE.mkdir(parents=True, exist_ok=True)
 (SOURCE / '.gdignore').write_text('')
 
@@ -19,9 +19,13 @@ def material(name, color, prefix=None):
     p.inputs['Roughness'].default_value = .85
     if prefix:
         for suffix, socket in [('color','Base Color'), ('roughness','Roughness'), ('normal','Normal')]:
-            path = TEX / f'{prefix}_{suffix}.png'
+            path = TEX / (f'bark_brown_02_{dict(color="diff",normal="nor_gl",roughness="rough")[suffix]}_2k.jpg' if prefix=='bark' else dict(color='leaves_albedo.png',normal='leaves_normal.jpg',roughness='leaves_arm.jpg')[suffix])
             t = m.node_tree.nodes.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(str(path),check_existing=True)
             if suffix != 'color': t.image.colorspace_settings.name='Non-Color'
+            if prefix=='leaf':
+                coord=m.node_tree.nodes.new('ShaderNodeTexCoord'); mapping=m.node_tree.nodes.new('ShaderNodeMapping')
+                mapping.inputs['Scale'].default_value=(.18,.36,1); mapping.inputs['Location'].default_value=(.16,.62,0)
+                m.node_tree.links.new(coord.outputs['UV'],mapping.inputs['Vector']); m.node_tree.links.new(mapping.outputs['Vector'],t.inputs['Vector'])
             if suffix == 'normal':
                 n = m.node_tree.nodes.new('ShaderNodeNormalMap'); m.node_tree.links.new(t.outputs['Color'],n.inputs['Color']); m.node_tree.links.new(n.outputs['Normal'],p.inputs[socket])
             else: m.node_tree.links.new(t.outputs['Color'],p.inputs[socket])
@@ -32,16 +36,39 @@ class Mesh:
     def face(self, points, uvs):
         k=len(self.v); self.v.extend(points); self.f.append(tuple(range(k,k+len(points)))); self.uv.extend(uvs)
     def tube(self, points, radii, sides, hollow=False):
-        points=[Vector(p) for p in points]
+        original=[Vector(p) for p in points]
+        # Catmull-Rom centreline and parallel-transport rings avoid disconnected
+        # tube segments, abrupt branch kinks and sliding texture orientation.
+        steps=3 if sides>=10 else (2 if sides>=7 else 1)
+        smooth=[]; smooth_r=[]
+        for j in range(len(original)-1):
+            p0=original[max(0,j-1)]; p1=original[j]; p2=original[j+1]; p3=original[min(len(original)-1,j+2)]
+            for k in range(steps):
+                t=k/steps
+                smooth.append((2*p1+(p2-p0)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t)*.5)
+                smooth_r.append(radii[j]*(1-t)+radii[j+1]*t)
+        smooth.append(original[-1]); smooth_r.append(radii[-1])
+        points=smooth; radii=smooth_r; frames=[]; distance=[0.0]
+        previous_axis=None; a=None
+        for j,p in enumerate(points):
+            axis=(points[min(j+1,len(points)-1)]-points[max(0,j-1)]).normalized()
+            if previous_axis is None:
+                a=axis.cross(Vector((0,1,0)))
+                if a.length < .01: a=axis.cross(Vector((1,0,0)))
+                a.normalize()
+            else: a=previous_axis.rotation_difference(axis) @ a
+            b=axis.cross(a).normalized(); frames.append((a.copy(),b.copy()))
+            previous_axis=axis
+            if j: distance.append(distance[-1]+(p-points[j-1]).length)
         for j in range(len(points)-1):
-            axis=(points[j+1]-points[j]).normalized(); a=axis.cross(Vector((0,1,0))).normalized(); b=axis.cross(a)
             for i in range(sides):
-                angles=[2*math.pi*i/sides,2*math.pi*(i+1)/sides]
-                q=[]
-                for t,k in [(angles[0],j),(angles[1],j),(angles[1],j+1),(angles[0],j+1)]:
-                    irregular=1+.09*math.sin(t*3+k*.7)+.045*math.sin(t*7-k)
+                q=[]; uv=[]
+                for t,k,u in [(2*math.pi*i/sides,j,i/sides),(2*math.pi*(i+1)/sides,j,(i+1)/sides),(2*math.pi*(i+1)/sides,j+1,(i+1)/sides),(2*math.pi*i/sides,j+1,i/sides)]:
+                    a,b=frames[k]
+                    irregular=1+.09*math.sin(t*3+k*.23)+.045*math.sin(t*7-k*.17)
                     q.append(points[k]+(a*math.cos(t)+b*math.sin(t))*radii[k]*irregular)
-                self.face(q,[(i/sides*2,j*.65),((i+1)/sides*2,j*.65),((i+1)/sides*2,(j+1)*.65),(i/sides*2,(j+1)*.65)])
+                    uv.append((u*2*math.pi*radii[k],distance[k]))
+                self.face(q,uv)
         if hollow:
             axis=(points[-1]-points[-2]).normalized(); a=axis.cross(Vector((0,1,0))).normalized(); b=axis.cross(a)
             inner=points[-1]-axis*.55
@@ -83,7 +110,7 @@ def tree(kind,tier,bark,leaves):
     hero=kind=='hero'; dead=kind=='dead_tree'; small=kind=='small_tree'
     h=12 if hero else (5.8 if small else (6 if dead else 9))
     r=.72 if hero else (.24 if small else .42)
-    sides=[12,8,5][tier]
+    sides=[16,9,5][tier]
     trunk=[(0,0,-.3),(.15,-.06,h*.18),(-.16,.13,h*.39),(.38,.1,h*.61),(.8,-.15,h*.86),(1.2,.2,h)]
     wood.tube(trunk,[r*1.5,r,r*.8,r*.63,r*.39,r*.09],sides)
     # Narrow tapering roots embed below the base rather than forming a flat flange.
@@ -92,7 +119,7 @@ def tree(kind,tier,bark,leaves):
         wood.tube([d*.1+Vector((0,0,.52)),d*r*1.4+Vector((0,0,.02)),d*r*2.5+Vector((0,0,-.28))],[r*.32,r*.16,.025],sides)
     branches=9 if hero else (5 if small else 7)
     for i in range(branches):
-        br=random.Random(810+i*77+int(h)); a=i*2.399+br.uniform(-.4,.4)
+        br=random.Random(810+i*77+int(h)+sum(map(ord,kind))); a=i*2.399+br.uniform(-.4,.4)
         start=Vector(trunk[2 if i<3 else 3]); start.z+=i*.19
         reach=(5.8 if hero else (2.4 if small else 4.3))*br.uniform(.7,1.25)
         d=Vector((math.cos(a),math.sin(a),0))
@@ -143,10 +170,10 @@ def plant(kind,tier,bark,leaves):
                     green.leaf(base,side,.30*(1-t)+.04,.07,[2,1,1][tier])
     else:
         grass='grass' in kind
-        n=28 if grass else (20 if kind=='shrub' else 9)
+        n=40 if grass else (20 if kind=='shrub' else 9)
         h=.72 if kind=='tall_grass' else (.22 if kind in ('short_grass','floor') else (.95 if kind=='shrub' else .48))
         for i in range(n):
-            a=rng.random()*math.tau; b=Vector((rng.uniform(-.15,.15),rng.uniform(-.15,.15),0)); length=h*rng.uniform(.65,1.3)
+            a=rng.random()*math.tau; b=Vector((rng.uniform(-.29,.29),rng.uniform(-.29,.29),0)); length=h*rng.uniform(.65,1.3)
             if i%[1,2,3][tier]: continue
             if grass: green.leaf(b,(math.cos(a)*.4,math.sin(a)*.4,1),length,.025,[4,2,1][tier])
             else:
@@ -156,8 +183,8 @@ def plant(kind,tier,bark,leaves):
     wood.object('Bark',bark); green.object('Leaves',leaves)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bark=material('Forest_Bark_PBR',(.28,.22,.15),'mango_bark')
-leaves=material('Forest_Leaves_PBR',(.19,.30,.08),'mango_leaf')
+bark=material('Forest_Bark_PBR',(.28,.22,.15),'bark')
+leaves=material('Forest_Leaves_PBR',(.19,.30,.08),'leaf')
 fungus=material('Forest_Fungus',(.53,.40,.24))
 kinds=['hero','canopy','canopy_broad','small_tree','dead_tree','fallen_log','fern','shrub','broadleaf','tall_grass','short_grass','floor','debris','shelf_fungus']
 for kind in kinds:
@@ -167,7 +194,7 @@ for kind in kinds:
         else: plant(kind,tier,bark,fungus if kind=='shelf_fungus' else leaves)
         if tier==0:
             for image in bpy.data.images:
-                if image.source=='FILE': image.pack()
+                if image.source=='FILE': image.filepath=bpy.path.relpath(bpy.path.abspath(image.filepath), start=str(SOURCE))
             bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE/f'{kind}.blend'),check_existing=False)
         bpy.ops.export_scene.gltf(filepath=str(OUT/f'{kind}_lod{tier}.glb'),export_format='GLB',export_image_format='NONE',export_yup=True,export_animations=False,export_cameras=False,export_lights=False)
         print('FOREST_ASSET',kind,tier,sum(len(o.data.polygons) for o in bpy.data.objects if o.type=='MESH'))

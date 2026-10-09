@@ -4,11 +4,15 @@ const Actor = preload("res://characters/npcs/households/household_npc_actor.gd")
 const Coach = preload("res://vehicles/family_carriage_candidate.gd")
 const Travel = preload("res://world/suryagarh/settlements/household_coach_travel.gd")
 var homes: Dictionary = {}
+var roles:Node
 
 func _ready() -> void:
 	plaster=material(Color(.83,.77,.64)); wood=material(Color(.25,.14,.08))
 	stone=material(Color(.52,.47,.38)); tile=material(Color(.47,.24,.14))
 	iron=material(Color(.15,.15,.14)); ochre=material(Color(.61,.42,.24))
+	roles=preload("res://world/suryagarh/settlements/household_world_roles.gd").new()
+	roles.name="WorldRoles";roles.world=get_parent();roles.player=get_parent().get_node("Player");roles.clock=get_parent().get_node_or_null("GameTimeSystem")
+	add_child(roles)
 	call_deferred("_build_households")
 
 func _anchor(label: String, at: Vector3, kind: String) -> Node3D:
@@ -48,7 +52,7 @@ func _build_households() -> void:
 	for home in homes.values():
 		var kitchen:Vector3=home.get_meta("kitchen_position")
 		_staff(home,"Cook",kitchen+Vector3(1,.12,-1.9),"village_woman",Vector3.BACK)
-		_staff(home,"WaterBearer",kitchen+Vector3(3,0,4),"village_farmer",Vector3.FORWARD)
+		_staff(home,"WaterBearer",kitchen+Vector3(4.8,0,2),"village_farmer",Vector3.FORWARD)
 		merge_visuals(home)
 	var landowner:=_person(landlord,"Landowner",Vector3(-12,.24,1),"res://characters/npcs/households/landowner.glb")
 	var trader:=_person(merchant,"Merchant",Vector3(3,.24,1),"res://characters/npcs/households/merchant.glb")
@@ -59,6 +63,8 @@ func _build_households() -> void:
 		actor.global_position=british.to_global(Vector3(-1 if label=="OfficialMan" else 2,.24,2))
 		actor.set("_home",actor.position); actor.set("movement_enabled",false)
 		actor.set_meta("household","BritishHousehold"); couple.append(actor)
+	roles.bind(landowner,"landowner",str(landlord.name));roles.bind(trader,"merchant",str(merchant.name))
+	roles.bind(couple[0],"official",str(british.name));roles.bind(couple[1],"host",str(british.name))
 	# Centre the parked coach in the court so its return/departure turn clears both arcades.
 	_coach(landlord,[landowner],[Vector3(-321,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
 	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-410,7.24,330),Vector3(-379,7.24,330)])
@@ -144,7 +150,7 @@ func _person(home:Node3D,label:String,at:Vector3,path:String) -> Node3D:
 	var actor:=Actor.new() as Node3D
 	actor.name=home.name+label; actor.position=home.to_global(at)
 	actor.set("patrol_distance",0.0);actor.set("movement_enabled",false)
-	actor.set_meta("household",str(home.name));actor.add_to_group("household_resident")
+	actor.set_meta("household",str(home.name));actor.set_meta("drape_profile",path.get_file().get_basename());actor.add_to_group("household_resident")
 	actor.add_child(load(path).instantiate());add_child(actor)
 	return actor
 
@@ -164,6 +170,7 @@ func _staff(home:Node3D,job:String,at:Vector3,slug:String,axis:Vector3) -> Node3
 		actor.free()
 		return null
 	actor.add_child(figure);add_child(actor)
+	roles.bind(actor,{"Cook":"cook","WaterBearer":"water","Coachman":"coachman"}[job],str(home.name))
 	if job=="WaterBearer":
 		var pot:=MeshInstance3D.new();pot.name="CarriedWaterPot"
 		var mesh:=_carried_pot_mesh()
@@ -233,3 +240,8 @@ func _workplace(home:Node3D,at:Vector3) -> Node3D:
 	piece(office,"EntranceRamp",Vector3(0,.06,3.75),Vector3(2.6,.12,1.5),stone)
 	merge_visuals(office)
 	return office
+
+func export_role_state() -> Dictionary:
+	return roles.export_state() if is_instance_valid(roles) else {}
+func restore_role_state(data:Dictionary) -> void:
+	if is_instance_valid(roles):roles.restore_state(data)

@@ -15,4 +15,4 @@ root_radius = 0
 ground_offset = 0.34
 align_to_ground = true
 receives_attachments = false
-extra_path_clearance = 3.0
+extra_path_clearance = 4.5

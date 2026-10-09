@@ -414,7 +414,7 @@ func merge_visuals(parent: Node3D) -> void:
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			groups[m]=st
 		var relative: Transform3D = parent.global_transform.affine_inverse()*node.global_transform
-		groups[m].append_from(node.mesh,0,relative)
+		preload("res://systems/static_mesh_source.gd").append(groups[m],node.mesh,0,relative)
 		node.queue_free()
 	for m in groups:
 		var mesh := MeshInstance3D.new()

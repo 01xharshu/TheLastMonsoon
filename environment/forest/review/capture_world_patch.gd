@@ -8,7 +8,7 @@ func _initialize() -> void:
 	call_deferred("capture")
 
 func capture() -> void:
-	DisplayServer.window_set_size(Vector2i(640, 360))
+	DisplayServer.window_set_size(Vector2i(1280, 720))
 	var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
@@ -35,7 +35,8 @@ func capture() -> void:
 		camera.look_at(Vector3(target.x, layout.height(target.x, target.y) + 1.8, target.y))
 		camera.make_current()
 		for i in 30: await process_frame
-		await RenderingServer.frame_post_draw
+		RenderingServer.force_draw()
+		print("FOREST_RENDER_METRICS ", view[0], " draw_calls=", Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), " primitives=", Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
 		var captured := root.get_texture().get_image()
 		captured.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
 		captured.save_png(OS.get_environment("FOREST_REVIEW_DIR").path_join("") + view[0] + ".png")

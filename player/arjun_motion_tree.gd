@@ -7,6 +7,7 @@ var ground_blend := 0.0
 var water_blend := 0.0
 var swim_blend := 0.0
 var playback_rate := 1.0
+var cinematic_rate := -1.0
 var foot_contact_offset := 0.0
 var skeleton: Skeleton3D
 var idle_foot_y := 0.0
@@ -335,6 +336,7 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	# in-place gait cadence to that travel so planted feet slide less.
 	var run_mix := clampf((ground_speed - 1.0) / 0.75, 0.0, 1.0)
 	var ground_rate := lerpf(clampf(ground_speed * 1.7, 0.7, 1.7), 1.4, run_mix)
+	if cinematic_rate >= 0.0: ground_rate = cinematic_rate
 	playback_rate = lerpf(playback_rate, lerpf(ground_rate, lerpf(0.75, 1.25, water_blend), swim_blend), weight)
 	advance(delta * playback_rate)
 	# The source boots rise as the thighs swing. Move only the visual rig down

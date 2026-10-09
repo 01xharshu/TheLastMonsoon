@@ -26,6 +26,7 @@ func configure(person:Node3D) -> bool:
   # Keep the fitted waist transition as the original opaque waistband.
  if cotton==null:return false
  waist_anchors=preload("res://characters/npcs/households/household_waist_fit.gd").anchors(actor,rig,SIDES)
+ if waist_anchors.size()!=SIDES:return false
  for node in originals:node.hide()
  garment=MeshInstance3D.new();garment.name="ContinuousOuterDrapeCandidate";add_child(garment)
  actor.set_meta("coach_dress",garment)
@@ -59,6 +60,9 @@ func update_pose() -> void:
    var u:float=(t-.62)/.38
    var end:Vector3=feet+Vector3.UP*.08 if female else knees.lerp(feet,.22)
    centres.append(knees.lerp(end,u));spans.append((pose[3]-pose[4]).lerp(pose[5]-pose[6],u if female else u*.22))
+ var pelvis_pose:=rig.get_bone_global_pose(rig.find_bone("pelvis"))
+ var seams:Array[Vector3]=[]
+ for bind in waist_anchors:seams.append(actor.to_local(rig.to_global(pelvis_pose*bind))-hip)
  var points:=PackedVector3Array()
  var normals:=PackedVector3Array()
  var uvs:=PackedVector2Array()
@@ -77,7 +81,7 @@ func update_pose() -> void:
    var angle:=TAU*side/SIDES
    var fold:=1+.035*sin(angle*8)
    var at:=centres[row]-hip+(right*cos(angle)*width+cross*sin(angle)*depth)*fold
-   var waist:=actor.to_local(rig.to_global(rig.get_bone_global_pose(rig.find_bone("pelvis"))*waist_anchors[side]))-hip
+   var waist:=seams[side]
    if row==0:at=waist
    elif row==1:at=waist.lerp(at,.45)
    points.append(at)

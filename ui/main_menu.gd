@@ -123,20 +123,19 @@ func _update_hint(action: String) -> void:
 func _begin_journey(slot: int) -> void:
 	if transitioning: return
 	transitioning = true
-	transition_cover.mouse_filter = Control.MOUSE_FILTER_STOP
-	var fade := create_tween()
-	fade.tween_property(transition_cover, "modulate:a", 1.0, 0.3)
-	await fade.finished
-	if DisplayServer.get_name() != "headless":
-		await RenderingServer.frame_post_draw
-	if slot == 0:
-		SaveManager.start_new_game()
-	else:
-		if not SaveManager.start_loaded_game(slot):
-			transitioning = false
-			transition_cover.modulate.a = 0.0
-			transition_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var loading := preload("res://ui/journey_loading.gd").new()
+	get_tree().root.add_child(loading)
+	var succeeded: bool = await loading.begin(slot)
+	if not succeeded and is_inside_tree():
+		transitioning = false
+		if slot > 0:
 			show_slots()
+			var message := Style.label("Unable to open the journey. Please try again.", 18)
+			column.add_child(message)
+			column.move_child(message, 1)
+		else:
+			show_main()
+			action_hint.text = "Unable to open the journey. Please try again."
 
 func _request_new_game() -> void:
 	if SaveManager.newest_slot() == 0:

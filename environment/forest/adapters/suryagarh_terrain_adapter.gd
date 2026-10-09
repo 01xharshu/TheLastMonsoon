@@ -4,18 +4,34 @@ const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 @export var replace_baked_grass_in_patch: bool = true
 var layout = Layout.new()
 var _original_grass_batches: Dictionary = {}
+var _surface_cache: Dictionary = {}
+const Surface = preload("res://world/suryagarh/grass_blades.gd")
 
 func _world_point(x: float, z: float) -> Vector2:
 	var origin: Vector3 = get_parent().global_position
 	return Vector2(origin.x + x, origin.z + z)
 
+func _surface_frame(p: Vector2) -> Transform3D:
+	var cell := Vector2i(((p + Vector2.ONE * Layout.HALF) / Layout.TILE).floor())
+	if not _surface_cache.has(cell):
+		var tile := get_node_or_null("../../Landscape/TerrainTiles/Terrain_%02d_%02d" % [cell.x, cell.y]) as MeshInstance3D
+		if tile != null and tile.mesh != null:
+			var vertices: PackedVector3Array = tile.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+			var step := vertices[1].x - vertices[0].x
+			_surface_cache[cell] = {"vertices": vertices, "step": step, "origin": Vector2(tile.global_position.x, tile.global_position.z)}
+		else:
+			_surface_cache[cell] = {}
+	var cached: Dictionary = _surface_cache[cell]
+	if not cached.is_empty():
+		return Surface.baked_frame(cached.vertices, cached.origin, p, cached.step, Layout.TILE)
+	return Transform3D(Basis.IDENTITY, Vector3(p.x, layout.height(p.x, p.y), p.y))
+
 func sample_forest_height(x: float, z: float) -> float:
-	var p := _world_point(x, z)
-	return layout.height(p.x, p.y) - get_parent().global_position.y
+	return _surface_frame(_world_point(x, z)).origin.y - get_parent().global_position.y
 
 func sample_forest_normal(x: float, z: float) -> Vector3:
-	var p := _world_point(x, z)
-	return layout.normal(p.x, p.y)
+	var frame := _surface_frame(_world_point(x, z))
+	return frame.basis.z.cross(frame.basis.x).normalized()
 
 func sample_forest_biome_mask(x: float, z: float) -> float:
 	var p := _world_point(x, z)
@@ -49,23 +65,32 @@ func sample_forest_existing_tree_points() -> PackedVector2Array:
 				result.append(local)
 	return result
 
-func prepare_forest_area() -> void:
+func _restore_grass() -> void:
 	for batch in _original_grass_batches:
 		if is_instance_valid(batch): batch.multimesh = _original_grass_batches[batch]
+
+func _exit_tree() -> void:
+	_restore_grass()
+
+func prepare_forest_area() -> void:
+	_surface_cache.clear()
+	_restore_grass()
 	if not replace_baked_grass_in_patch:
 		get_parent().set_meta("replaced_baked_grass_instances", 0)
 		return
 	var landscape := get_node_or_null("../../Landscape")
 	if landscape == null: return
-	var nature := landscape.get_node_or_null("NatureTiles")
-	if nature == null: return
+	var containers: Array[Node] = []
+	for container_name in ["NatureTiles", "TerrainTiles"]:
+		var container := landscape.get_node_or_null(container_name)
+		if container != null: containers.append_array(container.get_children())
 	var center: Vector3 = get_parent().global_position
 	var size: Vector2 = get_parent().forest_size
 	var removed := 0
-	for tile in nature.get_children():
+	for tile in containers:
 		if absf(tile.global_position.x - center.x) > 190.0 or absf(tile.global_position.z - center.z) > 190.0: continue
 		for batch in tile.get_children():
-			if not batch is MultiMeshInstance3D or not batch.name.begins_with("Grass_"): continue
+			if not batch is MultiMeshInstance3D or not batch.name.begins_with("Grass"): continue
 			if not _original_grass_batches.has(batch): _original_grass_batches[batch] = batch.multimesh
 			var original: MultiMesh = _original_grass_batches[batch]
 			var source := original.buffer

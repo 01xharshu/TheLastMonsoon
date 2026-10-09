@@ -22,3 +22,5 @@ tall_grass_density = 1.0
 fern_density = 0.9
 shrub_density = 1.05
 broadleaf_density = 0.9
+chunk_size = 15.0
+wind_strength = 0.12

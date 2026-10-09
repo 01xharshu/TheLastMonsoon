@@ -191,6 +191,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"items": inventory.items.duplicate(true),
 		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
+		"household_roles":world.get_node("WealthyHouseholds").export_role_state() if world.has_node("WealthyHouseholds") else {},
 		"health": actor.health,
 		"water_liters": inventory.stored_water_liters,
 		"survival": {
@@ -236,6 +237,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 	return DirAccess.rename_absolute(ProjectSettings.globalize_path(temp),ProjectSettings.globalize_path(slot_path(slot)))==OK
 
 func start_new_game() -> void:
+	WorldAudio.set_opening_quiet(true)
 	pending_slot = 0
 	get_tree().change_scene_to_file(WORLD)
 
@@ -278,6 +280,8 @@ func apply_pending(world: Node3D) -> void:
 	actor.health = clampf(float(data.get("health",actor.MAX_HEALTH)),0.0,actor.MAX_HEALTH)
 	inventory.items = data.get("items",{}).duplicate(true)
 	if world.has_node("ChachaHouse"):world.get_node("ChachaHouse").set_meta("advice_given",bool(data.get("chacha_advice_given",false)))
+	if world.has_node("WealthyHouseholds"):
+		world.get_node("WealthyHouseholds").restore_role_state(data.get("household_roles",{}))
 	if world.has_node("DevInquiry"):
 		world.get_node("DevInquiry").restore_state(data.get("dev_inquiry",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:

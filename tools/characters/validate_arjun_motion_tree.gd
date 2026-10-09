@@ -10,7 +10,7 @@ func _run() -> void:
 	model.add_child(tree)
 	if not tree.configure(model):
 		push_error("ARJUN MOTION TREE: failed to configure")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	var skeleton: Skeleton3D = model.find_children("*", "Skeleton3D", true, false)[0]
 	var thigh := skeleton.find_bone("thigh_l")
@@ -18,7 +18,7 @@ func _run() -> void:
 	var walk_rotation := skeleton.get_bone_pose_rotation(thigh)
 	if tree.playback_rate <= 1.0:
 		push_error("ARJUN MOTION TREE: walk cadence did not increase with travel speed")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 10: tree.update_motion(0.1, 0.0, 0.0, false)
 	var idle_rotation := skeleton.get_bone_pose_rotation(thigh)
@@ -27,7 +27,7 @@ func _run() -> void:
 	tree.update_climb(0.2, 0.35)
 	if tree.climb_blend < 0.99 or absf(float(tree.get("parameters/climb_pose/blend_position")) - 0.35) > 0.01:
 		push_error("ARJUN MOTION TREE: climb pull pose did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	var arm := skeleton.find_bone("upperarm_r")
 	tree.update_climb(.2,.28,"settle",.13)
@@ -35,7 +35,7 @@ func _run() -> void:
 	var reference_arm := pair_reference(tree,skeleton,arm,"catch","hang",.5)
 	if settled_arm.angle_to(reference_arm)>.01:
 		push_error("ARJUN MOTION TREE: settling passed through unrelated pull/leap poses")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_climb(.2,.50,"flight",.435)
 	var airborne_arm := skeleton.get_bone_pose_rotation(arm)
@@ -43,7 +43,7 @@ func _run() -> void:
 	reference_arm = pair_reference(tree,skeleton,arm,"leap","catch",flight_weight)
 	if airborne_arm.angle_to(reference_arm)>.01:
 		push_error("ARJUN MOTION TREE: airborne reach passed through alternating pull pose")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	print("PASS dedicated leap and settle bone poses exclude alternating pulls")
 	var spine := skeleton.find_bone("spine_01")
@@ -52,63 +52,63 @@ func _run() -> void:
 	tree.update_climb(0.2,.86)
 	if hanging_spine.angle_to(skeleton.get_bone_pose_rotation(spine)) < .30:
 		push_error("ARJUN MOTION TREE: mantle press did not transfer torso over the edge")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.release_climb(0.2)
 	tree.update_motion(0.1, 0.0, 0.0, false)
 	if walk_rotation.angle_to(idle_rotation) < 0.01:
 		push_error("ARJUN MOTION TREE: walk and idle poses did not differ")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 12: tree.update_motion(0.1, 1.0, 0.0, false)
 	if tree.foot_contact_offset <= 0.0 or tree.foot_contact_offset > 0.28:
 		push_error("ARJUN MOTION TREE: foot contact correction outside bounds")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 8: tree.update_motion(0.1, 1.75, 0.0, false)
 	if tree.ground_blend < 1.65 or tree.playback_rate < 1.3 or tree.playback_rate > 1.5:
 		push_error("ARJUN MOTION TREE: sprint did not reach its separate gait and cadence")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 10: tree.update_motion(0.1, 0.0, 1.0, true)
 	if tree.swim_blend < 0.9:
 		push_error("ARJUN MOTION TREE: water blend did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 10: tree.update_motion(0.1, 1.0, 0.0, false, false, 5.0)
 	var rise_pose := skeleton.get_bone_pose_rotation(thigh)
 	for i in 10: tree.update_motion(0.1, 1.0, 0.0, false, false, -5.0)
 	if tree.air_blend < 0.99 or rise_pose.angle_to(skeleton.get_bone_pose_rotation(thigh)) < 0.1 or tree.foot_contact_offset > 0.01:
 		push_error("ARJUN MOTION TREE: jump rise/fall or airborne ground correction failed")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	for i in 10: tree.update_motion(0.1, 1.0, 1.0, true, false, 0.0)
 	if tree.air_blend > 0.01:
 		push_error("ARJUN MOTION TREE: swimming retained jump pose")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_rest(0.3, 1.0)
 	if tree.rest_blend < 0.99 or not tree.get("parameters/rest/blend_amount") > 0.99:
 		push_error("ARJUN MOTION TREE: seated clip did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	var seated_pose := skeleton.get_bone_pose_rotation(thigh)
 	tree.update_rest(0.1, 0.8, 0.15, false)
 	var entering_pose := skeleton.get_bone_pose_rotation(thigh)
 	if tree.get("parameters/sit_transition/blend_amount") > 0.01 or entering_pose.angle_to(seated_pose) < 0.01:
 		push_error("ARJUN MOTION TREE: sit-down clip not sought")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_rest(0.1, 0.8, 0.15, true)
 	if tree.get("parameters/sit_transition/blend_amount") < 0.99 or entering_pose.angle_to(skeleton.get_bone_pose_rotation(thigh)) < 0.01:
 		push_error("ARJUN MOTION TREE: stand-up clip did not replace sit-down")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
 	tree.update_rest(0.1, 0.0, 1.0)
 	if tree.get("parameters/sleep/blend_amount") < 0.99:
 		push_error("ARJUN MOTION TREE: sleeping branch did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	var source: AnimationPlayer = model.find_children("*", "AnimationPlayer", true, false)[0]
 	var lie_clip := source.get_animation("motion/lie_down")
@@ -118,48 +118,48 @@ func _run() -> void:
 	var wake_arm := wake_clip.find_track(arm_path, Animation.TYPE_ROTATION_3D)
 	if lie_arm < 0 or wake_arm < 0 or lie_clip.get_track_count() < 12:
 		push_error("ARJUN MOTION TREE: authored lie/wake tracks missing")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	if lie_clip.rotation_track_interpolate(lie_arm, lie_clip.length * 0.5).angle_to(lie_clip.rotation_track_interpolate(lie_arm, lie_clip.length)) < 0.08:
 		push_error("ARJUN MOTION TREE: lie transition lacks a distinct brace pose")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_rest(0.1, 0.5, 0.65, false)
 	if tree.get("parameters/sleep_motion/blend_amount") > 0.01:
 		push_error("ARJUN MOTION TREE: lie clip was not sought through the middle pose")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_rest(0.1, 0.5, 0.65, true)
 	if tree.get("parameters/sleep_motion/blend_amount") < 0.99:
 		push_error("ARJUN MOTION TREE: wake clip did not replace lie clip")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_longgun_motion(0.3, true, true, -1.0, 0.075)
 	tree.rest_blend = 0.0
 	tree.update_motion(0.1, 0.0, 0.0, false)
 	if tree.get("parameters/sleep/blend_amount") > 0.01:
 		push_error("ARJUN MOTION TREE: sleeping branch survived locomotion recovery")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	if skeleton.get_bone_pose_rotation(head).angle_to(neutral_head) < 0.03:
 		push_error("ARJUN MOTION TREE: long gun library pose did not move head")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	if not tree.get("parameters/longgun_aim/blend_amount") > 0.9:
 		push_error("ARJUN MOTION TREE: long gun aim library layer did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	if tree.longgun_aim_blend < 0.9 or tree.longgun_recoil_blend < 0.9:
 		push_error("ARJUN MOTION TREE: long gun aim/recoil blend did not engage")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	tree.update_longgun_motion(0.3, true, false, 0.5, 0.0)
 	if tree.longgun_reload_blend < 0.9 or tree.longgun_aim_blend > 0.1:
 		push_error("ARJUN MOTION TREE: long gun reload did not release aim")
-		quit(1)
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1)
 		return
 	print("ARJUN MOTION TREE: PASS | idle, walk, run, swim, sit entry/exit and long gun envelopes")
-	quit()
+	preload("res://tools/test_audio_cleanup.gd").finish(self)
 
 func pair_reference(tree: AnimationTree, rig: Skeleton3D, bone: int, first: String, second: String, weight: float) -> Quaternion:
 	# Compare the resulting rig to an independent engine blend of only the two
