@@ -42,6 +42,7 @@ func _ready() -> void:
 	add_child(errands)
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	preload("res://world/suryagarh/settlements/asset_first_placement.gd").new().integrate(self)
+	add_child(preload("res://world/suryagarh/route_and_market_detail.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
 	combat_encounters.name="CombatEncounters"
@@ -65,6 +66,7 @@ func _ready() -> void:
 	add_child(preload("res://story/dev_inquiry.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/story_community.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/urban_west.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://story/dev_story.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")

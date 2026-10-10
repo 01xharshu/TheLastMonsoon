@@ -2,13 +2,13 @@
   "status": "RIVER_ROUTINE_RUNTIME",
   "source": "WorkingAssets/NPCs/river_woman/river_woman_motion.blend",
   "runtime": "characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb",
-  "source_sha256": "10f9cacbdd264eae28e24d4ced59b53710983ce26dd68649fb007389fc98ee48",
-  "runtime_sha256": "02d69bde19d3392a611209c17b94316c41fde0e6046d2b15b5514af91e57495c",
-  "foundation_faces": 880,
+  "source_sha256": "cc4780c5961ea34dd7034527be2fd7178d463723437dbb75756e450b2af51e82",
+  "runtime_sha256": "7d9c8c2ac5b5d19cd95816f07b8e9d02634b11e84916fe34c6720229771ed1ac",
+  "foundation_faces": 1760,
   "donor": "village_woman_motion_candidate.blend",
   "visual_approved": false,
   "motion_approved": false,
   "in_world": true,
-  "corrective_samples": 0,
+  "corrective_samples": 674,
   "foundation_in_runtime": true
 }

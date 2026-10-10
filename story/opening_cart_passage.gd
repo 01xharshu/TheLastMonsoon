@@ -20,6 +20,8 @@ var gathering_sound: AudioStreamPlayer3D
 var gathering: Node
 var gathering_physics := true
 var people: Array[Dictionary] = []
+var passenger_service:Node3D
+var arrival_called:=false
 
 func begin(sequence: Node3D) -> bool:
 	opening = sequence
@@ -28,6 +30,9 @@ func begin(sequence: Node3D) -> bool:
 		push_warning("Opening cart passage needs the authored village bullock cart")
 		return false
 	original_transform = cart.global_transform
+	cart.set_meta("opening_cart_passage",true)
+	passenger_service=preload("res://vehicles/public_passenger_service.gd").install(cart)
+	arrival_called=false
 	original_speed = cart.boarding.speed
 	original_boarding_physics = cart.boarding.is_physics_processing()
 	original_wheels.clear()
@@ -38,7 +43,7 @@ func begin(sequence: Node3D) -> bool:
 	cart.boarding.speed = SPEED
 	age = 0.0
 	active = true
-	var wheel_at := position_at(8.0)+Vector3(1.05,.68,-2.55)
+	var wheel_at := position_at(13.0)+Vector3(1.05,.68,-2.55)
 	wheel_camera_position = wheel_at+Vector3(2.15,.22,-1.4)
 	wheel_camera_target = wheel_at+Vector3(-.7,.18,2.4)
 	gathering_sound = AudioStreamPlayer3D.new()
@@ -51,6 +56,10 @@ func begin(sequence: Node3D) -> bool:
 	gathering_sound.global_position = Vector3(-265,layout.height(-265,259)+.7,259)
 	gathering_sound.play()
 	_stage_gathering()
+	# Refresh clock-driven sky/fog before the first night frame, including direct-world reviews.
+	var sun: Node = opening.world.get_node_or_null("Sun")
+	if sun != null and sun.has_method("_update_day_night_lighting"):
+		sun._update_day_night_lighting()
 	update(0.0)
 	return true
 
@@ -80,13 +89,20 @@ func update(delta: float) -> void:
 	if sun != null: sun.light_energy = 0.0
 	if moon != null: moon.light_energy = .32
 	opening.environment.ambient_light_energy = .18
-	opening.subtitle.text = "BHAIRAVPUR · NIGHT" if age < 6.5 else ""
+	if age>=8.5 and not arrival_called:
+		passenger_service.announce_arrival("Bhairavpur");arrival_called=true
+	opening.subtitle.text = "Driver: We’re in Bhairavpur. Mind your step!" if age>=8.5 and age<12.7 else ("BHAIRAVPUR · NIGHT" if age < 6.5 else "")
 	if age < 8.0:
 		var at := cart.global_position
 		opening.camera.fov = 54.0
 		opening.camera.global_position = Vector3(-237,at.y+24.0,at.z-19.0)
 		opening.camera.look_at(Vector3(-266,at.y+.6,at.z+11))
 		opening.shade.color = Color(0,0,0,maxf(1.0-smoothstep(0.0,1.2,age),smoothstep(6.6,7.8,age)))
+	elif age<13.0:
+		opening.camera.fov=45.0
+		opening.camera.global_position=cart.to_global(Vector3(2.5,2.7,.15))
+		opening.camera.look_at(cart.to_global(Vector3(0,2.25,1.70)))
+		opening.shade.color=Color(0,0,0,1.0-smoothstep(8.15,9.1,age))
 	else:
 		# Camera holds in world space while the cart advances out of its foreground.
 		opening.camera.fov = 48.0
@@ -105,6 +121,8 @@ func finish() -> void:
 		gathering_sound.queue_free()
 		gathering_sound = null
 	if is_instance_valid(cart):
+		cart.remove_meta("opening_cart_passage")
+		if is_instance_valid(passenger_service):passenger_service.cancel_announcement()
 		cart.global_transform = original_transform
 		cart.boarding.speed = original_speed
 		cart.set_forward_motion(original_speed,0.0)

@@ -41,6 +41,8 @@ func rebuild(generator: Node3D) -> void:
 				surface.set_uv(p / 3.2)
 				surface.set_normal(generator._normal(p))
 				surface.add_vertex(Vector3(p.x, generator._height(p) + 0.045, p.y))
+		if generator.startup_provider != null:
+			await generator.startup_provider.checkpoint(self,"Preparing forest floor…")
 	surface.index()
 	surface.generate_tangents()
 	surface.set_material(material)

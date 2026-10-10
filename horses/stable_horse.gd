@@ -397,9 +397,16 @@ func _animated_frame_delta(bone_name: String) -> Transform3D:
 	var animated := frame * rigged_skeleton.get_bone_global_pose(index)
 	return animated * rest.affine_inverse()
 
+const CosmeticBudget = preload("res://systems/simulation_budget.gd")
+var cosmetic_elapsed := 0.0
+
 func _process(delta: float) -> void:
 	if vitality != null and vitality.dead: return
 	if tack_root == null: return
+	cosmetic_elapsed+=delta
+	var cadence:=CosmeticBudget.interval(self,get_viewport().get_camera_3d(),rider!=null or transition!="" or absf(pace)>.1)
+	if cosmetic_elapsed<cadence:return
+	delta=cosmetic_elapsed;cosmetic_elapsed=0
 	# Imported gait clips translate/pitch the skinned back independently of the
 	# physics capsule. Seat, stirrups and saddle must follow that same frame.
 	tack_root.transform = _animated_frame_delta("Torso")

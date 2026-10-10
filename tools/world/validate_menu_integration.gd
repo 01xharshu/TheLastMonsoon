@@ -29,6 +29,20 @@ func run() -> void:
 	current_scene._input(cancel)
 	check(current_scene.page=="settings" and title_settings.category=="", "Title Back leaves submenu instead of returning to categories")
 	current_scene.show_main()
+	current_scene.play_button.pressed.emit()
+	if current_scene != null and current_scene.page == "new_game":
+		for button in current_scene.column.get_children():
+			if button is Button and button.text == "Begin New Journey":button.pressed.emit();break
+	await scene_changed
+	while preload("res://systems/world_startup.gd").current != null:await process_frame
+	for frame in 4:await process_frame
+	check(current_scene.has_node("Player") and current_scene.visible and not paused,"Play Game did not reveal a playable world")
+	var terrain:=preload("res://world/suryagarh/tree_trunk_collision.gd")
+	var grounds:=current_scene.find_children("GroundCollision","StaticBody3D",true,false)
+	check(terrain.terrain_exclusions(current_scene).size()==grounds.size(),"Menu terrain restoration did not update the shared support cache")
+	change_scene_to_file("res://ui/main_menu.tscn")
+	await scene_changed
+	for frame in 4:await process_frame
 	var old_scene := current_scene
 	current_scene = null
 	old_scene.queue_free()

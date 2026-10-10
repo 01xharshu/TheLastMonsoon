@@ -37,6 +37,10 @@ func _ready() -> void:
  var previous:=get_node("FlexibleReins");remove_child(previous);previous.queue_free()
  var reins:=preload("res://vehicles/flexible_cart_reins.gd").new();reins.name="FlexibleReins";reins.configure(self);add_child(reins)
  _add_driver.call_deferred()
+ if name=="VillageBullockCart":
+  _install_public_service.call_deferred()
+func _install_public_service() -> void:
+ preload("res://vehicles/public_passenger_service.gd").install(self)
 func _add_driver() -> void:
  var source:="res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb"
  var figure := preload("res://characters/human_scene.gd").instantiate(source)

@@ -20,6 +20,18 @@ func run()->void:
 		check(animal.vitality==original_health and is_equal_approx(animal.vitality.health,health),type+": health retained")
 		check(not cart.can_move(),type+": incomplete team stops cart")
 		for frame in 2:await physics_frame
+		if team.slots.size()>1:
+			var probe:=CharacterBody3D.new();world.add_child(probe)
+			animal.set_physics_process(false);animal.leader=probe
+			var obstruction:=StaticBody3D.new();world.add_child(obstruction)
+			var volume:=CollisionShape3D.new();var block:=BoxShape3D.new();block.size=Vector3(1.2,1.5,2.5)
+			volume.shape=block;obstruction.add_child(volume)
+			obstruction.global_position=cart.visual_root.to_global(team.slots[0].pose.origin)+Vector3.UP*.85
+			for frame in 2:await physics_frame
+			team.use(probe)
+			check(team.slots[1].attached,type+": blocked hitch preserves other attached animal")
+			animal.leader=null;animal.set_physics_process(true);obstruction.queue_free();probe.queue_free()
+			for frame in 2:await physics_frame
 		var attached:bool=team.attach(animal,0)
 		check(attached,type+": original animal reattaches")
 		if not attached:print("TEAM_ATTACH_FAILED ",type," animal ",animal.global_position);continue
@@ -43,6 +55,8 @@ func run()->void:
 		yard.restore_state(state);yard._process(.3)
 		check(is_equal_approx(replacement.vitality.health,restored_health),type+": saved numeric animal health restores")
 		check(yard.pending_state.is_empty(),type+": animal/team restore completes")
+		yard.restore_state({"animals":{"missing_identity":{"health":70}}});yard._process(31)
+		check(yard.pending_state.is_empty(),type+": stale identity stops retrying")
 		# Free before its deferred yard/animal builder runs in this small fixture.
 		yard.free()
 		cart.queue_free();animal.queue_free()

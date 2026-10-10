@@ -18,6 +18,7 @@ const SPAWN: Vector2 = Vector2(-230.0, 180.0)
 ## Surveyed plot centres and footprint half-extents. Keep building placement, grading,
 ## nature clearance and the map tied to these coordinates as the world grows.
 const PLOTS: Dictionary = {
+	"UrbanWest": {"center": Vector2(-330,-415), "half": Vector2(150,125), "grade": 8.0},
 	"CivilLines": {"center": Vector2(680,245), "half": Vector2(95,65), "grade": 10.0},
 	"CantonmentBazaar": {"center": Vector2(640,470), "half": Vector2(45,48), "grade": 8.5},
 	"AdministrativeDistrict": {"center": Vector2(520,120), "half": Vector2(75,60), "grade": 10.0},
@@ -34,6 +35,15 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"city_market_street": [Vector2(-250,-310),Vector2(-350,-310),Vector2(-440,-310)],
+	"city_front_street": [Vector2(-250,-338),Vector2(-350,-338),Vector2(-440,-338)],
+	"city_rear_lane": [Vector2(-250,-362),Vector2(-350,-362)],
+	"city_courtyard_lane": [Vector2(-250,-370),Vector2(-350,-370)],
+	"city_back_street": [Vector2(-250,-394),Vector2(-350,-394)],
+	"city_cross_lane": [Vector2(-350,-310),Vector2(-350,-400),Vector2(-350,-450),Vector2(-375,-450),Vector2(-358,-450),Vector2(-358,-505),Vector2(-375,-505)],
+	"city_hospital_road": [Vector2(-250,-310),Vector2(-250,-370),Vector2(-205,-370),Vector2(-205,-375)],
+	"merchant_city_drive": [Vector2(-417,-384),Vector2(-417,-356),Vector2(-417,-310),Vector2(-378,-310)],
+
 	"civil_lines_avenue": [Vector2(520,175),Vector2(580,175),Vector2(580,285),Vector2(680,285),Vector2(755,285)],
 	"collector_bungalow_drive": [Vector2(640,285),Vector2(640,248)],
 	"officer_bungalow_drive": [Vector2(720,285),Vector2(720,246)],
@@ -70,7 +80,11 @@ const SITES: Dictionary = {
 	"Bhairavpur village": Vector2(-310, 230),
 	"Agricultural plains": Vector2(-540, -90),
 	"River approach": Vector2(0, 165),
-	"Trading settlement reserve": Vector2(-320, -470),
+	"City market": Vector2(-340,-310),
+	"College campus": Vector2(-375,-520),
+	"College café": Vector2(-375,-484),
+	"Civilian hospital": Vector2(-205,-388),
+	"City residential lanes": Vector2(-310,-366),
 	"Company compound": Vector2(340, 290),
 	"Old fort reserve": FORT_CENTER,
 	"Government House": Vector2(-390, -110),

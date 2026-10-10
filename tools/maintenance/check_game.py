@@ -76,7 +76,7 @@ def run_check(binary, project, directory, label, args, timeout, native=False, co
     if process.returncode not in (0, None) and not diagnostics:
         print('\n'.join(lines[-20:]), flush=True)
     for line in lines:
-        if line.startswith(('SURYAGARH READY', 'SAFE TANGENTS', 'Leaked instance:', 'GAME SMOKE', 'SMOKE scene', 'HUMAN CACHE', 'COACHMAN CLEARANCE', 'PASS mobile', 'MAIN SKY', 'CITY_POPULATION_RESULT', 'DEV INQUIRY:', 'ARJUN MOTION', 'GAME ERROR ROUTE', 'LIVE WEAPON', 'STARTUP INTEGRATION', 'CODE AUDIT', 'DRAFT_TEAM_RESULT', 'RIFLE SMOKE')):
+        if line.startswith(('SURYAGARH READY', 'SAFE TANGENTS', 'Leaked instance:', 'GAME SMOKE', 'SMOKE scene', 'HUMAN CACHE', 'COACHMAN CLEARANCE', 'PASS mobile', 'MAIN SKY', 'CITY_POPULATION_RESULT', 'PUBLIC PASSENGER CART', 'DEV INQUIRY:', 'ARJUN MOTION', 'GAME ERROR ROUTE', 'LIVE WEAPON', 'STARTUP INTEGRATION', 'CODE AUDIT', 'DRAFT_TEAM_RESULT', 'RIFLE SMOKE')):
             print(line, flush=True)
     return not timed_out and process.returncode == 0 and not diagnostics
 

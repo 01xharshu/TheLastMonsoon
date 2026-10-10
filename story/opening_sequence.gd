@@ -6,6 +6,7 @@ var cart_passage = preload("res://story/opening_cart_passage.gd").new()
 @export var prologue_music: AudioStream = preload("res://assets/audio/opening/prologue_tension_draft.wav")
 var elapsed := 0.0
 var waiting_for_reveal := false
+var playback_tick_usec := 0
 var state := "prologue"
 var prologue_elapsed := 0.0
 var morning_elapsed := 0.0
@@ -315,6 +316,12 @@ func _input(event: InputEvent) -> void:
 			hint.show()
 
 func _process(delta: float) -> void:
+	# Cinematic playback follows real seconds, even when world rendering is slow.
+	# Loading artwork holds the clock; manual validation steps keep their delta.
+	var now := Time.get_ticks_usec()
+	if is_processing() and playback_tick_usec > 0:
+		delta = float(now-playback_tick_usec)/1000000.0
+	playback_tick_usec = now
 	if home == null or state == "done" or waiting_for_reveal: return
 	if state == "prologue":
 		prologue_elapsed += delta

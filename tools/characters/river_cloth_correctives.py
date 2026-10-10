@@ -20,8 +20,8 @@ def apply_river_pose(rig, bones, conversion, corrections):
     if error>.0001:raise RuntimeError('River pose did not reproduce target matrices: '+str(error))
 
 
-def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None):
-    data=json.loads((root/'WorkingAssets/NPCs/river_woman/poses.json').read_text())
+def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None, pose_data=None):
+    data=pose_data if pose_data is not None else json.loads((root/'WorkingAssets/NPCs/river_woman/poses.json').read_text())
     conversion=Matrix(((1,0,0,0),(0,0,-1,0),(0,1,0,0),(0,0,0,1)))
     inverse=conversion.inverted()
     # Each imported bone may include the glTF bind-axis correction. Preserve it.

@@ -6,7 +6,7 @@ def interrupted(signum,frame):raise SystemExit(128+signum)
 for sig in (signal.SIGINT,signal.SIGTERM):signal.signal(sig,interrupted)
 with tempfile.TemporaryDirectory(prefix='tlm-household-save-') as folder:
     env=os.environ.copy();env['TLM_HOUSEHOLD_SAVE_TEMP']=folder
-    process=subprocess.Popen(['/Applications/Godot.app/Contents/MacOS/Godot']+([] if '--native' in sys.argv else ['--headless'])+['--fixed-fps','60','--path',str(ROOT),'--script','tools/world/validate_household_roles_world.gd'],cwd=ROOT,env=env)
+    process=subprocess.Popen(['/Applications/Godot.app/Contents/MacOS/Godot']+([] if '--native' in sys.argv else ['--headless'])+['--fixed-fps','60','--path',str(ROOT),'--script','tools/world/validate_household_roles_world.gd']+(['--']+[arg for arg in ('--hide-ui','--profile-budget') if arg in sys.argv] if any(arg in sys.argv for arg in ('--hide-ui','--profile-budget')) else []),cwd=ROOT,env=env)
     try:
         try:result=process.wait(timeout=240)
         except subprocess.TimeoutExpired:print('HOUSEHOLD WORLD CHECK TIMEOUT');result=1

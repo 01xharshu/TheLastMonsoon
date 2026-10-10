@@ -33,4 +33,4 @@ func _run()->void:
 	check(yard.caretaker.transfers>0,"caretaker carries and transfers real fodder")
 	check(yard.caretaker.contact_max<.025,"caretaker settled palm contact within 25mm")
 	var report:={"passed":errors.is_empty(),"errors":errors,"states":seen.keys(),"distance_m":traveled,"muzzle_contacts":contacts,"hoof_stance_max_m":yard.motion.maximum_stance_error,"caretaker_transfers":yard.caretaker.transfers,"caretaker_palm_max_m":yard.caretaker.contact_max,"final_cow_position":yard.cow.position,"final_stage":yard.motion.stage,"caretaker_stage":yard.caretaker.stage,"scope":"fixed-step complete behavior/contact assertions; rendered motion and final art separate"}
-	print("COW MOTION: ",JSON.stringify(report));scene.queue_free();await process_frame;quit(0 if errors.is_empty() else 1)
+	print("COW MOTION: ",JSON.stringify(report));await root.get_node("SaveManager").quit_game(0 if errors.is_empty() else 1)

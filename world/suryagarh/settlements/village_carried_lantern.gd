@@ -4,10 +4,12 @@ var actor: Node3D
 var light: OmniLight3D
 var elapsed := 0.0
 var hand_error := 0.0
+var reach_error := 0.0
 var held := false
 func configure(person: Node3D) -> void:
  actor=person;name="CarriedNightLantern";actor.add_child(self)
  add_to_group("village_carried_lantern")
+ add_to_group("village_carried_light")
  var iron:=StandardMaterial3D.new();iron.albedo_color=Color(.12,.10,.08);iron.metallic=.45;iron.roughness=.65
  var glass:=StandardMaterial3D.new();glass.albedo_color=Color(.65,.49,.28,.18);glass.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;glass.roughness=.15
  _cylinder("OilReservoir",.08,.055,-.36,iron)
@@ -41,6 +43,7 @@ func update(delta: float,active: bool) -> void:
  rotation=Vector3(.025*sin(elapsed*3.1)*minf(actor.travel_speed,1.0),0,0)
  var target:=to_global(Vector3.ZERO)
  actor.solve_hand_contact("r",target);actor.set_grip("r",.6)
+ reach_error=actor.palm_world("r").distance_to(target)
  global_position+=actor.palm_world("r")-target
  hand_error=actor.palm_world("r").distance_to(global_position)
  if actor.drape!=null:actor.drape.update()

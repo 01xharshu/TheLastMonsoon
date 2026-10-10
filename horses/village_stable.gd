@@ -36,13 +36,20 @@ func _ready() -> void:
 		for side in [-1.0,1.0]:
 			var x: float = side*(.38+float(i%2)*.02)
 			_piece("ThatchCourse",Vector3(x*5.35,3.85-absf(x)*.82,z),Vector3(3.9,.035,.07),shade).rotation.z = -.28 if side>0 else .28
+	set_meta("owner","Bhairavpur horse keeper")
+	set_meta("parking_label","Bhairavpur · Horse keeper’s stable")
 	var horse := Horse.new()
 	horse.name = "VillageHorse"
-	_place_horse.call_deferred(horse)
+	_place_horse.call_deferred(horse,Vector3.ZERO)
+	for i in 2:
+		var resident:=Horse.new();resident.name="StableHorse%02d"%(i+1)
+		resident.set_meta("owner","Bhairavpur horse keeper");resident.set_meta("owner_stable",str(get_path()))
+		_place_horse.call_deferred(resident,Vector3(-2.2 if i==0 else 2.2,0,0))
+		_piece("HitchingPost",Vector3(-2.2 if i==0 else 2.2,.6,2.6),Vector3(.18,1.2,.18),timber)
 
-func _place_horse(horse: CharacterBody3D) -> void:
+func _place_horse(horse: CharacterBody3D,offset: Vector3) -> void:
 	get_parent().add_child(horse)
-	horse.global_position = Vector3(global_position.x,layout.height(global_position.x,global_position.z+1.0)+.15,global_position.z+1.0)
+	horse.global_position = Vector3(global_position.x+offset.x,layout.height(global_position.x+offset.x,global_position.z+1.0)+.15,global_position.z+1.0)
 	horse.rotation.y = PI
 
 func _material(color: Color) -> Material:

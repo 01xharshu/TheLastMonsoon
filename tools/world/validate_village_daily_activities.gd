@@ -31,12 +31,20 @@ func run()->void:
   for step in 90:
    activity.elapsed+=.05;activity.tick(.05)
    max_hand=maxf(max_hand,activity.hand_error)
+  if activity.job=="groom" and not activity.visits.has("groom"):errors.append("stable keeper never reaches horse grooming")
   print("ACTIVITY_HAND ",person.name," ",activity.hand_error)
   if person.animation_tree==null:errors.append(person.name+": missing personal tree")
   if not person.global_position.is_finite():errors.append(person.name+": invalid transform")
   if person.body_collider.collision_layer!=1:errors.append(person.name+": not solid")
  if max_hand>.025:errors.append("work palm target exceeds 25 mm")
  if manager.owned_horse==null or manager.owned_horse.get_meta("owner","")!="Arjun":errors.append("Arjun home horse missing")
+ for step in 400:
+  for index in [4,5]:
+   var drawing:Node=manager.residents[index].get_node("DailyActivity")
+   drawing.elapsed+=.05;drawing.tick(.05);max_hand=maxf(max_hand,drawing.hand_error)
+ for index in [4,5]:
+  if manager.residents[index].get_meta("water_draws",0)<1:errors.append("well users do not alternate completed draws")
+ if max_hand>.025 and not errors.has("work palm target exceeds 25 mm"):errors.append("work palm target exceeds 25 mm")
  var saved:Dictionary=manager.export_state()
  manager.restore_state(JSON.parse_string(JSON.stringify(saved)))
  var restored:Dictionary=manager.export_state()
@@ -54,6 +62,16 @@ func run()->void:
   var field:=root.find_child(field_name,true,false)
   if field==null or not field.has_node("YoungCropRows"):errors.append(field_name+": crop rows absent")
   else:crop_count+=field.get_node("YoungCropRows").multimesh.instance_count
+ if "--commute" in OS.get_cmdline_user_args():
+  clock.current_hour=19
+  for step in 1800:
+   for person in manager.residents:person.get_node("DailyActivity").tick(.1,false)
+   await physics_frame
+  for person in manager.residents:
+   var routine:Node=person.get_node("DailyActivity")
+   var left:=Vector2(person.global_position.x,person.global_position.z).distance_to(routine.home)
+   print("HOME_COMMUTE ",person.name," remaining=",left," state=",person.get_meta("daily_activity")," route=",routine.route_goal)
+   if left>.15:errors.append(person.name+": home route blocked")
  var output:=OS.get_environment("TLM_TEST_OUTPUT_DIR")
  if not output.is_empty():
   root.size=Vector2i(1280,720)

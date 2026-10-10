@@ -13,8 +13,9 @@ GODOT = "/Applications/Godot.app/Contents/MacOS/Godot"
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["terrain", "bag", "npc", "feet", "humans", "roadside", "scripts", "frames", "route"])
+    parser.add_argument("check", choices=["terrain", "bag", "npc", "feet", "humans", "roadside", "scripts", "frames", "route", "population", "traffic", "tutorial", "support", "coach", "continue", "combat", "cow", "menu"])
     parser.add_argument("--native", action="store_true")
+    parser.add_argument("--verbose", action="store_true", help="Include engine resource-leak diagnostics.")
     parser.add_argument("--sample", action="store_true", help="Sample only this check's native process after scene readiness.")
     parser.add_argument("--lod-sweep", action="store_true", help="Compare existing imported mesh LOD thresholds in the frame profiler.")
     parser.add_argument("--isolate", action="store_true", help="Temporarily isolate rendering, physics callbacks and animation in the village frame diagnostic.")
@@ -24,6 +25,15 @@ def main():
     parser.add_argument("--quality", choices=["low","medium","high"], help="Use this quality in memory for a route or frame profile; do not change saved preferences.")
     args = parser.parse_args()
     scripts = {
+        "menu": "tools/world/validate_menu_integration.gd",
+        "cow": "tools/animals/validate_cow_motion.gd",
+        "combat": "tools/weapons/validate_combat_motion.gd",
+        "continue": "tools/world/validate_resident_integration.gd",
+        "coach": "tools/horses/validate_coachman_startup_cache.gd",
+        "traffic": "tools/world/validate_city_route_population.gd",
+        "tutorial": "tools/world/validate_morning_tutorial.gd",
+        "support": "tools/world/validate_terrain_support_filter.gd",
+        "population": "tools/world/validate_population_budget.gd",
         "terrain": "tools/world/validate_terrain_query_budget.gd",
         "bag": "tools/characters/validate_water_bag_contact_cache.gd",
         "npc": "tools/characters/validate_npc_animation_cache.gd",
@@ -40,7 +50,9 @@ def main():
         command = [GODOT, *([] if native else ["--headless"]), "--path", str(ROOT),
                    "--log-file", str(directory / "engine.log"), "--max-fps", "120" if args.check == "frames" else "60",
                    "--script", "res://" + scripts[args.check]]
+        if args.verbose: command.insert(1,"--verbose")
         extras = []
+        if args.check == "continue": extras.append("--continue")
         if args.lod_sweep: extras.append("--lod-sweep")
         if args.isolate: extras.append("--isolate")
         if args.physics: extras.append("--physics")
@@ -48,14 +60,19 @@ def main():
         if args.review and args.check == "route": extras.append("--review-dir=" + str(directory))
         if args.quality: extras.append("--quality=" + str(["low","medium","high"].index(args.quality)))
         if extras: command += ["--", *extras]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        environment = None
+        if args.check == "continue":
+            import os
+            environment = dict(os.environ, TLM_TEST_SAVE_ROOT=str(directory))
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=environment)
         timed_out = threading.Event()
 
         def timeout():
             timed_out.set()
             process.kill()
 
-        timer = threading.Timer(240, timeout)
+        timeout_seconds = 600 if args.check in {"route", "frames", "traffic", "tutorial", "continue"} else 240
+        timer = threading.Timer(timeout_seconds, timeout)
         timer.daemon = True
         timer.start()
         errors = 0
@@ -68,8 +85,8 @@ def main():
                     diagnostic_context = 5
                 if line.startswith("SCRIPT ERROR:") and any(kind in line for kind in ("Compile Error:", "Parse Error:")):
                     process.terminate()
-                if diagnostic_context or any(marker in line for marker in (
-                    "BUDGET", "SCRIPT COST", "CONTACT CACHE", "NPC ANIMATION CACHE", "NPC FRAME WORK", "HUMAN CACHE", "ROADSIDE OPPORTUNITIES", "PIXEL PARITY", "GAME ERROR ROUTE", "RENDER REVIEW", '"routes"',
+                if diagnostic_context or line.startswith(("FAIL ","Leaked instance:","Resource still in use:")) or any(marker in line for marker in (
+                    "MENU INTEGRATION", "COW MOTION:", "COMBAT MOTION", "RESIDENT_WORLD_RESULT", "COACHMAN CACHE PARITY", "CITY_POPULATION_RESULT", "MORNING TUTORIAL", "BUDGET", "SCRIPT COST", "CONTACT CACHE", "NPC ANIMATION CACHE", "NPC FRAME WORK", "HUMAN CACHE", "ROADSIDE OPPORTUNITIES", "PIXEL PARITY", "GAME ERROR ROUTE", "RENDER REVIEW", '"routes"',
                 )):
                     print(line, end="", flush=True)
                     diagnostic_context = max(0, diagnostic_context - 1)
@@ -95,7 +112,7 @@ def main():
                     process.kill()
                     process.wait()
         if timed_out.is_set():
-            print("Check exceeded its 240-second limit.", flush=True)
+            print(f"Check exceeded its {timeout_seconds}-second limit.", flush=True)
         if args.review and args.check == "route":
             print("TEMPORARY REVIEW DIRECTORY " + str(directory), flush=True)
             # A reviewer can inspect local images and send Enter to clean up.

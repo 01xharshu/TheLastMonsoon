@@ -89,7 +89,7 @@ func run() -> void:
 		if i==26 and review_camera != null:
 			for frame in 3: await process_frame
 			await RenderingServer.frame_post_draw
-			check(root.get_texture().get_image().save_png("res://docs/world/captures/combat_flag_contact.png")==OK,"capture blade contact")
+			check(not root.get_texture().get_image().is_empty(),"native blade contact rendered")
 	check(marker.cut,"animated blade contact splits pole")
 	check(marker.fallen_top != null and marker.fallen_top is RigidBody3D,"upper pole becomes falling rigid body")
 	check(marker.find_child("BrokenPoleStump",false,false) != null,"lower stump remains")
@@ -128,6 +128,7 @@ func run() -> void:
 		slash._process(1.0/60.0)
 	check(not blocked.cut,"wall prevents sword from breaking pole")
 	wall.queue_free()
+	await process_frame # Flush removal before checking physics clearance.
 	for i in 3: await physics_frame
 	check(slash.strike(),"strike resumes after obstacle removed")
 	for i in 45:
@@ -141,4 +142,4 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	await preload("res://tools/test_audio_cleanup.gd").settle(self)
-	quit(1 if failures else 0)
+	await root.get_node("SaveManager").quit_game(1 if failures else 0)

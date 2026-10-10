@@ -114,7 +114,7 @@ def woven_shell(name,vertices,faces,mat):
   _,source,_=skin_tree.find(Vector(p))
   for bone,weight in weights[source].items():(obj.vertex_groups.get(bone) or obj.vertex_groups.new(name=bone)).add([i],weight,'REPLACE')
  return obj
-vertices=[];faces=[];N=48;R=32
+vertices=[];faces=[];N=32;R=24
 for row in range(R+1):
  z=.815+(1.245-.815)*row/R;rx,ry=section(z)
  for col in range(N):
@@ -129,7 +129,7 @@ def sleeve_accept(index):
  return any(w.get('upperarm_'+side,0)>.15 and (p-rig.data.bones['upperarm_'+side].head_local).length<.18 for side in ['l','r'])
 sleeves,_=surface('River blouse sleeves',sleeve_accept,.024,upper_mat)
 bpy.ops.object.select_all(action='DESELECT');blouse.select_set(True);sleeves.select_set(True);bpy.context.view_layer.objects.active=blouse;bpy.ops.object.join()
-vertices=[];faces=[];ROWS=32;COLS=8
+vertices=[];faces=[];ROWS=24;COLS=6
 for row in range(ROWS+1):
  z=.84+(1.24-.84)*row/ROWS;rx,ry=section(z);center=.14-(z-.85)/.39*.29
  for col in range(COLS+1):

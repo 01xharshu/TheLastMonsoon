@@ -19,6 +19,8 @@ var speed:=1.0
 var sit_amount:=0.0
 var stagger:=0.0
 var pending_path:Array[Vector3]=[]
+var home_door:Node3D
+var door_wait_frames:=0
 
 func configure(person:Node3D,owner_travel:Node,index:int) -> void:
  actor=person;travel=owner_travel;side=-1.0 if index==0 else 1.0;office_side=side
@@ -30,7 +32,8 @@ func change(next:String) -> void:
  state=next;elapsed=0;start_at=actor.global_position;visited[state]=true
  actor.set_meta("household_action",state)
  var conversation:=actor.get_node_or_null("HouseholdConversation")
- if conversation!=null:conversation.position.z=-.55 if state=="work" else .55
+ if conversation!=null:
+  conversation.position.z=-.55 if state=="work" else .55;conversation.refresh_physics()
  if state in ["climb_step","enter_coach","climb_down","step_to_ground"]:
   var rig:Skeleton3D=actor.get("_skeleton")
   for suffix in ["l","r"]:step_feet[suffix]=rig.to_global(rig.get_bone_global_pose(rig.find_bone("foot_"+suffix)).origin)
@@ -68,6 +71,9 @@ func tick(delta:float) -> void:
     transition_target=_desk_root();change("sit_at_desk")
    else:change("home")
    return
+  if not _home_door_ready():
+   door_wait_frames+=1;actor.set("travel_speed",0.0);actor.call("_set_animation",&"idle",delta)
+   travel._passenger_cloth(actor,false);return
   var target:Vector3=path[point];var offset:=target-actor.global_position
   var motion:=offset.limit_length(speed*delta)
   # Step-height sweep plus a floor ray keeps the feet on veranda/threshold levels.
@@ -130,6 +136,20 @@ func tick(delta:float) -> void:
  else:actor.call("_set_animation",&"idle",delta)
  travel._passenger_cloth(actor,state in ["work","seated"])
  actor.get_node("BodyCollider").force_update_transform()
+
+func _home_door_ready() -> bool:
+ if state not in ["leave_home","enter_home"]:return true
+ if not is_instance_valid(home_door):
+  var household:String=actor.get_meta("household","")
+  var home:Node3D=travel.coach.get_parent().get_node_or_null(NodePath(household))
+  if home!=null:home_door=home.get_node_or_null("EntranceDoor")
+ if home_door==null:return true
+ var gap:=Vector2(actor.global_position.x-home_door.global_position.x,actor.global_position.z-home_door.global_position.z).length()
+ if gap>4.5:return true
+ # Residents can leave from inside; an explicit exterior lock prevents re-entry.
+ if state=="enter_home" and home_door.manual_locked:return false
+ home_door.open_idle_seconds=0.0;home_door.set_open(true)
+ return home_door.opened and not home_door.moving
 
 func _move_transition(duration:float,seated:float,delta:float) -> void:
  var t:=smoothstep(0,1,clampf(elapsed/duration,0,1))

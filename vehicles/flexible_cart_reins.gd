@@ -83,6 +83,9 @@ func anchors(entry: Dictionary) -> Array[Vector3]:
   rig.force_update_all_bone_transforms()
   bit = rig.to_global(rig.get_bone_global_pose(entry.head)*entry.head_anchor)
  var hand: Vector3 = cart.to_global(entry.hand)
+ var driver:Node3D=cart.get("driver") if "driver" in cart else null
+ if is_instance_valid(driver) and driver.visible and driver.has_method("palm_world"):
+  hand=driver.palm_world(entry.side)
  if cart.boarding != null and cart.boarding.rider != null and cart.boarding.role == "driver" and cart.boarding.transition == "":
   var visual: Node3D = cart.boarding.rider.get_node("VisualRoot/CharacterVisual")
   var rig: Skeleton3D = visual.skeleton

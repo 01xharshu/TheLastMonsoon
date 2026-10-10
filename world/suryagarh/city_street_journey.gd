@@ -1,6 +1,12 @@
 extends "res://world/suryagarh/settlements/street_journey.gd"
 ## Keep remote residents persistent at reduced update cadence, never crowd the centre.
+const Budget = preload("res://systems/simulation_budget.gd")
 var viewer: Node3D
+var simulation_interval := 0.0
+var tier_age := 0.0
+var sweep_exclusions: Array[RID] = []
+var terrain_revision := -1
+var terrain_cache: Dictionary = {}
 var accumulated := 0.0
 const Ground = preload("res://world/suryagarh/tree_trunk_collision.gd")
 var terrain_rids: Array[RID] = []
@@ -8,14 +14,31 @@ var waypoint_heights: Dictionary = {}
 var detour := Vector2.INF
 var retry_age := 0.0
 var detours := 0
+var crowd: Node
+var personal_seed := 0
+var social_enabled := false
+var social_partner: Node
+var social_end := 0.0
+var social_cooldown := 0.0
+var social_speaker := false
+var awareness_age := 0.0
+var yield_age := 0.0
+var social_time := 0.0
 
 func _ready() -> void:
  super._ready()
- Ground.configure_terrain_support(actor)
- var world:Node=actor
- while world.get_parent()!=get_tree().root:world=world.get_parent()
- for body:CollisionObject3D in world.find_children("*","CollisionObject3D",true,false):
-  if body.name=="GroundCollision":terrain_rids.append(body.get_rid())
+ turn_in_place=false
+ personal_seed=int(actor.get_meta("population_index",0))+int(actor.get_meta("street_identity",0))*17
+ social_enabled=personal_seed%4<2
+ social_cooldown=5.0+float(personal_seed%19)
+ if is_instance_valid(crowd):crowd.register(self)
+ terrain_cache=Ground.terrain_cache(actor)
+ terrain_rids=terrain_cache.rids
+ sweep_exclusions = super.motion_exclusions()+terrain_rids
+ terrain_revision=terrain_cache.revision
+ # Stable phase spreads remote work across frames instead of synchronising it.
+ tier_age = float(actor.get_instance_id()%13)*.02
+ accumulated = float(actor.get_instance_id()%7)*.01
 
 func ground_at(point:Vector2) -> Dictionary:
  var height:float=layout.height(point.x,point.y)
@@ -31,12 +54,15 @@ func route_target(point:Vector2) -> Vector3:
 
 func motion_exclusions() -> Array[RID]:
  # Terrain support is tested by the dedicated ray; sweep all solid obstacles.
- return super.motion_exclusions()+terrain_rids
+ if terrain_revision!=int(terrain_cache.revision):
+  sweep_exclusions=super.motion_exclusions()+terrain_rids
+  terrain_revision=terrain_cache.revision
+ return sweep_exclusions
 
 func travel_motion(target:Vector3,delta:float) -> Vector3:
  var here:=Vector2(actor.global_position.x,actor.global_position.z)
  var offset:=Vector2(target.x,target.z)-here
- var next:=here+offset.normalized()*minf(offset.length(),speed*delta)
+ var next:=here+offset.normalized()*minf(offset.length(),current_speed*delta)
  var support:=ground_at(next)
  if support.is_empty() or support.normal.y<.6 or absf(support.position.y-actor.global_position.y)>.35:
   last_obstacle="unsafe terrain support";return Vector3.ZERO
@@ -70,8 +96,69 @@ func arrive() -> void:
  super.arrive()
 func _physics_process(delta: float) -> void:
  accumulated+=delta
- var far:=is_instance_valid(viewer) and actor.global_position.distance_squared_to(viewer.global_position)>40000
- if far and accumulated<.5:return
+ tier_age-=delta
+ if tier_age<=0:
+  tier_age=.25
+  simulation_interval=Budget.interval(actor,viewer,actor.get_meta("combat_action","")!="" or actor.get_meta("mission_active",false))
+ # Approaching/teleporting players restore full collision/animation immediately.
+ if simulation_interval>0 and is_instance_valid(viewer) and actor.global_position.distance_squared_to(viewer.global_position)<=Budget.NEAR_SQUARED:
+  simulation_interval=0
+ if accumulated<simulation_interval:return
  var step:=accumulated;accumulated=0
- if actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false):return
- tick(step)
+ if actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false) or actor.get_meta("dead",false) or actor.get_meta("combat_action","")!="":
+  if is_instance_valid(crowd):crowd.end_conversation(self)
+  return
+ if is_instance_valid(social_partner) and is_instance_valid(crowd):
+  if crowd.age>=social_end or not crowd.available(social_partner) or closing:
+   crowd.end_conversation(self)
+  else:
+   converse(step);return
+ awareness_age-=step
+ if awareness_age<=0 and is_instance_valid(crowd):
+  awareness_age=.15
+  var next:=route_target(route[goal])
+  var forward:=Vector2(next.x-actor.global_position.x,next.z-actor.global_position.z).normalized()
+  pace_scale=crowd.road_pace(self,forward)
+ if pace_scale<.1:
+  yield_age+=step;current_speed=0;actor.travel_speed=0
+  update_animation(&"idle",step);actor.set_meta("street_action","yielding_to_traffic")
+  if yield_age>1.2:on_blocked(route_target(route[goal]),step)
+  return
+ yield_age=0
+ # Retain elapsed remote time while bounding support/obstacle sweeps and turns.
+ var remaining:=step
+ while remaining>.0001:
+  var portion:=minf(remaining,.1)
+  tick(portion);remaining-=portion
+
+func update_animation(state: StringName, delta: float) -> void:
+ # Invisible residents still traverse the same collision-checked route and clock.
+ if simulation_interval>=.5:
+  actor.foot_plant.clear()
+  return
+ super.update_animation(state,delta)
+
+func clear_sight(other:Node3D) -> bool:
+ var ray:=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*1.25,other.global_position+Vector3.UP*1.25,1)
+ ray.exclude=[actor.body_collider.get_rid(),other.body_collider.get_rid()]
+ return actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
+
+func converse(delta:float) -> void:
+ social_time+=delta
+ current_speed=0;actor.travel_speed=0;update_animation(&"idle",delta)
+ var offset:Vector3=social_partner.actor.global_position-actor.global_position
+ actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.2)
+ actor.body_collider.force_update_transform()
+ var speaking:bool=(int((crowd.age-(social_end-10.0))/2.7)%2==0)==social_speaker
+ actor.set_meta("street_action","talking" if speaking else "listening")
+ # Idle is sampled first, so gesture deltas cannot accumulate into the next walk.
+ if simulation_interval>0.1 or actor._skeleton==null:return
+ var gesture:float=sin(social_time*2.1+float(personal_seed))*.035
+ actor.solve_hand_contact("r",actor.to_global(Vector3(-.20,1.02+gesture,.29)) if speaking else actor.to_global(Vector3(-.30,.81,.07)))
+ actor.set_grip("r",.12 if speaking else 0.0)
+ var head:int=actor._bones.get("head",-1)
+ if head>=0:
+  actor._skeleton.set_bone_pose_rotation(head,actor._base_rotations["head"]*Quaternion(actor._pitch_axes["head"],.025*sin(social_time*2.4) if not speaking else .015*sin(social_time*4.1)))
+
+func _exit_tree() -> void:
+ if is_instance_valid(crowd):crowd.end_conversation(self)

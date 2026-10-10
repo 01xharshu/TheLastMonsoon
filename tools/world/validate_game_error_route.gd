@@ -36,17 +36,17 @@ func _run() -> void:
 	for moment in [5.0,16.0,27.0]:
 		while opening.elapsed < moment: await process_frame
 		await capture("intro_"+str(int(moment)))
-	while opening.state == "night": await process_frame
-	check(opening.state == "seated","Intro did not reach morning")
+	while opening.state in ["prologue","cart_passage","night"]: await process_frame
+	check(opening.state in ["dawn","rising","departing","done"],"Intro did not reach morning")
 	await capture("morning")
 	var event := InputEventKey.new()
 	event.keycode=KEY_W
 	event.pressed=true
 	opening._input(event)
-	await create_timer(1.7).timeout
+	while opening.state != "done": await process_frame
 	check(opening.state == "done" and actor.is_physics_processing(),"Intro did not release controls")
 	var routes: Dictionary = {}
-	for spec in [["village",Vector2(-230,180)],["civil_lines",Vector2(640,235)],["cantonment",Vector2(500,465)]]:
+	for spec in [["village",Vector2(-230,180)],["civil_lines",Vector2(640,235)],["cantonment",Vector2(500,465)],["forest",Vector2(344,-105)]]:
 		var at: Vector2 = spec[1]
 		actor.global_position=Vector3(at.x,world.layout.height(at.x,at.y)+1.1,at.y)
 		actor.velocity=Vector3.ZERO

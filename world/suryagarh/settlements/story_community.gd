@@ -14,11 +14,18 @@ var wait:=0.0
 func _ready() -> void:
  name="StoryCommunity"
  b.wood=b.material(Color(.27,.17,.09));b.plaster=b.material(Color(.73,.67,.53));b.stone=b.material(Color(.42,.35,.25));b.tile=b.material(Color(.43,.24,.14))
- farm=site("ChachaFarm",Vector2(-360,338),Vector2(9,7),"Chacha · Farm practice")
- pavilion(farm,Vector2(9,7),false)
- college=site("CollegeReadingRoom",Vector2(-276,-469),Vector2(13,9),"College · Reading room")
+ farm=site("ChachaFarm",Vector2(-443,222),Vector2(9,5),"Chacha · Farm practice")
+ pavilion(farm,Vector2(9,5),false)
+ var house: Node3D=get_parent().get_node_or_null("ChachaHouse")
+ if house!=null:
+  var court: Vector3=house.to_global(Vector3(-5.9,.06,8))
+  var field: Vector3=farm.to_global(Vector3(8.5,.02,0))
+  var slope:=field-court
+  var ramp:=b.piece(farm,"HouseConnectionRamp",farm.to_local((court+field)*.5),Vector3(slope.length(),.14,2.4),b.stone)
+  ramp.rotation.z=-atan2(slope.y,absf(slope.x))
+ college=site("CollegeReadingRoom",Vector2(-375,-520),Vector2(13,9),"College campus · Reading room")
  pavilion(college,Vector2(13,9),true)
- courtyard=site("RefreshmentCourtyard",Vector2(-278,-433),Vector2(10,8),"Refreshment courtyard · Conversations")
+ courtyard=site("RefreshmentCourtyard",Vector2(-375,-484),Vector2(10,8),"College café · Refreshment courtyard")
  pavilion(courtyard,Vector2(10,8),false)
  for i in 3:
   var member=preload("res://story/training_member.gd").new();member.name="PracticeMember%d"%i
@@ -50,6 +57,8 @@ func site(label: String,point: Vector2,half: Vector2,map_label: String) -> Node3
  ramp.rotation.x=-atan2(finish.y-start.y,finish.z-start.z)
  return node
 func pavilion(node: Node3D,half: Vector2,enclosed: bool) -> void:
+ if node==farm:
+  family_farm(node);return
  var back: float=-half.y+1
  b.piece(node,"BackWall",Vector3(0,1.6,back),Vector3(half.x*2,3.2,.24),b.plaster)
  if enclosed:
@@ -74,6 +83,29 @@ func pavilion(node: Node3D,half: Vector2,enclosed: bool) -> void:
   for x in [-7,7]:
    for y in [.65,1.25,1.85]:b.piece(node,"ReadingShelf",Vector3(x,y,back+.5),Vector3(3,.1,.7),b.wood)
   for i in 16:b.piece(node,"PaperBundle",Vector3(-8.3+float(i%8)*.36,.76+float(i/8)*.6,back+.5),Vector3(.28,.10,.4),b.plaster,false)
+func family_farm(node: Node3D) -> void:
+ # A small work shelter leaves the practice yard open to the sky.
+ for x in [-8,-4]:
+  for z in [-4,-1.5]:b.piece(node,"FarmShelterPost",Vector3(x,1.35,z),Vector3(.16,2.7,.16),b.wood)
+ b.piece(node,"FarmShelterRoof",Vector3(-6,2.8,-2.75),Vector3(4.6,.18,3.1),b.tile,false).rotation.z=.07
+ b.piece(node,"FarmToolRail",Vector3(-6,.8,-4),Vector3(4,.12,.12),b.wood)
+ var soil:=b.material(Color(.25,.18,.10))
+ var leaf_mat:=StandardMaterial3D.new();leaf_mat.albedo_color=Color(.24,.38,.10);leaf_mat.roughness=1;leaf_mat.cull_mode=BaseMaterial3D.CULL_DISABLED
+ var leaf:=SurfaceTool.new();leaf.begin(Mesh.PRIMITIVE_TRIANGLES)
+ for turn in [0.0,PI*.5]:
+  var axis:=Vector3(cos(turn),0,sin(turn))
+  var across:=Vector3(-sin(turn),0,cos(turn))
+  for side in [-1,1]:
+   var root:=Vector3(0,.10,0);var tip:=axis*.25*side+Vector3.UP*.22;var center:=root.lerp(tip,.5)
+   for p in [root,center+across*.06,tip,root,tip,center-across*.06]:leaf.add_vertex(p)
+ leaf.generate_normals();var mesh:=leaf.commit();mesh.surface_set_material(0,leaf_mat)
+ for row in 2:
+  b.piece(node,"FamilyVegetableBed",Vector3(1.5,.08,-3.9+row*.85),Vector3(7,.16,.6),soil,false)
+  for seedling in 12:
+   var plant:=MeshInstance3D.new();plant.name="VegetableSeedling";plant.mesh=mesh;node.add_child(plant)
+   plant.position=Vector3(-1.6+seedling*.56,.10,-3.9+row*.85);plant.rotation.y=seedling*.71
+ for x in [-5,5]:b.piece(node,"PracticeRail",Vector3(x,.8,3.6),Vector3(.12,1.6,.12),b.wood)
+
 func _process(delta: float) -> void:
  wait-=delta
  if pending.is_empty() or wait>0:return

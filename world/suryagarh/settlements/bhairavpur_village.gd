@@ -179,6 +179,8 @@ func _build_well() -> void:
 	bucket.name = "SuspendedBucket"
 	well.add_child(bucket)
 	bucket.position = Vector3(0,.50,.15)
+	var drawing:=preload("res://world/suryagarh/settlements/well_water_draw.gd").new()
+	drawing.name="WellDrawingMechanism";well.add_child(drawing);drawing.configure(well)
 	for side in [-1.0,1.0]:
 		var seat := _root("BhairavpurWellSeat%d"%int(side+1),Vector2(-289+side*5,235))
 		_piece(seat,"StoneSeat",Vector3(0,.24,0),Vector3(2.1,.48,.7),settlement.stone)
@@ -215,7 +217,7 @@ func _build_market() -> void:
 			_piece(stall,"CounterLeg",Vector3(side*1.75,.39,0),Vector3(.16,.78,.85),settlement.wood)
 			for z in [-1.1,1.1]:
 				_piece(stall,"ShadePost",Vector3(side*2.0,1.25,z),Vector3(.14,2.5,.14),settlement.wood)
-		_piece(stall,"Shade",Vector3(0,2.55,0),Vector3(4.9,.12,2.9),fabric[i%fabric.size()],false).rotation.x = -.06
+		preload("res://world/suryagarh/route_and_market_detail.gd").canopy(stall,fabric[i%fabric.size()],i)
 		_piece(stall,"ShadeHem",Vector3(0,2.38,1.4),Vector3(4.9,.23,.055),fabric[i%fabric.size()],false)
 		house_detail.stock(stall,i,produce_materials)
 		var storage: Node3D = Basket.instantiate() if i%2==0 else Bucket.instantiate()
@@ -234,21 +236,11 @@ func _build_market() -> void:
 		_piece(shed,"GrainSurface",Vector3(x,.94,-1.1),Vector3(1.4,.04,1.1),fabric[0],false)
 
 func _build_farm_edge() -> void:
-	var leaves := _crop_mesh()
 	for i in GARDEN_COUNT:
 		var p := Vector2(-419+(i%2)*12,235+(i/2)*14)
 		var garden := _root("BhairavpurKitchenGarden%d"%i,p)
 		garden.add_to_group("bhairavpur_garden")
-		_piece(garden,"RaisedEarth",Vector3(0,.06,0),Vector3(8,.12,4.4),earth,false)
-		for side in [-1.0,1.0]:
-			_piece(garden,"EarthBorder",Vector3(0,.10,side*2.2),Vector3(8.2,.20,.18),earth,false)
-		var plants: Array[Transform3D] = []
-		for row in 3:
-			for column in 12:
-				var position := Vector3(-3.5+column*.63,.13,-1.5+row*1.5)
-				var basis := Basis(Vector3.UP,float(column+row+i)*1.74).scaled(Vector3.ONE*(.8+float((column+i)%4)*.12))
-				plants.append(Transform3D(basis,position))
-		_batch(garden,"CultivatedPlants",leaves,crop_material,plants)
+		preload("res://world/suryagarh/settlements/farm_visuals.gd").build(garden,settlement.layout,Vector2(8,4.4),140+i)
 	var drying := _root("BhairavpurHarvestYard",Vector2(-408,211))
 	_piece(drying,"DryingMat",Vector3(0,.025,0),Vector3(8,.05,5),fabric[0],false)
 	for side in [-1.0,1.0]:

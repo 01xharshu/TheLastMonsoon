@@ -20,7 +20,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix='tlm-opening-cart-') as tmp:
             command = ['/Applications/Godot.app/Contents/MacOS/Godot', '--path', str(ROOT)]
             command += ['--headless'] if args.headless else ['--windowed', '--resolution', '1280x720', '--max-fps', '60']
-            command += ['--script', 'res://tools/world/validate_opening_cart_passage.gd']
+            command += ['--log-file', str(Path(tmp)/'engine.log'), '--script', 'res://tools/world/validate_opening_cart_passage.gd']
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        text=True, start_new_session=True,
                                        env=dict(os.environ, TLM_CART_OUTPUT=tmp))

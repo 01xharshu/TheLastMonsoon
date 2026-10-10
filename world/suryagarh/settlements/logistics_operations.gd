@@ -18,26 +18,31 @@ func configure(scene: Node3D) -> void:
 	station("convoy_pickup","Load supply consignment · driver cart required",depot,Vector3(-2,.24,2))
 	station("mail_deliver","Deliver sealed military mail",world.get_node("Settlement/AdministrativeDistrict/Collectorate"),Vector3(3,.24,3))
 	station("convoy_deliver","Unload military consignment · driver cart required",world.get_node("Settlement/AdministrativeDistrict/DistrictTreasury"),Vector3(0,.24,7))
-	if world.has_node("TimberBridge"):
-		var bridge: Node3D = world.get_node("TimberBridge")
-		gate = Door.new()
-		gate.name = "RevenueCrossingGate"
-		gate.width = bridge.WIDTH + 2.0
-		gate.height = 1.25
-		gate.opened = false
-		gate.locked = true
-		gate.night_lock = false
-		gate.auto_open_at_dawn = false
-		gate.rotation.y = PI/2
-		gate.position = bridge.ramp_point(-1,1)+Vector3(0,.03,0)
-		bridge.add_child(gate)
-		var wood := StandardMaterial3D.new()
-		wood.albedo_color = Color(.25,.15,.075)
-		gate.build(wood)
-		# build() resets yaw and adds half-width to local X. Centre the gate on the road.
-		gate.position = bridge.ramp_point(-1,1)+Vector3(0,.03,0)
-		gate.rotation.y = PI/2
-		station("crossing","Pay crossing toll · 1 rupee",bridge,bridge.ramp_point(-1,1)+Vector3(-2,.1,bridge.WIDTH*.5+2.0))
+	if world.has_node("TimberBridge"):build_inspection_post(world.get_node("TimberBridge"))
+
+func build_inspection_post(bridge: Node3D) -> void:
+	var booth:=Node3D.new();booth.name="BridgeInspectionPost";bridge.add_child(booth)
+	booth.position=bridge.ramp_point(-1,1)+Vector3(0,0,bridge.WIDTH*.5+3.5)
+	var builder:=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
+	var wood:=builder.material(Color(.27,.16,.09));var plaster:=builder.material(Color(.69,.61,.47))
+	builder.piece(booth,"Floor",Vector3(0,.1,0),Vector3(3.4,.2,3.2),wood)
+	builder.piece(booth,"BackWall",Vector3(0,1.3,1.5),Vector3(3.4,2.6,.2),plaster)
+	for x in [-1.6,1.6]:
+		builder.piece(booth,"SideWall",Vector3(x,1.3,0),Vector3(.2,2.6,3.2),plaster)
+		builder.piece(booth,"FrontPost",Vector3(x,1.3,-1.5),Vector3(.15,2.6,.15),wood)
+	builder.piece(booth,"Roof",Vector3(0,2.7,0),Vector3(3.8,.18,3.6),wood)
+	builder.piece(booth,"InspectionDesk",Vector3(0,.75,-.65),Vector3(1.7,.12,.75),wood)
+	for x in [-.7,.7]:builder.piece(booth,"DeskLeg",Vector3(x,.35,-.65),Vector3(.12,.7,.6),wood)
+	builder.piece(booth,"OfficerBench",Vector3(0,.55,.6),Vector3(.75,.12,.6),wood)
+	for x in [-.27,.27]:builder.piece(booth,"BenchLeg",Vector3(x,.25,.6),Vector3(.10,.5,.55),wood)
+	var officer:=preload("res://characters/npcs/households/household_npc_actor.gd").new()
+	officer.name="BridgeInspectionOfficer";officer.movement_enabled=false;officer.rotation.y=PI
+	officer.set_meta("combat_faction","police");officer.set_meta("assigned_workplace",str(booth.get_path()))
+	officer.add_child(preload("res://characters/npcs/thana/daroga_motion.glb").instantiate());booth.add_child(officer)
+	officer.position=Vector3(0,.1,.6)
+	var sitting:=preload("res://story/community_social.gd").new();officer.add_child(sitting)
+	sitting.person=officer;sitting.seated=true;sitting.ground_y=officer.global_position.y;sitting.viewer=officer
+	builder.free()
 
 func station(id: String,label: String,parent: Node3D,at: Vector3) -> void:
 	var prompt := Prompt.new()
@@ -87,13 +92,8 @@ func request(id: String,player: CharacterBody3D) -> bool:
 			convoy_stage = "delivered"
 			inv.add_item("rupees",12)
 		"crossing":
-			if not is_instance_valid(gate): return false
-			if not paid_days.has(str(clock.current_day)):
-				if inv.get_item_count("rupees") < 1: return false
-				inv.remove_item("rupees",1)
-				paid_days[str(clock.current_day)] = true
-			gate.locked = false
-			gate.set_open(true)
+			# Legacy interactions/saves cannot reinstate the removed road barrier.
+			inv.message_requested.emit("The bridge crossing is open.")
 		_: return false
 	return true
 

@@ -13,12 +13,28 @@ var survey_paid_day:=-1
 var fields:Array[Node3D]=[]
 var waypoint_at:=Vector2(INF,INF)
 var navigation_seconds:=0.0
+var navigation_map:Node
+var navigation_errands:Node
+var navigation_inquiry:Node
+var navigation_story:Node
+func _ready() -> void:
+ call_deferred("cache_navigation")
+ if is_instance_valid(clock) and clock.has_signal("day_changed"):clock.day_changed.connect(_day_changed)
+func _day_changed(_day:int) -> void:
+ for service in services:_stock_today(service.home_id)
+ refresh_cooks()
+func refresh_cooks() -> void:
+ for service in services:
+  if service.role!="cook" or not is_instance_valid(service.person):continue
+  var tree:AnimationTree=service.person.get("animation_tree")
+  if tree!=null:tree.set("parameters/work_pose/blend_amount",1.0 if int(stock.get(service.home_id,{"roti":2}).get("roti",0))>0 else 0.0)
 func day() -> int:return maxi(1,int(clock.current_day)) if is_instance_valid(clock) else 1
 func message(text:String) -> void:player.get_node("InventoryComponent").message_requested.emit(text)
 func bind(person:Node3D,role:String,home:String) -> Node:
  var service:=preload("res://world/suryagarh/settlements/household_role_service.gd").new()
  service.name="HouseholdConversation";service.ledger=self;service.person=person;service.role=role;service.home_id=home;service.role_id=home+":"+role
  person.set_meta("world_role",role);person.add_child(service);services.append(service)
+ _stock_today(home);refresh_cooks()
  return service
 func configure_fields() -> void:
  if not fields.is_empty():return
@@ -64,6 +80,7 @@ func request(service:Node,actor:CharacterBody3D) -> void:
   "merchant":
    var count:int=int(record.get("sold",0)) if int(record.get("day",-1))==day() else 0
    if count>=3:message("I have bought today's three-mango order. Return tomorrow.");return
+   if int(pantry.mango)>=12:message("The produce store is full. I cannot take another mango yet.");return
    if not inv.remove_item("mango",1):message("Bring one mango for the counting-house produce order.");return
    record.day=day();record.sold=count+1;pantry.mango=mini(12,int(pantry.mango)+1);inv.add_item("rupees",2);message("One mango received. Paid 2 rupees.")
   "official":
@@ -74,7 +91,7 @@ func request(service:Node,actor:CharacterBody3D) -> void:
   "cook":
    if int(pantry.roti)<=0:message("The pantry is empty. Use the supply interaction to bring roti.");return
    if not inv.remove_item("rupees",2):message("A kitchen roti costs 2 rupees.");return
-   pantry.roti-=1;inv.add_item("roti",1);message("One roti supplied from the household pantry.")
+   pantry.roti-=1;refresh_cooks();inv.add_item("roti",1);message("One roti supplied from the household pantry.")
   "water":
    var used:float=float(record.get("liters",0)) if int(record.get("day",-1))==day() else 0.0
    if used>=2:message("Today's two-litre household water allowance is used.");return
@@ -89,7 +106,7 @@ func supply(service:Node,actor:CharacterBody3D,quantity:int,help:bool) -> void:
  if int(pantry.roti)+quantity>12:message("The pantry has enough stored food.");return
  var inv=player.get_node("InventoryComponent")
  if not inv.remove_item("roti",quantity):message("Bring %d roti for the pantry."%quantity);return
- pantry.roti+=quantity;inv.add_item("rupees",quantity*2)
+ pantry.roti+=quantity;refresh_cooks();inv.add_item("rupees",quantity*2)
  if help:
   record.help_day=day()
   var fame=player.get_node_or_null("FameComponent")
@@ -99,25 +116,36 @@ func explain(service:Node,actor:CharacterBody3D) -> void:
  if actor!=player:return
  message({"landowner":"I oversee the estate fields and accounts. My rent-office desk is where the coach takes me.","merchant":"I purchase produce here. Shipping and cloth deliveries are handled by the existing public dispatch clerk.","official":"I review this estate's accounts. District petitions, court registration and Treasury payments remain with those offices.","host":"I arrange this household's provisions. Pantry deliveries support the cook's food service.","cook":"I sell stored household meals and accept pantry supplies. Stock carries between visits.","water":"I carry household water. Bring a water bag; I can spare up to two litres per day.","coachman":"This coach is reserved for its household's home–office route. Public carts are available at the village cart stand."}.get(service.role,"I work for this household."))
 func export_state() -> Dictionary:
- return {"roles":state.duplicate(true),"stock":stock.duplicate(true),"stock_day":stock_day,"survey_active":survey_active,"survey_checked":survey_checked.duplicate(),"survey_paid_day":survey_paid_day}
+ return {"roles":state.duplicate(true),"stock":stock.duplicate(true),"stock_day":stock_day,"survey_active":survey_active,"survey_checked":survey_checked.duplicate(),"survey_paid_day":survey_paid_day,"waypoint_at":[waypoint_at.x,waypoint_at.y] if waypoint_at.is_finite() else []}
 func restore_state(data:Dictionary) -> void:
  state=data.get("roles",{}).duplicate(true);stock=data.get("stock",{}).duplicate(true);stock_day=maxi(0,int(data.get("stock_day",0)))
  survey_active=bool(data.get("survey_active",false));survey_paid_day=int(data.get("survey_paid_day",-1));survey_checked.clear()
+ waypoint_at=Vector2(INF,INF)
+ var saved_waypoint:Array=data.get("waypoint_at",[])
+ if saved_waypoint.size()==2:waypoint_at=Vector2(float(saved_waypoint[0]),float(saved_waypoint[1]))
  for value in data.get("survey_checked",[]):
-  if value in [0,1,2] and not int(value) in survey_checked:survey_checked.append(int(value))
+  if typeof(value) not in [TYPE_INT,TYPE_FLOAT]:continue
+  var index:=int(value)
+  if index>=0 and index<=2 and not index in survey_checked:survey_checked.append(index)
+ refresh_cooks()
  if survey_active:call_deferred("configure_fields")
 
 func _process(delta:float) -> void:
  if not survey_active:return
+ if not estate_owner_alive():
+  survey_active=false;clear_survey_waypoint();return
  navigation_seconds+=delta
  if navigation_seconds<1:return
  navigation_seconds=0;mark_survey()
-func mark_survey(force:bool=false) -> void:
- var map:=player.get_node_or_null("UI/WorldMap")
- if map==null:return
- var errands:=world.get_node_or_null("ErrandSystem")
- if errands!=null and not errands.active.is_empty():return
- if not force and map.waypoint.is_finite() and map.waypoint.distance_to(waypoint_at)>.1:return
+func mark_survey(_force:bool=false) -> void:
+ var map:=navigation_map
+ if not is_instance_valid(map):return
+ if player.get_meta("opening_active",false) or player.get_meta("morning_tutorial_active",false):return
+ if is_instance_valid(navigation_errands) and not navigation_errands.active.is_empty():return
+ if bool(map.get("follow_story")):
+  if is_instance_valid(navigation_inquiry) and navigation_inquiry.stage not in ["dormant","released"]:return
+  if is_instance_valid(navigation_story) and (navigation_story.active or navigation_story.state in ["farm","complete"]):return
+ if map.waypoint.is_finite() and map.waypoint.distance_to(waypoint_at)>.1:return
  var target:Node3D
  for marker in fields:
   if not marker.index in survey_checked:target=marker;break
@@ -128,6 +156,17 @@ func mark_survey(force:bool=false) -> void:
  waypoint_at=Vector2(target.global_position.x,target.global_position.z)
  map.selected_site="";map.waypoint=waypoint_at
 func clear_survey_waypoint() -> void:
- var map:=player.get_node_or_null("UI/WorldMap")
- if map!=null and map.waypoint.distance_to(waypoint_at)<.1:map.waypoint=Vector2(INF,INF)
+ var map:=navigation_map
+ if is_instance_valid(map) and map.waypoint.distance_to(waypoint_at)<.1:map.waypoint=Vector2(INF,INF)
  waypoint_at=Vector2(INF,INF)
+
+func estate_owner_alive() -> bool:
+ for service in services:
+  if service.role=="landowner":return is_instance_valid(service.person) and not service.person.get_meta("dead",false)
+ return false
+
+func cache_navigation() -> void:
+ navigation_map=player.get_node_or_null("UI/WorldMap")
+ navigation_errands=world.get_node_or_null("ErrandSystem")
+ navigation_inquiry=world.get_node_or_null("DevInquiry")
+ navigation_story=world.get_node_or_null("DevStory")

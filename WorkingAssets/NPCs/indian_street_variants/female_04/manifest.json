@@ -7,6 +7,7 @@
     "nose": 0.002,
     "cheek": -0.09
   },
+  "whole_character_width": 0.985,
   "runtime": "characters/npcs/street_residents/female_04.glb",
   "wardrobe": "street formal",
   "visual_approved": false

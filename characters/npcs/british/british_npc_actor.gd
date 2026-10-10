@@ -277,10 +277,22 @@ func _make_clip(walking: bool, turning: bool = false) -> Animation:
 	_clip_templates[cache_key] = {"clip":template_clip,"times":times,"time_corrections":corrections}
 	return clip
 
+var _remote_pose_elapsed := 0.0
+const SimulationBudget = preload("res://systems/simulation_budget.gd")
+
 func _process(delta: float) -> void:
 	if animation_player == null or get_meta("dead",false) or get_meta("knocked_out",false):
 		return
 	if get_meta("external_combat_motion",false):
+		# Movement/combat remains owned by the encounter system. Only autonomous
+		# patrol poses are amortised; reactions and player combat remain immediate.
+		_remote_pose_elapsed += delta
+		var pose_viewer := get_viewport().get_camera_3d()
+		var essential: bool = get_meta("combat_action", "") != "" or get_meta("mission_active", false)
+		var cadence := SimulationBudget.interval(self,pose_viewer,essential)
+		if _remote_pose_elapsed < cadence: return
+		delta = _remote_pose_elapsed
+		_remote_pose_elapsed = 0.0
 		_set_animation(&"walk" if travel_speed > .02 else &"idle",delta)
 		return
 	if not movement_enabled:

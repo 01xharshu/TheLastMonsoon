@@ -17,9 +17,11 @@ var stalled := 0.0
 var last_position := Vector3.ZERO
 var last_heading := 0.0
 func configure(driver: Node) -> void: boarding = driver
+func passenger_service() -> bool:
+ return boarding.cart.has_method("show_coachman_blockout") or boarding.cart.get_meta("public_passenger_service",false)
 func _unhandled_input(event: InputEvent) -> void:
  if boarding.cart.is_in_group("household_coach"): return
- if event.is_action_pressed("interact") and boarding.rider != null and boarding.role == "passenger" and boarding.transition == "" and payer == null and boarding.cart.has_method("show_coachman_blockout"):
+ if event.is_action_pressed("interact") and boarding.rider != null and boarding.role == "passenger" and boarding.transition == "" and payer == null and passenger_service():
   show_menu()
   get_viewport().set_input_as_handled()
 func _process(_delta: float) -> void:
@@ -28,7 +30,7 @@ func _process(_delta: float) -> void:
  if boarding.rider == null:
   offered_to = null
   close_menu()
- elif boarding.cart.has_method("show_coachman_blockout") and boarding.role == "passenger" and boarding.transition == "" and offered_to != boarding.rider and payer == null:
+ elif passenger_service() and boarding.role == "passenger" and boarding.transition == "" and offered_to != boarding.rider and payer == null:
   offered_to = boarding.rider
   show_menu()
 func style_button(button: Button) -> void:
@@ -93,7 +95,7 @@ func resume_trip(place: String) -> bool:
 func _begin_trip(place: String, already_paid: bool) -> bool:
  if boarding.cart.is_in_group("household_coach"): return false
  var actor: CharacterBody3D = boarding.rider
- if not boarding.cart.has_method("show_coachman_blockout") or actor == null or boarding.role != "passenger" or boarding.transition != "" or payer != null or not boarding.cart.can_move(): return false
+ if not passenger_service() or actor == null or boarding.role != "passenger" or boarding.transition != "" or payer != null or not boarding.cart.can_move(): return false
  if graph == null: graph = Routes.build()
  var start := Vector2(boarding.cart.global_position.x,boarding.cart.global_position.z)
  var route := PackedVector2Array()
@@ -177,6 +179,8 @@ func close_skip() -> void:
 
 func finish_trip() -> void:
  payer.inventory.message_requested.emit(destination)
+ var service:Node=boarding.cart.get_node_or_null("PublicPassengerService")
+ if service!=null and destination!=STANDING:service.announce_arrival(destination)
  payer = null
  path.clear()
  boarding.speed = 0.0

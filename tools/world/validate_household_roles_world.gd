@@ -10,7 +10,21 @@ func _stand_at(player:CharacterBody3D,service:Node3D) -> void:
   if player.call("_find_interactable")==service:return
 func _run() -> void:
  var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
+ if "--hide-ui" in OS.get_cmdline_user_args():
+  world.get_node("Player/UI").hide();world.get_node("LandscapeUI").hide()
  for frame in 12:await physics_frame
+ if "--profile-budget" in OS.get_cmdline_user_args():
+  var camera:Camera3D=root.get_camera_3d()
+  camera.global_position=Vector3(-321,12,344)
+  camera.look_at(Vector3(-321,8,330))
+  for frame in 60:await process_frame
+  var timings:Array[float]=[]
+  var previous:=Time.get_ticks_usec()
+  for frame in 180:
+   await process_frame
+   var now:=Time.get_ticks_usec();timings.append(float(now-previous)/1000.0);previous=now
+  timings.sort()
+  print("HOUSEHOLD_NATIVE_FRAME_SAMPLE ",JSON.stringify({"median_ms":timings[90],"p95_ms":timings[171],"frames":180,"render_scale":root.scaling_3d_scale,"window_pixels":[root.size.x,root.size.y],"msaa":root.msaa_3d,"renderer":RenderingServer.get_current_rendering_method(),"scope":"live full world at estate, HUD hidden only when requested; timing sample, not FPS approval"}))
  var player:CharacterBody3D=world.get_node("Player");player.set_physics_process(false);player.first_person=false
  for coach in get_nodes_in_group("household_coach"):coach.get_node("HouseholdTravel").set_physics_process(false)
  var services:=get_nodes_in_group("household_role_services")
@@ -52,7 +66,7 @@ func _run() -> void:
     if not data.has("household_roles"):errors.append("role ledger missing from save")
     ledger.state.clear();inv.items.mango=99
     saver.pending_slot=1;saver.apply_pending(world)
-    if int(ledger.state.get(merchant.role_id,{}).get("sold",0))!=1 or inv.get_item_count("mango")!=1 or ledger.survey_checked.size()!=1:errors.append("role/inventory/survey save restore failed")
+    if int(ledger.state.get(merchant.role_id,{}).get("sold",0))!=1 or inv.get_item_count("mango")!=1 or ledger.survey_checked.size()!=1:errors.append("role/inventory/survey save restore failed: sold=%s mango=%s checked=%s saved_checked=%s"%[ledger.state.get(merchant.role_id,{}).get("sold",0),inv.get_item_count("mango"),ledger.survey_checked,data.get("household_roles",{}).get("survey_checked",[])])
    saver.save_root=original_root;saver.pending_slot=original_pending
  print("HOUSEHOLD_ROLES_WORLD ",JSON.stringify({"passed":errors.is_empty(),"services":services.size(),"errors":errors,"scope":"placed NPC interaction selection, merchant trade and temporary real save/load"}))
  quit(0 if errors.is_empty() else 1)

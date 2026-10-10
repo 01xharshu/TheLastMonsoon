@@ -43,7 +43,7 @@ func _build_households() -> void:
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_shelter(landlord,Vector3(39,0,-21),"CoachHouse",Vector2(9,7))
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
-	var merchant:=_anchor("MerchantHousehold",Vector3(-413,7.2,282),"wealthy_indian")
+	var merchant:=_anchor("MerchantHousehold",Vector3(-420,8.0,-405),"wealthy_indian")
 	_house(merchant,false)
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_service(merchant,Vector3(-11,0,-16))
@@ -85,7 +85,7 @@ func _build_households() -> void:
 	# Centre the parked coach in the court so its return/departure turn clears both arcades.
 	_coach(landlord,[landowner],[Vector3(-321,7.24,344),Vector3(-321,7.24,337),Vector3(-321,7.24,315)])
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
-	_coach(merchant,[trader],[Vector3(-410,7.24,303),Vector3(-410,7.24,330),Vector3(-379,7.24,330)])
+	_coach(merchant,[trader],[Vector3(-417,8.04,-384),Vector3(-417,8.04,-356),Vector3(-417,8.04,-310),Vector3(-378,8.04,-310)])
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")

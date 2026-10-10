@@ -29,8 +29,9 @@ func _ready()->void:
 			var post:=piece("ShelterPost",base+Vector3.UP*1.25,Vector3(.13,2.5,.13),wood)
 			supports.append(post);floor_samples.append(to_global(base))
 	for z in [-2.1,2.1]:piece("RoofBeam",Vector3(0,2.47,z),Vector3(5.15,.16,.14),wood)
+	var thatch:=ShaderMaterial.new();thatch.shader=preload("res://world/suryagarh/settlements/yard_thatch.gdshader")
 	for x in [-1.3,1.3]:
-		var roof:=piece("ThatchRoof",Vector3(x,2.7,0),Vector3(2.75,.12,4.7),straw)
+		var roof:=piece("ThatchRoof",Vector3(x,2.7,0),Vector3(2.75,.20,4.7),thatch)
 		roof.rotation.z=(-.19 if x>0 else .19)
 	# Low side fence, open at the rear approach; doors and street stay clear.
 	for x in [-2.5,2.5]:
@@ -59,11 +60,17 @@ func _ready()->void:
 		var care:=preload("res://world/suryagarh/settlements/cattle_care.gd").new();care.name="Care_"+entry[0];care.yard=self;care.action=entry[0];care.position=entry[1]+Vector3.UP*.38
 		var collision:=CollisionShape3D.new();var target:=BoxShape3D.new();target.size=Vector3(.75,.6,.95);collision.shape=target;care.add_child(collision);add_child(care)
 	refresh_supplies()
-	var grass:=material(Color(.24,.32,.09))
-	for i in 28:
-		var x:=sin(i*2.4)*.28;var z:=2.73+cos(i*1.7)*.25
-		var blade:=piece("GrazingGrass",Vector3(x,ground(x,z)+.055,z),Vector3(.013,.11,.023),grass,false)
-		blade.rotation.z=sin(i)*.22
+	# One shared blade batch replaces 28 separate box meshes in the grazing patch.
+	var grass:=MultiMesh.new();grass.transform_format=MultiMesh.TRANSFORM_3D
+	grass.mesh=preload("res://world/suryagarh/grass_blades.gd").make_mesh()
+	grass.instance_count=48
+	for i in 48:
+		var x:float=sin(i*2.4)*.31;var z:float=2.73+cos(i*1.7)*.28
+		grass.set_instance_transform(i,Transform3D(Basis(Vector3.UP,i*1.7).scaled(Vector3.ONE*.65),Vector3(x,ground(x,z)+.015,z)))
+	var patch:=MultiMeshInstance3D.new();patch.name="GrazingGrass";patch.multimesh=grass
+	patch.visibility_range_end=55;patch.visibility_range_end_margin=8;patch.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;add_child(patch)
+	# Static shelter surfaces batch by shared material; collision children stay put.
+	batch_shelter()
 	motion=preload("res://animals/cow_motion.gd").new();motion.name="CowMotion";motion.configure(self,cow);cow.add_child(motion)
 	caretaker=preload("res://animals/cattle_caretaker.gd").new();caretaker.name="HouseholdCaretaker";caretaker.yard=self;add_child(caretaker)
 func ground(x:float,z:float)->float:return layout.height(position.x+x,position.z+z)-position.y
@@ -86,3 +93,19 @@ func restore_state(state:Dictionary)->void:
 	fodder_stock=clampi(int(state.get("fodder_stock",4)),0,4)
 	water_liters=clampf(float(state.get("water_liters",4)),0,8)
 	refresh_supplies()
+
+func batch_shelter()->void:
+	var surfaces:Dictionary={}
+	for node in get_children():
+		if not node is MeshInstance3D or node in [fodder,water_surface]:continue
+		var mat:Material=node.material_override
+		if not surfaces.has(mat):
+			var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES);surfaces[mat]=st
+		preload("res://systems/static_mesh_source.gd").append(surfaces[mat],node.mesh,0,node.transform)
+		# Preserve supports, physical shapes and their transforms for care/collision.
+		node.mesh=null
+	var merged:=ArrayMesh.new()
+	for mat:Material in surfaces:
+		surfaces[mat].set_material(mat);surfaces[mat].commit(merged)
+	var visual:=MeshInstance3D.new();visual.name="ShelterBatched";visual.mesh=merged
+	visual.visibility_range_end=180;visual.visibility_range_end_margin=20;add_child(visual)

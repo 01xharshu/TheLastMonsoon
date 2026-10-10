@@ -196,6 +196,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
 		"dev_story":world.get_node("DevStory").export_state() if world.has_node("DevStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
+		"city_route_population":world.get_node("CityRoutePopulation").export_route_state() if world.has_node("CityRoutePopulation") else {},
 		"household_roles":world.get_node("WealthyHouseholds").export_role_state() if world.has_node("WealthyHouseholds") else {},
 		"health": actor.health,
 		"water_liters": inventory.stored_water_liters,
@@ -348,6 +349,8 @@ func apply_pending(world: Node3D) -> void:
 		firearm.reload_remaining = clampf(float(weapon.get(entry[1]+"_reload",0.0)),0.0,entry[2])
 		firearm.pending_rounds = clampi(int(weapon.get(entry[1]+"_pending",0)),0,entry[3]-firearm.rounds) if firearm.reload_remaining > 0.0 else 0
 	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
+	if world.has_node("CityRoutePopulation") and data.get("city_route_population",{}) is Dictionary:
+		world.get_node("CityRoutePopulation").restore_route_state(data.get("city_route_population",{}))
 	restore_household_pickups(world,data)
 	if data.get("remaining_medical_ids") is Array:
 		for pickup in world.get_tree().get_nodes_in_group("medical_supplies"):

@@ -19,10 +19,12 @@ func point(label:String)->Vector3:
  return actor.to_local(rig.to_global(rig.get_bone_global_pose(rig.find_bone(label)).origin))
 func update()->void:
  if garment==null:return
- var hip:=point("pelvis");var thighs:=(point("thigh_l")+point("thigh_r"))*.5
- var knees:=(point("calf_l")+point("calf_r"))*.5
+ var hip:=point("pelvis");var left_thigh:=point("thigh_l");var right_thigh:=point("thigh_r")
+ var left_knee:=point("calf_l");var right_knee:=point("calf_r")
+ var thighs:=(left_thigh+right_thigh)*.5
+ var knees:=(left_knee+right_knee)*.5
  var feet:=(point("foot_l")+point("foot_r"))*.5
- var pose:=PackedVector3Array([hip,thighs,knees,feet,point("calf_l"),point("calf_r")])
+ var pose:=PackedVector3Array([hip,thighs,knees,feet,left_knee,right_knee])
  if previous.size()==pose.size():
   var dirty:=false
   for i in pose.size():
@@ -39,7 +41,7 @@ func update()->void:
   var tangent:Vector3=(centres[mini(ROWS-1,row+1)]-centres[maxi(0,row-1)]).normalized()
   var right:Vector3=(Vector3.RIGHT-tangent*Vector3.RIGHT.dot(tangent)).normalized()
   var front:Vector3=right.cross(tangent).normalized()
-  var span:Vector3=(point("thigh_l")-point("thigh_r")).lerp(point("calf_l")-point("calf_r"),t)
+  var span:Vector3=(left_thigh-right_thigh).lerp(left_knee-right_knee,t)
   var width:=.135+absf(span.dot(right))*.5
   var depth:=.15+absf(span.dot(front))*.5
   if row==0:width=.235;depth=.18

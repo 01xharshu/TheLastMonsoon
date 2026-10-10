@@ -67,7 +67,7 @@ func _physics_process(_delta: float) -> void:
  for id in tracked.keys():
   var state: Dictionary=tracked[id]
   var actor: CharacterBody3D=state.actor.get_ref()
-  if actor==null:tracked.erase(id);continue
+  if actor==null or not actor.is_inside_tree():tracked.erase(id);continue
   var at := actor.global_position
   var travel: float=at.distance_to(state.position);state.position=at
   var ground := actor.is_on_floor()
@@ -93,7 +93,7 @@ func _npc_steps() -> void:
  for id in npc_tracks.keys():
   var state: Dictionary=npc_tracks[id]
   var actor: Node3D=state.actor.get_ref()
-  if actor==null:npc_tracks.erase(id);continue
+  if actor==null or not actor.is_inside_tree():npc_tracks.erase(id);continue
   var at := actor.global_position
   var travel: float=at.distance_to(state.position);state.position=at
   if actor.get_meta('dead',false) or actor.get_meta('knocked_out',false) or not (actor.is_processing() or actor.is_physics_processing()):

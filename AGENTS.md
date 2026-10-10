@@ -31,3 +31,13 @@
 - Every human used in the game must retain their complete MakeHuman/MPFB body beneath all clothing, in editable assets and runtime exports. This includes player characters, NPCs, drivers, staff and placeholders.
 - Disable clothing-driven body masks and do not delete covered body surfaces. Exclude only non-human MPFB helper geometry. Preserve the same physique under every outfit; fix intersections by fitting clothing.
 - Retain separate opaque foundation garments for clearly adult characters. Full-body topology does not grant clothing/deformation/contact approval.
+
+## Gameplay HUD and opening guidance
+
+- Before changing opening controls, HUD placement/reveal or destination instructions, read `docs/world/morning_tutorial.md` and inspect the current HUD, tutorial and marker owners linked there.
+- Preserve the minimap's established placement. Instructions belong at the top left; introduction blinks the existing UI element itself without adding highlight boxes. Reuse the existing survival diamonds and shared map/waypoint state.
+- Keep the opening → tutorial → horse/story handoff and saved tutorial progress integrated. Update the focused documentation and reusable validation when that contract changes.
+
+## Expansion performance rule
+
+- Reuse terrain/forest visibility and LOD and `systems/simulation_budget.gd` for new autonomous content. Keep nearby interactions/combat at full rate; accumulate elapsed time for remote updates, retain schedules/identity/save state and swept obstacle checks, and restore immediately on approach. Cache world references during setup, scope caches to the world, amortise spawning, and keep expensive work out of frame loops. Activate optional effects by region; never suspend a quest/save owner or remove collision merely because it is distant. Measure native frame times at the actual 3D budget before accepting batching or pooling.

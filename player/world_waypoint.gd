@@ -11,6 +11,7 @@ var site_identity := ""
 
 func _ready() -> void:
 	name = "WorldWaypoint"
+	set_process(false) # Guidance is rendered once by DestinationMarker.
 	stake = MeshInstance3D.new()
 	var shaft := CylinderMesh.new()
 	shaft.top_radius = 0.018

@@ -58,7 +58,7 @@ func restore_step(value: int) -> void:
 func _enter() -> void:
 	age = 0.0
 	responded = false
-	player.set_meta("tutorial_reading",step >= 3 and step <= 9)
+	player.set_meta("tutorial_reading",false)
 	_apply_reveal()
 	visible = step < 11
 	if step >= 11: return
@@ -101,9 +101,8 @@ func _input(event: InputEvent) -> void:
 		advance()
 	elif step == 1 and (event.is_action_pressed("move_left") or event.is_action_pressed("move_right") or event.is_action_pressed("move_backward")):
 		advance()
-	elif step >= 3 and step <= 9:
+	elif step >= 2 and step <= 9:
 		if event.is_pressed(): responded = true
-		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
 	if step >= 11: return
@@ -113,10 +112,10 @@ func _process(delta: float) -> void:
 	if get_tree().paused: return
 	age += delta
 	_apply_reveal()
-	if step >= 2 and step <= 9 and ((responded and age >= 5.0) or age >= 10.0): advance()
+	if step >= 2 and step <= 9 and ((responded and age >= 10.0) or age >= 20.0): advance()
 	if step == 10 and is_instance_valid(horse):
 		var mount: Node = player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null
-		if mount == horse: advance()
+		if mount == horse and horse.rider == player and horse.transition.is_empty(): advance()
 
 func advance() -> void:
 	step += 1
@@ -129,7 +128,7 @@ func advance() -> void:
 
 
 func pulse(element: int) -> float:
-	return 0.35+0.65*(sin(age*TAU*1.3)*.5+.5) if step == element else 1.0
+	return 0.35+0.65*(sin(age*TAU*.65)*.5+.5) if step == element else 1.0
 
 func blink_on(element: int) -> bool:
-	return step != element or fmod(age,0.8) < 0.55
+	return step != element or fmod(age,1.6) < 1.1

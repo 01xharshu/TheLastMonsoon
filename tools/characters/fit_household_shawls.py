@@ -19,7 +19,9 @@ for vertex in cloth.data.vertices:
     original=cloth.matrix_world@vertex.co
     point,normal,face,distance=tree.find_nearest(original)
     if face is None:raise RuntimeError('shirt projection failed')
-    at=point+normal*.004
+    # Retain the two baked cloth layers rather than collapsing them together.
+    clearance=.010 if vertex.index < len(cloth.data.vertices)//2 else .0065
+    at=point+normal*clearance
     vertex.co=cloth.matrix_world.inverted()@at
     nearest=faces[face]
     factors={i:1/max((verts[i]-point).length_squared,.000001) for i in nearest}
@@ -30,7 +32,7 @@ for vertex in cloth.data.vertices:
     for group,weight in weights.items():
         if weight>.00001:cloth.vertex_groups[group].add([vertex.index],weight,'REPLACE')
     maximum=max(maximum,distance)
-cloth['fit']='Shirt-surface projection + 4 mm layer clearance; interpolated shirt weights'
+cloth['fit']='Shirt-surface projection; 6.5/10 mm inner/outer layers; interpolated shirt weights'
 bpy.ops.wm.save_as_mainfile(filepath=str(source))
 bpy.ops.export_scene.gltf(filepath=str(ROOT/f'characters/npcs/households/{role}.glb'),export_format='GLB',export_skins=True,export_animations=False,export_cameras=False,export_lights=False)
-print('HOUSEHOLD_SHAWL_FIT',role,'vertices',len(cloth.data.vertices),'previous_max_gap_m',maximum,'new_rest_gap_m',.004)
+print('HOUSEHOLD_SHAWL_FIT',role,'vertices',len(cloth.data.vertices),'previous_max_gap_m',maximum,'inner_outer_rest_gap_m',[.0065,.010])

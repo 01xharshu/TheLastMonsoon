@@ -70,6 +70,7 @@ func _estate() -> void:
 	# Worked estate plots differ from household vegetable beds in scale.
 	for i in 6:
 		var field: Node3D = village._root("EstateField%d"%i,Vector2(-288+(i%2)*11,334+(i/2)*10))
-		piece(field,"CultivatedBed",Vector3(0,.035,0),Vector3(9,.07,8),village.earth,false)
-		for row in 6:
-			piece(field,"CropRow",Vector3(0,.23,-3+row*1.1),Vector3(8,.38,.25),village.crop_material,false)
+		if i in [0,3]:piece(field,"CultivatedBed",Vector3(0,.035,0),Vector3(9,.07,8),village.earth,false)
+		# Working plots 0/3 retain their daily-activity owner's young rows.
+		if i not in [0,3]:
+			preload("res://world/suryagarh/settlements/farm_visuals.gd").build(field,builder.layout,Vector2(9,8),210+i)

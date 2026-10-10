@@ -15,9 +15,12 @@ var blocked_frames:=0
 var driver_lean:=.4
 var estate_gate:Node3D
 var gate_wait_frames:=0
+var own_vehicle_rids:Array[RID]=[]
 
 func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachman:Node3D) -> void:
 	coach=vehicle;residents=people;route=points;driver=coachman
+	# Player distance remains correct across opening/story camera switches.
+	budget_viewer=vehicle.get_parent().get_parent().get_node_or_null("Player")
 	driver.set_process(false);driver.set("foot_plant_enabled",false)
 	driver.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
 	for part in coach.visual_root.get_children():
@@ -32,35 +35,37 @@ func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachma
 		person.add_to_group("household_resident")
 	coach.rotation.y=atan2(-(route[1]-route[0]).x,-(route[1]-route[0]).z)
 
-# Far routines retain state/time at the same 0.1 s step used by sequence validation.
-const FAR_INTERVAL:=.1
-const NEAR_RADIUS:=150.0
-const FAR_RADIUS:=180.0
+# Shared tiers retain elapsed time; each remote movement still uses bounded sweeps.
+const SimulationBudget=preload("res://systems/simulation_budget.gd")
+const MAX_STEP:=.1
 var budget_far:=false
 var budget_pending:=0.0
 var budget_steps:=0
 var budget_skipped:=0
+var budget_updates:=0
+var budget_viewer:Node3D
 
 func _physics_process(delta:float) -> void:
-	var camera:=get_viewport().get_camera_3d()
-	if camera==null:
-		step(delta);return
-	advance_budget(delta,camera.global_position)
+	if not is_instance_valid(budget_viewer):budget_viewer=get_viewport().get_camera_3d()
+	advance_budget(delta,budget_viewer)
 
-func advance_budget(delta:float,observer:Vector3) -> void:
-	var nearest:=coach.global_position.distance_squared_to(observer)
-	for person in residents:nearest=minf(nearest,person.global_position.distance_squared_to(observer))
-	if budget_far:
-		if nearest<=NEAR_RADIUS*NEAR_RADIUS:budget_far=false
-	elif nearest>FAR_RADIUS*FAR_RADIUS:budget_far=true
-	# Bound work and motion after a stall; no unbounded catch-up loop.
-	budget_pending+=clampf(delta,0,FAR_INTERVAL)
-	if budget_far and budget_pending+0.000001<FAR_INTERVAL:
+func advance_budget(delta:float,observer:Node3D) -> void:
+	var cadence:=SimulationBudget.interval(coach,observer)
+	for person in residents:
+		if is_instance_valid(person):cadence=minf(cadence,SimulationBudget.interval(person,observer))
+	budget_far=cadence>0
+	# A stalled frame contributes bounded time; normal remote frames accumulate fully.
+	budget_pending+=clampf(delta,0,MAX_STEP)
+	if budget_far and budget_pending+0.000001<cadence:
 		budget_skipped+=1;return
-	var amount:=minf(budget_pending,FAR_INTERVAL)
-	budget_pending=maxf(0,budget_pending-amount)
-	budget_steps+=1
-	step(amount)
+	budget_updates+=1
+	# At most five collision-tested slices per far tick; wake consumes pending time.
+	for slice in 5:
+		if budget_pending<0.000001:break
+		var amount:=minf(budget_pending,MAX_STEP)
+		budget_pending=maxf(0,budget_pending-amount)
+		budget_steps+=1
+		step(amount)
 
 var journeys:Array[Node]=[]
 var home_path:Array[Vector3]=[]
@@ -226,7 +231,10 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
 			actor.call("set_grip",side,.7)
 
 func _clear(at:Vector3,basis:Basis) -> bool:
-	var exclusions:Array[RID]=[coach.boarding.collision_body.get_rid(),driver.get_node("BodyCollider").get_rid()]
+	if own_vehicle_rids.is_empty():
+		for body in coach.find_children("*","CollisionObject3D",true,false):own_vehicle_rids.append(body.get_rid())
+	var exclusions:Array[RID]=own_vehicle_rids.duplicate()
+	exclusions.append(driver.get_node("BodyCollider").get_rid())
 	for actor in residents:exclusions.append(actor.get_node("BodyCollider").get_rid())
 	var space:=coach.get_world_3d().direct_space_state
 	for collision in coach.boarding.clearance_shapes:
@@ -234,6 +242,13 @@ func _clear(at:Vector3,basis:Basis) -> bool:
 		query.shape=collision.shape
 		query.transform=Transform3D(basis,at+basis*collision.position)
 		query.exclude=exclusions;query.collision_mask=1
+		var destination:=query.transform
+		query.transform=Transform3D(coach.global_basis,coach.global_position+coach.global_basis*collision.position)
+		query.motion=destination.origin-query.transform.origin
+		if query.motion.length_squared()>0.000001:
+			var sweep:=space.cast_motion(query)
+			if sweep[0]<.99999:return false
+		query.transform=destination;query.motion=Vector3.ZERO
 		var hits:=space.intersect_shape(query,1)
 		if not hits.is_empty():
 			if blocked_frames==0:print("COACH_BLOCKED ",coach.name," ",phase," from=",coach.global_position," next=",at," obstacle=",hits[0].collider.get_path()," obstacle_at=",hits[0].collider.global_position)

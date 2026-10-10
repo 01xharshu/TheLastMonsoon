@@ -50,8 +50,14 @@ func configure() -> void:
 	if station==null:push_error("Dev inquiry needs DistrictPolice");return
 	coordinator=station.get_node("ThanaStaff/ArrestCoordinator")
 	var roster=Node3D.new();roster.name="InquiryPersonnel";station.add_child(roster)
-	for record in [["DistrictOfficer",Vector3(-9.5,0,-8.3)],["FirstOfficial",Vector3(-11.4,0,-8.3)],["SecondOfficial",Vector3(-7.7,0,-8.3)]]:
+	for record in [["DistrictOfficer",Vector3(-9.5,-.48,-8.3)],["FirstOfficial",Vector3(-11.4,-.48,-5.8)],["SecondOfficial",Vector3(-7.7,-.48,-5.8)]]:
 		var actor=Official.new();actor.name=record[0];actor.position=record[1]
+		actor.rotation.y=0 if officials.is_empty() else PI
+		actor.set_meta("inquiry_seat",actor.transform)
+		# Separate benches leave the chamber's central approach clear.
+		var center: Vector3=record[1]+Vector3(0,.48,0)
+		station.piece(station,"InquiryBenchSeat",center+Vector3(0,.46,0),Vector3(.72,.08,.55),station.wood)
+		for side in [-1,1]:station.piece(station,"InquiryBenchLeg",center+Vector3(side*.27,.22,0),Vector3(.065,.44,.45),station.wood,false)
 		actor.add_child(preload("res://characters/npcs/british/official_man.glb").instantiate())
 		roster.add_child(actor);officials.append(actor)
 		var expression=FaceExpression.new();expression.configure(actor);expressions.append(expression)
@@ -133,6 +139,8 @@ func _process(delta: float) -> void:
 	if director!=null and (director.active or director.state in ["farm","complete"]):
 		objective.hide()
 		objective_marker.visible=not hidden and not director.active
+	objective_marker.hide() # DestinationMarker is the sole projected guidance owner.
+	objective.hide()
 	if objective_marker.visible:
 		var camera: Camera3D=player.get_node("CameraPivot/SpringArm3D/Camera3D")
 		var target:=destination.global_position+Vector3.UP*1.3

@@ -31,6 +31,7 @@ func _physics_process(delta:float)->void:
  for side in ["l","r"]:
   var at:Vector3=cart.to_local(socket.global_position)+Vector3(-.18 if side=="l" else .18,0,-.55)
   at.y=1.369 if cart.has_method("show_coachman_blockout") else 1.13
+  if cart.get_meta("public_passenger_service",false):at.y=1.185
   actor.foot_plant._solve(actor.foot_plant.legs[side],rig.to_local(cart.to_global(at)))
   actor.solve_hand_contact(side,socket.to_global(Vector3(-.18 if side=="l" else .18,.15,-.25)))
  if actor.drape!=null:actor.drape.update()

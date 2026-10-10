@@ -11,7 +11,7 @@ func _process(delta: float) -> void:
 		var vehicles: Array[Node3D] = []
 		for group in ["cart_parking_vehicles","live_travel_carts","bullock_carts"]:
 			for node in get_tree().get_nodes_in_group(group):
-				if node is Node3D and not vehicles.has(node): vehicles.append(node)
+				if node is Node3D and node.is_inside_tree() and not vehicles.has(node): vehicles.append(node)
 		var camera := get_viewport().get_camera_3d()
 		if camera != null:
 			vehicles.sort_custom(func(a,b): return a.global_position.distance_squared_to(camera.global_position)<b.global_position.distance_squared_to(camera.global_position))
@@ -32,7 +32,7 @@ func _process(delta: float) -> void:
 	for i in slots.size():
 		var slot: Dictionary = slots[i]
 		var target := 0.0
-		if is_instance_valid(slot.node):
+		if is_instance_valid(slot.node) and slot.node.is_inside_tree():
 			var position: Vector3 = slot.node.global_position
 			var travel: float = position.distance_to(slot.position)
 			# Ignore teleports; parked carts produce no permanent bending.

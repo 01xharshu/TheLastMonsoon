@@ -9,6 +9,11 @@ func capture(name: String) -> void:
 	if DisplayServer.get_name() == "headless" or OS.get_environment("TLM_CART_OUTPUT") == "": return
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(OS.get_environment("TLM_CART_OUTPUT")+"/"+name+".png")
+func quiet_unrelated(node: Node, retained: Array[Node]) -> void:
+	if node in retained: return
+	node.set_process(false)
+	node.set_physics_process(false)
+	for child in node.get_children(): quiet_unrelated(child,retained)
 func run() -> void:
 	root.size = Vector2i(1280,720)
 	root.content_scale_size = Vector2i(1280,720)
@@ -29,17 +34,19 @@ func run() -> void:
 	var cart: Node3D = world.get_node("LiveCarts/VillageBullockCart")
 	var saved_transform := cart.global_transform
 	check(opening.titles.CARDS[6][0] == "HeyaHarshu Creative Studio Presents","Studio credit must match exact requested spelling")
-	# Let existing residents reach the fire while prologue cards occupy the screen.
-	if DisplayServer.get_name() != "headless":
-		var start := Time.get_ticks_msec()
-		while Time.get_ticks_msec()-start < 56000:
-			opening._process(0.0)
-			await process_frame
+	# Seek the card boundary; the passage stages existing residents under black.
 	opening.prologue_elapsed = opening.Titles.DURATION
 	opening._process(.01)
 	check(opening.state == "cart_passage","Cards must lead to cart, not room")
 	var passage = opening.cart_passage
 	check(passage.active and cart.global_position.is_equal_approx(passage.position_at(0)),"Real cart starts on village lane")
+	# Focus the visual check on the borrowed actors, cart and night lighting.
+	# Other world actors remain authored/visible but their simulation is suspended.
+	var retained: Array[Node] = [opening,cart,world.find_child("VillageNightLife",true,false)]
+	for record in passage.people: retained.append(record.actor)
+	quiet_unrelated(world,retained)
+	check(cart.get_meta("public_passenger_service",false),"Opening uses the public passenger cart")
+	check(cart.get_meta("npc_occupied_seats",[]).size()==2,"Opening carries two existing MPFB passengers")
 	var previous := cart.global_position
 	var wheel_rotation: float = cart.wheels[0].rotation.x
 	check(passage.people.size() >= 2,"Existing people are staged before reveal")
@@ -52,7 +59,9 @@ func run() -> void:
 			opening._process(.1)
 			check(cart.global_position.z > previous.z,"Cart moves forward without stopping during fades")
 			previous = cart.global_position
-			if passage.age >= 8:
+			if passage.age>=8.5 and passage.age<12.7:
+				check("Bhairavpur" in opening.subtitle.text and passage.arrival_called,"Driver arrival dialogue is integrated")
+			if passage.age >= 13:
 				if not fixed_camera.is_finite(): fixed_camera = opening.camera.global_position
 				check(opening.camera.global_position.is_equal_approx(fixed_camera),"Wheel camera must hold still")
 	else:
@@ -66,7 +75,7 @@ func run() -> void:
 			if passage.active:
 				check(cart.global_position.z >= previous.z,"Native cart advances through fades")
 				previous = cart.global_position
-				if passage.age >= 8:
+				if passage.age >= 13:
 					if not fixed_camera.is_finite(): fixed_camera = opening.camera.global_position
 					check(opening.camera.global_position.is_equal_approx(fixed_camera),"Native fixed wheel camera")
 				var beat := floori(passage.age)
@@ -85,6 +94,7 @@ func run() -> void:
 	check(opening.state == "night","Cart fades into room")
 	check(cart.global_transform.is_equal_approx(saved_transform),"Borrowed cart restores gameplay placement")
 	check(not passage.active and passage.gathering_sound == null,"Transient passage/audio cleaned")
+	check(not cart.has_meta("opening_cart_passage") and not passage.passenger_service.caption.visible,"Arrival dialogue cancels after the cut")
 	opening._process(.7)
 	check(opening.elapsed < 1.0,"Diya timeline starts fresh after cart passage")
 	await capture("cart_room_handoff")
@@ -97,6 +107,8 @@ func run() -> void:
 	print("OPENING CART PASSAGE: ","PASS" if failures == 0 else "FAIL"," | live cart, uninterrupted travel, aerial/fixed wheels, fades, room handoff, skip/restore; art separate")
 	saves.options = options
 	passage = null
+	preload("res://tools/test_audio_cleanup.gd").stop(root)
+	await preload("res://tools/test_audio_cleanup.gd").settle(self)
 	world.queue_free()
 	for i in 3: await process_frame
-	quit(1 if failures else 0)
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,1 if failures else 0)

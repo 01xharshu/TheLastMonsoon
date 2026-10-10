@@ -9,6 +9,7 @@ var clock: Node
 var viewer: Node3D
 var elapsed := 0.0
 var age := 0.0
+var age_step:=0.0
 var prop: Node3D
 var hand_error := 0.0
 var trips := 0
@@ -19,12 +20,18 @@ var returning := false
 var seeds_sown := 0
 var previous_seed_cycle := -1
 var seed_bowl: Node3D
+var seed_scatter:MultiMeshInstance3D
 var commute: Array[Vector2]=[]
 var route_goal := 0
 var route_direction := 1
 var social_role := "labourer"
 const Roles=preload("res://world/suryagarh/settlements/resident_roles.gd")
 var animal:Node3D
+var well_drawing:Node
+const WalkRoute=preload("res://world/suryagarh/settlements/resident_walk_route.gd")
+var detour:Array[Vector3]=[]
+var last_goal:=Vector2.INF
+var route_retry:=0.0
 
 func _ready() -> void:
 	clock=get_tree().get_first_node_in_group("game_time_system")
@@ -36,6 +43,11 @@ func _ready() -> void:
 	elif job=="sow":
 		seed_bowl=load("res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf").instantiate()
 		seed_bowl.name="SeedBasket";seed_bowl.scale=Vector3.ONE*.18;seed_bowl.position=Vector3(.18,.90,.23);actor.add_child(seed_bowl)
+		seed_scatter=MultiMeshInstance3D.new();seed_scatter.name="ScatteredSeed"
+		var seed:=SphereMesh.new();seed.radius=.008;seed.height=.016
+		var grain:=StandardMaterial3D.new();grain.albedo_color=Color(.56,.39,.16);seed.material=grain
+		var batch:=MultiMesh.new();batch.transform_format=MultiMesh.TRANSFORM_3D;batch.mesh=seed;batch.instance_count=8
+		seed_scatter.multimesh=batch;seed_scatter.hide();actor.add_child(seed_scatter)
 
 func _work_tree() -> void:
 	var clip:=Animation.new();clip.length=4.5;clip.loop_mode=Animation.LOOP_LINEAR
@@ -87,6 +99,7 @@ func _physics_process(delta:float) -> void:
 	var step:=minf(age,.5);age=0.0;tick(step,distance<22500)
 
 func tick(delta:float, animate:=true) -> void:
+	age_step=delta;route_retry=maxf(0,route_retry-delta)
 	if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false):return
 	var working:bool=(clock==null or (clock.current_hour>=6 and clock.current_hour<18)) and Roles.permits(social_role,job)
 	if job=="groom":working=working and is_instance_valid(animal) and animal.rider==null and Vector2(animal.global_position.x,animal.global_position.z).distance_to(workplace)<3.0
@@ -99,7 +112,13 @@ func tick(delta:float, animate:=true) -> void:
 		if route_direction!=expected:
 			route_goal=clampi(route_goal+expected,0,commute.size()-1);route_direction=expected
 		goal=commute[route_goal]
-	var offset:=Vector3(goal.x,layout.height(goal.x,goal.y),goal.y)-actor.global_position;offset.y=0
+	if goal!=last_goal:detour.clear();last_goal=goal;route_retry=0
+	var destination:=Vector3(goal.x,layout.height(goal.x,goal.y),goal.y)
+	while not detour.is_empty() and Vector2(detour[0].x-actor.global_position.x,detour[0].z-actor.global_position.z).length()<.08:detour.pop_front()
+	var offset:Vector3=(detour[0] if not detour.is_empty() else destination)-actor.global_position;offset.y=0
+	if not seated:
+		var ground:=WalkRoute.support(actor,actor.global_position)
+		if is_finite(ground) and absf(ground-actor.global_position.y)<.3:actor.global_position.y=ground
 	var moving:=offset.length()>.08
 	actor.set_meta("daily_activity",job if working and not moving else ("going_to_"+job if working else "going_home"))
 	visits[str(actor.get_meta("daily_activity"))]=true
@@ -112,18 +131,24 @@ func tick(delta:float, animate:=true) -> void:
 		var motion:=offset.normalized()*minf(offset.length(),delta*.95)
 		var shape:CollisionShape3D=actor.body_collider.get_node("BodyShape")
 		var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform
-		query.transform.origin.y+=.03;query.motion=motion;query.collision_mask=1;query.exclude=[actor.body_collider.get_rid()]
+		query.transform.origin.y+=.15;query.motion=motion;query.collision_mask=1;query.exclude=[actor.body_collider.get_rid()]
 		var safe:=actor.get_world_3d().direct_space_state.cast_motion(query)
 		if safe[0]>.99:
-			actor.global_position+=motion;actor.global_position.y=layout.height(actor.global_position.x,actor.global_position.z)
+			actor.global_position+=motion
+			var support:=WalkRoute.support(actor,actor.global_position)
+			actor.global_position.y=support if is_finite(support) else layout.height(actor.global_position.x,actor.global_position.z)
 			actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.5);actor.travel_speed=.95
-		else:actor.travel_speed=0.0;actor.set_meta("daily_activity","waiting_for_clear_path")
+		else:
+			actor.travel_speed=0.0;actor.set_meta("daily_activity","waiting_for_clear_path")
+			if route_retry<=0:
+				route_retry=4.0;detour=WalkRoute.find(actor,destination)
 	else:
 		actor.travel_speed=0.0
 		var endpoint:bool=commute.is_empty() or (route_goal==commute.size()-1 if outward else route_goal==0)
 		if not endpoint:route_goal+=route_direction;moving=true
 		elif job=="carry" and working and fposmod(elapsed,12.0)<delta:returning=not returning;trips+=1
-	for side in ["l","r"]:actor.foot_plant.ankle_height[side]=layout.height(actor.global_position.x,actor.global_position.z)+ankle_offsets[side]
+	for side in ["l","r"]:actor.foot_plant.ankle_height[side]=(layout.height(actor.global_position.x,actor.global_position.z) if seated and not moving else actor.global_position.y)+ankle_offsets[side]
+	if seed_scatter!=null:seed_scatter.visible=working and not moving and animate
 	if animate:
 		actor._set_animation(&"walk" if actor.travel_speed>0 else &"idle",delta)
 		if not moving and working and seated:_sit()
@@ -133,20 +158,24 @@ func tick(delta:float, animate:=true) -> void:
 
 func _sit() -> void:
 	var rig:Skeleton3D=actor._skeleton
+	actor.global_rotation.y=0.0
 	actor.global_position.y=layout.height(actor.global_position.x,actor.global_position.z)-.28
 	for side in ["l","r"]:
 		for pair in [["thigh_",-1.25],["calf_",1.5],["foot_",-.25]]:
 			var label:String=pair[0]+side;rig.set_bone_pose_rotation(rig.find_bone(label),actor._base_rotations[label]*Quaternion(actor._pitch_axes[label],pair[1]))
-		var ankle:Vector3=actor.to_global(Vector3(.17 if side=="l" else -.17,.07,.40));ankle.y=layout.height(ankle.x,ankle.z)+ankle_offsets[side]
+		var ankle:Vector3=actor.to_global(Vector3(.17 if side=="l" else -.17,.07,.65));ankle.y=layout.height(ankle.x,ankle.z)+ankle_offsets[side]
 		actor.foot_plant._solve(actor.foot_plant.legs[side],rig.to_local(ankle))
 	var collision:CollisionShape3D=actor.body_collider.get_node("BodyShape");collision.shape.height=1.10;collision.position.y=.83
 
 func _hands(moving:bool) -> void:
 	hand_error=0.0
+	if job=="well" and not moving:
+		if not is_instance_valid(well_drawing):well_drawing=get_tree().root.find_child("WellDrawingMechanism",true,false)
+		if well_drawing!=null and well_drawing.draw(self,age_step):return
 	if prop!=null:
 		prop.position=Vector3(0,.88,.36)
 		if job=="hoe" and not moving:
-			prop.position=Vector3(0,.87+.025*sin(elapsed*TAU/4.5),.27);prop.rotation.x=.15*sin(elapsed*TAU/4.5)
+			prop.position=Vector3(0,.87+.10*(.5-.5*cos(elapsed*TAU/4.5)),.27);prop.rotation.x=.27*sin(elapsed*TAU/4.5)
 		elif job=="well" and not moving:prop.position.y=.83+.10*sin(elapsed*TAU/4.5)
 		elif job=="groom" and not moving:prop.position=Vector3(0,1.15+.05*sin(elapsed*TAU/3),.47)
 		for side in ["l","r"]:
@@ -159,6 +188,13 @@ func _hands(moving:bool) -> void:
 	elif job=="sow" and not moving:
 		actor.solve_hand_contact("l",actor.to_global(Vector3(.18,.92,.22)))
 		actor.solve_hand_contact("r",actor.to_global(Vector3(-.12-.10*sin(elapsed*TAU/4.5),.76,.36+.10*cos(elapsed*TAU/4.5))))
+		var fraction:=fposmod(elapsed,4.5)/4.5
+		var fall:=clampf((fraction-.40)/.28,0,1)
+		seed_scatter.visible=fraction>=.40 and fraction<.96
+		for i in 8:
+			var landing:=Vector3(-.18+.34*sin(i*2.4),.025,.65+.25*cos(i*1.7))
+			var point:=Vector3(-.12,.76,.36).lerp(landing,fall);point.y+=.14*sin(fall*PI)
+			seed_scatter.multimesh.set_instance_transform(i,Transform3D(Basis.IDENTITY,point))
 		var cycle:=int(elapsed/4.5)
 		if cycle!=previous_seed_cycle:
 			previous_seed_cycle=cycle;seeds_sown+=1;actor.set_meta("seeds_sown",seeds_sown)

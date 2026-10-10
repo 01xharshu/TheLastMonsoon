@@ -7,6 +7,8 @@
     "nose": 0.009,
     "cheek": 0.07
   },
+  "whole_character_width": 0.96,
   "runtime": "characters/npcs/street_residents/male_01.glb",
+  "wardrobe": "street formal",
   "visual_approved": false
 }

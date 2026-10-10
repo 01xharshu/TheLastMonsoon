@@ -47,7 +47,7 @@ func _physics_process(delta: float) -> void:
 			if slot in [0,2]:
 				lantern=preload("res://world/suryagarh/settlements/village_carried_lantern.gd").new()
 				lantern.configure(actor)
-			members.append({"slot":slot,"lantern":lantern,"actor":actor,"activity":actor.get_node("DailyActivity"),"journey":null,"active":false,"returning":false,"prop_visible":true})
+			members.append({"slot":slot,"lantern":lantern,"actor":actor,"activity":actor.get_node("DailyActivity"),"journey":null,"active":false,"returning":false,"prop_visible":true,"return_goal":1})
 	if clock==null or not is_instance_valid(fire):return
 	var night: bool=clock.current_hour>=18 or clock.current_hour<6
 	for member_index in members.size():
@@ -103,16 +103,39 @@ func _depart(member: Dictionary,index: int,returning: bool) -> void:
 		# Retrace only the completed approach, including its safe arc around the fire.
 		var previous: FireJourney=member.journey
 		var last:=previous.route.size()-2 if previous.arrived else maxi(0,previous.goal-1)
-		for waypoint in range(last,0,-1):points.append(previous.route[waypoint])
+		if last<int(member.return_goal):
+			# Dawn during the household exit still follows its safe field path.
+			for waypoint in range(previous.goal,int(member.return_goal)+1):points.append(previous.route[waypoint])
+		else:
+			for waypoint in range(last,int(member.return_goal)-1,-1):points.append(previous.route[waypoint])
 		points.append(activity.workplace)
 	else:
-		var exit_point:=here+Vector2(0,1.3) if activity.seated else here
-		var lane: float=-260+index*.8
+		# Registration can occur while a farmer is already commuting home.
+		# Follow that household's surveyed path back to the field first.
+		var departure: Vector2=activity.workplace
+		if not activity.seated and activity.commute.size()>1:
+			var nearest_segment:=1
+			var nearest_distance:=INF
+			for segment in range(1,activity.commute.size()):
+				var a: Vector2=activity.commute[segment-1]
+				var b: Vector2=activity.commute[segment]
+				var edge:=b-a
+				var projection:=a+edge*clampf((here-a).dot(edge)/maxf(edge.length_squared(),.0001),0.0,1.0)
+				var distance:=here.distance_squared_to(projection)
+				if distance<nearest_distance:nearest_distance=distance;nearest_segment=segment
+			if nearest_distance<4.0:
+				for waypoint in range(nearest_segment,activity.commute.size()):points.append(activity.commute[waypoint])
+			departure=activity.workplace
+		var exit_point:=departure+Vector2(0,1.3) if activity.seated else departure
+		member.return_goal=points.size()
+		# Separate lanes and matching-side fire entries avoid head-on
+		# crossings on both the outward and retraced dawn journey.
+		var lane: float=-260+index*1.2
 		var upper: bool=sin(angle)>0.0
-		var entry_angle: float=(PI*.5 if upper else -PI*.5)+(-.35 if index in [0,3] else .35)
+		var entry_angle: float=(PI*.5 if upper else -PI*.5)+(-.35 if index in [0,2] else .35)
 		var radius: float=3.5
 		var entry:=centre+Vector2(cos(entry_angle),sin(entry_angle))*radius
-		var approach_z: float=centre.y+(4.5 if upper else -4.5)
+		var approach_z: float=centre.y+(4.5 if upper else (-4.5 if index==2 else -6.5))
 		points.append_array([exit_point,Vector2(lane,exit_point.y),Vector2(lane,approach_z),Vector2(entry.x,approach_z),entry])
 		var arc: float=angle_difference(entry_angle,angle)
 		var steps:=maxi(1,ceili(absf(arc)/.45))
@@ -123,6 +146,19 @@ func _depart(member: Dictionary,index: int,returning: bool) -> void:
 	if member.journey!=null:member.journey.queue_free()
 	var journey:=FireJourney.new()
 	add_child(journey);journey.configure(actor,points,0.0 if returning else index*2.4)
+	if not returning and Vector2(actor.global_position.x,actor.global_position.z).distance_to(activity.workplace)>1.0:
+		# A saved resident already along the night route resumes from that
+		# segment; retain the full route for a safe dawn return.
+		var nearest_distance:=INF
+		var resume_goal:=1
+		var position_2d:=Vector2(actor.global_position.x,actor.global_position.z)
+		for waypoint in range(int(member.return_goal)+1,points.size()):
+			var a:=points[waypoint-1]
+			var edge:=points[waypoint]-a
+			var projection:=a+edge*clampf((position_2d-a).dot(edge)/maxf(edge.length_squared(),.0001),0.0,1.0)
+			var distance:=position_2d.distance_squared_to(projection)
+			if distance<nearest_distance:nearest_distance=distance;resume_goal=waypoint
+		if nearest_distance<.09:journey.goal=resume_goal
 	if activity.seated:
 		journey.returning_to_seat=returning
 		for label in ["BhairavpurWellSeat0","BhairavpurWellSeat2"]:
@@ -130,6 +166,7 @@ func _depart(member: Dictionary,index: int,returning: bool) -> void:
 			if seat!=null and Vector2(seat.global_position.x,seat.global_position.z).distance_to(activity.workplace)<2.0:
 				for body: StaticBody3D in seat.find_children("*","StaticBody3D",true,false):journey.seat_exclusions.append(body.get_rid())
 	journey.clock=null;journey.set_physics_process(false)
-	journey.speed=.78+index*.045
+	# Later departures do not catch the resident immediately ahead.
+	journey.speed=.88-index*.025
 	member.journey=journey;member.active=true;member.returning=returning
 	actor.set_meta("fire_gathering",true)

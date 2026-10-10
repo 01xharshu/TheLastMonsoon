@@ -46,6 +46,25 @@ var starting_minute: int = 0
 
 @export var clock_paused: bool = false
 
+# Mission owners enable this on entry/restore and release it on every exit.
+# Multiple missions request the same slowdown; they never compound it.
+const MISSION_CLOCK_MULTIPLIER: float = 1.0 / 3.0
+var _slow_clock_missions: Dictionary = {}
+
+func set_mission_clock_slowed(mission_id: StringName, enabled: bool) -> void:
+	if mission_id == &"":
+		return
+	if enabled:
+		_slow_clock_missions[mission_id] = true
+	else:
+		_slow_clock_missions.erase(mission_id)
+
+func get_clock_multiplier() -> float:
+	return MISSION_CLOCK_MULTIPLIER if not _slow_clock_missions.is_empty() else 1.0
+
+func clear_mission_clock_slowdowns() -> void:
+	_slow_clock_missions.clear()
+
 
 # =========================================================
 # CONSTANTS
@@ -110,6 +129,7 @@ func _process(
 
 	var advanced_minutes: float = (
 		game_minutes_per_real_second
+		* get_clock_multiplier()
 		* delta
 	)
 

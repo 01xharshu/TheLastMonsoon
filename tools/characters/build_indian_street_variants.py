@@ -59,22 +59,27 @@ def build(sex, index, workwear=False):
         for endpoint in ['head','tail']:
             point=rig.matrix_world@getattr(bone,endpoint);point.x*=width;setattr(bone,endpoint,inverse@point)
     bpy.ops.object.mode_set(mode='OBJECT')
+    for slot, original_material in enumerate(body.data.materials):
+        mat=original_material.copy();body.data.materials[slot]=mat
+        if not mat.use_nodes:continue
+        node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
+        if node:
+            tint=([(.61,.42,.28),(.76,.55,.39),(.48,.31,.20),(.67,.47,.32)] if sex=='female' else [(.91,.94,.97),(1.06,1.04,1.01),(.84,.88,.93),(.97,.97,.95)])[index]
+            source_node=next((n for n in mat.node_tree.nodes if n.type=='TEX_IMAGE' and n.image and 'diffuse' in n.image.name.lower()),None)
+            if source_node is None:
+                skin=next((image for image in bpy.data.images if 'darkskinned' in image.name.lower() and 'diffuse' in image.name.lower()),None)
+                if skin:
+                    source_node=mat.node_tree.nodes.new('ShaderNodeTexImage');source_node.image=skin
+            if source_node:
+                original=source_node.image
+                pixels=np.empty(len(original.pixels),dtype=np.float32);original.pixels.foreach_get(pixels)
+                pixels.reshape((-1,4))[:,:3]*=np.array(tint,dtype=np.float32)
+                image=bpy.data.images.new(f'Indian_{sex}_{index}_skin',width=original.size[0],height=original.size[1])
+                image.pixels.foreach_set(pixels);image.pack();source_node.image=image
+                for link in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(link)
+                mat.node_tree.links.new(source_node.outputs['Color'],node.inputs['Base Color'])
+            else:node.inputs['Base Color'].default_value=(*tint,1)
     if sex=='female':
-        for mat in body.data.materials:
-            if not mat.use_nodes:continue
-            node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
-            if node:
-                tint=[(.61,.42,.28),(.76,.55,.39),(.48,.31,.20),(.67,.47,.32)][index]
-                source_node=next((n for n in mat.node_tree.nodes if n.type=='TEX_IMAGE' and n.image),None)
-                if source_node:
-                    original=source_node.image
-                    pixels=np.empty(len(original.pixels),dtype=np.float32);original.pixels.foreach_get(pixels)
-                    pixels.reshape((-1,4))[:,:3]*=np.array(tint,dtype=np.float32)
-                    image=bpy.data.images.new(f'Indian_{sex}_{index}_skin',width=original.size[0],height=original.size[1])
-                    image.pixels.foreach_set(pixels);image.pack();source_node.image=image
-                    for link in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(link)
-                    mat.node_tree.links.new(source_node.outputs['Color'],node.inputs['Base Color'])
-                else:node.inputs['Base Color'].default_value=(*tint,1)
         hair=bpy.data.objects.get('Farmer_hair')
         if hair and index%2==1:
             for vertex in hair.data.vertices:vertex.co.x=-vertex.co.x
@@ -89,7 +94,9 @@ def build(sex, index, workwear=False):
         mat.diffuse_color = (*color, 1)
         if mat.use_nodes:
             node = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
-            if node: node.inputs['Base Color'].default_value = (*color, 1)
+            if node:
+                for link in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(link)
+                node.inputs['Base Color'].default_value = (*color, 1)
     if workwear:
         # Workers retain the donor anatomy and foundation; change the outfit only.
         for obj in list(bpy.data.objects):
@@ -102,6 +109,7 @@ def build(sex, index, workwear=False):
                 if mat.use_nodes:
                     node=next((n for n in mat.node_tree.nodes if n.type=='BSDF_PRINCIPLED'),None)
                     if node:
+                        for link in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(link)
                         node.inputs['Base Color'].default_value=(*color,1);node.inputs['Roughness'].default_value=.97
     slug = f'{"workman" if workwear else sex}_{index+1:02d}'
     out = ROOT / 'WorkingAssets/NPCs/indian_street_variants' / slug
@@ -125,7 +133,7 @@ def build(sex, index, workwear=False):
     runtime = ROOT / 'characters/npcs/street_residents' / f'{slug}.glb'
     bpy.ops.export_scene.gltf(filepath=str(runtime), export_format='GLB', use_selection=True,
                              export_animations=False, export_skins=True, export_all_influences=True,
-                             export_cameras=False, export_lights=False)
+                             export_cameras=False, export_lights=False, export_morph=False)
     report = dict(identity=slug, donor=donor, complete_body_vertices=len(body.data.vertices),
                   facial_changes=dict(jaw=jaw,nose=nose,cheek=cheek), whole_character_width=width,
                   runtime=str(runtime.relative_to(ROOT)), wardrobe='plain working cotton' if workwear else 'street formal', visual_approved=False)

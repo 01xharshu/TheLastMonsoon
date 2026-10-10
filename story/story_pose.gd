@@ -11,7 +11,7 @@ func configure(visual: Node3D) -> void:
   "collar":{"upperarm_l":Vector3(-1.35,0,.15),"upperarm_r":Vector3(-1.35,0,-.15),"lowerarm_l":Vector3(-.7,0,0),"lowerarm_r":Vector3(-.7,0,0),"spine_02":Vector3(.13,0,0)},
   "pain":{"spine_01":Vector3(.22,0,.08),"head":Vector3(.16,0,0),"upperarm_l":Vector3(-.5,0,.3),"lowerarm_l":Vector3(-1.7,0,0),"upperarm_r":Vector3(-.3,0,-.12)},
   "drink":{"upperarm_r":Vector3(-1.8,0,-.15),"lowerarm_r":Vector3(-1.5,0,0),"head":Vector3(-.10,0,0)},
-  "down":{"pelvis":Vector3(-PI/2,0,0),"spine_02":Vector3(-.10,0,0),"thigh_l":Vector3(-.25,0,0),"thigh_r":Vector3(-.15,0,0),"calf_l":Vector3(.4,0,0),"calf_r":Vector3(.3,0,0),"upperarm_l":Vector3(.1,0,.4),"upperarm_r":Vector3(.1,0,-.4)}}
+  "down":{"pelvis":Vector3(-PI/2,0,0),"spine_02":Vector3(-.10,0,0),"thigh_l":Vector3(-.25,0,0),"thigh_r":Vector3(-.15,0,0),"calf_l":Vector3(.4,0,0),"calf_r":Vector3(.3,0,0),"upperarm_l":Vector3(.08,0,.25),"upperarm_r":Vector3(.08,0,-.25),"lowerarm_l":Vector3(.24,0,0),"lowerarm_r":Vector3(.28,0,0),"head":Vector3(.03,.12,.08)}}
  for action: String in shapes:
   var clip:=Animation.new();clip.length=2;clip.loop_mode=Animation.LOOP_LINEAR
   for bone: String in shapes[action]:
@@ -30,6 +30,30 @@ func configure(visual: Node3D) -> void:
     var value: Vector3=visual.skeleton.get_bone_pose_position(i)+axis*.72
     clip.position_track_insert_key(pos,0,value);clip.position_track_insert_key(pos,2,value)
   library.add_animation(action,clip)
+ # Collapse transfers weight through the knees before settling to the floor.
+ var fall:=library.get_animation("down").duplicate() as Animation
+ fall.loop_mode=Animation.LOOP_NONE
+ for track in fall.get_track_count():
+  var bone:=str(fall.track_get_path(track)).get_slice(":",1)
+  var final_value=fall.track_get_key_value(track,0)
+  while fall.track_get_key_count(track)>0:fall.track_remove_key(track,0)
+  if fall.track_get_type(track)==Animation.TYPE_ROTATION_3D:
+   var rest: Quaternion=visual.base_rotations[bone]
+   var bent: Quaternion=rest
+   if bone.begins_with("thigh"):bent=rest*Quaternion(visual.axes[bone]*Vector3.RIGHT,-.85)
+   elif bone.begins_with("calf"):bent=rest*Quaternion(visual.axes[bone]*Vector3.RIGHT,1.4)
+   elif bone=="spine_02":bent=rest*Quaternion(visual.axes[bone]*Vector3.RIGHT,.4)
+   fall.rotation_track_insert_key(track,0,rest)
+   fall.rotation_track_insert_key(track,.65,bent)
+   fall.rotation_track_insert_key(track,1.55,final_value)
+   fall.rotation_track_insert_key(track,2,final_value)
+  else:
+   var rest: Vector3=visual.skeleton.get_bone_pose_position(visual.bones[bone])
+   fall.position_track_insert_key(track,0,rest)
+   fall.position_track_insert_key(track,.65,rest.lerp(final_value,.35))
+   fall.position_track_insert_key(track,1.55,final_value)
+   fall.position_track_insert_key(track,2,final_value)
+ library.add_animation("fall",fall)
  source.add_animation_library("story",library)
  var graph:=tree.tree_root as AnimationNodeBlendTree
  var previous: StringName=&""
@@ -38,15 +62,17 @@ func configure(visual: Node3D) -> void:
   if connections[index]==&"output":previous=connections[index+2]
  if previous==&"":push_error("Story pose needs player output connection");return
  node=AnimationNodeAnimation.new();node.animation=&"story/pain";graph.add_node("story_animation",node)
+ var seek:=AnimationNodeTimeSeek.new();graph.add_node("story_seek",seek);graph.connect_node("story_seek",0,"story_animation")
  var blend:=AnimationNodeBlend2.new();blend.filter_enabled=true
- for action in shapes:
+ for action in library.get_animation_list():
   var clip: Animation=library.get_animation(action)
   for track in clip.get_track_count():blend.set_filter_path(clip.track_get_path(track),true)
  graph.add_node("story_pose",blend);graph.disconnect_node("output",0)
- graph.connect_node("story_pose",0,previous);graph.connect_node("story_pose",1,"story_animation");graph.connect_node("output",0,"story_pose")
+ graph.connect_node("story_pose",0,previous);graph.connect_node("story_pose",1,"story_seek");graph.connect_node("output",0,"story_pose")
  tree.set("parameters/story_pose/blend_amount",0.0)
-func apply(action: String,amount: float,delta: float) -> void:
+func apply(action: String,amount: float,delta: float,progress: float=-1.0) -> void:
  if node==null:return
  if not action.is_empty():node.animation=StringName("story/"+action)
+ if progress>=0:tree.set("parameters/story_seek/seek_request",clampf(progress,0,1)*2.0)
  weight=move_toward(weight,amount,delta*3)
  tree.set("parameters/story_pose/blend_amount",weight)

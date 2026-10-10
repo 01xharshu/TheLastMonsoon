@@ -124,7 +124,7 @@ func regenerate() -> void:
 		_floor_patch.set_script(preload("res://environment/forest/scripts/forest_floor_patch.gd"))
 		_floor_patch.name = "ForestFloor_Runtime"
 		add_child(_floor_patch)
-		_floor_patch.rebuild(self)
+		await _floor_patch.rebuild(self)
 	set_meta("forest_counts", _counts.duplicate())
 	generated.emit()
 

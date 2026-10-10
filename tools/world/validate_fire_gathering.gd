@@ -1,6 +1,8 @@
 extends SceneTree
 var errors: Array[String]=[]
 func _initialize() -> void:run.call_deferred()
+func set_hour(clock: Node,hour: int) -> void:
+ clock.advance_minutes(fposmod(hour*60.0-fmod(clock.total_game_minutes,1440.0),1440.0))
 func run() -> void:
  var world: Node3D
  var clock: Node
@@ -15,7 +17,8 @@ func run() -> void:
   world.add_child(load("res://tools/world/river_village_fixture.gd").new())
   world.add_child(load("res://world/suryagarh/settlements/village_daily_activities.gd").new())
  var night_start: bool="--night-start" in OS.get_cmdline_user_args()
- clock.clock_paused=true;clock.current_hour=20 if night_start else 10
+ var early_dawn: bool="--early-dawn" in OS.get_cmdline_user_args()
+ clock.clock_paused=true;set_hour(clock,20 if night_start else 10)
  for frame in 180:await physics_frame
  var gathering:Node=root.find_child("FireGatheringResidents",true,false)
  if gathering==null:push_error("Missing gathering");quit(1);return
@@ -23,15 +26,30 @@ func run() -> void:
  if gathering.members.size()!=4:errors.append("Daytime registration missing")
  for member in gathering.members:
   if member.active and not night_start:errors.append("Gathering active during day")
- clock.current_hour=20
- for step in 1800:
-  gathering._physics_process(.1)
+ if "--resume" in OS.get_cmdline_user_args():
   for member in gathering.members:
-   if member.active and member.actor.global_position.distance_to(gathering.fire.global_position)<1.8:errors.append("Approach enters fire safety radius")
+   member.activity.set_physics_process(false)
+   var angle: float=.35+int(member.slot)*PI*.5
+   var position: Vector3=gathering.fire.global_position+Vector3(cos(angle)*2.25,0,sin(angle)*2.25)
+   position.y=member.activity.layout.height(position.x,position.z)
+   member.actor.global_position=position
+   member.actor.body_collider.force_update_transform()
+ set_hour(clock,20)
+ if "--physics" in OS.get_cmdline_user_args():
+  gathering.set_physics_process(true)
+  for step in (120 if early_dawn else 10800):
+   await physics_frame
+   if gathering.members.all(func(member):return member.active and member.journey.arrived):break
+  gathering.set_physics_process(false)
+ else:
+  for step in 1800:
+   gathering._physics_process(.1)
+   for member in gathering.members:
+    if member.active and member.actor.global_position.distance_to(gathering.fire.global_position)<1.8:errors.append("Approach enters fire safety radius")
  if gathering.members.size()!=4:errors.append("Expected four existing residents")
  for member in gathering.members:
   if member.actor.movement_profile!=&"male":errors.append("Only men should attend")
-  if not member.active or not member.journey.arrived:errors.append(str(member.actor.name)+" did not arrive: "+str(member.journey.last_obstacle))
+  if not member.active or (not member.journey.arrived and not early_dawn):errors.append(str(member.actor.name)+" did not arrive: "+str(member.journey.last_obstacle)+" position="+str(member.actor.global_position)+" goal="+str(member.journey.goal))
   if member.actor.global_position.distance_to(gathering.fire.global_position)<1.8:errors.append("Unsafe fire distance")
   if member.actor.animation_tree==null:errors.append("Missing animation tree")
   if member.activity.prop!=null and member.activity.prop.visible:errors.append("Work tools visible at fire")
@@ -49,13 +67,20 @@ func run() -> void:
   while Time.get_ticks_msec()-started<4000:await physics_frame
   await process_frame;RenderingServer.force_draw(false);root.get_texture().get_image().save_png(output+"/fire.png")
   gathering.set_physics_process(false)
- clock.current_hour=6
- for step in 1800:
-  gathering._physics_process(.1)
-  for member in gathering.members:
-   if member.active and member.actor.global_position.distance_to(gathering.fire.global_position)<1.8:errors.append("Approach enters fire safety radius")
+ set_hour(clock,6)
+ if "--physics" in OS.get_cmdline_user_args():
+  gathering.set_physics_process(true)
+  for step in 10800:
+   await physics_frame
+   if gathering.members.all(func(member):return not member.active):break
+  gathering.set_physics_process(false)
+ else:
+  for step in 1800:
+   gathering._physics_process(.1)
+   for member in gathering.members:
+    if member.active and member.actor.global_position.distance_to(gathering.fire.global_position)<1.8:errors.append("Approach enters fire safety radius")
  for member in gathering.members:
-  if member.active:errors.append(str(member.actor.name)+" did not return: "+str(member.journey.last_obstacle))
+  if member.active:errors.append(str(member.actor.name)+" did not return: "+str(member.journey.last_obstacle)+" position="+str(member.actor.global_position)+" goal="+str(member.journey.goal))
   if member.lantern!=null and member.lantern.visible:errors.append("Lantern remains lit after dawn return")
   if member.activity.prop!=null and member.activity.prop.visible!=member.prop_visible:errors.append("Work prop visibility not restored")
  for member in gathering.members:

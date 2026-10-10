@@ -19,9 +19,10 @@ func _ready() -> void:
  process_priority = 110
  seated_cloth.configure(self,coach)
  seated_cloth.use_startup_cache = not coach.get_meta("rebuild_startup_cloth",false)
- if Startup.current != null:
-  var task := Startup.begin("Seated driver")
-  _prepare_startup_clothing.call_deferred(task)
+ # Establish the exact neutral seated pose before the first live motion delta;
+ # otherwise dynamic traffic misses the existing pose-keyed cache.
+ var task := Startup.begin("Seated driver")
+ _prepare_startup_clothing.call_deferred(task)
 func _prepare_startup_clothing(task: int) -> void:
  var started := Time.get_ticks_usec()
  await _process(0.0)

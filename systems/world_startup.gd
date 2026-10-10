@@ -38,6 +38,12 @@ static func checkpoint(node: Node, label: String = "", force: bool = false) -> v
 	if not force and Time.get_ticks_usec() - session.frame_start < BUDGET_US: return
 	session.checkpoints += 1
 	await node.get_tree().process_frame
+	# Charge all resumed builders against the same frame budget, including the
+	# work between their first resume and their first subsequent checkpoint.
+	var resumed_frame := Engine.get_process_frames()
+	if session.frame != resumed_frame:
+		session.frame = resumed_frame
+		session.frame_start = Time.get_ticks_usec()
 
 static func wait_for(node: Node, label: String) -> void:
 	while current != null and label in current.tasks.values():

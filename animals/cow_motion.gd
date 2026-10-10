@@ -1,5 +1,8 @@
 extends Node
 ## Four independent stance targets, neck/head contact and a finite care loop.
+const Budget = preload("res://systems/simulation_budget.gd")
+var viewer: Node3D
+var simulation_elapsed := 0.0
 var yard:Node3D
 var cow:Node3D
 var rig:Skeleton3D
@@ -28,6 +31,8 @@ const OFFSETS={"Hind.L":0.0,"Front.L":.25,"Hind.R":.5,"Front.R":.75}
 func configure(owner_yard:Node3D,animal:Node3D)->void:yard=owner_yard;cow=animal
 func _ready()->void:
 	process_priority=100
+	var world:Node=preload("res://systems/world_context.gd").find_world(self)
+	viewer=world.get_node_or_null("Player") if world!=null else null
 	breathing_mesh=cow.find_child("Continuous cow skin",true,false)
 	if breathing_mesh!=null:
 		for index in breathing_mesh.mesh.get_blend_shape_count():
@@ -44,7 +49,12 @@ func _ready()->void:
 		var side: String = tag.get_slice(".",1)
 		feet[tag]=[rig.find_bone(end+"Upper."+side),rig.find_bone(end+"Lower."+side),rig.find_bone(end+"Foot."+side)]
 func _physics_process(delta:float)->void:
-	if enabled:tick(delta)
+	if not enabled:simulation_elapsed=0;return
+	simulation_elapsed+=delta
+	var cadence:=Budget.interval(cow,viewer,cow.get_meta("mission_active",false))
+	if simulation_elapsed<cadence:return
+	var step:=simulation_elapsed;simulation_elapsed=0
+	tick(step)
 func update_breathing(delta:float,walking:bool=false)->void:
 	if breath_index<0 or breathing_mesh==null:return
 	breath_rate=lerpf(breath_rate,.36 if walking else .28,1.0-exp(-delta*2.0))

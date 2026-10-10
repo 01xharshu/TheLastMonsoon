@@ -36,21 +36,24 @@ func _run() -> void:
 		for frame in 2:
 			await process_frame
 		opening._input(skip)
-		for frame in 120:
-			if actor.is_physics_processing() and opening.state == "done":
-				break
-			await physics_frame
-		require(actor.is_physics_processing(), "Opening skip releases control")
+		# Skipping advances to dawn; Arjun still rises and walks to the gate.
+		# Wait for that real-time sequence instead of assuming 120 physics ticks.
+		var opening_deadline := Time.get_ticks_msec() + 90000
+		while not (actor.is_physics_processing() and opening.state == "done") and Time.get_ticks_msec() < opening_deadline:
+			await process_frame
+		require(actor.is_physics_processing() and opening.state == "done", "Opening skip releases control after the morning exit")
 		for point in [Vector2(-230,180), Vector2(640,235), Vector2(500,465)]:
 			actor.global_position = Vector3(point.x, world.layout.height(point.x,point.y) + 1.1, point.y)
 			actor.velocity = Vector3.ZERO
 			for frame in 8:
 				await physics_frame
+			var movement_start := actor.global_position
 			Input.action_press("move_forward")
 			for frame in 12:
 				await physics_frame
 			Input.action_release("move_forward")
 			require(actor.global_position.is_finite(), "Finite player movement")
+			require(Vector2(actor.global_position.x-movement_start.x,actor.global_position.z-movement_start.z).length() > .05, "Forward input moves Arjun at " + str(point))
 		var inventory: Node = actor.get_node("InventoryComponent")
 		# Weapon controls require captured input, even when another desktop app was
 		# focused during the route. Re-enter that ordinary gameplay context.

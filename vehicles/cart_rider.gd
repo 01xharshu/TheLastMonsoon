@@ -97,6 +97,8 @@ func rein_grip_world(side: String) -> Vector3:
 func foot_support_world(side: String) -> Vector3:
 	var socket: Node3D = cart.seat_sockets.get(seat_name)
 	var x: float = socket.position.x + (-.18 if side == "l" else .18)
+	if role=="passenger" and cart.get_meta("public_passenger_service",false):
+		return cart.to_global(Vector3(x,1.185,socket.position.z-.55))
 	if cart.has_method("show_coachman_blockout"):
 		if role == "passenger":
 			var on_floor: Vector3 = socket.position + socket.basis * Vector3(-.18 if side == "l" else .18, 0, -.55)

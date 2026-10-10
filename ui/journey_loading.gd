@@ -154,6 +154,7 @@ func begin(slot: int) -> bool:
 	for entry in terrain_bodies:
 		entry.body.collision_layer |= preload("res://world/suryagarh/tree_trunk_collision.gd").TERRAIN_SUPPORT_LAYER
 		entry.parent.add_child(entry.body)
+		preload("res://world/suryagarh/tree_trunk_collision.gd").register_terrain_support(instance,entry.body)
 		entry.parent.move_child(entry.body,mini(entry.index,entry.parent.get_child_count()-1))
 		entry.body.owner = entry.owner
 		await Startup.checkpoint(self, "Preparing the landscape…")

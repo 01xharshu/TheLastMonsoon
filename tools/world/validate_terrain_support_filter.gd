@@ -36,7 +36,16 @@ func run() -> void:
 		var obstacle := body(world,"Scenery",Vector3(index%80-40,1,index/80-25),Vector3(.5,2,.5))
 		exclusions.append(obstacle.get_rid())
 	Trunks.configure_terrain_support(world)
+	check(Trunks.terrain_exclusions(world)==[ground.get_rid()],"Shared terrain exclusions differ from ground body set")
+	check(Trunks.terrain_exclusions(world)==Trunks.terrain_exclusions(world),"Terrain cache is unstable")
 	check(ground.collision_layer & 1 == 1,"Terrain lost gameplay collision layer")
+	var cache := Trunks.terrain_cache(world)
+	var streamed := body(world,"StreamedGround",Vector3(150,-.5,0),Vector3(10,1,10))
+	Trunks.register_terrain_support(world,streamed)
+	check(cache.rids.has(streamed.get_rid()) and cache.revision==1,"Terrain addition failed shared-cache invalidation")
+	Trunks.unregister_terrain_support(world,streamed)
+	check(not cache.rids.has(streamed.get_rid()) and cache.revision==2,"Terrain removal retained a stale RID")
+	streamed.queue_free()
 	await physics_frame
 	await physics_frame
 	var original := PhysicsRayQueryParameters3D.new()

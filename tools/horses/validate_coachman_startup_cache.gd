@@ -51,5 +51,11 @@ func run() -> void:
 	for retained in body_meshes:
 		check(retained[0].mesh == retained[1] and retained[0].skin == retained[2],"Cache replaced the retained MPFB body/foundation")
 	Startup.close(session)
-	print("COACHMAN CACHE PARITY ",JSON.stringify({"status":"FAIL" if failed else "PASS","max_position_error_m":max_position_error,"retained_skinned_meshes":body_meshes.size()}))
+	var runtime_cart: Node3D = load("res://vehicles/family_carriage_candidate.gd").new()
+	runtime_cart.transform = cart.transform
+	world.add_child(runtime_cart)
+	await process_frame
+	var runtime_driver: Node3D = runtime_cart.visual_root.get_node("CoachmanMakeHuman")
+	check(runtime_driver.get_meta("startup_cloth_cache",false),"Runtime traffic rejected the exact-input cloth cache")
+	print("COACHMAN CACHE PARITY ",JSON.stringify({"status":"FAIL" if failed else "PASS","max_position_error_m":max_position_error,"retained_skinned_meshes":body_meshes.size(),"cached_setup_us":driver.get_meta("startup_cloth_usec",0),"rebuild_setup_us":reference.get_meta("startup_cloth_usec",0),"runtime_cached_setup_us":runtime_driver.get_meta("startup_cloth_usec",0)}))
 	await root.get_node("SaveManager").quit_game(1 if failed else 0)

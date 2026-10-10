@@ -3,6 +3,8 @@ const Animal=preload("res://animals/draft_animal.gd")
 var layout=preload("res://world/suryagarh/landscape_layout.gd").new()
 var pending_state:Dictionary={}
 var restore_wait:=0.0
+var restore_age:=0.0
+var active_builder: Node3D
 func _ready()->void:
 	name="DraftAnimalYards";prepare.call_deferred()
 func prepare()->void:
@@ -15,6 +17,7 @@ func prepare()->void:
 			await get_tree().process_frame
 	var yard:=Node3D.new();yard.name="VillageBullockYard";yard.position=Vector3(-402,layout.height(-402,214),214);add_child(yard)
 	var builder=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
+	active_builder=builder
 	var earth:=StandardMaterial3D.new();earth.albedo_color=Color(.42,.29,.17);earth.roughness=1
 	for side in [-1,1]:builder.piece(yard,"YardBoundary",Vector3(side*6,1,0),Vector3(.25,2,12),earth)
 	builder.piece(yard,"YardRear",Vector3(0,1,-6),Vector3(12,2,.25),earth)
@@ -26,6 +29,7 @@ func prepare()->void:
 		add_child(animal);animal.global_position=yard.to_global(Vector3(-3+index*2,.02,-1));animal.build()
 		await get_tree().process_frame
 	builder.free()
+	active_builder=null
 
 func export_state()->Dictionary:
 	var state:Dictionary={"teams":{},"animals":{}}
@@ -43,10 +47,13 @@ func export_state()->Dictionary:
 	return state
 
 func restore_state(state:Dictionary)->void:
-	pending_state=state.duplicate(true);restore_wait=0.0
+	pending_state=state.duplicate(true);restore_wait=0.0;restore_age=0.0
 
 func _process(delta:float)->void:
 	if pending_state.is_empty():return
+	restore_age+=delta
+	if restore_age>30:
+		pending_state.clear();return # Stale or malformed identities never keep a background retry alive.
 	restore_wait+=delta
 	if restore_wait<.25:return
 	restore_wait=0
@@ -77,7 +84,8 @@ func _process(delta:float)->void:
 				if found==null:ready=false;continue
 				if team.slots[i].animal!=found:
 					if team.slots[i].attached:team.detach(i)
-					found.global_position=cart.to_global(Vector3(-2.5,0,-1.1));team.attach(found,i)
+					found.global_position=cart.to_global(Vector3(-2.5,0,-1.1))
+					if not team.attach(found,i):ready=false
 		if ready:teams.erase(path)
 	for id in animals.keys():
 		var found:Node3D
@@ -96,3 +104,8 @@ func _process(delta:float)->void:
 		if found.team==null and (heading is int or heading is float) and is_finite(float(heading)):found.global_rotation.y=float(heading)
 		found.leader=null;animals.erase(id)
 	if teams.is_empty() and animals.is_empty():pending_state.clear()
+
+func _exit_tree() -> void:
+	# Scene changes can interrupt the frame-amortised animal build before its end.
+	if is_instance_valid(active_builder):active_builder.free()
+	active_builder=null

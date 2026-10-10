@@ -10,9 +10,45 @@ static func configure_terrain_support(node: Node) -> void:
 	while world.get_parent() != null and world.get_parent() != node.get_tree().root:
 		world = world.get_parent()
 	if world.has_meta("terrain_support_configured"): return
+	var terrain_rids: Array[RID] = []
 	for body in world.find_children("*", "CollisionObject3D", true, false):
-		if body.name == "GroundCollision": body.collision_layer |= TERRAIN_SUPPORT_LAYER
+		if body.name == "GroundCollision":
+			body.collision_layer |= TERRAIN_SUPPORT_LAYER
+			terrain_rids.append(body.get_rid())
+	world.set_meta("terrain_support_rids", terrain_rids)
+	world.set_meta("terrain_support_cache", {"rids":terrain_rids,"revision":0})
 	world.set_meta("terrain_support_configured", true)
+
+static func terrain_exclusions(node: Node) -> Array[RID]:
+	configure_terrain_support(node)
+	var world := node
+	while world.get_parent() != null and world.get_parent() != node.get_tree().root:
+		world = world.get_parent()
+	var result: Array[RID] = world.get_meta("terrain_support_rids", [])
+	return result
+
+static func terrain_cache(node: Node) -> Dictionary:
+	configure_terrain_support(node)
+	var world := node
+	while world.get_parent() != null and world.get_parent() != node.get_tree().root:
+		world = world.get_parent()
+	return world.get_meta("terrain_support_cache")
+
+static func register_terrain_support(node: Node, body: CollisionObject3D) -> void:
+	# Runtime terrain additions must update the existing shared support set.
+	var cache := terrain_cache(node)
+	var rids: Array[RID] = cache.rids
+	body.collision_layer |= TERRAIN_SUPPORT_LAYER
+	if not rids.has(body.get_rid()):
+		rids.append(body.get_rid())
+		cache.revision += 1
+
+static func unregister_terrain_support(node: Node, body: CollisionObject3D) -> void:
+	# Call before removing/freeing a terrain body; do not leave stale RIDs.
+	var cache := terrain_cache(node)
+	if cache.rids.has(body.get_rid()):
+		cache.rids.erase(body.get_rid())
+		cache.revision += 1
 
 static func copy_instances(source: MultiMesh) -> MultiMesh:
 	# Allocate the destination layout before assigning packed instance data.

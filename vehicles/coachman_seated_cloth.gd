@@ -33,7 +33,9 @@ func update() -> void:
   knee += coach.to_local(skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("calf_"+side)).origin))*.5
  if knee.distance_to(last_knee) < .0005: return
  last_knee = knee
- if Startup.current != null and use_startup_cache:
+ # Dynamically spawned traffic needs the same exact-input cache as title loads.
+ # Trying only on first fit avoids hashing full body meshes during motion.
+ if use_startup_cache and updates == 0:
   startup_signature = source_signature()
   if _restore_startup_cache(): return
  skin_fit.build_body(actor,coach)

@@ -11,11 +11,20 @@ func _ready() -> void:
  secondary_interaction_text="Supply kitchen · 1 roti" if role=="cook" else "Ask about duties"
  var collider:=CollisionShape3D.new();var shape:=SphereShape3D.new();shape.radius=.18;collider.shape=shape;add_child(collider)
  collision_layer=1<<29;collision_mask=0;position=Vector3(0,1.2,.55)
+ var vitality:=person.get_node_or_null("Vitality")
+ if vitality!=null and vitality.has_signal("died"):vitality.died.connect(_person_died)
+ refresh_physics()
 func interaction_available() -> bool:
- if not super.interaction_available() or not is_instance_valid(person):return false
- if person.get_meta("dead",false) or person.get_meta("knocked_out",false):return false
- var action:String=person.get_meta("household_action","home")
- return action in ["home","work"] and person.get_meta("combat_action","")==""
+ var available:=super.interaction_available() and is_instance_valid(person)
+ if available:
+  available=not person.get_meta("dead",false) and not person.get_meta("knocked_out",false)
+  var action:String=person.get_meta("household_action","home")
+  available=available and action in ["home","work"] and person.get_meta("combat_action","")==""
+ var layer:int=(1<<29) if available else 0
+ if collision_layer!=layer:collision_layer=layer
+ return available
+func refresh_physics() -> void:interaction_available()
+func _person_died() -> void:collision_layer=0
 func interact(player:CharacterBody3D) -> void:
  if interaction_available() and player.global_position.distance_to(global_position)<=interaction_max_distance:ledger.request(self,player)
 func secondary_interact(player:CharacterBody3D) -> void:

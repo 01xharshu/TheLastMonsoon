@@ -15,9 +15,10 @@ func _ready() -> void:
 
 func _set_animation(state: StringName, delta: float) -> void:
 	super._set_animation(state, delta)
-	if drape == null:return
+	if drape == null or DisplayServer.get_name()=="headless":return
 	drape_age += delta
 	var camera := get_viewport().get_camera_3d()
-	var near := camera != null and global_position.distance_squared_to(camera.global_position)<3600.0
-	if near or (drape_age>.5 and DisplayServer.get_name()!="headless"):
+	var distance:float=global_position.distance_squared_to(camera.global_position) if camera!=null else INF
+	var cadence:=0.0 if distance<400 else (.1 if distance<3600 else .5)
+	if drape_age>=cadence:
 		drape_age=0.0;drape.update()

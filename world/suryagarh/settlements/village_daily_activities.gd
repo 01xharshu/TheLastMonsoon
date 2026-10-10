@@ -9,6 +9,7 @@ var wait:=0.0
 var viewer:Node3D
 var owned_horse:Node3D
 var saved_residents:Dictionary={}
+var home_slots:Dictionary={}
 
 func _ready() -> void:
 	name="VillageDailyActivities";add_to_group("village_daily_activities")
@@ -33,9 +34,8 @@ func prepare() -> void:
 		{"job":"inspect","role":"landowner","sex":"male","id":2,"at":Vector2(-283,340),"home":Vector2(-321,337)}]
 	_fields()
 	_home_horse()
-	if owned_horse!=null:
-		var at:=Vector2(owned_horse.global_position.x-.9,owned_horse.global_position.z)
-		pending.append({"job":"groom","sex":"male","id":4,"at":at,"home":at+Vector2(-2,2)})
+	# The keeper works at his own stable, never at Arjun's family home.
+	pending.append({"job":"groom","sex":"male","id":4,"at":Vector2(-261.15,195),"home":Vector2(-256,204)})
 	set_process(true)
 
 func _process(delta:float) -> void:
@@ -58,12 +58,17 @@ func _spawn(record:Dictionary) -> void:
 	var at:Vector2=record.at;actor.position=Vector3(at.x,layout.height(at.x,at.y),at.y)
 	if record.job=="well":actor.rotation.y=atan2(-289-at.x,231-at.y)
 	if record.job=="social":actor.rotation.y=PI*.25 if residents.size()%2==0 else -PI*.75
-	if record.job=="groom":actor.rotation.y=PI*.5
+	if record.job=="groom":actor.rotation.y=-PI*.5
 	add_child(actor);actor.add_to_group("village_work_residents");actor.set_meta("human_source",source)
 	var activity:=Activity.new();activity.name="DailyActivity";activity.actor=actor;activity.job=record.job;activity.social_role=role
 	activity.home=record.home;activity.workplace=record.at;activity.viewer=viewer;activity.elapsed=residents.size()*.71
 	activity.seated=record.get("seat",false)
-	if record.job=="groom":activity.animal=owned_horse
+	if record.job=="groom":
+		activity.animal=get_parent().get_node_or_null("StableHorse01")
+		var stable:=get_parent().get_node_or_null("VillageStable")
+		if stable!=null:stable.set_meta("owner",str(actor.get_path()))
+		for horse in get_tree().get_nodes_in_group("horses"):
+			if str(horse.name).begins_with("StableHorse"):horse.set_meta("owner",str(actor.get_path()));horse.set_meta("owner_home",str(activity.home))
 	var nearest:Node3D
 	var best:=INF
 	for house:Node3D in get_tree().get_nodes_in_group("bhairavpur_home"):
@@ -71,7 +76,8 @@ func _spawn(record:Dictionary) -> void:
 		if distance<best:best=distance;nearest=house
 	if nearest!=null:
 		actor.set_meta("assigned_house",str(nearest.get_path()))
-		var front:Vector3=nearest.to_global(Vector3(0,0,5.6))
+		var slot:int=int(home_slots.get(str(nearest.get_path()),0));home_slots[str(nearest.get_path())]=slot+1
+		var front:Vector3=nearest.to_global(Vector3((slot%3-1)*.9,0,5.6+float(slot/3)*.9))
 		var side:Vector3=nearest.to_global(Vector3(5.3,0,5.6))
 		activity.home=Vector2(front.x,front.z)
 		var corner:=Vector2(side.x,at.y) if absf(nearest.global_basis.x.x)>.5 else Vector2(at.x,side.z)
@@ -79,8 +85,13 @@ func _spawn(record:Dictionary) -> void:
 		activity.route_goal=activity.commute.size()-1
 	if role=="landowner":
 		activity.home=Vector2(-321,337);activity.commute=[activity.home,Vector2(-321,330),Vector2(-283,330),at];activity.route_goal=3
+	if record.job=="groom" and nearest!=null:
+		for horse in get_tree().get_nodes_in_group("horses"):
+			if str(horse.name).begins_with("StableHorse"):horse.set_meta("owner_home",str(nearest.get_path()))
 	actor.add_child(activity);residents.append(actor)
-	activity.restore_state(saved_residents.get(str(actor.name),{}))
+	var restored: Dictionary=saved_residents.get(str(actor.name),{}).duplicate(true)
+	if record.job=="groom":restored.erase("position") # Migrate the old family-home groom to the stable.
+	activity.restore_state(restored)
 	for mesh:GeometryInstance3D in actor.find_children("*","GeometryInstance3D",true,false):
 		mesh.visibility_range_end=150;mesh.visibility_range_end_margin=15
 
@@ -129,9 +140,14 @@ func _home_horse() -> void:
 	var house:Node3D=homes[0]
 	for horse:Node3D in get_tree().get_nodes_in_group("horses"):
 		if str(horse.name)!="VillageHorse" or horse.rider!=null:continue
-		owned_horse=horse;horse.set_meta("owner","Arjun");horse.set_meta("owner_home",str(house.get_path()))
+		owned_horse=horse;horse.set_meta("owner","Arjun");horse.set_meta("player_owned",true);horse.set_meta("owner_home",str(house.get_path()))
 		var point:=house.to_global(Vector3(6,0,5));point.y=layout.height(point.x,point.z)+.08
 		horse.global_position=point;horse.rotation.y=PI;house.set_meta("owns_horse",true)
+		var builder:=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
+		var timber:=builder.material(Color(.27,.16,.09))
+		for x in [-1.2,1.2]:builder.piece(house,"FamilyHitchingPost",house.to_local(point)+Vector3(x,.6,-1.8),Vector3(.18,1.2,.18),timber)
+		builder.piece(house,"FamilyHitchingRail",house.to_local(point)+Vector3(0,1.05,-1.8),Vector3(2.6,.12,.14),timber)
+		builder.free()
 		break
 
 func export_state()->Dictionary:
@@ -141,4 +157,7 @@ func export_state()->Dictionary:
 
 func restore_state(state:Dictionary)->void:
 	saved_residents=state.duplicate(true)
-	for resident in residents:resident.get_node("DailyActivity").restore_state(state.get(str(resident.name),{}))
+	for resident in residents:
+		var restored: Dictionary=state.get(str(resident.name),{}).duplicate(true)
+		if resident.household_job=="groom":restored.erase("position")
+		resident.get_node("DailyActivity").restore_state(restored)

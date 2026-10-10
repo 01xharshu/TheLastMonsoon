@@ -27,6 +27,7 @@ func use(actor:CharacterBody3D)->void:
 		if animal.leader==actor and animal.kind==kind and animal.can_lead() and animal.global_position.distance_to(cart.global_position)<6:
 			for i in slots.size():
 				if not slots[i].attached and attach(animal,i):return
+			return # A failed hitch must not detach the rest of the existing team.
 	# Never tear down an occupied passenger transition or moving traffic.
 	if cart.has_meta("errand_transfer"):return
 	for i in slots.size():

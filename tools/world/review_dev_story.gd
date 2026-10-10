@@ -19,26 +19,35 @@ func run() -> void:
  check(story.configured and inquiry.stage=="dormant","story waits for main opening")
  var event:=InputEventKey.new();event.keycode=KEY_SPACE;event.pressed=true;opening._input(event)
  await create_timer(.9).timeout;check(inquiry.stage=="dormant","morning seat precedes story")
+ opening._input(event) # The first press reveals the skip hint; the second skips.
  # The opening now owns the complete dawn rise and walk out of the house.
- opening._process(25.0);await process_frame
+ opening.set_process(false)
+ for step in 200:
+  opening._process(.25);await process_frame
+  if opening.state=="done":break
  check(opening.state=="done","morning releases control")
  var tutorial: Node=player.get_node_or_null("UI/HUDRoot/MorningTutorial")
- if tutorial!=null:
-  # Onboarding owns the new-game interval before the police objective.
-  while tutorial.step<11:tutorial.advance()
- check(inquiry.stage=="police","completed morning onboarding starts police objective")
- # Relocate once from home, then approach the gate using the real controller.
- player.global_position=inquiry.station.to_global(Vector3(0,.9,24));player.velocity=Vector3.ZERO
- player.get_node("CameraPivot").global_rotation.y=0
- Input.action_press("move_forward")
- for frame in 600:
-  await physics_frame
-  if story.active:break
- Input.action_release("move_forward")
- check(story.active and story.kind=="inquiry","walking through main station gate triggers film")
- print("STORY WORLD: gate cinematic active ",story.active)
+ check(tutorial!=null,"morning tutorial available")
+ while tutorial.step<10:tutorial.advance()
+ var horse: Node=world.get_node("VillageHorse")
+ player.global_position=horse.global_position+Vector3(1,.9,0);player.velocity=Vector3.ZERO
+ check(horse.get_meta("owner","")=="Arjun","home horse belongs to Arjun")
+ check(horse.board(player),"home horse boards through production mount")
+ for frame in 100:await physics_frame
+ tutorial._process(.1);story._process(0)
+ check(story.active and story.cue=="horse_departure","mount starts cinematic journey to station")
+ check(world.has_node("StableHorse01") and world.has_node("StableHorse02"),"village stable retains two additional horses")
+ var bridge: Node=world.get_node("TimberBridge")
+ check(not bridge.has_node("RevenueCrossingGate") and bridge.has_node("BridgeInspectionPost/BridgeInspectionOfficer"),"open bridge has seated inspection officer and no barrier")
+ check(story.community.farm.global_position.distance_to(world.get_node("ChachaHouse").global_position)<30,"family farm adjoins Chacha's house")
+ check(world.get_node("ChachaHouse").has_node("FamilyCourtyardGate"),"family boundary has working gate")
+ var activities: Node=world.get_node("VillageDailyActivities")
+ for resident in activities.residents:
+  if resident.household_job=="groom":check(resident.global_position.distance_to(horse.global_position)>70,"horse keeper stays at stable, away from family home")
+ print("STORY WORLD: horse cinematic active ",story.active)
  var reviewed: Array[String]=[]
  var natural:=OS.get_environment("TLM_STORY_NATURAL")=="1"
+ if not natural:story.set_process(false)
  while story.active:
   if natural:
    await physics_frame
@@ -47,6 +56,9 @@ func run() -> void:
     if DisplayServer.get_name()!="headless":
      await RenderingServer.frame_post_draw;root.get_texture().get_image().save_png(temporary+"/"+story.cue+".png")
   else:
+   if story.cue in ["entry","chamber"]:check(not story.hero_path.is_empty(),"cinematic approach has a traversable station path")
+   if story.cue=="horse_dismount":
+    for frame in 100:await physics_frame
    story._process(float(story.beats[story.beat_index].seconds)+.1);await process_frame
  check(story.state=="farm" and player.is_physics_processing(),"main film ends at recovery checkpoint")
  check(inquiry.destination.global_position==story.community.farm.global_position,"farm map destination integrated")
