@@ -71,7 +71,14 @@ func run()->void:
    var routine:Node=person.get_node("DailyActivity")
    var left:=Vector2(person.global_position.x,person.global_position.z).distance_to(routine.home)
    print("HOME_COMMUTE ",person.name," remaining=",left," state=",person.get_meta("daily_activity")," route=",routine.route_goal)
-   if left>.15:errors.append(person.name+": home route blocked")
+   if left>.15:
+    errors.append(person.name+": home route blocked")
+    print("HOME_ROUTE_DETAIL ",person.name," at=",person.global_position," home=",routine.home," house=",person.get_meta("assigned_house")," detour=",routine.detour)
+    var shape:CollisionShape3D=person.body_collider.get_node("BodyShape")
+    var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin.y+=.15;query.collision_mask=1;query.exclude=[person.body_collider.get_rid()]
+    var goal:Vector3=routine.detour[0] if not routine.detour.is_empty() else Vector3(routine.home.x,person.global_position.y,routine.home.y)
+    query.transform.origin+=(goal-person.global_position).limit_length(.10)
+    for hit in person.get_world_3d().direct_space_state.intersect_shape(query,8):print("HOME_ROUTE_OBSTACLE ",hit.collider.get_path())
  var output:=OS.get_environment("TLM_TEST_OUTPUT_DIR")
  if not output.is_empty():
   root.size=Vector2i(1280,720)

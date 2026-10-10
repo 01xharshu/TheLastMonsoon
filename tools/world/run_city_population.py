@@ -10,6 +10,7 @@ def main():
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument("--native", action="store_true")
  parser.add_argument("--passenger", action="store_true")
+ parser.add_argument("--budget", action="store_true",help="Measure public passenger tiers in the actual native world at Medium")
  parser.add_argument("--review", action="store_true")
  parser.add_argument("--opening", action="store_true",help="Also check the integrated opening cart passage in this snapshot")
  args=parser.parse_args()
@@ -22,10 +23,10 @@ def main():
   try:
    binary=shutil.which("godot") or "/Applications/Godot.app/Contents/MacOS/Godot"
    if not checks.run_check(binary,project,directory,"IMPORT",["--import"],240):return 1
-   script="tools/horses/validate_public_passenger_cart.gd" if args.passenger else "tools/world/validate_city_route_population.gd"
+   script="tools/horses/validate_public_cart_budget.gd" if args.budget else ("tools/horses/validate_public_passenger_cart.gd" if args.passenger else "tools/world/validate_city_route_population.gd")
    command=["--fixed-fps","20","--script","res://"+script]
    if args.review:command += ["--","--output="+str(directory)]
-   passed=checks.run_check(binary,project,directory,"PUBLIC_CART" if args.passenger else "CITY_POPULATION",command,300,native=args.native)
+   passed=checks.run_check(binary,project,directory,"PUBLIC_CART" if args.passenger or args.budget else "CITY_POPULATION",command,360 if args.budget else 300,native=args.native)
    if args.opening:
     passed=checks.run_check(binary,project,directory,"OPENING_CART",["--fixed-fps","20","--script","res://tools/world/validate_opening_cart_passage.gd"],300) and passed
    review_image=directory/("passenger_cart.png" if args.passenger else "road_traffic.png")

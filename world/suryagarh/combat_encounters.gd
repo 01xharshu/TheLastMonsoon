@@ -22,6 +22,7 @@ var station: Node3D
 var escort: Dictionary = {}
 var escape_press := 0.0
 var ground_exclusions: Array[RID]=[]
+var patrol_terrain:Dictionary={}
 var profile_enabled:=false
 var cost_samples: Array[float]=[]
 var sense_ray_count:=0
@@ -47,6 +48,7 @@ func spawn(label: String, path: String, at: Vector3, faction: String) -> Node3D:
 
 func build() -> void:
 	ground_exclusions=[player.get_rid()]
+	patrol_terrain=preload("res://world/suryagarh/tree_trunk_collision.gd").terrain_cache(self)
 	for npc in get_tree().get_nodes_in_group("combat_actors"):
 		if npc.body_collider!=null:ground_exclusions.append(npc.body_collider.get_rid())
 	var origin:=ground(Vector3(321,0,151))
@@ -205,9 +207,18 @@ func visible_to(actor: Node3D) -> bool:
 
 func move_actor(actor: Node3D, goal: Vector3, speed: float, delta: float) -> bool:
 	var offset:=goal-actor.global_position;offset.y=0
-	if offset.length()<.13:actor.travel_speed=0;return true
-	var change:=offset.normalized()*minf(delta*speed,offset.length())
-	actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*4)
+	actor.set_meta("patrol_turning",false)
+	if offset.length()<.13:
+		actor.travel_speed=0;actor.set_meta("patrol_speed",0.0);return true
+	var desired:float=atan2(offset.x,offset.z)
+	var turn:float=absf(angle_difference(actor.global_rotation.y,desired))
+	actor.global_rotation.y=rotate_toward(actor.global_rotation.y,desired,delta*3.2)
+	if turn>1.05:
+		actor.travel_speed=0;actor._turn_progress=clampf(1.0-turn/PI,0,1)
+		actor.set_meta("patrol_turning",true);actor.set_meta("patrol_speed",0.0);return false
+	var pace:float=move_toward(float(actor.get_meta("patrol_speed",0.0)),minf(speed,sqrt(offset.length()*2.0)),delta*1.8)
+	actor.set_meta("patrol_speed",pace)
+	var change:=offset.normalized()*minf(delta*pace,offset.length())
 	var next:=ground(actor.global_position+change)
 	if absf(next.y-actor.global_position.y)>.3:actor.travel_speed=0;return false
 	var query:=PhysicsShapeQueryParameters3D.new()
@@ -225,6 +236,13 @@ func move_actor(actor: Node3D, goal: Vector3, speed: float, delta: float) -> boo
 		if not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():actor.travel_speed=0;return false
 		next.y=support.y
 
+	# Remote cadence still sweeps the whole capsule across thin obstacles.
+	query.exclude=[actor.body_collider.get_rid()]
+	query.exclude.append_array(patrol_terrain.get("rids",[]))
+	query.transform=actor.body_collider.get_node("BodyShape").global_transform
+	query.transform.origin+=Vector3.UP*.025;query.motion=next-actor.global_position
+	if actor.get_world_3d().direct_space_state.cast_motion(query)[0]<.99:
+		actor.travel_speed=0;return false
 	actor.global_position=next;actor.travel_speed=change.length()/maxf(delta,.001)
 	actor.body_collider.force_update_transform()
 	return false
@@ -296,7 +314,13 @@ func _tick(delta: float) -> void:
 			if station.get_node("ThanaStaff/ArrestCoordinator").phase!="idle":continue
 			actor.set_meta("city_custody",false)
 		if not escort.is_empty() and escort.actor==actor:continue
-		patrol.sense-=delta
+		var essential:bool=patrol.state=="pursue" or actor.get_meta("mission_active",false) or actor.get_meta("combat_action","")!=""
+		var cadence:float=preload("res://systems/simulation_budget.gd").interval(actor,player,essential)
+		patrol["motion_elapsed"]=float(patrol.get("motion_elapsed",0.0))+delta
+		if float(patrol.motion_elapsed)<cadence:continue
+		var patrol_delta:float=patrol.motion_elapsed
+		patrol.motion_elapsed=0.0
+		patrol.sense-=patrol_delta
 		if patrol.sense<=0:
 			patrol.sense=.25
 			patrol.seen=wanted and visible_to(actor)
@@ -305,7 +329,7 @@ func _tick(delta: float) -> void:
 		patrol.marker.visible=patrol.state=="pursue"
 		if patrol.state=="patrol":
 			var point: Vector3=patrol.points[patrol.index]
-			if move_actor(actor,point,1.3,delta):
+			if move_actor(actor,point,1.3,patrol_delta):
 				if patrol.index==patrol.points.size()-1:patrol.step=-1
 				elif patrol.index==0:patrol.step=1
 				patrol.index+=patrol.step
@@ -316,9 +340,9 @@ func _tick(delta: float) -> void:
 				continue
 			var offset:=player.global_position-actor.global_position;offset.y=0
 			if not patrol.seen:
-				move_actor(actor,patrol.get("last_seen",last_known),2.8,delta)
+				move_actor(actor,patrol.get("last_seen",last_known),2.8,patrol_delta)
 				continue
-			if offset.length()>1.15:move_actor(actor,player.global_position,2.8,delta)
+			if offset.length()>1.15:move_actor(actor,player.global_position,2.8,patrol_delta)
 			else:
 				actor.travel_speed=0
 				var rear: Vector3=actor.global_position-player.global_position;rear.y=0
@@ -327,7 +351,7 @@ func _tick(delta: float) -> void:
 					actor.combat_react("held")
 					player.inventory.message_requested.emit("Caught · Press Space four times to escape")
 				else:
-					patrol.attack_age+=delta
+					patrol.attack_age+=patrol_delta
 					if patrol.attack_age>=1.2:patrol.attack_age=0;patrol.hit=false;actor.combat_react("strike")
 					if patrol.attack_age>=.28 and patrol.attack_age<=.60 and not patrol.hit and strike_hits_player(actor):
 						patrol.hit=true;player.receive_combat_hit(minf(8,maxf(0,player.health-1)),actor)

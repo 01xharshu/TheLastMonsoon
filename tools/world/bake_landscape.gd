@@ -63,6 +63,8 @@ func bake() -> void:
 	for pair in [["soil", "brown_mud_dry"], ["grass", "aerial_grass_rock"], ["rock", "rock_boulder_dry"]]:
 		terrain_material.set_shader_parameter(pair[0] + "_tex", load("res://assets/nature/materials/" + pair[1] + "_diff_1k.jpg"))
 		terrain_material.set_shader_parameter(pair[0] + "_normal", load("res://assets/nature/materials/" + pair[1] + "_nor_gl_1k.jpg"))
+	if ResourceLoader.exists(OUT+"density_mask.res"):
+		terrain_material.set_shader_parameter("density_mask_tex",load(OUT+"density_mask.res"))
 	save_resource(terrain_material, "terrain_material.tres")
 	for slug in ["island_tree_02", "boulder_01"]:
 		var model: Node = load("res://assets/nature/models/" + slug + ".glb").instantiate()

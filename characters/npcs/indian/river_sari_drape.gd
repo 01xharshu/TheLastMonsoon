@@ -83,6 +83,7 @@ func update() -> void:
 		var rz := lerpf(float(DIMENSIONS.waist_ry),float(DIMENSIONS.hem_radius),t)
 		var sections: Array[Vector3]=[]
 		for sphere in spheres:
+			if row==0:continue # The sewn waist stays at the waist, rather than enclosing the knees.
 			var vertical: float=maxf(0.0,absf(sphere.y-y)-band)
 			if vertical>=sphere.w:continue
 			sections.append(Vector3(sphere.x-waist.x,sphere.z-waist.z,sqrt(maxf(0.0,sphere.w*sphere.w-vertical*vertical))+float(DIMENSIONS.clearance)))
@@ -115,12 +116,30 @@ func update() -> void:
 			var world := actor.to_global(point)
 			hem_heights[i]=actor.to_local(Vector3(world.x,float(ground.call(world.x,world.z)),world.z)).y+.018
 	var drape := PackedVector3Array();drape.resize((rings+1)*segments)
+	var lap_heights:=PackedFloat32Array();lap_heights.resize(segments);lap_heights.fill(waist.y)
+	for i in segments:
+		var direction:Vector2=directions[i]
+		for sphere in spheres:
+			var horizontal:=Vector2(sphere.x-waist.x,sphere.z-waist.z)
+			if horizontal.dot(direction)>.18 and absf(horizontal.cross(direction))<sphere.w+.06:
+				lap_heights[i]=maxf(lap_heights[i],sphere.y+sphere.w+float(DIMENSIONS.clearance))
+	for sweep in 4:
+		var previous:=lap_heights.duplicate()
+		for i in segments:lap_heights[i]=maxf(previous[i],(previous[(i+segments-1)%segments]+previous[(i+1)%segments])*.5)
 	for row in rings+1:
 		var t := float(row)/rings
 		for i in segments:
 			var direction: Vector2=directions[i]
 			var point := Vector3(waist.x+direction.x*radii[row][i],0,waist.z+direction.y*radii[row][i])
-			point.y=lerpf(waist.y,hem_heights[i],t);drape[row*segments+i]=point
+			point.y=lerpf(waist.y,hem_heights[i],t)
+			# Seated fabric bridges from the fitted waist over the raised lap. The
+			# former parallel rings left an open cup around exposed knee tops.
+			if row>0:
+				var lap_top:float=lap_heights[i]
+				if lap_top>waist.y+.04:
+					var fold:float=smoothstep(0,.12,t)*(1-smoothstep(.35,.85,t))
+					point.y=maxf(point.y,lerpf(point.y,lap_top,fold))
+			drape[row*segments+i]=point
 	for piece in pieces:
 		var points: PackedVector3Array=drape
 		var row_count: int=piece.rows

@@ -22,7 +22,7 @@ def export_river_asset(ROOT,rig,body,foundation_faces):
     bpy.context.view_layer.objects.active=rig
     runtime=ROOT/'characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb'
     runtime.parent.mkdir(parents=True,exist_ok=True)
-    bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_frame_range=False,export_cameras=False,export_lights=False,export_yup=True,export_skins=True,export_all_influences=True,export_apply=False)
+    bpy.ops.export_scene.gltf(filepath=str(runtime),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIONS',export_force_sampling=True,export_frame_range=False,export_cameras=False,export_lights=False,export_yup=True,export_skins=True,export_all_influences=True,export_apply=False,export_morph_normal=False,export_morph_tangent=False)
     report=dict(status='RIVER_ROUTINE_RUNTIME',source=str(source.relative_to(ROOT)),runtime=str(runtime.relative_to(ROOT)),source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),runtime_sha256=hashlib.sha256(runtime.read_bytes()).hexdigest(),foundation_faces=foundation_faces,donor='village_woman_motion_candidate.blend',visual_approved=False,motion_approved=False,in_world=True,corrective_samples=max((len(obj.data.shape_keys.key_blocks)-1 for obj in bpy.data.objects if obj.type=="MESH" and obj.data.shape_keys and obj.name!=body.name),default=0),foundation_in_runtime=True)
     (OUT/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')
     print('RIVER_SOURCE',json.dumps(report))

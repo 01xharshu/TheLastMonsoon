@@ -59,6 +59,21 @@ func run() -> void:
 	check(routine.mode=="home","no duplicate departure same day")
 	clock.current_day=2;clock.current_hour=5;routine.tick(1);check(routine.mode=="home","no predawn departure")
 	clock.current_hour=6;routine.tick(.1);check(routine.mode=="depart","next morning restarts")
+	var observer:=Node3D.new();world.add_child(observer)
+	observer.global_position=routine.women[0].global_position+Vector3(500,0,0)
+	routine.viewer=observer;routine.physics_age=0;clock.clock_paused=false
+	var remote_before:Vector3=routine.journeys[0].position
+	routine._physics_process(.2)
+	check(routine.journeys[0].position.distance_to(remote_before)<.00001,"remote work retains elapsed time before budget update")
+	routine._physics_process(.3)
+	var remote_distance:=Vector2(routine.journeys[0].position.x-remote_before.x,routine.journeys[0].position.z-remote_before.z).length()
+	check(remote_distance>.50 and remote_distance<.65,"remote update consumes elapsed swept walking motion")
+	observer.global_position=routine.women[2].global_position
+	var nearby_before:Vector3=routine.journeys[0].position
+	routine._physics_process(.02)
+	check(routine.journeys[0].position.distance_to(nearby_before)>.01,"approaching a companion wakes the group immediately")
+	for woman in routine.women:check(woman.get_node("BodyCollider").collision_layer==1,"budget never removes companion collision")
+	clock.clock_paused=true
 	var report:={"passed":issues.is_empty(),"issues":issues,"blocked_frames":routine.blocked_frames,"worst":worst,"max_hand_m":max_hand,"max_ankle_m":max_ankle,"shore":[routine.shore.x,routine.shore.y,routine.shore.z],"actions":reached.keys(),"in_world":true,"visual_approved":false}
 	print("RIVER_WORLD ",JSON.stringify(report))
 	world.queue_free();await process_frame;quit(0 if issues.is_empty() else 1)

@@ -26,6 +26,7 @@ corrections={name:(c@Matrix(rest)@inv).inverted()@rig.data.bones[name].matrix_lo
 rig.animation_data_clear();rig.data.pose_position='POSE'
 objects={name:bpy.data.objects[name] for name in ['Fitted cotton upper base','Wrapped sari lower drape','Sari lower border','Woven sari pallu over blouse','Opaque fitted bra and thong foundation']}
 for obj in objects.values():
+ if obj.data.shape_keys is None:continue
  for key in obj.data.shape_keys.key_blocks:key.value=0
 # Validate the coordinate conversion before changing any retained source.
 first=records[0];apply_river_pose(rig,first['bones'],c,corrections)
@@ -38,7 +39,7 @@ error=max(kd.find(ev.matrix_world@vertex.co)[2] for vertex in mesh.vertices);ev.
 print('RIVER_NATIVE_ALIGNMENT_M',error,flush=True)
 if error>.0001:raise RuntimeError('Source/native pose spaces do not agree')
 if '--align-only' in sys.argv:raise SystemExit(0)
-for sweep in range(3):
+for sweep in range(6 if '--foundation-only' in sys.argv or '--finish-upper' in sys.argv else 3):
  changed=0;worst=0.0
  for record in records if sweep%2==0 else reversed(records):
   apply_river_pose(rig,record['bones'],c,corrections)
@@ -48,9 +49,12 @@ for sweep in range(3):
    offset=len(points);points.extend(transform@Vector(point) for point in entry['vertices'])
    ids=entry['indices'];reverse=entry.get('winding_sign',1)<0
    faces.extend(tuple(offset+i for i in (reversed(ids[j:j+3]) if reverse else ids[j:j+3])) for j in range(0,len(ids),3))
-  tree=VolumeSurface.FromPolygons(points,faces,all_triangles=True,strict=False)
+  tree=VolumeSurface.FromPolygons(points,faces,all_triangles=True,strict='--finish-upper' in sys.argv)
   for entry in record['garments']:
-   obj=objects[entry['name']];basis=obj.data.shape_keys.key_blocks['Basis']
+   if '--foundation-only' in sys.argv and entry['name']!='Opaque fitted bra and thong foundation':continue
+   obj=objects[entry['name']]
+   if obj.data.shape_keys is None or not entry['active_keys']:continue
+   basis=obj.data.shape_keys.key_blocks['Basis']
    active=[(obj.data.shape_keys.key_blocks[name],weight) for name,weight in entry['active_keys']]
    if abs(sum(weight for _,weight in active)-1.0)>.0001:raise RuntimeError('Unexpected native morph weight sum')
    before=[vertex.co.copy()+sum(((key.data[index].co-vertex.co)*weight for key,weight in active),Vector()) for index,vertex in enumerate(basis.data)]
@@ -70,4 +74,4 @@ for sweep in range(3):
  print('RIVER_INTERPOLATION_SWEEP',sweep,'changed_surfaces',changed,'max_shift_m',worst,flush=True)
 for bone in rig.pose.bones:bone.matrix_basis=Matrix.Identity(4)
 rig.data.pose_position='REST'
-export_river_asset(ROOT,rig,body,894)
+export_river_asset(ROOT,rig,body,len(objects['Opaque fitted bra and thong foundation'].data.polygons))

@@ -1,23 +1,23 @@
 # Current handoff — Updated: 2026-10-08 IST
 - **FOREST — WORLD + MAP INTEGRATED**. `environment/forest/README.md`.
-- **STORY — ACTING BASELINE; ART OPEN**. `docs/world/story_cinematics_and_training.md`.
+- **STORY — RECOVERY/HANDOFF + FARM/GATE PASS; ART/FPS OPEN**. `docs/world/story_cinematics_and_training.md`.
 - **CAMERA — ROOM/CONTROLS PASS; PLAY OPEN**. `docs/world/camera_clearance.md`.
 - **STORAGE — UNIVERSAL NO-LFS GUARDS; HISTORY OPEN**. `docs/assets/repository_storage.md`.
 - **REPOSITORY INTEGRATION — FUNCTIONAL SOURCE/PACK PASS**. `docs/world/repository_integration_2026-10-09.md`.
 - **GAME ERRORS — ROUTES PASS**. `docs/world/game_error_cleanup_2026-10-07.md`.
 - **SKY — MAIN NEW/CONTINUE + WORLD PASS**. `docs/world/sky_birds.md`, `docs/world/night_sky.md`.
-- **ROAD / VILLAGE / MARKETS — NATIVE DETAIL PASS; PLAY/ART OPEN**, 10-10. `docs/world/route_market_realism.md`.
+- **ROAD / VILLAGE / MARKETS — NATIVE DETAIL + SAMPLED PLAY PASS; FULL PLAY/ART/FPS OPEN**, 10-10. `docs/world/route_market_realism.md`.
 - **TERRAIN / GRASS — INTEGRATED**. `docs/world/tall_grass.md`.
 - **BRITISH MILITARY SITES — ART_OPEN**. `docs/world/cantonment_service_realism.md`.
 - **CIVIL LINES — IN_PROGRESS**. `docs/world/civil_lines.md`.
-- **HOUSE ACCESS — BODY/LATCH/NEAR-FAR PASS; ART_OPEN**. `docs/world/staff_clothing_and_latch_motion.md`.
+- **HOUSE ACCESS — BODY/LATCH/NEAR-FAR PASS; ART_OPEN**. `docs/world/staff_clothing_and_latch_motion.md`. City/households: `docs/world/city_placement.md`, `docs/world/household_world_roles.md`; new lanes in review.
 - **BUILDING REALISM — ART_OPEN**. `docs/world/building_realism_2026-10-01.md`.
 - **ARJUN / DEV HOUSE — IN_PROGRESS**. `docs/world/arjun_dev_home.md`.
 - **ASSET-FIRST — IN_PROGRESS**. `docs/assets/craft_batch_10.md`.
 - **MOUNTED RIDER REALISM — IN_PROGRESS**. `docs/world/paid_coach_travel_2026-10-02.md`.
 - **STUDIO INTRO — REVISED / ART REVIEW OPEN**. `docs/world/studio_intro.md`.
 - **TITLE MENU — LOADING TRANSITION INTEGRATED; FULL-WORLD STALL OPEN**. `docs/world/title_menu_design.md`.
-- **BHAIRAVPUR — WOOD / FIRE BASELINE PASS; ART OPEN**. Six timber homes/four fences/eight hearths/two flues. Night gathering: four existing men, two lanterns; real-physics dusk/dawn, night-start and recovery PASS; full-world Metal arrival/return/contact PASS, clean exit. Art/FPS open. `docs/world/village_household_fire_details.md`, `docs/world/village_period_life.md`.
+- **BHAIRAVPUR — WOOD/FIRE/MOTION PASS; ART/FPS OPEN**. `docs/world/village_household_fire_details.md`, `docs/world/village_period_life.md`.
 - **HOOGHLY PORT REALISM — COMPLETE / ART OPEN**. `docs/world/hooghly_port.md`.
 - **THANA POLICE NPCS — REFERENCE DETAIL CANDIDATE**. `docs/characters/npcs/thana_staff.md`.
 - **DEV — CANDIDATE**. `docs/characters/npcs/arjun_brother.md`.
@@ -41,13 +41,14 @@
 - **POLICE — LOGIC PASS / ART OPEN**, 10-08. `docs/characters/arjun/police_custody_transfers.md`.
 - **ARJUN COMBAT — IN_PROGRESS**. `docs/characters/arjun/combat_rescue_2026-10-05.md`.
 - **WOMEN RIVER — PACE/SHORE PASS; CLOTH/WORLD OPEN**. `docs/characters/npcs/women_river_routine.md`.
+- **RESIDENT WORK — CONTINUE/PAID/HOSPITAL/COMMUTES PASS; ART/FPS OPEN**. `docs/world/resident_work_and_transport.md`.
 - **OPENING — CINEMATIC/GATE PASS; ART OPEN**, 10-09. Eight story/studio/title fades, moving cart, match/diya, automatic dawn→gate→controls. Main/world + Metal timeline/contact/audio PASS; acting/cloth/listening open. `docs/world/opening_sequence.md`
-- **RUNTIME / INTRO — CACHE/LOD/NPC PASS; FPS OPEN**. `docs/world/intro_performance_repair.md`.
+- **RUNTIME — COW/DRIVER CACHE PASS; ARCHITECTURE/FPS OPEN**. `docs/world/runtime_optimisation.md`; intro: `docs/world/intro_performance_repair.md`.
 - **MORNING TUTORIAL — REAL BOARDING PASS / PLAY REVIEW OPEN**, 10-10. `docs/world/morning_tutorial.md`.
 - **ESCAPE MAP — COMPLETE**. `docs/world/escape_map.md`.
 - **WORKSPACE / HOURS / CART PARKING — BEHAVIOUR PASS / PERFORMANCE OPEN**. `docs/world/workspace_optimisation.md`.
 - **BRIDGE — BOAT/TWO-CART PASS; WORLD OPEN**. `docs/world/two_lane_timber_bridge.md`.
-- **DAY / STAMINA / FORAGE — MOTION + DAY PASS**. `docs/world/day_survival_forage.md`.
+- **DAY / STAMINA / FORAGE + MISSION CLOCK — PASS**. `docs/world/day_survival_forage.md`.
 - **ORDERED COMPLETION — IN_PROGRESS**. `docs/characters/npcs/ordered_completion_2026-10-06.md`.
 - **MOBILE TOUCH — BASIC LAYER INTEGRATED**, 10-08. `docs/world/mobile_touch_controls.md`.
 - **HUD — COMPLETE; PAUSE ISOLATION FIXED**, 10-09. `docs/world/hud_health_spacing.md`.
@@ -55,12 +56,5 @@
 - **INDIAN NPC CLOTHING REPAIR — IN_PROGRESS**. `docs/characters/npcs/indian_clothing_repair_2026-10-07.md`.
 - **AMBIENT / SETTINGS — LISTENING OPEN**, 10-09. `docs/world/ambient_audio_settings.md`.
 - **GATE / WINDOW — MAIN INTEGRATED / ART OPEN**. `docs/characters/arjun/window_climb.md`.
-- **CITY ROUTE POPULATION — 72 WALKERS / 8 CARTS MOVEMENT PASS; ART/FPS OPEN**. `docs/world/city_route_population.md`.
-- Static-mesh fix complete; all-code audit **stopped by user**, final city/intro/pack gates unfinished. `docs/agent/history/2026-10-09-error-audit-before-morning-tutorial.md`.
-`docs/world/household_world_roles.md`. Next: final cloth/finger/facial and world FPS review; police/tutorial routes PASS. Shared history: `docs/agent/history/2026-10-10-opening-integration-before-final-review.md`.
-
-## World clock / Chacha mission slowdown — 2026-10-10 19:13:50 IST (chat /root)
-- Status: COMPLETE. Normal day remains 600 real seconds; Chacha's started eight-lesson weapon training uses one-third clock speed (1800-second day), through demonstrations/practice until completion.
-- Changed: `world/suryagarh/systems/game_time_system.gd` mission-owner API; minimal additions to concurrently dirty `story/dev_story.gd` for lesson entry, refresh/restore, completion and teardown; `docs/world/day_survival_forage.md`; reusable `tools/world/validate_mission_clock.gd`. Other concurrent edits preserved.
-- Verification: `/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script tools/world/validate_mission_clock.gd` PASS, exit 0, Godot 4.7.2. Exact normal/slow day, rollover, idempotent/overlapping owners, pause, exact skips, reset, actual story sync for unstarted/started/restored/completed training and teardown. Initial test-only player-type mismatch corrected. No generated test artifacts retained.
-- Limits: focused clock/story lifecycle checks; no full-world playthrough or rendered approval. No blocker. Next: user play-check Chacha teaching, save/continue mid-training and completion; nominate other missions if desired.
+- Static-mesh fix complete; all-code audit **stopped by user**, final city/intro/pack gates unfinished. `docs/agent/history/2026-10-09-error-audit-before-morning-tutorial.md`. Next: city native routes/art/FPS. Shared history: `docs/agent/history/2026-10-10-opening-integration-before-final-review.md`.
+- **PUBLIC PASSENGER — CONTACT/TIERS PASS; METAL/FPS OPEN**. `docs/world/opening_passenger_cart.md`.

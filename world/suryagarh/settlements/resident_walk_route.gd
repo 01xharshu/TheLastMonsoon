@@ -54,6 +54,15 @@ static func find(actor:Node3D,goal:Vector3,extra_excluded:Array[RID]=[])->Array[
 			if not space.intersect_shape(query,1).is_empty():continue
 			query.transform.origin=at+relative+Vector3.UP*.15;query.motion=to-at
 			if space.cast_motion(query)[0]<.99:continue
+			# A sweep can ignore a shape already touching the starting capsule.
+			# Check intermediate occupancy too, so a grid edge cannot jump a post.
+			var clear:=true
+			var slices:=ceili(at.distance_to(to)/.20)
+			query.motion=Vector3.ZERO
+			for slice_index in range(1,slices):
+				query.transform.origin=at.lerp(to,float(slice_index)/slices)+relative+Vector3.UP*.15
+				if not space.intersect_shape(query,1).is_empty():clear=false;break
+			if not clear:continue
 			costs[next]=cost;parents[next]=cell;points[next]=to
 			if not pending.has(next):pending.append(next)
 	return []

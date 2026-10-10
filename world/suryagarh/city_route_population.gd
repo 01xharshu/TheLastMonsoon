@@ -19,6 +19,7 @@ var eager_population := false:
   eager_population=value
   if value:ready_population=false
 var logical_age := 0.0
+var logical_cursor := 0
 var population_clock: Node
 var restored_states: Dictionary = {}
 const PREPARE_RADIUS_SQUARED := 160000.0
@@ -26,6 +27,9 @@ var ready_population := false
 var prepared := false
 var encounters: Node
 var player: Node3D
+var remote_shape:CapsuleShape3D
+var remote_terrain:Dictionary={}
+var remote_blocked:=0
 
 func _ready() -> void:
  name = "CityRoutePopulation"
@@ -64,8 +68,14 @@ func prepare() -> void:
 func _process(delta: float) -> void:
  if not prepared:return
  logical_age+=delta
- if logical_age>=.5:
-  advance_remote(logical_age);logical_age=0
+ # Round-robin the logical crowd instead of issuing hundreds of sweeps in one frame.
+ for attempt in mini(8,pending.size()):
+  logical_cursor=posmod(logical_cursor,pending.size())
+  var logical_record:Dictionary=pending[logical_cursor];logical_cursor+=1
+  if logical_record.kind!="person":continue
+  var elapsed:float=logical_age-float(logical_record.get("last_tick",0.0))
+  if elapsed<.5:continue
+  advance_record(logical_record,elapsed);logical_record["last_tick"]=logical_age
  if pending.is_empty():
   ready_population = true
   set_process(false)
@@ -119,6 +129,10 @@ func spawn_record(record: Dictionary) -> void:
  var phase: Dictionary = record.get("phase",phase_on_route(points,(float(index%record.count)+.25)/float(record.count)))
  var at:Vector2=phase.point
  if record.kind=="person":
+  var supported:=clear_spawn(at)
+  if not supported.is_finite():
+   pending.append(record);spawn_wait=.15;return
+  at=Vector2(supported.x,supported.z)
   var actor:=Actor.new()
   actor.name="Street_%s_%02d"%[record.route,index]
   actor.movement_enabled=false;actor.patrol_distance=0;actor.cycle_offset=float(index)*.37
@@ -132,7 +146,7 @@ func spawn_record(record: Dictionary) -> void:
   var stature: float=[.97,1.02,1.03,.98,1.0,1.05,1.04,1.0][identity]
   actor.scale=Vector3.ONE*stature
   actor.add_child(preload("res://characters/human_scene.gd").instantiate(source))
-  actor.position=Vector3(at.x,layout.height(at.x,at.y),at.y)
+  actor.position=supported
   add_child(actor);actor.add_to_group("city_route_pedestrians")
   actor.set_meta("population_route",record.route);actor.set_meta("population_index",index);actor.set_meta("human_source",source)
   actor.set_meta("street_identity",identity);actor.set_meta("stature",stature)
@@ -146,6 +160,7 @@ func spawn_record(record: Dictionary) -> void:
   if record.has("saved"):
    var saved:Dictionary=record.saved
    journey.distance_walked=float(saved.get("distance",0));journey.visits=int(saved.get("visits",0))
+   if is_instance_valid(journey.crowd):journey.social_cooldown=journey.crowd.age+float(saved.get("social_cooldown",5))
    actor.set_meta("dead",saved.get("dead",false));actor.set_meta("knocked_out",saved.get("knocked_out",false))
    var vitality:Node=actor.get_node_or_null("Vitality")
    if vitality!=null and saved.has("health"):vitality.health=float(saved.health)
@@ -173,7 +188,7 @@ func spawn_record(record: Dictionary) -> void:
   var unit:Vector2=(b-a).normalized();a+=unit*9;b-=unit*9
   at=a.lerp(b,.20+float(index/ CART_ROUTES.size())*.42)
   var cart:Node3D=preload("res://vehicles/bullock_cart.gd").new() if index%2==0 else preload("res://vehicles/family_carriage_candidate.gd").new()
-  cart.name="CityCart_%s_%02d"%[record.route,index];cart.position=Vector3(at.x,layout.height(at.x,at.y),at.y);cart.rotation.y=atan2(-unit.x,-unit.y)
+  cart.name=("CityCart_%s"%record.route) if index<CART_ROUTES.size() else ("CityCart_%s_%02d"%[record.route,index]);cart.position=Vector3(at.x,layout.height(at.x,at.y),at.y);cart.rotation.y=atan2(-unit.x,-unit.y)
   add_child(cart);cart.add_to_group("live_travel_carts");cart.add_to_group("city_route_carts");cart.set_meta("booking_status","public");cart.set_meta("population_route",record.route)
   var journey:=preload("res://world/suryagarh/city_cart_journey.gd").new();journey.name="CityRoadJourney";journey.configure(cart);journey.viewer=player;journey.route=[a,b];cart.add_child(journey)
   carts.append(cart)
@@ -200,26 +215,31 @@ func _passenger(cart:Node3D,index:int)->void:
 func advance_remote(delta: float) -> void:
  # Logical walkers preserve identity, route, endpoint pauses and night return.
  # No physics/rig is allocated until 400 m, beyond the 190 m visual range.
- for record in pending:
-  if record.kind!="person":continue
-  if record.has("saved") and (record.saved.get("dead",false) or record.saved.get("knocked_out",false)):continue
-  var points:Array[Vector2]=record.points
-  var phase:Dictionary=record.phase
-  var night:bool=is_instance_valid(population_clock) and (population_clock.current_hour<6 or population_clock.current_hour>=18)
-  if night and int(record.direction)>0:
-   record.direction=-1;phase.goal=maxi(0,int(phase.goal)-1);record.wait=0.0
-  if night and int(phase.goal)==0 and phase.point.distance_squared_to(points[0])<.001:continue
-  if float(record.wait)>0:
-   record.wait=maxf(0,float(record.wait)-delta);continue
-  var target:Vector2=points[int(phase.goal)]
-  var offset:Vector2=target-phase.point
-  var pace:float=.88+float(int(record.index)%5)*.075
-  phase.point=phase.point+offset.normalized()*minf(offset.length(),pace*delta)
-  if phase.point.distance_squared_to(target)<.001:
-   if int(phase.goal)==points.size()-1 or int(phase.goal)==0:
-    if night and int(phase.goal)==0:continue
-    record.direction=-int(record.direction);record.wait=6.0
-   phase.goal=int(phase.goal)+int(record.direction)
+ for record in pending:advance_record(record,delta)
+
+func advance_record(record:Dictionary,delta:float) -> void:
+ if record.kind!="person":return
+ if record.has("saved") and (record.saved.get("dead",false) or record.saved.get("knocked_out",false)):return
+ var points:Array[Vector2]=record.points
+ var phase:Dictionary=record.phase
+ var night:bool=is_instance_valid(population_clock) and (population_clock.current_hour<6 or population_clock.current_hour>=18)
+ if night and int(record.direction)>0:
+  record.direction=-1;phase.goal=maxi(0,int(phase.goal)-1);record.wait=0.0
+ if night and int(phase.goal)==0 and phase.point.distance_squared_to(points[0])<.001:return
+ if float(record.wait)>0:
+  record.wait=maxf(0,float(record.wait)-delta);return
+ var target:Vector2=points[int(phase.goal)]
+ var offset:Vector2=target-phase.point
+ var pace:float=.88+float(int(record.index)%5)*.075
+ var destination:Vector2=phase.point+offset.normalized()*minf(offset.length(),pace*delta)
+ if not logical_clear(phase.point,destination,record):
+  remote_blocked+=1;record.wait=.5;return
+ phase.point=destination
+ if phase.point.distance_squared_to(target)<.001:
+  if int(phase.goal)==points.size()-1 or int(phase.goal)==0:
+   if night and int(phase.goal)==0:return
+   record.direction=-int(record.direction);record.wait=6.0
+  phase.goal=int(phase.goal)+int(record.direction)
 
 func record_key(record: Dictionary) -> String:
  return "%s:%d"%[record.route,int(record.index)]
@@ -236,7 +256,7 @@ func export_route_state() -> Dictionary:
   if not is_instance_valid(actor):continue
   var journey:Node=actor.get_node("CityStreetJourney")
   var at:=actor.global_position
-  var state:Dictionary={"point":[at.x,at.z],"goal":journey.goal,"direction":journey.direction,"wait":journey.wait,"distance":journey.distance_walked,"visits":journey.visits,"dead":actor.get_meta("dead",false),"knocked_out":actor.get_meta("knocked_out",false)}
+  var state:Dictionary={"point":[at.x,at.z],"goal":journey.goal,"direction":journey.direction,"wait":journey.wait,"distance":journey.distance_walked,"visits":journey.visits,"social_cooldown":maxf(0,journey.social_cooldown-journey.crowd.age) if is_instance_valid(journey.crowd) else 0.0,"dead":actor.get_meta("dead",false),"knocked_out":actor.get_meta("knocked_out",false)}
   var vitality:Node=actor.get_node_or_null("Vitality")
   if vitality!=null:state["health"]=vitality.health
   result["%s:%d"%[actor.get_meta("population_route"),actor.get_meta("population_index")]]=state
@@ -260,12 +280,16 @@ func restore_route_state(states: Dictionary) -> void:
   var saved:Dictionary=states.get(key,{})
   if saved.is_empty() or not saved.get("point") is Array or saved.point.size()!=2:continue
   var at:=Vector2(float(saved.point[0]),float(saved.point[1]))
-  actor.global_position=Vector3(at.x,layout.height(at.x,at.y),at.y)
+  var restored_position:=clear_spawn(at,[actor.body_collider.get_rid()])
+  if restored_position.is_finite():actor.global_position=restored_position
   var journey:Node=actor.get_node("CityStreetJourney")
   journey.goal=clampi(int(saved.get("goal",1)),0,journey.route.size()-1)
   journey.direction=1 if int(saved.get("direction",1))>0 else -1
   journey.wait=maxf(0,float(saved.get("wait",0)))
   journey.distance_walked=float(saved.get("distance",0));journey.visits=int(saved.get("visits",0))
+  if is_instance_valid(journey.crowd):
+   journey.crowd.end_conversation(journey)
+   journey.social_cooldown=journey.crowd.age+float(saved.get("social_cooldown",5))
   actor.set_meta("dead",saved.get("dead",false));actor.set_meta("knocked_out",saved.get("knocked_out",false))
   var vitality:Node=actor.get_node_or_null("Vitality")
   if vitality!=null and saved.has("health"):vitality.health=float(saved.health)
@@ -280,3 +304,48 @@ func restore_health(actor: Node3D, saved: Dictionary) -> void:
  if saved.get("dead",false) or saved.get("knocked_out",false):
   actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
   actor.combat_react("down")
+
+func logical_clear(origin:Vector2,destination:Vector2,record:Dictionary={}) -> bool:
+ # Even an unmaterialised identity cannot advance through solid walls/traffic.
+ # Small pure-data fixtures intentionally have no physics space.
+ if not is_inside_tree():return true
+ var ground:=preload("res://world/suryagarh/tree_trunk_collision.gd")
+ if remote_shape==null:
+  remote_shape=CapsuleShape3D.new();remote_shape.radius=.33;remote_shape.height=1.6
+  remote_terrain=ground.terrain_cache(self)
+ var height:float=float(record.support_height) if record.has("support_height") else layout.height(origin.x,origin.y)
+ var ray:=PhysicsRayQueryParameters3D.create(Vector3(origin.x,height+8,origin.y),Vector3(origin.x,height-8,origin.y),ground.TERRAIN_SUPPORT_LAYER)
+ var space:=get_world_3d().direct_space_state
+ var start:Dictionary={}
+ if record.get("support_point",Vector2.INF)==origin:
+  start={"position":Vector3(origin.x,height,origin.y)}
+ else:start=space.intersect_ray(ray)
+ ray.from=Vector3(destination.x,height+8,destination.y);ray.to=Vector3(destination.x,height-8,destination.y)
+ var end:=space.intersect_ray(ray)
+ if start.is_empty() or end.is_empty() or end.normal.y<.6 or absf(start.position.y-end.position.y)>.35:return false
+ var query:=PhysicsShapeQueryParameters3D.new();query.shape=remote_shape;query.collision_mask=1;query.exclude=remote_terrain.rids;query.margin=.008
+ query.transform=Transform3D(Basis.IDENTITY,start.position+Vector3.UP*.825);query.motion=end.position-start.position
+ if space.cast_motion(query)[0]<.99:return false
+ query.transform.origin=end.position+Vector3.UP*.825;query.motion=Vector3.ZERO
+ if not space.intersect_shape(query,1).is_empty():return false
+ record["support_point"]=destination;record["support_height"]=end.position.y
+ return true
+
+func clear_spawn(at:Vector2,extra_excluded:Array[RID]=[]) -> Vector3:
+ var ground:=preload("res://world/suryagarh/tree_trunk_collision.gd")
+ if remote_shape==null:
+  remote_shape=CapsuleShape3D.new();remote_shape.radius=.34;remote_shape.height=1.7
+  remote_terrain=ground.terrain_cache(self)
+ var space:=get_world_3d().direct_space_state
+ var query:=PhysicsShapeQueryParameters3D.new();query.shape=remote_shape;query.collision_mask=1;query.exclude=remote_terrain.rids+extra_excluded;query.margin=.008
+ # All candidates remain in the local road region; real capsule clearance wins.
+ for offset in [Vector2.ZERO,Vector2(1.5,0),Vector2(-1.5,0),Vector2(0,1.5),Vector2(0,-1.5),Vector2(3,0),Vector2(-3,0),Vector2(0,3),Vector2(0,-3),Vector2(0,5),Vector2(0,-5),Vector2(5,0),Vector2(-5,0),Vector2(0,8),Vector2(0,-8),Vector2(8,0),Vector2(-8,0),Vector2(0,12),Vector2(0,-12)]:
+  var sample:Vector2=at+offset
+  if layout.road_distance(sample.x,sample.y)>4.5:continue
+  var height:float=layout.height(sample.x,sample.y)
+  var ray:=PhysicsRayQueryParameters3D.create(Vector3(sample.x,height+8,sample.y),Vector3(sample.x,height-8,sample.y),ground.TERRAIN_SUPPORT_LAYER)
+  var hit:=space.intersect_ray(ray)
+  if hit.is_empty() or hit.normal.y<.6:continue
+  query.transform=Transform3D(Basis.IDENTITY,hit.position+Vector3.UP*.875)
+  if space.intersect_shape(query,1).is_empty():return hit.position
+ return Vector3.INF

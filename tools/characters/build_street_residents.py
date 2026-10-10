@@ -70,7 +70,8 @@ retain_complete_body(body)
 foundation_material=bpy.data.materials.new('Street opaque cotton foundation');foundation_material.diffuse_color=(.16,.13,.095,1);foundation_material.use_nodes=True
 foundation_material.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(.16,.13,.095,1)
 foundation_material.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.95
-selected=[f for f in body.data.polygons if all(.70<(body.matrix_world@body.data.vertices[i].co).z<1.025 for i in f.vertices)]
+arm_groups={group.index for group in body.vertex_groups if group.name.startswith(('hand_', 'thumb_', 'index_', 'middle_', 'ring_', 'pinky_', 'lowerarm_', 'upperarm_', 'clavicle_'))}
+selected=[f for f in body.data.polygons if all(.70<(body.matrix_world@body.data.vertices[i].co).z<1.025 and sum(assignment.weight for assignment in body.data.vertices[i].groups if assignment.group in arm_groups)<.15 for i in f.vertices)]
 indices=sorted({i for f in selected for i in f.vertices});mapping={old:new for new,old in enumerate(indices)}
 data=bpy.data.meshes.new('Separate opaque fitted foundation')
 data.from_pydata([body.matrix_world@(body.data.vertices[i].co+body.data.vertices[i].normal*.0045) for i in indices],[],[tuple(mapping[i] for i in f.vertices) for f in selected]);data.materials.append(foundation_material)

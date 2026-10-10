@@ -172,7 +172,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 	var actor: CharacterBody3D = world.get_node("Player")
 	if not actor.is_inside_tree(): return false
 	var story: Node=world.get_node_or_null("DevStory")
-	if story!=null and (story.active or actor.get_meta("paired_combat",false)):
+	if actor.get_meta("story_cinematic",false) or (story!=null and (story.active or actor.get_meta("paired_combat",false))):
 		last_error="Cannot save during a cinematic or paired practice";return false
 	var inquiry: Node=world.get_node_or_null("DevInquiry")
 	if inquiry!=null and (not inquiry.dialogue.is_empty() or inquiry.stage=="summoning"):
@@ -195,7 +195,9 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"items": inventory.items.duplicate(true),
 		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
 		"dev_story":world.get_node("DevStory").export_state() if world.has_node("DevStory") else {},
+		"rebellion_story":world.get_node("RebellionStory").export_state() if world.has_node("RebellionStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
+		"population_expansion":world.get_node("PopulationExpansion").export_route_state() if world.has_node("PopulationExpansion") else {},
 		"city_route_population":world.get_node("CityRoutePopulation").export_route_state() if world.has_node("CityRoutePopulation") else {},
 		"household_roles":world.get_node("WealthyHouseholds").export_role_state() if world.has_node("WealthyHouseholds") else {},
 		"health": actor.health,
@@ -308,6 +310,8 @@ func apply_pending(world: Node3D) -> void:
 	actor.get_node("UI/HUDRoot/MorningTutorial").restore_step(int(data.get("morning_tutorial",11)))
 	if world.has_node("DevStory"):
 		world.get_node("DevStory").restore_state(data.get("dev_story",{}))
+	if world.has_node("RebellionStory"):
+		world.get_node("RebellionStory").restore_state(data.get("rebellion_story",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
 		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
 	if world.has_node("CombatEncounters") and data.get("crime",{}) is Dictionary:
@@ -351,6 +355,8 @@ func apply_pending(world: Node3D) -> void:
 	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
 	if world.has_node("CityRoutePopulation") and data.get("city_route_population",{}) is Dictionary:
 		world.get_node("CityRoutePopulation").restore_route_state(data.get("city_route_population",{}))
+	if world.has_node("PopulationExpansion") and data.get("population_expansion",{}) is Dictionary:
+		world.get_node("PopulationExpansion").restore_route_state(data.get("population_expansion",{}))
 	restore_household_pickups(world,data)
 	if data.get("remaining_medical_ids") is Array:
 		for pickup in world.get_tree().get_nodes_in_group("medical_supplies"):

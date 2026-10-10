@@ -462,7 +462,7 @@ func update_acting(delta: float,t: float) -> void:
   var rig: Skeleton3D=visual.skeleton
   var head: Transform3D=rig.get_bone_global_pose(visual.bones["head"])
   var mouth: Vector3=rig.to_global(head.origin)+player.get_node("VisualRoot").global_basis.z*.105-Vector3.UP*.025
-  var resting: Vector3=player.global_position+player.get_node("VisualRoot").global_basis.z*.30+Vector3.UP*.16
+  var resting: Vector3=rig.to_global(head.origin)+player.get_node("VisualRoot").global_basis.z*.25-Vector3.UP*.38
   var target: Vector3=tea_start.lerp(resting,smoothstep(0,1,t)) if cue=="tea_offer" else resting.lerp(mouth-Vector3.UP*.055,smoothstep(.1,.4,t)*(1.0-smoothstep(.75,1,t)))
   var lift: float=smoothstep(.1,.4,t)*(1.0-smoothstep(.75,1,t)) if cue=="drink" else 0.0
   cup.global_transform=Transform3D(player.get_node("VisualRoot").global_basis*Basis(Vector3.RIGHT,-.18*lift),target)

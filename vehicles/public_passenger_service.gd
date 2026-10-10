@@ -10,6 +10,9 @@ var speech_age := 0.0
 var speech_started_ms := 0
 var motion_age := 0.0
 var last_inside := false
+var clock:Node
+var viewer:Node3D
+var passengers:Array[Node]=[]
 
 static func install(vehicle:Node3D) -> Node3D:
  var existing:=vehicle.get_node_or_null("PublicPassengerService")
@@ -20,6 +23,7 @@ static func install(vehicle:Node3D) -> Node3D:
 
 func _ready() -> void:
  process_priority=130
+ _cache_world()
  cart.set_meta("public_passenger_service",true)
  cart.set_meta("booking_status","public")
  for part in cart.visual_root.get_children():
@@ -51,6 +55,13 @@ func _ready() -> void:
  caption.add_theme_constant_override("shadow_offset_x",2);caption.add_theme_constant_override("shadow_offset_y",2)
  caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;caption.hide()
 
+func _cache_world() -> void:
+ var world:Node=cart
+ while world.get_parent()!=get_tree().root:world=world.get_parent()
+ clock=world.get_node_or_null("GameTimeSystem")
+ viewer=world.get_node_or_null("Player") as Node3D
+ for journey in passengers:journey.viewer=viewer
+
 func _box(label:String,at:Vector3,size:Vector3,material:Material) -> void:
  var node:=MeshInstance3D.new();node.name=label;var mesh:=BoxMesh.new();mesh.size=size;node.mesh=mesh;node.material_override=material;node.position=at;add_child(node)
 
@@ -60,7 +71,8 @@ func _passenger(index:int,socket:Node3D) -> void:
  var source:="res://characters/npcs/street_residents/"+("female_01.glb" if index==0 else "male_02.glb")
  actor.set_meta("human_source",source);actor.add_child(preload("res://characters/human_scene.gd").instantiate(source));cart.visual_root.add_child(actor)
  var occupied:Array=cart.get_meta("npc_occupied_seats",[]);occupied.append(str(socket.name));cart.set_meta("npc_occupied_seats",occupied)
- var journey:=preload("res://world/suryagarh/city_cart_passenger.gd").new();journey.cart=cart;journey.actor=actor;journey.socket=socket;actor.add_child(journey)
+ var journey:=preload("res://world/suryagarh/city_cart_passenger.gd").new();journey.cart=cart;journey.actor=actor;journey.socket=socket;journey.viewer=viewer;actor.add_child(journey)
+ passengers.append(journey)
 
 func _build_lantern() -> void:
  var iron:=StandardMaterial3D.new();iron.albedo_color=Color(.12,.10,.08);iron.metallic=.6;iron.roughness=.65
@@ -92,9 +104,9 @@ func _process(delta:float) -> void:
   speech_remaining=maxf(0,4.2-speech_age)
  var camera:=get_viewport().get_camera_3d()
  caption.visible=speech_remaining>0 and not cinematic and camera!=null and camera.global_position.distance_squared_to(cart.global_position)<625
- var clock:=get_tree().root.find_child("GameTimeSystem",true,false)
- var night:bool=cinematic or (clock!=null and (clock.current_hour<6 or clock.current_hour>=18))
- lantern.light.visible=night;lantern.get_node("OilFlame").visible=night
+ var night:bool=cinematic or (is_instance_valid(clock) and (clock.current_hour<6 or clock.current_hour>=18))
+ var nearby:bool=cinematic or (camera!=null and camera.global_position.distance_squared_to(cart.global_position)<6400)
+ lantern.light.visible=night and nearby;lantern.get_node("OilFlame").visible=night
  lantern.light.light_energy=.65+.025*sin(motion_age*6.1)
  lantern_pivot.rotation.z=sin(motion_age*2.4)*.035*minf(absf(cart.boarding.speed),1.0)
  var driver:Node3D=cart.driver

@@ -4,6 +4,10 @@ const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Bridge = preload("res://world/suryagarh/timber_bridge.gd")
 const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const INK := Color(0.20,0.17,0.12)
+const Density = preload("res://world/suryagarh/settlements/countryside_density.gd")
+var density_routes := Density.lanes()
+var density_fields := Density.fields()
+var density_homes := Density.homes()
 const MAP_TEXTURE := "res://world/suryagarh/generated/field_map.res"
 var icons: Dictionary = {}
 var map_canvas: Control
@@ -293,6 +297,19 @@ func draw_map_contents() -> void:
 	for x in range(-280,90,4): lane.append(Vector2(x,160+12*sin(x*0.017)))
 	draw_route(lane,Color(0.48,0.31,0.17),maxf(2.0,zoom))
 	for route in Layout.ROUTES.values(): draw_route(route,Color(0.48,0.31,0.17),maxf(2.0,zoom))
+	for center: Vector2 in density_fields:
+		var start := project(center-Density.FIELD_SIZE*.5)
+		var finish := project(center+Density.FIELD_SIZE*.5)
+		var footprint := Rect2(start,finish-start).intersection(map_rect)
+		if footprint.has_area():map_canvas.draw_rect(footprint,Color(.47,.46,.27,.4))
+	for site: Dictionary in density_homes:
+		var size: Vector2=site.size
+		if absf(sin(site.yaw))>.5:size=Vector2(size.y,size.x)
+		var start := project(site.p-size*.5)
+		var finish := project(site.p+size*.5)
+		var footprint := Rect2(start,finish-start).intersection(map_rect)
+		if footprint.has_area():map_canvas.draw_rect(footprint,Color(.37,.25,.16,.8))
+	for route in density_routes:draw_route(route,Color(.48,.31,.17),maxf(1.0,zoom))
 	var drawn: Array[Vector2] = []
 	var clusters: Dictionary = {}
 	for site in sites:

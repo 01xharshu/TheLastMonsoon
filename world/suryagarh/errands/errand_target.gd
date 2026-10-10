@@ -13,7 +13,7 @@ func _ready() -> void:
 	collider.shape = shape
 	collider.position.y = -.1 if person != null else 0.0
 	add_child(collider)
-	collision_layer = 1
+	collision_layer = 1 << 29 # Conversation ray; the person's separate body remains solid.
 	collision_mask = 0
 
 func interaction_available() -> bool:

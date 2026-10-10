@@ -145,7 +145,7 @@ func _depart(member: Dictionary,index: int,returning: bool) -> void:
 		points.append(destination)
 	if member.journey!=null:member.journey.queue_free()
 	var journey:=FireJourney.new()
-	add_child(journey);journey.configure(actor,points,0.0 if returning else index*2.4)
+	journey.configure(actor,points,0.0 if returning else index*2.4);add_child(journey)
 	if not returning and Vector2(actor.global_position.x,actor.global_position.z).distance_to(activity.workplace)>1.0:
 		# A saved resident already along the night route resumes from that
 		# segment; retain the full route for a safe dawn return.

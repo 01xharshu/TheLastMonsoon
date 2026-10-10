@@ -293,7 +293,7 @@ func _process(delta: float) -> void:
 		if _remote_pose_elapsed < cadence: return
 		delta = _remote_pose_elapsed
 		_remote_pose_elapsed = 0.0
-		_set_animation(&"walk" if travel_speed > .02 else &"idle",delta)
+		_set_animation(&"turn" if get_meta("patrol_turning",false) else (&"walk" if travel_speed > .02 else &"idle"),delta)
 		return
 	if not movement_enabled:
 		contact_blocked = false

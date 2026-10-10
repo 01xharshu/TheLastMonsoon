@@ -2,10 +2,13 @@ extends Node3D
 ## One morning departure per day; physical route, shared river visit, home delivery.
 const Woman = preload("res://characters/npcs/indian/river_woman_study.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
+const Budget = preload("res://systems/simulation_budget.gd")
 var layout := Layout.new()
 var women: Array[Node3D] = []
 var journeys: Array[Dictionary] = []
 var clock: Node
+var viewer:Node3D
+var physics_age:=0.0
 var completed_day := 0
 var departure_day := 0
 var mode := "home"
@@ -20,11 +23,13 @@ func _ready() -> void:
 	name = "VillageRiverRoutine"
 	add_to_group("village_river_routine")
 	clock = get_tree().root.find_child("GameTimeSystem",true,false)
+	viewer=get_parent().get_node_or_null("Player")
 	_build_ghat()
 	for index in 3:
 		var woman := Woman.new()
 		woman.name = "BhairavpurRiverWoman%d"%index
 		woman.member_index = index
+		woman.scale=Vector3.ONE*[.97,1.03,1.0][index]
 		woman.water_level = Layout.WATER_LEVEL
 		var start := Vector2(-277.0-index*1.3,208.5)
 		woman.home = Vector3(start.x,layout.height(start.x,start.y),start.y)
@@ -58,7 +63,14 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if clock != null and clock.clock_paused: return
-	tick(delta)
+	physics_age+=delta
+	var interval:=.5
+	for woman in women:interval=minf(interval,Budget.interval(woman,viewer))
+	if physics_age<interval:return
+	# The whole elapsed motion is swept against real obstacles. Approaching any
+	# companion restores full-rate evaluation immediately; collision stays live.
+	var elapsed:=physics_age;physics_age=0.0
+	tick(elapsed)
 
 func tick(delta: float) -> void:
 	if mode == "home":

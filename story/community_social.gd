@@ -1,5 +1,8 @@
 extends Node
-## Different discussion phases; distant conversations stop updating hands.
+## Discussion poses retain their state and accumulate time at distant cadence.
+const Budget = preload("res://systems/simulation_budget.gd")
+var elapsed := 0.0
+var initialized := false
 var person: Node3D
 var offset:=0.0
 var age:=0.0
@@ -8,9 +11,13 @@ var seated:=false
 var ground_y:=0.0
 func _process(delta: float) -> void:
  if person==null or person.get_meta("dead",false) or person.get_meta("knocked_out",false):return
- if viewer==null:viewer=get_tree().root.find_child("Player",true,false)
- if viewer==null or viewer.global_position.distance_squared_to(person.global_position)>900:return
- age+=delta
+ if not is_instance_valid(viewer) or (viewer is Camera3D and not viewer.current):viewer=get_viewport().get_camera_3d()
+ elapsed+=delta
+ var cadence: float=Budget.interval(person,viewer)
+ if initialized and elapsed<cadence:return
+ age+=elapsed
+ elapsed=0.0
+ initialized=true
  if seated:
   person.global_position.y=ground_y-.48
   for side in ["l","r"]:

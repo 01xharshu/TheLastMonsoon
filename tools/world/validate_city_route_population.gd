@@ -21,10 +21,10 @@ func run() -> void:
  var player:Node3D=world.get_node("Player")
  player.set_physics_process(false)
  var start:=Time.get_ticks_msec()
- while not population.ready_population and Time.get_ticks_msec()-start<90000:
+ while not population.ready_population and Time.get_ticks_msec()-start<180000:
   await process_frame
  if not population.ready_population:
-  print("CITY_POPULATION_RESULT ",JSON.stringify({"passed":false,"pending":population.pending.size(),"errors":["population did not finish spawning within 90 seconds"]}))
+  print("CITY_POPULATION_RESULT ",JSON.stringify({"passed":false,"pending":population.pending.size(),"errors":["population did not finish spawning within 180 seconds"]}))
   root.get_node("SaveManager").quit_game(1)
   return
  paused=false
@@ -34,15 +34,17 @@ func run() -> void:
   origins[person]={"position":person.global_position,"walked":person.get_node("CityStreetJourney").distance_walked}
   var label:String=person.get_meta("population_route")
   route_counts[label]=int(route_counts.get(label,0))+1
- if population.pedestrians.size()!=72:errors.append("expected 72 extra walkers")
- if population.patrols.size()!=10:errors.append("expected 10 extra police patrols")
- if population.carts.size()!=8:errors.append("expected 8 extra carts")
+ var expected_walkers:=0
+ for count in population.ROUTE_COUNTS.values():expected_walkers+=int(count)
+ if population.pedestrians.size()!=expected_walkers:errors.append("missing authored walkers")
+ if population.patrols.size()!=population.POLICE_ROUTES.size()*population.POPULATION_MULTIPLIER:errors.append("incorrect doubled police count")
+ if population.carts.size()!=population.CART_ROUTES.size()*population.POPULATION_MULTIPLIER:errors.append("incorrect doubled cart count")
  for label:String in population.ROUTE_COUNTS:
-  if int(route_counts.get(label,0))!=population.ROUTE_COUNTS[label]:errors.append(label+": missing walkers")
+  if int(route_counts.get(label,0))!=population.ROUTE_COUNTS[label]*population.POPULATION_MULTIPLIER:errors.append(label+": missing walkers")
  var cart_origins:Dictionary={};var police_origins:Dictionary={}
  for cart:Node3D in population.carts:cart_origins[cart]=cart.global_position
  for officer:Node3D in population.patrols:police_origins[officer]=officer.global_position
- await create_timer(16).timeout
+ await create_timer(30).timeout
  var moved:=0;var moving_routes:Dictionary={};var blocked:Dictionary={}
  for person:Node3D in population.pedestrians:
   # A completed return can finish near its origin; count actual swept travel.
@@ -65,9 +67,9 @@ func run() -> void:
  var moved_police:=0
  for officer:Node3D in population.patrols:
   if officer.global_position.distance_to(police_origins[officer])>1:moved_police+=1
- if moved!=72:errors.append("not all 72 walkers made progress")
- if moved_carts!=8:errors.append("not all eight carts made progress")
- if moved_police<8:errors.append("fewer than eight new police patrols made progress")
+ if moved!=expected_walkers:errors.append("not all authored walkers made progress")
+ if moved_carts!=population.carts.size():errors.append("not all doubled carts made progress")
+ if moved_police<int(population.patrols.size()*.8):errors.append("fewer than 80 percent of doubled patrols made progress")
  print("CITY_POPULATION_RESULT ",JSON.stringify({"passed":errors.is_empty(),"people":population.pedestrians.size(),"police":population.patrols.size(),"carts":population.carts.size(),"moving_people":moved,"moving_police":moved_police,"moving_carts":moved_carts,"routes":moving_routes,"blocked_people":blocked,"stopped_carts":stopped_carts,"errors":errors}))
  for argument in OS.get_cmdline_user_args():
   if argument.begins_with("--output=") and DisplayServer.get_name()!="headless":

@@ -1,10 +1,13 @@
 extends Node
 ## A complete MPFB resident rides an occupied socket on existing live traffic.
+const Budget=preload("res://systems/simulation_budget.gd")
 var cart:Node3D
 var actor:Node3D
 var socket:Node3D
 var age:=0.0
 var viewer:Node3D
+var pose_updates:=0
+var simulation_interval:=0.0
 func _ready()->void:
  actor.set_process(false)
  # Layer 2 remains solid to the player's all-world mask without the cart's
@@ -16,9 +19,11 @@ func _ready()->void:
 func _physics_process(delta:float)->void:
  if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):return
  age+=delta
- var far:=is_instance_valid(viewer) and cart.global_position.distance_squared_to(viewer.global_position)>22500
- if far and age<.5:return
+ var essential:bool=cart.get_meta("opening_cart_passage",false) or cart.boarding.rider!=null or actor.get_meta("mission_active",false) or actor.get_meta("combat_action","")!=""
+ simulation_interval=Budget.interval(cart,viewer,essential)
+ if age<simulation_interval:return
  var step:=age;age=0
+ pose_updates+=1
  actor._set_animation(&"idle",step)
  var rig:Skeleton3D=actor._skeleton
  for side in ["l","r"]:

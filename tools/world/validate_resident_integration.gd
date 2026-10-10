@@ -26,15 +26,21 @@ func run()->void:
 	world.get_node("GameTimeSystem").clock_paused=true;world.get_node("GameTimeSystem").current_hour=10
 	jobs=world.get_node("ErrandSystem")
 	var population:Node=world.get_node("CityRoutePopulation")
+	var expected_people:=0
+	for count in population.ROUTE_COUNTS.values():expected_people+=int(count)*population.POPULATION_MULTIPLIER
+	var expected_police:int=population.POLICE_ROUTES.size()*population.POPULATION_MULTIPLIER
+	var expected_carts:int=population.CART_ROUTES.size()*population.POPULATION_MULTIPLIER
 	population.eager_population=true
 	for frame in 1200:
 		await process_frame
 		if population.ready_population and world.get_node("VillageDailyActivities").residents.size()==14:break
-	check(population.pedestrians.size()==72,"72 integrated pedestrians")
-	check(population.patrols.size()==10,"10 integrated police patrols")
-	check(population.carts.size()==8,"8 integrated traffic carts")
+	check(population.pedestrians.size()==expected_people,"all configured integrated pedestrians")
+	check(population.patrols.size()==expected_police,"all configured police patrols")
+	check(population.carts.size()==expected_carts,"all configured traffic carts")
 	check(get_nodes_in_group("institution_post_residents").size()==5,"five added institution posts")
 	check(get_nodes_in_group("draft_animals").size()==8,"eight yard animals")
+	var independent:Node=world.get_node_or_null("CivicResidentPosts/HospitalLinenPorter/LinenDelivery")
+	check(independent!=null and independent.goods.size()==3,"independent hospital worker integrated into New Journey")
 	var Roles=preload("res://world/suryagarh/settlements/resident_roles.gd")
 	check(not Roles.permits("landowner","hoe") and not Roles.permits("landowner_spouse","well"),"wealthy household forbidden chores")
 	for resident in world.get_node("VillageDailyActivities").residents:
@@ -58,8 +64,16 @@ func run()->void:
 		var saver:Node=root.get_node("SaveManager")
 		var saved_identity: String=str(population.pedestrians[0].name)
 		population.pedestrians[0].get_node("Vitality").health=32.5
+		if independent!=null:
+			independent.set_physics_process(false)
+			for frame in 500:
+				if independent.phase=="inside":break
+				independent.tick(.1);await physics_frame
+			check(independent.phase=="inside" and independent.goods[independent.delivered].get_parent()==independent.actor,"real save taken while porter carries physical goods")
+		var worker_state:Dictionary=independent.export_state() if independent!=null else {}
+		if independent!=null:independent.set_physics_process(false)
 		check(saver.save_game(world,1),"real save records loaded consignment")
-		check(saver.read_slot(1).get("city_route_population",{}).size()==72,"real save retains all civilian identities")
+		check(saver.read_slot(1).get("city_route_population",{}).size()==expected_people,"real save retains all civilian identities")
 		if not saver.start_loaded_game(1):check(false,"Continue loads temporary slot");finish();return
 		await scene_changed
 		for frame in 4:await process_frame
@@ -71,7 +85,13 @@ func run()->void:
 		for frame in 1200:
 			await process_frame
 			if population.ready_population and jobs.delivery!=null and jobs.delivery.vehicle!=null:break
-		check(population.pedestrians.size()==72 and world.get_node("VillageDailyActivities").residents.size()==14,"population returns through Continue")
+		check(population.pedestrians.size()==expected_people and world.get_node("VillageDailyActivities").residents.size()==14,"population returns through Continue")
+		var restored_worker:Node=world.get_node_or_null("CivicResidentPosts/HospitalLinenPorter/LinenDelivery")
+		check(restored_worker!=null and restored_worker.goods.size()==3,"Continue restores one hospital worker and finite consignment")
+		if restored_worker!=null:
+			check(restored_worker.delivered>=int(worker_state.get("delivered",0)),"Continue retains completed independent deliveries")
+			if worker_state.get("phase","")=="inside" and restored_worker.delivered==int(worker_state.get("delivered",0)):
+				check(restored_worker.goods[restored_worker.delivered].get_parent()==restored_worker.actor,"Continue restores actual carried hospital goods")
 		var restored_person:Node=population.get_node_or_null(NodePath(saved_identity))
 		check(restored_person!=null and is_equal_approx(restored_person.get_node("Vitality").health,32.5),"Continue restores matching civilian identity and health")
 		freight=jobs.delivery.vehicle
@@ -83,15 +103,26 @@ func run()->void:
 	for frame in 2:await physics_frame
 	check(jobs.delivery.begin("port_delivery"),"unloading begins in bay")
 	check(player.inventory.get_item_count("rupees")==0,"no payment before handover")
-	for frame in 3600:
+	# Accelerate only this receiver's elapsed time; retain actual physics steps,
+	# physical obstacles and the real New Journey/Continue owners.
+	jobs.delivery.set_physics_process(false)
+	for frame in 900:
+		jobs.delivery._physics_process(.1)
 		await physics_frame
-		if frame%600==0:print("DELIVERY_PROGRESS ",jobs.delivery.phase," age=",jobs.delivery.age," route=",jobs.delivery.route.size()," receiver=",jobs.targets.office.person.global_position)
+		if frame%100==0:print("DELIVERY_PROGRESS ",jobs.delivery.phase," age=",jobs.delivery.age," route=",jobs.delivery.route.size()," receiver=",jobs.targets.office.person.global_position)
 		if jobs.active.is_empty() or jobs.delivery.phase.is_empty():break
 	check(jobs.active.is_empty() and player.inventory.get_item_count("rupees")==18,"physical unloading thanks and payment")
 	print("DELIVERY_BEFORE_DUPLICATE active=",jobs.active," phase=",jobs.delivery.phase," wage=",player.inventory.get_item_count("rupees")," receiver=",jobs.targets.office.person.global_position)
 	if jobs.active.is_empty():jobs._finish("port_delivery",true)
 	check(player.inventory.get_item_count("rupees")==18,"no duplicate wage")
 	print("DELIVERY_END_STATE ",jobs.delivery.phase," ",jobs.toast.text)
+	var hospital_work:Node=world.get_node_or_null("CivicResidentPosts/HospitalLinenPorter/LinenDelivery")
+	if hospital_work!=null:
+		hospital_work.set_physics_process(false)
+		for frame in 600:
+			if hospital_work.delivered>0:break
+			hospital_work.tick(.1);await physics_frame
+	check(hospital_work!=null and hospital_work.delivered>0,"hospital porter delivers past the real receiving orderly")
 	finish()
 func finish()->void:
 	print("RESIDENT_WORLD_RESULT ",JSON.stringify({"passed":failures.is_empty(),"failures":failures}))

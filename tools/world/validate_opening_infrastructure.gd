@@ -33,6 +33,17 @@ func run() -> void:
  player.global_position=Vector3(-800,20,-800)
  for frame in 3:await process_frame
  check(officer.position.y<0,"inspection officer stays seated even when Arjun is far away")
+ var discussion: Node=officer.get_children().filter(func(node: Node):return node.get_script()!=null and node.get_script().resource_path=="res://story/community_social.gd")[0]
+ discussion.set_process(false);discussion.viewer=player;discussion.elapsed=0.0
+ var discussion_age: float=discussion.age
+ discussion._process(.1)
+ check(discussion.age==discussion_age,"distant inspector defers cosmetic update")
+ discussion._process(.4)
+ check(is_equal_approx(discussion.age-discussion_age,.5),"distant inspector accumulates elapsed time")
+ player.global_position=officer.global_position+Vector3(2,0,0)
+ discussion._process(.016)
+ check(discussion.age>discussion_age+.5,"inspector resumes immediately on approach")
+ discussion.set_process(true)
  var sun:=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-48,-30,0);sun.light_energy=1.2;world.add_child(sun)
  var sky:=WorldEnvironment.new();sky.environment=Environment.new();sky.environment.background_mode=Environment.BG_COLOR;sky.environment.background_color=Color(.35,.45,.6);sky.environment.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;sky.environment.ambient_light_color=Color(.8,.8,.8);sky.environment.ambient_light_energy=.65;world.add_child(sky)
  var camera:=Camera3D.new();camera.near=.05;camera.fov=55;world.add_child(camera);camera.make_current()

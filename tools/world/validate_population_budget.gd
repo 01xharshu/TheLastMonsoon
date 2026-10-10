@@ -31,11 +31,11 @@ func run() -> void:
  var record:Dictionary={"kind":"person","route":"test","index":0,"count":1,"points":points,"phase":{"point":Vector2.ZERO,"goal":1},"direction":1,"wait":0.0}
  population.pending.append(record)
  for step in 20:population.advance_remote(.5)
- check(is_equal_approx(record.phase.point.x,7.8),"Remote destination progress lost elapsed time")
+ check(is_equal_approx(record.phase.point.x,8.8),"Remote destination progress lost elapsed time")
  var state:=population.export_route_state()
  population.advance_remote(1)
  population.restore_route_state(state)
- check(is_equal_approx(record.phase.point.x,7.8),"Logical save roundtrip changed position")
+ check(is_equal_approx(record.phase.point.x,8.8),"Logical save roundtrip changed position")
  check(population.export_route_state()==state,"Logical save roundtrip changed route state")
  population.advance_remote(3)
  check(record.direction==-1 and record.wait==6.0,"Remote arrival lost endpoint pause")

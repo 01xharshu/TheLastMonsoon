@@ -24,6 +24,9 @@ var social_speaker := false
 var awareness_age := 0.0
 var yield_age := 0.0
 var social_time := 0.0
+var shadow_meshes:Array[GeometryInstance3D]=[]
+var shadow_modes:Array[int]=[]
+var shadows_near:=true
 
 func _ready() -> void:
  super._ready()
@@ -32,6 +35,8 @@ func _ready() -> void:
  social_enabled=personal_seed%4<2
  social_cooldown=5.0+float(personal_seed%19)
  if is_instance_valid(crowd):crowd.register(self)
+ for mesh:GeometryInstance3D in actor.find_children("*","GeometryInstance3D",true,false):
+  shadow_meshes.append(mesh);shadow_modes.append(mesh.cast_shadow)
  terrain_cache=Ground.terrain_cache(actor)
  terrain_rids=terrain_cache.rids
  sweep_exclusions = super.motion_exclusions()+terrain_rids
@@ -42,7 +47,7 @@ func _ready() -> void:
 
 func ground_at(point:Vector2) -> Dictionary:
  var height:float=layout.height(point.x,point.y)
- var ray:=PhysicsRayQueryParameters3D.create(Vector3(point.x,height+3,point.y),Vector3(point.x,height-3,point.y),Ground.TERRAIN_SUPPORT_LAYER)
+ var ray:=PhysicsRayQueryParameters3D.create(Vector3(point.x,height+8,point.y),Vector3(point.x,height-8,point.y),Ground.TERRAIN_SUPPORT_LAYER)
  return actor.get_world_3d().direct_space_state.intersect_ray(ray)
 
 func route_target(point:Vector2) -> Vector3:
@@ -100,6 +105,12 @@ func _physics_process(delta: float) -> void:
  if tier_age<=0:
   tier_age=.25
   simulation_interval=Budget.interval(actor,viewer,actor.get_meta("combat_action","")!="" or actor.get_meta("mission_active",false))
+  var camera:Camera3D=actor.get_viewport().get_camera_3d()
+  var near:bool=camera==null or camera.global_position.distance_squared_to(actor.global_position)<Budget.NEAR_SQUARED
+  if near!=shadows_near:
+   shadows_near=near
+   for index in shadow_meshes.size():
+    if is_instance_valid(shadow_meshes[index]):shadow_meshes[index].cast_shadow=shadow_modes[index] if near else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
  # Approaching/teleporting players restore full collision/animation immediately.
  if simulation_interval>0 and is_instance_valid(viewer) and actor.global_position.distance_squared_to(viewer.global_position)<=Budget.NEAR_SQUARED:
   simulation_interval=0

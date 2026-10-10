@@ -58,12 +58,12 @@ func _process(delta:float) -> void:
   if not available(journey) or journey.social_partner!=null or age<journey.social_cooldown:continue
   if clock!=null and (clock.current_hour<7 or clock.current_hour>=18):continue
   if is_instance_valid(viewer) and journey.actor.global_position.distance_squared_to(viewer.global_position)>6400:continue
-  if journey.closing or journey.wait>0 or journey.detour.is_finite():continue
+  if journey.closing or journey.detour.is_finite():continue
   # Half continue straight to their destination. Social residents take short breaks.
   if not journey.social_enabled:continue
   if journey.layout.road_distance(journey.actor.global_position.x,journey.actor.global_position.z)<1.05:continue
   for other:Node in neighbours(journey.actor.global_position):
-   if other==journey or not available(other) or not other.social_enabled or other.social_partner!=null or age<other.social_cooldown or other.closing or other.wait>0:continue
+   if other==journey or not available(other) or not other.social_enabled or other.social_partner!=null or age<other.social_cooldown or other.closing:continue
    var distance:float=journey.actor.global_position.distance_to(other.actor.global_position)
    if distance<1.35 or distance>2.2:continue
    if absf(journey.actor.global_position.y-other.actor.global_position.y)>.25:continue

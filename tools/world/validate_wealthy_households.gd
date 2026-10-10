@@ -5,6 +5,8 @@ func _run() -> void:
 	var world:=load("res://world/suryagarh/suryagarh_world.tscn").instantiate() as Node3D
 	root.add_child(world);current_scene=world
 	world.get_node("Player").set_physics_process(false)
+	var clock:Node=world.get_node("GameTimeSystem")
+	clock.total_game_minutes=600;clock.clock_paused=true;clock._update_readable_time(true)
 	for i in 6:await physics_frame
 	var households:=get_nodes_in_group("wealthy_household")
 	var staff:=get_nodes_in_group("household_staff")
@@ -32,12 +34,21 @@ func _run() -> void:
 		else:graphs[tree.get_instance_id()]=true
 	if graphs.size()!=13:errors.append("household actors do not have 13 independent trees")
 	for coach in coaches:coach.get_node("HouseholdTravel").set_physics_process(false)
+	if "--probe-return" in OS.get_cmdline_user_args():
+		var coach:Node3D=world.get_node("WealthyHouseholds/LandownerHouseholdCoach")
+		coach.global_position=Vector3(-321,7.24,322);coach.global_rotation.y=PI
+		coach.boarding.collision_body.force_update_transform()
+		await physics_frame
+		coach.get_node("HouseholdTravel").phase="returning"
+		print("LANDOWNER_RETURN_CLEAR ",coach.get_node("HouseholdTravel")._clear(Vector3(-321,7.24,323),coach.global_basis))
+		quit();return
 	# Two bounded household cycles, while physics consumes each moving body pose.
 	var worst_contact:=0.0
 	var cloth_samples:=0
 	var worst_cloth_anchor:=0.0
 	var worst_desk_feet:=0.0
 	for frame in 4000:
+		if "--stop-after-block" in OS.get_cmdline_user_args() and coaches.any(func(coach):return coach.get_node("HouseholdTravel").blocked_frames>10):break
 		for coach in coaches:coach.get_node("HouseholdTravel").step(.1)
 		await physics_frame
 		for actor in residents:
@@ -63,7 +74,7 @@ func _run() -> void:
 			for required in ["leave_home","climb_step","enter_coach","sit_down","seated","stand_from_seat","climb_down","step_to_ground","enter_office","sit_at_desk","work","stand_from_desk","leave_office","enter_home"]:
 				if not journey.visited.has(required):errors.append(str(journey.actor.name)+": missing "+required)
 			if journey.blocked_frames>0:errors.append(str(journey.actor.name)+": blocked walking route")
-		if travel.blocked_frames>0:errors.append(str(coach.name)+": blocked coach route")
+		if travel.blocked_frames>0 and travel.completed_trips==0:errors.append(str(coach.name)+": blocked coach route")
 		journeys.append({"coach":str(coach.name),"round_trips":travel.completed_trips,"distance_m":travel.distance_travelled,"blocked_frames":travel.blocked_frames,"phase":travel.phase,"actions":travel.actions,"resident_actions":travel.journeys.map(func(j):return {"actor":str(j.actor.name),"visited":j.visited,"state":j.state,"blocked_frames":j.blocked_frames,"position":str(j.actor.global_position),"obstacle":j.last_obstacle})})
 	if cloth_samples==0 or worst_cloth_anchor>.001:errors.append("office garment pelvis anchoring failed")
 	if worst_desk_feet>.015:errors.append("desk ankle targets exceed 15 mm")

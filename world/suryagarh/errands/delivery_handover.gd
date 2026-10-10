@@ -15,6 +15,8 @@ var trail:Array[Vector3]=[]
 var pending_cart_path:=""
 var pending_cart_age:=0.0
 var marker:MeshInstance3D
+var retry_age:=0.0
+var reported_blocker:=false
 
 func configure(owner:Node3D)->void:
 	manager=owner
@@ -147,10 +149,19 @@ func _physics_process(delta:float)->void:
 func _step(motion:Vector3,delta:float)->bool:
 	var body:CollisionObject3D=receiver.body_collider
 	var shape:CollisionShape3D=body.get_node("BodyShape")
-	var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin.y+=.30;query.motion=motion;query.collision_mask=1
-	query.exclude=[body.get_rid(),manager.targets[manager.JOBS[request].goal].get_rid()]
+	var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin.y+=.15;query.motion=motion;query.collision_mask=1;query.margin=.02
+	var excluded:Array[RID]=[body.get_rid(),manager.targets[manager.JOBS[request].goal].get_rid()]
+	if is_instance_valid(vehicle):
+		for handle in vehicle.get_children():
+			if handle is CollisionObject3D and handle.is_in_group("cart_boarding_handles"):excluded.append(handle.get_rid())
+	query.exclude=excluded
 	var safe:=get_world_3d().direct_space_state.cast_motion(query)
-	if safe[0]<.99:return false
+	if safe[0]<.99:
+		if not reported_blocker:
+			reported_blocker=true
+			query.transform.origin+=motion;query.motion=Vector3.ZERO
+			for hit in get_world_3d().direct_space_state.intersect_shape(query,4):print("DELIVERY_BLOCKER ",hit.collider.get_path()," receiver=",receiver.global_position)
+		return false
 	receiver.global_position+=motion
 	if phase=="receiving" and (trail.is_empty() or trail[-1].distance_to(receiver.global_position)>.35):trail.append(receiver.global_position)
 	var ground:=PhysicsRayQueryParameters3D.create(receiver.global_position+Vector3.UP*1.5,receiver.global_position-Vector3.UP*1.0,1,query.exclude)
@@ -213,6 +224,7 @@ func _resolve_saved_cart()->void:
 	vehicle.set_meta("errand_cargo","port_delivery")
 
 func _follow_route(delta:float)->bool:
+	retry_age=maxf(0,retry_age-delta)
 	while not route.is_empty():
 		var offset:=route[0]-receiver.global_position;offset.y=0
 		if offset.length()<.08:route.pop_front();continue
@@ -220,50 +232,16 @@ func _follow_route(delta:float)->bool:
 		# touches furniture; returning must never push his capsule into it.
 		if route.size()==1 and phase in ["returning","recovering"] and offset.length()<.40:
 			finish=receiver.global_position;route.clear();return true
-		_step(offset.normalized()*minf(offset.length(),delta*.85),delta)
+		if not _step(offset.normalized()*minf(offset.length(),delta*.85),delta) and retry_age<=0:
+			retry_age=4.0
+			var replacement:=_route_to(route[-1])
+			if not replacement.is_empty():route=replacement
 		return false
 	return true
 
 func _route_to(goal:Vector3)->Array[Vector3]:
-	# A bounded local search uses the same complete capsule as the moving clerk.
-	# Furniture, walls and the cart remain solid during both search and playback.
-	var origin:=receiver.global_position
-	var destination:=Vector2i(roundi(goal.x-origin.x),roundi(goal.z-origin.z))
-	var pending:Array[Vector2i]=[Vector2i.ZERO]
-	var costs:Dictionary={Vector2i.ZERO:0.0}
-	var parents:Dictionary={}
-	var points:Dictionary={Vector2i.ZERO:origin}
-	var body:CollisionObject3D=receiver.body_collider
-	var shape:CollisionShape3D=body.get_node("BodyShape")
-	var excluded:Array[RID]=[body.get_rid(),manager.targets[manager.JOBS[request].goal].get_rid()]
-	for attempt in 1200:
-		if pending.is_empty():break
-		var best:=0;var score:=INF
-		for i in pending.size():
-			var cell:Vector2i=pending[i]
-			var candidate:float=float(costs[cell])+Vector2(cell-destination).length()
-			if candidate<score:score=candidate;best=i
-		var cell:Vector2i=pending.pop_at(best)
-		if cell==destination:
-			var result:Array[Vector3]=[goal]
-			while cell!=Vector2i.ZERO:
-				result.push_front(points[cell]);cell=parents[cell]
-			return result
-		for direction in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1),Vector2i(1,1),Vector2i(-1,1),Vector2i(1,-1),Vector2i(-1,-1)]:
-			var next:Vector2i=cell+direction
-			if absi(next.x)>18 or absi(next.y)>18:continue
-			var cost:float=float(costs[cell])+Vector2(direction).length()
-			if costs.has(next) and float(costs[next])<=cost:continue
-			var at:Vector3=points[cell]
-			var to:=origin+Vector3(next.x,0,next.y)
-			var ray:=PhysicsRayQueryParameters3D.create(to+Vector3.UP*1.5,to-Vector3.UP*1.0,1,excluded)
-			var hit:=get_world_3d().direct_space_state.intersect_ray(ray)
-			if hit.is_empty() or absf(hit.position.y-at.y)>.4:continue
-			to.y=hit.position.y
-			var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape
-			query.transform=shape.global_transform;query.transform.origin+=at-origin+Vector3.UP*.30
-			query.motion=to-at;query.collision_mask=1;query.exclude=excluded
-			if get_world_3d().direct_space_state.cast_motion(query)[0]<.99:continue
-			costs[next]=cost;parents[next]=cell;points[next]=to
-			if not pending.has(next):pending.append(next)
-	return []
+	var excluded:Array[RID]=[manager.targets[manager.JOBS[request].goal].get_rid()]
+	if is_instance_valid(vehicle):
+		for handle in vehicle.get_children():
+			if handle is CollisionObject3D and handle.is_in_group("cart_boarding_handles"):excluded.append(handle.get_rid())
+	return preload("res://world/suryagarh/settlements/resident_walk_route.gd").find(receiver,goal,excluded)

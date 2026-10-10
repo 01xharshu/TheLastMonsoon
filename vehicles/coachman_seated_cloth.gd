@@ -1,5 +1,6 @@
 extends RefCounted
 const CACHE_PATH := "res://vehicles/generated/coachman_startup_cloth.res"
+const BULLOCK_CACHE_PATH := "res://vehicles/generated/bullock_driver_startup_cloth.res"
 const CACHE_REVISION := 2
 var use_startup_cache := true
 var startup_signature := ""
@@ -13,9 +14,14 @@ var updates := 0
 var skin_fit = preload("res://vehicles/coachman_clearance.gd").new()
 var skin_corrections := 0
 var fit_cache: Dictionary = {}
+var profile_updates := false
+var fitting := false
+var use_cpu_meshes := true
 func configure(person: Node3D, vehicle: Node3D) -> void:
  actor = person
  coach = vehicle
+ profile_updates = "--profile-cloth" in OS.get_cmdline_user_args()
+ use_cpu_meshes = not coach.get_meta("reference_cloth_uploads",false)
  for node in actor.find_children("*","MeshInstance3D",true,false):
   var label: String = node.name.to_lower()
   if not ("wrapped dhoti" in label or "dhoti woven border" in label): continue
@@ -27,17 +33,24 @@ func configure(person: Node3D, vehicle: Node3D) -> void:
   node.skeleton = NodePath("")
   node.show()
 func update() -> void:
+ if fitting: return
  var skeleton: Skeleton3D = actor._skeleton
  var knee := Vector3.ZERO
  for side in ["l","r"]:
   knee += coach.to_local(skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("calf_"+side)).origin))*.5
  if knee.distance_to(last_knee) < .0005: return
+ fitting = true
+ var started := Time.get_ticks_usec() if profile_updates else 0
+ var knee_change := knee.distance_to(last_knee)
  last_knee = knee
  # Dynamically spawned traffic needs the same exact-input cache as title loads.
  # Trying only on first fit avoids hashing full body meshes during motion.
  if use_startup_cache and updates == 0:
   startup_signature = source_signature()
-  if _restore_startup_cache(): return
+  if _restore_startup_cache():
+   fitting = false
+   _profile_update(started,knee_change,true)
+   return
  skin_fit.build_body(actor,coach)
  skin_corrections = 0
  fit_cache.clear()
@@ -45,6 +58,7 @@ func update() -> void:
  for piece in pieces:
   var node: MeshInstance3D = piece.node
   var result := ArrayMesh.new()
+  var cpu_surfaces: Array[Dictionary] = []
   for surface in piece.surfaces:
    var arrays: Array = surface.arrays
    var source: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -65,9 +79,19 @@ func update() -> void:
    tool.index()
    tool.generate_normals()
    tool.set_material(surface.material)
-   tool.commit(result)
-  node.mesh = await _relax(result,node)
+   if use_cpu_meshes:
+    cpu_surfaces.append({"arrays":tool.commit_to_arrays(),"material":surface.material})
+   else: tool.commit(result)
+  node.mesh = await _relax(cpu_surfaces if use_cpu_meshes else result,node)
  updates += 1
+ fitting = false
+ _profile_update(started,knee_change,false)
+
+func _profile_update(started: int,knee_change: float,cache_hit: bool) -> void:
+ if not profile_updates: return
+ var elapsed := Time.get_ticks_usec()-started
+ if elapsed >= 100000 or updates == 1:
+  print("COACHMAN CLOTH COST ",JSON.stringify({"actor":str(actor.get_path()),"usec":elapsed,"updates":updates,"cache_hit":cache_hit,"knee_change":knee_change,"loading":Startup.current != null}))
 
 func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Array,level: int,hip: Vector3,knee: Vector3) -> void:
  if level > 0:
@@ -110,10 +134,10 @@ func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Ar
   tool.set_uv(uv[index])
   tool.add_vertex(node.to_local(coach.to_global(at)))
 
-func _relax(mesh: ArrayMesh,node: MeshInstance3D) -> ArrayMesh:
+func _relax(mesh: Variant,node: MeshInstance3D) -> ArrayMesh:
  var relaxed := ArrayMesh.new()
- for surface in mesh.get_surface_count():
-  var arrays: Array = mesh.surface_get_arrays(surface)
+ for surface in (mesh.size() if use_cpu_meshes else mesh.get_surface_count()):
+  var arrays: Array = mesh[surface].arrays if use_cpu_meshes else mesh.surface_get_arrays(surface)
   var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
   var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
   var neighbors: Array[Dictionary] = []
@@ -142,12 +166,14 @@ func _relax(mesh: ArrayMesh,node: MeshInstance3D) -> ArrayMesh:
   arrays[Mesh.ARRAY_VERTEX] = positions
   arrays[Mesh.ARRAY_NORMAL] = null
   arrays[Mesh.ARRAY_TANGENT] = null
-  var intermediate := ArrayMesh.new()
-  intermediate.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
   var tool := SurfaceTool.new()
-  tool.create_from(intermediate,0)
+  if use_cpu_meshes: tool.create_from_arrays(arrays)
+  else:
+   var intermediate := ArrayMesh.new()
+   intermediate.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+   tool.create_from(intermediate,0)
   tool.generate_normals()
-  tool.set_material(mesh.surface_get_material(surface))
+  tool.set_material(mesh[surface].material if use_cpu_meshes else mesh.surface_get_material(surface))
   tool.commit(relaxed)
  return relaxed
 
@@ -200,6 +226,9 @@ func source_signature() -> String:
  for node in actor.find_children("*","MeshInstance3D",true,false):
   if node.skin == null: continue
   for surface in node.mesh.get_surface_count():
+   # Hashing only includes full-body surfaces. Reject smaller surfaces from
+   # metadata before asking the rendering device for their uploaded arrays.
+   if node.mesh.surface_get_array_len(surface) < 14000: continue
    var arrays: Array = node.mesh.surface_get_arrays(surface)
    if arrays[Mesh.ARRAY_VERTEX].size() >= 14000: digest.update(var_to_bytes(arrays))
  var rig: Skeleton3D = actor._skeleton
@@ -212,9 +241,13 @@ func source_signature() -> String:
  digest.update(var_to_bytes(pose))
  return digest.finish().hex_encode()
 
+func startup_cache_path() -> String:
+ return BULLOCK_CACHE_PATH if actor.get_script().resource_path == "res://vehicles/bullock_driver.gd" else CACHE_PATH
+
 func _restore_startup_cache() -> bool:
- if not ResourceLoader.exists(CACHE_PATH): return false
- var cached := load(CACHE_PATH)
+ var path := startup_cache_path()
+ if not ResourceLoader.exists(path): return false
+ var cached := load(path)
  if cached.get_meta("revision",0) != CACHE_REVISION or cached.get_meta("signature","") != startup_signature: return false
  var meshes: Dictionary = cached.get_meta("meshes",{})
  for piece in pieces:

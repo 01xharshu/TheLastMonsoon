@@ -29,6 +29,7 @@ const Roles=preload("res://world/suryagarh/settlements/resident_roles.gd")
 var animal:Node3D
 var well_drawing:Node
 const WalkRoute=preload("res://world/suryagarh/settlements/resident_walk_route.gd")
+const Budget=preload("res://systems/simulation_budget.gd")
 var detour:Array[Vector3]=[]
 var last_goal:=Vector2.INF
 var route_retry:=0.0
@@ -94,9 +95,11 @@ func _prop() -> void:
 func _physics_process(delta:float) -> void:
 	age+=delta;elapsed+=delta
 	var distance: float=actor.global_position.distance_squared_to(viewer.global_position) if is_instance_valid(viewer) else 0.0
-	var cadence:=.5 if distance>22500 else (.1 if distance>4900 else 0.0)
+	var cadence:=Budget.interval(actor,viewer)
 	if age<cadence:return
-	var step:=minf(age,.5);age=0.0;tick(step,distance<22500)
+	for slice_index in 5:
+		if age<=0:break
+		var step:=minf(age,.1);age-=step;tick(step,distance<40000)
 
 func tick(delta:float, animate:=true) -> void:
 	age_step=delta;route_retry=maxf(0,route_retry-delta)
@@ -142,6 +145,9 @@ func tick(delta:float, animate:=true) -> void:
 			actor.travel_speed=0.0;actor.set_meta("daily_activity","waiting_for_clear_path")
 			if route_retry<=0:
 				route_retry=4.0;detour=WalkRoute.find(actor,destination)
+				if detour.is_empty() and not actor.get_meta("home_route_reported",false):
+					actor.set_meta("home_route_reported",true)
+					print("RESIDENT_ROUTE_BLOCKED ",actor.name," at=",actor.global_position," goal=",destination," obstruction=",actor.get_world_3d().direct_space_state.get_rest_info(query))
 	else:
 		actor.travel_speed=0.0
 		var endpoint:bool=commute.is_empty() or (route_goal==commute.size()-1 if outward else route_goal==0)

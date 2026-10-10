@@ -7,6 +7,7 @@ const Startup=preload("res://systems/world_startup.gd")
 var b=Builder.new()
 var layout=Layout.new()
 var homes:Array[Node3D]=[]
+var connected_pairs:Array= []
 var community:Node3D
 var classified:=false
 var setup_age:=0.0
@@ -16,7 +17,7 @@ func _ready() -> void:
 	name="UrbanWest"
 	startup_task=Startup.begin("Western city")
 	var surfaces:=preload("res://world/suryagarh/settlements/civil_lines.gd").new()
-	b.plaster=surfaces.surface("clay_plaster",Color(.76,.69,.56),false);surfaces.free()
+	b.plaster=surfaces.surface("clay_plaster",Color(.76,.69,.56),false)
 	b.wood=b.material(Color(.26,.16,.09));b.stone=b.material(Color(.49,.43,.34));b.tile=b.material(Color(.43,.24,.15));b.ochre=b.material(Color(.67,.48,.29))
 	call_deferred("build_city")
 
@@ -30,15 +31,32 @@ func build_city() -> void:
 		for index in 6:
 			var home:=site("CityHome%d"%(row*6+index),Vector2(-280-index*12,-350-row*32))
 			home.add_to_group("city_through_house");home.set_meta("district","city_residential");homes.append(home)
-			house(home,index%2==0)
+			house(home,index%2==0,index%3==0)
 			b.merge_visuals(home)
 			await Startup.checkpoint(self,"Preparing connected city homes…")
 	for row in 2:
-		for pair in 3:
-			var at:=Vector2(-286-pair*24,-349-row*32)
-			var connector:=site("SharedHousePassage%d"%(row*3+pair),at)
-			b.piece(connector,"PassageFloor",Vector3(0,.12,0),Vector3(2,.24,2.4),b.stone)
-			b.piece(connector,"PassageCanopy",Vector3(0,2.8,0),Vector3(2.2,.16,2.6),b.tile)
+		for pair in 3:connected_pairs.append([homes[row*6+pair*2],homes[row*6+pair*2+1]])
+	for row in 2:
+		for index in 4:
+			var home:=site("CityHome%d"%homes.size(),Vector2(-366-index*12,-350-row*32))
+			home.add_to_group("city_through_house");home.set_meta("district","city_residential");homes.append(home)
+			house(home,index%2==0,index%2==1);b.merge_visuals(home)
+			await Startup.checkpoint(self,"Preparing attached city homes…")
+		for pair in 2:connected_pairs.append([homes[12+row*4+pair*2],homes[12+row*4+pair*2+1]])
+	for index in 6:
+		var home:=site("CityHome%d"%homes.size(),Vector2(-280-index*12,-430))
+		home.add_to_group("city_through_house");home.set_meta("district","city_residential");homes.append(home)
+		house(home,index%2==0,true);b.merge_visuals(home)
+		await Startup.checkpoint(self,"Preparing college-neighbourhood homes…")
+	for pair in 3:connected_pairs.append([homes[20+pair*2],homes[20+pair*2+1]])
+	for pair in connected_pairs:
+		var at:=Vector2((pair[0].position.x+pair[1].position.x)*.5,pair[0].position.z+1)
+		var connector:=site("SharedHousePassage%d"%get_tree().get_nodes_in_group("city_neighbour_passage").size(),at)
+		connector.add_to_group("city_neighbour_passage")
+		b.piece(connector,"PassageFloor",Vector3(0,.12,0),Vector3(2,.24,2.4),b.stone)
+		b.piece(connector,"PassageCanopy",Vector3(0,2.92,0),Vector3(2.2,.16,2.6),b.tile)
+	var city_gate:=site("CityMarketGateway",Vector2(-250,-295),"City entrance · Market road")
+	for x in [-5.0,5.0]:b.piece(city_gate,"CityEntrancePier",Vector3(x,1.4,0),Vector3(.65,2.8,.65),b.plaster)
 	market()
 	await Startup.checkpoint(self,"Preparing city market…")
 	hospital()
@@ -47,14 +65,17 @@ func build_city() -> void:
 	for label in Layout.ROUTES:
 		if label.begins_with("city_") or label=="merchant_city_drive":lane(label,Layout.ROUTES[label],5.0 if label.contains("street") or label.contains("road") else 3.2)
 	# Connect the rural approach to the city without building over the farm buffer.
-	var approach:Array[Vector2]=[]
+	var approach:Array[Vector2]=[Vector2(-230,180)]
 	for z in range(180,-321,-20):approach.append(Vector2(layout.road_x(z),z))
 	approach.append(Vector2(-250,-310));lane("VillageCityApproach",approach,6.0)
 	for pair in [[-350,-338,-394],[-250,-310,-400]]:lane("CityCrossConnection",[Vector2(pair[0],pair[1]),Vector2(pair[0],pair[2])],4.0)
 	community=get_parent().get_node_or_null("StoryCommunity")
+	if community!=null:
+		community.crowd_ready.connect(classify_crowd)
+		classify_crowd()
 	get_parent().get_node("Player/UI/WorldMap").refresh_sites()
 	Startup.finish(startup_task)
-	print("WESTERN CITY READY | 12 through houses, 6 paired passages, market, civilian hospital, college/café")
+	print("WESTERN CITY READY | 26 through houses, 13 paired passages, market, civilian hospital, college/café")
 
 func door(parent:Node3D,label:String,at:Vector3,yaw:float=0.0,width:float=2.0) -> Node3D:
 	var jamb:=Node3D.new();jamb.position=at;jamb.rotation.y=yaw;parent.add_child(jamb)
@@ -63,7 +84,7 @@ func door(parent:Node3D,label:String,at:Vector3,yaw:float=0.0,width:float=2.0) -
 	entrance.label_name=label.capitalize();entrance.position=Vector3(-width*.5,.24,0);entrance.build(b.wood);jamb.add_child(entrance)
 	return entrance
 
-func house(home:Node3D,left_connection:bool) -> void:
+func house(home:Node3D,left_connection:bool,two_storeys:bool=false) -> void:
 	b.piece(home,"Floor",Vector3(0,.12,0),Vector3(10,.24,14),b.stone)
 	for z in [-7.0,7.0]:
 		for side in [-1.0,1.0]:b.piece(home,"DoorWall",Vector3(side*3,1.7,z),Vector3(4,2.92,.24),b.plaster)
@@ -80,12 +101,31 @@ func house(home:Node3D,left_connection:bool) -> void:
 			b.piece(home,"WindowSill",Vector3(side*5,.72,0),Vector3(.24,.96,14),b.plaster)
 			b.piece(home,"WindowLintel",Vector3(side*5,2.65,0),Vector3(.24,1.02,14),b.plaster)
 			for z in [-5.0,0.0,5.0]:b.piece(home,"WindowPier",Vector3(side*5,1.67,z),Vector3(.24,1,3),b.plaster)
-		b.piece(home,"RoofSlope",Vector3(side*2.5,3.38,0),Vector3(5.4,.18,14.7),b.tile).rotation.z=-side*.17
+		b.piece(home,"RoofSlope",Vector3(side*2.5,6.42 if two_storeys else 3.38,0),Vector3(5.4,.18,14.7),b.tile).rotation.z=-side*.17
 	for side in [-1.0,1.0]:
-		b.piece(home,"RoomPartition",Vector3(side*3.1,1.55,0),Vector3(3.8,2.62,.16),b.plaster)
+		var stair_side:=1.0 if left_connection else -1.0
+		var partition_width:=1.8 if two_storeys and side==stair_side else 3.8
+		b.piece(home,"RoomPartition",Vector3(side*(1.2+partition_width*.5),1.55,0),Vector3(partition_width,2.62,.16),b.plaster)
 		b.piece(home,"LowCot",Vector3(side*3,.52,-4.7),Vector3(1.6,.25,2.3),b.wood)
 		b.piece(home,"CotLeg",Vector3(side*3,.26,-4.7),Vector3(1.2,.5,1.8),b.wood)
 		b.piece(home,"HouseholdChest",Vector3(side*3,.55,4.6),Vector3(1,.62,.62),b.wood)
+	if two_storeys:
+		home.set_meta("storeys",2)
+		var stair_side:=1.0 if left_connection else -1.0
+		home.set_meta("stair_side",stair_side)
+		b.piece(home,"UpperFloor",Vector3(-stair_side*1.2,3.22,0),Vector3(7.6,.12,14),b.wood)
+		b.piece(home,"UpperLanding",Vector3(stair_side*3.8,3.22,-5.8375),Vector3(2.4,.12,2.325),b.wood)
+		for step in 16:
+			var rise:=.19*(step+1)
+			b.piece(home,"StairTread",Vector3(stair_side*3.9,.24+rise*.5,5.4-step*.65),Vector3(1.2,rise,.65),b.wood)
+		for side in [-1.0,1.0]:
+			b.piece(home,"UpperWindowSill",Vector3(side*5,3.76,0),Vector3(.24,.96,14),b.plaster)
+			b.piece(home,"UpperWindowLintel",Vector3(side*5,5.69,0),Vector3(.24,1.02,14),b.plaster)
+			for z in [-5.0,0.0,5.0]:b.piece(home,"UpperWindowPier",Vector3(side*5,4.71,z),Vector3(.24,1,3),b.plaster)
+			for z in [-7.0,7.0]:
+				b.piece(home,"UpperFrontSill",Vector3(0,3.76,z),Vector3(10,.96,.24),b.plaster)
+				b.piece(home,"UpperFrontLintel",Vector3(0,5.69,z),Vector3(10,1.02,.24),b.plaster)
+				for x in [-4.0,0.0,4.0]:b.piece(home,"UpperWindowPier",Vector3(x,4.71,z),Vector3(2,1,.24),b.plaster)
 	for z in [-9.5,9.5]:b.piece(home,"DoorApproach",Vector3(0,.10,z),Vector3(2.4,.20,5),b.stone)
 
 func market() -> void:
@@ -107,7 +147,7 @@ func hospital() -> void:
 			b.piece(ward,"WardMattress",Vector3(x,.78,z),Vector3(2.5,.12,1.1),b.plaster,false)
 	b.piece(ward,"DressingTable",Vector3(-4,.96,4.6),Vector3(2,.12,1),b.wood)
 	var actor:=preload("res://characters/npcs/households/household_npc_actor.gd").new()
-	actor.name="CivilianAttendant";actor.movement_enabled=false;actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/households/staff_farmer.glb"));actor.position=Vector3(3,.24,4);ward.add_child(actor)
+	actor.name="CivilianAttendant";actor.set_meta("combat_faction","indian");actor.movement_enabled=false;actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/households/staff_farmer.glb"));actor.position=Vector3(3,.24,4);ward.add_child(actor)
 	actor.set_meta("world_role","civilian_hospital_attendant")
 	var operations:=preload("res://world/suryagarh/settlements/civil_hospital_operations.gd").new();operations.name="Operations";ward.add_child(operations);operations.configure(ward)
 	operations.station("hospital",ward,Vector3(1.5,.24,4),actor)
@@ -156,16 +196,19 @@ func _process(delta:float) -> void:
 	setup_age+=delta
 	if setup_age<1:return
 	setup_age=0
+	classify_crowd()
+
+func classify_crowd() -> void:
 	if not is_instance_valid(community):community=get_parent().get_node_or_null("StoryCommunity")
 	if community==null or community.residents.size()<16:return
 	var count:=0
 	for actor in community.residents:
-		var venue:String=str(actor.get_parent().name)
-		if venue not in ["CollegeReadingRoom","RefreshmentCourtyard"]:continue
-		actor.set_meta("district","college_neighbourhood")
+		var venue:Node=actor.get_parent()
+		if venue!=community.college and venue!=community.courtyard:continue
+		actor.set_meta("district","college_neighbourhood");actor.set_meta("combat_faction","indian")
 		var role:String="student" if count%8<6 else ("lecturer" if count%8==6 else "printer")
 		actor.set_meta("world_role",role)
-		if venue=="RefreshmentCourtyard" and count%8 in [2,5]:actor.set_meta("political_role","educated_rebel")
+		if venue==community.courtyard and count%8 in [2,5]:actor.set_meta("political_role","educated_rebel")
 		count+=1
 	if count==16:
 		for talk in community.courtyard.get_children():

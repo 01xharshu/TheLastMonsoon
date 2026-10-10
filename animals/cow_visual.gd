@@ -16,8 +16,9 @@ static func apply(cow:Node3D)->void:
 				surface.set_shader_parameter("base_color",source.albedo_color);surface.set_shader_parameter("surface_kind",kind)
 				mesh.set_surface_override_material(index,surface);continue
 			if not "grey coat" in source.resource_name:continue
-			var arrays:=mesh.mesh.surface_get_arrays(index)
-			var has_colors:bool=arrays[Mesh.ARRAY_COLOR]!=null and not arrays[Mesh.ARRAY_COLOR].is_empty()
+			# Presence is surface metadata; reading uploaded vertex arrays stalls
+			# the render device when carts spawn during play.
+			var has_colors:bool=(mesh.mesh.surface_get_format(index)&Mesh.ARRAY_FORMAT_COLOR)!=0
 			var material:=ShaderMaterial.new();material.shader=preload("res://animals/cow_coat.gdshader")
 			material.set_shader_parameter("vertex_coat",has_colors)
 			mesh.set_surface_override_material(index,material)

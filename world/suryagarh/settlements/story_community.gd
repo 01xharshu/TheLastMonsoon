@@ -2,6 +2,7 @@ extends Node3D
 ## Populated fictional gathering places and a consent-based family practice yard.
 const Builder=preload("res://world/suryagarh/settlements/settlement_builder.gd")
 const Actor=preload("res://characters/npcs/households/household_npc_actor.gd")
+signal crowd_ready
 var b=Builder.new()
 var layout=preload("res://world/suryagarh/landscape_layout.gd").new()
 var farm: Node3D
@@ -96,7 +97,7 @@ func family_farm(node: Node3D) -> void:
   var axis:=Vector3(cos(turn),0,sin(turn))
   var across:=Vector3(-sin(turn),0,cos(turn))
   for side in [-1,1]:
-   var root:=Vector3(0,.10,0);var tip:=axis*.25*side+Vector3.UP*.22;var center:=root.lerp(tip,.5)
+   var root:=Vector3(0,.10,0);var tip: Vector3=axis*.25*side+Vector3.UP*.22;var center:=root.lerp(tip,.5)
    for p in [root,center+across*.06,tip,root,tip,center-across*.06]:leaf.add_vertex(p)
  leaf.generate_normals();var mesh:=leaf.commit();mesh.surface_set_material(0,leaf_mat)
  for row in 2:
@@ -104,13 +105,21 @@ func family_farm(node: Node3D) -> void:
   for seedling in 12:
    var plant:=MeshInstance3D.new();plant.name="VegetableSeedling";plant.mesh=mesh;node.add_child(plant)
    plant.position=Vector3(-1.6+seedling*.56,.10,-3.9+row*.85);plant.rotation.y=seedling*.71
+   plant.visibility_range_end=130;plant.visibility_range_end_margin=15
  for x in [-5,5]:b.piece(node,"PracticeRail",Vector3(x,.8,3.6),Vector3(.12,1.6,.12),b.wood)
 
 func _process(delta: float) -> void:
  wait-=delta
- if pending.is_empty() or wait>0:return
+ if pending.is_empty():
+  crowd_ready.emit();set_process(false);return
+ if wait>0:return
  wait=.15;var record: Dictionary=pending.pop_front()
  var actor=Actor.new();actor.name="CommunityResident%d"%residents.size();actor.movement_enabled=false;actor.cycle_offset=residents.size()*.43
+ if record.parent==college or record.parent==courtyard:
+  actor.set_meta("district","college_neighbourhood")
+  actor.set_meta("world_role","student" if record.index<6 else ("lecturer" if record.index==6 else "printer"))
+  if record.parent==courtyard and record.index in [2,5]:actor.set_meta("political_role","educated_rebel")
+ actor.set_meta("combat_faction","indian")
  var variant:=1+residents.size()%4
  var sex: String="female" if (record.parent==courtyard and record.index%2==1) or (record.has("world") and record.index==1) else "male"
  actor.movement_profile=&"female" if sex=="female" else &"male"

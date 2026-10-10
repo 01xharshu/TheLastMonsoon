@@ -34,7 +34,7 @@ The merchant/landowner shawls retain distinct inner/outer layers fitted to the s
 ## Try it in game
 
 1. Visit the landowner at home (−321, 7.2, 344) or the estate office (−309, 7.2, 315). Ask about work, follow the field marker, hold the check interaction at each boundary, then return for payment.
-2. Bring mangoes to the merchant at home (−413, 7.2, 282) or the counting house (−367, 7.2, 312), during 09:00–17:00. Confirm the order closes after three purchases.
+2. Bring mangoes to the merchant at home (−420, 8.0, −405) or the counting house (−366, 8.0, −328), during 09:00–17:00. Confirm the order closes after three purchases.
 3. At the British home (−455, 8.5, −184) or office (−463, 8.52, −124), show the official a Treasury revenue receipt; supply the host with two roti. Speak to the cook afterwards to see the pantry stock used.
 4. Use the cooks' secondary supply action and the water bearers' bag-filling action. Check that missing items, full bags and daily limits are explained without losing inventory.
 5. Save, continue and confirm that paid work, acknowledged paperwork, pantry stock and checked boundaries remain recorded. Busy residents hide their service prompt; wait for them or meet them at their destination.

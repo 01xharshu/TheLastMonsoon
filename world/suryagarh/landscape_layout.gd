@@ -1,5 +1,6 @@
 class_name SuryagarhLayout
 extends RefCounted
+const Density = preload("res://world/suryagarh/settlements/countryside_density.gd")
 const FortShape = preload("res://world/ruined_fort/fort_shape.gd")
 const FORT_CENTER := Vector2(520.0, -350.0)
 const FORT_BASE_HEIGHT := 120.0
@@ -35,11 +36,14 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"city_college_front_street": [Vector2(-250,-418),Vector2(-350,-418)],
+	"city_college_rear_lane": [Vector2(-250,-442),Vector2(-350,-442)],
+	"city_east_high_street": [Vector2(-250,-310),Vector2(-250,-442)],
 	"city_market_street": [Vector2(-250,-310),Vector2(-350,-310),Vector2(-440,-310)],
 	"city_front_street": [Vector2(-250,-338),Vector2(-350,-338),Vector2(-440,-338)],
-	"city_rear_lane": [Vector2(-250,-362),Vector2(-350,-362)],
-	"city_courtyard_lane": [Vector2(-250,-370),Vector2(-350,-370)],
-	"city_back_street": [Vector2(-250,-394),Vector2(-350,-394)],
+	"city_rear_lane": [Vector2(-250,-362),Vector2(-440,-362)],
+	"city_courtyard_lane": [Vector2(-250,-370),Vector2(-440,-370)],
+	"city_back_street": [Vector2(-250,-394),Vector2(-400,-394)],
 	"city_cross_lane": [Vector2(-350,-310),Vector2(-350,-400),Vector2(-350,-450),Vector2(-375,-450),Vector2(-358,-450),Vector2(-358,-505),Vector2(-375,-505)],
 	"city_hospital_road": [Vector2(-250,-310),Vector2(-250,-370),Vector2(-205,-370),Vector2(-205,-375)],
 	"merchant_city_drive": [Vector2(-417,-384),Vector2(-417,-356),Vector2(-417,-310),Vector2(-378,-310)],
@@ -293,6 +297,7 @@ func segment_distance(point: Vector2, a: Vector2, b: Vector2) -> float:
 	return point.distance_to(a+ab*clampf((point-a).dot(ab)/ab.length_squared(),0.0,1.0))
 
 func plot_clearance(x: float,z: float) -> float:
+	if x >= -660 and x <= -230 and z >= -450 and z <= 350 and Density.clearance(Vector2(x,z)): return 0.0
 	var distance := INF
 	for plot in PLOTS.values():
 		var dx: float = maxf(absf(x-plot.center.x)-plot.half.x,0.0)
@@ -301,7 +306,9 @@ func plot_clearance(x: float,z: float) -> float:
 	return distance
 
 func field_mask(x: float, z: float) -> float:
-	return (1.0 - smoothstep(-125.0, -80.0, x)) * smoothstep(-730.0, -660.0, x) * (1.0 - smoothstep(470.0, 570.0, absf(z)))
+	var plot:Dictionary=PLOTS.UrbanWest
+	var edge:=maxf(absf(x-plot.center.x)-plot.half.x,absf(z-plot.center.y)-plot.half.y)
+	return smoothstep(0,12,edge) * (1.0 - smoothstep(-125.0, -80.0, x)) * smoothstep(-730.0, -660.0, x) * (1.0 - smoothstep(470.0, 570.0, absf(z)))
 
 func built_area(x: float,z: float) -> bool:
 	return plot_clearance(x,z) < 8.0 or (absf(z-235)<5 and x>river_x(z)-river_width(z)-50 and x<river_x(z)-river_width(z)+8)

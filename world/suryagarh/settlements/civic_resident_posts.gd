@@ -7,12 +7,17 @@ var posts:Array[Dictionary]=[]
 var viewer:Node3D
 var clock:Node
 var elapsed := 0.0
+const Budget=preload("res://systems/simulation_budget.gd")
+const Startup=preload("res://systems/world_startup.gd")
+var startup_task:=-1
 var layout=preload("res://world/suryagarh/landscape_layout.gd").new()
 
 func _ready()->void:
+	startup_task=Startup.begin("Institution residents")
 	name="CivicResidentPosts";add_to_group("civic_resident_posts");prepare.call_deferred()
 
 func prepare()->void:
+	await Startup.wait_for(self,"Settlement")
 	await get_tree().process_frame
 	viewer=get_parent().get_node_or_null("Player");clock=get_parent().get_node_or_null("GameTimeSystem")
 	for spec in [
@@ -31,21 +36,25 @@ func prepare()->void:
 		actor.add_to_group("institution_post_residents")
 		posts.append({"actor":actor,"home":point,"role":spec[2],"phase":float(posts.size())*.71})
 		if spec[2]=="hospital_attendant":
-			var basket:Node3D=load("res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf").instantiate();basket.name="HospitalLinenBasket";basket.scale=Vector3.ONE*.22;basket.position=Vector3(0,.92,.30);actor.add_child(basket)
+			var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
+			work.name="LinenDelivery";work.actor=actor;work.institution=institution;work.viewer=viewer;work.clock=clock;actor.add_child(work)
+			while work.waypoints.size()<5:await get_tree().process_frame
 		for mesh:GeometryInstance3D in actor.find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=150
 		await get_tree().process_frame
+	Startup.finish(startup_task)
+
+func _exit_tree()->void:
+	Startup.finish(startup_task)
 
 func _process(delta:float)->void:
 	elapsed+=delta
 	for post in posts:
 		var actor:Node3D=post.actor
 		if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):continue
-		var near:bool=viewer==null or viewer.global_position.distance_squared_to(actor.global_position)<4900
-		actor.animation_tree.active=near;actor.set_process(near)
-		if not near:continue
+		if post.role=="hospital_attendant":continue # Its persistent work controller owns motion/contact.
+		var accumulated:float=float(post.get("age",0.0))+delta
+		if accumulated<Budget.interval(actor,viewer):post.age=accumulated;continue
+		post.age=0.0
 		# Guard watches the approach; the orderly carries linen, never performs field work.
 		if post.role=="guard":
 			actor.global_rotation.y=.16*sin((elapsed+post.phase)/4)
-		else:
-			actor.set_process(false);actor._set_animation(&"idle",delta)
-			for side in ["l","r"]:actor.solve_hand_contact(side,actor.to_global(Vector3(.18 if side=="l" else -.18,.95,.30)))

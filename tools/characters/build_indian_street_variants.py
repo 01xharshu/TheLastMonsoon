@@ -1,5 +1,5 @@
 """Build distinct clothed street identities from retained complete MPFB donors."""
-import bpy, json, math, sys, numpy as np
+import bpy, bmesh, json, math, sys, numpy as np
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/characters'))
@@ -15,6 +15,19 @@ def build(sex, index, workwear=False):
     rig.animation_data_clear()
     body = next(o for o in bpy.data.objects if o.type == 'MESH' and 'MakeHuman_body' in o.name)
     retain_complete_body(body)
+    # A height-only donor foundation included the lowered rest-pose hands.
+    # Trim that clothing only; retain the complete original MPFB skin beneath.
+    for garment in bpy.data.objects:
+        if garment.type != 'MESH' or not garment.name.startswith('Street opaque foundation'): continue
+        arms={group.index for group in garment.vertex_groups if group.name.startswith(('hand_', 'thumb_', 'index_', 'middle_', 'ring_', 'pinky_', 'lowerarm_', 'upperarm_', 'clavicle_'))}
+        bm=bmesh.new();bm.from_mesh(garment.data)
+        deform=bm.verts.layers.deform.active
+        if deform:
+            rejected=[face for face in bm.faces if any(sum(weight for index,weight in vertex[deform].items() if index in arms)>.15 for vertex in face.verts)]
+            bmesh.ops.delete(bm,geom=rejected,context='FACES')
+            loose=[vertex for vertex in bm.verts if not vertex.link_faces]
+            if loose:bmesh.ops.delete(bm,geom=loose,context='VERTS')
+        bm.to_mesh(garment.data);bm.free();garment.data.update()
     # Apply small, smooth facial changes to every shape key, preserving topology,
     # physique keys, eyes, original skin weights and the complete donor anatomy.
     vertices = body.data.shape_keys.key_blocks if body.data.shape_keys else [None]
@@ -141,7 +154,7 @@ def build(sex, index, workwear=False):
     print('INDIAN_STREET_VARIANT', json.dumps(report), flush=True)
 
 if '--workwear-only' not in sys.argv:
-    for sex in (['female'] if '--female-only' in sys.argv else ['female','male']):
+    for sex in (['female'] if '--female-only' in sys.argv else (['male'] if '--male-only' in sys.argv else ['female','male'])):
         for index in range(4): build(sex, index)
 if '--female-only' not in sys.argv:
     for index in range(4): build('male',index,True)

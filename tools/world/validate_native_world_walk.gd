@@ -31,6 +31,8 @@ func capture(label: String) -> void:
 func travel(label: String,point: Vector2,direction: Vector2) -> void:
 	await place(point,direction)
 	for frame in 24:await process_frame
+	# Let the world's amortised nearby population settle before timing input.
+	for frame in 180:await physics_frame
 	await capture(label+"_start")
 	var start := actor.global_position
 	var tick := Time.get_ticks_msec();var frames := 0;var floor_frames := 0;var simulation := 0.0
@@ -50,6 +52,7 @@ func travel(label: String,point: Vector2,direction: Vector2) -> void:
 		if not middle_taken and simulation>1.5:
 			await capture(label+"_moving");middle_taken=true
 	button("move_forward",false)
+	check(simulation>=3.0,label+" completes the full walking sample")
 	var distance := Vector2(actor.global_position.x-start.x,actor.global_position.z-start.z).length()
 	check(distance>2.0,label+" forward walking "+str(snappedf(distance,.01))+"m")
 	var displacement := Vector2(actor.global_position.x-start.x,actor.global_position.z-start.z)

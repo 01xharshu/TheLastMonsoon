@@ -16,11 +16,13 @@ var driver_lean:=.4
 var estate_gate:Node3D
 var gate_wait_frames:=0
 var own_vehicle_rids:Array[RID]=[]
+var household_clock:Node
 
 func configure(vehicle:Node3D,people:Array[Node3D],points:Array[Vector3],coachman:Node3D) -> void:
 	coach=vehicle;residents=people;route=points;driver=coachman
 	# Player distance remains correct across opening/story camera switches.
 	budget_viewer=vehicle.get_parent().get_parent().get_node_or_null("Player")
+	household_clock=vehicle.get_parent().get_parent().get_node_or_null("GameTimeSystem")
 	driver.set_process(false);driver.set("foot_plant_enabled",false)
 	driver.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
 	for part in coach.visual_root.get_children():
@@ -131,7 +133,7 @@ func step(delta:float) -> void:
 	for journey in journeys:journey.tick(delta)
 	if phase=="home":
 		dwell+=delta
-		if dwell>=12:
+		if dwell>=12 and (not is_instance_valid(household_clock) or household_clock.current_hour>=8 and household_clock.current_hour<18):
 			_phase("leaving_home")
 			for journey in journeys:journey.walk(_home_walk(journey,false),"leave_home")
 	elif phase=="leaving_home" or phase=="boarding_return":
@@ -247,7 +249,12 @@ func _clear(at:Vector3,basis:Basis) -> bool:
 		query.motion=destination.origin-query.transform.origin
 		if query.motion.length_squared()>0.000001:
 			var sweep:=space.cast_motion(query)
-			if sweep[0]<.99999:return false
+			if sweep[0]<.99999:
+				if blocked_frames==0:
+					query.transform.origin+=query.motion*minf(1.0,sweep[0]+.05);query.motion=Vector3.ZERO
+					var obstacles:=space.intersect_shape(query,4)
+					print("COACH_SWEEP_BLOCKED ",coach.name," ",phase," at=",at," obstacles=",obstacles.map(func(hit):return str(hit.collider.get_path())))
+				return false
 		query.transform=destination;query.motion=Vector3.ZERO
 		var hits:=space.intersect_shape(query,1)
 		if not hits.is_empty():

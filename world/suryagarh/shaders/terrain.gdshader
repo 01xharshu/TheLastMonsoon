@@ -7,6 +7,8 @@ uniform sampler2D soil_normal : hint_normal, filter_linear_mipmap_anisotropic, r
 uniform sampler2D grass_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D rock_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D road_mask_tex : filter_linear_mipmap;
+uniform sampler2D density_mask_tex : hint_default_black, filter_linear_mipmap;
+uniform vec4 urban_bounds = vec4(0.0);
 varying vec3 world_pos;
 varying vec3 world_normal;
 void vertex() {
@@ -25,7 +27,10 @@ void fragment() {
 	rock = clamp(rock, 0.0, 1.0);
 	float wet = 1.0 - smoothstep(0.1, 3.8, world_pos.y);
 	float road = texture(road_mask_tex, (p + vec2(864.0)) / 1728.0).r;
+	float urban_edge = max(max(urban_bounds.x-p.x,p.x-urban_bounds.z),max(urban_bounds.y-p.y,p.y-urban_bounds.w));
+	float urban = (urban_bounds.z>urban_bounds.x) ? 1.0-smoothstep(0.0,12.0,urban_edge) : 0.0;
 	float fields = (1.0-smoothstep(-125.0,-80.0,p.x))*smoothstep(-730.0,-660.0,p.x)*(1.0-smoothstep(470.0,570.0,abs(p.y)));
+	fields *= 1.0-urban;
 	fields *= smoothstep(75.0,130.0,length(p-vec2(-310,230)));
 	vec2 field_cell = floor((p + vec2(19,33))/vec2(66,91));
 	float crop = hash(field_cell);
@@ -41,6 +46,9 @@ void fragment() {
 	base = mix(base, cultivated*furrow, fields*(1.0-bund)*0.78);
 	base = mix(base, grass*0.72, fields*bund);
 	base = mix(base, stone, rock);
+	base = mix(base,soil*vec3(0.68,0.62,0.52),urban*0.92);
+	float authored_field = texture(density_mask_tex, (p + vec2(864.0)) / 1728.0).r;
+	base = mix(base, soil * vec3(0.68,0.58,0.43) * (0.94+0.06*sin(p.x*6.283)), authored_field);
 	base = mix(base, soil*vec3(1.07,0.95,0.78), road);
 	base *= mix(0.84,1.1,noise(p*0.007));
 	base *= 1.0-wet*0.36;

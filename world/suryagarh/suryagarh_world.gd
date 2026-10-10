@@ -48,7 +48,9 @@ func _ready() -> void:
 	combat_encounters.name="CombatEncounters"
 	add_child(combat_encounters)
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
+	add_child(preload("res://world/suryagarh/population_social.gd").new())
 	add_child(preload("res://world/suryagarh/city_route_population.gd").new())
+	add_child(preload("res://world/suryagarh/population_expansion.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://world/suryagarh/settlements/village_daily_activities.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
@@ -69,6 +71,7 @@ func _ready() -> void:
 	add_child(preload("res://world/suryagarh/settlements/urban_west.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://story/dev_story.gd").new())
+	add_child(preload("res://story/rebellion_story.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	await Startup.wait_others(self, startup_task)
 	Startup.finish(startup_task)

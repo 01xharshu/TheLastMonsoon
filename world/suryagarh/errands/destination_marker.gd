@@ -23,6 +23,8 @@ func _process(_delta: float) -> void:
 func refresh() -> void:
 	var actor: CharacterBody3D = manager.player
 	destination = manager.destination()
+	var rebellion: Node=actor.get_parent().get_node_or_null("RebellionStory")
+	if rebellion!=null and rebellion.stage!="dormant":destination=rebellion.destination()
 	var tutorial: Node=actor.get_node_or_null("UI/HUDRoot/MorningTutorial")
 	var teaching: bool=actor.get_meta("morning_tutorial_active",false)
 	var horse_lesson: bool=teaching and tutorial!=null and tutorial.step==10
@@ -42,6 +44,7 @@ func refresh() -> void:
 		objective_text=inquiry.objective.text
 		var story: Node=actor.get_parent().get_node_or_null("DevStory")
 		if story!=null and story.state in ["farm","complete"]:objective_text=story.objective.text
+	if rebellion!=null and rebellion.stage!="dormant":objective_text=rebellion.objective()
 	if teaching:objective_text=""
 	arrived = false
 	if destination.get("endpoint","") != "": arrived = manager._near(destination.endpoint)

@@ -37,6 +37,7 @@ const DURATIONS := [10.0, 2.0, 3.0, 5.0, 3.0, 12.0, 3.0, 10.0, 3.0, 4.0, 10.0, 3
 func _ready() -> void:
 	candidate_slug = "village_woman"
 	_load_river_motion()
+	_personal_appearance()
 	skeleton = find_child("*", true, false) as Skeleton3D
 	for node in find_children("*", "Skeleton3D", true, false):
 		skeleton = node as Skeleton3D
@@ -84,6 +85,26 @@ func _ready() -> void:
 	cotton.cull_mode = BaseMaterial3D.CULL_DISABLED
 	cloth.material_override = cotton
 	add_child(cloth)
+
+func _personal_appearance()->void:
+	var identity:=member_index%3
+	var saris:=[Color(.36,.18,.12),Color(.19,.29,.25),Color(.32,.20,.29)]
+	var blouses:=[Color(.20,.25,.28),Color(.37,.29,.18),Color(.25,.21,.18)]
+	var skin_tints:=[Color(.78,.60,.46),Color(.65,.45,.32),Color(.88,.69,.52)]
+	for mesh:MeshInstance3D in find_children("*","MeshInstance3D",true,false):
+		var label:=str(mesh.name)
+		var skin:bool="MakeHuman_body" in label
+		var garment:bool=label in ["Fitted cotton upper base","Wrapped sari lower drape","Sari lower border","Woven sari pallu over blouse"]
+		if not skin and not garment:continue
+		for surface in mesh.mesh.get_surface_count():
+			var original:=mesh.get_active_material(surface) as StandardMaterial3D
+			if original==null:continue
+			var material:=original.duplicate() as StandardMaterial3D
+			if skin:material.albedo_color*=skin_tints[identity]
+			elif label=="Fitted cotton upper base":material.albedo_color=blouses[identity]
+			elif label=="Sari lower border":material.albedo_color=saris[identity].lightened(.18)
+			else:material.albedo_color=saris[identity]
+			mesh.set_surface_override_material(surface,material)
 
 func _process(delta: float) -> void:
 	tick_routine(delta)

@@ -64,7 +64,7 @@ func begin() -> bool:
 	visual.equipment._refresh()
 	actor.set_meta("paired_combat",true)
 	actor.velocity=Vector3.ZERO
-	if not victim.get_meta("training_partner",false):
+	if not victim.get_meta("training_partner",false) and not victim.get_meta("rebellion_guard",false):
 		actor.get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",victim)
 	return true
 
@@ -106,7 +106,7 @@ func _process(delta: float) -> void:
 		var palm: Vector3=hero_rig.to_global(hero_rig.get_bone_global_pose(hand_index)*equipment.palm_offsets[side])
 		contact_error=maxf(contact_error,palm.distance_to(target))
 	if age>=1.2:
-		victim.get_node("Vitality").receive_hit(100,actor,"takedown")
+		victim.get_node("Vitality").receive_hit(100,actor,"silent_takedown" if victim.get_meta("rebellion_guard",false) else "takedown")
 		cancel()
 
 func cancel() -> void:

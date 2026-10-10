@@ -10,6 +10,8 @@ func bake() -> void:
 	world = load(OUT+"landscape.scn").instantiate()
 	root.add_child(world)
 	terrain_material = load(OUT+"terrain_material.tres")
+	var urban:Dictionary=Layout.PLOTS.UrbanWest
+	terrain_material.set_shader_parameter("urban_bounds",Vector4(urban.center.x-urban.half.x,urban.center.y-urban.half.y,urban.center.x+urban.half.x,urban.center.y+urban.half.y))
 	var terrain: Node3D = world.get_node("TerrainTiles")
 	for tz in [2,3,4]:
 		for tx in [2,3,4]:

@@ -37,6 +37,7 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
  for node in actor.find_children("*","MeshInstance3D",true,false):
   if node.skin == null: continue
   for surface in node.mesh.get_surface_count():
+   if node.mesh.surface_get_array_len(surface) < 14000: continue
    var arrays: Array = node.mesh.surface_get_arrays(surface)
    var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
    if vertices.size() < 14000: continue

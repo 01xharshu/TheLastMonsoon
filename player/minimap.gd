@@ -51,6 +51,11 @@ func _draw() -> void:
 	# Draw authored roads with true circular clipping, using the same heading as terrain.
 	for route in map.Layout.ROUTES.values():
 		for index in range(route.size()-1): _road_line(point(route[index],actor),point(route[index+1],actor))
+	for route in map.density_routes:
+		for index in range(route.size()-1):_road_line(point(route[index],actor),point(route[index+1],actor))
+	for site in map.density_homes:
+		var at:=point(site.p,actor)
+		if at.distance_to(CENTRE)<RADIUS-5:draw_rect(Rect2(at-Vector2(2,2),Vector2(4,4)),Color(.37,.25,.16))
 	for z in range(int(actor.y-RANGE),int(actor.y+RANGE),8):
 		_road_line(point(Vector2(map.layout.road_x(z),z),actor),point(Vector2(map.layout.road_x(z+8),z+8),actor))
 	for site in map.sites:

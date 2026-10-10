@@ -176,6 +176,11 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
    if story.cue=="drink":
     held_frames+=1;check(story.cup_contact_error<.04,"live drinking palm follows cup")
    if story.cue=="bed_sit" and story.age>2.5:check(story.support_contact_error<.12,"live sitting support remains within reach")
+   if story.cue=="tea_offer" and story.age>2.0:
+    var rig: Skeleton3D=story.visual.skeleton
+    var head: Vector3=rig.to_global(rig.get_bone_global_pose(story.visual.bones["head"]).origin)
+    var forward: Vector3=player.get_node("VisualRoot").global_basis.z
+    check((story.cup.global_position-head).dot(forward)>.05,"tea is offered in front of the seated torso")
    var key: String=story.cue
    var when: float=3.5 if key=="drink" else 1.8 if key=="tea_offer" else 3.0
    if story.active and story.age>when and not photographed.has(key):

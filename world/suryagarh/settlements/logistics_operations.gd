@@ -41,7 +41,7 @@ func build_inspection_post(bridge: Node3D) -> void:
 	officer.add_child(preload("res://characters/npcs/thana/daroga_motion.glb").instantiate());booth.add_child(officer)
 	officer.position=Vector3(0,.1,.6)
 	var sitting:=preload("res://story/community_social.gd").new();officer.add_child(sitting)
-	sitting.person=officer;sitting.seated=true;sitting.ground_y=officer.global_position.y;sitting.viewer=officer
+	sitting.person=officer;sitting.seated=true;sitting.ground_y=officer.global_position.y
 	builder.free()
 
 func station(id: String,label: String,parent: Node3D,at: Vector3) -> void:

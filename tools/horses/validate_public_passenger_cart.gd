@@ -42,6 +42,24 @@ func run() -> void:
   await RenderingServer.frame_post_draw
   root.get_texture().get_image().save_png(output.path_join("passenger_cart.png"))
  var player:CharacterBody3D=load("res://player/player.tscn").instantiate();world.add_child(player);player.position=cart.to_global(Vector3(1.7,0,2.4));player.set_physics_process(false)
+ service._cache_world()
+ check(service.clock==clock and service.viewer==player,"Clock and viewer caches belong to the fixture world")
+ player.position+=Vector3(300,0,0)
+ await create_timer(1.1).timeout
+ var passenger:Node=service.passengers[0]
+ check(is_equal_approx(passenger.simulation_interval,.5),"Remote passenger uses shared simulation tier")
+ cart.position+=Vector3(.5,0,0)
+ await physics_frame
+ var pelvis:Vector3=passenger.actor._skeleton.to_global(passenger.actor._skeleton.get_bone_global_pose(passenger.actor._skeleton.find_bone("pelvis")).origin)
+ check(pelvis.distance_to(passenger.socket.global_position+Vector3.UP*.11)<.02,"Seated contact follows the cart between remote pose updates")
+ cart.set_meta("opening_cart_passage",true)
+ await physics_frame
+ check(is_zero_approx(passenger.simulation_interval),"Cinematic passenger updates remain full rate remotely")
+ cart.remove_meta("opening_cart_passage")
+ player.position=cart.to_global(Vector3(1.7,0,2.4))
+ await physics_frame
+ check(is_zero_approx(passenger.simulation_interval),"Approach immediately restores full-rate passenger pose")
+ check(passenger.actor.body_collider.collision_layer==2,"Remote tiers retain passenger collision")
  for frame in 3:await physics_frame
  check(cart.board_at(player,"PublicPassenger_0_Right","passenger"),"Player boards a free passenger seat")
  var boarding_start:=Time.get_ticks_msec()

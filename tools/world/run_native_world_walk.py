@@ -57,12 +57,15 @@ def main():
                 print('PLAY TIMEOUT', flush=True)
             print(result[-14000:], flush=True)
             print('PLAY_EXIT', process.returncode, flush=True)
+            engine_errors = 'ERROR:' in result
+            if engine_errors:
+                print('PLAY_ENGINE_ERRORS: runtime check is not clean.', flush=True)
             if args.review:
                 print('REVIEW_READY', directory, flush=True)
                 deadline = time.monotonic() + 120
                 while time.monotonic() < deadline and not (output / 'review_done').exists():
                     time.sleep(.5)
-            return process.returncode
+            return process.returncode or (1 if engine_errors else 0)
         finally:
             if process and process.poll() is None:
                 process.kill()

@@ -19,10 +19,11 @@ var ankle_offsets:Dictionary={}
 var turn_angle:=0.0
 var current_speed:=0.0
 var pace_scale:=1.0
-var turn_in_place:=true
+var turn_in_place:=false
 
 func _ready() -> void:
-	clock = preload("res://systems/world_context.gd").find_world(actor).get_node_or_null("GameTimeSystem")
+	var world:Node=preload("res://systems/world_context.gd").find_world(actor)
+	clock = world.get_node_or_null("GameTimeSystem") if world!=null else null
 
 func configure(person: Node3D, points: Array[Vector2], offset: float) -> void:
 	actor=person;route=points;initial_wait=offset;wait=offset
@@ -66,12 +67,17 @@ func tick(delta: float) -> void:
 	var amount:=motion.length()
 	var shape:CollisionShape3D=actor.get_node("BodyCollider/BodyShape")
 	var query:=PhysicsShapeQueryParameters3D.new()
-	query.shape=shape.shape;query.transform=shape.global_transform
+	query.shape=shape.shape;query.transform=Transform3D(actor.global_basis*shape.basis,actor.global_position+actor.global_basis*shape.position)
 	query.transform.origin+=Vector3.UP*.025
 	query.motion=motion;query.margin=.008;query.collision_mask=1
 	query.exclude=motion_exclusions()
 	var safe:=actor.get_world_3d().direct_space_state.cast_motion(query)
-	if safe[0]<.99:
+	# cast_motion ignores initial overlaps; validate the destination as well.
+	var start:Transform3D=query.transform
+	query.transform.origin+=motion;query.motion=Vector3.ZERO
+	var occupied:=actor.get_world_3d().direct_space_state.intersect_shape(query,1)
+	query.transform=start;query.motion=motion
+	if safe[0]<.99 or not occupied.is_empty():
 		current_speed=0
 		blocked_frames+=1
 		query.transform.origin+=motion*minf(1.0,safe[0]+.05)
@@ -99,7 +105,7 @@ func route_target(point:Vector2) -> Vector3:
 
 func travel_motion(target:Vector3,delta:float) -> Vector3:
 	var offset:=target-actor.global_position
-	return offset.normalized()*minf(offset.length(),speed*delta)
+	return offset.normalized()*minf(offset.length(),current_speed*delta)
 
 func motion_exclusions() -> Array[RID]:
 	return [actor.get_node("BodyCollider").get_rid()]

@@ -49,7 +49,9 @@ def surface(name,accepted,offset,mat):
  return obj,len(selected)
 def upper_accept(index):
  p=points[index];w=weights[index]
- torso=.815<p.z<1.27 and abs(p.x)<.215
+ # Breast and shoulder skin can use dedicated MPFB groups. Filtering only
+ # spine weights cuts holes in the shirt over those unchanged body surfaces.
+ torso=.79<p.z<1.29 and abs(p.x)<.28
  sleeve=False
  for side in ['l','r']:
   head=rig.data.bones['upperarm_'+side].head_local
@@ -73,6 +75,7 @@ def clip_surface(obj,plane_point,plane_normal,inner=True):
  bmesh.ops.bisect_plane(bm,geom=list(bm.verts)+list(bm.edges)+list(bm.faces),dist=.000001,plane_co=plane_point,plane_no=plane_normal,clear_inner=inner,clear_outer=not inner)
  bm.to_mesh(obj.data);bm.free();obj.data.update()
 clip_surface(blouse,(0,0,1.245),(0,0,1),False)
+clip_surface(blouse,(0,0,.835),(0,0,1),True)
 def foundation_accept(index):
  x,y,z=points[index]
  return (.995<z<1.17 and abs(x)<.19) or (1.15<z<1.19 and .10<abs(x)<.14) or (.785<z<.825 and abs(x)<.19) or (.64<z<.825 and ((y<-.025 and abs(x)<.105) or (y>=-.025 and abs(x)<.035)))
@@ -81,7 +84,7 @@ def pallu_accept(index):
  p=points[index]
  # A continuous diagonal skin-following cotton panel, outside the blouse.
  center=.14-(p.z-.85)/.39*.29
- return .84<p.z<1.27 and p.y<-.015 and abs(p.x-center)<.15 and abs(p.x)<.23
+ return .80<p.z<1.30 and p.y<.005 and abs(p.x-center)<.19 and abs(p.x)<.27
 pallu,_=surface('Woven sari pallu over blouse',pallu_accept,.044,sari)
 for vertex in pallu.data.vertices:
  p=vertex.co
@@ -93,53 +96,10 @@ slope=.29/.39
 clip_surface(pallu,(.14-.105,0,.85),(1,0,slope),True)
 clip_surface(pallu,(.14+.105,0,.85),(1,0,slope),False)
 clip_surface(pallu,(0,0,1.255),(0,0,1),False)
-# Use a smooth woven shell rather than reproducing skin details in the outer
-# blouse/pallu. Only clothing is rebuilt; every donor body vertex stays intact.
-bpy.data.objects.remove(blouse,do_unlink=True);bpy.data.objects.remove(pallu,do_unlink=True)
-profile=[(.815,.215,.165),(.94,.215,.165),(1.05,.21,.20),(1.14,.205,.18),(1.20,.215,.13),(1.245,.085,.075)]
-def section(z):
- for a,b in zip(profile,profile[1:]):
-  if a[0]<=z<=b[0]:
-   t=(z-a[0])/(b[0]-a[0]);return a[1]+t*(b[1]-a[1]),a[2]+t*(b[2]-a[2])
- return profile[-1][1:]
-skin_tree=KDTree(len(human))
-for index in human:skin_tree.insert(points[index],index)
-skin_tree.balance()
-def woven_shell(name,vertices,faces,mat):
- mesh=bpy.data.meshes.new(name+' smooth shell');mesh.from_pydata(vertices,[],faces);mesh.update();mesh.materials.append(mat)
- for polygon in mesh.polygons:polygon.use_smooth=True
- obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj);obj.parent=rig
- obj.modifiers.new('Retained MPFB garment rig','ARMATURE').object=rig
- for i,p in enumerate(vertices):
-  _,source,_=skin_tree.find(Vector(p))
-  for bone,weight in weights[source].items():(obj.vertex_groups.get(bone) or obj.vertex_groups.new(name=bone)).add([i],weight,'REPLACE')
- return obj
-vertices=[];faces=[];N=32;R=24
-for row in range(R+1):
- z=.815+(1.245-.815)*row/R;rx,ry=section(z)
- for col in range(N):
-  angle=math.tau*col/N;vertices.append((rx*math.cos(angle),ry*math.sin(angle)-.008,z))
-for row in range(R):
- for col in range(N):
-  a=row*N+col;b=row*N+(col+1)%N;faces.extend([(a,b,a+N),(b,b+N,a+N)])
-blouse=woven_shell('Fitted cotton upper base',vertices,faces,upper_mat)
-# Existing skin-derived sleeve panels keep their exact shoulder/arm weighting.
-def sleeve_accept(index):
- p=points[index];w=weights[index]
- return any(w.get('upperarm_'+side,0)>.15 and (p-rig.data.bones['upperarm_'+side].head_local).length<.18 for side in ['l','r'])
-sleeves,_=surface('River blouse sleeves',sleeve_accept,.024,upper_mat)
-bpy.ops.object.select_all(action='DESELECT');blouse.select_set(True);sleeves.select_set(True);bpy.context.view_layer.objects.active=blouse;bpy.ops.object.join()
-vertices=[];faces=[];ROWS=24;COLS=6
-for row in range(ROWS+1):
- z=.84+(1.24-.84)*row/ROWS;rx,ry=section(z);center=.14-(z-.85)/.39*.29
- for col in range(COLS+1):
-  x=max(-rx*.98,min(rx*.98,center+(col/COLS-.5)*.19))
-  y=-ry*math.sqrt(max(0,1-(x/rx)**2))-.026
-  vertices.append((x,y,z))
-for row in range(ROWS):
- for col in range(COLS):
-  a=row*(COLS+1)+col;faces.extend([(a,a+COLS+1,a+1),(a+1,a+COLS+1,a+COLS+2)])
-woven_shell('Woven sari pallu over blouse',vertices,faces,sari)
+clip_surface(pallu,(0,0,.84),(0,0,1),True)
+# Keep body-derived garment topology and original MPFB weights. A detached
+# cylinder resampled to nearest skin triangles can change binding across a
+# sleeve seam, creating large corrective folds. Covered human skin stays intact.
 # Editable rest drape. The bounded runtime fabric follows actual leg positions.
 RINGS=20;SEGMENTS=40;WAIST=.905
 for name,low,high,mat in [('Wrapped sari lower drape',.020,WAIST,sari),('Sari lower border',.020,.050,border)]:
