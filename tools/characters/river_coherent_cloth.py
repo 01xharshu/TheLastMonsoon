@@ -8,7 +8,10 @@ def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True):
     if reset_key:
         for i in range(len(key.data)):key.data[i].co=basis.data[i].co
     bpy.context.view_layer.update();ev=obj.evaluated_get(bpy.context.evaluated_depsgraph_get());mesh=ev.to_mesh()
-    points=[ev.matrix_world@v.co for v in mesh.vertices];faces=[tuple(p.vertices) for p in mesh.polygons];ev.to_mesh_clear()
+    # Cropped garment faces can be quads or ngons. Check the same triangles
+    # that the exporter uses; a polygon centre can miss an inward diagonal.
+    obj.data.calc_loop_triangles()
+    points=[ev.matrix_world@v.co for v in mesh.vertices];faces=[tuple(p.vertices) for p in obj.data.loop_triangles];ev.to_mesh_clear()
     inverse_transforms=[];offsets=[0.0]*len(points)
     for vertex in obj.data.vertices:
         blend=Matrix.Identity(4)*0;total=0

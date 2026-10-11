@@ -10,6 +10,8 @@ func _ready()->void:
 	var hospital:=cantonment.shell("MilitaryHospital",Vector3(-43,0,45),Vector2(24,10),"")
 	for x in [-9,-3,3,9]:
 		for z in [-2,2]:cantonment.bed(hospital,Vector3(x,.24,z),true)
+	var depot:=cantonment.shell("MilitarySupplyDepot",Vector3(-10,0,45),Vector2(22,10),"")
+	cantonment.stock(depot,"crate",[-7.0,-3.0,3.0,7.0])
 	for label in ["GrainFodderWarehouse","CavalryStables","CantonmentChurch","MilitaryCemetery"]:
 		var room:=Node3D.new();room.name=label;district.add_child(room)
 	preload("res://world/suryagarh/settlements/cantonment_rooms.gd").install(self,district)

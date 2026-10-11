@@ -78,7 +78,8 @@ func run() -> void:
 	for pose in poses:
 		camera.position=pose[1];camera.look_at(pose[2])
 		for frame in 15:await process_frame
-		await RenderingServer.frame_post_draw
+		# Fifteen native frames settle the view; image readback flushes the device.
+		# Do not wait on frame_post_draw: Metal can leave this fixture suspended.
 		if not folder.is_empty():root.get_texture().get_image().save_png(folder.path_join(pose[0]+".png"))
 	camera.position=Vector3(-500,16,230);camera.look_at(Vector3(-450,7,260))
 	var samples:Array[float]=[];var previous:=Time.get_ticks_usec()

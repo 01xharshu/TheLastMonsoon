@@ -72,3 +72,7 @@ Native uninterrupted recovery follow-up passed: bed support and live drinking pa
 Inspector budget regression passed: distant cosmetic updates accumulate 0.5 seconds, then resume immediately on approach; seated posture and collision remain active. The reused horses already use the shared cosmetic budget; vegetable meshes use the existing 130 m visibility range.
 
 Final current-tree actual-world rerun passed without script errors: new journey opening/onboarding, real horse board, cinematic station entry/chamber, recovery, connected farm and save/load (`review_dev_story.gd`, headless fixed 60). Focused native recovery and infrastructure checks passed separately. Full-world native frame-time and final cloth/facial approval remain open.
+
+## Post-training continuation — 2026-10-11
+
+Chacha’s completed equipment lessons now hand off to `RebellionStory`. The user’s revenge/chase, Mangal carriage rescue, fort-hideout firearm introduction and cantonment weapons-raid sequence is canonical in [rebellion_sequence.md](rebellion_sequence.md). That document owns the continuation and its unresolved checks; the former courtyard exploration objective is no longer the next required plot beat.

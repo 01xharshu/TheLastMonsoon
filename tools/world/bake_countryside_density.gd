@@ -95,6 +95,19 @@ func bake() -> void:
 		var max_pixel:=((center+Density.FIELD_SIZE*.5+Vector2.ONE*Layout.HALF)/Layout.SIZE*1024).ceil()
 		for z in range(int(min_pixel.y),int(max_pixel.y)):
 			for x in range(int(min_pixel.x),int(max_pixel.x)):mask.set_pixel(x,z,Color(1,0,0))
+	for lane in Density.lanes():
+		for segment in range(lane.size()-1):
+			var a:Vector2=lane[segment];var b:Vector2=lane[segment+1]
+			var bounds:=Rect2(a,Vector2.ZERO).expand(b).grow(3)
+			var first:=((bounds.position+Vector2.ONE*Layout.HALF)/Layout.SIZE*1024).floor()
+			var last:=((bounds.end+Vector2.ONE*Layout.HALF)/Layout.SIZE*1024).ceil()
+			for z in range(int(first.y),int(last.y)):
+				for x in range(int(first.x),int(last.x)):
+					var point:Vector2=(Vector2(x+.5,z+.5)/1024-Vector2.ONE*.5)*Layout.SIZE
+					var distance:float=survey.segment_distance(point,a,b)
+					var strength:=1-smoothstep(1.4,2.2,distance)
+					var old:=mask.get_pixel(x,z)
+					mask.set_pixel(x,z,Color(old.r,maxf(old.g,strength),0))
 	var texture:=ImageTexture.create_from_image(mask);save_resource(texture,"density_mask.res");texture.take_over_path(OUT+"density_mask.res")
 	terrain_material=load(OUT+"terrain_material.tres");terrain_material.set_shader_parameter("density_mask_tex",texture)
 	save_resource(terrain_material,"terrain_material.tres")

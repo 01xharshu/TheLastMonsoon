@@ -26,7 +26,7 @@ static func catalogue() -> Dictionary:
  return result
 
 func configure(owner: Node3D, saved: Dictionary) -> void:
- manager=owner;graph=preload("res://vehicles/coach_routes.gd").build()
+ manager=owner;graph=preload("res://vehicles/coach_routes.gd").build(owner.get_parent())
  # Actual existing counting-house desk and hospital entrance, not new buildings.
  var desk:=preload("res://world/suryagarh/errands/errand_target.gd").new()
  desk.manager=manager;desk.endpoint="road_office_desk";desk.position=manager.targets.parcel.global_position

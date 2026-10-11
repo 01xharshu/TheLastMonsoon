@@ -181,10 +181,8 @@ func follow_story_destination() -> void:
 
 func _sync_story_destination() -> void:
 	if player.get_meta("opening_active",false) or player.get_meta("morning_tutorial_active",false): return
-	var inquiry := player.get_parent().get_node_or_null("DevInquiry")
-	if inquiry == null or not inquiry.configured or inquiry.stage == "dormant": return
-	var destination: Node3D = inquiry.destination
-	var label := str(destination.get_meta("parking_label",""))
+	var destination: Dictionary = preload("res://systems/objective_resolver.gd").resolve(player,false)
+	var label := str(destination.get("label",""))
 	if story_site.is_empty() and waypoint.is_finite() and selected_site != label:
 		follow_story = false # Preserve a custom waypoint restored from a save.
 		return
@@ -195,7 +193,8 @@ func _sync_story_destination() -> void:
 		story_site = ""
 		story_target = Vector2(INF,INF)
 		return
-	var target := Vector2(destination.global_position.x,destination.global_position.z)
+	var position: Vector3=destination.position
+	var target := Vector2(position.x,position.z)
 	if label == story_site and target.is_equal_approx(story_target): return
 	story_site = label
 	story_target = target

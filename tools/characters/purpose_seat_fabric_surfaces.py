@@ -62,14 +62,10 @@ def rebuild_lower_surfaces(rig,body,foundation,trousers):
  used=sorted({i for face in faces for i in face});mapping={i:j for j,i in enumerate(used)}
  transform=trousers.matrix_world.inverted()@donor.matrix_world
  points=[transform@(donor.data.vertices[i].co+donor.data.vertices[i].normal*.009) for i in used]
- # Add a rounded dropped crotch to the garment pattern, tapering into the legs.
- # This supplies fabric ease beneath the pelvis without changing the human.
- for point in points:
-  lateral=max(0.0,1.0-abs(point.x)/.12)
-  vertical=max(0.0,1.0-abs(point.z-.76)/.16)
-  point.z-=.10*lateral*lateral*vertical
  weights=[[(g.group,g.weight) for g in donor.data.vertices[i].groups] for i in used]
  replace(trousers,points,[tuple(mapping[i] for i in face) for face in faces],[g.name for g in donor.vertex_groups],weights)
+ from purpose_trouser_seams import prepare_trouser_seams
+ prepare_trouser_seams(rig,trousers)
  mesh=donor.data;bpy.data.objects.remove(donor,do_unlink=True)
  if mesh.users==0:bpy.data.meshes.remove(mesh)
  for obj in [foundation,trousers]:

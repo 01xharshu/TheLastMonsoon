@@ -20,6 +20,11 @@ func _ready() -> void:
 func register(journey:Node) -> void:
  if not members.has(journey):members.append(journey)
 
+func unregister(journey:Node) -> void:
+ end_conversation(journey)
+ members.erase(journey)
+ for bucket:Array in cells.values():bucket.erase(journey)
+
 func cell(point:Vector3) -> Vector2i:
  return Vector2i(floori(point.x/CELL_SIZE),floori(point.z/CELL_SIZE))
 

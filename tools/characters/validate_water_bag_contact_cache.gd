@@ -35,6 +35,18 @@ func prepare_reference(bag: Node3D) -> void:
 				sample.binds.append(cloth.skin.get_bind_pose(bind))
 				sample.weights.append(weight)
 			reference_samples.append(sample)
+func exact_unique_samples(bag: Node3D) -> int:
+	# Inventory only: compare binary position and ordered influence data.
+	# No rounding, approximate welding, skin/material or query changes.
+	var seen := {}
+	for sample in bag.contact_points.size():
+		var key := PackedVector3Array([bag.contact_points[sample]]).to_byte_array()
+		for slot in range(bag.contact_offsets[sample],bag.contact_offsets[sample+1]):
+			key.append_array(PackedInt32Array([bag.contact_indices[slot]]).to_byte_array())
+			key.append_array(PackedFloat32Array([bag.contact_weights[slot]]).to_byte_array())
+		seen[key.hex_encode()] = true
+	return seen.size()
+
 func reference(bag: Node3D) -> float:
 	var inverse: Transform3D = bag.pouch.global_transform.affine_inverse() * bag.cloth_rig.global_transform
 	var poses := {}
@@ -113,8 +125,16 @@ func _run() -> void:
 	for frame in 3: await process_frame
 	stop_scripts(stage)
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+	# Match the main OpeningSequence garment replacement before first contact.
+	preload("res://player/arjun_complete_fit.gd").new().apply(visual)
+	# The real first query uses the authored standing attachment, before sway.
+	bag.transform = Transform3D(Basis.IDENTITY,Vector3(.13,.175,-.09))
+	bag.set_sway(0.0,0.0)
 	if not bag.contact_ready: bag._prepare_cloth_contact()
 	prepare_reference(bag)
+	bag.use_contact_width_bound = true
+	if "--trace-bag-contact" in OS.get_cmdline_user_args():
+		print("CONTACT INIT UNIQUE ",JSON.stringify({"samples":bag.contact_points.size(),"exact_unique":exact_unique_samples(bag),"scope":"inventory only; original query unchanged"}))
 	check(not reference_samples.is_empty(),"No real coat contact samples")
 	check(reference_samples.size()==bag.contact_offsets.size()-1,"Contact sample selection changed")
 	var maximum_error := 0.0
@@ -127,7 +147,9 @@ func _run() -> void:
 			actor.velocity = Vector3(0,0,spec[0]*4.0)
 			equipment._process(1.0/60.0)
 			var expected := reference(bag)
+			var original: float = bag._cloth_contact_required(true)
 			var actual: float = bag._cloth_contact_required()
+			check(original==actual,"Width rejection changed exact cached contact at pose %d" % poses_checked)
 			maximum_error = maxf(maximum_error,absf(expected-actual))
 			check(absf(expected-actual)<.00002,"Cached coat contact changed at pose %d" % poses_checked)
 			bag.cloth_support = 0.0
@@ -146,6 +168,16 @@ func _run() -> void:
 			(old_times if variant==0 else new_times).append(Time.get_ticks_usec()-started)
 	old_times.sort()
 	new_times.sort()
+	var bound_times: Array[int] = []
+	var full_times: Array[int] = []
+	for round_index in 9:
+		for full_scan in ([true,false] if round_index%2==0 else [false,true]):
+			var started := Time.get_ticks_usec()
+			for repeat in 30: bag._cloth_contact_required(full_scan)
+			(full_times if full_scan else bound_times).append(Time.get_ticks_usec()-started)
+	full_times.sort()
+	bound_times.sort()
+	print("CONTACT INIT WIDTH COST ",JSON.stringify({"full_30_calls_us":full_times[4],"bounded_30_calls_us":bound_times[4],"width_m":bag.contact_width_limit,"exact_parity":failures.is_empty()}))
 	bag.held = true
 	bag.cloth_support = .1
 	bag._update_cloth_contact(.2)

@@ -5,6 +5,7 @@ var route:Array[Vector2]=[Vector2(-416,230),Vector2(-386,230)]
 var direction:=1
 var wait:=0.0
 var blocked_seconds:=0.0
+var ground_collision_mask:=1
 func configure(vehicle:Node3D) -> void:cart=vehicle
 func _physics_process(delta:float) -> void:
  if cart==null:return
@@ -18,7 +19,7 @@ func _physics_process(delta:float) -> void:
  if not cart.boarding._clearance_at(cart.global_position):cart.rotation.y=old_yaw;cart.set_forward_motion(0,delta);return
  var pace:=1.05 if absf(angle_difference(cart.rotation.y,heading))<.15 else 0.0
  var next:=cart.global_position-cart.global_basis.z*pace*delta
- var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*2,next-Vector3.UP*3,1,cart.boarding._vehicle_exclusions())
+ var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*2,next-Vector3.UP*3,ground_collision_mask,cart.boarding._vehicle_exclusions())
  var ground:=cart.get_world_3d().direct_space_state.intersect_ray(ray)
  if not ground.is_empty():next.y=ground.position.y
  if not ground.is_empty() and absf(next.y-cart.global_position.y)<.35 and cart.boarding._clearance_at(next):

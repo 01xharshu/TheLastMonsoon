@@ -122,4 +122,5 @@ func _repair_tree_trunks() -> void:
 	await Startup.wait_for(self, "Terrain collision")
 	await get_tree().physics_frame
 	await preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($Landscape)
+	await preload("res://world/suryagarh/broadleaf_render_records.gd").configure_landscape($Landscape)
 	Startup.finish(startup_tree_task)

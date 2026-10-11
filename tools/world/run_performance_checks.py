@@ -24,13 +24,20 @@ def other_native_jobs(own_pid=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["cow-metadata", "terrain", "bag", "npc", "feet", "humans", "roadside", "scripts", "frames", "route", "population", "traffic", "tutorial", "support", "coach", "continue", "combat", "cow", "menu"])
+    parser.add_argument("check", choices=["tree-compact", "cow-metadata", "terrain", "bag", "npc", "feet", "humans", "roadside", "scripts", "frames", "route", "population", "traffic", "tutorial", "support", "coach", "continue", "combat", "cow", "menu"])
     parser.add_argument("--native", action="store_true")
+    parser.add_argument("--compare-bag-contact", action="store_true", help="Same-scene live width-bound contact A/B; route check only.")
+    parser.add_argument("--trace-bag-contact", action="store_true", help="Trace actual first cloth selection; diagnostic output only.")
+    parser.add_argument("--geometry-attribution", action="store_true", help="Attribute geometry producers in a frozen populated fixed-view diagnostic.")
+    parser.add_argument("--tree-lod", action="store_true", help="Test existing broadleaf LOD biases within the geometry diagnostic; production unchanged.")
+    parser.add_argument("--tree-compact", action="store_true", help="Test removal of exactly collapsed broadleaf rendering records; production unchanged.")
     parser.add_argument("--bullock", action="store_true", help="Check the actual bullock-cart driver with the coach validator.")
     parser.add_argument("--baseline", action="store_true", help="Print actual driver setup without requiring a cache hit.")
     parser.add_argument("--locations", action="store_true", help="Check driver cache identity across world locations and headings.")
     parser.add_argument("--runtime-fitting", action="store_true", help="Compare uncached fitting without loading-stage yielding.")
-    parser.add_argument("--area", choices=["village", "civil_lines", "cantonment", "forest"], help="Verify just this walking segment through New Journey.")
+    parser.add_argument("--local-pose", action="store_true", help="Test the disabled cart-local driver-pose candidate.")
+    parser.add_argument("--pose-review", action="store_true", help="Compare local seating against the established body and garments.")
+    parser.add_argument("--area", choices=["village", "civil_lines", "cantonment", "forest", "broadleaf_close"], help="Select the walking segment or geometry diagnostic view.")
     parser.add_argument("--skip-intro", action="store_true", help="Use the existing two-press skip in a focused walking check.")
     parser.add_argument("--profile-cloth", action="store_true", help="Attribute slow seated-driver garment fitting during the route.")
     parser.add_argument("--verbose", action="store_true", help="Include engine resource-leak diagnostics.")
@@ -42,7 +49,14 @@ def main():
     parser.add_argument("--review", action="store_true", help="Keep temporary route or cow views available for up to 60 seconds before cleanup.")
     parser.add_argument("--quality", choices=["low","medium","high"], help="Use this quality in memory for a route or frame profile; do not change saved preferences.")
     args = parser.parse_args()
+    if args.compare_bag_contact and args.check != "route":
+        parser.error("Live contact comparison requires the route check.")
+    if (args.geometry_attribution or args.tree_lod or args.tree_compact or args.area == "broadleaf_close") and args.check != "frames":
+        parser.error("Geometry diagnostics require the frames check.")
+    if (args.tree_lod or args.tree_compact or args.area == "broadleaf_close") and not args.geometry_attribution:
+        parser.error("Tree LOD/close views require geometry attribution.")
     scripts = {
+        "tree-compact": "tools/world/validate_broadleaf_compaction.gd",
         "cow-metadata": "tools/animals/validate_cow_surface_metadata.gd",
         "menu": "tools/world/validate_menu_integration.gd",
         "cow": "tools/animals/validate_cow_motion.gd",
@@ -82,10 +96,17 @@ def main():
                    "--script", "res://" + scripts[args.check]]
         if args.verbose: command.insert(1,"--verbose")
         extras = []
+        if args.compare_bag_contact: extras.append("--compare-bag-contact")
+        if args.trace_bag_contact: extras.append("--trace-bag-contact")
+        if args.geometry_attribution: extras.append("--geometry-attribution")
+        if args.tree_lod: extras.append("--tree-lod")
+        if args.tree_compact: extras.append("--tree-compact")
         if args.bullock: extras.append("--bullock")
         if args.baseline: extras.append("--baseline")
         if args.locations: extras.append("--locations")
         if args.runtime_fitting: extras.append("--runtime-fitting")
+        if args.local_pose: extras.append("--local-pose")
+        if args.pose_review: extras.append("--pose-review")
         if args.area: extras.append("--area=" + args.area)
         if args.skip_intro: extras.append("--skip-intro")
         if args.profile_cloth: extras.append("--profile-cloth")
@@ -94,7 +115,7 @@ def main():
         if args.isolate: extras.append("--isolate")
         if args.physics: extras.append("--physics")
         if args.village: extras.append("--village")
-        if args.review and args.check in {"route", "cow-metadata", "coach"}: extras.append("--review-dir=" + str(directory))
+        if args.review and args.check in {"route", "cow-metadata", "coach", "frames", "tree-compact"}: extras.append("--review-dir=" + str(directory))
         if args.quality: extras.append("--quality=" + str(["low","medium","high"].index(args.quality)))
         if extras: command += ["--", *extras]
         environment = None
@@ -142,7 +163,7 @@ def main():
                 if line.startswith("SCRIPT ERROR:") and any(kind in line for kind in ("Compile Error:", "Parse Error:")):
                     process.terminate()
                 if diagnostic_context or line.startswith(("FAIL ","Leaked instance:","Resource still in use:")) or any(marker in line for marker in (
-                    "PERFORMANCE SNAPSHOT", "COW METADATA", "MENU INTEGRATION", "COW MOTION:", "COMBAT MOTION", "RESIDENT_WORLD_RESULT", "COACHMAN CACHE", "COACHMAN CLOTH COST", "CITY_POPULATION_RESULT", "MORNING TUTORIAL", "BUDGET", "SCRIPT COST", "CONTACT CACHE", "NPC ANIMATION CACHE", "NPC FRAME WORK", "HUMAN CACHE", "ROADSIDE OPPORTUNITIES", "PIXEL PARITY", "GAME ERROR ROUTE", "RENDER REVIEW", '"routes"',
+                    "FINAL BLADE MIN CONTACT", "CONTACT INIT", "GEOMETRY", "PERFORMANCE SNAPSHOT", "COW METADATA", "MENU INTEGRATION", "COW MOTION:", "COMBAT MOTION", "RESIDENT_WORLD_RESULT", "COACHMAN CACHE", "COACHMAN CLOTH COST", "CITY_POPULATION_RESULT", "MORNING TUTORIAL", "BUDGET", "SCRIPT COST", "CONTACT CACHE", "NPC ANIMATION CACHE", "NPC FRAME WORK", "HUMAN CACHE", "ROADSIDE OPPORTUNITIES", "PIXEL PARITY", "GAME ERROR ROUTE", "RENDER REVIEW", '"routes"',
                 )):
                     print(line, end="", flush=True)
                     diagnostic_context = max(0, diagnostic_context - 1)
@@ -170,7 +191,9 @@ def main():
                     process.wait()
         if timed_out.is_set():
             print(f"Check exceeded its {timeout_seconds}-second limit.", flush=True)
-        if args.review and args.check in {"route", "cow-metadata", "coach"} and result == 0 and not (errors or timed_out.is_set() or overlapped.is_set()):
+        if args.review and args.check in {"route", "cow-metadata", "coach", "frames", "tree-compact"} and not (timed_out.is_set() or overlapped.is_set()) and any(directory.glob("*.png")):
+            if errors or result:
+                print("Check failed; temporary pixels are available for diagnosis, not acceptance.", flush=True)
             print("TEMPORARY REVIEW DIRECTORY " + str(directory), flush=True)
             # A reviewer can inspect local images and send Enter to clean up.
             # Timeout/EOF/interruption also leaves the TemporaryDirectory scope.

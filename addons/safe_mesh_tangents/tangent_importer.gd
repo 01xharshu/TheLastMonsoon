@@ -20,6 +20,9 @@ func _fill_meshes(node: Node, replacements: Dictionary) -> void:
 
 static func tangent_array(arrays: Array, primitive: int) -> PackedFloat32Array:
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	# Unaffected blend-shape surfaces can have empty arrays. Zero UVs and zero
+	# normals must not pass the matching-count check and enter MikkTSpace.
+	if normals.is_empty():return PackedFloat32Array()
 	var uvs = arrays[Mesh.ARRAY_TEX_UV]
 	if uvs != null and uvs.size() == normals.size() and primitive == Mesh.PRIMITIVE_TRIANGLES:
 		var tool := SurfaceTool.new()

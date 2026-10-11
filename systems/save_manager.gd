@@ -181,7 +181,16 @@ func save_game(world: Node3D, slot: int) -> bool:
 	if police_case_active(actor):
 		last_error = "Cannot save during pursuit or custody"
 		return false
-	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(save_root))!=OK: return false
+	var save_directory:=ProjectSettings.globalize_path(save_root)
+	var ancestor:=save_directory
+	while not DirAccess.dir_exists_absolute(ancestor):
+		if FileAccess.file_exists(ancestor):
+			last_error="Save destination is blocked by a file"
+			return false
+		var parent:=ancestor.get_base_dir()
+		if parent.is_empty() or parent==ancestor:break
+		ancestor=parent
+	if DirAccess.make_dir_recursive_absolute(save_directory)!=OK: return false
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	var survival: SurvivalComponent = actor.get_node("SurvivalComponent")
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
@@ -222,6 +231,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"opened_treasure_chests": _opened_treasure_chest_ids(world),
 		"door_states": _door_states(world),
 		"cart_states": preload("res://vehicles/cart_save_state.gd").collect(world),
+		"horse_states": preload("res://horses/horse_save_state.gd").collect(world),
 		"household_cattle": _cattle_states(world),
 		"river_routines": preload("res://world/suryagarh/settlements/river_routine_save.gd").collect(world),
 		"draft_yards": world.get_node("DraftAnimalYards").export_state() if world.has_node("DraftAnimalYards") else {},
@@ -381,6 +391,7 @@ func apply_pending(world: Node3D) -> void:
 			chest.restore_opened()
 	_restore_door_states(world,data.get("door_states",{}))
 	preload("res://vehicles/cart_save_state.gd").restore(world,data.get("cart_states",[]))
+	preload("res://horses/horse_save_state.gd").restore(world,data.get("horse_states",[]))
 	for service in world.get_tree().get_nodes_in_group("administrative_services"):
 		var key := str(world.get_path_to(service))
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
@@ -534,6 +545,12 @@ func _restore_door_states(world: Node3D,states: Dictionary) -> void:
 		var value = states[path]
 		if not (value is bool or (value is Dictionary and value.get("opened") is bool)): continue
 		var node := world.get_node_or_null(NodePath(path))
+		# Early city candidates used automatic jamb names; resolve their authored door.
+		if node == null and str(path).begins_with("UrbanWest/"):
+			var parts:=str(path).split("/")
+			if parts.size()==4 and (parts[1].begins_with("CityHome") or parts[1] in ["CivilianHospital","CollegeLectureHall"]) and parts[2].begins_with("@Node3D@") and parts[3] in ["FrontDoor","RearEscapeDoor","NeighbourDoor","EntranceDoor"]:
+				var building:=world.get_node_or_null(NodePath("UrbanWest/"+parts[1]))
+				if building!=null:node=building.find_child(parts[3],true,false)
 		if node != null and node.is_in_group("house_doors") and node.has_method("restore_state"):
 			if value is Dictionary:
 				node.swing_direction=-1.0 if float(value.get("swing_direction",1.0))<0 else 1.0

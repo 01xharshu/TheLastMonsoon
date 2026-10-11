@@ -64,7 +64,7 @@ func refresh_occupancy() -> void:
 			# accept a bay merely because its own centre also lies inside it.
 			if occupant == null or cart != owner_cart: occupant = cart
 			if cart != owner_cart: break
-	if occupant == owner_cart:
+	if is_instance_valid(owner_cart) and occupant == owner_cart:
 		docked = Vector2(owner_cart.global_position.x-global_position.x,owner_cart.global_position.z-global_position.z).length() < .6 and absf(angle_difference(owner_cart.global_rotation.y,standing_heading)) < .15
 	set_meta("parking_occupied",occupant != null)
 	set_meta("parking_docked",docked)

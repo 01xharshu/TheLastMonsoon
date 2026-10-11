@@ -5,4 +5,4 @@ func _ready() -> void:
 	set_process(false);set_physics_process(false)
 func move_actor(_actor: Node3D, goal: Vector3, _speed: float, _delta: float) -> bool:
 	commanded_goals.append(goal)
-	return false
+	return _actor.global_position.distance_to(goal)<.13

@@ -24,6 +24,8 @@ mesh=bpy.data.meshes.new_from_object(body.evaluated_get(dg),preserve_all_data_la
 group=body.vertex_groups['body'].index
 human={v.index for v in body.data.vertices if any(a.group==group and a.weight>.5 for a in v.groups)}
 objects=[bpy.data.objects[name] for name in ['Fitted cotton upper base','Woven sari pallu over blouse','Opaque fitted bra and thong foundation']]
+foundation=bpy.data.objects['Opaque fitted bra and thong foundation']
+if '--pallu-only' in sys.argv:objects=[bpy.data.objects['Woven sari pallu over blouse']]
 for obj in objects:
  if obj.data.shape_keys:obj.shape_key_clear()
  bind_surface(obj,body,mesh,human)
@@ -31,7 +33,7 @@ bpy.data.meshes.remove(mesh)
 for m,enabled in mask_state:m.show_viewport=enabled
 fit_river_cloth(ROOT,rig,body,objects,pose_data=data)
 # Export first: a fitting/export failure must leave the live timeline intact.
-export_river_asset(ROOT,rig,body,len(objects[-1].data.polygons))
+export_river_asset(ROOT,rig,body,len(foundation.data.polygons))
 # Runtime and source use the same bounded timeline. Lower fabric stays under
 # its existing joint-envelope controller and never needs hundreds of morphs.
 (ROOT/'characters/npcs/indian/river_cloth_timeline.gd').write_text('extends RefCounted\n## Authored upper-clothing contact poses; calmer phases stay sparse.\nconst TIMES := '+json.dumps(data['times'])+'\n')

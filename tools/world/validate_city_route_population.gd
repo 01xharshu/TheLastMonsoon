@@ -35,14 +35,14 @@ func run() -> void:
   var label:String=person.get_meta("population_route")
   route_counts[label]=int(route_counts.get(label,0))+1
  var expected_walkers:=0
- for count in population.ROUTE_COUNTS.values():expected_walkers+=int(count)
+ for count in population.ROUTE_COUNTS.values():expected_walkers+=int(count)*population.POPULATION_MULTIPLIER
  if population.pedestrians.size()!=expected_walkers:errors.append("missing authored walkers")
  if population.patrols.size()!=population.POLICE_ROUTES.size()*population.POPULATION_MULTIPLIER:errors.append("incorrect doubled police count")
  if population.carts.size()!=population.CART_ROUTES.size()*population.POPULATION_MULTIPLIER:errors.append("incorrect doubled cart count")
  for label:String in population.ROUTE_COUNTS:
   if int(route_counts.get(label,0))!=population.ROUTE_COUNTS[label]*population.POPULATION_MULTIPLIER:errors.append(label+": missing walkers")
  var cart_origins:Dictionary={};var police_origins:Dictionary={}
- for cart:Node3D in population.carts:cart_origins[cart]=cart.global_position
+ for cart:Node3D in population.carts:cart_origins[cart]=cart.get_node("CityRoadJourney").distance_travelled
  for officer:Node3D in population.patrols:police_origins[officer]=officer.global_position
  await create_timer(30).timeout
  var moved:=0;var moving_routes:Dictionary={};var blocked:Dictionary={}
@@ -60,7 +60,7 @@ func run() -> void:
   if int(moving_routes.get(label,0))<2:errors.append(label+": fewer than two walkers made progress")
  var moved_carts:=0;var stopped_carts:Array[String]=[]
  for cart:Node3D in population.carts:
-  if cart.global_position.distance_to(cart_origins[cart])>2:moved_carts+=1
+  if cart.get_node("CityRoadJourney").distance_travelled-float(cart_origins[cart])>2:moved_carts+=1
   else:
    var journey:Node=cart.get_node("CityRoadJourney")
    stopped_carts.append(str(cart.name)+" | at="+str(cart.global_position)+" goal="+str(journey.route[journey.direction])+" blocked="+str(journey.blocked_seconds)+" reason="+journey.blocked_reason+" wait="+str(journey.wait)+" can_move="+str(cart.can_move()))

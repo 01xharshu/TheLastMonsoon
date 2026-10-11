@@ -15,6 +15,7 @@ func nearest_vehicle() -> Node3D:
 	return closest
 
 func try_toggle() -> bool:
+	if not preload("res://systems/action_permissions.gd").allowed(actor,&"board"): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open",false) or actor.get_meta("weapon_wheel_open",false): return false
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)

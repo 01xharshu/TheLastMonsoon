@@ -47,6 +47,9 @@ var idle_age:=0.0
 var swing_age:=0.0
 var journey_horse: Node3D
 var horse_physics:=true
+var journey_cart: Node
+var cart_physics:=true
+var camera_exclusions: Array[RID]=[]
 var hero_path:=PackedVector3Array()
 var path_origin:=Vector3.ZERO
 var tea_start:=Vector3.ZERO
@@ -95,7 +98,32 @@ func configure() -> void:
  var tea:=MeshInstance3D.new();tea.name="TeaSurface";var liquid:=CylinderMesh.new();liquid.top_radius=.044;liquid.bottom_radius=.044;liquid.height=.004
  tea.mesh=liquid;var tea_mat:=StandardMaterial3D.new();tea_mat.albedo_color=Color(.18,.08,.03);tea_mat.roughness=.2;tea.material_override=tea_mat
  cup.add_child(tea);tea.position.y=.053
+ camera_exclusions.append(player.get_rid())
+ for actor in inquiry.officials+inquiry.guards+[inquiry.police_prompt.get_meta("attendant")]:
+  camera_exclusions.append(actor.body_collider.get_rid())
+ match_station_heights()
+ var standing=preload("res://vehicles/cart_parking_bay.gd").new()
+ standing.name="InquiryVehicleStanding";get_parent().add_child(standing)
+ standing.global_position=inquiry.station.to_global(Vector3(7,0,32))
+ standing.global_position.y=get_parent().layout.height(standing.global_position.x,standing.global_position.z)+.1
+ standing.global_rotation.y=inquiry.station.global_rotation.y
+ standing.set_meta("parking_label","Police station · horse and cart standing")
  configured=true;refresh()
+func rest_stature(rig: Skeleton3D) -> float:
+ var head: int=rig.find_bone("head");var foot: int=rig.find_bone("foot_l")
+ if head<0 or foot<0:return 0.0
+ return (rig.global_basis*(rig.get_bone_global_rest(head).origin-rig.get_bone_global_rest(foot).origin)).y
+func match_station_heights() -> void:
+ var stature:=rest_stature(visual.skeleton)
+ if stature<=0:return
+ var personnel: Array=inquiry.officials+inquiry.guards+[inquiry.police_prompt.get_meta("attendant")]
+ for actor in personnel:
+  var existing:=rest_stature(actor._skeleton)
+  if existing<=0:continue
+  actor.scale*=stature/existing
+  if actor.has_meta("inquiry_seat"):actor.set_meta("inquiry_seat",actor.transform)
+  reset_actor_grounding(actor)
+
 func line(speaker: String,text: String,seconds: float,at: Vector3,target: Vector3,action:="",place:="station") -> Dictionary:
  return {"speaker":speaker,"text":text,"seconds":seconds,"at":at,"target":target,"cue":action,"place":place}
 func begin_optional() -> bool:
@@ -113,11 +141,19 @@ func start_horse_journey(horse: Node3D) -> bool:
 func start_inquiry(_id:="police") -> bool:
  if not configured or active or state!="awaiting_inquiry" or player.health<=0:return false
  if player.get_meta("document_busy",false) or get_tree().root.get_node("SaveManager").police_case_active(player):return false
+ var mount: Node=player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null
+ if is_instance_valid(mount) and not is_instance_valid(journey_horse) and not is_instance_valid(journey_cart):
+  if not mount.transition.is_empty():return false
+  if mount.is_in_group("horses"):
+   journey_horse=mount;horse_physics=mount.is_physics_processing();_id="horse"
+  elif "cart" in mount:
+   journey_cart=mount;cart_physics=mount.is_physics_processing();_id="cart"
+  else:return false
  var list: Array[Dictionary]=[]
- if _id=="horse":
-  list.append(line("","",4,Vector3.ZERO,Vector3.ZERO,"horse_departure","home"))
+ if _id in ["horse","cart"]:
+  list.append(line("","",4,Vector3.ZERO,Vector3.ZERO,"horse_departure","station_exterior"))
   list.append(line("","",4,Vector3(5,2.8,32),Vector3(0,1.4,25),"horse_arrival"))
-  list.append(line("","",1.4,Vector3(3,1.8,25),Vector3(0,1,23),"horse_dismount"))
+  list.append(line("","",2.0,Vector3(3,1.8,25),Vector3(0,1,23),"horse_dismount"))
  list.append(line("","",12,Vector3(7,2.1,23),Vector3(0,1,18),"entry"))
  for record in inquiry.POLICE_LINES:
   list.append(line(record[0],record[1],record[2],Vector3(6,1.65,9.5),Vector3(8.6,1.3,7.4),"reception"))
@@ -202,28 +238,46 @@ func frame_conversation(speaker: String) -> void:
  camera_end=camera_start+station.global_basis.x*.08
  camera.fov=48
 
+func keep_camera_inside_room() -> void:
+ if cue not in ["entry","chamber","reception","humiliation","objection","warning","collar","guards","beating","collapse"]:return
+ var ray:=PhysicsRayQueryParameters3D.create(camera_target,camera.global_position,1)
+ ray.exclude=camera_exclusions
+ var hit:=get_world_3d().direct_space_state.intersect_ray(ray)
+ if not hit.is_empty():
+  var direction: Vector3=(camera.global_position-camera_target).normalized()
+  camera.global_position=hit.position-direction*.22
+ camera.look_at(camera_target)
+
 func stage_action(action: String) -> void:
  for guard in inquiry.guards:guard.cinematic_style="";guard.cinematic_palms.clear();guard.cinematic_carry=false
  var station: Node3D=inquiry.station
- if action=="horse_departure":
+ if action in ["horse_departure","horse_arrival","horse_dismount"] and is_instance_valid(journey_cart):
+  stage_cart_arrival(action)
+ elif action=="horse_departure":
   journey_horse.set_physics_process(false);journey_horse.pace=2.0
-  start_position=journey_horse.global_position;finish_position=start_position-journey_horse.global_basis.z*8
+  start_position=journey_horse.global_position;finish_position=departure_goal(journey_horse,journey_horse)
   camera_start=start_position+journey_horse.global_basis.x*5+Vector3.UP*2.4;camera_end=camera_start-journey_horse.global_basis.z*3;camera_target=start_position+Vector3.UP*1.4
  elif action=="horse_arrival":
   journey_horse.set_physics_process(false);journey_horse.rotation.y=station.global_rotation.y
-  start_position=station.to_global(Vector3(0,0,30));finish_position=station.to_global(Vector3(0,0,23.5))
+  start_position=station.to_global(Vector3(7,0,37));finish_position=station.to_global(Vector3(7,0,30.5))
   start_position.y=get_parent().layout.height(start_position.x,start_position.z)+.1
   finish_position.y=get_parent().layout.height(finish_position.x,finish_position.z)+.1
   journey_horse.global_position=start_position;journey_horse.pace=1.625
+  camera_start=start_position+station.global_basis.x*6+Vector3.UP*2.6
+  camera_end=finish_position+station.global_basis.x*6+Vector3.UP*2.6
+  camera_target=start_position+Vector3.UP*1.3
  elif action=="horse_dismount":
   journey_horse.pace=0;journey_horse.velocity=Vector3.ZERO;journey_horse.set_physics_process(true)
+  camera_target=journey_horse.global_position+Vector3.UP*1.2
+  camera_start=camera_target+station.global_basis.x*5+station.global_basis.z*3+Vector3.UP*.8
+  camera_end=camera_start
   if not journey_horse.dismount():
    # A physics tick establishes ground contact before the dismount request.
    journey_horse.set_meta("story_dismount_pending",true)
  elif action=="entry":
-  var arrived_by_horse:=is_instance_valid(journey_horse)
+  var arrived_by_horse:=is_instance_valid(journey_horse) or is_instance_valid(journey_cart)
   release_story_horse()
-  if not arrived_by_horse:player.global_position=station.to_global(Vector3(0,.9,19))
+  if not arrived_by_horse:player.velocity=Vector3.ZERO
   set_hero_path(station.to_global(Vector3(8.3,.9,9)))
  elif action=="reception":player.global_position=station.to_global(Vector3(8.3,.9,9));player.velocity=Vector3.ZERO;face(player,station.to_global(Vector3(9,1,6.8)))
  elif action=="chamber":set_hero_path(station.to_global(Vector3(-9.5,.9,-5.2)))
@@ -295,6 +349,7 @@ func _process(delta: float) -> void:
   if beat_index+1<beats.size() and record.place!=beats[beat_index+1].place and age>float(record.seconds)-.45:
    shade.color.a=smoothstep(float(record.seconds)-.45,float(record.seconds),age)
   update_acting(delta,t)
+  keep_camera_inside_room()
   if age>=float(record.seconds):
    beat_index+=1
    if beat_index>=beats.size():finish()
@@ -350,15 +405,32 @@ func update_acting(delta: float,t: float) -> void:
  if cue in ["entry","chamber"]:
   move_hero_path(t,float(beats[beat_index].seconds))
   camera_target=player.global_position+Vector3.UP*.6
+  var local: Vector3=inquiry.station.to_local(player.global_position)
+  var eye:=local+Vector3(2.2,1.2,2.8)
+  if cue=="chamber":eye.x=clampf(eye.x,-11.8,-5.0);eye.z=clampf(eye.z,-9.7,-2.5)
+  else:eye.x=clampf(eye.x,-2.0,10.5);eye.z=clampf(eye.z,6.0,25.0)
+  camera.global_position=inquiry.station.to_global(eye);camera.look_at(camera_target)
   if cue=="chamber" and t>.94:face(player,inquiry.officials[0].global_position)
  if cue in ["horse_departure","horse_arrival"]:
-  journey_horse.global_position=start_position.lerp(finish_position,t);journey_horse.gait+=delta*3
-  journey_horse._sync_rider()
-  camera_target=journey_horse.global_position+Vector3.UP*1.3
- if cue=="horse_dismount" and journey_horse.get_meta("story_dismount_pending",false):
+  var body: Node3D=journey_cart.cart if is_instance_valid(journey_cart) else journey_horse
+  body.global_position=start_position.lerp(finish_position,smoothstep(0,1,t))
+  body.global_position.y=get_parent().layout.height(body.global_position.x,body.global_position.z)+.1
+  var speed: float=start_position.distance_to(finish_position)/float(record.seconds)*6*t*(1-t)
+  if is_instance_valid(journey_cart):
+   journey_cart.speed=speed;body.set_forward_motion(speed,delta);journey_cart._sync_rider()
+  else:
+   journey_horse.velocity=Vector3.ZERO;journey_horse.step_up_grace=.2
+   journey_horse.pace=speed;journey_horse._update_rigged_animation()
+   if speed>.5:journey_horse.rigged_anim.speed_scale=clampf(speed/4.2,.25,1.7)
+   journey_horse.rigged_anim.advance(delta)
+   journey_horse.tack_root.transform=journey_horse._animated_frame_delta("Torso")
+   journey_horse._update_hoof_contacts(delta);journey_horse._sync_rider()
+  camera_target=body.global_position+Vector3.UP*1.3
+ if cue=="horse_dismount" and is_instance_valid(journey_horse) and journey_horse.get_meta("story_dismount_pending",false):
   if journey_horse.dismount():journey_horse.remove_meta("story_dismount_pending")
  pose.apply(action,amount,delta,progress)
  if progress>=0:visual.motion_tree.advance(0)
+ if cue in ["horse_departure","horse_arrival"] and is_instance_valid(journey_horse):visual._pose_horse_riding(delta)
  if cue=="collar":
   var official: Node3D=inquiry.officials[0]
   var station: Node3D=inquiry.station
@@ -657,8 +729,9 @@ func refresh() -> void:
   inquiry.destination.set_meta("parking_label","Find Dev · Refreshment courtyard")
  else:objective.text=""
 func export_state() -> Dictionary:
- return {"state":state,"first_chacha_seen":first_chacha_seen,"lesson":lesson,"partners":completed_partners,"started":player.get_meta("farm_lesson_started",false)}
+ return {"state":state,"first_chacha_seen":first_chacha_seen,"lesson":lesson,"partners":completed_partners,"started":player.get_meta("farm_lesson_started",false),"community_routes":community.export_route_state()}
 func restore_state(data: Dictionary) -> void:
+ community.restore_route_state(data.get("community_routes",{}))
  state=str(data.get("state","awaiting_inquiry"));first_chacha_seen=bool(data.get("first_chacha_seen",false));lesson=clampi(int(data.get("lesson",0)),0,LESSONS.size())
  completed_partners.assign(data.get("partners",[]));player.set_meta("farm_lesson_started",bool(data.get("started",false)))
  if state=="farm" and player.get_meta("farm_lesson_started",false):
@@ -679,7 +752,7 @@ func _exit_tree() -> void:
 func set_hero_path(goal: Vector3) -> void:
  path_origin=player.global_position
  var local_origin: Vector3=inquiry.station.to_local(path_origin)
- if cue=="entry" and local_origin.z>20:
+ if cue=="entry" and local_origin.z>18:
   # Station navigation starts inside the gate; retain the visible outside approach.
   var gate: Vector3=inquiry.station.to_global(Vector3(0,inquiry.station.to_local(goal).y,19.2))
   hero_path=inquiry.coordinator.path(gate,goal,.29)
@@ -700,10 +773,52 @@ func move_hero_path(t: float,seconds: float) -> void:
    player.velocity=(point-previous).normalized()*total/seconds;return
   remaining-=distance;previous=point
  player.global_position=hero_path[-1];player.velocity=Vector3.ZERO
+func departure_goal(body: Node3D,mount: Node) -> Vector3:
+ var origin: Vector3=body.global_position
+ var heading: float=body.global_rotation.y
+ for turn in [0.0,PI*.25,-PI*.25,PI*.5,-PI*.5,PI]:
+  body.global_rotation.y=heading+turn
+  var motion: Vector3=-body.global_basis.z*8.0
+  var clear:=true
+  if body is CharacterBody3D:clear=not body.test_move(body.global_transform,motion)
+  else:
+   for step in 16:
+    if not mount._clearance_at(origin+motion*float(step+1)/16.0):clear=false;break
+  if clear:return origin+motion
+ body.global_rotation.y=heading
+ return origin
+
+func stage_cart_arrival(action: String) -> void:
+ var body: Node3D=journey_cart.cart
+ if action=="horse_dismount":
+  journey_cart.speed=0;body.set_forward_motion(0,0)
+  journey_cart.set_physics_process(true);journey_cart.dismount();return
+ journey_cart.set_physics_process(false)
+ start_position=body.global_position;finish_position=departure_goal(body,journey_cart)
+ if action=="horse_arrival":
+  body.global_rotation.y=inquiry.station.global_rotation.y
+  start_position=inquiry.station.to_global(Vector3(7,0,40))
+  finish_position=inquiry.station.to_global(Vector3(7,0,32))
+  body.global_position=start_position
+  var bay: Node3D=get_parent().get_node("InquiryVehicleStanding")
+  bay.configure(body,"Police station · horse and cart standing")
+  bay.global_position=finish_position;bay.global_position.y=get_parent().layout.height(finish_position.x,finish_position.z)+.1
+ camera_start=start_position+body.global_basis.x*6+Vector3.UP*3
+ camera_end=camera_start-body.global_basis.z*3;camera_target=start_position+Vector3.UP*1.4
+
 func release_story_horse() -> void:
+ if is_instance_valid(journey_cart):
+  journey_cart.speed=0;journey_cart.cart.set_forward_motion(0,0)
+  if journey_cart.rider==player:
+   player.global_position=journey_cart.transition_ground if journey_cart.transition=="exiting" else journey_cart.cart.global_position+journey_cart.cart.global_basis.x*2.35+Vector3.UP*.96
+   journey_cart.rider=null;journey_cart.transition=""
+   player.collision_layer=journey_cart.saved_layer;player.collision_mask=journey_cart.saved_mask
+  player.set_meta("mounted_vehicle",null);player.set_meta("cart_role","")
+  journey_cart.set_physics_process(cart_physics);journey_cart=null
  if not is_instance_valid(journey_horse):return
  journey_horse.pace=0;journey_horse.velocity=Vector3.ZERO
  if journey_horse.rider==player:
+  player.global_position=journey_horse.transition_to if journey_horse.transition=="dismount" else journey_horse.global_position+journey_horse.global_basis.x*1.55+Vector3.UP*.96
   journey_horse.rider=null;journey_horse.transition=""
   player.set_meta("mounted_vehicle",null);player.set_meta("horse_transition","")
   player.collision_layer=journey_horse.saved_layer;player.collision_mask=journey_horse.saved_mask

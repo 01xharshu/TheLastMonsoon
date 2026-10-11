@@ -30,6 +30,17 @@ var player: Node3D
 var remote_shape:CapsuleShape3D
 var remote_terrain:Dictionary={}
 var remote_blocked:=0
+var recovery_age:=0.0
+
+func _physics_process(delta:float) -> void:
+ recovery_age+=delta
+ if recovery_age<.5:return
+ recovery_age=0.0
+ if is_instance_valid(encounters) and (encounters.wanted or not encounters.escort.is_empty()):return
+ for officer in patrols:
+  if not is_instance_valid(officer) or officer.travel_speed>.001:continue
+  if officer.get_meta("dead",false) or officer.get_meta("knocked_out",false) or officer.get_meta("combat_action","")!="":continue
+  preload("res://world/suryagarh/city_contact_recovery.gd").recover(officer,officer.body_collider)
 
 func _ready() -> void:
  name = "CityRoutePopulation"
@@ -40,6 +51,11 @@ func prepare() -> void:
  await get_tree().process_frame
  encounters = get_parent().get_node_or_null("CombatEncounters")
  player = get_parent().get_node_or_null("Player")
+ # The estate's thin, raised lawn is a real walking surface alongside this road.
+ var estate_ground:Node=get_parent().get_node_or_null("Settlement/GovernmentHouse/EstateGround")
+ if estate_ground!=null:
+  for body:CollisionObject3D in estate_ground.find_children("*","CollisionObject3D",true,false):
+   preload("res://world/suryagarh/tree_trunk_collision.gd").register_terrain_support(self,body)
  for route_name: String in ROUTE_COUNTS:
   for index in int(ROUTE_COUNTS[route_name])*POPULATION_MULTIPLIER:
    pending.append({"kind":"person","route":route_name,"index":index,"count":int(ROUTE_COUNTS[route_name])*POPULATION_MULTIPLIER})
@@ -50,6 +66,10 @@ func prepare() -> void:
  # Populate the current neighbourhood first while amortising expensive actor setup.
  if is_instance_valid(player):
   pending.sort_custom(func(a:Dictionary,b:Dictionary)->bool:
+   # Establish large vehicle and police bounds before placing the civilian crowd.
+   # A later cart must never materialise around an already standing pedestrian.
+   var priority:Dictionary={"cart":0,"police":1,"person":2}
+   if priority[a.kind]!=priority[b.kind]:return priority[a.kind]<priority[b.kind]
    var pa:Vector2=Layout.ROUTES[a.route][0];var pb:Vector2=Layout.ROUTES[b.route][0]
    var here:=Vector2(player.global_position.x,player.global_position.z)
    return pa.distance_squared_to(here)<pb.distance_squared_to(here))
@@ -57,7 +77,7 @@ func prepare() -> void:
  population_clock=get_parent().get_node_or_null("GameTimeSystem")
  for record in pending:
   if record.kind!="person":continue
-  var points:=route_points(record.route,record.index,1.65)
+  var points:=route_points(record.route,record.index,3.3)
   var phase:=phase_on_route(points,(float(record.index%record.count)+.25)/float(record.count))
   record["points"]=points;record["phase"]=phase
   record["direction"]=1;record["wait"]=0.0
@@ -102,6 +122,8 @@ func _process(delta: float) -> void:
  ready_population=pending.is_empty() if eager_population else pending.all(func(item:Dictionary)->bool:return item.kind=="person")
 
 func route_points(label: String, index: int, lane: float) -> Array[Vector2]:
+ if is_equal_approx(lane,3.3) and label=="village_spine":lane=2.0
+ if is_equal_approx(lane,2.2) and label in ["civil_lines_avenue","administrative_approach","port_approach"]:lane=3.8
  var result: Array[Vector2] = []
  var source: Array = Layout.ROUTES[label]
  # Gentle personal lane changes follow the road rather than rigid straight files.
@@ -125,7 +147,7 @@ func phase_on_route(points: Array[Vector2], fraction: float) -> Dictionary:
 
 func spawn_record(record: Dictionary) -> void:
  var index: int=record.index
- var points: Array[Vector2] = record.get("points",route_points(record.route,index,1.65 if record.kind=="person" else (2.2 if record.kind=="police" else 0.0)))
+ var points: Array[Vector2] = record.get("points",route_points(record.route,index,3.3 if record.kind=="person" else (2.2 if record.kind=="police" else 0.0)))
  var phase: Dictionary = record.get("phase",phase_on_route(points,(float(index%record.count)+.25)/float(record.count)))
  var at:Vector2=phase.point
  if record.kind=="person":
@@ -173,7 +195,7 @@ func spawn_record(record: Dictionary) -> void:
   var officer:Node3D=encounters.spawn("CityPatrol_%s_%02d"%[record.route,index],"res://characters/npcs/thana/%s_motion.glb"%("daroga" if index%4==0 else "burkundaz"),Vector3(at.x,layout.height(at.x,at.y),at.y),"police")
   officer.add_to_group("city_route_patrols");officer.set_meta("population_route",record.route)
   var grounded:=PackedVector3Array()
-  for point in points:grounded.append(encounters.ground(Vector3(point.x,0,point.y)))
+  for point in points:grounded.append(encounters.ground(Vector3(point.x,0,point.y),true))
   var marker:=Label3D.new();marker.name="AlertMarker";marker.text="!";marker.position.y=2.05;marker.font_size=48;marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED;marker.visible=false;officer.add_child(marker)
   encounters.patrols.append({"actor":officer,"points":grounded,"index":phase.goal,"step":1,"state":"patrol","sense":float(index%4)*.06,"attack_age":0.0,"hit":false,"marker":marker,"seen":false})
   patrols.append(officer)
@@ -190,7 +212,10 @@ func spawn_record(record: Dictionary) -> void:
   var cart:Node3D=preload("res://vehicles/bullock_cart.gd").new() if index%2==0 else preload("res://vehicles/family_carriage_candidate.gd").new()
   cart.name=("CityCart_%s"%record.route) if index<CART_ROUTES.size() else ("CityCart_%s_%02d"%[record.route,index]);cart.position=Vector3(at.x,layout.height(at.x,at.y),at.y);cart.rotation.y=atan2(-unit.x,-unit.y)
   add_child(cart);cart.add_to_group("live_travel_carts");cart.add_to_group("city_route_carts");cart.set_meta("booking_status","public");cart.set_meta("population_route",record.route)
-  var journey:=preload("res://world/suryagarh/city_cart_journey.gd").new();journey.name="CityRoadJourney";journey.configure(cart);journey.viewer=player;journey.route=[a,b];cart.add_child(journey)
+  var journey:=preload("res://world/suryagarh/city_cart_journey.gd").new();journey.name="CityRoadJourney";journey.configure(cart);journey.viewer=player;journey.route=[a,b]
+  journey.preferred_lane=-1.8 if index<CART_ROUTES.size() else 1.8
+  if record.route=="government_house_road":journey.preferred_lane=-2.5 if index<CART_ROUTES.size() else 2.5
+  cart.add_child(journey)
   carts.append(cart)
   if index%CART_ROUTES.size() in [0,1,3,6]:_passenger.call_deferred(cart,index)
   for mesh:GeometryInstance3D in cart.find_children("*","GeometryInstance3D",true,false):
@@ -280,9 +305,13 @@ func restore_route_state(states: Dictionary) -> void:
   var saved:Dictionary=states.get(key,{})
   if saved.is_empty() or not saved.get("point") is Array or saved.point.size()!=2:continue
   var at:=Vector2(float(saved.point[0]),float(saved.point[1]))
-  var restored_position:=clear_spawn(at,[actor.body_collider.get_rid()])
-  if restored_position.is_finite():actor.global_position=restored_position
+  # Restore all saved identities to their own coordinates. A conservative spawn
+  # capsule must not shift valid neighbouring saved actors during this pass.
   var journey:Node=actor.get_node("CityStreetJourney")
+  var support:Dictionary=journey.ground_at(at)
+  var height:float=support.position.y if not support.is_empty() else actor.global_position.y
+  actor.global_position=Vector3(at.x,height,at.y)
+  actor.foot_plant.clear()
   journey.goal=clampi(int(saved.get("goal",1)),0,journey.route.size()-1)
   journey.direction=1 if int(saved.get("direction",1))>0 else -1
   journey.wait=maxf(0,float(saved.get("wait",0)))

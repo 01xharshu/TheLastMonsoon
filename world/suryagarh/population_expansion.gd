@@ -59,6 +59,9 @@ func discover(skeleton:Node) -> void:
  if figure==world:return
  var original:=figure.get_parent() as Node3D
  if original==null:return
+ # City officers live under CombatEncounters, not the city manager. That cohort
+ # already doubled its records; discovering it here would double it a second time.
+ if original.is_in_group("city_route_patrols") or original.is_in_group("city_route_pedestrians"):return
  var key:=str(world.get_path_to(original))
  if originals.has(key):return
  # Reuse existing ranges; add the standard human range only where none existed.
@@ -118,7 +121,12 @@ func spawn_record(record:Dictionary) -> void:
  if not position.is_finite():
   unresolved[record.source_id]="no clear supported spawn yet"
   pending.append(record);spawn_wait=.15;return
- var actor:Node3D=HouseholdActor.new() if record.faction=="british" or record.police else Actor.new()
+ var actor:Node3D
+ if record.police:actor=preload("res://characters/npcs/thana/thana_officer.gd").new()
+ elif record.faction=="british" and record.profile=="female" and record.source.get_file() in ["private_woman.glb","corporal_woman.glb","sergeant_woman.glb"]:
+  actor=preload("res://characters/npcs/british/candidates/private_skirt_actor.gd").new()
+ elif record.faction=="british":actor=HouseholdActor.new()
+ else:actor=Actor.new()
  var figure:=Human.instantiate(record.source,false)
  if figure==null:
   actor.free();unresolved[record.source_id]="failed source import";return

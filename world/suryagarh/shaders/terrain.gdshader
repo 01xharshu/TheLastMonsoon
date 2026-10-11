@@ -47,8 +47,10 @@ void fragment() {
 	base = mix(base, grass*0.72, fields*bund);
 	base = mix(base, stone, rock);
 	base = mix(base,soil*vec3(0.68,0.62,0.52),urban*0.92);
-	float authored_field = texture(density_mask_tex, (p + vec2(864.0)) / 1728.0).r;
+	vec2 authored_land = texture(density_mask_tex, (p + vec2(864.0)) / 1728.0).rg;
+	float authored_field = authored_land.r;
 	base = mix(base, soil * vec3(0.68,0.58,0.43) * (0.94+0.06*sin(p.x*6.283)), authored_field);
+	base = mix(base, soil * vec3(0.78,0.67,0.50), authored_land.g);
 	base = mix(base, soil*vec3(1.07,0.95,0.78), road);
 	base *= mix(0.84,1.1,noise(p*0.007));
 	base *= 1.0-wet*0.36;

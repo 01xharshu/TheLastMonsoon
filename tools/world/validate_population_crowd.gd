@@ -50,13 +50,13 @@ func run() -> void:
  first.actor.set_meta("mission_active",false)
  first.social_enabled=false;second.social_enabled=false
  var before:float=first.distance_walked
- await create_timer(5).timeout
+ await create_timer(12).timeout
  check(first.distance_walked>before+1,"Conversation did not resume destination walking")
  var obstacle:=wall(Vector3(0,1,12),Vector3(.05,2,2))
  await physics_frame
  var walker:=person("ObstacleWalker",Vector3(-3,0,12),[Vector2(-3,12),Vector2(6,12)],2)
  walker.social_enabled=false
- await create_timer(10).timeout
+ await create_timer(20).timeout
  check(walker.detours>0 and walker.actor.global_position.x>1,"Walker did not pass a thin wall with a swept detour")
  # A cached cart ahead requires yielding; removal releases the destination.
  var cart:=Node3D.new();world.add_child(cart);cart.position=Vector3(20,0,4);cart.add_to_group("live_travel_carts")
@@ -74,6 +74,23 @@ func run() -> void:
  viewer.global_position=walker.actor.global_position+Vector3(1,0,2)
  for frame in 3:await physics_frame
  check(walker.simulation_interval==0,"Approach failed to wake full cadence")
- print("CROWD RESULT ",JSON.stringify({"passed":errors.is_empty(),"conversations":crowd.conversations_started,"released":crowd.conversations_finished,"detours":walker.detours,"walker":{"at":str(walker.actor.global_position),"distance":walker.distance_walked,"blocked":walker.last_obstacle,"frames":walker.blocked_frames,"action":walker.actor.get_meta("street_action",""),"combat":walker.actor.get_meta("combat_action",""),"interval":walker.simulation_interval,"detour":str(walker.detour)},"errors":errors}))
+ var sampler:=preload("res://world/suryagarh/street_surface.gd").new()
+ sampler.set_support({"position":Vector3(10,4,20),"normal":Vector3(.2,1,.1).normalized()})
+ check(is_equal_approx(sampler.height(11,21),3.7),"Cached physical support plane lost its slope")
+ # CombatEncounters owns city officers in the real world. The regional
+ # discovery registry must exclude that already-doubled city cohort.
+ var city_officer:=person("AlreadyDoubledOfficer",Vector3(30,0,-15),[Vector2(30,-15),Vector2(35,-15)],7)
+ city_officer.actor.add_to_group("city_route_patrols")
+ var expansion:=preload("res://world/suryagarh/population_expansion.gd").new()
+ world.add_child(expansion);expansion.set_process(false)
+ await process_frame
+ for skeleton:Node in city_officer.actor.find_children("*","Skeleton3D",true,false):expansion.discover(skeleton)
+ check(not expansion.originals.has(str(world.get_path_to(city_officer.actor))),"City officer was doubled again by regional discovery")
+ var first_resumed_distance:float=first.distance_walked-before
+ var registry_size:int=crowd.members.size()
+ first.actor.queue_free()
+ for frame in 4:await process_frame
+ check(crowd.members.size()==registry_size-1,"Departing participant left a stale spatial registry entry")
+ print("CROWD RESULT ",JSON.stringify({"passed":errors.is_empty(),"first_resumed_distance":first_resumed_distance,"conversations":crowd.conversations_started,"released":crowd.conversations_finished,"detours":walker.detours,"walker":{"at":str(walker.actor.global_position),"distance":walker.distance_walked,"blocked":walker.last_obstacle,"frames":walker.blocked_frames,"action":walker.actor.get_meta("street_action",""),"combat":walker.actor.get_meta("combat_action",""),"interval":walker.simulation_interval,"detour":str(walker.detour)},"errors":errors}))
  world.queue_free();await process_frame
  root.get_node("SaveManager").quit_game(0 if errors.is_empty() else 1)

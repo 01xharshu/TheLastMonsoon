@@ -53,6 +53,15 @@ func _run() -> void:
 	door.global_position = Vector3(100,1000,0)
 	door.anchor_delta = Vector3(-100,0,1.5)
 	check(actor._find_interactable()==door and actor.baseline_find_interactable()==door,"Distant door root retains near latch anchor")
+	door.hold_duration=1.0
+	Input.action_press("interact")
+	actor._begin_interaction_hold(door,"interact")
+	actor._update_interaction();actor._advance_interaction_hold(.1)
+	check(actor.hold_target==door and actor.hold_elapsed>.09,"Door hold uses reachable latch instead of distant root")
+	door.anchor_delta=Vector3(-100,0,5)
+	actor._update_interaction();actor._advance_interaction_hold(.1)
+	check(actor.hold_target==null and actor.get_node("ActionPermissions").domain_free(&"attack"),"Leaving latch reach cancels hold and releases action lease")
+	Input.action_release("interact")
 	door.hide()
 	near.show()
 	for probe in far: probe.checks=0

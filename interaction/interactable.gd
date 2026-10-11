@@ -167,3 +167,13 @@ func _enter_tree() -> void:
 	add_to_group(
 		"interactables"
 	)
+	set_notify_transform(true)
+	set_notify_local_transform(true)
+
+func _notification(what: int) -> void:
+	if what in [NOTIFICATION_TRANSFORM_CHANGED,NOTIFICATION_LOCAL_TRANSFORM_CHANGED] and has_meta("interaction_spatial_index"):
+		var index: Node=get_meta("interaction_spatial_index")
+		if is_instance_valid(index) and is_inside_tree():index.update_subject(self)
+	elif what==NOTIFICATION_EXIT_TREE and has_meta("interaction_spatial_index"):
+		var index: Node=get_meta("interaction_spatial_index")
+		if is_instance_valid(index):index.remove_subject(get_instance_id())

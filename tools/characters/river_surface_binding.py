@@ -18,7 +18,9 @@ def bind_surface(obj,body,rest_body,human_indices):
         u=(v1.dot(v1)*v2.dot(v0)-v0.dot(v1)*v2.dot(v1))/max(denominator,1e-16)
         v=(v0.dot(v0)*v2.dot(v1)-v0.dot(v1)*v2.dot(v0))/max(denominator,1e-16)
         gap=max(.015 if obj.name=='Opaque fitted bra and thong foundation' else .025,(point-near).dot(normal))
-        if obj.name=='Woven sari pallu over blouse':gap=min(.04,gap)
+        # The pallu is a second garment over the blouse. Clamping its gap to
+        # 40 mm put it inside the bridged chest, causing torn-looking patches.
+        if obj.name=='Woven sari pallu over blouse':gap=max(.055,gap+.020)
         bindings.append([a,b,c,1-u-v,u,v,gap])
     obj['river_surface_bindings']=json.dumps(bindings)
 

@@ -59,6 +59,7 @@ func pose_matrix(t:Transform3D) -> Array:
 	return [[t.basis.x.x,t.basis.y.x,t.basis.z.x,t.origin.x],[t.basis.x.y,t.basis.y.y,t.basis.z.y,t.origin.y],[t.basis.x.z,t.basis.y.z,t.basis.z.z,t.origin.z],[0,0,0,1]]
 
 func _export(folder:String,woman:Node3D,rig:Skeleton3D,sample:int,label:String) -> void:
+	woman.apply_face_identity()
 	rig.force_update_all_bone_transforms()
 	var data:Dictionary={"role":"river_woman","walking":woman.walking,"sample":sample,"label":label,"body":[],"garments":[],"bones":{},"skeleton_transform":pose_matrix(rig.global_transform)}
 	for bone in rig.get_bone_count():data.bones[rig.get_bone_name(bone)]=pose_matrix(rig.get_bone_global_pose(bone))
@@ -74,7 +75,8 @@ func _export(folder:String,woman:Node3D,rig:Skeleton3D,sample:int,label:String) 
 			else:
 				world_points=PackedVector3Array()
 				for vertex in arrays[Mesh.ARRAY_VERTEX]:world_points.append(node.global_transform*vertex)
-			var entry:Dictionary={"name":str(node.name),"vertices":serialize_points(world_points),"indices":arrays[Mesh.ARRAY_INDEX]}
+			var garment_name:String="Woven sari pallu over blouse" if str(node.name)=="Fitted cotton upper base" and surface>0 else str(node.name)
+			var entry:Dictionary={"name":garment_name,"vertices":serialize_points(world_points),"indices":arrays[Mesh.ARRAY_INDEX]}
 			if body and woman.action=="talk":
 				for point in world_points:seated_points.append(woman.to_local(point))
 			if body:
@@ -90,7 +92,18 @@ func _export(folder:String,woman:Node3D,rig:Skeleton3D,sample:int,label:String) 
 				for key in node.mesh.get_blend_shape_count():
 					var value:float=node.get_blend_shape_value(key)
 					if value>.0001:entry.active_keys.append([node.mesh.get_blend_shape_name(key),value])
-			data["body" if body else "garments"].append(entry)
+			if str(node.name)=="Fitted cotton upper base" and node.mesh.get_surface_count()==1:
+				var colors:PackedColorArray=arrays[Mesh.ARRAY_COLOR]
+				var source_ids:PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+				var blouse_ids:=PackedInt32Array();var pallu_ids:=PackedInt32Array()
+				for j in range(0,source_ids.size(),3):
+					var mask:float=(colors[source_ids[j]].r+colors[source_ids[j+1]].r+colors[source_ids[j+2]].r)/3.0
+					if mask>.5:pallu_ids.append_array(source_ids.slice(j,j+3))
+					else:blouse_ids.append_array(source_ids.slice(j,j+3))
+				if blouse_ids.is_empty() or pallu_ids.is_empty():push_error("Missing coherent cloth region mask");quit(1);return
+				entry.name="Fitted cotton upper base";entry.indices=blouse_ids;data.garments.append(entry)
+				var panel:Dictionary=entry.duplicate();panel.name="Woven sari pallu over blouse";panel.indices=pallu_ids;data.garments.append(panel)
+			else:data["body" if body else "garments"].append(entry)
 	if not seated_points.is_empty():
 		var hip: Vector3=woman.to_local(rig.to_global(woman.Contact.point(rig,"pelvis")))
 		var gap := INF

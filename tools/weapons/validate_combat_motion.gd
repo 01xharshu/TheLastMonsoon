@@ -9,7 +9,18 @@ func run() -> void:
 	var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 5: await physics_frame
+	# Release the actual opening pose owner before exercising combat. Physics-
+	# frame-only waiting can let a deferred opening start midway through a strike.
+	for i in 12: await process_frame
+	var opening := world.get_node_or_null("OpeningSequence")
+	if opening != null:
+		var skip := InputEventKey.new();skip.keycode=KEY_ESCAPE;skip.pressed=true
+		opening._input(skip)
+		await process_frame
+		opening._input(skip)
+		while opening.state!="done":await process_frame
+	var tutorial := world.get_node_or_null("Player/UI/HUDRoot/MorningTutorial")
+	if tutorial != null:tutorial.restore_step(11)
 	var actor: CharacterBody3D = world.get_node("Player")
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	var combat: Node = actor.get_node("CombatInput")
@@ -112,6 +123,12 @@ func run() -> void:
 	blocked.set_script(load("res://world/suryagarh/cuttable_flag.gd"))
 	world.add_child(blocked)
 	blocked.global_position=actor.global_position+Vector3(0,-.9,1.05)
+	# Test a real pole collision, as on the first authored flag, rather than a
+	# shapeless body whose endpoint cannot participate in the clearance ray.
+	var blocked_collision := CollisionShape3D.new()
+	blocked_collision.shape=pole_shape
+	blocked_collision.position.y=1.2375
+	blocked.add_child(blocked_collision)
 	var wall := StaticBody3D.new()
 	world.add_child(wall)
 	wall.global_position=actor.global_position+Vector3(0,.3,.72)
@@ -130,7 +147,8 @@ func run() -> void:
 	wall.queue_free()
 	await process_frame # Flush removal before checking physics clearance.
 	for i in 3: await physics_frame
-	check(slash.strike(),"strike resumes after obstacle removed")
+	camera.look_at(blocked.global_position+Vector3.UP*1.25)
+	check(slash.strike() and slash.target==blocked,"strike resumes at the aimed pole after obstacle removed")
 	for i in 45:
 		visual._process(1.0/60.0)
 		slash._process(1.0/60.0)

@@ -20,6 +20,8 @@ def main():
             [GODOT,'--headless','--path',str(ROOT),'--log-file',str(Path(folder)/'foundation_surfaces.log'),'--script','res://tools/characters/export_river_test_surfaces.gd'],
             [BLENDER,'--background','--python-exit-code','1','--python',str(ROOT/'tools/characters/refine_river_interpolation.py'),'--',folder,'--finish-upper'],
             [GODOT,'--headless','--editor','--path',str(ROOT),'--log-file',str(Path(folder)/'contact_import.log'),'--import'],
+            [BLENDER,'--background','--python-exit-code','1','--python',str(ROOT/'tools/characters/rebuild_river_pallu.py')],
+            [GODOT,'--headless','--editor','--path',str(ROOT),'--log-file',str(Path(folder)/'layer_import.log'),'--import'],
         ]
         for command in commands:
             result=subprocess.run(command,cwd=ROOT,env=env,text=True,capture_output=True,timeout=1800)

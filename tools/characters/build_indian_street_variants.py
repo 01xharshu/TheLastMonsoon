@@ -5,6 +5,101 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/characters'))
 from whole_body_contract import retain_complete_body
 
+def supported_street_pallu(rig):
+    """Reuse the fitted blouse's triangles and weights for its outer panel."""
+    from mathutils import Vector
+    blouse=bpy.data.objects['Fitted cotton upper base'];old=bpy.data.objects['Woven sari pallu over blouse']
+    blouse.data.calc_loop_triangles()
+    selected=[]
+    for triangle in blouse.data.loop_triangles:
+        point=sum((blouse.data.vertices[i].co for i in triangle.vertices),Vector())/3
+        if .84<point.z<1.245 and point.y<.005 and abs(point.x-(.14-(point.z-.85)*.29/.39))<.105:selected.append(tuple(triangle.vertices))
+    ids=sorted({i for face in selected for i in face});mapping={i:j for j,i in enumerate(ids)}
+    normals=[Vector() for vertex in blouse.data.vertices]
+    for triangle in blouse.data.loop_triangles:
+        a,b,c=[blouse.data.vertices[i].co for i in triangle.vertices];normal=(b-a).cross(c-a)
+        for i in triangle.vertices:normals[i]+=normal
+    mesh=bpy.data.meshes.new('Street blouse-supported sari panel')
+    mesh.from_pydata([blouse.data.vertices[i].co+normals[i].normalized()*.018 for i in ids],[],[tuple(mapping[i] for i in face) for face in selected]);mesh.update()
+    panel=bpy.data.objects.new('Street outer pallu',mesh);bpy.context.collection.objects.link(panel)
+    panel.parent=blouse.parent;panel.matrix_parent_inverse=blouse.matrix_parent_inverse.copy();panel.matrix_basis=blouse.matrix_basis.copy()
+    for group in blouse.vertex_groups:panel.vertex_groups.new(name=group.name)
+    for j,i in enumerate(ids):
+        for group in blouse.data.vertices[i].groups:panel.vertex_groups[group.group].add([j],group.weight,'REPLACE')
+    panel.modifiers.new('Original MPFB rig','ARMATURE').object=rig
+    mesh.materials.append(old.data.materials[0])
+    for face in mesh.polygons:face.use_smooth=True
+    bpy.data.objects.remove(old,do_unlink=True);panel.name='Woven sari pallu over blouse'
+    panel['construction']='Separate outer cotton panel; fitted blouse support and skin weights, 18 mm source clearance'
+
+def fit_female_rest(rig,body):
+    """Street actors use rest garments, not the river action morph timeline."""
+    from river_surface_binding import bind_surface,apply_surface
+    from river_coherent_cloth import fit_key
+    from purpose_cloth_volume import VolumeSurface
+    masks=[(modifier,modifier.show_viewport) for modifier in body.modifiers if modifier.type=='MASK']
+    for modifier,_ in masks:modifier.show_viewport=False
+    bpy.context.view_layer.update();dg=bpy.context.evaluated_depsgraph_get()
+    mesh=bpy.data.meshes.new_from_object(body.evaluated_get(dg),preserve_all_data_layers=True,depsgraph=dg)
+    try:
+        group=body.vertex_groups['body'].index
+        human={vertex.index for vertex in body.data.vertices if any(value.group==group and value.weight>.5 for value in vertex.groups)}
+        mesh.calc_loop_triangles()
+        points=[body.matrix_world@vertex.co for vertex in mesh.vertices]
+        normals=[(body.matrix_world.to_3x3()@vertex.normal).normalized() for vertex in mesh.vertices]
+        faces=[tuple(triangle.vertices) for triangle in mesh.loop_triangles if all(index in human for index in triangle.vertices)]
+        tree=VolumeSurface.FromPolygons(points,faces,all_triangles=True,strict=True)
+        for name in ['Fitted cotton upper base','Opaque fitted bra and thong foundation']:
+            obj=bpy.data.objects[name]
+            if obj.data.shape_keys:obj.shape_key_clear()
+            key=obj.shape_key_add(name='Basis')
+            bind_surface(obj,body,mesh,human)
+            apply_surface(rig,obj,key,points,normals)
+            fit_key(rig,obj,tree,key,reset_key=False)
+            # Preserve the chest bridge between clothing layers. Rebinding to
+            # skin alone put the pallu behind the blouse's bridge, making a
+            # continuous panel look torn in the actual renderer.
+            if name!='Opaque fitted bra and thong foundation':
+                def ease(a,b,value):
+                    t=max(0,min(1,(value-a)/(b-a)));return t*t*(3-2*t)
+                for fitted in key.data:
+                    point=obj.matrix_world@fitted.co
+                    if point.y>=-.025:continue
+                    vertical=ease(.95,.99,point.z)*(1-ease(1.17,1.23,point.z))
+                    lateral=1-ease(.20,.27,abs(point.x))
+                    strength=vertical*lateral
+                    front=-.255 if name=='Woven sari pallu over blouse' else -.205
+                    point.y=min(point.y,point.y*(1-strength)+front*strength)
+                    fitted.co=obj.matrix_world.inverted()@point
+            # With morph export disabled, glTF reads the mesh's raw vertices.
+            # Keep those identical to the fitted Basis instead of exporting
+            # the unfitted donor mesh beneath the editable fitted key.
+            for vertex,fitted in zip(obj.data.vertices,key.data):vertex.co=fitted.co
+        supported_street_pallu(rig)
+    finally:
+        bpy.data.meshes.remove(mesh)
+        for modifier,enabled in masks:modifier.show_viewport=enabled
+
+def trim_work_sleeves(obj,prefixes,limit):
+    """Finish a work-shirt cuff on the donor cloth's deform-weight contour."""
+    indices={g.index for g in obj.vertex_groups if g.name.startswith(prefixes)}
+    bm=bmesh.new();bm.from_mesh(obj.data);deform=bm.verts.layers.deform.verify()
+    def weight(vertex):return sum(vertex[deform].get(i,0) for i in indices)
+    boundary=set()
+    for edge in list(bm.edges):
+        a,b=edge.verts;wa,wb=weight(a),weight(b)
+        if (wa-limit)*(wb-limit)>=0:continue
+        t=(limit-wa)/(wb-wa);ga=dict(a[deform]);gb=dict(b[deform])
+        _,vertex=bmesh.utils.edge_split(edge,a,t)
+        for group in ga.keys()|gb.keys():vertex[deform][group]=(1-t)*ga.get(group,0)+t*gb.get(group,0)
+        boundary.add(vertex)
+    for face in list(bm.faces):
+        cuts=[v for v in face.verts if v in boundary]
+        if len(cuts)==2 and len(face.verts)>3:bmesh.utils.face_split(face,cuts[0],cuts[1])
+    bmesh.ops.delete(bm,geom=[f for f in bm.faces if sum(weight(v) for v in f.verts)/len(f.verts)>limit+1e-6],context='FACES')
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS')
+    bm.to_mesh(obj.data);bm.free();obj.data.update()
+
 def build(sex, index, workwear=False):
     donor = ('river_woman/river_woman_motion.blend' if sex == 'female' else
              f'street_residents/{"merchant" if index % 2 == 0 else "landowner"}/{"merchant" if index % 2 == 0 else "landowner"}.blend')
@@ -13,6 +108,9 @@ def build(sex, index, workwear=False):
     rig = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
     rig.data.pose_position = 'REST'
     rig.animation_data_clear()
+    from mathutils import Matrix
+    for bone in rig.pose.bones:bone.matrix_basis=Matrix.Identity(4)
+    bpy.context.view_layer.update()
     body = next(o for o in bpy.data.objects if o.type == 'MESH' and 'MakeHuman_body' in o.name)
     retain_complete_body(body)
     # A height-only donor foundation included the lowered rest-pose hands.
@@ -93,10 +191,30 @@ def build(sex, index, workwear=False):
                 mat.node_tree.links.new(source_node.outputs['Color'],node.inputs['Base Color'])
             else:node.inputs['Base Color'].default_value=(*tint,1)
     if sex=='female':
+        fit_female_rest(rig,body)
         hair=bpy.data.objects.get('Farmer_hair')
-        if hair and index%2==1:
-            for vertex in hair.data.vertices:vertex.co.x=-vertex.co.x
-            for polygon in hair.data.polygons:polygon.flip()
+        if hair:
+            # Reshape the retained MPFB hair mesh, preserving its scalp and
+            # commercial source. The body and its topology remain untouched.
+            if index==1:
+                for vertex in hair.data.vertices:
+                    if vertex.co.z<1.30:vertex.co.z=1.30+(vertex.co.z-1.30)*.58
+            elif index==2:
+                head_group=hair.vertex_groups.get('head')
+                for vertex in hair.data.vertices:
+                    if vertex.co.z>=1.30:continue
+                    length=1.30-vertex.co.z
+                    theta=length/.36*math.pi*2
+                    vertex.co.x+=.042*math.sin(theta)
+                    vertex.co.y=.080+(vertex.co.y-.080)*.4+.042*(1-math.cos(theta))
+                    vertex.co.z=1.30+.045*math.sin(theta*.5)
+                    for group in hair.vertex_groups:group.remove([vertex.index])
+                    head_group.add([vertex.index],1,'REPLACE')
+            elif index==3:
+                for vertex in hair.data.vertices:
+                    if vertex.co.z<1.30:vertex.co.x+=.10*min(1,(1.30-vertex.co.z)/.25)
+            hair['style']=['long center braid','short braid','coiled back bun','side braid'][index]
+            hair.data.update()
     palettes = ([(.31,.115,.105),(.12,.19,.29),(.25,.28,.13),(.39,.23,.11)] if sex == 'female' else
                 [(.11,.18,.23),(.38,.30,.20),(.19,.25,.16),(.35,.18,.13)])
     for mat in bpy.data.materials:
@@ -111,6 +229,9 @@ def build(sex, index, workwear=False):
                 for link in list(node.inputs['Base Color'].links):mat.node_tree.links.remove(link)
                 node.inputs['Base Color'].default_value = (*color, 1)
     if workwear:
+        upper=bpy.data.objects.get('Fitted cotton upper base')
+        if upper and index<3:
+            trim_work_sleeves(upper,('upperarm_','lowerarm_','hand_') if index==0 else ('lowerarm_','hand_'),.25 if index<2 else .05)
         # Workers retain the donor anatomy and foundation; change the outfit only.
         for obj in list(bpy.data.objects):
             if obj.name.startswith('Bordered shoulder shawl') or (index%2==0 and obj.name.startswith('Fitted turban')):
@@ -149,12 +270,13 @@ def build(sex, index, workwear=False):
                              export_cameras=False, export_lights=False, export_morph=False)
     report = dict(identity=slug, donor=donor, complete_body_vertices=len(body.data.vertices),
                   facial_changes=dict(jaw=jaw,nose=nose,cheek=cheek), whole_character_width=width,
-                  runtime=str(runtime.relative_to(ROOT)), wardrobe='plain working cotton' if workwear else 'street formal', visual_approved=False)
+                  runtime=str(runtime.relative_to(ROOT)), wardrobe=['sleeveless cotton work shirt','elbow sleeve cotton work shirt','short sleeve cotton work shirt','long sleeve cotton work shirt'][index] if workwear else ('cotton sari and blouse' if sex=='female' else 'street formal'), hair_style=['long center braid','short braid','coiled back bun','side braid'][index] if sex=='female' else ('uncovered' if workwear and index%2==0 else 'turban'), visual_approved=False)
     (out / 'manifest.json').write_text(json.dumps(report, indent=2)+'\n')
     print('INDIAN_STREET_VARIANT', json.dumps(report), flush=True)
 
+indices=[int(sys.argv[sys.argv.index('--identity-index')+1])] if '--identity-index' in sys.argv else range(4)
 if '--workwear-only' not in sys.argv:
     for sex in (['female'] if '--female-only' in sys.argv else (['male'] if '--male-only' in sys.argv else ['female','male'])):
-        for index in range(4): build(sex, index)
+        for index in indices: build(sex, index)
 if '--female-only' not in sys.argv:
-    for index in range(4): build('male',index,True)
+    for index in indices: build('male',index,True)

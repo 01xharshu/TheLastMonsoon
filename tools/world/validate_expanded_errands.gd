@@ -2,29 +2,36 @@ extends SceneTree
 var world: Node3D
 var actor: CharacterBody3D
 var jobs: Node
+var freight: Node3D
 func _initialize() -> void: _run.call_deferred()
 func _visit(id: String) -> void:
 	actor.global_position = jobs.targets[id].global_position + Vector3(0,0,1)
 	await physics_frame
 func _run() -> void:
+	create_timer(240.0,true,false,true).timeout.connect(func():push_error("Expanded errand regression timed out");root.get_node("SaveManager").quit_game(2))
 	world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world); current_scene = world
 	for frame in 25: await physics_frame
 	actor = world.get_node("Player"); jobs = world.get_node("ErrandSystem")
 	actor.set_physics_process(false)
 	actor.inventory.items.erase("rupees")
+	freight=load("res://vehicles/horse_cart_candidate.gd").new();freight.variant=1;freight.name="ErrandFreightProbe"
+	freight.set_meta("driver_permission","Player");world.add_child(freight);freight.add_to_group("live_travel_carts");freight.set_physics_process(false)
+	for frame in 8:await physics_frame
 	for id in ["port_delivery","urgent_medicine","emergency_money"]:
 		await _visit("board"); jobs.use_endpoint("board",actor); assert(jobs.accept(id))
 		var job: Dictionary = jobs.JOBS[id]
 		await _visit(job.goal); jobs.use_endpoint(job.goal,actor)
 		assert(jobs.active == id) # Receiver cannot pay before collection.
 		jobs.close_panel()
+		if id=="port_delivery":freight.global_position=jobs.delivery.parking_position(job.pickup);freight.boarding.speed=0
 		await _visit(job.pickup); jobs.use_endpoint(job.pickup,actor)
 		assert(jobs.stages[id] == "carrying" and jobs.next_endpoint() == job.goal)
 		var saved: Dictionary = jobs.export_state(); jobs.restore_state(saved)
 		assert(jobs.active == id and jobs.stages[id] == "carrying")
+		if id=="port_delivery":freight.global_position=jobs.delivery.parking_position(job.goal)
 		await _visit(job.goal); jobs.use_endpoint(job.goal,actor)
-		assert(jobs.active.is_empty())
+		if not await _await_handover(id):return
 	assert(actor.inventory.get_item_count("rupees") == 40)
 	await _visit("board"); jobs.use_endpoint("board",actor); assert(jobs.accept("family_cart"))
 	await _visit("passenger"); jobs.use_endpoint("passenger",actor)
@@ -105,7 +112,36 @@ func _run() -> void:
 	assert(actor.inventory.get_item_count("rupees") == 60)
 	jobs.close_panel()
 	print("EXPANDED ERRANDS: PASS | port/medicine/money ordered pickup, saved cargo, separate wages, passenger cart proximity, seated hip, stopped/blocked arrival, continuous transfers/delayed wages, occupied disk save/load, invalid cart fallback, no duplicate payment")
-	quit()
+	root.get_node("SaveManager").quit_game()
+
+func _await_handover(id: String) -> bool:
+	# The frozen test player must step out of the receiver's physical return lane.
+	actor.global_position+=Vector3(4,0,0)
+	var started:=Time.get_ticks_msec()
+	var last_progress:=started
+	var prior_phase:=str(jobs.delivery.phase)
+	var prior_position:Vector3=jobs.delivery.receiver.global_position
+	while jobs.active==id:
+		await physics_frame
+		if is_instance_valid(jobs.delivery.receiver):
+			var at:Vector3=jobs.delivery.receiver.global_position
+			if at.distance_to(prior_position)>.03 or str(jobs.delivery.phase)!=prior_phase:
+				last_progress=Time.get_ticks_msec();prior_position=at;prior_phase=str(jobs.delivery.phase)
+		if Time.get_ticks_msec()-started>105000 or Time.get_ticks_msec()-last_progress>15000:
+			var context:=""
+			if is_instance_valid(jobs.delivery.receiver):
+				var person:Node3D=jobs.delivery.receiver
+				var shape:CollisionShape3D=person.body_collider.get_node("BodyShape")
+				var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin.y+=.15;query.collision_mask=1
+				var excluded:Array[RID]=[person.body_collider.get_rid(),jobs.targets[jobs.JOBS[id].goal].get_rid()];query.exclude=excluded
+				var blockers:Array[String]=[]
+				for hit in world.get_world_3d().direct_space_state.intersect_shape(query,8):blockers.append(str(hit.collider.get_path()))
+				context=" support="+str(preload("res://world/suryagarh/settlements/resident_walk_route.gd").support(person,person.global_position+Vector3(0,0,.05)))+" blockers="+str(blockers)+" goods="+str(jobs.delivery.goods.global_position if is_instance_valid(jobs.delivery.goods) else Vector3.INF)
+				print("ERRAND_HANDOVER_CONTEXT ",JSON.stringify({"id":id,"support":preload("res://world/suryagarh/settlements/resident_walk_route.gd").support(person,person.global_position+Vector3(0,0,.05)),"blockers":blockers,"goods":str(jobs.delivery.goods.global_position if is_instance_valid(jobs.delivery.goods) else Vector3.INF)}))
+			push_error("Handover did not finish: "+id+" phase="+str(jobs.delivery.phase)+" receiver="+str(jobs.delivery.receiver.global_position if is_instance_valid(jobs.delivery.receiver) else Vector3.INF)+" return="+str(jobs.delivery.finish)+" remaining="+str(jobs.delivery.route.size())+context)
+			root.get_node("SaveManager").quit_game(1)
+			return false
+	return jobs.active.is_empty()
 
 func _transfer_review(cart: Node3D, kind: String) -> void:
 	var previous: Vector3 = jobs.expanded.passenger.global_position

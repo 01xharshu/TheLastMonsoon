@@ -76,7 +76,9 @@ func board_at(actor: CharacterBody3D, seat: String, role: String) -> bool:
 	return boarding.board_at(actor, seat, role) if boarding != null else false
 
 func rein_grip_world(side: String) -> Vector3:
-	return to_global(_rein_grip_local(side))
+	return to_global(rein_grip_local(side))
+func rein_grip_local(side: String) -> Vector3:
+	return _rein_grip_local(side)
 
 func _rein_grip_local(side: String) -> Vector3:
 	var lateral := -.18 if side == "l" else .18

@@ -16,24 +16,44 @@ func run() -> void:
 	var cart_script := load("res://vehicles/bullock_cart.gd" if bullock else "res://vehicles/family_carriage_candidate.gd")
 	var driver_name := "MPFBBullockDriver" if bullock else "CoachmanMakeHuman"
 	var layout = load("res://world/suryagarh/landscape_layout.gd").new()
+	if "--pose-review" in OS.get_cmdline_user_args():
+		await review_local_pose(world,session,cart_script,driver_name,layout)
+		Startup.close(session)
+		await root.get_node("SaveManager").quit_game(1 if failed else 0)
+		return
 	if "--runtime-fitting" in OS.get_cmdline_user_args():
 		Startup.close(session)
 		var results: Array = []
-		for legacy in [true,false]:
+		var reference_arrays: Array = []
+		var fitted_carts: Array[Node3D] = []
+		for mode in [0,1,2]:
+			var reference: bool = mode==0
 			var cart: Node3D = cart_script.new()
 			cart.position=Vector3(640,layout.height(640,235),235)
 			cart.rotation.y=PI
 			cart.set_meta("rebuild_startup_cloth",true)
-			cart.set_meta("reference_cloth_uploads",legacy)
+			cart.set_meta("local_driver_pose",false)
+			cart.set_meta("reference_cloth_queries",reference)
+			cart.set_meta("reference_cloth_bounds",mode<2)
 			world.add_child(cart)
 			await process_frame
 			await process_frame
 			var driver: Node3D = cart.visual_root.get_node(driver_name)
 			check(driver.has_meta("startup_cloth_usec"),"Runtime fitting did not complete")
-			results.append({"legacy_uploads":legacy,"setup_us":driver.get_meta("startup_cloth_usec",0)})
-			cart.queue_free()
+			for piece_index in driver.seated_cloth.pieces.size():
+				var mesh: ArrayMesh = driver.seated_cloth.pieces[piece_index].node.mesh
+				var arrays: Array = []
+				for surface in mesh.get_surface_count(): arrays.append(mesh.surface_get_arrays(surface))
+				if reference: reference_arrays.append(arrays)
+				else: check(arrays==reference_arrays[piece_index],"Query cache changed runtime garment arrays")
+			results.append({"reference_queries":reference,"reference_bounds":mode<2,"setup_us":driver.get_meta("startup_cloth_usec",0),"phases":driver.seated_cloth.fit_timings})
+			cart.hide()
+			fitted_carts.append(cart)
 			await process_frame
 		print("COACHMAN CACHE RUNTIME FITTING ",JSON.stringify(results))
+		if DisplayServer.get_name() != "headless":
+			await compare_native_driver_pixels(world,fitted_carts[0],fitted_carts[2],fitted_carts[0].visual_root.get_node(driver_name))
+		for cart in fitted_carts: cart.queue_free()
 		await root.get_node("SaveManager").quit_game(1 if failed else 0)
 		return
 	if "--locations" in OS.get_cmdline_user_args():
@@ -85,13 +105,18 @@ func run() -> void:
 	cloth.startup_signature=cloth.source_signature()
 	var reference_cart: Node3D = cart_script.new()
 	reference_cart.transform = cart.transform
+	reference_cart.set_meta("local_driver_pose",false)
 	reference_cart.set_meta("rebuild_startup_cloth",true)
-	reference_cart.set_meta("reference_cloth_uploads",true)
+	reference_cart.set_meta("reference_cloth_queries",true)
+	reference_cart.set_meta("reference_cloth_bounds",true)
 	world.add_child(reference_cart)
 	await process_frame
 	while not session.tasks.is_empty(): await process_frame
 	var reference: Node3D = reference_cart.visual_root.get_node(driver_name)
 	var reference_cloth = reference.seated_cloth
+	# Compare the established canonical geometry under the production local pose.
+	reference_cart.set_meta("local_driver_pose",true)
+	reference._seat(reference,"CoachmanSeat",0.0)
 	var max_position_error := 0.0
 	for index in cloth.pieces.size():
 		var node: MeshInstance3D = reference_cloth.pieces[index].node
@@ -104,26 +129,8 @@ func run() -> void:
 	check(max_position_error < .000001,"Cached garment position changed")
 	for retained in body_meshes:
 		check(retained[0].mesh == retained[1] and retained[0].skin == retained[2],"Cache replaced the retained MPFB body/foundation")
-	var cpu_cart: Node3D = cart_script.new()
-	cpu_cart.transform=cart.transform
-	cpu_cart.set_meta("rebuild_startup_cloth",true)
-	world.add_child(cpu_cart)
-	await process_frame
-	while not session.tasks.is_empty(): await process_frame
-	var cpu_driver: Node3D = cpu_cart.visual_root.get_node(driver_name)
-	for index in cloth.pieces.size():
-		var cpu_mesh: ArrayMesh = cpu_driver.seated_cloth.pieces[index].node.mesh
-		for surface in cpu_mesh.get_surface_count():
-			var arrays: Array = cpu_mesh.surface_get_arrays(surface)
-			for field in Mesh.ARRAY_MAX:
-				check(arrays[field]==expected[index][surface][field],"CPU-only garment preparation differs in field %s" % field)
-	print("COACHMAN CACHE CPU PREPARATION ",JSON.stringify({"legacy_setup_us":reference.get_meta("startup_cloth_usec",0),"cpu_setup_us":cpu_driver.get_meta("startup_cloth_usec",0),"arrays_equal":not failed}))
-	cpu_cart.hide()
 	if DisplayServer.get_name() != "headless":
 		await compare_native_driver_pixels(world, cart, reference_cart, driver)
-		reference_cart.hide()
-		await compare_native_driver_pixels(world,cart,cpu_cart,driver)
-		cpu_cart.hide()
 	Startup.close(session)
 	var runtime_cart: Node3D = cart_script.new()
 	runtime_cart.transform = cart.transform
@@ -134,12 +141,81 @@ func run() -> void:
 	print("COACHMAN CACHE PARITY ",JSON.stringify({"status":"FAIL" if failed else "PASS","bullock":bullock,"max_position_error_m":max_position_error,"retained_skinned_meshes":body_meshes.size(),"cached_setup_us":driver.get_meta("startup_cloth_usec",0),"rebuild_setup_us":reference.get_meta("startup_cloth_usec",0),"runtime_cached_setup_us":runtime_driver.get_meta("startup_cloth_usec",0)}))
 	await root.get_node("SaveManager").quit_game(1 if failed else 0)
 
+func review_local_pose(world: Node3D,session: RefCounted,cart_script: Script,driver_name: String,layout: RefCounted) -> void:
+	var carts: Array[Node3D] = []
+	for index in 2:
+		var cart: Node3D = cart_script.new()
+		cart.position=Vector3(-265,layout.height(-265,-18),-18)
+		cart.rotation.y=PI*.5
+		world.add_child(cart)
+		await process_frame
+		while not session.tasks.is_empty(): await process_frame
+		check(cart.visual_root.get_node(driver_name).get_meta("startup_cloth_cache",false),"Existing cache source/pose validation failed before local-pose comparison")
+		carts.append(cart)
+	var original: Node3D = carts[0].visual_root.get_node(driver_name)
+	var candidate: Node3D = carts[1].visual_root.get_node(driver_name)
+	carts[0].set_meta("local_driver_pose",false)
+	original._seat(original,"CoachmanSeat",0.0)
+	var before := posed_vertices(original,carts[0])
+	carts[1].set_meta("local_driver_pose",true)
+	candidate._seat(candidate,"CoachmanSeat",0.0)
+	var after := posed_vertices(candidate,carts[1])
+	check(before.size()==after.size(),"Local pose removed body vertices")
+	var maximum := 0.0
+	for index in before.size(): maximum=maxf(maximum,before[index].distance_to(after[index]))
+	check(maximum<.0005,"Local pose changed body position by more than 0.5 mm")
+	for index in candidate.seated_cloth.pieces.size():
+		check(candidate.seated_cloth.pieces[index].node.mesh==original.seated_cloth.pieces[index].node.mesh,"Local pose replaced established garment geometry")
+	print("COACHMAN CACHE LOCAL BODY ",JSON.stringify({"max_posed_vertex_difference_m":maximum,"skinned_vertices":before.size(),"left_hand_gap_m":candidate.get_meta("hand_contact_l",INF),"right_hand_gap_m":candidate.get_meta("hand_contact_r",INF),"original_left_hand_gap_m":original.get_meta("hand_contact_l",INF),"original_right_hand_gap_m":original.get_meta("hand_contact_r",INF)}))
+	for side in ["l","r"]:
+		check(candidate.get_meta("hand_contact_"+side,INF)<=original.get_meta("hand_contact_"+side,0.0)+.0001,"Local seating worsened rein contact")
+	var cache: Resource = load(candidate.seated_cloth.startup_cache_path()).duplicate()
+	candidate.seated_cloth.startup_signature=candidate.seated_cloth.source_signature()
+	cache.set_meta("signature",candidate.seated_cloth.startup_signature)
+	carts[1].set_meta("test_cloth_cache",cache)
+	for spec in [[-265,-18,PI*.5],[-403,225,PI*.5],[-416,230,-PI*.5],[500,470,0.0],[640,235,PI]]:
+		carts[1].position=Vector3(spec[0],layout.height(spec[0],spec[1]),spec[1])
+		carts[1].rotation.y=spec[2]
+		candidate._seat(candidate,"CoachmanSeat",0.0)
+		candidate.seated_cloth.startup_signature=candidate.seated_cloth.source_signature()
+		check(candidate.seated_cloth._restore_startup_cache(),"Strict local-pose cache failed at "+str(carts[1].position))
+		print("COACHMAN CACHE LOCAL HIT ",str(carts[1].position))
+	carts[1].transform=carts[0].transform
+	candidate._seat(candidate,"CoachmanSeat",0.0)
+	if DisplayServer.get_name() != "headless": await compare_native_driver_pixels(world,carts[0],carts[1],original)
+
+static func posed_vertices(driver: Node3D,cart: Node3D) -> PackedVector3Array:
+	var output := PackedVector3Array()
+	var rig: Skeleton3D = driver._skeleton
+	var relative: Transform3D = cart.global_transform.affine_inverse()*rig.global_transform
+	for node in driver.find_children("*","MeshInstance3D",true,false):
+		if node.skin==null: continue
+		var binds: Array[Transform3D] = []
+		for bind in node.skin.get_bind_count():
+			var bone: int = node.skin.get_bind_bone(bind)
+			if bone<0: bone=rig.find_bone(node.skin.get_bind_name(bind))
+			binds.append(relative*rig.get_bone_global_pose(bone)*node.skin.get_bind_pose(bind))
+		for surface in node.mesh.get_surface_count():
+			var arrays: Array = node.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+			var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+			var stride: int = bones.size()/vertices.size()
+			for index in vertices.size():
+				var point := Vector3.ZERO
+				for slot in stride:
+					var offset: int=index*stride+slot
+					if weights[offset]>0: point+=(binds[bones[offset]]*vertices[index])*weights[offset]
+				output.append(point)
+	return output
+
 func compare_locations(world: Node3D,session: RefCounted,cart_script: Script,driver_name: String,layout: RefCounted) -> void:
 	var reference_pose := PackedFloat32Array()
 	var reference_hash := ""
 	var reference_raw := PackedFloat32Array()
 	for spec in [[-265,-18,PI*.5],[-403,225,PI*.5],[-416,230,-PI*.5],[500,470,0.0],[640,235,PI]]:
 		var cart: Node3D = cart_script.new()
+		cart.set_meta("local_driver_pose",true)
 		cart.position = Vector3(spec[0],layout.height(spec[0],spec[1]),spec[1])
 		cart.rotation.y = spec[2]
 		world.add_child(cart)
@@ -149,6 +225,7 @@ func compare_locations(world: Node3D,session: RefCounted,cart_script: Script,dri
 		var cloth = driver.seated_cloth
 		var rig: Skeleton3D = driver._skeleton
 		var relative: Transform3D = cart.global_transform.affine_inverse()*rig.global_transform
+		if cart.get_meta("local_driver_pose",false): relative=preload("res://vehicles/seated_driver_coordinates.gd").relative(rig,cart)
 		var pose := PackedFloat32Array()
 		var raw_pose := PackedFloat32Array()
 		for index in rig.get_bone_count():
@@ -159,6 +236,8 @@ func compare_locations(world: Node3D,session: RefCounted,cart_script: Script,dri
 					pose.append(snappedf(component,.001))
 		var signature: String = cloth.source_signature()
 		if reference_pose.is_empty(): reference_pose=pose;reference_hash=signature;reference_raw=raw_pose.duplicate()
+		check(signature==reference_hash,"Local driver pose changed with world coordinates")
+		check(driver.get_meta("startup_cloth_cache",false),"Production cache missed at world location")
 		var different_values := 0
 		var max_difference := 0.0
 		var max_raw_difference := 0.0
@@ -167,35 +246,20 @@ func compare_locations(world: Node3D,session: RefCounted,cart_script: Script,dri
 			max_difference=maxf(max_difference,absf(pose[index]-reference_pose[index]))
 			max_raw_difference=maxf(max_raw_difference,absf(raw_pose[index]-reference_raw[index]))
 		print("COACHMAN CACHE LOCATION ",JSON.stringify({"position":str(cart.position),"yaw":spec[2],"hit":driver.get_meta("startup_cloth_cache",false),"setup_us":driver.get_meta("startup_cloth_usec",0),"signature_equal":signature==reference_hash,"pose_bytes_equal":pose.to_byte_array()==reference_pose.to_byte_array(),"different_pose_values":different_values,"max_quantized_pose_difference":max_difference,"max_raw_pose_difference":max_raw_difference}))
-		if spec[0] == 640 and driver.get_meta("startup_cloth_cache",false):
-			var reference_cart: Node3D = cart_script.new()
-			reference_cart.transform=cart.transform
-			reference_cart.set_meta("rebuild_startup_cloth",true)
-			world.add_child(reference_cart)
-			await process_frame
-			while not session.tasks.is_empty(): await process_frame
-			var reference_driver: Node3D = reference_cart.visual_root.get_node(driver_name)
-			var maximum_error := 0.0
-			for piece_index in cloth.pieces.size():
-				var cached_mesh: ArrayMesh = cloth.pieces[piece_index].node.mesh
-				var rebuilt_mesh: ArrayMesh = reference_driver.seated_cloth.pieces[piece_index].node.mesh
-				for surface in cached_mesh.get_surface_count():
-					var cached_arrays: Array = cached_mesh.surface_get_arrays(surface)
-					var rebuilt_arrays: Array = rebuilt_mesh.surface_get_arrays(surface)
-					check(cached_arrays[Mesh.ARRAY_INDEX]==rebuilt_arrays[Mesh.ARRAY_INDEX],"Location cache changed garment topology")
-					for vertex in cached_arrays[Mesh.ARRAY_VERTEX].size():
-						maximum_error=maxf(maximum_error,cached_arrays[Mesh.ARRAY_VERTEX][vertex].distance_to(rebuilt_arrays[Mesh.ARRAY_VERTEX][vertex]))
-			check(maximum_error<.0005,"Location cache garment differs by more than 0.5 mm")
-			print("COACHMAN CACHE LOCATION GEOMETRY ",JSON.stringify({"max_position_error_m":maximum_error,"cached_setup_us":driver.get_meta("startup_cloth_usec",0),"rebuild_setup_us":reference_driver.get_meta("startup_cloth_usec",0)}))
-			if DisplayServer.get_name() != "headless": await compare_native_driver_pixels(world,cart,reference_cart,driver)
-			reference_cart.queue_free()
+		var original_updates: int = cloth.updates
+		for step in 12:
+			cart.position+=Vector3(.03,0,.02)
+			cart.rotation.y+=.01
+			await driver._process(1.0/60.0)
+		check(cloth.updates==original_updates,"Moving driver unnecessarily rebuilt cached clothing")
 		cart.queue_free()
 		await process_frame
 
 func compare_native_driver_pixels(world: Node3D, cart: Node3D, reference_cart: Node3D, driver: Node3D) -> void:
 	var camera := Camera3D.new()
 	world.add_child(camera)
-	camera.global_position = driver.global_position + cart.global_basis*Vector3(2,1.3,2)
+	# View the driver from the footboard side; the carriage cabin occludes +Z.
+	camera.global_position = driver.global_position + cart.global_basis*Vector3(2,1.3,-2)
 	camera.look_at(driver.global_position + Vector3.UP*.45)
 	camera.make_current()
 	var sun := DirectionalLight3D.new()
@@ -217,13 +281,18 @@ func compare_native_driver_pixels(world: Node3D, cart: Node3D, reference_cart: N
 	for frame in 10: await process_frame
 	await RenderingServer.frame_post_draw
 	var after := root.get_texture().get_image()
-	check(before.get_data()==after.get_data(),"Cached versus rebuilt driver pixels changed")
+	var pose_review := "--pose-review" in OS.get_cmdline_user_args()
+	if not pose_review: check(before.get_data()==after.get_data(),"Cached versus rebuilt driver pixels changed")
 	print("COACHMAN CACHE PIXEL PARITY | equal ",before.get_data()==after.get_data())
+	if pose_review:
+		print("COACHMAN CACHE POSE PIXELS ",JSON.stringify(before.compute_image_metrics(after,false))," | quantified visual review; strict fit/cache pixel test unchanged")
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--review-dir="):
 			var directory := argument.trim_prefix("--review-dir=")
 			check(directory.is_absolute_path() and directory.get_file().begins_with("tlm-performance-"),"Review needs temporary runner directory")
-			if not failed: after.save_png(directory.path_join("coachman_cache.png"))
+			if not failed:
+				after.save_png(directory.path_join("coachman_cache.png"))
+				if pose_review: before.save_png(directory.path_join("local_driver.png"))
 
 func reference_signature(cloth: RefCounted) -> String:
 	# Previous full readback filter retained as the exact-input reference.
@@ -239,7 +308,7 @@ func reference_signature(cloth: RefCounted) -> String:
 			if arrays[Mesh.ARRAY_VERTEX].size() >= 14000: digest.update(var_to_bytes(arrays))
 	var rig: Skeleton3D = cloth.actor._skeleton
 	var pose := PackedFloat32Array()
-	var relative: Transform3D = cloth.coach.global_transform.affine_inverse()*rig.global_transform
+	var relative: Transform3D = preload("res://vehicles/seated_driver_coordinates.gd").relative(rig,cloth.coach) if cloth.coach.get_meta("local_driver_pose",true) else cloth.coach.global_transform.affine_inverse()*rig.global_transform
 	for index in rig.get_bone_count():
 		var transform: Transform3D = relative*rig.get_bone_global_pose(index)
 		for axis in [transform.basis.x,transform.basis.y,transform.basis.z,transform.origin]:

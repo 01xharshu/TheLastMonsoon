@@ -4,6 +4,18 @@ const CELL := .12
 var triangles: Array[Dictionary] = []
 var cells: Dictionary = {}
 var hierarchy: Array[Dictionary] = []
+const QUERY_CACHE_LIMIT := 4096
+var use_query_cache := true
+var use_precomputed_bounds := true
+var query_cache: Dictionary = {}
+var query_keys: Array[Vector3] = []
+var query_cursor := 0
+var query_hits := 0
+var query_misses := 0
+func clear_query_cache() -> void:
+ query_cache.clear()
+ query_keys.clear()
+ query_cursor=0
 func _cell(at: Vector3) -> Vector3i:
  return Vector3i(floori(at.x/CELL),floori(at.y/CELL),floori(at.z/CELL))
 static func closest(p: Vector3,a: Vector3,b: Vector3,c: Vector3) -> Vector3:
@@ -33,6 +45,9 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
  triangles.clear()
  cells.clear()
  hierarchy.clear()
+ clear_query_cache()
+ query_hits=0
+ query_misses=0
  var skeleton: Skeleton3D = actor._skeleton
  for node in actor.find_children("*","MeshInstance3D",true,false):
   if node.skin == null: continue
@@ -72,9 +87,9 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
     if maxf(a.y,maxf(b.y,c.y)) < 1.40 or minf(a.y,minf(b.y,c.y)) > 2.12: continue
     var normal: Vector3 = (directions[indices[offset]]+directions[indices[offset+1]]+directions[indices[offset+2]]).normalized()
     var id := triangles.size()
-    triangles.append({"a":a,"b":b,"c":c,"normal":normal,"low":a.min(b).min(c),"high":a.max(b).max(c)})
     var low := _cell(a.min(b).min(c))
     var high := _cell(a.max(b).max(c))
+    triangles.append({"a":a,"b":b,"c":c,"normal":normal,"low":a.min(b).min(c),"high":a.max(b).max(c),"cell_low":low,"cell_high":high})
     for x in range(low.x,high.x+1):
      for y in range(low.y,high.y+1):
       for z in range(low.z,high.z+1):
@@ -116,6 +131,21 @@ func _earlier(cell: Vector3i,id: int,previous: Vector3i,previous_id: int) -> boo
  return id < previous_id
 
 func nearest(at: Vector3) -> Dictionary:
+ if not use_query_cache: return nearest_uncached(at)
+ if query_cache.has(at):
+  query_hits+=1
+  return query_cache[at].duplicate()
+ query_misses+=1
+ var result := nearest_uncached(at)
+ if query_keys.size() < QUERY_CACHE_LIMIT: query_keys.append(at)
+ else:
+  query_cache.erase(query_keys[query_cursor])
+  query_keys[query_cursor]=at
+  query_cursor=(query_cursor+1)%QUERY_CACHE_LIMIT
+ query_cache[at]=result.duplicate()
+ return result
+
+func nearest_uncached(at: Vector3) -> Dictionary:
  if hierarchy.is_empty(): return {}
  var key := _cell(at)
  var distance := INF
@@ -131,8 +161,9 @@ func nearest(at: Vector3) -> Dictionary:
   if node.has("ids"):
    for id in node.ids:
     var triangle: Dictionary = triangles[id]
-    var cell_low := _cell(triangle.low)
-    if not _in_domain(cell_low,_cell(triangle.high),key): continue
+    var cell_low: Vector3i = triangle.cell_low if use_precomputed_bounds else _cell(triangle.low)
+    var cell_high: Vector3i = triangle.cell_high if use_precomputed_bounds else _cell(triangle.high)
+    if not _in_domain(cell_low,cell_high,key): continue
     box_point = at.clamp(triangle.low,triangle.high)
     if box_point.distance_squared_to(at) > distance+0.0000000001: continue
     var point := closest(at,triangle.a,triangle.b,triangle.c)

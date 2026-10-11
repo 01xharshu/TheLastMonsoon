@@ -9,6 +9,7 @@
   },
   "whole_character_width": 0.96,
   "runtime": "characters/npcs/street_residents/female_01.glb",
-  "wardrobe": "street formal",
+  "wardrobe": "cotton sari and blouse",
+  "hair_style": "long center braid",
   "visual_approved": false
 }

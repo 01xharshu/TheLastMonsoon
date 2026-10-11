@@ -7,6 +7,7 @@ var rock_material: StandardMaterial3D
 var stones: Array[Transform3D] = []
 var stone_positions: Array[Vector3] = []
 var prop_count := 0
+var runoff_pilot_registered:=false
 
 func _ready() -> void:
 	name = "RouteAndMarketDetail"
@@ -52,6 +53,15 @@ func _mountain() -> void:
 		_drain(a,b,normal)
 
 func _drain(a: Vector2,b: Vector2,normal: Vector2) -> void:
+	# One decorative pilot; contact stone assemblies and all gameplay stay resident.
+	if not runoff_pilot_registered and "--region-presentation-pilot" in OS.get_cmdline_user_args():
+		runoff_pilot_registered=true
+		var service:=preload("res://systems/region_presentation.gd").new();service.name="FortRunoffPresentation";add_child(service)
+		service.register("fort_runoff_pilot",ground((a+b)*.5),a.distance_to(b)*.5,_build_drain.bind(a,b,normal))
+		return
+	add_child(_build_drain(a,b,normal))
+
+func _build_drain(a: Vector2,b: Vector2,normal: Vector2) -> Node3D:
 	# Narrow rock-lined runoff bed on the uphill verge; conforms at 1 m intervals.
 	var middle := (a+b)*.5
 	var side := 1.0 if layout.height((middle+normal*7).x,(middle+normal*7).y)>layout.height((middle-normal*7).x,(middle-normal*7).y) else -1.0
@@ -67,7 +77,7 @@ func _drain(a: Vector2,b: Vector2,normal: Vector2) -> void:
 	st.generate_normals()
 	var mesh := MeshInstance3D.new();mesh.name="RunoffBed%d"%get_child_count();mesh.mesh=st.commit();mesh.material_override=rock_material
 	mesh.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh)
+	return mesh
 
 func _batch_stones() -> void:
 	var primitive := SphereMesh.new();primitive.radial_segments=9;primitive.rings=4;primitive.radius=.5;primitive.height=1.0

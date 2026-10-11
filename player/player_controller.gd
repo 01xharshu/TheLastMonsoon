@@ -174,6 +174,8 @@ var current_interactable: Interactable = null
 var hold_target: Interactable = null
 var hold_action := ""
 var hold_elapsed := 0.0
+var hold_lease := -1
+var interaction_index: Node
 
 
 # =========================================================
@@ -181,6 +183,7 @@ var hold_elapsed := 0.0
 # =========================================================
 
 func _ready() -> void:
+	preload("res://systems/action_permissions.gd").install(self)
 	if not inventory.has_water_bag():
 		inventory.add_item("water_bag", 1)
 		# Starting equipment is already owned when play begins, not a pickup.
@@ -798,7 +801,7 @@ func _find_interactable() -> Interactable:
 	var best: Interactable
 	var best_score := -INF
 	var origin := global_position + Vector3.UP * 1.35
-	for node in get_tree().get_nodes_in_group("interactables"):
+	for node in nearby_interactables():
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
 		var candidate := node as Interactable
 		if candidate == null: continue
@@ -831,8 +834,18 @@ func _find_interactable() -> Interactable:
 			best_score = score
 	return best
 
+func nearby_interactables(marker_range := 0.0) -> Array[Node]:
+	if not is_instance_valid(interaction_index):
+		var world:=preload("res://systems/world_context.gd").find_world(self)
+		if world==null:return get_tree().get_nodes_in_group("interactables")
+		interaction_index=world.get_node_or_null("InteractionSpatialIndex")
+		if interaction_index==null:
+			interaction_index=preload("res://systems/interaction_spatial_index.gd").new()
+			interaction_index.name="InteractionSpatialIndex";world.add_child(interaction_index)
+	return interaction_index.candidates(global_position,marker_range)
+
 func _update_interaction() -> void:
-	if is_instance_valid(hold_target) and hold_target.interaction_available() and Input.is_action_pressed(hold_action) and global_position.distance_to(hold_target.global_position) <= hold_target.interaction_max_distance:
+	if is_instance_valid(hold_target) and hold_target.interaction_available() and Input.is_action_pressed(hold_action) and global_position.distance_to(hold_target.interaction_anchor() if hold_target.is_in_group("house_doors") else hold_target.global_position) <= hold_target.interaction_max_distance:
 		current_interactable = hold_target
 	else:
 		current_interactable = _find_interactable()
@@ -851,6 +864,11 @@ func _update_interaction() -> void:
 	interaction_overlay.set_target(current_interactable,hold_elapsed/maxf(current_interactable.hold_duration,.001) if hold_target == current_interactable else 0.0)
 
 func _begin_interaction_hold(selected: Interactable, action: String) -> void:
+	_release_hold_lease()
+	var domains: Array[StringName]=[&"attack",&"board"]
+	if selected.interaction_pose!="none": domains.append(&"move")
+	hold_lease=get_node("ActionPermissions").acquire(selected,domains)
+	if hold_lease<0: return
 	hold_target = selected
 	hold_action = action
 	hold_elapsed = 0.0
@@ -864,6 +882,7 @@ func _advance_interaction_hold(delta: float) -> void:
 		hold_target = null
 		hold_elapsed = 0.0
 		set_meta("interaction_reach",false)
+		_release_hold_lease()
 		return
 	hold_elapsed += delta
 	interaction_overlay.set_target(hold_target,hold_elapsed/maxf(hold_target.hold_duration,.001))
@@ -872,6 +891,7 @@ func _advance_interaction_hold(delta: float) -> void:
 		hold_target = null
 		hold_elapsed = 0.0
 		set_meta("interaction_reach",false)
+		_release_hold_lease()
 		WorldAudio.interaction(completed)
 		completed.interact(self)
 		ControllerFeedback.pulse("interaction")
@@ -881,7 +901,13 @@ func _advance_interaction_hold(delta: float) -> void:
 # HIDE INTERACTION LABELS
 # =========================================================
 
+func _release_hold_lease() -> void:
+	var permissions:=get_node_or_null("ActionPermissions")
+	if permissions!=null and hold_lease>=0: permissions.release(hold_lease)
+	hold_lease=-1
+
 func _hide_interaction_labels() -> void:
+	_release_hold_lease()
 
 	primary_interaction_label.visible = false
 

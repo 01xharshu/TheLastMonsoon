@@ -57,6 +57,13 @@ func _run() -> void:
 			failed = true
 			push_error("Garment clearance contact changed at sample " + str(index))
 	var optimized_usec := Time.get_ticks_usec()-started
+	for index in points.size():
+		var cached: Dictionary = clearance.nearest(points[index])
+		if cached != previous[index]: failed=true;push_error("Cached contact changed at sample "+str(index))
+		cached.clear()
+		if clearance.nearest(points[index]) != previous[index]: failed=true;push_error("Caller mutation corrupted cached contact")
+	clearance.build_body(actor,coach)
+	if not clearance.query_cache.is_empty(): failed=true;push_error("Body rebuild retained stale query results")
 	coach.free()
 	print("COACHMAN CLEARANCE ", "FAIL" if failed else "PASS", " | 128 exact contact comparisons | previous_us=", legacy_usec, " current_us=", optimized_usec)
 	var saves := root.get_node_or_null("SaveManager")

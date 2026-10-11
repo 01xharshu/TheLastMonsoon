@@ -11,7 +11,8 @@ func _run() -> void:
 	var households:=get_nodes_in_group("wealthy_household")
 	var staff:=get_nodes_in_group("household_staff")
 	var residents:=get_nodes_in_group("household_resident")
-	var coaches:=get_nodes_in_group("household_coach")
+	var household_root:Node=world.get_node("WealthyHouseholds")
+	var coaches:=get_nodes_in_group("household_coach").filter(func(coach):return household_root.is_ancestor_of(coach))
 	if households.size()!=3 or staff.size()!=9 or residents.size()!=4 or coaches.size()!=3:
 		errors.append("household population/coach count mismatch")
 	# Clear physical entrances into the two new homes.
@@ -67,7 +68,7 @@ func _run() -> void:
 				if actor.has_meta("hand_contact_"+side):worst_contact=maxf(worst_contact,actor.get_meta("hand_contact_"+side))
 	var journeys:Array=[]
 	for coach in coaches:
-		var travel:=coach.get_node("HouseholdTravel")
+		var travel:Node=coach.get_node("HouseholdTravel")
 		if travel.journeys.size()!=travel.residents.size():errors.append(str(coach.name)+": resident controllers missing")
 		if travel.completed_trips<1:errors.append(str(coach.name)+": no completed driveway round trip")
 		for journey in travel.journeys:

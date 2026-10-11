@@ -88,6 +88,7 @@ func _ready() -> void:
 
 func _personal_appearance()->void:
 	var identity:=member_index%3
+	apply_face_identity()
 	var saris:=[Color(.36,.18,.12),Color(.19,.29,.25),Color(.32,.20,.29)]
 	var blouses:=[Color(.20,.25,.28),Color(.37,.29,.18),Color(.25,.21,.18)]
 	var skin_tints:=[Color(.78,.60,.46),Color(.65,.45,.32),Color(.88,.69,.52)]
@@ -101,10 +102,28 @@ func _personal_appearance()->void:
 			if original==null:continue
 			var material:=original.duplicate() as StandardMaterial3D
 			if skin:material.albedo_color*=skin_tints[identity]
-			elif label=="Fitted cotton upper base":material.albedo_color=blouses[identity]
+			elif label=="Fitted cotton upper base":material.albedo_color=saris[identity] if surface>0 else blouses[identity]
 			elif label=="Sari lower border":material.albedo_color=saris[identity].lightened(.18)
 			else:material.albedo_color=saris[identity]
-			mesh.set_surface_override_material(surface,material)
+			if garment:
+				var woven:=ShaderMaterial.new()
+				woven.shader=preload("res://characters/npcs/indian/river_upper_cotton.gdshader") if label=="Fitted cotton upper base" else preload("res://characters/npcs/households/household_cloth.gdshader")
+				if label=="Fitted cotton upper base":
+					woven.set_shader_parameter("blouse_color",blouses[identity])
+					woven.set_shader_parameter("pallu_color",saris[identity])
+				woven.set_shader_parameter("cloth_color",material.albedo_color)
+				woven.set_shader_parameter("garment_kind",0)
+				woven.set_shader_parameter("fabric_sway",Vector2.ZERO)
+				mesh.set_surface_override_material(surface,woven)
+			else:mesh.set_surface_override_material(surface,material)
+
+func apply_face_identity()->void:
+	for mesh:MeshInstance3D in find_children("*","MeshInstance3D",true,false):
+		if not "MakeHuman_body" in str(mesh.name):continue
+		for key in mesh.mesh.get_blend_shape_count():
+			var shape_name:String=str(mesh.mesh.get_blend_shape_name(key))
+			if shape_name.begins_with("River identity "):
+				mesh.set_blend_shape_value(key,1.0 if shape_name=="River identity %d"%(member_index%3) else 0.0)
 
 func _process(delta: float) -> void:
 	tick_routine(delta)

@@ -19,8 +19,16 @@ func run()->void:
 	for frame in 4:await process_frame
 	world=current_scene
 	if world.has_node("OpeningSequence"):
+		var opening:Node=world.get_node("OpeningSequence")
 		var skip:=InputEventKey.new();skip.keycode=KEY_ESCAPE;skip.pressed=true
-		world.get_node("OpeningSequence")._input(skip);await process_frame;world.get_node("OpeningSequence")._input(skip)
+		opening._input(skip);await process_frame;opening._input(skip)
+		# Skip enters the next morning; the real wake/walk handoff must finish
+		# before paid work can open. Population readiness is not that handoff.
+		for frame in 1800:
+			if opening.state=="done":break
+			await physics_frame
+		check(opening.state=="done","opening releases player before resident work")
+		if opening.state!="done":finish();return
 	paused=false
 	player=world.get_node("Player");player.set_physics_process(false);player.set_process_unhandled_input(false)
 	world.get_node("GameTimeSystem").clock_paused=true;world.get_node("GameTimeSystem").current_hour=10
@@ -37,10 +45,12 @@ func run()->void:
 	check(population.pedestrians.size()==expected_people,"all configured integrated pedestrians")
 	check(population.patrols.size()==expected_police,"all configured police patrols")
 	check(population.carts.size()==expected_carts,"all configured traffic carts")
-	check(get_nodes_in_group("institution_post_residents").size()==5,"five added institution posts")
+	check(get_nodes_in_group("institution_post_residents").size()==9,"nine added institution and receiving posts")
 	check(get_nodes_in_group("draft_animals").size()==8,"eight yard animals")
 	var independent:Node=world.get_node_or_null("CivicResidentPosts/HospitalLinenPorter/LinenDelivery")
 	check(independent!=null and independent.goods.size()==3,"independent hospital worker integrated into New Journey")
+	var depot_worker:Node=world.get_node_or_null("CivicResidentPosts/DepotStoresPorter/StoresDelivery")
+	check(depot_worker!=null and depot_worker.goods.size()==3,"independent depot worker integrated into New Journey")
 	var Roles=preload("res://world/suryagarh/settlements/resident_roles.gd")
 	check(not Roles.permits("landowner","hoe") and not Roles.permits("landowner_spouse","well"),"wealthy household forbidden chores")
 	for resident in world.get_node("VillageDailyActivities").residents:
@@ -52,9 +62,14 @@ func run()->void:
 	check(freight!=null,"freight cart available")
 	if freight==null:finish();return
 	player.inventory.items.erase("rupees")
-	await visit("board");jobs.use_endpoint("board",player);check(jobs.accept("port_delivery"),"accept consignment")
+	await visit("board");jobs.use_endpoint("board",player)
+	var accepted:bool=jobs.accept("port_delivery")
+	check(accepted,"accept consignment")
+	if not accepted:
+		print("RESIDENT_JOB_SETUP source=",jobs.source," active=",jobs.active," near=",jobs._near("board")," health=",player.health," inventory_open=",player.inventory_ui.is_open()," rest=",player.get_meta("rest_action","")," paused=",paused)
+		finish();return
 	await visit("port_cargo");jobs.use_endpoint("port_cargo",player)
-	check(jobs.stages.port_delivery=="accepted","remote cart cannot collect cargo")
+	check(jobs.stages.get("port_delivery","")=="accepted","remote cart cannot collect cargo")
 	freight.global_position=jobs.delivery.parking_position("port_cargo");freight.rotation.y=0;freight.boarding.speed=0
 	for frame in 2:await physics_frame
 	jobs.use_endpoint("port_cargo",player);check(jobs.stages.port_delivery=="carrying","stopped cart loads sealed goods")
@@ -71,6 +86,13 @@ func run()->void:
 				independent.tick(.1);await physics_frame
 			check(independent.phase=="inside" and independent.goods[independent.delivered].get_parent()==independent.actor,"real save taken while porter carries physical goods")
 		var worker_state:Dictionary=independent.export_state() if independent!=null else {}
+		if depot_worker!=null:
+			depot_worker.set_physics_process(false)
+			for frame in 500:
+				if depot_worker.phase=="inside":break
+				depot_worker.tick(.1);await physics_frame
+			check(depot_worker.phase=="inside" and depot_worker.goods[depot_worker.delivered].get_parent()==depot_worker.actor,"real save taken while depot porter carries physical goods")
+		var depot_state:Dictionary=depot_worker.export_state() if depot_worker!=null else {}
 		if independent!=null:independent.set_physics_process(false)
 		check(saver.save_game(world,1),"real save records loaded consignment")
 		check(saver.read_slot(1).get("city_route_population",{}).size()==expected_people,"real save retains all civilian identities")
@@ -92,6 +114,12 @@ func run()->void:
 			check(restored_worker.delivered>=int(worker_state.get("delivered",0)),"Continue retains completed independent deliveries")
 			if worker_state.get("phase","")=="inside" and restored_worker.delivered==int(worker_state.get("delivered",0)):
 				check(restored_worker.goods[restored_worker.delivered].get_parent()==restored_worker.actor,"Continue restores actual carried hospital goods")
+		var restored_depot:Node=world.get_node_or_null("CivicResidentPosts/DepotStoresPorter/StoresDelivery")
+		check(restored_depot!=null and restored_depot.goods.size()==3,"Continue restores one depot worker and finite consignment")
+		if restored_depot!=null:
+			check(restored_depot.delivered>=int(depot_state.get("delivered",0)),"Continue retains depot deliveries")
+			if depot_state.get("phase","")=="inside" and restored_depot.delivered==int(depot_state.get("delivered",0)):
+				check(restored_depot.goods[restored_depot.delivered].get_parent()==restored_depot.actor,"Continue restores actual carried depot goods")
 		var restored_person:Node=population.get_node_or_null(NodePath(saved_identity))
 		check(restored_person!=null and is_equal_approx(restored_person.get_node("Vitality").health,32.5),"Continue restores matching civilian identity and health")
 		freight=jobs.delivery.vehicle
@@ -123,6 +151,23 @@ func run()->void:
 			if hospital_work.delivered>0:break
 			hospital_work.tick(.1);await physics_frame
 	check(hospital_work!=null and hospital_work.delivered>0,"hospital porter delivers past the real receiving orderly")
+	var depot_work:Node=world.get_node_or_null("CivicResidentPosts/DepotStoresPorter/StoresDelivery")
+	if depot_work!=null:
+		depot_work.set_physics_process(false)
+		for frame in 600:
+			if depot_work.delivered>0:break
+			depot_work.tick(.1);await physics_frame
+	check(depot_work!=null and depot_work.delivered>0,"depot porter stores supplies inside the real building")
+	for label in ["CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"]:
+		var work:Node=world.get_node_or_null("CivicResidentPosts/"+label+"/SupplyDelivery")
+		check(work!=null and work.goods.size()==3,label+" integrated into main Continue")
+		if work==null:continue
+		work.set_physics_process(false)
+		for frame in 1000:
+			if work.delivered>0:break
+			work.tick(.1);await physics_frame
+		print("RECEIVING_WORK ",label," delivered=",work.delivered," phase=",work.phase," blocked=",work.blocked," at=",work.actor.global_position)
+		check(work.delivered>0,label+" carries goods into assigned workplace")
 	finish()
 func finish()->void:
 	print("RESIDENT_WORLD_RESULT ",JSON.stringify({"passed":failures.is_empty(),"failures":failures}))

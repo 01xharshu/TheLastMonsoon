@@ -39,7 +39,9 @@ func run() -> void:
 	check(current_scene.has_node("Player") and current_scene.visible and not paused,"Play Game did not reveal a playable world")
 	var terrain:=preload("res://world/suryagarh/tree_trunk_collision.gd")
 	var grounds:=current_scene.find_children("GroundCollision","StaticBody3D",true,false)
-	check(terrain.terrain_exclusions(current_scene).size()==grounds.size(),"Menu terrain restoration did not update the shared support cache")
+	var support_rids: Array[RID]=terrain.terrain_exclusions(current_scene)
+	# Authored road support is explicitly registered too; it is not named GroundCollision.
+	check(grounds.all(func(body:StaticBody3D)->bool:return support_rids.has(body.get_rid())),"Menu terrain restoration omitted a ground body from the shared support cache")
 	change_scene_to_file("res://ui/main_menu.tscn")
 	await scene_changed
 	for frame in 4:await process_frame

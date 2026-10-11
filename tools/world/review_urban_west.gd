@@ -43,7 +43,7 @@ func run() -> void:
 		camera.global_position=pose[1];camera.look_at(pose[2])
 		for frame in 8:await process_frame
 		if not folder.is_empty() and DisplayServer.get_name()!="headless":
-			await RenderingServer.frame_post_draw
+			RenderingServer.force_draw()
 			root.get_texture().get_image().save_png(folder.path_join(pose[0]+".png"))
 	print("URBAN_WORLD_REVIEW ",JSON.stringify({"passed":errors.is_empty(),"homes":city.homes.size(),"community_residents":community.residents.size(),"community_pending":community.pending.size(),"venues":community.residents.map(func(actor):return str(actor.get_parent().name)),"rebel_readers":rebels,"median_ms":samples[90],"p95_ms":samples[171],"render_scale":root.scaling_3d_scale,"window_pixels":[root.size.x,root.size.y],"city_walkers":world.get_node("CityRoutePopulation").pedestrians.filter(func(actor):return str(actor.get_meta("population_route","")).begins_with("city_")).size(),"errors":errors,"scope":"placed district, saved terrain and full-world native view; FPS and final asset art remain separate"}))
 	quit(0 if errors.is_empty() else 1)

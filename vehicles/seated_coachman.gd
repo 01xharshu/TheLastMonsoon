@@ -58,6 +58,9 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
     var bone:String=entry[0]+side
     skeleton.set_bone_pose_rotation(skeleton.find_bone(bone),bases[bone]*Quaternion(axes[bone],entry[1]))
  var socket:Node3D=coach.seat_sockets[socket_name]
+ if coach.get_meta("local_driver_pose",true):
+  preload("res://vehicles/seated_driver_coordinates.gd").anchor(self,coach,socket)
+  return
  actor.global_rotation.y=socket.global_rotation.y+PI
  var pelvis:=skeleton.find_bone("pelvis")
  var hip:Vector3=skeleton.to_global(skeleton.get_bone_global_pose(pelvis).origin)
@@ -73,4 +76,6 @@ func _seat(actor:Node3D,socket_name:String,delta:float) -> void:
    actor.call("set_grip",side,.7)
 
 func foot_target_world(side: String) -> Vector3:
- return coach.to_global(Vector3(-.18 if side == "l" else .18,1.46,.48))
+ return coach.to_global(foot_target_local(side))
+func foot_target_local(side: String) -> Vector3:
+ return Vector3(-.18 if side == "l" else .18,1.46,.48)

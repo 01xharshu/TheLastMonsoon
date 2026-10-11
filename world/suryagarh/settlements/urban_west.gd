@@ -78,7 +78,7 @@ func build_city() -> void:
 	print("WESTERN CITY READY | 26 through houses, 13 paired passages, market, civilian hospital, college/café")
 
 func door(parent:Node3D,label:String,at:Vector3,yaw:float=0.0,width:float=2.0) -> Node3D:
-	var jamb:=Node3D.new();jamb.position=at;jamb.rotation.y=yaw;parent.add_child(jamb)
+	var jamb:=Node3D.new();jamb.name=label+"Frame";jamb.position=at;jamb.rotation.y=yaw;parent.add_child(jamb)
 	var entrance:=Door.new();entrance.name=label;entrance.width=width;entrance.height=2.5
 	entrance.night_lock=false;entrance.auto_open_at_dawn=false;entrance.auto_close_delay=12;entrance.outside_latch_access=true
 	entrance.label_name=label.capitalize();entrance.position=Vector3(-width*.5,.24,0);entrance.build(b.wood);jamb.add_child(entrance)
@@ -90,7 +90,9 @@ func house(home:Node3D,left_connection:bool,two_storeys:bool=false) -> void:
 		for side in [-1.0,1.0]:b.piece(home,"DoorWall",Vector3(side*3,1.7,z),Vector3(4,2.92,.24),b.plaster)
 		b.piece(home,"DoorHeader",Vector3(0,2.95,z),Vector3(2, .42,.24),b.plaster)
 		var entrance:=door(home,"RearEscapeDoor" if z<0 else "FrontDoor",Vector3(0,0,z),PI if z<0 else 0)
-		entrance.set_meta("exit_road",("city_rear_lane" if home.position.z>-370 else "city_back_street") if z<0 else ("city_front_street" if home.position.z>-370 else "city_courtyard_lane"))
+		var front_road:="city_college_front_street" if home.position.z<-410 else ("city_front_street" if home.position.z>-370 else "city_courtyard_lane")
+		var rear_road:="city_college_rear_lane" if home.position.z<-410 else ("city_rear_lane" if home.position.z>-370 else "city_back_street")
+		entrance.set_meta("exit_road",rear_road if z<0 else front_road)
 	for side in [-1.0,1.0]:
 		if (side<0)==left_connection:
 			b.piece(home,"SideDoorNorthWall",Vector3(side*5,1.7,-3.5),Vector3(.24,2.92,7),b.plaster)
@@ -101,13 +103,15 @@ func house(home:Node3D,left_connection:bool,two_storeys:bool=false) -> void:
 			b.piece(home,"WindowSill",Vector3(side*5,.72,0),Vector3(.24,.96,14),b.plaster)
 			b.piece(home,"WindowLintel",Vector3(side*5,2.65,0),Vector3(.24,1.02,14),b.plaster)
 			for z in [-5.0,0.0,5.0]:b.piece(home,"WindowPier",Vector3(side*5,1.67,z),Vector3(.24,1,3),b.plaster)
-		b.piece(home,"RoofSlope",Vector3(side*2.5,6.42 if two_storeys else 3.38,0),Vector3(5.4,.18,14.7),b.tile).rotation.z=-side*.17
+		b.piece(home,"RoofSlope",Vector3(side*2.5,6.72 if two_storeys else 3.68,0),Vector3(5.4,.18,14.7),b.tile).rotation.z=-side*.17
+	for z in [-7.0,7.0]:gable(home,z,6.20 if two_storeys else 3.16)
 	for side in [-1.0,1.0]:
 		var stair_side:=1.0 if left_connection else -1.0
 		var partition_width:=1.8 if two_storeys and side==stair_side else 3.8
 		b.piece(home,"RoomPartition",Vector3(side*(1.2+partition_width*.5),1.55,0),Vector3(partition_width,2.62,.16),b.plaster)
 		b.piece(home,"LowCot",Vector3(side*3,.52,-4.7),Vector3(1.6,.25,2.3),b.wood)
-		b.piece(home,"CotLeg",Vector3(side*3,.26,-4.7),Vector3(1.2,.5,1.8),b.wood)
+		for dx in [-.65,.65]:
+			for dz in [-.95,.95]:b.piece(home,"CotLeg",Vector3(side*3+dx,.26,-4.7+dz),Vector3(.12,.5,.12),b.wood)
 		b.piece(home,"HouseholdChest",Vector3(side*3,.55,4.6),Vector3(1,.62,.62),b.wood)
 	if two_storeys:
 		home.set_meta("storeys",2)
@@ -115,9 +119,23 @@ func house(home:Node3D,left_connection:bool,two_storeys:bool=false) -> void:
 		home.set_meta("stair_side",stair_side)
 		b.piece(home,"UpperFloor",Vector3(-stair_side*1.2,3.22,0),Vector3(7.6,.12,14),b.wood)
 		b.piece(home,"UpperLanding",Vector3(stair_side*3.8,3.22,-5.8375),Vector3(2.4,.12,2.325),b.wood)
+		# Close the floor edge even where the staircase leaves the deck open.
+		for z in [-7.0,7.0]:b.piece(home,"StoreyRim",Vector3(0,3.22,z),Vector3(10.24,.16,.24),b.wood)
+		for x in [-5.0,5.0]:b.piece(home,"StoreyRim",Vector3(x,3.22,0),Vector3(.24,.16,14),b.wood)
 		for step in 16:
 			var rise:=.19*(step+1)
 			b.piece(home,"StairTread",Vector3(stair_side*3.9,.24+rise*.5,5.4-step*.65),Vector3(1.2,rise,.65),b.wood)
+		var rail_start:=Vector3(stair_side*4.65,1.33,5.4)
+		var rail_end:=Vector3(stair_side*4.65,4.18,-4.35)
+		var rail_span:=rail_end-rail_start
+		b.piece(home,"StairHandrail",(rail_start+rail_end)*.5,Vector3(.10,.10,rail_span.length()),b.wood).rotation.x=-atan2(rail_span.y,rail_span.z)
+		for step in [0,4,8,12,15]:
+			b.piece(home,"HandrailPost",Vector3(stair_side*4.65,.24+.19*(step+1)+.475,5.4-step*.65),Vector3(.10,.95,.10),b.wood)
+		b.piece(home,"UpperWellRail",Vector3(stair_side*2.55,4.18,1.2),Vector3(.10,.10,11.5),b.wood)
+		for z in [-4.4,-1.0,2.0,5.0,6.8]:b.piece(home,"WellRailPost",Vector3(stair_side*2.55,3.73,z),Vector3(.10,.9,.10),b.wood)
+		for z in [-4.7,3.6]:
+			b.piece(home,"UpperSleepingMat",Vector3(-stair_side*3.5,3.32,z),Vector3(1.2,.08,2.1),b.ochre,false)
+			b.piece(home,"UpperStorageChest",Vector3(-stair_side*3.8,3.65,z+1.35),Vector3(.8,.74,.5),b.wood)
 		for side in [-1.0,1.0]:
 			b.piece(home,"UpperWindowSill",Vector3(side*5,3.76,0),Vector3(.24,.96,14),b.plaster)
 			b.piece(home,"UpperWindowLintel",Vector3(side*5,5.69,0),Vector3(.24,1.02,14),b.plaster)
@@ -127,6 +145,22 @@ func house(home:Node3D,left_connection:bool,two_storeys:bool=false) -> void:
 				b.piece(home,"UpperFrontLintel",Vector3(0,5.69,z),Vector3(10,1.02,.24),b.plaster)
 				for x in [-4.0,0.0,4.0]:b.piece(home,"UpperWindowPier",Vector3(x,4.71,z),Vector3(2,1,.24),b.plaster)
 	for z in [-9.5,9.5]:b.piece(home,"DoorApproach",Vector3(0,.10,z),Vector3(2.4,.20,5),b.stone)
+
+func gable(home:Node3D,z:float,base:float) -> void:
+	# A closed triangular prism seals the roof end without a box above the ridge.
+	var points:PackedVector3Array=[]
+	for depth in [-.12,.12]:
+		points.append(Vector3(-5,base,z+depth))
+		points.append(Vector3(5,base,z+depth))
+		points.append(Vector3(0,base+.86,z+depth))
+	var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for index in [0,2,1,3,4,5,0,1,4,0,4,3,1,2,5,1,5,4,2,0,3,2,3,5]:
+		var point:=points[index]
+		surface.set_uv(Vector2(point.x,point.y));surface.add_vertex(point)
+	surface.generate_normals()
+	var mesh:=MeshInstance3D.new();mesh.name="RoofGable";mesh.mesh=surface.commit();mesh.material_override=b.plaster;home.add_child(mesh)
+	var body:=StaticBody3D.new();body.name="GableCollision";home.add_child(body)
+	var collision:=CollisionShape3D.new();var shape:=ConvexPolygonShape3D.new();shape.points=points;collision.shape=shape;body.add_child(collision)
 
 func market() -> void:
 	var district:=site("CityTradingMarket",Vector2(-340,-310),"City market · Grain, cloth and books")
@@ -200,21 +234,26 @@ func _process(delta:float) -> void:
 
 func classify_crowd() -> void:
 	if not is_instance_valid(community):community=get_parent().get_node_or_null("StoryCommunity")
-	if community==null or community.residents.size()<16:return
+	if community==null:return
+	for record in community.pending:
+		if record.get("parent")==community.college or record.get("parent")==community.courtyard:return
 	var count:=0
+	var venue_counts:Dictionary={}
 	for actor in community.residents:
 		var venue:Node=actor.get_parent()
 		if venue!=community.college and venue!=community.courtyard:continue
 		actor.set_meta("district","college_neighbourhood");actor.set_meta("combat_faction","indian")
-		var role:String="student" if count%8<6 else ("lecturer" if count%8==6 else "printer")
+		var venue_index:int=venue_counts.get(venue,0)
+		venue_counts[venue]=venue_index+1
+		var role:String="student" if venue_index%4<2 else ("lecturer" if venue_index%4==2 else "printer")
 		actor.set_meta("world_role",role)
-		if venue==community.courtyard and count%8 in [2,5]:actor.set_meta("political_role","educated_rebel")
+		if venue==community.courtyard and venue_index in [1,3]:actor.set_meta("political_role","educated_rebel")
 		count+=1
-	if count==16:
+	if venue_counts.size()==2:
 		for talk in community.courtyard.get_children():
 			if talk.get_script()==preload("res://story/community_conversation.gd"):
 				talk.lines.assign(["Student: The lecture notes are ready. Sit with us; the café is full today.","Printer: Among the students we can compare news without drawing every guard's attention.","Reader: Some of us oppose the Company's rule. Speak quietly; a careless name puts a household at risk.","Patron: Anyone asking about Dev should listen here and at the college reading room."])
-	classified=count==16
+	classified=venue_counts.size()==2
 	if classified:set_process(false)
 
 func _exit_tree() -> void:b.free()

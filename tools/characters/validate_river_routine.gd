@@ -13,6 +13,16 @@ func run() -> void:
 	for index in times.size():
 		for woman in scene.women:
 			woman.sample(times[index])
+			var identity_keys:=0
+			for mesh:MeshInstance3D in woman.find_children("*","MeshInstance3D",true,false):
+				if not "MakeHuman_body" in str(mesh.name):continue
+				for key in mesh.mesh.get_blend_shape_count():
+					var name_:String=str(mesh.mesh.get_blend_shape_name(key))
+					if not name_.begins_with("River identity "):continue
+					identity_keys+=1
+					var expected:float=1.0 if name_=="River identity %d"%woman.member_index else 0.0
+					if not is_equal_approx(mesh.get_blend_shape_value(key),expected):issues.append("Animation changed resident facial identity")
+			if identity_keys!=2:issues.append("Missing exported MPFB facial identities")
 			if woman.action != stages[index]: issues.append("Unexpected action at " + str(times[index]))
 			if woman.skeleton == null: issues.append("Missing MPFB skeleton")
 			if woman.water_full != (index >= 4): issues.append("Water ownership mismatch")

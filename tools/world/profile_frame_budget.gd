@@ -66,6 +66,11 @@ func _run() -> void:
 	RenderingServer.viewport_set_measure_render_time(rid,true)
 	print("FRAME BUDGET START | ready_ms ",Time.get_ticks_msec()-started," viewport ",root.size," scale ",root.scaling_3d_scale)
 	print("PERFORMANCE SNAPSHOT ready ",JSON.stringify(Snapshot.capture()))
+	if "--geometry-attribution" in OS.get_cmdline_user_args():
+		await preload("res://tools/world/render_geometry_attribution.gd").run(self,world,actor,camera)
+		print("FRAME BUDGET PROFILE: COMPLETE | geometry attribution, not gameplay acceptance")
+		await saves.quit_game()
+		return
 	if "--isolate" in OS.get_cmdline_user_args():
 		actor.global_position=Vector3(-310,9,245)
 		camera.global_position=actor.global_position

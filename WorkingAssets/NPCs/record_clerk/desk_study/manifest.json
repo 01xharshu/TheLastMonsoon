@@ -14,5 +14,13 @@
     "construction": "Single MPFB trouser fabric sheet, one subdivision, tapered dropped-crotch ease; complete original body and separate opaque brief foundation.",
     "rebuild": "Blender --background --python-exit-code 1 --python tools/characters/simulate_clerk_seat_cloth.py -- --single-surfaces --wider-stance --candidate-source <source> --candidate-runtime <runtime>",
     "open_work": "Inner-thigh deformation, fabric stretching, chair clearance and upper garment fit. No live integration approval."
+  },
+  "seam_candidate": {
+    "status": "ISOLATED_UNAPPROVED",
+    "source": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/WorkingAssets/NPCs/record_clerk/desk_study/record_clerk_seat_seam_candidate.blend",
+    "runtime": "/Users/harshmishra/Documents/GitHub/TheLastMonsoon/characters/npcs/review/record_clerk_seat_seam_candidate.glb",
+    "construction": "MPFB single fabric surface; garment-only6mm seam consolidation and continuous pelvis/thigh weight transition before physical bake. Complete authoritative body and opaque foundation retained.",
+    "rebuild": "Blender --background --python-exit-code 1 --python tools/characters/simulate_clerk_seat_cloth.py -- --single-surfaces --wider-stance --candidate-source <source> --candidate-runtime <runtime>",
+    "open_work": "Inner-thigh contact/strain, chair clearance and upper garment deformation; not selected for live gameplay."
   }
 }

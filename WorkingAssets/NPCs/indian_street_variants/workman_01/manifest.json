@@ -9,6 +9,7 @@
   },
   "whole_character_width": 0.96,
   "runtime": "characters/npcs/street_residents/workman_01.glb",
-  "wardrobe": "plain working cotton",
+  "wardrobe": "sleeveless cotton work shirt",
+  "hair_style": "uncovered",
   "visual_approved": false
 }

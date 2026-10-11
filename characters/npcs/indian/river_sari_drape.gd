@@ -10,6 +10,8 @@ var planes: PackedVector2Array = []
 var plane_rays: Array[Array] = []
 var segments: int = int(DIMENSIONS.segments)
 var rings: int = int(DIMENSIONS.rings)
+var previous_inputs: PackedVector4Array=[]
+var previous_world := Transform3D.IDENTITY
 
 func _init(owner: Node3D, skeleton: Skeleton3D) -> void:
 	actor=owner;rig=skeleton
@@ -68,11 +70,19 @@ func update() -> void:
 	var floor_y := 0.0
 	var ground: Callable=actor.ground_height
 	if ground.is_valid():floor_y=actor.to_local(Vector3(actor.global_position.x,float(ground.call(actor.global_position.x,actor.global_position.z)),actor.global_position.z)).y
+	var inputs:=PackedVector4Array([Vector4(waist.x,waist.y,waist.z,floor_y),Vector4(pelvis.x,pelvis.y,pelvis.z,0)])
+	inputs.append_array(PackedVector4Array(spheres))
 	var terrain_span := 0.0
 	if ground.is_valid():
 		for offset in [Vector3(.5,0,0),Vector3(-.5,0,0),Vector3(0,0,.5),Vector3(0,0,-.5)]:
 			var world := actor.to_global(offset)
-			terrain_span=maxf(terrain_span,absf(actor.to_local(Vector3(world.x,float(ground.call(world.x,world.z)),world.z)).y-floor_y))
+			var height:float=float(ground.call(world.x,world.z))
+			inputs.append(Vector4(world.x,world.y,world.z,height))
+			terrain_span=maxf(terrain_span,absf(actor.to_local(Vector3(world.x,height,world.z)).y-floor_y))
+	# Seated gestures move arms/head without changing this lower-fabric
+	# envelope. Reuse exact geometry only while every input is unchanged.
+	if inputs==previous_inputs and actor.global_transform==previous_world:return
+	previous_inputs=inputs;previous_world=actor.global_transform
 	var radii: Array[PackedFloat32Array]=[]
 	for row in rings+1:
 		var t := float(row)/rings
@@ -91,11 +101,13 @@ func update() -> void:
 		var hip_scale: float=sqrt(maxf(0.0,1.0-pow(hip_vertical/float(DIMENSIONS.pelvis_height),2)))
 		for j in PLANE_COUNT:
 			var normal: Vector2=planes[j]
-			var extent: float=sqrt(pow(rx*normal.x,2)+pow(rz*normal.y,2))
+			var ex:float=rx*normal.x;var ez:float=rz*normal.y
+			var extent: float=sqrt(ex*ex+ez*ez)
 			for section in sections:
-				extent=maxf(extent,normal.dot(Vector2(section.x,section.y))+section.z)
+				extent=maxf(extent,normal.x*section.x+normal.y*section.y+section.z)
 			if hip_vertical<float(DIMENSIONS.pelvis_height):
-				var hip_extent: float=sqrt(pow(float(DIMENSIONS.pelvis_rx)*normal.x,2)+pow(float(DIMENSIONS.pelvis_ry)*normal.y,2))*hip_scale
+				var hx:float=float(DIMENSIONS.pelvis_rx)*normal.x;var hz:float=float(DIMENSIONS.pelvis_ry)*normal.y
+				var hip_extent: float=sqrt(hx*hx+hz*hz)*hip_scale
 				extent=maxf(extent,normal.dot(Vector2(pelvis.x-waist.x,pelvis.z-waist.z))+hip_extent+float(DIMENSIONS.clearance))
 			support[j]=extent
 		var radii_row := PackedFloat32Array();radii_row.resize(segments)
@@ -107,7 +119,13 @@ func update() -> void:
 	# Smooth dents outward so the fabric stays clear of its conservative bounds.
 	for sweep in 2:
 		for row in range(1,rings):
-			for i in segments:radii[row][i]=maxf(radii[row][i],(radii[row-1][i]+radii[row+1][i])*.5)
+			# Keep a local packed row: nested writes can copy the shared
+			# packed array for every single vertex.
+			var current:PackedFloat32Array=radii[row]
+			var above:PackedFloat32Array=radii[row-1]
+			var below:PackedFloat32Array=radii[row+1]
+			for i in segments:current[i]=maxf(current[i],(above[i]+below[i])*.5)
+			radii[row]=current
 	var hem_heights := PackedFloat32Array();hem_heights.resize(segments)
 	for i in segments:
 		var point := Vector3(waist.x+directions[i].x*radii[rings][i],0,waist.z+directions[i].y*radii[rings][i])
@@ -115,31 +133,55 @@ func update() -> void:
 		if ground.is_valid():
 			var world := actor.to_global(point)
 			hem_heights[i]=actor.to_local(Vector3(world.x,float(ground.call(world.x,world.z)),world.z)).y+.018
-	var drape := PackedVector3Array();drape.resize((rings+1)*segments)
-	var lap_heights:=PackedFloat32Array();lap_heights.resize(segments);lap_heights.fill(waist.y)
-	for i in segments:
-		var direction:Vector2=directions[i]
+	var seated:float=1.0-smoothstep(.40,.65,waist.y-floor_y)
+	# A local grid rejects spheres whose horizontal bound cannot reach a
+	# cloth vertex. It changes only candidate selection, not the envelope.
+	var lap_cells: Dictionary={}
+	if seated>0:
 		for sphere in spheres:
-			var horizontal:=Vector2(sphere.x-waist.x,sphere.z-waist.z)
-			if horizontal.dot(direction)>.18 and absf(horizontal.cross(direction))<sphere.w+.06:
-				lap_heights[i]=maxf(lap_heights[i],sphere.y+sphere.w+float(DIMENSIONS.clearance))
-	for sweep in 4:
-		var previous:=lap_heights.duplicate()
-		for i in segments:lap_heights[i]=maxf(previous[i],(previous[(i+segments-1)%segments]+previous[(i+1)%segments])*.5)
+			var radius:float=sphere.w+float(DIMENSIONS.clearance)+.016
+			var bound:=Vector4(sphere.x,sphere.y,sphere.z,radius*radius)
+			for x in range(floori((sphere.x-radius)*8),floori((sphere.x+radius)*8)+1):
+				for z in range(floori((sphere.z-radius)*8),floori((sphere.z+radius)*8)+1):
+					var cell:=Vector2i(x,z)
+					if not lap_cells.has(cell):lap_cells[cell]=[]
+					lap_cells[cell].append(bound)
+	var drape := PackedVector3Array();drape.resize((rings+1)*segments)
+	var spread:=PackedFloat32Array();spread.resize(segments)
+	for i in segments:
+		for row in rings+1:spread[i]=maxf(spread[i],radii[row][i])
 	for row in rings+1:
 		var t := float(row)/rings
 		for i in segments:
 			var direction: Vector2=directions[i]
-			var point := Vector3(waist.x+direction.x*radii[row][i],0,waist.z+direction.y*radii[row][i])
+			# Seated cloth runs across the lap before falling towards the feet.
+			# Reusing horizontal standing sections made the first ring jump
+			# outside both knees, leaving a rigid raised rim around the lap.
+			var radius:float=lerpf(radii[row][i],lerpf(radii[0][i],spread[i],t),seated)
+			var point := Vector3(waist.x+direction.x*radius,0,waist.z+direction.y*radius)
 			point.y=lerpf(waist.y,hem_heights[i],t)
-			# Seated fabric bridges from the fitted waist over the raised lap. The
-			# former parallel rings left an open cup around exposed knee tops.
-			if row>0:
-				var lap_top:float=lap_heights[i]
-				if lap_top>waist.y+.04:
-					var fold:float=smoothstep(0,.12,t)*(1-smoothstep(.35,.85,t))
-					point.y=maxf(point.y,lerpf(point.y,lap_top,fold))
+			if row>0 and seated>0:
+				var lap_top:float=point.y
+				for sphere: Vector4 in lap_cells.get(Vector2i(floori(point.x*8),floori(point.z*8)),[]):
+					var dx:float=point.x-sphere.x
+					var dz:float=point.z-sphere.z
+					var distance_squared:float=dx*dx+dz*dz
+					if distance_squared<sphere.w:
+						lap_top=maxf(lap_top,sphere.y+sqrt(sphere.w-distance_squared)+.008)
+				point.y=lerpf(point.y,lap_top,seated)
 			drape[row*segments+i]=point
+	# Spread lap folds across neighbouring samples without lowering a point
+	# into its leg envelope. The sewn waist remains fixed.
+	if seated>0:
+		for sweep in 2:
+			var previous:=drape.duplicate()
+			for row in range(1,rings+1):
+				for i in segments:
+					var index:int=row*segments+i
+					var angular:float=(previous[row*segments+(i+segments-1)%segments].y+previous[row*segments+(i+1)%segments].y)*.5
+					var radial:float=previous[index].y
+					if row<rings:radial=(previous[index-segments].y+previous[index+segments].y)*.5
+					drape[index].y=maxf(previous[index].y,maxf(angular,radial))
 	for piece in pieces:
 		var points: PackedVector3Array=drape
 		var row_count: int=piece.rows

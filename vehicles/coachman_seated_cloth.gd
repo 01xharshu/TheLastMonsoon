@@ -1,7 +1,7 @@
 extends RefCounted
 const CACHE_PATH := "res://vehicles/generated/coachman_startup_cloth.res"
 const BULLOCK_CACHE_PATH := "res://vehicles/generated/bullock_driver_startup_cloth.res"
-const CACHE_REVISION := 2
+const CACHE_REVISION := 3
 var use_startup_cache := true
 var startup_signature := ""
 const Startup = preload("res://systems/world_startup.gd")
@@ -16,12 +16,13 @@ var skin_corrections := 0
 var fit_cache: Dictionary = {}
 var profile_updates := false
 var fitting := false
-var use_cpu_meshes := true
+var fit_timings: Dictionary = {}
 func configure(person: Node3D, vehicle: Node3D) -> void:
  actor = person
  coach = vehicle
+ skin_fit.use_query_cache=not coach.get_meta("reference_cloth_queries",false)
+ skin_fit.use_precomputed_bounds=not coach.get_meta("reference_cloth_bounds",false)
  profile_updates = "--profile-cloth" in OS.get_cmdline_user_args()
- use_cpu_meshes = not coach.get_meta("reference_cloth_uploads",false)
  for node in actor.find_children("*","MeshInstance3D",true,false):
   var label: String = node.name.to_lower()
   if not ("wrapped dhoti" in label or "dhoti woven border" in label): continue
@@ -36,8 +37,11 @@ func update() -> void:
  if fitting: return
  var skeleton: Skeleton3D = actor._skeleton
  var knee := Vector3.ZERO
+ var stable_pose: bool = coach.get_meta("local_driver_pose",true)
+ var rig_to_cart := preload("res://vehicles/seated_driver_coordinates.gd").relative(skeleton,coach) if stable_pose else Transform3D.IDENTITY
  for side in ["l","r"]:
-  knee += coach.to_local(skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("calf_"+side)).origin))*.5
+  var point: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("calf_"+side)).origin
+  knee += (rig_to_cart*point if stable_pose else coach.to_local(skeleton.to_global(point)))*.5
  if knee.distance_to(last_knee) < .0005: return
  fitting = true
  var started := Time.get_ticks_usec() if profile_updates else 0
@@ -51,14 +55,16 @@ func update() -> void:
    fitting = false
    _profile_update(started,knee_change,true)
    return
+ var phase_start := Time.get_ticks_usec()
  skin_fit.build_body(actor,coach)
+ fit_timings={"body_us":Time.get_ticks_usec()-phase_start}
  skin_corrections = 0
  fit_cache.clear()
  var hip: Vector3 = coach.to_local(skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("pelvis")).origin))
  for piece in pieces:
   var node: MeshInstance3D = piece.node
   var result := ArrayMesh.new()
-  var cpu_surfaces: Array[Dictionary] = []
+  phase_start=Time.get_ticks_usec()
   for surface in piece.surfaces:
    var arrays: Array = surface.arrays
    var source: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -79,11 +85,15 @@ func update() -> void:
    tool.index()
    tool.generate_normals()
    tool.set_material(surface.material)
-   if use_cpu_meshes:
-    cpu_surfaces.append({"arrays":tool.commit_to_arrays(),"material":surface.material})
-   else: tool.commit(result)
-  node.mesh = await _relax(cpu_surfaces if use_cpu_meshes else result,node)
+   tool.commit(result)
+  fit_timings[str(node.name)+"_split_us"]=Time.get_ticks_usec()-phase_start
+  phase_start=Time.get_ticks_usec()
+  node.mesh = await _relax(result,node)
+  fit_timings[str(node.name)+"_relax_us"]=Time.get_ticks_usec()-phase_start
  updates += 1
+ fit_timings["query_hits"]=skin_fit.query_hits
+ fit_timings["query_misses"]=skin_fit.query_misses
+ skin_fit.clear_query_cache()
  fitting = false
  _profile_update(started,knee_change,false)
 
@@ -91,7 +101,7 @@ func _profile_update(started: int,knee_change: float,cache_hit: bool) -> void:
  if not profile_updates: return
  var elapsed := Time.get_ticks_usec()-started
  if elapsed >= 100000 or updates == 1:
-  print("COACHMAN CLOTH COST ",JSON.stringify({"actor":str(actor.get_path()),"usec":elapsed,"updates":updates,"cache_hit":cache_hit,"knee_change":knee_change,"loading":Startup.current != null}))
+  print("COACHMAN CLOTH COST ",JSON.stringify({"actor":str(actor.get_path()),"usec":elapsed,"updates":updates,"cache_hit":cache_hit,"knee_change":knee_change,"loading":Startup.current != null,"phases":fit_timings,"body_triangles":skin_fit.triangles.size(),"fitted_points":fit_cache.size()}))
 
 func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Array,level: int,hip: Vector3,knee: Vector3) -> void:
  if level > 0:
@@ -134,10 +144,10 @@ func _split_triangle(tool: SurfaceTool,node: MeshInstance3D,points: Array,uv: Ar
   tool.set_uv(uv[index])
   tool.add_vertex(node.to_local(coach.to_global(at)))
 
-func _relax(mesh: Variant,node: MeshInstance3D) -> ArrayMesh:
+func _relax(mesh: ArrayMesh,node: MeshInstance3D) -> ArrayMesh:
  var relaxed := ArrayMesh.new()
- for surface in (mesh.size() if use_cpu_meshes else mesh.get_surface_count()):
-  var arrays: Array = mesh[surface].arrays if use_cpu_meshes else mesh.surface_get_arrays(surface)
+ for surface in mesh.get_surface_count():
+  var arrays: Array = mesh.surface_get_arrays(surface)
   var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
   var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
   var neighbors: Array[Dictionary] = []
@@ -166,14 +176,12 @@ func _relax(mesh: Variant,node: MeshInstance3D) -> ArrayMesh:
   arrays[Mesh.ARRAY_VERTEX] = positions
   arrays[Mesh.ARRAY_NORMAL] = null
   arrays[Mesh.ARRAY_TANGENT] = null
+  var intermediate := ArrayMesh.new()
+  intermediate.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
   var tool := SurfaceTool.new()
-  if use_cpu_meshes: tool.create_from_arrays(arrays)
-  else:
-   var intermediate := ArrayMesh.new()
-   intermediate.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
-   tool.create_from(intermediate,0)
+  tool.create_from(intermediate,0)
   tool.generate_normals()
-  tool.set_material(mesh[surface].material if use_cpu_meshes else mesh.surface_get_material(surface))
+  tool.set_material(mesh.surface_get_material(surface))
   tool.commit(relaxed)
  return relaxed
 
@@ -234,6 +242,7 @@ func source_signature() -> String:
  var rig: Skeleton3D = actor._skeleton
  var pose := PackedFloat32Array()
  var relative: Transform3D = coach.global_transform.affine_inverse()*rig.global_transform
+ if coach.get_meta("local_driver_pose",true): relative=preload("res://vehicles/seated_driver_coordinates.gd").relative(rig,coach)
  for index in rig.get_bone_count():
   var transform: Transform3D = relative*rig.get_bone_global_pose(index)
   for axis in [transform.basis.x,transform.basis.y,transform.basis.z,transform.origin]:
@@ -247,8 +256,10 @@ func startup_cache_path() -> String:
 func _restore_startup_cache() -> bool:
  var path := startup_cache_path()
  if not ResourceLoader.exists(path): return false
- var cached := load(path)
+ var cached: Resource = coach.get_meta("test_cloth_cache") if coach.has_meta("test_cloth_cache") else null
+ if cached == null: cached=load(path)
  if cached.get_meta("revision",0) != CACHE_REVISION or cached.get_meta("signature","") != startup_signature: return false
+ if cached.get_meta("pose_coordinates","") != "cart_local": return false
  var meshes: Dictionary = cached.get_meta("meshes",{})
  for piece in pieces:
   if not meshes.has(str(piece.node.name)): return false

@@ -93,7 +93,9 @@ func show_coachman_blockout() -> void:
 		if str(part.get_meta("part_label",part.name)).begins_with("Coachman"): part.visible = true
 
 func rein_grip_world(side: String) -> Vector3:
-	return to_global(Vector3(-.20 if side == "l" else .20, 1.97, .65))
+	return to_global(rein_grip_local(side))
+func rein_grip_local(side: String) -> Vector3:
+	return Vector3(-.20 if side == "l" else .20,1.97,.65)
 
 func _build_boarding_doors() -> void:
 	var leaf_parts := ["LowerDoorPanel", "DoorWaistRail", "DoorHandle", "DoorInsetPanel", "InteriorDoorLining", "InteriorDoorPull", "SideGlazing"]

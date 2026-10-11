@@ -12,7 +12,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="tlm-resident-continue-") as folder:
         environment = dict(os.environ, TLM_TEST_SAVE_ROOT=str(Path(folder) / "saves"))
         result = subprocess.run(
-            [ENGINE, "--headless", "--path", str(ROOT), "--log-file",
+            [ENGINE, "--headless", "--fixed-fps", "60", "--path", str(ROOT), "--log-file",
              str(Path(folder) / "engine.log"), "--script",
              "res://tools/world/validate_resident_integration.gd", "--", "--continue"],
             cwd=ROOT, env=environment, capture_output=True, text=True, timeout=720,
@@ -20,9 +20,11 @@ def main():
         output = result.stdout + result.stderr
         failed = result.returncode != 0 or "SCRIPT ERROR:" in output or "\nERROR:" in output
         for line in output.splitlines():
-            if line.startswith(("RESIDENT_WORLD_RESULT", "DELIVERY_", "GOODS_BLOCKER")):
+            if line.startswith(("RESIDENT_WORLD_RESULT", "DELIVERY_", "GOODS_BLOCKER", "RECEIVING_WORK")):
                 print(line)
         if failed:
+            errors=[i for i,line in enumerate(output.splitlines()) if line.startswith(("SCRIPT ERROR:","ERROR:"))]
+            for index in errors[:3]:print("\n".join(output.splitlines()[index:index+7]))
             print("\n".join(output.splitlines()[-15:]))
         return int(failed)
 

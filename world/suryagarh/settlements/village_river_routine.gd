@@ -23,7 +23,13 @@ func _ready() -> void:
 	name = "VillageRiverRoutine"
 	add_to_group("village_river_routine")
 	clock = get_tree().root.find_child("GameTimeSystem",true,false)
-	viewer=get_parent().get_node_or_null("Player")
+	# The owner is nested under Settlement/VillageStreetLife, not beside Player.
+	# Resolve once against the containing world; do not pin another scene's actor.
+	var world: Node = get_parent()
+	while world != null:
+		viewer=world.get_node_or_null("Player") as Node3D
+		if viewer != null: break
+		world=world.get_parent()
 	_build_ghat()
 	for index in 3:
 		var woman := Woman.new()

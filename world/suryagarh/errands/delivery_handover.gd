@@ -147,8 +147,18 @@ func _physics_process(delta:float)->void:
 			manager._message("Thank you. Delivery received — %d rupees paid."%int(manager.JOBS[id].pay))
 
 func _step(motion:Vector3,delta:float)->bool:
+	# Follow validated terrain height as well as route X/Z. The outward trip can
+	# step down a veranda; its return must not sweep horizontally into that riser.
+	var supported_y:float=preload("res://world/suryagarh/settlements/resident_walk_route.gd").support(receiver,receiver.global_position+motion)
+	if not is_finite(supported_y) or absf(supported_y-receiver.global_position.y)>.30:return false
 	var body:CollisionObject3D=receiver.body_collider
 	var shape:CollisionShape3D=body.get_node("BodyShape")
+	var horizontal:=Vector3(motion.x,0,motion.z)
+	var ahead:=receiver.global_position+horizontal+horizontal.normalized()*(float(shape.shape.radius)+.05)
+	var ahead_y:float=preload("res://world/suryagarh/settlements/resident_walk_route.gd").support(receiver,ahead)
+	# Retain a raised stance while the leading capsule crosses the supported riser.
+	if is_finite(ahead_y) and absf(ahead_y-receiver.global_position.y)<.025 and supported_y<receiver.global_position.y:supported_y=receiver.global_position.y
+	motion.y=supported_y-receiver.global_position.y
 	var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin.y+=.15;query.motion=motion;query.collision_mask=1;query.margin=.02
 	var excluded:Array[RID]=[body.get_rid(),manager.targets[manager.JOBS[request].goal].get_rid()]
 	if is_instance_valid(vehicle):
@@ -156,7 +166,25 @@ func _step(motion:Vector3,delta:float)->bool:
 			if handle is CollisionObject3D and handle.is_in_group("cart_boarding_handles"):excluded.append(handle.get_rid())
 	query.exclude=excluded
 	var safe:=get_world_3d().direct_space_state.cast_motion(query)
-	if safe[0]<.99:
+	var destination:Transform3D=query.transform
+	destination.origin+=motion
+	var start:Transform3D=query.transform
+	query.transform=destination;query.motion=Vector3.ZERO
+	var occupied:=get_world_3d().direct_space_state.intersect_shape(query,1)
+	query.transform=start;query.motion=motion
+	if (safe[0]<.99 or not occupied.is_empty()) and is_finite(ahead_y):
+		var rise:=ahead_y-receiver.global_position.y
+		if rise>.01 and rise<=.30:
+			query.transform=start;query.motion=Vector3.UP*rise
+			var up_clear:=get_world_3d().direct_space_state.cast_motion(query)[0]>=.99
+			query.transform.origin+=Vector3.UP*rise;query.motion=horizontal
+			var across_clear:=get_world_3d().direct_space_state.cast_motion(query)[0]>=.99
+			query.transform.origin+=horizontal;query.motion=Vector3.ZERO
+			var landing_clear:=get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
+			if up_clear and across_clear and landing_clear:
+				motion=horizontal+Vector3.UP*rise;safe=PackedFloat32Array([1.0,1.0]);occupied=[]
+			query.transform=start;query.motion=motion
+	if safe[0]<.99 or not occupied.is_empty():
 		if not reported_blocker:
 			reported_blocker=true
 			query.transform.origin+=motion;query.motion=Vector3.ZERO
@@ -164,9 +192,6 @@ func _step(motion:Vector3,delta:float)->bool:
 		return false
 	receiver.global_position+=motion
 	if phase=="receiving" and (trail.is_empty() or trail[-1].distance_to(receiver.global_position)>.35):trail.append(receiver.global_position)
-	var ground:=PhysicsRayQueryParameters3D.create(receiver.global_position+Vector3.UP*1.5,receiver.global_position-Vector3.UP*1.0,1,query.exclude)
-	var hit:=get_world_3d().direct_space_state.intersect_ray(ground)
-	if not hit.is_empty() and absf(hit.position.y-receiver.global_position.y)<.4:receiver.global_position.y=hit.position.y
 	receiver.global_rotation.y=atan2(motion.x,motion.z);receiver.travel_speed=.85
 	for side in ["l","r"]:receiver.foot_plant.ankle_height[side]=receiver.global_position.y+.08
 	receiver._set_animation(&"walk",delta);body.force_update_transform();return true

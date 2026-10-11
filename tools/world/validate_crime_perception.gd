@@ -19,6 +19,7 @@ class Probe extends Node3D:
 		add_child(body_collider)
 class Coordinator extends Node:
 	var phase := "idle"
+	var officer: Node
 var failures: Array[String] = []
 var count := 0
 func _initialize() -> void: run.call_deferred()
@@ -67,8 +68,10 @@ func run() -> void:
 	vehicle.set_meta("player_owned",true);crime.report_vehicle_theft(player,vehicle,"horse_theft")
 	check(not crime.wanted,"player-owned vehicle remains lawful")
 	vehicle.set_meta("player_owned",false);crime.report_vehicle_theft(player,vehicle,"horse_theft")
+	coordinator.phase="fight";coordinator.officer=crime.aggressor
 	crime.recruit_visible_police()
-	check(crime.patrols.size()==1 and not observer.movement_enabled,"visible officer interrupts duty to pursue")
+	check(crime.patrols.size()==1 and not observer.movement_enabled,"unassigned visible police can pursue while station officer is busy")
+	coordinator.phase="idle"
 	crime._tick(.3)
 	check(crime.patrols[0].seen and crime.patrols[0].state=="pursue","police sight acquires wanted Arjun")
 	var remembered: Vector3=crime.patrols[0].last_seen
@@ -77,7 +80,9 @@ func run() -> void:
 	check(not crime.patrols[0].seen,"entering shelter breaks police sight")
 	check(crime.commanded_goals.size()>0 and crime.commanded_goals[-1]==remembered,"hidden pursuit searches last seen position instead of tracking Arjun")
 	crime.advance_wanted(24.0,false)
-	check(not crime.wanted and observer.movement_enabled and crime.patrols.is_empty(),"unseen escape clears star and restores interrupted duty")
+	check(not crime.wanted and crime.patrols[0].state=="return" and not observer.movement_enabled,"unseen escape clears star and starts physical duty return")
+	crime._tick(.3)
+	check(observer.movement_enabled and crime.patrols.is_empty(),"arrival at duty position restores interrupted duty")
 	wall.position.x=100;await sync()
 	var owners: Array[String]=["owner"]
 	crime.record_incident("cart_theft",player.position,owners,5)

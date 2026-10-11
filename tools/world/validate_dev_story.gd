@@ -29,6 +29,10 @@ func run() -> void:
  var story: Node=world.get_node("DevStory");var inquiry: Node=world.get_node("DevInquiry")
  check(story.configured and story.pose.node!=null,"cinematic and AnimationTree layer configured")
  if not story.configured or story.pose.node==null:world.queue_free();await process_frame;quit(1);return
+ if OS.get_environment("TLM_STORY_ARRIVAL_REVIEW")=="1":
+  await review_arrivals(story,inquiry,player,world,temporary)
+  print("STORY ARRIVAL MOTION: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
+  world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1);return
  inquiry.begin();player.global_position=station.to_global(Vector3(0,.9,20));player.velocity=Vector3.ZERO
  for frame in 5:await physics_frame
  story._process(0)
@@ -293,3 +297,36 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
      print("STORY RENDERED CARRY error=",after_draw)
      check(after_draw<.06,"carry posture and palms survive rendered-frame evaluation")
     root.get_texture().get_image().save_png(temporary.path_join(cue+"_"+str(sample)+".png"))
+
+func review_arrivals(story: Node,inquiry: Node,player: CharacterBody3D,world: Node3D,temporary: String) -> void:
+ if DisplayServer.get_name()!="headless":
+  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);DisplayServer.window_set_size(Vector2i(960,540))
+ var sun:=DirectionalLight3D.new();world.add_child(sun);sun.rotation_degrees=Vector3(-45,-25,0);sun.light_energy=1.5
+ for vehicle_type in ["horse","cart"]:
+  story.state="awaiting_inquiry";inquiry.stage="police";story.set_process(false)
+  var mount: Node
+  var body: Node3D
+  if vehicle_type=="horse":
+   body=preload("res://horses/stable_horse.gd").new();body.set_meta("owner","Arjun");world.add_child(body);mount=body
+  else:
+   body=preload("res://vehicles/horse_cart_candidate.gd").new();body.set_meta("owner","Arjun");world.add_child(body);mount=body.boarding
+  body.global_position=inquiry.station.to_global(Vector3(7,0,40));body.global_position.y=.1
+  player.global_position=body.global_position+Vector3(1,.9,0)
+  for frame in 10:await physics_frame
+  if vehicle_type=="horse":check(body.board(player),"review boards horse")
+  else:
+   player.global_position=body.seat_sockets["DriverSeat"].global_position
+   check(body.board_at(player,"DriverSeat","driver"),"review boards cart")
+  for frame in 100:await physics_frame
+  check(story.start_inquiry(),"review starts "+vehicle_type+" arrival")
+  story.set_process(true)
+  var recorded: Dictionary={}
+  while story.active and story.cue!="reception":
+   await process_frame
+   if story.age>1.3 and not recorded.has(story.cue):
+    recorded[story.cue]=true
+    if DisplayServer.get_name()!="headless":
+     await RenderingServer.frame_post_draw
+     root.get_texture().get_image().save_png(temporary.path_join(vehicle_type+"_"+story.cue+".png"))
+   if story.cue=="entry":check(mount.rider==null,"arrival releases "+vehicle_type+" before police entry")
+  story.finish();body.queue_free();await process_frame

@@ -96,7 +96,7 @@ func _begin_trip(place: String, already_paid: bool) -> bool:
  if boarding.cart.is_in_group("household_coach"): return false
  var actor: CharacterBody3D = boarding.rider
  if not passenger_service() or actor == null or boarding.role != "passenger" or boarding.transition != "" or payer != null or not boarding.cart.can_move(): return false
- if graph == null: graph = Routes.build()
+ if graph == null: graph = Routes.build(preload("res://systems/world_context.gd").find_world(boarding.cart))
  var start := Vector2(boarding.cart.global_position.x,boarding.cart.global_position.z)
  var route := PackedVector2Array()
  if place == STANDING:

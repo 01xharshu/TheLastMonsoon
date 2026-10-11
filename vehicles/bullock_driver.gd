@@ -4,4 +4,6 @@ func _process(delta:float) -> void:
  visible=coach.boarding.rider==null or coach.boarding.role!="driver"
  if visible:await super._process(delta)
 func foot_target_world(side:String) -> Vector3:
- return coach.to_global(Vector3(-.18 if side=="l" else .18,.93,1.29))
+ return coach.to_global(foot_target_local(side))
+func foot_target_local(side:String) -> Vector3:
+ return Vector3(-.18 if side=="l" else .18,.93,1.29)

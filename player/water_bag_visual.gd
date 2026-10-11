@@ -30,6 +30,9 @@ var contact_materials: Array[ShaderMaterial] = []
 var contact_usec := 0
 var mesh_rebuilds := 0
 var contact_ready := false
+var contact_prepare_calls := 0
+var use_contact_width_bound := true # Exact rejection; full_scan retains the reference path.
+var contact_width_limit := _contact_width_bound()
 @onready var inventory: InventoryComponent = $"../../../InventoryComponent"
 @onready var pouch: Node3D = $PouchModel
 
@@ -254,11 +257,18 @@ func _stopper_material() -> Material:
 	return stopper_material
 
 func _prepare_cloth_contact() -> void:
+	contact_prepare_calls += 1
+	var trace := "--trace-bag-contact" in OS.get_cmdline_user_args()
+	var previous_samples := contact_points.size()
 	var visual: Node3D = get_parent().get_parent().get_node("CharacterVisual")
 	cloth_rig = visual.skeleton
 	var cloth := visual.model.find_child("Arjun_Kurta_SplitHem", true, false) as MeshInstance3D
 	if cloth == null: return
 	var inverse := pouch.global_transform.affine_inverse()
+	if trace:
+		var trace_arrays := cloth.mesh.surface_get_arrays(0)
+		print("CONTACT INIT MESH ",JSON.stringify({"vertices":trace_arrays[Mesh.ARRAY_VERTEX].size(),"vertex_hash":hash(trace_arrays[Mesh.ARRAY_VERTEX]),"weight_hash":hash(trace_arrays[Mesh.ARRAY_WEIGHTS]),"tailored":visual.get_node_or_null("Clothing")!=null,"motion_ready":visual.motion_tree!=null,"riding_source":cloth.get_meta("riding_cloth_source","")}))
+		print("CONTACT INIT BEGIN ",JSON.stringify({"call":contact_prepare_calls,"previous_samples":previous_samples,"frame":Engine.get_process_frames(),"inside_tree":is_inside_tree(),"pouch":str(pouch.global_transform),"cloth":str(cloth.global_transform),"rig":str(cloth_rig.global_transform),"mesh":cloth.mesh.resource_path,"surfaces":cloth.mesh.get_surface_count()}))
 	for surface_index in cloth.mesh.get_surface_count():
 		var arrays := cloth.mesh.surface_get_arrays(surface_index)
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -295,8 +305,24 @@ func _prepare_cloth_contact() -> void:
 				contact_weights.append(amounts[slot])
 			contact_offsets.append(contact_indices.size())
 	contact_ready = true
+	if trace: print("CONTACT INIT END ",JSON.stringify({"call":contact_prepare_calls,"samples":contact_points.size(),"added":contact_points.size()-previous_samples,"bones":contact_bones.size(),"frame":Engine.get_process_frames(),"width_bound_active":use_contact_width_bound,"width_limit_m":contact_width_limit}))
 
-func _cloth_contact_required() -> float:
+static func _contact_width_bound() -> float:
+	# Hermite endpoint bases sum to one; tangent bases are bounded by 4/27.
+	# This bounds every radius in PROFILE without approximating its curve.
+	var maximum := 0.0
+	for index in range(1,PROFILE.size()):
+		var lower: Vector2 = PROFILE[index-1]
+		var upper: Vector2 = PROFILE[index]
+		var before: Vector2 = PROFILE[maxi(0,index-2)]
+		var after: Vector2 = PROFILE[mini(PROFILE.size()-1,index+1)]
+		var span := maxf(upper.y-lower.y,.001)
+		var slope_a := (upper.x-before.x)/maxf(upper.y-before.y,.001)*span
+		var slope_b := (after.x-lower.x)/maxf(after.y-lower.y,.001)*span
+		maximum = maxf(maximum,maxf(lower.x,upper.x)+(absf(slope_a)+absf(slope_b))*4.0/27.0)
+	return maximum*.84+.018+.00001
+
+func _cloth_contact_required(full_scan := false) -> float:
 	# Compose each influencing bone/bind pair once instead of per vertex.
 	# Keep the original arithmetic order and dropped tiny-weight behaviour.
 	var inverse := pouch.global_transform.affine_inverse() * cloth_rig.global_transform
@@ -310,7 +336,10 @@ func _cloth_contact_required() -> float:
 			var pose := palette[contact_indices[slot]]
 			vertex += (pose * contact_points[sample]) * contact_weights[slot]
 		var point := inverse * vertex
-		if point.y < .005 or point.y > .285 or absf(point.x) > _radius_at(point.y)*.84+.018: continue
+		if point.y < .005 or point.y > .285: continue
+		var horizontal := absf(point.x)
+		if use_contact_width_bound and not full_scan and horizontal > contact_width_limit: continue
+		if horizontal > _radius_at(point.y)*.84+.018: continue
 		var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
 		required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
 	return required

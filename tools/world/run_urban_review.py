@@ -15,8 +15,10 @@ for sig in (signal.SIGINT, signal.SIGTERM):
 with tempfile.TemporaryDirectory(prefix="tlm-urban-review-") as folder:
     env = os.environ.copy()
     env["TLM_URBAN_REVIEW_TEMP"] = folder
+    if "--houses-only" in sys.argv:
+        env["TLM_URBAN_ISOLATED_TEMP"] = folder
     print("URBAN_REVIEW_TEMP", folder, flush=True)
-    process = subprocess.Popen(["/Applications/Godot.app/Contents/MacOS/Godot"] + (["--rendering-method", "gl_compatibility"] if "--compatibility" in sys.argv else []) + ["--path", str(ROOT), "--script", "tools/world/review_urban_west.gd"], cwd=ROOT, env=env)
+    process = subprocess.Popen(["/Applications/Godot.app/Contents/MacOS/Godot"] + (["--rendering-method", "gl_compatibility"] if "--compatibility" in sys.argv else []) + ["--path", str(ROOT), "--script", "tools/world/validate_urban_west.gd" if "--houses-only" in sys.argv else "tools/world/review_urban_west.gd"], cwd=ROOT, env=env)
     try:
         try:
             result = process.wait(timeout=300)

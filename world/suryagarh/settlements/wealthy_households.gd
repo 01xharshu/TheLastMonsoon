@@ -47,6 +47,13 @@ func _build_households() -> void:
 	_house(merchant,false)
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_service(merchant,Vector3(-11,0,-16))
+	_shelter(merchant,Vector3(23,0,-24),"ReceivingStore",Vector2(16,8))
+	piece(merchant,"ReceivingStoreRaisedFloor",Vector3(23,.12,-24),Vector3(16,.24,8),stone)
+	var receiving_span:=Vector3(0,-.24,2)
+	var receiving_angle:=-atan2(receiving_span.y,receiving_span.z)
+	var receiving_center:=Vector3(23,.12,-19)-Basis(Vector3.RIGHT,receiving_angle).y*.05
+	piece(merchant,"ReceivingStoreRamp",receiving_center,Vector3(4,.1,receiving_span.length()),stone).rotation.x=receiving_angle
+
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_shelter(merchant,Vector3(-9,0,24),"CoachHouse",Vector2(9,7))
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
@@ -124,7 +131,11 @@ func _house(home:Node3D,british:bool) -> void:
 	piece(home,"VerandaFloor",Vector3(0,.12,8.5),Vector3(23,.24,5),stone)
 	piece(home,"VerandaRoof",Vector3(0,3.6,8.5),Vector3(24,.25,6),tile)
 	for x in [-10.0,-5.0,5.0,10.0]: column(home,Vector3(x,1.95,10.5),3.5)
-	piece(home,"ThresholdRamp",Vector3(0,.07,11.7),Vector3(3,.14,1.5),stone)
+	var ramp_start:=Vector3(0,.24,11)
+	var ramp_finish:=Vector3(0,0,13)
+	var ramp_angle:=-atan2(ramp_finish.y-ramp_start.y,ramp_finish.z-ramp_start.z)
+	var ramp_center:=(ramp_start+ramp_finish)*.5-Basis(Vector3.RIGHT,ramp_angle).y*.05
+	piece(home,"ThresholdRamp",ramp_center,Vector3(3,.10,ramp_start.distance_to(ramp_finish)),stone).rotation.x=ramp_angle
 	home.set_meta("entrance",home.to_global(Vector3(0,.24,11)))
 
 func _furniture(home:Node3D,at:Vector3,bed:bool) -> void:

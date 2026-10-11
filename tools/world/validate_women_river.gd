@@ -7,6 +7,8 @@ func run() -> void:
 	create_timer(180).timeout.connect(func(): quit(2))
 	var world := Node3D.new();world.name="RiverVillageValidation"
 	root.add_child(world);current_scene=world
+	var observer:=Node3D.new();observer.name="Player";world.add_child(observer)
+	observer.position=Vector3(-277,7.2,208.5)
 	var game_clock=preload("res://world/suryagarh/systems/game_time_system.gd").new();game_clock.name="GameTimeSystem";world.add_child(game_clock)
 	world.add_child(load("res://world/suryagarh/generated/landscape.scn").instantiate())
 	var charpai=load("res://objects/charpai.tscn").instantiate();charpai.name="Charpai";world.add_child(charpai)
@@ -18,6 +20,7 @@ func run() -> void:
 	var routine = routines[0]
 	routine.set_physics_process(false)
 	var clock=world.get_node("GameTimeSystem");clock.clock_paused=true;clock.current_hour=6;clock.current_day=1
+	check(routine.viewer==observer,"nested river owner caches its containing world player")
 	check(routine.women.size()==3,"three independently rigged adult women")
 	check(routine.SPEED>=1.0 and routine.SPEED<=1.4,"ordinary walking pace")
 	check(not routine.has_node("RiverWashingLanding"),"no shared sitting or boarding platform at collection point")
@@ -59,9 +62,8 @@ func run() -> void:
 	check(routine.mode=="home","no duplicate departure same day")
 	clock.current_day=2;clock.current_hour=5;routine.tick(1);check(routine.mode=="home","no predawn departure")
 	clock.current_hour=6;routine.tick(.1);check(routine.mode=="depart","next morning restarts")
-	var observer:=Node3D.new();world.add_child(observer)
 	observer.global_position=routine.women[0].global_position+Vector3(500,0,0)
-	routine.viewer=observer;routine.physics_age=0;clock.clock_paused=false
+	routine.physics_age=0;clock.clock_paused=false
 	var remote_before:Vector3=routine.journeys[0].position
 	routine._physics_process(.2)
 	check(routine.journeys[0].position.distance_to(remote_before)<.00001,"remote work retains elapsed time before budget update")

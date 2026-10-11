@@ -25,6 +25,7 @@ c=Matrix(((1,0,0,0),(0,0,-1,0),(0,1,0,0),(0,0,0,1)));inv=c.inverted()
 corrections={name:(c@Matrix(rest)@inv).inverted()@rig.data.bones[name].matrix_local for name,rest in data['rest'].items() if name in rig.data.bones}
 rig.animation_data_clear();rig.data.pose_position='POSE'
 objects={name:bpy.data.objects[name] for name in ['Fitted cotton upper base','Wrapped sari lower drape','Sari lower border','Woven sari pallu over blouse','Opaque fitted bra and thong foundation']}
+if objects['Fitted cotton upper base'].get('river_composite',False):objects['Woven sari pallu over blouse']=objects['Fitted cotton upper base']
 for obj in objects.values():
  if obj.data.shape_keys is None:continue
  for key in obj.data.shape_keys.key_blocks:key.value=0
@@ -39,6 +40,23 @@ error=max(kd.find(ev.matrix_world@vertex.co)[2] for vertex in mesh.vertices);ev.
 print('RIVER_NATIVE_ALIGNMENT_M',error,flush=True)
 if error>.0001:raise RuntimeError('Source/native pose spaces do not agree')
 if '--align-only' in sys.argv:raise SystemExit(0)
+if '--cloth-align-only' in sys.argv:
+ for record in records:
+  apply_river_pose(rig,record['bones'],c,corrections)
+  transform=rig.matrix_world@c@Matrix(record['skeleton_transform']).inverted()
+  for entry in record['garments']:
+   obj=objects[entry['name']]
+   if obj.data.shape_keys is None:continue
+   for key in obj.data.shape_keys.key_blocks:key.value=0
+   for name,weight in entry['active_keys']:obj.data.shape_keys.key_blocks[name].value=weight
+   bpy.context.view_layer.update()
+   native=[transform@Vector(point) for point in entry['vertices']]
+   kd=KDTree(len(native))
+   for index,point in enumerate(native):kd.insert(point,index)
+   kd.balance();ev=obj.evaluated_get(bpy.context.evaluated_depsgraph_get());mesh=ev.to_mesh()
+   gap=max(kd.find(ev.matrix_world@vertex.co)[2] for vertex in mesh.vertices);ev.to_mesh_clear()
+   print('RIVER_NATIVE_CLOTH_ALIGNMENT',record['sample'],entry['name'],gap,flush=True)
+ raise SystemExit(0)
 for sweep in range(6 if '--foundation-only' in sys.argv or '--finish-upper' in sys.argv else 3):
  changed=0;worst=0.0
  for record in records if sweep%2==0 else reversed(records):
@@ -50,9 +68,12 @@ for sweep in range(6 if '--foundation-only' in sys.argv or '--finish-upper' in s
    ids=entry['indices'];reverse=entry.get('winding_sign',1)<0
    faces.extend(tuple(offset+i for i in (reversed(ids[j:j+3]) if reverse else ids[j:j+3])) for j in range(0,len(ids),3))
   tree=VolumeSurface.FromPolygons(points,faces,all_triangles=True,strict='--finish-upper' in sys.argv)
+  handled=set()
   for entry in record['garments']:
    if '--foundation-only' in sys.argv and entry['name']!='Opaque fitted bra and thong foundation':continue
    obj=objects[entry['name']]
+   if obj.name in handled:continue
+   handled.add(obj.name)
    if obj.data.shape_keys is None or not entry['active_keys']:continue
    basis=obj.data.shape_keys.key_blocks['Basis']
    active=[(obj.data.shape_keys.key_blocks[name],weight) for name,weight in entry['active_keys']]

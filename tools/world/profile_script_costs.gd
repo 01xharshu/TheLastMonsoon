@@ -51,4 +51,12 @@ func _run() -> void:
 		result["ms_per_frame"] = float(result.usec)/120000.0
 		print("SCRIPT COST ",JSON.stringify(result))
 	print("SCRIPT COST PROFILE: COMPLETE | ",tick_method," explicitly ticked nodes ",ticks.size())
+	var bag := actor.get_node_or_null("VisualRoot/EquipmentVisuals/WaterBagVisual")
+	if bag!=null:
+		if "--trace-bag-contact" in OS.get_cmdline_user_args():
+			var visual := actor.get_node("VisualRoot/CharacterVisual")
+			var cloth := visual.model.find_child("Arjun_Kurta_SplitHem",true,false) as MeshInstance3D
+			var arrays := cloth.mesh.surface_get_arrays(0)
+			print("CONTACT INIT LIVE MESH ",JSON.stringify({"vertices":arrays[Mesh.ARRAY_VERTEX].size(),"vertex_hash":hash(arrays[Mesh.ARRAY_VERTEX]),"weight_hash":hash(arrays[Mesh.ARRAY_WEIGHTS]),"motion_ready":visual.motion_tree!=null,"riding_source":cloth.get_meta("riding_cloth_source","")}))
+		print("SCRIPT COST CONTACT CONTEXT ",JSON.stringify({"samples":bag.contact_offsets.size()-1,"bones":bag.contact_bones.size(),"contact_us":bag.contact_usec,"mesh_rebuilds":bag.mesh_rebuilds,"fullness":bag.fullness,"target_fullness":bag.target_fullness,"contact_ready":bag.contact_ready}))
 	await root.get_node("SaveManager").quit_game()

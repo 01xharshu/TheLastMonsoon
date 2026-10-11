@@ -33,6 +33,14 @@ const Budget=preload("res://systems/simulation_budget.gd")
 var detour:Array[Vector3]=[]
 var last_goal:=Vector2.INF
 var route_retry:=0.0
+var navigation_pending:=false
+var navigation_goal:=Vector3.INF
+
+func receive_navigation(path: Array[Vector3], goal: Vector3) -> void:
+	navigation_pending=false
+	if goal!=navigation_goal or not is_instance_valid(actor):return
+	if Vector2(goal.x,goal.z)!=last_goal:return
+	detour=path
 
 func _ready() -> void:
 	clock=get_tree().get_first_node_in_group("game_time_system")
@@ -143,11 +151,9 @@ func tick(delta:float, animate:=true) -> void:
 			actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.5);actor.travel_speed=.95
 		else:
 			actor.travel_speed=0.0;actor.set_meta("daily_activity","waiting_for_clear_path")
-			if route_retry<=0:
-				route_retry=4.0;detour=WalkRoute.find(actor,destination)
-				if detour.is_empty() and not actor.get_meta("home_route_reported",false):
-					actor.set_meta("home_route_reported",true)
-					print("RESIDENT_ROUTE_BLOCKED ",actor.name," at=",actor.global_position," goal=",destination," obstruction=",actor.get_world_3d().direct_space_state.get_rest_info(query))
+			if route_retry<=0 and not navigation_pending:
+				route_retry=4.0;navigation_pending=true;navigation_goal=destination
+				navigation_pending=preload("res://systems/navigation_work_queue.gd").request(self,actor,destination)
 	else:
 		actor.travel_speed=0.0
 		var endpoint:bool=commute.is_empty() or (route_goal==commute.size()-1 if outward else route_goal==0)

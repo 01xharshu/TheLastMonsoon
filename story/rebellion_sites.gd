@@ -28,6 +28,10 @@ var rope: MeshInstance3D
 var target: StaticBody3D
 var cargo: Node3D
 var cargo_seats: Array[Node3D]=[]
+var shared_officer=false
+var parking_material: StandardMaterial3D
+func _exit_tree()->void:
+ if is_instance_valid(b):b.free()
 func configure(owner: Node) -> void:
  director=owner
  b.wood=b.material(Color(.28,.16,.08));b.stone=b.material(Color(.39,.34,.27));b.plaster=b.material(Color(.70,.65,.52));b.tile=b.material(Color(.37,.21,.14))
@@ -40,7 +44,9 @@ func configure(owner: Node) -> void:
  var foliage=load("res://environment/forest/assets/small_tree_lod0.glb").instantiate();tree.add_child(foliage)
  for mesh in foliage.find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=130
  var trunk=StaticBody3D.new();tree.add_child(trunk);var shape=CollisionShape3D.new();var cylinder=CylinderShape3D.new();cylinder.radius=.45;cylinder.height=5;shape.shape=cylinder;shape.position.y=2.5;trunk.add_child(shape)
- officer=person("RevengeOfficer",parking,Vector3(-5,0,-6),"res://characters/npcs/british/official_man.glb","british")
+ if director.inquiry.get("officials") is Array and not director.inquiry.officials.is_empty():
+  officer=director.inquiry.officials[0];shared_officer=true
+ else:officer=person("RevengeOfficer",parking,Vector3(-5,0,-6),"res://characters/npcs/british/official_man.glb","british")
  horse=preload("res://horses/stable_horse.gd").new();horse.name="SuperiorHorse";parking.add_child(horse);horse.position=Vector3(3,0,-4)
  coach=preload("res://vehicles/family_carriage_candidate.gd").new();coach.name="MangalCoveredCoach";coach.add_to_group("household_coach");add_child(coach)
  coach.set_meta("npc_occupied_seats",["CoachmanSeat"])
@@ -59,7 +65,7 @@ func configure(owner: Node) -> void:
  b.piece(cellar,"CellarRoof",Vector3(0,3.5,0),Vector3(18,.35,14),b.stone)
  for x in [-10,10]:b.piece(cellar,"EarthBank",Vector3(x,1.75,0),Vector3(2,3.5,15),b.stone)
  b.piece(cellar,"EarthenCap",Vector3(0,3.8,0),Vector3(21,.4,15),b.stone)
- var approach_start:=Vector3(0,.1,34);var approach_end:=Vector3(0,3.7,24)
+ var approach_start: Vector3=cellar.to_local(director.ground(cellar.to_global(Vector3(0,0,34))));var approach_end:=Vector3(0,3.7,24)
  var approach:=b.piece(cellar,"TerraceApproach",(approach_start+approach_end)*.5,Vector3(4,.18,approach_start.distance_to(approach_end)),b.stone);approach.rotation.x=-atan2(approach_end.y-approach_start.y,approach_end.z-approach_start.z)
  for x in [-9,9]:b.piece(cellar,"CellarWall",Vector3(x,1.8,0),Vector3(.4,3.6,14),b.stone)
  b.piece(cellar,"RearWall",Vector3(0,1.8,-7),Vector3(18,3.6,.4),b.stone)
@@ -73,9 +79,12 @@ func configure(owner: Node) -> void:
  var lamp=OmniLight3D.new();lamp.position=Vector3(0,2.6,0);lamp.light_color=Color(1,.68,.35);lamp.omni_range=13;lamp.light_energy=1.5;cellar.add_child(lamp)
  mangal=person("MangalPandey",cellar,Vector3(-3,.2,2),"res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb","indian")
  for i in 4:
+  await get_tree().process_frame
   var member=person("Rebel%d"%i,cellar,Vector3(-6+i*4,.2,-2),"res://characters/npcs/households/merchant.glb","indian")
   trainees.append(member);equip(member)
- for i in 2:companions.append(person("RaidCompanion%d"%i,cellar,Vector3(-2+i*4,.2,4),"res://characters/npcs/households/merchant.glb","indian"));equip(companions[-1])
+ for i in 2:
+  await get_tree().process_frame
+  companions.append(person("RaidCompanion%d"%i,cellar,Vector3(-2+i*4,.2,4),"res://characters/npcs/households/merchant.glb","indian"));equip(companions[-1])
  prompt("briefing","Speak to Mangal Pandey",cellar,Vector3(-3,1.1,2))
  prompt("weapons","Inspect the stolen weapons",cellar,Vector3(5,1.1,-4))
  prompt("raid","Begin the cantonment weapons raid",cellar,Vector3(-3,1.1,3.5))
@@ -85,14 +94,29 @@ func configure(owner: Node) -> void:
  target=StaticBody3D.new();target.name="TrainingTarget";cellar.add_child(target);target.position=Vector3(0,1.5,-5)
  var hit=CollisionShape3D.new();var box=BoxShape3D.new();box.size=Vector3(1.2,1.5,.16);hit.shape=box;target.add_child(hit)
  var board=MeshInstance3D.new();var board_mesh=BoxMesh.new();board_mesh.size=box.size;board.mesh=board_mesh;board.material_override=b.wood;target.add_child(board)
+ for i in trainees.size():trainees[i].practice_target=target.global_position;trainees[i].practice_clock=i*2.5
  return_bay=site("HideoutDeliveryBay",fort.to_global(Vector3(13,0,64)))
  outline(return_bay,Vector2(6,12))
  # Independent two-storey magazine occupies a clear edge of the cantonment.
  raid=site("RaidMagazine",cantonment.to_global(Vector3(80,0,12)))
  b.piece(raid,"GroundFloor",Vector3(0,.1,0),Vector3(16,.2,20),b.stone)
- b.piece(raid,"SecondFloor",Vector3(0,3.6,-2),Vector3(16,.2,16),b.wood)
+ ground_ramp(raid,Vector3(0,.2,10.1),Vector3(0,0,17))
+ b.piece(raid,"SecondFloorLeft",Vector3(-7.15,3.6,-2),Vector3(1.7,.2,16),b.wood)
+ b.piece(raid,"SecondFloorRight",Vector3(2.15,3.6,-2),Vector3(11.7,.2,16),b.wood)
+ b.piece(raid,"SecondFloorRear",Vector3(-5,3.6,-4.4),Vector3(2.6,.2,11.2),b.wood)
  b.piece(raid,"Roof",Vector3(0,7,0),Vector3(17,.2,21),b.tile)
- for x in [-8,8]:b.piece(raid,"MagazineSide",Vector3(x,3.5,0),Vector3(.35,7,20),b.plaster)
+ for side in [-1,1]:
+  b.piece(raid,"SideLowerWall",Vector3(side*8,2.45,0),Vector3(.35,4.9,20),b.plaster)
+  b.piece(raid,"SideHeader",Vector3(side*8,6.75,0),Vector3(.35,.5,20),b.plaster)
+  for z in [-9.5,-5.5,-1.5,2.5,6.5,9.5]:b.piece(raid,"WindowPier",Vector3(side*8,5.7,z),Vector3(.35,1.6,1.2),b.plaster)
+  for z in [-7.5,-3.5,.5,4.5,8.5]:
+   for edge in [-1,1]:b.piece(raid,"WindowJamb",Vector3(side*8,5.7,z+edge*1.35),Vector3(.45,1.65,.12),b.wood)
+   b.piece(raid,"WindowSill",Vector3(side*8,4.93,z),Vector3(.6,.12,2.8),b.stone)
+   for edge in [-1,1]:b.piece(raid,"OpenShutter",Vector3(side*8.25,5.7,z+edge*1.6),Vector3(.12,1.5,.55),b.wood,false)
+  for z in [-10,10]:b.piece(raid,"CornerQuoin",Vector3(side*8,3.45,z),Vector3(.6,6.9,.6),b.stone)
+ for y in [.35,3.45,6.95]:b.piece(raid,"FacadeCourse",Vector3(0,y,10.25),Vector3(16.5,.16,.35),b.stone)
+
+ 
  for x in [-5,5]:b.piece(raid,"FrontPier",Vector3(x,3.5,10),Vector3(6,7,.35),b.plaster)
  b.piece(raid,"FrontHeader",Vector3(0,5,10),Vector3(4,4,.35),b.plaster)
  # Rear escape window has a real opening and no invisible full-wall collider.
@@ -113,27 +137,43 @@ func configure(owner: Node) -> void:
  for i in 20:b.piece(raid,"WallDescent",Vector3(0,2.85-i*.15,-23-i*.28),Vector3(2.4,.15,.34),b.stone)
  rope=MeshInstance3D.new();rope.name="EscapeRope";raid.add_child(rope);var line=CylinderMesh.new();line.top_radius=.025;line.bottom_radius=.025;var start=Vector3(0,5.5,-10);var finish=Vector3(0,4.5,-22);line.height=start.distance_to(finish);rope.mesh=line;rope.position=(start+finish)*.5;rope.quaternion=Quaternion(Vector3.UP,(finish-start).normalized());rope.material_override=b.wood;rope.hide()
  for i in 4:
+  await get_tree().process_frame
   var guard=person("MagazineGuard%d"%i,raid,Vector3(-2+i*2,0,4) if i<2 else Vector3(-3+(i-2)*6,3.7,-3),"res://characters/npcs/british/private_man.glb","british")
   guard.set_meta("rebellion_guard",true);guards.append(guard);equip(guard)
   prompt("uniform%d"%i,"Take the sentry’s uniform",guard,Vector3(0,.7,0))
+ for mesh in find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=180;mesh.visibility_range_end_margin=15
  set_enabled(false)
 func site(label: String,at: Vector3) -> Node3D:
- var node=Node3D.new();node.name=label;add_child(node);node.global_position=director.ground(at);return node
+ var node=Node3D.new();node.name=label;add_child(node);node.global_position=director.ground(at)
+ if label in ["RaidMagazine","RebelUndercroft","SuperiorParking"]:
+  var half=Vector2(8,10) if label=="RaidMagazine" else Vector2(10.5,7.5) if label=="RebelUndercroft" else Vector2(6,8)
+  for x in [-half.x,half.x]:
+   for z in [-half.y,half.y]:node.global_position.y=maxf(node.global_position.y,director.ground(at+Vector3(x,0,z)).y)
+ return node
 func person(label: String,parent: Node3D,at: Vector3,path: String,faction: String) -> Node3D:
- var actor=Actor.new();actor.name=label;actor.movement_enabled=false;actor.set_meta("combat_faction",faction);actor.set_meta("rebellion_guard",label.begins_with("MagazineGuard"));actor.set_meta("human_source",path);actor.add_child(Human.instantiate(path));parent.add_child(actor);actor.position=at;return actor
+ var actor=Actor.new();actor.name=label;actor.viewer=director.player;actor.movement_enabled=false;actor.set_meta("combat_faction",faction);actor.set_meta("external_combat_motion",true);actor.set_meta("rebellion_guard",label.begins_with("MagazineGuard"));actor.set_meta("human_source",path);actor.add_child(Human.instantiate(path));parent.add_child(actor);actor.position=at;return actor
 func equip(actor: Node3D) -> void:
- var gun=preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate();gun.name="RebelEnfield";actor.add_child(gun);gun.position=Vector3(.2,1,-.2);gun.rotation.z=.2;gun.scale=Vector3.ONE*.85
+ var gun=preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate();gun.name="RebelEnfield";actor.add_child(gun);actor.held_rifle=gun;gun.position=Vector3(.2,1,-.2);gun.rotation.z=.2;gun.scale=Vector3.ONE*.85
  # Non-human ammunition bandolier is worn over the retained complete MPFB body.
  var strap=b.piece(actor,"AmmunitionBelt",Vector3(0,1.15,.19),Vector3(.09,.66,.035),b.wood,false);strap.rotation.z=.45
+ var socket:=BoneAttachment3D.new();socket.bone_name="spine_02";actor._skeleton.add_child(socket)
+ var placement: Transform3D=actor._skeleton.global_transform.affine_inverse()*strap.global_transform
+ strap.reparent(socket,false);strap.transform=actor._skeleton.get_bone_global_rest(actor._skeleton.find_bone("spine_02")).affine_inverse()*placement
  for i in 8:b.piece(strap,"Cartridge",Vector3(0,-.28+i*.08,.035),Vector3(.045,.05,.05),b.tile,false)
 func prompt(id: String,label: String,parent: Node3D,at: Vector3) -> void:
  var node=Prompt.new();node.action_id=id;node.director=director;node.interaction_text=label;parent.add_child(node);node.position=at;prompts[id]=node
+ if id.begins_with("bundle"):node.hold_duration=1.0;node.interaction_pose="low_reach"
+func ground_ramp(parent: Node3D,start: Vector3,end: Vector3) -> void:
+ end=parent.to_local(director.ground(parent.to_global(end)))
+ var ramp=b.piece(parent,"GroundAccessRamp",(start+end)*.5,Vector3(3.2,.18,start.distance_to(end)),b.stone)
+ ramp.rotation.x=-atan2(end.y-start.y,end.z-start.z)
 func outline(parent: Node3D,size: Vector2) -> void:
- var gold=b.material(Color(.9,.73,.2))
+ var gold=StandardMaterial3D.new();gold.albedo_color=Color(.9,.73,.2);gold.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED;gold.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;parking_material=gold
  for x in [-size.x*.5,size.x*.5]:b.piece(parent,"ParkingOutline",Vector3(x,.03,0),Vector3(.06,.025,size.y),gold,false)
  for z in [-size.y*.5,size.y*.5]:b.piece(parent,"ParkingOutline",Vector3(0,.03,z),Vector3(size.x,.025,.06),gold,false)
 func set_enabled(enabled: bool) -> void:
  for actor in [officer,mangal]+companions+guards+trainees:
+  if actor==officer and shared_officer and not enabled:continue
   actor.visible=enabled;actor.set_process(enabled);actor.get_node("BodyCollider").collision_layer=1 if enabled else 0;actor.get_node("Vitality").hit_body.collision_layer=8 if enabled else 0
  horse.visible=enabled;horse.set_physics_process(enabled)
  coach.visible=enabled;goods.visible=enabled;return_bay.visible=false

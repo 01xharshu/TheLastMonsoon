@@ -13,14 +13,30 @@ func run() -> void:
 	var layout = load("res://world/suryagarh/landscape_layout.gd").new()
 	cart.position = Vector3(-265,layout.height(-265,-18),-18)
 	cart.rotation.y = PI*.5
+	# Preserve the established canonical garment fit. The stable local pose is
+	# physically equivalent, but tiny rounding changes can alter fitter topology.
+	cart.set_meta("local_driver_pose",false)
 	cart.set_meta("rebuild_startup_cloth",true)
 	world.add_child(cart)
 	await process_frame
 	var driver: Node3D = cart.visual_root.get_node("MPFBBullockDriver" if bullock else "CoachmanMakeHuman")
 	while not session.tasks.is_empty(): await process_frame
 	var cloth = driver.seated_cloth
+	var reference := preload("res://tools/horses/validate_coachman_startup_cache.gd").posed_vertices(driver,cart)
+	cart.set_meta("local_driver_pose",true)
+	driver._seat(driver,"CoachmanSeat",0.0)
+	var stable := preload("res://tools/horses/validate_coachman_startup_cache.gd").posed_vertices(driver,cart)
+	var maximum := 0.0
+	for index in mini(reference.size(),stable.size()): maximum=maxf(maximum,reference[index].distance_to(stable[index]))
+	if reference.size()!=stable.size() or maximum>=.0005:
+		push_error("Local cache migration exceeded established body-pose tolerance")
+		Startup.close(session)
+		await root.get_node("SaveManager").quit_game(1)
+		return
 	var cache := Resource.new()
 	cache.set_meta("revision",cloth.CACHE_REVISION)
+	cache.set_meta("geometry_reference","canonical_legacy")
+	cache.set_meta("pose_coordinates","cart_local")
 	cache.set_meta("signature",cloth.source_signature())
 	var meshes := {}
 	for piece in cloth.pieces:

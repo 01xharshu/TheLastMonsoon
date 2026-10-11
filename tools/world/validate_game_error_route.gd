@@ -21,6 +21,21 @@ func capture(label: String) -> void:
 			var pixels := root.get_texture().get_image()
 			pixels.resize(1280,720,Image.INTERPOLATE_LANCZOS)
 			check(pixels.save_png(directory.path_join(label+".png"))==OK,"Temporary review view could not be written")
+func compare_bag_contact(actor: Node3D, label: String) -> void:
+	var bag := actor.get_node("VisualRoot/EquipmentVisuals/WaterBagVisual")
+	bag.use_contact_width_bound = true
+	check(bag._cloth_contact_required()==bag._cloth_contact_required(true),"Live contact parity failed at "+label)
+	var original: Array[int] = []
+	var candidate: Array[int] = []
+	for round_index in 7:
+		for full_scan in ([true,false] if round_index%2==0 else [false,true]):
+			var started := Time.get_ticks_usec()
+			for repeat in 30: bag._cloth_contact_required(full_scan)
+			(original if full_scan else candidate).append(Time.get_ticks_usec()-started)
+	original.sort()
+	candidate.sort()
+	print("CONTACT INIT LIVE WIDTH COST ",JSON.stringify({"label":label,"samples":bag.contact_points.size(),"bones":bag.contact_bones.size(),"original_30_calls_us":original[3],"bounded_30_calls_us":candidate[3],"original_max_30_calls_us":original.back(),"bounded_max_30_calls_us":candidate.back(),"exact_parity":not failed,"scope":"same native scene/pose alternating contact queries; excluded from walking frame sample"}))
+
 func _run() -> void:
 	var saves = root.get_node("SaveManager")
 	for argument in OS.get_cmdline_user_args():
@@ -63,6 +78,7 @@ func _run() -> void:
 	while opening.state != "done": await process_frame
 	check(opening.state == "done" and actor.is_physics_processing(),"Intro did not release controls")
 	print("PERFORMANCE SNAPSHOT playable ",JSON.stringify(Snapshot.capture()))
+	if "--compare-bag-contact" in OS.get_cmdline_user_args(): compare_bag_contact(actor,"playable")
 	var routes: Dictionary = {}
 	var area := ""
 	for argument in OS.get_cmdline_user_args():
@@ -76,20 +92,28 @@ func _run() -> void:
 		actor.get_node("CameraPivot").global_rotation.y = atan2(-direction.x,-direction.y)
 		actor.camera_pitch = deg_to_rad(-10.0)
 		actor.get_node("CameraPivot").rotation.x = actor.camera_pitch
-		await create_timer(1.0).timeout
+		var arrival_frames: Array[float] = []
+		var arrival_stop := Time.get_ticks_msec()+1000
+		while Time.get_ticks_msec()<arrival_stop:
+			var tick := Time.get_ticks_usec()
+			await process_frame
+			arrival_frames.append((Time.get_ticks_usec()-tick)/1000.0)
+		arrival_frames.sort()
 		print("PERFORMANCE SNAPSHOT entered ",spec[0]," ",JSON.stringify(Snapshot.capture()))
 		var before := actor.global_position
 		Input.action_press("move_forward")
 		var frames: Array[float] = []
 		var stop := Time.get_ticks_msec()+3000
-		while Time.get_ticks_msec()<stop:
+		var hard_stop := Time.get_ticks_msec()+20000
+		while (Time.get_ticks_msec()<stop or frames.size()<30) and Time.get_ticks_msec()<hard_stop:
 			var tick := Time.get_ticks_usec()
 			await process_frame
 			frames.append((Time.get_ticks_usec()-tick)/1000.0)
 		Input.action_release("move_forward")
 		check(actor.global_position.distance_to(before)>1.0,"Walking route blocked in "+str(spec[0]))
 		frames.sort()
-		routes[spec[0]]={"movement_m":actor.global_position.distance_to(before),"frame_ms_p50":frames[frames.size()/2],"frame_ms_p95":frames[int(frames.size()*.95)],"frame_ms_p99":frames[mini(frames.size()-1,int(frames.size()*.99))],"frame_ms_max":frames.back(),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"resources":Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),"cpu_process_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"cpu_physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000}
+		routes[spec[0]]={"movement_m":actor.global_position.distance_to(before),"frame_samples":frames.size(),"arrival_frame_max_ms":arrival_frames.back(),"frame_ms_p50":frames[frames.size()/2],"frame_ms_p95":frames[int(frames.size()*.95)],"frame_ms_p99":frames[mini(frames.size()-1,int(frames.size()*.99))],"frame_ms_max":frames.back(),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"resources":Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),"cpu_process_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"cpu_physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000}
+		if "--compare-bag-contact" in OS.get_cmdline_user_args(): compare_bag_contact(actor,"walked_"+str(spec[0]))
 		await capture(spec[0])
 		print("PERFORMANCE SNAPSHOT leaving ",spec[0]," ",JSON.stringify(Snapshot.capture()))
 	var pixels: Vector2i=root.size

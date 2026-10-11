@@ -140,10 +140,7 @@ func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 	if rider != null or actor.get_meta("climbing", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null): return false
 	var socket: Node3D = cart.seat_sockets.get(seat)
 	if socket == null or actor.global_position.distance_to(socket.global_position) > 5.0: return false
-	if kind=="driver" and not cart.get_meta("crime_taken",false) and actor.name=="Player":
-		for observer in get_tree().get_nodes_in_group("police_crime_observers"):
-			if observer.has_method("report_vehicle_theft"): observer.report_vehicle_theft(actor,cart,"cart_theft")
-		cart.set_meta("crime_taken",true)
+	if kind=="driver": preload("res://systems/vehicle_permissions.gd").take(cart,actor,"cart_theft")
 	rider = actor
 	seat_name = seat
 	role = kind
@@ -215,7 +212,7 @@ func _physics_process(delta: float) -> void:
 				if cart.has_method("show_coachman_blockout"): cart.show_coachman_blockout()
 			transition = ""
 		return
-	if (role == "driver" or travel.payer != null) and (not cart.has_method("can_move") or cart.can_move()) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
+	if (role == "driver" or travel.payer != null) and (not cart.has_method("can_move") or cart.can_move()) and not rider.get_meta("story_cinematic",false) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
 		var throttle := Input.get_axis("move_backward", "move_forward")
 		var steer := Input.get_axis("move_right", "move_left")
 		if travel.payer != null:

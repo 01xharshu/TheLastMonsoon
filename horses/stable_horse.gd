@@ -452,13 +452,12 @@ func board(actor: CharacterBody3D) -> bool:
 	if not can_board(actor): return false
 	rider = actor
 	var first_take := not stolen
-	if first_take and actor.name=="Player":
-		for observer in get_tree().get_nodes_in_group("police_crime_observers"):
-			if observer.has_method("report_vehicle_theft"): observer.report_vehicle_theft(actor,self,"horse_theft")
+	preload("res://systems/vehicle_permissions.gd").take(self,actor,"horse_theft")
 	stolen = get_meta("owner","") != "Arjun"
-	tack_player.play()
-	voice_player.stream = Neigh if first_take else Snort
-	voice_player.play()
+	if not get_meta("restore_in_progress",false):
+		tack_player.play()
+		voice_player.stream = Neigh if first_take else Snort
+		voice_player.play()
 	saved_layer = actor.collision_layer
 	saved_mask = actor.collision_mask
 	actor.collision_layer = 0
@@ -530,7 +529,7 @@ func _physics_process(delta: float) -> void:
 		gallop_exhausted = true
 	elif stamina >= MAX_STAMINA * .25:
 		gallop_exhausted = false
-	if rider != null and transition == "" and not rider.inventory_ui.is_open() and not rider.get_meta("map_open",false) and not rider.get_meta("weapon_wheel_open",false):
+	if rider != null and transition == "" and not rider.get_meta("story_cinematic",false) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open",false) and not rider.get_meta("weapon_wheel_open",false):
 		throttle = Input.get_axis("move_backward","move_forward")
 		steer = Input.get_axis("move_right","move_left")
 		gallop = Input.is_action_pressed("sprint") and not gallop_exhausted and stamina > 0.0

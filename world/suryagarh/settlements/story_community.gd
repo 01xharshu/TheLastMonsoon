@@ -12,6 +12,8 @@ var members: Array[Node3D]=[]
 var residents: Array[Node3D]=[]
 var pending: Array[Dictionary]=[]
 var wait:=0.0
+var road_journeys: Array[Node]=[]
+var restored_routes: Dictionary={}
 func _ready() -> void:
  name="StoryCommunity"
  b.wood=b.material(Color(.27,.17,.09));b.plaster=b.material(Color(.73,.67,.53));b.stone=b.material(Color(.42,.35,.25));b.tile=b.material(Color(.43,.24,.14))
@@ -33,7 +35,7 @@ func _ready() -> void:
   member.add_child(preload("res://characters/npcs/households/merchant.glb").instantiate());farm.add_child(member)
   member.position=Vector3(-3+i*3,0,-1);members.append(member)
  for site_node in [college,courtyard]:
-  for i in 8:
+  for i in 4:
    var table_x: float=-4 if i%4<2 else 1.2
    var at:=Vector3(table_x+(-1.05 if i%2==0 else 1.05),0,-2 if i<4 else 2)
    pending.append({"parent":site_node,"at":at,"index":i,"talk":true,"seated":i<4})
@@ -42,9 +44,16 @@ func _ready() -> void:
     for dx in [-.28,.28]:b.piece(site_node,"SeatLeg",at+Vector3(dx,.18,0),Vector3(.10,.36,.6),b.wood)
   var talk=preload("res://story/community_conversation.gd").new();site_node.add_child(talk);talk.position=Vector3(2.25,.9,3.2)
   talk.lines.assign(["Reader: We compare accounts here. An official's answer is not always the whole truth.","Reader: Bring what you learn about Dev. We will listen, but we must be careful."] if site_node==college else ["Patron: Sit with us. News travels with the merchants and the people returning from the cantonment.","Patron: If you are searching for someone, listen before you speak. People are afraid of the officials."])
- # Add social groups at the station exterior and village spine, clear of gates.
- for point in [Vector2(310,157),Vector2(333,151),Vector2(-396,232),Vector2(-365,244)]:
-  for i in 3:pending.append({"parent":self,"world":point+Vector2(i*1.3,0),"index":i,"talk":false})
+ # Distribute the remaining residents along road shoulders instead of fixed clusters.
+ var roads: Array[String]=["village_spine","village_market_lane","civil_lines_avenue","administrative_approach","port_approach"]
+ var distribution=preload("res://world/suryagarh/city_route_population.gd").new()
+ for road in roads:
+  for i in 4:
+   var points: Array[Vector2]=distribution.route_points(road,i,2.8)
+   var phase: Dictionary=distribution.phase_on_route(points,(float(i)+.5)/4.0)
+   pending.append({"parent":self,"world":phase.point,"index":i,"talk":false,"route":points,"goal":phase.goal,"identity":"CommunityRoad_%s_%d"%[road,i]})
+ distribution.free()
+
 func site(label: String,point: Vector2,half: Vector2,map_label: String) -> Node3D:
  var node:=Node3D.new();node.name=label;add_child(node)
  var highest: float=layout.height(point.x,point.y)
@@ -114,7 +123,13 @@ func _process(delta: float) -> void:
   crowd_ready.emit();set_process(false);return
  if wait>0:return
  wait=.15;var record: Dictionary=pending.pop_front()
- var actor=Actor.new();actor.name="CommunityResident%d"%residents.size();actor.movement_enabled=false;actor.cycle_offset=residents.size()*.43
+ var supported:=Vector3.INF
+ if record.has("world"):
+  var population: Node=get_parent().get_node_or_null("CityRoutePopulation")
+  if population!=null:
+   supported=population.clear_spawn(record.world)
+   if not supported.is_finite():pending.append(record);return
+ var actor=Actor.new();actor.name=record.get("identity","CommunityResident%d"%residents.size());actor.movement_enabled=false;actor.cycle_offset=residents.size()*.43
  if record.parent==college or record.parent==courtyard:
   actor.set_meta("district","college_neighbourhood")
   actor.set_meta("world_role","student" if record.index<6 else ("lecturer" if record.index==6 else "printer"))
@@ -126,10 +141,37 @@ func _process(delta: float) -> void:
  actor.add_child(load("res://characters/npcs/street_residents/%s_%02d.glb"%[sex,variant]).instantiate())
  record.parent.add_child(actor)
  if record.has("world"):
-  var p: Vector2=record.world;actor.global_position=Vector3(p.x,layout.height(p.x,p.y),p.y)
+  var p: Vector2=record.world;actor.global_position=supported if supported.is_finite() else Vector3(p.x,layout.height(p.x,p.y),p.y)
  else:actor.position=record.at
  actor.rotation.y=PI*.5 if record.index%2==0 else -PI*.5
  for mesh in actor.find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=130;mesh.visibility_range_end_margin=15
+ if record.has("route"):
+  var journey=preload("res://world/suryagarh/city_street_journey.gd").new()
+  var walking_route: Array[Vector2]=[];walking_route.assign(record.route)
+  journey.configure(actor,walking_route,float(record.index)*1.7)
+  journey.goal=record.goal;journey.speed=.85+float(record.index)*.07
+  journey.viewer=get_parent().get_node("Player");actor.add_child(journey)
+  road_journeys.append(journey);apply_road_state(journey)
+  residents.append(actor);return
  var social=preload("res://story/community_social.gd").new();actor.add_child(social);social.person=actor;social.offset=residents.size()*.73;social.seated=record.get("seated",false);social.ground_y=actor.global_position.y
  residents.append(actor)
 func _exit_tree() -> void:b.free()
+
+func export_route_state() -> Dictionary:
+ var result: Dictionary=restored_routes.duplicate(true)
+ for journey in road_journeys:
+  var at: Vector3=journey.actor.global_position
+  result[str(journey.actor.name)]={"position":[at.x,at.y,at.z],"goal":journey.goal,"direction":journey.direction,"wait":journey.wait,"distance":journey.distance_walked}
+ return result
+func restore_route_state(data: Dictionary) -> void:
+ restored_routes=data.duplicate(true)
+ for journey in road_journeys:apply_road_state(journey)
+func apply_road_state(journey: Node) -> void:
+ var saved: Dictionary=restored_routes.get(str(journey.actor.name),{})
+ if saved.is_empty():return
+ var at: Array=saved.get("position",[])
+ if at.size()==3:journey.actor.global_position=Vector3(float(at[0]),float(at[1]),float(at[2]))
+ journey.goal=clampi(int(saved.get("goal",1)),0,journey.route.size()-1)
+ journey.direction=1 if int(saved.get("direction",1))>=0 else -1
+ journey.wait=maxf(0,float(saved.get("wait",0)))
+ journey.distance_walked=float(saved.get("distance",0));journey.actor.foot_plant.clear()

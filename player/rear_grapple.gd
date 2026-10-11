@@ -53,6 +53,7 @@ func begin() -> bool:
 		chosen=target;closest=distance
 	if chosen==null:return false
 	victim=chosen;age=0;active=true
+	process_priority=140 if victim.get_meta("rebellion_guard",false) else 40
 	set_process(true)
 	set_physics_process(true)
 	neck_bone=victim._skeleton.find_bone("neck_01")
@@ -80,6 +81,8 @@ func _process(delta: float) -> void:
 	visual.motion_tree.advance(0)
 	var rig: Skeleton3D=victim._skeleton
 	var chest:=rig.to_global(rig.get_bone_global_pose(neck_bone).origin)
+	var mission_hold: bool=victim.get_meta("rebellion_guard",false)
+	if mission_hold:victim.set_meta("mission_grapple_phase",minf(age/1.2,1.0))
 	contact_error=0
 	var hero_rig: Skeleton3D=visual.skeleton
 	var equipment: Node3D=visual.equipment
@@ -89,6 +92,15 @@ func _process(delta: float) -> void:
 		var target:=chest+victim.global_basis*Vector3(.09*sign_side,.005,-.035)
 		var inward: Vector3=victim.global_basis*Vector3(-sign_side,0,0)
 		var forward: Vector3=victim.global_basis.z.normalized()
+		if mission_hold:
+			var head_index:=rig.find_bone("head")
+			var head:=rig.to_global(rig.get_bone_global_pose(head_index).origin)
+			var posed: Basis=(rig.global_basis*rig.get_bone_global_pose(head_index).basis).orthonormalized()
+			var rest: Basis=(rig.global_basis*rig.get_bone_global_rest(head_index).basis).orthonormalized()
+			var face: Basis=posed*rest.inverse()*victim.global_basis
+			target=head+face*Vector3(-.015,.035,.075) if side=="l" else head+face*Vector3(.09,.075,-.065)
+			inward=-face.z if side=="l" else face.z
+			forward=face.x if side=="l" else -face.x
 		var across:=forward.cross(inward).normalized()
 		var palm_basis:=Basis(across,forward,inward)
 		var desired: Basis=hero_rig.global_basis.inverse()*palm_basis*(equipment.palm_axes[side] as Basis).inverse()
@@ -112,11 +124,12 @@ func _process(delta: float) -> void:
 func cancel() -> void:
 	if is_instance_valid(victim):
 		victim.set_meta("grappled",false)
+		victim.remove_meta("mission_grapple_phase")
 		if not victim.get_meta("knocked_out",false) and not victim.get_meta("dead",false):
 			victim.get_node("CombatMotion").state=""
 			victim.set_meta("combat_action","");victim.animation_tree.set("parameters/combat/blend_amount",0.0)
 			victim.movement_enabled=victim_movement
-	active=false;victim=null
+	active=false;victim=null;process_priority=40
 	set_process(false)
 	set_physics_process(false)
 	actor.set_meta("paired_combat",false)

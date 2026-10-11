@@ -2,7 +2,8 @@ extends RefCounted
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Bridge = preload("res://world/suryagarh/timber_bridge.gd")
 const STOPS := {"Bhairavpur":Vector2(-250,230),"Town Hall":Vector2(-320,-432),"Government House":Vector2(-390,-18),"Police Station":Vector2(320,150),"Company Compound":Vector2(345,252),"Hooghly Port":Vector2(-194,623)}
-static func build() -> AStar2D:
+static func build(world: Node = null) -> AStar2D:
+ if world!=null and world.has_meta("coach_road_graph"): return world.get_meta("coach_road_graph")
  var graph := AStar2D.new()
  var layout := Layout.new()
  var paths: Array = Layout.ROUTES.values().duplicate()
@@ -24,9 +25,17 @@ static func build() -> AStar2D:
     if previous >= 0: graph.connect_points(previous,id)
     previous = id
  var ids := graph.get_point_ids()
- for i in ids.size():
-  for j in range(i+1,ids.size()):
-   if graph.get_point_position(ids[i]).distance_to(graph.get_point_position(ids[j])) < 11.0: graph.connect_points(ids[i],ids[j])
+ var cells: Dictionary={}
+ for id in ids:
+  var point:=graph.get_point_position(id)
+  var cell:=Vector2i(floori(point.x/11.0),floori(point.y/11.0))
+  for x in range(-1,2):
+   for z in range(-1,2):
+    for other in cells.get(cell+Vector2i(x,z),[]):
+     if point.distance_squared_to(graph.get_point_position(other))<121.0: graph.connect_points(other,id)
+  if not cells.has(cell):cells[cell]=[]
+  cells[cell].append(id)
+ if world!=null:world.set_meta("coach_road_graph",graph)
  return graph
 static func route(graph: AStar2D, start: Vector2, destination: String) -> PackedVector2Array:
  if not STOPS.has(destination): return PackedVector2Array()

@@ -187,19 +187,7 @@ func follow_officer(delta: float, speed: float) -> bool:
 	officer.body_collider.force_update_transform()
 	return false
 func can_see(candidate: Node3D, subject: CharacterBody3D) -> bool:
-	if not is_instance_valid(candidate) or not is_instance_valid(subject): return false
-	if candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): return false
-	var from := candidate.global_position+Vector3.UP*1.4
-	var stance := subject.get_node_or_null("StealthStance")
-	var target: Vector3=stance.sight_target() if stance!=null else subject.global_position+Vector3.UP*.4
-	var toward: Vector3=target-from
-	var visible_range: float=stance.visible_range(from,28.0) if stance!=null else 28.0
-	if toward.length()>visible_range: return false
-	if toward.length()>3.0 and toward.normalized().dot(candidate.global_basis.z)<.2: return false
-	var query := PhysicsRayQueryParameters3D.create(from,target,1)
-	query.exclude=[subject.get_rid(),candidate.body_collider.get_rid()]
-	if preload("res://combat/escape_smoke.gd").obscures(get_tree(),from,target):return false
-	return station.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	return preload("res://systems/visual_perception.gd").sees(candidate,subject)
 
 func officer_has_sight() -> bool:
 	return can_see(officer,suspect)

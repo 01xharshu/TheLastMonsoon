@@ -66,4 +66,62 @@ func run() -> void:
 		await process_frame;RenderingServer.force_draw(false)
 		viewport.get_texture().get_image().save_png(output_dir+"/river_world_"+shot.name+".png")
 		print("WORLD_RIVER_CAPTURE ",shot.name)
+	if "--identities" in OS.get_cmdline_user_args():
+		for i in routine.women.size():
+			var woman:Node3D=routine.women[i]
+			woman.travel_override=true;woman.travel_speed=0;woman.travel_direction=Vector3.FORWARD
+			woman.sample(1.0)
+			var head:Vector3=woman.skeleton.to_global(woman.skeleton.get_bone_global_pose(woman.skeleton.find_bone("head")).origin)+Vector3.UP*.055
+			camera.fov=28
+			camera.global_position=head+woman.global_basis*Vector3(.10,.08,-1.1);camera.look_at(head)
+			await process_frame;RenderingServer.force_draw(false)
+			viewport.get_texture().get_image().save_png(output_dir+"/river_face_%d.png"%i)
+			print("WORLD_RIVER_IDENTITY ",i)
+	if "--budget" in OS.get_cmdline_user_args(): await measure_budget(viewport,routine,world.get_node("GameTimeSystem"))
 	world.queue_free();await process_frame;quit()
+
+class TimedFabric:
+	extends RefCounted
+	var source: RefCounted
+	var cost_ms := 0.0
+	func update() -> void:
+		var started := Time.get_ticks_usec()
+		source.update()
+		cost_ms += float(Time.get_ticks_usec()-started)/1000.0
+
+func measure_budget(viewport: SubViewport, routine: Node3D, clock: Node) -> void:
+	var observer := Node3D.new();routine.get_parent().add_child(observer)
+	var previous_viewer: Node3D = routine.viewer
+	var saved: Dictionary = routine.export_state()
+	var saved_pause: bool = clock.clock_paused
+	clock.set_process(false);clock.clock_paused=false
+	routine.viewer=observer
+	var wrappers: Array[TimedFabric]=[]
+	for woman in routine.women:
+		var wrapper := TimedFabric.new();wrapper.source=woman.sari_drape;woman.sari_drape=wrapper;wrappers.append(wrapper)
+	var rid := viewport.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(rid,true)
+	for remote in [false,true]:
+		routine.restore_state(saved);routine.mode="visit";routine.visit_seconds=42.0;routine.physics_age=0.0
+		observer.global_position=routine.shore+Vector3(500 if remote else 0,0,0)
+		var callback: Array[float]=[];var cpu: Array[float]=[];var gpu: Array[float]=[];var wall: Array[float]=[]
+		var fabric: Array[float]=[]
+		var prior := Time.get_ticks_usec()
+		for frame in 210:
+			await process_frame
+			var now := Time.get_ticks_usec();var elapsed := float(now-prior)/1000000.0;prior=now
+			for wrapper in wrappers:wrapper.cost_ms=0.0
+			var started := Time.get_ticks_usec();routine._physics_process(elapsed)
+			var cost := float(Time.get_ticks_usec()-started)/1000.0
+			RenderingServer.force_draw(false)
+			if frame>=30:
+				callback.append(cost);wall.append(elapsed*1000)
+				var fabric_ms := 0.0
+				for wrapper in wrappers:fabric_ms+=wrapper.cost_ms
+				fabric.append(fabric_ms)
+				cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(rid));gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(rid))
+		callback.sort();cpu.sort();gpu.sort();wall.sort();fabric.sort()
+		print("RIVER_NATIVE_BUDGET ",JSON.stringify({"scope":"focused village, same camera and 1280x720 Forward+ viewport; no whole-game FPS approval","remote":remote,"samples":180,"fabric_median_ms":fabric[90],"callback_median_ms":callback[90],"callback_p95_ms":callback[171],"wall_median_ms":wall[90],"render_cpu_median_ms":cpu[90],"render_gpu_median_ms":gpu[90]}))
+	for i in routine.women.size():routine.women[i].sari_drape=wrappers[i].source
+	routine.restore_state(saved);routine.viewer=previous_viewer;clock.clock_paused=saved_pause;clock.set_process(true)
+	observer.queue_free()

@@ -12,6 +12,7 @@ const Ground = preload("res://world/suryagarh/tree_trunk_collision.gd")
 var terrain_rids: Array[RID] = []
 var waypoint_heights: Dictionary = {}
 var detour := Vector2.INF
+var detour_followup := Vector2.INF
 var retry_age := 0.0
 var detours := 0
 var crowd: Node
@@ -27,6 +28,7 @@ var social_time := 0.0
 var shadow_meshes:Array[GeometryInstance3D]=[]
 var shadow_modes:Array[int]=[]
 var shadows_near:=true
+var street_surface:RefCounted
 
 func _ready() -> void:
  super._ready()
@@ -41,6 +43,14 @@ func _ready() -> void:
  terrain_rids=terrain_cache.rids
  sweep_exclusions = super.motion_exclusions()+terrain_rids
  terrain_revision=terrain_cache.revision
+ if actor.get_script().resource_path=="res://characters/npcs/indian/indian_street_actor.gd":
+  var world:Node=preload("res://systems/world_context.gd").find_world(actor)
+  if world==null or not world.get_meta("uncached_street_surfaces",false):
+   street_surface=preload("res://world/suryagarh/street_surface.gd").new()
+   street_surface.point=actor.global_position
+   street_surface.set_support(ground_at(Vector2(actor.global_position.x,actor.global_position.z)))
+   actor.ground_height=street_surface.height
+
  # Stable phase spreads remote work across frames instead of synchronising it.
  tier_age = float(actor.get_instance_id()%13)*.02
  accumulated = float(actor.get_instance_id()%7)*.01
@@ -71,19 +81,25 @@ func travel_motion(target:Vector3,delta:float) -> Vector3:
  var support:=ground_at(next)
  if support.is_empty() or support.normal.y<.6 or absf(support.position.y-actor.global_position.y)>.35:
   last_obstacle="unsafe terrain support";return Vector3.ZERO
+ if street_surface!=null:street_surface.set_support(support)
  return Vector3(next.x,support.position.y,next.y)-actor.global_position
 
 func on_blocked(target:Vector3,delta:float) -> void:
  retry_age+=delta
  if retry_age<.5:return
  retry_age=0
+ var recovered:float=preload("res://world/suryagarh/city_contact_recovery.gd").recover(actor,actor.body_collider)
+ if recovered>0:
+  distance_walked+=recovered;detour=Vector2.INF;detour_followup=Vector2.INF
+  return
  var here:=Vector2(actor.global_position.x,actor.global_position.z)
- var forward:Vector2=(Vector2(target.x,target.z)-here).normalized()
+ var forward:Vector2=(route[goal]-here).normalized()
  var side:=Vector2(-forward.y,forward.x)
  var preference:=1.0 if int(actor.get_meta("street_identity",0))%2==0 else -1.0
- for distance in [1.1,2.0,3.0]:
+ var fallback:=Vector2.INF
+ for distance in [.65,1.1,2.0,3.0,.35]:
   for sign in [preference,-preference]:
-   for advance in [1.2,0.0]:
+   for advance in [1.2,0.0,-.6,-1.2,-2.4]:
     var point: Vector2=here+side*distance*sign+forward*advance
     if layout.road_distance(point.x,point.y)>4.5:continue
     var support:=ground_at(point)
@@ -94,10 +110,29 @@ func on_blocked(target:Vector3,delta:float) -> void:
     query.motion=Vector3(point.x,support.position.y,point.y)-actor.global_position
     query.margin=.008;query.collision_mask=1;query.exclude=motion_exclusions()
     if actor.get_world_3d().direct_space_state.cast_motion(query)[0]<.99:continue
+    query.transform.origin+=query.motion;query.motion=Vector3.ZERO
+    if not actor.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():continue
+    # Hold the passing lane until beyond a long cart, instead of immediately
+    # steering back into its rear when the first lateral step finishes.
+    var onward:=point+forward*5.0
+    var onward_support:=ground_at(onward)
+    detour_followup=Vector2.INF
+    if layout.road_distance(onward.x,onward.y)<=4.5 and not onward_support.is_empty() and onward_support.normal.y>=.6 and absf(onward_support.position.y-support.position.y)<.35:
+     query.motion=Vector3(onward.x,onward_support.position.y,onward.y)-query.transform.origin+Vector3.UP*(shape.global_position.y-actor.global_position.y+.025)
+     if actor.get_world_3d().direct_space_state.cast_motion(query)[0]>=.99:
+      query.transform.origin+=query.motion;query.motion=Vector3.ZERO
+      if actor.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():detour_followup=onward
+    if not detour_followup.is_finite():
+     # A clear lateral toe-step alone can steer straight back into the blocker.
+     # Prefer a complete passing lane; retain the shortest escape only as fallback.
+     if not fallback.is_finite() or point.distance_squared_to(here)<fallback.distance_squared_to(here):fallback=point
+     continue
     detour=point;detours+=1;return
+ if fallback.is_finite():detour=fallback;detour_followup=Vector2.INF;detours+=1
 
 func arrive() -> void:
- if detour.is_finite():detour=Vector2.INF;return
+ if detour.is_finite():
+  detour=detour_followup;detour_followup=Vector2.INF;return
  super.arrive()
 func _physics_process(delta: float) -> void:
  accumulated+=delta
@@ -130,6 +165,9 @@ func _physics_process(delta: float) -> void:
   var next:=route_target(route[goal])
   var forward:=Vector2(next.x-actor.global_position.x,next.z-actor.global_position.z).normalized()
   pace_scale=crowd.road_pace(self,forward)
+ # A checked escape from the yielding lane must be allowed to execute.
+ # tick still sweeps the capsule, so this never ignores the cart or a person.
+ if detour.is_finite():pace_scale=1.0
  if pace_scale<.1:
   yield_age+=step;current_speed=0;actor.travel_speed=0
   update_animation(&"idle",step);actor.set_meta("street_action","yielding_to_traffic")
@@ -143,7 +181,6 @@ func _physics_process(delta: float) -> void:
   tick(portion);remaining-=portion
 
 func update_animation(state: StringName, delta: float) -> void:
- # Invisible residents still traverse the same collision-checked route and clock.
  if simulation_interval>=.5:
   actor.foot_plant.clear()
   return
@@ -162,6 +199,10 @@ func converse(delta:float) -> void:
  actor.body_collider.force_update_transform()
  var speaking:bool=(int((crowd.age-(social_end-10.0))/2.7)%2==0)==social_speaker
  actor.set_meta("street_action","talking" if speaking else "listening")
+ apply_conversation_gesture()
+
+func apply_conversation_gesture() -> void:
+ var speaking:bool=actor.get_meta("street_action","")=="talking"
  # Idle is sampled first, so gesture deltas cannot accumulate into the next walk.
  if simulation_interval>0.1 or actor._skeleton==null:return
  var gesture:float=sin(social_time*2.1+float(personal_seed))*.035
@@ -172,4 +213,4 @@ func converse(delta:float) -> void:
   actor._skeleton.set_bone_pose_rotation(head,actor._base_rotations["head"]*Quaternion(actor._pitch_axes["head"],.025*sin(social_time*2.4) if not speaking else .015*sin(social_time*4.1)))
 
 func _exit_tree() -> void:
- if is_instance_valid(crowd):crowd.end_conversation(self)
+ if is_instance_valid(crowd):crowd.unregister(self)

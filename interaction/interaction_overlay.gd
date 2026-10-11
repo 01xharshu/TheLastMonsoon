@@ -370,12 +370,7 @@ func _physics_process(
 	# FIND VISIBLE INTERACTABLES
 	# =====================================================
 
-	for node in (
-		get_tree()
-		.get_nodes_in_group(
-			"interactables"
-		)
-	):
+	for node in actor.nearby_interactables(MARKER_MAX_DISTANCE):
 
 		var candidate := (
 			node as Interactable

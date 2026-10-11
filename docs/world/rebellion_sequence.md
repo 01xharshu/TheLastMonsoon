@@ -1,0 +1,49 @@
+# Equipment training → revenge → Mangal’s hideout → weapons raid
+
+Updated 2026-10-11 IST. Owner: this story continuation chat. **IN_PROGRESS: integrated playable baseline; final motion, clothing and full-route review remain open.** Do not substitute a new plot or resume the old courtyard lead after the equipment tutorial.
+
+## Canonical sequence requested by the user
+
+1. Finish Chacha’s eight actual equipment lessons. Fade to **A few days later**.
+2. Arjun waits behind a tree beside the superior’s office. The same superior from the humiliation scene walks toward the adjoining carriage/horse parking area. Arjun confronts and kills him through playable combat.
+3. A witness reports the killing. Existing crime stars and police pursuit become active. Arjun can fight or flee, take the superior’s horse, and follow the ruins marker.
+4. Near the fort approach, Mangal Pandey draws alongside in the existing roofed, enclosed carriage. He warns that the pursuers will kill Arjun and invites him aboard. Arjun jumps from the horse into the carriage; the horse stays behind.
+5. Fade to the ruined Indian fort. Mangal drives in; both leave the carriage. Player control returns to follow Mangal to the descending passage and undercroft hideout. Indian fighters carry rifles and cartridge belts and practise weapon handling.
+6. Mangal explains that bare hands cannot win the struggle. Inspect the previously captured weapons, then actually load an Enfield and hit the practice target twice, reloading between shots.
+7. Mangal assigns a weapons theft at the cantonment with two companions and an open-backed horse goods cart. Enter the two-storey magazine unnoticed, follow the left stairs to the second-floor weapons room, and avoid walking sentries.
+8. Behind a stopped sentry, **Q** starts the existing paired rear contact animation. Mission sentries receive a lethal silent takedown; Chacha’s consenting training partners retain their existing nonlethal behaviour. **E** takes the incapacitated sentry’s uniform. Arjun retains his own complete MPFB body/physique. The guard retains his complete body, a separate opaque foundation and an opaque short lungi; no body surfaces are masked or deleted.
+9. Collect **four bundles of three rifles**, not a single weapon. Rig a rope at the real rear window, traverse toward the boundary wall, and jump into the cart with both companions. Player control returns as the driver.
+10. Drive back to the hideout. A rectangular ground marker appears nearby. The cart must stop with its whole collision footprint inside the bay. The marker fades during the arrival presentation, then the mission completes and the twelve captured rifles are recorded as delivered.
+
+“Blake” in the spoken request is treated as Arjun, the player already established in this sequence. This is a fictional game sequence, not an assertion of Mangal Pandey’s documented historical itinerary.
+
+## Runtime ownership and integration
+
+- `story/rebellion_story.gd`: stages, fades/subtitles/camera, real lesson gates, suspicion, actor motion, rope/carriage transitions, delivery and saved story state.
+- `story/rebellion_sites.gd`: mission-owned office parking/tree, existing covered/open vehicle constructors, fort-flank undercroft and access ramps, magazine stairwell/windows, four rifle bundles, landing/descent and ground bay. Reuses existing complete MPFB exports; never builds human anatomy from primitives.
+- `story/rebellion_actor.gd`: locomotion/AnimationTree overlays and held-rifle, seated driver/passenger and rope hand contacts. Existing human and weapon resources remain shared.
+- `story/rebellion_disguise.gd`: garment-only rest-space rebinding, original-body clearance fitting and retained foundation/lungi. Original human mesh resources remain intact.
+- `story/rebellion_vitality.gd`: mission-only silent takedown result. The shared rear-grapple chooses this result only for mission sentries.
+- Main world installs `RebellionStory` after `DevStory`. SaveManager serializes/restores the new field and blocks cinematic saves. Existing live goods-cart save state retains the driving vehicle.
+- The existing destination renderer and map waypoint own guidance; minimap placement and morning HUD onboarding remain unchanged. The original inquiry destination is updated at mission-stage changes. The new director has no second projected marker or tutorial highlight box.
+- Setup yields between actor batches; references are scoped/cached to the owning world. Raid sensing uses the shared simulation budget; nearby interactions retain full rate. Collision remains present at distance. Cinematic carriage motion checks swept increments; optional geometry uses visibility ranges. Firearm practice registers with the existing slowed mission clock.
+
+Save stages: `dormant`, `ambush`, `confront`, `escape`, `follow`, `briefing`, `inspect`, `load`, `shoot`, `raid_ready`, `infiltrate`, `collect`, `rope`, `return`, `complete`. Collection indices, original superior and sentry outcomes, actor positions, disguise donor, firearm lesson state and follow progress persist. Saving during pursuit still obeys the existing police-case restriction.
+
+## Verification and exact next work
+
+Reusable checks: `tools/world/validate_rebellion_story.gd` (isolated real player/MPFB/vehicle fixture) and `tools/world/review_rebellion_story.gd` (actual Suryagarh integration). Both require `TLM_STORY_TEST_DIR` inside the OS temporary directory. Optional `TLM_REBELLION_NATIVE=1` writes disposable native screenshots there. Delete all output in a finally/exit cleanup. These are not retained evidence assets.
+
+Focused real-player regression **PASS**, clean headless 2026-10-11: tutorial handoff, cinematic save blocking, lethal sentry contact, complete-body preservation, opaque guard wrap, physical magazine stairs and undercroft descent, four bundle gates/duplicate rejection, horse-to-carriage rescue, rope hand contact, companion boarding, real cartridge reload and two target impacts, partial/return/completed SaveManager checkpoints, whole-cart stopped delivery and reward replay prevention. Original eight-lesson `validate_dev_story.gd` regression also **PASS** with no script errors. Final actual-world `review_rebellion_story.gd` rerun **PASS**, clean startup/stages/restore and no script errors. Cinematics also wait for an existing move lease without changing story state. Early restore is deep-copied into a pending state until actor/site/camera configuration completes, then applied once before startup is released. Startup export returns that pending snapshot safely. Added early-restore regression **PASS**; full actual-world `validate_save_flow.gd` **PASS** with no script errors after the correction.
+
+Shared integration now uses `visual_perception.gd` for sentry sight (stance/smoke/occlusion), `action_permissions.gd` for cinematic leases and `objective_resolver.gd` for existing guidance. Completion retires the temporary delivery destination. Goods transport is player-owned; stealing the superior’s horse still uses the ordinary acquisition rules. Killing the superior before the tree prompt also starts escape rather than locking the stage.
+
+Actual-world native stage integration **PASS** after the resident-work owner’s typed-array fix: original superior identity, wanted pursuit, real cantonment raid and restore. Native placement samples showed the magazine access and fort-flank undercroft grounded. The undercroft sits beneath its own earthen terrace; it does not carve shared terrain. Whole-world timing was **not accepted**: sampled 1280×720 full 3D scale median123.084ms/p95287.177ms while multiple other native Godot jobs were running. No test output was retained.
+
+Native Metal review, 2026-10-11: corrected standing disguise covers the opaque foundation; the defeated guard retains his short opaque wrap. The foundation transfer now selects the actual `Combat opaque foundation` garment; MakeHuman `short02` is hair and remains on Arjun. Original outer trouser yoke is hidden with his other clothes, while the complete body and separate foundation remain present. The nearest-surface clearance fit removes the earlier collar inflation. Small cuff/wrist deformation still needs normal-motion review.
+
+Sampled native rope frames show the two-handed overhead grip and companion hanging pose; the snapshot driver now reapplies contact after ordinary animation processing rather than capturing a reset pose. Rescue frames show the stolen horse beside the covered carriage, Mangal at the reins and Arjun in the existing AnimationTree flight pose toward the cabin. Boarding no longer replaces the cinematic camera. Subtitles render above the letterbox; the existing player UI is temporarily hidden as one layer and restored with its prior visibility. These sampled frames establish a usable presentation baseline, not uninterrupted motion/contact approval. Disposable images/logs were deleted after inspection.
+
+Next: ordinary continuous play from the superior fight through the horse rescue, hideout lessons and raid/delivery, concentrating on doorway entry, cuff/rope motion and the two companions’ travel. Review with the full populated world at its actual 3D budget when concurrent native workloads have finished. Architecture remains a developing asset batch; cloth folds, actor likeness/facial/dialogue performance and whole-world FPS approval remain open. Do not mark the sequence finally approved from stage/mesh checks or frozen presentation samples alone.
+
+Play from a new journey: complete opening/onboarding → inquiry/recovery → all eight Chacha lessons → follow the ambush marker → kill the superior → mount his horse → follow the fort marker → follow Mangal → inspect weapons/load/shoot twice → accept raid → sneak up the left stairs, use Q/E on a sentry if needed → hold E at each of four bundles → use the rear-window rope interaction → drive the goods cart to the hideout rectangle and stop.

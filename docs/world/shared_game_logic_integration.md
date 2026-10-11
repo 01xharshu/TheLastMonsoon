@@ -1,0 +1,51 @@
+# Shared game logic integration
+
+11 October 2026 IST. Implements the user's approved order from the [architecture audit](game_logic_architecture_audit_2026-10-11.md). This is a verified integration baseline, not whole-game performance, animation/contact or release approval. Existing feature owners and their concurrent work remain authoritative.
+
+## Current implementation
+
+| Order | Integrated behaviour | Verification / remaining boundary |
+| --- | --- | --- |
+| 1. Restore and perception | Shared vehicle permission/acquisition API; cart restoration reconstructs seats without new theft; lawful employer borrowing; explicit reclaim permits a new taking event. Street and station share strict facing, range, smoke/occlusion and sleep-aware sight. Held doors retain the reachable latch anchor. | Native boundary suite19/19 PASS includes current/legacy cart saves, real Player/cart/horse, borrowing, reclaim/re-theft and silent horse restore. Crime owner separately verified physical pursuit/return and mounted police; see crime doc. Full populated-world contact remains open. |
+| 2. State identity and cleanup | Cart save records use authored entity IDs, with legacy path fallback. One actor-owned action-permission service manages held interaction leases; combat weapons and boarding consult it. Success/cancellation and removed owners release leases. | Native services24/24 PASS covers identity reparenting, legacy resolution, lease exclusion/cleanup, guidance, road connectivity and spatial lifecycle. Other legacy actions retain their own pose/collision transition owners; this is an incremental migration, not an entirely replaced player state machine. |
+| 3. Objectives | One resolver feeds existing destination overlay and map; minimap continues reading shared map state. Tutorial wins; cinematic gaps suppress lower objectives; completed rebellion releases guidance. Explicit custom waypoints remain selected until following story again. | Native services priority checks and actual-world morning tutorial PASS. Existing minimap placement, survival diamonds and top-left instructions preserved. Extended rebellion/errand presentation remains with its owners. |
+| 4. Spatial discovery | One world-owned interaction grid feeds player selection and markers. Transform/local-transform notifications update membership; exact availability, anchor, scoring, occlusion and range filters remain in consumers. Local results retain Godot scene-tree order for equal-score ties. | Native services24/24 and actual-world selector parity PASS, including immediate teleport/removal/reorder. Native same-scene measurements below. Dynamic anchor/reach configuration should be set before registration; future changes to these bounds need explicit reindexing. |
+| 5. Navigation | World-owned coach topology; spatial junction linking replaces all-pairs discovery without removing proximity edges. Shared local search uses a min-heap and unchanged support/capsule/sweep/intermediate occupancy checks. Resident blocking and crime owner's police adapter submit to one yielding world search queue. | Native navigation5/5 PASS; additional cancellation/lifecycle cases headless7/7 PASS. Existing synchronous delivery callers use the same search implementation without changing their API. Station interior grid is still its own coordinator; asynchronous station preparation and dynamic door-grid invalidation remain a future scoped migration. |
+| 6. Cost evidence | Native A/B compares current selector with/without spatial candidate discovery in the same frozen actual world, at1280×720 3D pixels. Existing performance owner has separately accepted conservative pouch horizontal rejection; preserved here. | Spatial query benefit demonstrated. Frozen-world timings are not gameplay FPS. Existing native gameplay and traffic frame targets still fail; no resolution, population, collision, shadow or body reductions were introduced by this integration. |
+| 7. Presentation pilot | `--region-presentation-pilot` activates one decorative fort runoff segment using lightweight build inputs and near/leave hysteresis. Its unique mesh is freed when leaving and rebuilt identically on return. Gameplay, collision and quest/save owners remain resident. | Headless5/5 and native6/6 PASS: exact geometry, no collision ownership, unique resource release, stable return identity, identical reference/return pixels. Opt-in only; no full terrain/forest streaming, large RSS benefit or gameplay-route acceptance claimed. |
+
+## Shared contracts and ownership
+
+- `systems/vehicle_permissions.gd`: lawful taking, one acquisition flag, silent restore and explicit reclaim. Permission state is additive to version1 saves. Reclaim is an API, not an autonomous impound system.
+- `systems/visual_perception.gd`: visual identification only. Close assault victim recognition remains a separate incident rule. Hearing is not misrepresented as rear vision.
+- `systems/entity_identity.gd`: authored IDs plus compatible paths. A generated fallback ID inherits its original path's stability; future content should assign explicit unique `entity_id` before scene insertion. Duplicate IDs are rejected in group indexing.
+- `systems/action_permissions.gd`: actor-local leases with weak owners. Existing locomotion, AnimationTree, contact and transitions are preserved. Initial migration covers held interactions and the attack/boarding permission consumers.
+- `systems/objective_resolver.gd`: common guidance priority; UI layout stays in the existing UI owners.
+- `systems/interaction_spatial_index.gd`: world-scoped local candidate discovery; no extra physics body, human asset or per-target processing callback.
+- `systems/navigation_work_queue.gd` and `resident_walk_route.gd`: main-thread physics search, shared1500µs cooperative yield budget and bounded2400 expansions. One expansion/physics call cannot be preempted, so1500µs is a yield threshold, not a hard worst-frame guarantee. Search extent remains72m per axis; final movement still validates collision and terrain. Request owners/actors are weak; removed actors cancel safely and the queue continues.
+- `horses/horse_save_state.gd`: separate ordinary-horse acquisition/transform/riding participant, excluding `police_mounts`. Current saves restore Player riding without crime or taking sounds. Legacy saves without horse records preserve previous behaviour. Full horse injury/corpse persistence is not part of this participant.
+- `systems/region_presentation.gd`: optional decorative scene lifetime only. The pilot releases its unique geometry; shared rock textures/materials remain legitimately shared with resident stone contact geometry. This is not an asset-wide unloading claim.
+
+## Measured interaction cost
+
+Native Forward+/Metal, one copied-source/current-import snapshot, seven alternating rounds per view,200 selector calls/round;456 interactables. The exact current selector was used in both modes, changing only discovery. The world was frozen for comparable queries. Renderer work remained at1280×720; these are CPU query costs and cannot be converted to whole-game FPS gains.
+
+| View | Global discovery median for200 calls | Indexed median | Local candidates | Selection parity |
+| --- | ---: | ---: | ---: | --- |
+| Village |127,251µs |41,735µs |61 |PASS |
+| Market |113,963µs |983µs |11 |PASS |
+| Cantonment |83,265µs |1,233µs |2 |PASS |
+
+The separate clean-import headless interaction regression passed synthetic far-object, door-anchor, availability, projection and lighting checks. Its numbers are not comparable to the native table. A clean disposable import completed81.3s with no script/import/shutdown diagnostics, followed by successful boundary/service/navigation/runtime/tutorial checks. Later bounded lifecycle tests and horse sound suppression were checked separately.
+
+Final save-flow check PASS with no diagnostics: three-slot creation/replacement, failed-write preservation and state restoration. A blocked-directory save now returns its error before invoking directory creation on an existing file. The story owner corrected early rebellion restoration by retaining pending state until site configuration completes; the integration rerun verifies that boundary. Held-door continuation/cancellation and lease release also PASS in the actual-world interaction regression. These are functional checks, not clothing/contact approval.
+
+## Reproduction and in-game checks
+
+Run `python3 tools/world/run_architecture_checks.py architecture_boundaries architecture_services architecture_navigation region_presentation runtime_optimisation morning_tutorial` for a clean disposable import and headless checks. Add `--cached` only to copy current import data; that mode does not verify fresh imports. Add `--native` for Metal checks; the runner waits for another active native renderer and never stops it. `--cached --native architecture_performance` reproduces the frozen-world query attribution. Logs, any test-generated files and custom user data are temporary and removed in finally cleanup.
+
+In game: save while driving a previously acquired cart or riding an ordinary horse, Continue near a facing witness, and confirm no extra wanted star. Approach a door by its reachable ring, hold the interaction key, then leave reach and confirm cancellation. Take a cart with a close back-facing NPC, then repeat with a facing NPC. Select a custom map point during ordinary story guidance, and switch back to following story. New Journey → tutorial → actual horse boarding should retain the existing HUD/map layout. World-mounted/roof pursuit and road traffic are separate owner acceptance gates.
+
+## Remaining work
+
+The integrated baseline is usable; the entire architectural migration is not complete. Next migration candidates must follow measured need: station grid startup/invalidation, further action owners, authored persistent IDs for additional entities, and resource ownership for a larger decorative region. Do not expand streaming while traffic movement, first-use spikes, gameplay frame budget and ordinary return/save-route acceptance remain open. Coordinate those gates with the feature owners rather than taking over their files. The original audit table is historical source evidence, not the current status of fixes listed above.

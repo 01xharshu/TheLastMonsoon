@@ -1,5 +1,10 @@
 extends "res://player/player_controller.gd"
 ## Pre-optimisation test-only behaviour reference.
+var use_spatial_index:=true
+
+func nearby_interactables(marker_range := 0.0) -> Array[Node]:
+	return super.nearby_interactables(marker_range) if use_spatial_index else get_tree().get_nodes_in_group("interactables")
+
 func baseline_find_interactable() -> Interactable:
 	var forward: Vector3 = -camera_pivot.global_basis.z if first_person else visual_root.global_basis.z
 	forward.y = 0.0

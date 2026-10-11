@@ -3,7 +3,9 @@ func _initialize() -> void:call_deferred("run")
 func run() -> void:
  var errors:Array[String]=[]
  var document:=GLTFDocument.new();var state:=GLTFState.new()
- if document.append_from_file(ProjectSettings.globalize_path("res://characters/npcs/review/record_clerk_seat.glb"),state)!=OK:quit(1);return
+ var candidate_path:=OS.get_environment("TLM_SEAT_REVIEW_GLB")
+ if candidate_path.is_empty():candidate_path=ProjectSettings.globalize_path("res://characters/npcs/review/record_clerk_seat.glb")
+ if document.append_from_file(candidate_path,state)!=OK:quit(1);return
  var actor:=preload("res://characters/npcs/indian/purpose_seated_actor.gd").new()
  actor.add_child(document.generate_scene(state));root.add_child(actor);actor.set_process(false)
  await process_frame

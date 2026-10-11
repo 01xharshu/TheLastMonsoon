@@ -48,6 +48,8 @@ func configure(owner: Node3D) -> void:
 	home = passenger.global_position
 	borrowed = preload("res://vehicles/horse_cart_candidate.gd").new()
 	borrowed.name = "EmployerPassengerCart"
+	borrowed.set_meta("driver_permission","Player")
+	borrowed.set_meta("entity_id","vehicle:employer_passenger_cart")
 	borrowed.position = Vector3(-252,owner.get_parent().layout.height(-252,210),210)
 	borrowed.rotation.y = PI
 	owner.add_child(borrowed)

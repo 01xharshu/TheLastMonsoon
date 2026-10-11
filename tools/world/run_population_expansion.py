@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--native', action='store_true')
     parser.add_argument('--fixture', action='store_true')
     parser.add_argument('--budget', action='store_true')
+    parser.add_argument('--compare-surfaces', '--compare-poses', dest='compare_surfaces', action='store_true')
     args = parser.parse_args()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
@@ -50,7 +51,15 @@ def main():
             if not args.native: command = ['--fixed-fps','30',*command]
             # Keep full-world output compact while exposing our verification summary.
             original = checks.run_check
-            passed = original(binary,project,output,'CITY_POPULATION',command,480,native=args.native)
+            passed = True
+            if args.compare_surfaces:
+                baseline = original(binary,project,output,'POPULATION_BASELINE',command+['--','--uncached-surfaces'],480,native=args.native)
+                baseline_log=output/'POPULATION_BASELINE.log'
+                if baseline_log.exists():
+                    for line in baseline_log.read_text(errors='replace').splitlines():
+                        if line.startswith(('POPULATION PROFILE','POPULATION EXPANSION')):print('UNCACHED '+line,flush=True)
+                passed = baseline and passed
+            passed = original(binary,project,output,'CITY_POPULATION',command,480,native=args.native) and passed
             logfile=output/'CITY_POPULATION.log'
             if logfile.exists():
                 for line in logfile.read_text(errors='replace').splitlines():

@@ -9,6 +9,7 @@ func run() -> void:
  saver.start_new_game();await scene_changed
  for frame in 4:await process_frame
  var world:Node3D=current_scene
+ world.set_meta("uncached_street_surfaces","--uncached-surfaces" in OS.get_cmdline_user_args())
  var city:Node=world.get_node("CityRoutePopulation")
  var expansion:Node=world.get_node("PopulationExpansion")
  var exhaustive:bool="--exhaustive" in OS.get_cmdline_user_args()
@@ -41,6 +42,8 @@ func run() -> void:
  for person:Node3D in expansion.pedestrians:
   var key:String=person.get_meta("counterpart_of")
   check(not keys.has(key),"Duplicate counterpart: "+key);keys[key]=true
+  var original:Node=world.get_node_or_null(NodePath(key))
+  check(original==null or not original.is_in_group("city_route_patrols"),"City officer was doubled twice")
   check(person.find_children("*","Skeleton3D",true,false).size()==1,"Missing or duplicate MPFB rig")
  if not city.ready_population or not expansion.census_finished:
   print("POPULATION EXPANSION ",JSON.stringify({"passed":false,"stage":"population readiness timeout","city_loaded":city.pedestrians.size(),"city_pending":city.pending.size(),"non_city_originals":expansion.discovered_count,"counterparts_loaded":expansion.materialized_count,"counterparts_pending":expansion.pending.size(),"errors":errors}))
@@ -48,7 +51,15 @@ func run() -> void:
  var original_state:Dictionary=expansion.export_route_state()
  check(original_state.size()>=expansion.discovered_count,"Save omitted expanded identities")
  expansion.advance_remote(1);expansion.restore_route_state(original_state)
- check(expansion.export_route_state()==original_state,"Expanded save roundtrip changed state")
+ var restored_state:Dictionary=expansion.export_route_state()
+ var changes:Array[String]=[]
+ for key:String in original_state:
+  if not restored_state.has(key):changes.append(key+": missing identity");continue
+  for field:String in original_state[key]:
+   var before:Variant=original_state[key][field];var after:Variant=restored_state[key].get(field)
+   if before is float and after is float and is_equal_approx(before,after):continue
+   if before!=after:changes.append(key+"/"+field+": "+str(before)+" -> "+str(after))
+ check(changes.is_empty(),"Expanded save roundtrip changed state: "+str(changes.slice(0,8)))
  var origins:Dictionary={}
  for person:Node3D in city.pedestrians:origins[person]=person.get_node("CityStreetJourney").distance_walked
  var samples:Array[float]=[]
@@ -77,6 +88,17 @@ func run() -> void:
   if person.get_node("CityStreetJourney").distance_walked-float(origins.get(person,person.get_node("CityStreetJourney").distance_walked))>.5:moving+=1
   check(person.global_position.is_finite(),"Invalid pedestrian transform")
  check(moving>origins.size()*.65,"Too few loaded city residents made progress")
+ var original_groups:Dictionary={};var colleague_groups:Dictionary={}
+ for source_id:String in expansion.originals:
+  var group:String=source_id.get_slice("/",0)
+  original_groups[group]=int(original_groups.get(group,0))+1
+ for record:Dictionary in expansion.pending:
+  var group:String=str(record.source_id).get_slice("/",0)
+  colleague_groups[group]=int(colleague_groups.get(group,0))+1
+ for person:Node3D in expansion.pedestrians:
+  var group:String=str(person.get_meta("counterpart_of")).get_slice("/",0)
+  colleague_groups[group]=int(colleague_groups.get(group,0))+1
+ check(original_groups==colleague_groups,"A regional population group did not double")
  print("POPULATION PROFILE ",JSON.stringify({"renderer":RenderingServer.get_current_rendering_method(),"resolution":root.size,"frames":samples.size(),"median_ms":samples[samples.size()/2],"p95_ms":samples[int(samples.size()*.95)],"last_process_ms":cpu_ms,"last_physics_ms":physics_ms,"draws":draws,"scope":"normal logical/materialised population at the actual 1280x720 world budget"}))
- print("POPULATION EXPANSION ",JSON.stringify({"passed":errors.is_empty(),"city_civilian_identities":city.export_route_state().size(),"city_walkers_loaded":city.pedestrians.size(),"city_police":city.patrols.size(),"city_carts":city.carts.size(),"non_city_originals":expansion.discovered_count,"counterpart_identities":expansion.materialized_count+expansion.pending.size(),"counterparts_loaded":expansion.materialized_count,"initial_walkers":origins.size(),"moving_city_walkers":moving,"conversations":world.get_node("PopulationSocial").conversations_started,"pending":expansion.pending.size(),"unresolved":expansion.unresolved,"errors":errors}))
+ print("POPULATION EXPANSION ",JSON.stringify({"passed":errors.is_empty(),"city_civilian_identities":city.export_route_state().size(),"city_walkers_loaded":city.pedestrians.size(),"city_police":city.patrols.size(),"city_carts":city.carts.size(),"non_city_originals":expansion.discovered_count,"counterpart_identities":expansion.materialized_count+expansion.pending.size(),"counterparts_loaded":expansion.materialized_count,"initial_walkers":origins.size(),"moving_city_walkers":moving,"conversations":world.get_node("PopulationSocial").conversations_started,"pending":expansion.pending.size(),"original_groups":original_groups,"counterpart_groups":colleague_groups,"unresolved":expansion.unresolved,"errors":errors}))
  saver.quit_game(0 if errors.is_empty() else 1)

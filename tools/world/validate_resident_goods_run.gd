@@ -3,6 +3,7 @@ var failures:Array[String]=[]
 var output:=OS.get_environment("TLM_WORKER_TEST_OUTPUT")
 var camera:Camera3D
 var pictures:Dictionary={}
+var depot:bool="--depot" in OS.get_cmdline_user_args()
 func _initialize()->void:run.call_deferred()
 func check(ok:bool,label:String)->void:
 	if not ok:failures.append(label)
@@ -19,8 +20,8 @@ func run()->void:
 	var work:Node
 	for frame in 600:
 		await process_frame
-		var porter:=posts.get_node_or_null("HospitalLinenPorter")
-		if porter!=null:work=porter.get_node_or_null("LinenDelivery")
+		var porter:=posts.get_node_or_null("DepotStoresPorter" if depot else "HospitalLinenPorter")
+		if porter!=null:work=porter.get_node_or_null("StoresDelivery" if depot else "LinenDelivery")
 		if work!=null and work.goods.size()==3 and work.waypoints.size()==5:break
 	check(work!=null and work.goods.size()==3,"worker and three physical consignments")
 	if work==null:print("RESIDENT_GOODS_RESULT FAIL ",failures);quit(1);return
@@ -48,7 +49,13 @@ func run()->void:
 	check(work.actor.global_position.distance_to(stopped)<.001 and work.delivered==0,"solid obstacle pauses work without transferring goods")
 	obstacle.queue_free();await physics_frame;work.blocked=0
 	var max_hand:=0.0;var saved:=false
-	for frame in 3600:
+	var freight_only:bool="--freight-only" in OS.get_cmdline_user_args()
+	if freight_only:
+		work.phase="rest";work.delivered=3;saved=true
+		for i in 3:work.place(work.goods[i],work.institution,Vector3(.53,1.15,1+i*.55))
+		work.actor.global_position=work.institution.to_global(Vector3(8,0,15.4));work.actor.body_collider.force_update_transform()
+		await physics_frame
+	for frame in (0 if freight_only else 3600):
 		work.tick(.05);await physics_frame
 		if not output.is_empty() and not pictures.has(work.phase) and work.phase in ["lift","inside","lower","return"] and (work.phase not in ["lift","lower"] or work.progress>.6):
 			pictures[work.phase]=true;await photograph(work,work.phase)
@@ -69,14 +76,65 @@ func run()->void:
 	check(max_hand<.025,"palm targets within 25 mm")
 	check(work.actor.body_collider.collision_layer==1,"worker body remains solid")
 	for item:Node3D in work.goods:
-		check(item.get_parent()==work.institution,"consignment retained inside hospital")
+		check(item.get_parent()==work.institution,"consignment retained inside assigned workplace")
 		check(item.get_node("ConsignmentBody").collision_layer==1,"stored goods remain solid to other people")
 	if not output.is_empty():await photograph(work,"stored")
-	print("RESIDENT_GOODS_RESULT ","PASS" if failures.is_empty() else "FAIL"," delivered=",work.delivered," blocked=",work.blocked," max_hand=",max_hand," failures=",failures)
+	if "--restock" in OS.get_cmdline_user_args():
+		var initial_cart:Vector3=work.cart.global_position
+		for frame in 1800:
+			work.tick(.1);await physics_frame
+			if work.freight_phase=="awaiting_supply":break
+		print("FREIGHT_STATE ",work.freight_phase," distance=",work.freight_distance," cart=",work.cart.global_position," worker=",work.actor.global_position)
+		if work.freight_phase!="awaiting_supply":
+			for shape in work.cart.boarding.clearance_shapes:
+				var q:=PhysicsShapeQueryParameters3D.new();q.shape=shape.shape;q.transform=Transform3D(work.cart.global_basis,work.cart.global_position+work.cart.global_basis*shape.position);q.exclude=work.cart.boarding._vehicle_exclusions();q.collision_mask=1
+				for hit in work.cart.get_world_3d().direct_space_state.intersect_shape(q,10):print("FREIGHT_HIT ",hit.collider.get_path())
+		check(work.freight_phase=="awaiting_supply","empty cart reaches supplier approach")
+		check(work.cart.global_position.distance_to(initial_cart)>5.5,"cart visibly departs with its draft team")
+		clock.current_day+=1
+		work.tick(.1);await physics_frame
+		check(work.freight_phase.begins_with("loading_") and work.phase=="rest","new day starts physical supplier loading before incoming freight")
+		var arrival:Vector3=work.cart.global_position
+		var supply_state:Dictionary=JSON.parse_string(JSON.stringify(work.export_state()))
+		work.restore_state(supply_state)
+		check(work.cart.global_position.distance_to(arrival)<.001 and work.freight_phase.begins_with("loading_"),"supplier save retains cart and shipment")
+		var load_saved:=false;var incoming_saved:=false;var loading_hand:=0.0
+		for frame in 2400:
+			work.tick(.1);await physics_frame
+			if not output.is_empty() and not pictures.has(work.freight_phase) and ((work.freight_phase in ["loading_lift","loading_lower"] and work.progress>.6) or work.freight_phase=="arriving"):
+				pictures[work.freight_phase]=true;await photograph(work,"freight_arriving" if work.freight_phase=="arriving" else work.freight_phase)
+			if work.freight_phase in ["loading_lift","loading_carry","loading_lower"]:
+				if work.hand_error>loading_hand+.005:print("SUPPLIER_HAND ",work.freight_phase," progress=",work.progress," load=",work.freight_loaded," error=",work.hand_error," feet=",work.actor.global_position)
+				loading_hand=maxf(loading_hand,work.hand_error)
+			if not load_saved and work.freight_phase=="loading_carry":
+				var load_state:Dictionary=JSON.parse_string(JSON.stringify(work.export_state()))
+				work.restore_state(load_state);load_saved=true
+				check(work.goods[work.freight_loaded].get_parent()==work.actor,"supplier reload restores a carried crate")
+			if not incoming_saved and work.freight_phase=="arriving":
+				var incoming_state:Dictionary=JSON.parse_string(JSON.stringify(work.export_state()))
+				var incoming_at:Vector3=work.cart.global_position
+				work.restore_state(incoming_state);incoming_saved=true
+				check(work.cart.global_position.distance_to(incoming_at)<.001,"mid-arrival save retains moving cart")
+			if work.phase!="rest":break
+		print("SUPPLIER_END phase=",work.freight_phase," waypoint=",work.freight_waypoint," actor=",work.actor.global_position," distance=",work.freight_distance)
+		print("SUPPLIER_CONTACT max_hand=",loading_hand," saved_carry=",load_saved," saved_arrival=",incoming_saved)
+		check(load_saved and incoming_saved,"physical loading and arrival saves both exercised")
+		check(loading_hand<.025,"supplier loading palms within 25 mm")
+		check(work.phase=="collect" and work.freight_phase=="parked","incoming cart parks before worker resumes unloading")
+		check(work.cart.global_position.distance_to(initial_cart)<.1,"cart returns to its assigned receiving bay")
+	print("RESIDENT_GOODS_RESULT ","PASS" if failures.is_empty() else "FAIL"," workplace=",work.work_kind," delivered=",work.delivered," blocked=",work.blocked," max_hand=",max_hand," failures=",failures)
 	world.queue_free();await process_frame;root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)
 
 func photograph(work:Node,label:String)->void:
 	var focus:Vector3=work.institution.to_global(Vector3(.53,1.15,1.55)) if label=="stored" else work.actor.global_position+Vector3(0,.9,0)
-	camera.global_position=focus+work.actor.global_basis*Vector3(2.1,.7,2.4);camera.look_at(focus)
+	if label=="freight_arriving":
+		focus=work.cart.global_position+Vector3(0,1.1,2)
+		camera.global_position=focus+Vector3(3,1.6,7)
+	elif label in ["loading_lift","loading_lower"]:
+		var away:Vector3=work.actor.global_position-work.cart.global_position
+		away.y=0
+		camera.global_position=focus+away.normalized()*3.2+Vector3.UP*.9
+	else:camera.global_position=focus+work.actor.global_basis*Vector3(2.1,.7,2.4)
+	camera.look_at(focus)
 	await process_frame;RenderingServer.force_draw(false)
 	root.get_texture().get_image().save_png(output+"/worker_"+label+".png")

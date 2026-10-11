@@ -3,8 +3,11 @@ extends RefCounted
 static func collect(world: Node3D) -> Array:
 	var states: Array = []
 	for cart in world.get_tree().get_nodes_in_group("live_travel_carts"):
+		if not world.is_ancestor_of(cart): continue
 		var at: Vector3 = cart.global_position
 		var state := {"path": str(world.get_path_to(cart)), "position": [at.x, at.y, at.z], "heading": cart.rotation.y}
+		state.merge(preload("res://systems/vehicle_permissions.gd").export_state(cart))
+		state["entity_id"]=preload("res://systems/entity_identity.gd").id_for(world,cart)
 		if cart.boarding.rider != null:
 			state["seat"] = cart.boarding.seat_name
 			state["role"] = cart.boarding.role
@@ -14,9 +17,10 @@ static func collect(world: Node3D) -> Array:
 	return states
 
 static func restore(world: Node3D, states: Array) -> void:
+	var identities:=preload("res://systems/entity_identity.gd").index_group(world,&"live_travel_carts")
 	for state in states:
 		if not state is Dictionary: continue
-		var cart := world.get_node_or_null(NodePath(str(state.get("path", ""))))
+		var cart := preload("res://systems/entity_identity.gd").resolve(world,state,identities)
 		if cart == null or not cart.is_in_group("live_travel_carts"): continue
 		var at: Array = state.get("position", [])
 		if at.size() != 3: continue
@@ -24,9 +28,13 @@ static func restore(world: Node3D, states: Array) -> void:
 		if not position.is_finite(): continue
 		cart.global_position = position
 		cart.rotation.y = float(state.get("heading", 0.0))
+		preload("res://systems/vehicle_permissions.gd").restore_state(cart,state,state.get("role","")=="driver")
 		if state.has("seat"):
 			var actor: CharacterBody3D = world.get_node("Player")
-			if cart.board_at(actor, str(state.seat), str(state.get("role", "passenger"))):
+			cart.set_meta("restore_in_progress",true)
+			var boarded: bool = cart.board_at(actor, str(state.seat), str(state.get("role", "passenger")))
+			cart.remove_meta("restore_in_progress")
+			if boarded:
 				if state.has("paid_destination"): _resume_paid(cart,str(state.paid_destination))
 
 static func _resume_paid(cart: Node3D, destination: String) -> void:

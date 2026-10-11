@@ -9,6 +9,7 @@
   },
   "whole_character_width": 1.035,
   "runtime": "characters/npcs/street_residents/workman_02.glb",
-  "wardrobe": "plain working cotton",
+  "wardrobe": "elbow sleeve cotton work shirt",
+  "hair_style": "turban",
   "visual_approved": false
 }
