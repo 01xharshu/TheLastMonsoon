@@ -4,17 +4,22 @@ var failures: Array[String]=[]
 func _initialize() -> void:call_deferred("run")
 func check(ok: bool,label: String) -> void:
  if not ok:failures.append(label);push_error(label)
+func silence_review_input(node: Node) -> void:
+ node.set_process_input(false);node.set_process_unhandled_input(false);node.set_process_unhandled_key_input(false)
+ for child in node.get_children():silence_review_input(child)
 func run() -> void:
  var temporary:=OS.get_environment("TLM_STORY_TEST_DIR")
  if temporary.is_empty() or not temporary.begins_with(OS.get_environment("TMPDIR")):quit(2);return
  var manager: Node=root.get_node("SaveManager");manager.save_root=temporary;manager.pending_slot=0
  var world: Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
+ if DisplayServer.get_name()!="headless":silence_review_input(world)
  if OS.get_environment("TLM_INQUIRY_ISOLATE_RIVER")=="1":
   for node in world.find_children("*","Node",true,false):
    if node.get_script()!=null and node.get_script().resource_path.ends_with("village_river_routine.gd"):node.set_physics_process(false)
   print("STORY WORLD: river routine isolated in fixture")
  for frame in 30:await physics_frame
  var story: Node=world.get_node("DevStory");var inquiry: Node=world.get_node("DevInquiry");var player: CharacterBody3D=world.get_node("Player")
+ check(world.has_node("WorldDistricts/Village") and world.has_node("WorldDistricts/City"),"main world installs separate village and city districts")
  var opening: Node=world.get_node("OpeningSequence")
  check(story.configured and inquiry.stage=="dormant","story waits for main opening")
  var event:=InputEventKey.new();event.keycode=KEY_SPACE;event.pressed=true;opening._input(event)
@@ -55,6 +60,8 @@ func run() -> void:
  story.update_acting(.1,.5)
  check(horse.rigged_anim.current_animation.ends_with("Walk"),"cinematic horse advances its walking clip")
  if OS.get_environment("TLM_STORY_ARRIVAL_NATIVE")=="1":
+  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+  DisplayServer.window_set_size(Vector2i(1280,720))
   story.set_process(true)
   var photos: Dictionary={}
   while story.active and story.cue!="reception":
@@ -66,10 +73,20 @@ func run() -> void:
   story.finish();story.set_process(false)
  var reviewed: Array[String]=[]
  var natural:=OS.get_environment("TLM_STORY_NATURAL")=="1"
- if not natural:story.set_process(false)
+ story.set_process(natural)
+ var standing_position:=Vector3.INF
+ if natural and DisplayServer.get_name()!="headless":
+  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+  DisplayServer.window_set_size(Vector2i(1280,720))
  while story.active:
   if natural:
    await physics_frame
+   if story.cue=="entry" and not standing_position.is_finite():standing_position=horse.global_position
+   if story.cue in ["beating","discard","throw","rescue","support_walk","bed_arrival"]:
+    check(horse.rider==null and (not player.has_meta("mounted_vehicle") or player.get_meta("mounted_vehicle")==null),"natural later acting has no mounted owner")
+    check(Vector2(horse.global_position.x,horse.global_position.z).distance_to(Vector2(standing_position.x,standing_position.z))<.15,"horse stays parked through natural assault and Chacha")
+   if story.cue=="discard" and story.age>.1:check(story.carry_contact_error<.06,"main-world live carry contact")
+   if story.cue in ["rescue","support_walk"] and story.age>.1:check(story.support_contact_error<.06,"main-world live helper contact")
    if story.age>1 and story.cue not in reviewed:
     reviewed.append(story.cue)
     if DisplayServer.get_name()!="headless":
@@ -84,6 +101,11 @@ func run() -> void:
     check(horse.rider==null,"horse completes physical dismount before entry")
    story._process(float(story.beats[story.beat_index].seconds)+.1);await process_frame
  check(story.state=="farm" and player.is_physics_processing(),"main film ends at recovery checkpoint")
+ player.inventory.add_item("talwar",1)
+ var gear: Node=player.get_node("VisualRoot/CharacterVisual").equipment
+ gear.select_weapon(0);gear.stowed=false;gear._refresh()
+ check(player.get_node("TalwarSlash").strike(),"actual horse story arrival allows sword animation")
+ player.get_node("CombatInput").interrupt()
  check(inquiry.destination.global_position==story.community.farm.global_position,"farm map destination integrated")
  await check_arrival_variants(story,inquiry,player,world)
  var community: Node=story.community
@@ -99,6 +121,19 @@ func run() -> void:
  for i in road_residents.size():
   for j in range(i+1,road_residents.size()):check(road_residents[i].global_position.distance_to(road_residents[j].global_position)>2.0,"distributed road residents retain personal spacing")
  print("STORY COMMUNITY DISTRIBUTION: ",road_residents.size()," road walkers")
+ var expansion: Node=world.get_node("PopulationExpansion")
+ var station_sources: Dictionary={}
+ var gate: Vector3=inquiry.station.to_global(Vector3(0,0,20))
+ for key: String in expansion.originals:
+  var source: Node3D=world.get_node_or_null(NodePath(key))
+  if source!=null and source.global_position.distance_to(gate)<45:station_sources[key]=true
+ var near_gate:=0
+ for record: Dictionary in expansion.pending:
+  if station_sources.has(record.source_id) and record.phase.point.distance_to(Vector2(gate.x,gate.z))<25:near_gate+=1
+ for person: Node3D in expansion.pedestrians:
+  if station_sources.has(person.get_meta("counterpart_of","")) and person.global_position.distance_to(gate)<25:near_gate+=1
+ if station_sources.size()>=4:check(near_gate<=ceili(station_sources.size()*.5),"station colleagues spread beyond the entrance")
+ print("STORY REGIONAL DISTRIBUTION: ",near_gate," nearby colleagues from ",station_sources.size()," station sources")
  check(manager.save_game(world,1),"main recovery checkpoint saves")
  var saved_road_position: Vector3=road_residents[0].global_position if not road_residents.is_empty() else Vector3.ZERO
  if not road_residents.is_empty():road_residents[0].global_position+=Vector3(3,0,0)
@@ -124,6 +159,16 @@ func check_arrival_variants(story: Node,inquiry: Node,player: CharacterBody3D,wo
  var started: bool=story.start_inquiry()
  check(started,"mounted cart starts station arrival")
  if not started:cart.queue_free();return
+ if OS.get_environment("TLM_STORY_ARRIVAL_NATIVE")=="1" and DisplayServer.get_name()!="headless":
+  story.set_process(true)
+  var photographed: Dictionary={}
+  while story.active and story.cue!="entry":
+   await process_frame
+   if story.age>1.3 and not photographed.has(story.cue):
+    photographed[story.cue]=true
+    await RenderingServer.frame_post_draw
+    root.get_texture().get_image().save_png(OS.get_environment("TLM_STORY_TEST_DIR").path_join("cart_"+story.cue+".png"))
+  check(cart.rider==null,"natural cart exit completes before entry")
  story.set_process(false)
  while story.active and story.cue!="entry":
   if story.cue=="horse_arrival":

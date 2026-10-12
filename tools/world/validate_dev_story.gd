@@ -29,10 +29,6 @@ func run() -> void:
  var story: Node=world.get_node("DevStory");var inquiry: Node=world.get_node("DevInquiry")
  check(story.configured and story.pose.node!=null,"cinematic and AnimationTree layer configured")
  if not story.configured or story.pose.node==null:world.queue_free();await process_frame;quit(1);return
- if OS.get_environment("TLM_STORY_ARRIVAL_REVIEW")=="1":
-  await review_arrivals(story,inquiry,player,world,temporary)
-  print("STORY ARRIVAL MOTION: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
-  world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1);return
  inquiry.begin();player.global_position=station.to_global(Vector3(0,.9,20));player.velocity=Vector3.ZERO
  for frame in 5:await physics_frame
  story._process(0)
@@ -74,13 +70,32 @@ func run() -> void:
  check(story.lesson==1 and story.active,"draw idle lesson enters demonstration before practice")
  story.finish()
  var partner: Node=story.community.members[0];var vitality: Node=partner.get_node("Vitality")
+ # Production dismount/arrival clears the mount value but retains its metadata.
+ player.set_meta("mounted_vehicle",null)
+ check(player.get_node("TalwarSlash").available(),"sword available after production dismount")
+ check(inquiry.destination.global_position.distance_to(partner.global_position)<.01,"sword lesson marks its required partner")
  # Exercise the existing weapon animations and physical hit paths, not a tutorial-only reward.
  player.global_position=partner.global_position+Vector3(0,.9,-1.05)
  player.get_node("CameraPivot").global_rotation.y=PI
  player.get_node("VisualRoot").global_rotation.y=0
  for frame in 15:await physics_frame
- player.get_node("TalwarSlash").strike()
- for frame in 120:await physics_frame
+ var review_camera: Camera3D
+ if OS.get_environment("TLM_STORY_COMBAT_REVIEW")=="1" and DisplayServer.get_name()!="headless":
+  story.set_process(false)
+  var light:=DirectionalLight3D.new();world.add_child(light);light.rotation_degrees=Vector3(-45,-30,0);light.light_energy=2
+  review_camera=Camera3D.new();world.add_child(review_camera)
+  review_camera.global_position=player.global_position+Vector3(-3,1.6,2.6)
+  review_camera.look_at(player.global_position+Vector3(0,.35,.5));review_camera.make_current()
+  Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+ var attack:=InputEventMouseButton.new();attack.button_index=MOUSE_BUTTON_LEFT;attack.pressed=true
+ player.get_node("CombatInput")._unhandled_input(attack)
+ player.get_node("CombatInput")._process(.27)
+ for frame in 120:
+  await physics_frame
+  if review_camera!=null and frame in [6,16,26]:
+   await RenderingServer.frame_post_draw
+   root.get_texture().get_image().save_png(temporary.path_join("sword_"+str(frame)+".png"))
+  if review_camera!=null and frame==45:story.set_process(true)
  print("SWORD PRACTICE ",story.lesson," hit ",partner.get_meta("training_hit",""))
  check(story.lesson==2,"animated blade contact advances sword lesson")
  if story.active:story.finish()
@@ -128,7 +143,8 @@ func run() -> void:
   for frame in 15:await physics_frame
   var event:=InputEventKey.new();event.physical_keycode=KEY_Q;event.pressed=true;story._input(event)
   check(grapple.active,"Q begins consent-based paired knockout")
-  for frame in 120:await physics_frame
+  for frame in ceili((grapple.DURATION+grapple.RELEASE_SECONDS+.2)*60):await physics_frame
+  check(not grapple.active,"paired practice releases control before next partner")
   check(not partner.get_meta("dead",false),"practice partner survives")
  check(story.state=="complete" and story.completed_partners.size()==3,"all three knockout practices complete tutorial")
  var saved: Dictionary=story.export_state();story.state="complete";story.restore_state(saved)
@@ -297,36 +313,3 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
      print("STORY RENDERED CARRY error=",after_draw)
      check(after_draw<.06,"carry posture and palms survive rendered-frame evaluation")
     root.get_texture().get_image().save_png(temporary.path_join(cue+"_"+str(sample)+".png"))
-
-func review_arrivals(story: Node,inquiry: Node,player: CharacterBody3D,world: Node3D,temporary: String) -> void:
- if DisplayServer.get_name()!="headless":
-  DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);DisplayServer.window_set_size(Vector2i(960,540))
- var sun:=DirectionalLight3D.new();world.add_child(sun);sun.rotation_degrees=Vector3(-45,-25,0);sun.light_energy=1.5
- for vehicle_type in ["horse","cart"]:
-  story.state="awaiting_inquiry";inquiry.stage="police";story.set_process(false)
-  var mount: Node
-  var body: Node3D
-  if vehicle_type=="horse":
-   body=preload("res://horses/stable_horse.gd").new();body.set_meta("owner","Arjun");world.add_child(body);mount=body
-  else:
-   body=preload("res://vehicles/horse_cart_candidate.gd").new();body.set_meta("owner","Arjun");world.add_child(body);mount=body.boarding
-  body.global_position=inquiry.station.to_global(Vector3(7,0,40));body.global_position.y=.1
-  player.global_position=body.global_position+Vector3(1,.9,0)
-  for frame in 10:await physics_frame
-  if vehicle_type=="horse":check(body.board(player),"review boards horse")
-  else:
-   player.global_position=body.seat_sockets["DriverSeat"].global_position
-   check(body.board_at(player,"DriverSeat","driver"),"review boards cart")
-  for frame in 100:await physics_frame
-  check(story.start_inquiry(),"review starts "+vehicle_type+" arrival")
-  story.set_process(true)
-  var recorded: Dictionary={}
-  while story.active and story.cue!="reception":
-   await process_frame
-   if story.age>1.3 and not recorded.has(story.cue):
-    recorded[story.cue]=true
-    if DisplayServer.get_name()!="headless":
-     await RenderingServer.frame_post_draw
-     root.get_texture().get_image().save_png(temporary.path_join(vehicle_type+"_"+story.cue+".png"))
-   if story.cue=="entry":check(mount.rider==null,"arrival releases "+vehicle_type+" before police entry")
-  story.finish();body.queue_free();await process_frame

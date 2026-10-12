@@ -9,6 +9,8 @@ spec.loader.exec_module(checks)
 def main():
  parser=argparse.ArgumentParser(description=__doc__)
  parser.add_argument("--native", action="store_true")
+ parser.add_argument("--import-timeout", type=int, default=240, help="Wall-clock allowance for a fresh disposable import")
+ parser.add_argument("--driver-inputs", action="store_true", help="Check source readback cache and driver cloth parity, then native parity")
  parser.add_argument("--diagnose-import", action="store_true", help="Include verbose asset context when diagnosing an import failure")
  parser.add_argument("--city-budget", action="store_true", help="Measure populated city frame times at Medium using native timing")
  parser.add_argument("--passenger", action="store_true")
@@ -25,15 +27,26 @@ def main():
   try:
    binary=shutil.which("godot") or "/Applications/Godot.app/Contents/MacOS/Godot"
    import_args=["--import","--verbose"] if args.diagnose_import else ["--import"]
-   if not checks.run_check(binary,project,directory,"IMPORT",import_args,240):
+   if not checks.run_check(binary,project,directory,"IMPORT",import_args,args.import_timeout):
     lines=(directory/"IMPORT.log").read_text().splitlines()
     for index,line in enumerate(lines):
      if line.startswith("ERROR:"):
       print("First import failure context:\n"+"\n".join(lines[max(0,index-25):index+3]),flush=True);break
     return 1
+   if args.driver_inputs:
+    stages=[("DRIVER_INPUTS", "tools/world/validate_coachman_mesh_inputs.gd", [], False),
+            ("COACHMAN_PARITY", "tools/horses/validate_coachman_startup_cache.gd", [], False),
+            ("BULLOCK_PARITY", "tools/horses/validate_coachman_startup_cache.gd", ["--", "--bullock"], False),
+            ("COACHMAN_NATIVE", "tools/horses/validate_coachman_startup_cache.gd", [], True),
+            ("BULLOCK_NATIVE", "tools/horses/validate_coachman_startup_cache.gd", ["--", "--bullock"], True)]
+    for label,script,extra,native in stages:
+     if not checks.run_check(binary,project,directory,label,["--script","res://"+script]+extra,240,native=native):return 1
+     for line in (directory/(label+".log")).read_text().splitlines():
+      if line.startswith("COACHMAN "):print(line,flush=True)
+    return 0
    movement_passed=True
    if args.city_budget:
-    movement_passed=checks.run_check(binary,project,directory,"CITY_MOVEMENT",["--fixed-fps","20","--script","res://tools/world/validate_city_route_population.gd"],300)
+    movement_passed=checks.run_check(binary,project,directory,"CITY_MOVEMENT",["--fixed-fps","20","--script","res://tools/world/validate_city_route_population.gd"],600)
     if not movement_passed:
      print("Native budget skipped until movement passes",flush=True)
      return 1

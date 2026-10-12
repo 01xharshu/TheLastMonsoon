@@ -44,7 +44,9 @@ func _init(owner: Node3D, skeleton: Skeleton3D) -> void:
 		arrays[Mesh.ARRAY_VERTEX]=vertices;arrays[Mesh.ARRAY_NORMAL]=normals;arrays[Mesh.ARRAY_TEX_UV]=uv;arrays[Mesh.ARRAY_INDEX]=ids
 		var mesh := ArrayMesh.new();mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_DYNAMIC_UPDATE)
 		mesh.surface_set_material(0,mat);mesh.custom_aabb=AABB(Vector3(-1,-.1,-1),Vector3(2,2,2));node.mesh=mesh
-		pieces.append({"node":node,"mesh":mesh,"border":border,"rows":row_count})
+		pieces.append({"node":node,"mesh":mesh,"border":border,"rows":row_count,
+			"normal_offset":RenderingServer.mesh_surface_get_format_offset(mesh.surface_get_format(0),vertices.size(),Mesh.ARRAY_NORMAL),
+			"normal_stride":RenderingServer.mesh_surface_get_format_normal_tangent_stride(mesh.surface_get_format(0),vertices.size())})
 
 func _point(name: String) -> Vector3:
 	return actor.to_local(rig.to_global(rig.get_bone_global_pose(rig.find_bone(name)).origin))
@@ -199,10 +201,22 @@ func update() -> void:
 				normals[row*segments+i]=up.cross(across).normalized()
 		var mesh: ArrayMesh=piece.mesh
 		mesh.surface_update_vertex_region(0,0,points.to_byte_array())
-		var packed := PackedByteArray();packed.resize(normals.size()*4)
+		# Godot generates tangents for a surface with normals. Its packed
+		# normal/tangent records are interleaved, even without ARRAY_TANGENT
+		# in the original arrays. Use the actual renderer stride.
+		var stride:int=piece.normal_stride
+		var packed := PackedByteArray();packed.resize(normals.size()*stride)
 		for i in normals.size():
 			var oct: Vector2=normals[i].octahedron_encode()
-			packed.encode_u16(i*4,int(clampf(oct.x,0,1)*65535));packed.encode_u16(i*4+2,int(clampf(oct.y,0,1)*65535))
-		var offset: int=RenderingServer.mesh_surface_get_format_offset(mesh.surface_get_format(0),points.size(),Mesh.ARRAY_NORMAL)
-		mesh.surface_update_vertex_region(0,offset,packed)
+			packed.encode_u16(i*stride,int(clampf(oct.x,0,1)*65535));packed.encode_u16(i*stride+2,int(clampf(oct.y,0,1)*65535))
+			if stride>=8:
+				var normal:Vector3=normals[i]
+				var tangent:Vector3=Vector3(normal.z,-normal.x,normal.y).cross(normal).normalized()
+				var tangent_oct:Vector2=tangent.octahedron_encode()
+				tangent_oct.y=maxf(tangent_oct.y,1.0/32767.0)*.5+.5
+				var tx:int=int(clampf(tangent_oct.x,0,1)*65535)
+				var ty:int=int(clampf(tangent_oct.y,0,1)*65535)
+				if tx==0 and ty==65535:tx=65535
+				packed.encode_u16(i*stride+4,tx);packed.encode_u16(i*stride+6,ty)
+		mesh.surface_update_vertex_region(0,piece.normal_offset,packed)
 		piece.node.set_meta("river_sari_points",points)

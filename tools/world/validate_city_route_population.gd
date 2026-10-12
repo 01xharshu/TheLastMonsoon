@@ -20,6 +20,7 @@ func run() -> void:
  clock._update_readable_time(true)
  var player:Node3D=world.get_node("Player")
  player.set_physics_process(false)
+ print("CITY_POPULATION_PHASE spawning")
  var start:=Time.get_ticks_msec()
  while not population.ready_population and Time.get_ticks_msec()-start<180000:
   await process_frame
@@ -27,6 +28,7 @@ func run() -> void:
   print("CITY_POPULATION_RESULT ",JSON.stringify({"passed":false,"pending":population.pending.size(),"errors":["population did not finish spawning within 180 seconds"]}))
   root.get_node("SaveManager").quit_game(1)
   return
+ print("CITY_POPULATION_PHASE sampling people=",population.pedestrians.size()," police=",population.patrols.size()," carts=",population.carts.size())
  paused=false
  population.set_process(false)
  var origins:Dictionary={};var route_counts:Dictionary={}

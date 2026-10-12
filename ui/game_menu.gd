@@ -125,6 +125,7 @@ func _hide_gameplay_ui(node: Node) -> void:
 
 # ── Input ────────────────────────────────────────────────────
 func _input(event: InputEvent) -> void:
+	if world.get_node("Player").health <= 0.0: return
 	if overlay.visible and page=="settings" and (event.is_action_pressed("pause") or (event is InputEventJoypadButton and event.pressed and event.button_index==JOY_BUTTON_B)):
 		var settings:=column.find_child("SettingsPanel",true,false)
 		if settings!=null and settings.handle_back():

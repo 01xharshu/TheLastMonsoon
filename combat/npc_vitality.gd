@@ -45,12 +45,12 @@ func take_damage(amount: float) -> void:
 
 func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool:
 	if dead or not is_finite(amount) or amount <= 0.0: return false
-	if actor.get_meta("knocked_out",false) and kind in ["punch","kick","takedown","abuse"]:return false
+	if actor.get_meta("knocked_out",false) and kind in ["punch","kick","takedown","silent_takedown","abuse"]:return false
 	if attacker != null and attacker.name == "Player" and actor.get_meta("combat_faction","indian") == "indian": return false
 	actor.set_meta("last_attacker",attacker)
-	var reported_kind := "murder" if amount>=health and kind not in ["punch","kick","takedown","abuse"] else kind
+	var reported_kind := "murder" if amount>=health and kind not in ["punch","kick","takedown","silent_takedown","abuse"] else kind
 	actor.set_meta("last_hit_kind",reported_kind)
-	if attacker != null and attacker.name == "Player":
+	if attacker != null and attacker.name == "Player" and kind != "silent_takedown":
 		# Capture the incident before lethal damage removes the victim's awareness.
 		for observer in get_tree().get_nodes_in_group("police_crime_observers"):
 			if observer.has_method("record_incident"): observer.report_assault(actor,attacker)
@@ -58,7 +58,7 @@ func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool
 	health = maxf(0.0,health-amount)
 	if actor.has_method("combat_react"): actor.combat_react("down" if actor.get_meta("knocked_out",false) else "hit" if health > 0 else "fall")
 	if health > 0: return true
-	if kind in ["punch","kick","takedown","abuse"]:
+	if kind in ["punch","kick","takedown","silent_takedown","abuse"]:
 		health=1.0
 		actor.set_meta("knocked_out",true)
 		actor.set("movement_enabled",false)

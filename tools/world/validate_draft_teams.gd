@@ -8,6 +8,8 @@ func run()->void:
 	var floor:=StaticBody3D.new();world.add_child(floor);var support:=CollisionShape3D.new();var box:=BoxShape3D.new();box.size=Vector3(100,.1,100);support.shape=box;support.position.y=-.05;floor.add_child(support)
 	for type in ["horse_cart_candidate","bullock_cart","family_carriage_candidate"]:
 		var cart:Node3D=load("res://vehicles/"+type+".gd").new();cart.position.x=float(["horse_cart_candidate","bullock_cart","family_carriage_candidate"].find(type))*12;world.add_child(cart)
+		# Autonomous traffic may update on its first tick, before deferred team setup.
+		cart.set_forward_motion(.2, 1.0 / 60.0)
 		for frame in 5:await physics_frame
 		var team:Node=cart.get_node("DraftTeam")
 		check(team.slots.size()==(1 if type=="horse_cart_candidate" else 2),type+": correct slots")

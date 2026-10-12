@@ -96,6 +96,9 @@ func bake() -> void:
 			bake_nature(origin, tx, tz, nature)
 		print("BAKE ROW ", tz + 1, "/12")
 	bake_water()
+	var port_bridge := preload("res://world/suryagarh/port_ravine_bridge.gd").build()
+	attach(port_bridge, world)
+	for node in port_bridge.find_children("*", "", true, false): node.owner = world
 	bake_horizon()
 	var sites := Node3D.new()
 	sites.name = "FutureSiteReserves"

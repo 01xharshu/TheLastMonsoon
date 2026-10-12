@@ -1,4 +1,5 @@
 extends RefCounted
+const MeshInputs = preload("res://vehicles/coachman_mesh_inputs.gd")
 ## Actual posed body triangles, spatially indexed in cart coordinates.
 const CELL := .12
 var triangles: Array[Dictionary] = []
@@ -53,7 +54,7 @@ func build_body(actor: Node3D,coach: Node3D) -> void:
   if node.skin == null: continue
   for surface in node.mesh.get_surface_count():
    if node.mesh.surface_get_array_len(surface) < 14000: continue
-   var arrays: Array = node.mesh.surface_get_arrays(surface)
+   var arrays: Array = MeshInputs.arrays(node.mesh,surface,coach)
    var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
    if vertices.size() < 14000: continue
    var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
@@ -194,7 +195,7 @@ func audit_garment(driver: Node3D,cart: Node3D) -> Dictionary:
  for piece in driver.seated_cloth.pieces:
   var node: MeshInstance3D = piece.node
   for surface in node.mesh.get_surface_count():
-   var arrays: Array = node.mesh.surface_get_arrays(surface)
+   var arrays: Array = MeshInputs.arrays(node.mesh,surface,cart)
    var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
    var posed := PackedVector3Array()
    for point in positions:

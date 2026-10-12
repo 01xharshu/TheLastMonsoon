@@ -191,7 +191,6 @@ func record_incident(kind: String, location: Vector3, witnesses: Array[String], 
 	last_known=location
 	evidence.append({"kind":kind,"location":location,"witnesses":witnesses,"time":Time.get_ticks_msec()})
 	if evidence.size()>32: evidence.pop_front()
-	player.inventory.message_requested.emit("Crime reported · %d star%s" % [wanted_level,"s" if wanted_level!=1 else ""])
 	return true
 
 func report_vehicle_theft(actor: CharacterBody3D, vehicle: Node3D, kind: String) -> void:

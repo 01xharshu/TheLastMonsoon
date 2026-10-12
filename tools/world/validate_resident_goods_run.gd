@@ -26,6 +26,9 @@ func run()->void:
 	check(work!=null and work.goods.size()==3,"worker and three physical consignments")
 	if work==null:print("RESIDENT_GOODS_RESULT FAIL ",failures);quit(1);return
 	work.set_physics_process(false)
+	if "--external" in OS.get_cmdline_user_args():
+		work.supplier_leg=30.0 if depot else 53.0
+		work.supply_bench.position.x+=work.supplier_leg
 	if not output.is_empty():
 		root.get_node("SaveManager").apply_options()
 		var sun:=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-50,-30,0);world.add_child(sun)
@@ -84,7 +87,7 @@ func run()->void:
 		for frame in 1800:
 			work.tick(.1);await physics_frame
 			if work.freight_phase=="awaiting_supply":break
-		print("FREIGHT_STATE ",work.freight_phase," distance=",work.freight_distance," cart=",work.cart.global_position," worker=",work.actor.global_position)
+		print("FREIGHT_STATE ",work.freight_phase," distance=",work.freight_distance," cart=",work.cart.global_position," worker=",work.actor.global_position," obstacle=",work.freight_obstacle)
 		if work.freight_phase!="awaiting_supply":
 			for shape in work.cart.boarding.clearance_shapes:
 				var q:=PhysicsShapeQueryParameters3D.new();q.shape=shape.shape;q.transform=Transform3D(work.cart.global_basis,work.cart.global_position+work.cart.global_basis*shape.position);q.exclude=work.cart.boarding._vehicle_exclusions();q.collision_mask=1
@@ -116,10 +119,11 @@ func run()->void:
 				work.restore_state(incoming_state);incoming_saved=true
 				check(work.cart.global_position.distance_to(incoming_at)<.001,"mid-arrival save retains moving cart")
 			if work.phase!="rest":break
-		print("SUPPLIER_END phase=",work.freight_phase," waypoint=",work.freight_waypoint," actor=",work.actor.global_position," distance=",work.freight_distance)
+		print("SUPPLIER_END phase=",work.freight_phase," waypoint=",work.freight_waypoint," actor=",work.actor.global_position," distance=",work.freight_distance," cart=",work.cart.global_position," obstacle=",work.freight_obstacle," issue_hand=",work.issue_hand_error)
 		print("SUPPLIER_CONTACT max_hand=",loading_hand," saved_carry=",load_saved," saved_arrival=",incoming_saved)
 		check(load_saved and incoming_saved,"physical loading and arrival saves both exercised")
 		check(loading_hand<.025,"supplier loading palms within 25 mm")
+		check(work.issue_hand_error<.025,"issuing parcel palms within 25 mm")
 		check(work.phase=="collect" and work.freight_phase=="parked","incoming cart parks before worker resumes unloading")
 		check(work.cart.global_position.distance_to(initial_cart)<.1,"cart returns to its assigned receiving bay")
 	print("RESIDENT_GOODS_RESULT ","PASS" if failures.is_empty() else "FAIL"," workplace=",work.work_kind," delivered=",work.delivered," blocked=",work.blocked," max_hand=",max_hand," failures=",failures)

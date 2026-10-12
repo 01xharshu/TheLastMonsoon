@@ -13,6 +13,7 @@ var contact_age := 0.0
 var passing_target := Vector2.INF
 var stalled_age := 0.0
 var passing_retry := 0.0
+var retreat_remaining := 0.0
 
 func _ready() -> void:
  var ground=preload("res://world/suryagarh/tree_trunk_collision.gd")
@@ -47,6 +48,9 @@ func _physics_process(delta: float) -> void:
  if accumulated<minf(cadence,.1):return
  delta=accumulated;accumulated=0
  passing_retry=maxf(0,passing_retry-delta)
+ if retreat_remaining>0:
+  retreat(delta)
+  return
  traffic_age-=delta
  if traffic_age<=0:
   traffic_age=.5
@@ -114,6 +118,39 @@ func plan_pass() -> void:
     if clear and not cart.boarding._clearance_at(destination):clear=false
    cart.rotation.y=original_yaw
    if clear:passing_target=point;stalled_age=0;return
+ # A cart pinned beside a person or boundary cannot safely pivot. Back away
+ # using the same supported body clearance before attempting another pass.
+ passing_target=Vector2.INF
+ retreat_remaining=2.5
+
+func retreat(delta:float) -> void:
+ var before:=cart.global_position
+ var next:Vector3=before+cart.global_basis.z*minf(.65*delta,retreat_remaining)
+ var space:=cart.get_world_3d().direct_space_state
+ var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*2,next-Vector3.UP*3,ground_collision_mask,cart.boarding._vehicle_exclusions())
+ var support:=space.intersect_ray(ray)
+ var clear:=not support.is_empty()
+ if clear:
+  next.y=support.position.y
+  clear=support.normal.y>=.6 and absf(next.y-before.y)<.35 and cart.boarding._clearance_at(next)
+ if clear:
+  var terrain:=preload("res://world/suryagarh/tree_trunk_collision.gd").terrain_cache(cart)
+  for shape:CollisionShape3D in cart.boarding.clearance_shapes:
+   var query:=PhysicsShapeQueryParameters3D.new()
+   query.shape=shape.shape;query.transform=Transform3D(cart.global_basis,before+cart.global_basis*shape.position)
+   query.motion=next-before;query.margin=.008;query.collision_mask=1
+   query.exclude=terrain.rids+cart.boarding._vehicle_exclusions()
+   if space.cast_motion(query)[0]<.99:clear=false;break
+ if clear:
+  cart.global_position=next
+  var travelled:=before.distance_to(next)
+  distance_travelled+=travelled;retreat_remaining=maxf(0,retreat_remaining-travelled)
+  cart.boarding.collision_body.force_update_transform()
+  cart.boarding.speed=-.65;cart.set_forward_motion(-.65,delta)
+ else:
+  retreat_remaining=0;cart.boarding.speed=0;cart.set_forward_motion(0,delta)
+ if retreat_remaining<=0:stalled_age=0;passing_retry=0
+
 
 func align_road_grade() -> void:
  var space:=cart.get_world_3d().direct_space_state

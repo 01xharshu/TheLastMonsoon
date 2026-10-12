@@ -9,6 +9,7 @@ extends Interactable
 
 
 @export var water_available_per_fill: float = 10.0
+var breakage: StaticBody3D
 
 
 # =========================================================
@@ -19,6 +20,23 @@ func _ready() -> void:
 	interaction_icon = "water"
 	interaction_text = "Fill Water Bag"
 	secondary_interaction_text = ""
+	# Only the earthen vessel scene is fragile; the village masonry well uses
+	# this same water-source script and must retain its normal behaviour.
+	var shells := find_children("EarthenShell","MeshInstance3D",true,false)
+	if not shells.is_empty():
+		var component = preload("res://objects/household/breakable_earthenware.gd").new()
+		component.visual_root = self
+		component.vessel_size = 1.8
+		component.position = to_local(shells[0].global_position)
+		breakage = component
+		add_child(component)
+		component.broken.connect(func(_reason):
+			water_available_per_fill = 0.0
+			collision_layer = 0
+			interaction_text = "Broken water pot")
+
+func take_damage(amount: float) -> void:
+	if breakage: breakage.take_damage(amount)
 
 func interact(player: CharacterBody3D) -> void:
 	_fill_water_bag(player)
@@ -28,6 +46,8 @@ func secondary_interact(_player: CharacterBody3D) -> void:
 	pass
 
 func _fill_water_bag(player: CharacterBody3D) -> void:
+	if water_available_per_fill <= 0:
+		return
 
 	var inventory := (
 		player.get_node_or_null(

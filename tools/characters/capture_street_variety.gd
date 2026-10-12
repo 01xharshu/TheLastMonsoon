@@ -22,7 +22,7 @@ func run()->void:
 	
 	for actor in actors:
 		for side in [-1,1]:
-			camera.global_position=actor.global_position+Vector3(.3,1.6,side*2.4);camera.look_at(actor.global_position+Vector3(0,1.1,0))
+			camera.global_position=actor.global_position+Vector3(.3,1.3,side*3.1);camera.look_at(actor.global_position+Vector3(0,.9,0))
 			for frame in 45:
 				actor._set_animation(&"walk",1.0/60);await physics_frame
 			await process_frame;RenderingServer.force_draw(false)

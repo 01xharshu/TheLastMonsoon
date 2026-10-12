@@ -14,7 +14,8 @@ func _ready() -> void:
  var stream := preload('res://systems/audio_edges.gd').prepare(load('res://audio/world/wind.wav'),true)
  ambience.stream=stream;ambience.volume_db=-60
 func sample(at: Vector3) -> Vector3:
- var gust := .78+.22*sin(elapsed*.71-at.x*.015-at.z*.011)
+ var phase := elapsed*.43-at.x*.015-at.z*.011
+ var gust := .78+.14*sin(phase)+.06*sin(phase*2.37+1.8)+.02*sin(phase*5.13)
  return Vector3(direction.x,0,direction.y)*speed*gust
 func _process(delta: float) -> void:
  elapsed+=delta

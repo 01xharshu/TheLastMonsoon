@@ -28,6 +28,7 @@ var health: float = MAX_HEALTH
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or health <= 0.0: return
 	health = maxf(0.0, health - amount)
+	if health <= 0.0: get_node("PlayerSafety").show_death.call_deferred()
 	WorldAudio.play_at("impact",global_position)
 	var climb := get_node_or_null("ClimbComponent")
 	if climb != null and climb.active: climb.release_grip()
@@ -183,6 +184,9 @@ var interaction_index: Node
 # =========================================================
 
 func _ready() -> void:
+	var safety := preload("res://player/player_safety.gd").new()
+	safety.name = "PlayerSafety"
+	add_child(safety)
 	preload("res://systems/action_permissions.gd").install(self)
 	if not inventory.has_water_bag():
 		inventory.add_item("water_bag", 1)
@@ -281,6 +285,10 @@ func _unhandled_input(
 				else:
 					_try_primary_interaction()
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q and (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null) == null and not get_meta("climbing",false):
+		var restraint := get_node_or_null("RearGrapple")
+		if restraint != null and (restraint.active or restraint.begin()):
+			get_viewport().set_input_as_handled()
+			return
 		_try_secondary_interaction()
 
 
@@ -321,6 +329,14 @@ func _unhandled_input(
 func _physics_process(
 	delta: float
 ) -> void:
+	if health <= 0.0: return
+	var escape_remaining := float(get_meta("river_escape_remaining", 0.0))
+	if escape_remaining > 0.0:
+		set_meta("river_escape_remaining", maxf(0.0, escape_remaining-delta))
+		velocity.y -= 9.8*delta
+		_move_with_fall_damage()
+		if escape_remaining <= delta: get_node("PlayerSafety").finish_river_escape()
+		return
 	if get_meta("tutorial_reading",false):
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
@@ -336,11 +352,11 @@ func _physics_process(
 	if has_meta("combat_dodge"):
 		var direction: Vector3=get_meta("combat_dodge")
 		velocity.x=direction.x*3.2;velocity.z=direction.z*3.2
-		_apply_gravity(delta);move_and_slide();return
+		_apply_gravity(delta);_move_with_fall_damage();return
 	if get_meta("river_action", "") != "":
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
-		move_and_slide()
+		_move_with_fall_damage()
 		_hide_interaction_labels()
 		return
 
@@ -384,7 +400,7 @@ func _physics_process(
 		)
 
 
-		move_and_slide()
+		_move_with_fall_damage()
 
 
 		_hide_interaction_labels()
@@ -418,10 +434,7 @@ func _physics_process(
 	var intended_horizontal := Vector3(velocity.x, 0.0, velocity.z) * delta
 	step_ground_grace = 0.15 if is_on_floor() else maxf(0.0, step_ground_grace - delta)
 	step_up_grace = maxf(0.0, step_up_grace - delta)
-	var landing_speed: float = -velocity.y if not is_on_floor() else 0.0
-	move_and_slide()
-	if is_on_floor() and landing_speed > 9.0 and not is_swimming and not get_meta("climbing",false) and not has_meta("mounted_vehicle"):
-		take_damage((landing_speed - 9.0) * 7.0)
+	_move_with_fall_damage()
 	_try_walk_step(delta, intended_horizontal)
 	_try_walk_step_down()
 	# Only distance actually travelled counts as sprint effort. A wall or held
@@ -435,6 +448,12 @@ func _physics_process(
 	_update_interaction()
 	_advance_interaction_hold(delta)
 
+
+func _move_with_fall_damage() -> void:
+	var landing_speed := -velocity.y if not is_on_floor() else 0.0
+	move_and_slide()
+	if is_on_floor() and landing_speed > 9.0 and not is_swimming and not get_meta("climbing",false) and (get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null) == null:
+		take_damage(MAX_HEALTH if landing_speed >= 15.3 else (landing_speed - 9.0) * 7.0)
 
 func _try_walk_step(delta: float, horizontal: Vector3) -> void:
 	step_lift = move_toward(step_lift, 0.0, delta * 4.0)
@@ -778,6 +797,7 @@ func _handle_jump() -> void:
 		)
 		and is_on_floor()
 		and not is_swimming
+		and preload("res://player/contextual_jump.gd").new().available(self,visual_root.global_basis.z,max_walk_step_height,jump_velocity*jump_velocity/(2.0*gravity))
 	):
 
 		velocity.y = (

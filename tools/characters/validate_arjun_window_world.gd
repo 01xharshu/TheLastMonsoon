@@ -12,17 +12,21 @@ func _run() -> void:
 	climb.set_physics_process(false)
 	var windows := get_tree().get_nodes_in_group("climbable_windows")
 	print("WINDOW WORLD ready | registered=",windows.size())
+	var house_filter := ""
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--house="): house_filter = "BhairavpurHouse"+argument.trim_prefix("--house=")
 	var single_window := OS.get_cmdline_user_args().has("--single-window")
 	var open_windows := 0
 	var paired := 0
 	for portal in windows:
 		if portal.get_parent().get_meta("window_access","") != "open": continue
+		if not house_filter.is_empty() and str(portal.get_parent().name) != house_filter: continue
 		if single_window and open_windows > 0: continue
 		open_windows += 1
 		var both := true
 		for direction in [-1.0,1.0]:
 			var crossed := false
-			for lane in [0.0,.5,-.5]:
+			for lane in [0.0,.5,-.5,.65,-.65]:
 				if await _cross(actor,climb,portal,direction,lane):
 					crossed = true
 					break
@@ -31,7 +35,7 @@ func _run() -> void:
 				print("WINDOW WORLD blocked: ",portal.get_path()," side=",direction)
 				both = false
 		if both: paired += 1
-	var passed := open_windows >= (1 if single_window else 8) and paired == open_windows
+	var passed := open_windows >= (1 if single_window else (2 if not house_filter.is_empty() else 8)) and paired == open_windows
 	print("WINDOW WORLD: ","PASS" if passed else "FAIL"," | registered=",windows.size()," open=",open_windows," crossed_both_ways=",paired," normal_Space_and_cloth=true")
 	world.queue_free()
 	for frame in 3: await get_tree().physics_frame
@@ -68,15 +72,36 @@ func _cross(actor: CharacterBody3D, climb: Node, portal: Node3D, direction: floa
 	Input.parse_input_event(press)
 	var started: bool = climb.window.active and climb.window.profile == "window"
 	var gathered := false
+	var captured := false
+	var review_dir := OS.get_environment("TLM_WINDOW_REVIEW_DIR")
 	for frame in 300:
 		await get_tree().physics_frame
 		started = started or (climb.window.active and climb.window.profile == "window")
 		if started and tunic.mesh != original_tunic and tunic.mesh.get_blend_shape_count() > 0:
 			gathered = gathered or tunic.get_blend_shape_value(0) > .9
+		if started and not captured and climb.window.progress > .48 and not review_dir.is_empty() and DisplayServer.get_name() != "headless":
+			captured = true
+			await get_tree().process_frame
+			RenderingServer.force_draw(false)
+			get_viewport().get_texture().get_image().save_png(review_dir.path_join("world_%s_%s.png"%[portal.get_parent().name,str(direction)]))
 		if started and not climb.active: break
+		if not started and climb.active and not climb.window.active: break
+	if not started and climb.active:
+		# A blocked strip may catch ordinary masonry. Release before relocating
+		# to the next strip, as a player would, rather than teleport a held grip.
+		climb.release_grip()
+		for frame in 120:
+			await get_tree().physics_frame
+			if not climb.active: break
+		if climb.active:
+			push_error("Failed approach did not release its masonry grip")
+			get_tree().quit(1)
+			return false
 	actor.set_physics_process(false)
 	climb.set_physics_process(false)
-	if not started: return false
+	if not started:
+		print("WINDOW WORLD no catch | lane=",lane," floor=",floor_hit.collider.get_path()," floor_y=",floor_hit.position.y," actor=",actor.global_position," grounded=",actor.is_on_floor()," active=",climb.active)
+		return false
 	if climb.active or climb.window.active or actor.collision_mask == 0 or actor.get_meta("climbing",false):
 		push_error("WINDOW WORLD: input crossing failed to restore collision")
 		get_tree().quit(1)

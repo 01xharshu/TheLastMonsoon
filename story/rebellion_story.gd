@@ -126,7 +126,7 @@ func destination() -> Dictionary:
  return {"position":at+Vector3.UP,"label":objective(),"endpoint":""}
 func set_stage(next: String) -> void:
  stage=next;age=0
- clock.set_mission_clock_slowed(&"mangal_weapon_training",stage in ["inspect","load","shoot"])
+ clock.set_mission_daylight_locked(&"mangal_weapon_training",stage in ["inspect","load","shoot"])
  if stage=="complete":
   inquiry.destination.set_meta("parking_label","")
   if story_map.waypoint.is_equal_approx(map_waypoint):story_map.waypoint=Vector2.INF;story_map.selected_site=""
@@ -502,7 +502,7 @@ func restore_state(data: Dictionary) -> void:
 func _exit_tree() -> void:
  if is_instance_valid(action_service):action_service.release(cinematic_lease)
  outfit.remove()
- if is_instance_valid(clock):clock.set_mission_clock_slowed(&"mangal_weapon_training",false)
+ if is_instance_valid(clock):clock.set_mission_daylight_locked(&"mangal_weapon_training",false)
  if is_instance_valid(player) and active:
   player.set_meta("story_cinematic",false);player.set_meta("document_busy",prior_busy);player.set_physics_process(prior_physics)
   for i in hidden_ui.size():

@@ -2,9 +2,12 @@ extends Node3D
 ## Authored service rules, not historical tariffs. Save state lives in this ledger.
 const Service = preload("res://world/suryagarh/settlements/institution_service.gd")
 const Horse = preload("res://horses/stable_horse.gd")
+signal stock_changed(kind:String,amount:int)
 var ledger: Dictionary = {}
 var stock := {"ration":12,"fodder":16,"dressings":8}
 var stock_day := 1
+var delivery_receipts:Dictionary={}
+var physical_stock_delivery:=false
 var pending: Dictionary = {}
 var patient: CharacterBody3D
 var horse: CharacterBody3D
@@ -19,6 +22,7 @@ var chapel_phase := "closed"
 
 func configure(site: Node3D) -> void:
 	district = site
+	physical_stock_delivery=true
 	add_to_group("institution_operations")
 	var world: Node = preload("res://systems/world_context.gd").find_world(site)
 	if world == null:
@@ -63,9 +67,22 @@ func _time_changed(day: int,hour: int,_minute: int) -> void:
 	# A time rewind never replenishes supplies or reopens an already used service.
 	if day > stock_day:
 		stock_day = day
-		stock = {"ration":12,"fodder":16,"dressings":8}
+		if not physical_stock_delivery:stock={"ration":12,"fodder":16,"dressings":8}
 	chapel_phase = "service" if hour == 8 or hour == 18 else "closed"
 	set_meta("chapel_phase",chapel_phase)
+
+func receive_consignment(kind:String,shipment:int,index:int)->bool:
+	if kind not in ["hospital","depot"]:return false
+	var ticket:int=shipment*3+index
+	if ticket<=int(delivery_receipts.get(kind,-1)):return false
+	delivery_receipts[kind]=ticket
+	if kind=="hospital":
+		stock.dressings=mini(16,int(stock.dressings)+3);stock_changed.emit(kind,int(stock.dressings))
+	else:
+		stock.ration=mini(16,int(stock.ration)+4)
+		stock.fodder=mini(16,int(stock.fodder)+5)
+		stock_changed.emit(kind,int(stock.ration))
+	return true
 
 func request(id: String,actor: CharacterBody3D) -> bool:
 	var inv: InventoryComponent = actor.get_node("InventoryComponent")
@@ -146,10 +163,12 @@ func _finish() -> void:
 				cancel(); return
 			inv.remove_item("rupees",2)
 			stock.dressings -= 1
+			stock_changed.emit("hospital",int(stock.dressings))
 			patient.health = minf(patient.MAX_HEALTH,patient.health+50)
 		"issue":
 			if stock.ration <= 0: cancel(); return
 			stock.ration -= 1
+			stock_changed.emit("depot",int(stock.ration))
 			inv.add_item("roti",2)
 		"fodder":
 			if stock.fodder <= 0: cancel(); return
@@ -174,7 +193,7 @@ func _finish() -> void:
 
 func export_state() -> Dictionary:
 	# Mid-service saves restore to an uncharged idle state, never an unpaid reward.
-	return {"ledger":ledger.duplicate(true),"stock":stock.duplicate(true),"stock_day":stock_day,"horse_care":{"feed":horse.get_meta("care_feed",0),"water":horse.get_meta("care_water",0),"groom":horse.get_meta("care_groom",0)}}
+	return {"ledger":ledger.duplicate(true),"stock":stock.duplicate(true),"stock_day":stock_day,"delivery_receipts":delivery_receipts.duplicate(),"horse_care":{"feed":horse.get_meta("care_feed",0),"water":horse.get_meta("care_water",0),"groom":horse.get_meta("care_groom",0)}}
 
 func restore_state(data: Dictionary) -> void:
 	cancel()
@@ -184,6 +203,8 @@ func restore_state(data: Dictionary) -> void:
 		for key in saved:
 			if saved[key] == true: ledger[str(key)] = true
 	stock_day = maxi(1,int(data.get("stock_day",clock.current_day)))
+	var receipts:Variant=data.get("delivery_receipts",{})
+	delivery_receipts=receipts.duplicate() if receipts is Dictionary else {}
 	var supplies: Variant = data.get("stock",{})
 	for key in stock:
 		stock[key] = clampi(int(supplies.get(key,stock[key])),0,16) if supplies is Dictionary else stock[key]

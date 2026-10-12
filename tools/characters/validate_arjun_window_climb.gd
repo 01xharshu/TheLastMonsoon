@@ -111,6 +111,7 @@ func _run() -> void:
         failures += 1
         print("FAIL tunic was not restored after landing")
     for node in original_sash: assert(node.mesh == original_sash[node],"Landing retained gathered sash")
+    var built_after_forward: int = climb.window.clothing_fit.meshes_built
     actor.global_position = Vector3(.95,.94,0)
     actor.visual_root.global_rotation.y = -PI/2
     if not climb.window.try_start(actor):
@@ -135,6 +136,7 @@ func _run() -> void:
         if tunic.mesh != original_tunic:
             failures += 1
             print("FAIL reverse landing retained climbing tunic")
+    assert(climb.window.clothing_fit.meshes_built == built_after_forward,"Reverse crossing rebuilt cached garments")
     for node in original_sash: assert(node.mesh == original_sash[node],"Reverse landing retained gathered sash")
     actor.global_position = Vector3(-.9,.94,0)
     actor.visual_root.global_rotation.y = PI/2

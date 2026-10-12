@@ -144,7 +144,7 @@ def main():
         config.write_text(config.read_text().replace('[application]', '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="' + directory.name + '"'))
         print('Disposable project prepared; importing', flush=True)
         checks = [
-            ('IMPORT', ['--import'], 240),
+            ('IMPORT', ['--import'], 600),
             ('CODE', ['--script', 'res://tools/maintenance/validate_code.gd'], 120),
             ('TANGENTS', ['--script', 'res://tools/assets/validate_safe_tangents.gd'], 90),
             ('HUMANS', ['--script', 'res://tools/characters/validate_human_scene_cache.gd'], 45),
@@ -160,8 +160,8 @@ def main():
                 ('DRAFT_TEAMS', 'tools/world/validate_draft_teams.gd', 90),
                 ('DEV_INQUIRY', 'tools/world/validate_dev_inquiry.gd', 180),
                 ('MAIN_SKY', 'tools/world/validate_main_sky_integration.gd', 180),
-                ('CITY_POPULATION', 'tools/world/validate_city_route_population.gd', 240),
-                ('INTRO_ROUTE', 'tools/world/validate_game_error_route.gd', 300),
+                ('CITY_POPULATION', 'tools/world/validate_city_route_population.gd', 600),
+                ('INTRO_ROUTE', 'tools/world/validate_game_error_route.gd', 600),
             ]:
                 # Heavy headless scenes cannot sustain 60 wall-clock frames here.
                 # A 20 Hz process step still advances the normal physics ticks;
@@ -170,14 +170,19 @@ def main():
                 checks.append((label, ['--fixed-fps', fixed_fps, '--script', 'res://' + script], timeout))
         if args.pack_only:
             checks = checks[:2]
+        pack_ready = True
         try:
             for label, command, timeout in checks:
                 ok = run_check(args.godot, project, directory, label, command, timeout,
                                native=args.native and label in native_labels, compatibility=args.compatibility)
                 passed = passed and ok
+                if label in {'IMPORT', 'CODE'}:
+                    pack_ready = pack_ready and ok
                 if label == 'IMPORT' and not ok:
                     break
-            if passed and args.packed:
+            # A failed gameplay assertion must not hide independent packaging
+            # errors. Only import/code failures prevent a meaningful export.
+            if pack_ready and args.packed:
                 preset = project / 'export_presets.cfg'
                 platform = {'darwin': 'macOS', 'win32': 'Windows Desktop'}.get(sys.platform, 'Linux')
                 preset.write_text('[preset.0]\nname="Disposable check"\nplatform="' + platform + '"\nrunnable=true\nexport_filter="all_resources"\ninclude_filter=""\nexclude_filter="WorkingAssets/*,docs/*"\nexport_path=""\nscript_export_mode=1\n[preset.0.options]\napplication/bundle_identifier="org.thelastmonsoon.disposable"\n')

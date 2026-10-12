@@ -55,7 +55,9 @@ func set_forward_motion(speed:float,delta:float) -> void:
  var gait_speed:=maxf(absf(speed),minf(turn_rate*.72,.8))
  draft_phase=fmod(draft_phase+gait_speed*delta/.72,1.0)
  for index in solvers.size():
-  if combat.horses[index].dead or (has_node("DraftTeam") and not get_node("DraftTeam").slots[index].attached):continue
+  # Traffic can tick before the deferred draft-team registration finishes.
+  # Until a slot exists, the original animal health remains authoritative.
+  if combat.horses[index].dead or (has_node("DraftTeam") and get_node("DraftTeam").slots.size()>index and not get_node("DraftTeam").slots[index].attached):continue
   var solver:Node=solvers[index]
   solver.update_breathing(delta,absf(speed)>.03)
   var rig:Skeleton3D=solver.rig

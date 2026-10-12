@@ -11,6 +11,12 @@ var sky_material: ShaderMaterial
 const LIGHTING_INTERVAL := 0.1
 const CLOCK_JUMP_MINUTES := 2.88
 var lighting_elapsed := 0.0
+var last_brightness := -1.0
+
+static func night_ambient(value: float) -> float:
+	var amount := clampf(value, 0.0, 1.0)
+	return lerpf(0.025, 0.10, amount*2.0) if amount <= 0.5 else lerpf(0.10, 0.70, (amount-0.5)*2.0)
+
 var last_lighting_fraction := -1.0
 var last_lighting_minutes := -INF
 
@@ -31,6 +37,9 @@ func _process(delta: float) -> void:
 	var minutes := game_time.total_game_minutes
 	# Read the clock once, without recomputing a wrapped fraction on every frame.
 	# Sleep/load/time skips refresh immediately; paused clocks perform no writes.
+	var brightness := float(get_node("/root/SaveManager").options.night_brightness)
+	if brightness != last_brightness:
+		_update_day_night_lighting(); return
 	if minutes == last_lighting_minutes: return
 	lighting_elapsed += delta
 	if lighting_elapsed < LIGHTING_INTERVAL and absf(minutes-last_lighting_minutes) < CLOCK_JUMP_MINUTES: return
@@ -39,6 +48,7 @@ func _process(delta: float) -> void:
 
 func _update_day_night_lighting() -> void:
 	if game_time == null or moon == null: return
+	last_brightness = float(get_node("/root/SaveManager").options.night_brightness)
 	var fraction := game_time.get_time_of_day_fraction()
 	last_lighting_fraction = fraction
 	last_lighting_minutes = game_time.total_game_minutes
@@ -55,7 +65,7 @@ func _update_day_night_lighting() -> void:
 	if environment:
 		environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		environment.ambient_light_color = Color(0.32, 0.42, 0.65).lerp(Color(0.65, 0.72, 0.78), daylight)
-		environment.ambient_light_energy = lerpf(0.10, 0.55, daylight)
+		environment.ambient_light_energy = lerpf(night_ambient(last_brightness), 0.55, daylight)
 		environment.fog_light_color = horizon
 		environment.fog_light_energy = lerpf(0.12, 0.65, daylight)
 	if sky_material:

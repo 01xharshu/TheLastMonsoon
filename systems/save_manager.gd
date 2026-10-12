@@ -4,13 +4,14 @@ const WORLD := "res://world/suryagarh/suryagarh_world.tscn"
 const SAVE_DIR := "user://saves"
 const SETTINGS_FILE := "user://settings.cfg"
 const SLOT_COUNT := 3
+const CHECKPOINT_SLOT := 4
 const VERSION := 1
 const DEFAULTS := {
 	"master": 0.8, "music": 0.55, "ambient": 0.4, "mouse": 1.0,
 	"camera_distance": 1.25, "aim_camera_distance": 0.55,
 	"camera_angle": 0.0, "aim_camera_angle": 0.0,
 	"fullscreen": false, "vsync": true, "input_device": "auto",
-	"graphics_quality": 2, "key_bindings": {},
+	"night_brightness": 0.5, "graphics_quality": 2, "key_bindings": {},
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
 }
 signal input_device_changed(device: String)
@@ -134,7 +135,7 @@ func slot_path(slot: int) -> String:
 	return "%s/slot_%d.json" % [save_root,slot]
 
 func read_slot(slot: int) -> Dictionary:
-	if slot < 1 or slot > SLOT_COUNT: return {}
+	if slot < 1 or slot > CHECKPOINT_SLOT: return {}
 	var path := slot_path(slot)
 	if not FileAccess.file_exists(path): return {}
 	var file := FileAccess.open(path,FileAccess.READ)
@@ -168,9 +169,13 @@ func police_case_active(actor: Node) -> bool:
 
 func save_game(world: Node3D, slot: int) -> bool:
 	last_error = "Save failed"
-	if slot < 1 or slot > SLOT_COUNT: return false
+	if slot < 1 or slot > CHECKPOINT_SLOT: return false
 	var actor: CharacterBody3D = world.get_node("Player")
 	if not actor.is_inside_tree(): return false
+	if actor.health <= 0.0:
+		last_error = "Cannot save after death"; return false
+	if float(actor.get_meta("river_escape_remaining",0.0)) > 0.0:
+		last_error = "Cannot save during a river escape"; return false
 	var story: Node=world.get_node_or_null("DevStory")
 	if actor.get_meta("story_cinematic",false) or (story!=null and (story.active or actor.get_meta("paired_combat",false))):
 		last_error="Cannot save during a cinematic or paired practice";return false
@@ -204,6 +209,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"items": inventory.items.duplicate(true),
 		"chacha_advice_given":world.has_node("ChachaHouse") and world.get_node("ChachaHouse").get_meta("advice_given",false),
 		"dev_story":world.get_node("DevStory").export_state() if world.has_node("DevStory") else {},
+		"community_story":world.get_node("CommunityStory").export_state() if world.has_node("CommunityStory") else {},
 		"rebellion_story":world.get_node("RebellionStory").export_state() if world.has_node("RebellionStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"population_expansion":world.get_node("PopulationExpansion").export_route_state() if world.has_node("PopulationExpansion") else {},
@@ -267,6 +273,8 @@ func save_game(world: Node3D, slot: int) -> bool:
 		last_error = "Could not replace the save slot"
 		return false
 	last_error = ""
+	if slot != CHECKPOINT_SLOT:
+		DirAccess.copy_absolute(ProjectSettings.globalize_path(slot_path(slot)), ProjectSettings.globalize_path(slot_path(CHECKPOINT_SLOT)))
 	return true
 
 func start_new_game() -> void:
@@ -287,12 +295,15 @@ func apply_pending(world: Node3D) -> void:
 		var is_new_game := pending_slot == 0
 		pending_slot = -1
 		if is_new_game:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(slot_path(CHECKPOINT_SLOT)))
 			var opening := preload("res://story/opening_sequence.gd").new()
 			opening.name = "OpeningSequence"
 			world.add_child(opening)
 			opening.start(world)
 		return
 	var data := read_slot(pending_slot)
+	if pending_slot != CHECKPOINT_SLOT and not data.is_empty():
+		DirAccess.copy_absolute(ProjectSettings.globalize_path(slot_path(pending_slot)), ProjectSettings.globalize_path(slot_path(CHECKPOINT_SLOT)))
 	pending_slot = -1
 	if data.is_empty(): return
 	var actor: CharacterBody3D = world.get_node("Player")
@@ -322,6 +333,8 @@ func apply_pending(world: Node3D) -> void:
 		world.get_node("DevStory").restore_state(data.get("dev_story",{}))
 	if world.has_node("RebellionStory"):
 		world.get_node("RebellionStory").restore_state(data.get("rebellion_story",{}))
+	if world.has_node("CommunityStory"):
+		world.get_node("CommunityStory").restore_state(data.get("community_story",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
 		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
 	if world.has_node("CombatEncounters") and data.get("crime",{}) is Dictionary:

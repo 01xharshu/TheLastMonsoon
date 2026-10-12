@@ -14,6 +14,12 @@ func build(builder: Node3D) -> void:
 	for i in 34:
 		var home: Node3D = builder.get_node("BhairavpurHouse%d"%i) if i<33 else builder.get_node("BhairavpurLandownerEstate")
 		var lamp_at := Vector3(1.72,1.40,1.3) if i<33 else Vector3(-12,1.03,-7)
+		if i == 1:
+			lamp_at = Vector3(3.8,1.40,3.24)
+		if i == 27:
+			lamp_at = Vector3(3.8,1.40,3.14)
+		if i == 30:
+			lamp_at = Vector3(3.8,1.40,3.14)
 		if i == 0:
 			lamp_at = Vector3(0.37,1.40,1.3)
 			for z in [1.13,1.47]:

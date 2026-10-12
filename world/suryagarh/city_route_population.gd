@@ -123,6 +123,7 @@ func _process(delta: float) -> void:
 
 func route_points(label: String, index: int, lane: float) -> Array[Vector2]:
  if is_equal_approx(lane,3.3) and label=="village_spine":lane=2.0
+ if is_equal_approx(lane,3.3) and label=="government_house_road":lane=4.2
  if is_equal_approx(lane,2.2) and label in ["civil_lines_avenue","administrative_approach","port_approach"]:lane=3.8
  var result: Array[Vector2] = []
  var source: Array = Layout.ROUTES[label]
@@ -215,6 +216,7 @@ func spawn_record(record: Dictionary) -> void:
   var journey:=preload("res://world/suryagarh/city_cart_journey.gd").new();journey.name="CityRoadJourney";journey.configure(cart);journey.viewer=player;journey.route=[a,b]
   journey.preferred_lane=-1.8 if index<CART_ROUTES.size() else 1.8
   if record.route=="government_house_road":journey.preferred_lane=-2.5 if index<CART_ROUTES.size() else 2.5
+  if record.route in ["village_west_lane","village_north_lane"]:journey.preferred_lane=0.0
   cart.add_child(journey)
   carts.append(cart)
   if index%CART_ROUTES.size() in [0,1,3,6]:_passenger.call_deferred(cart,index)

@@ -214,6 +214,7 @@ func _draw_ammo() -> void:
 		draw_string(font,Vector2(x+19,y+115),"RELOADING",HORIZONTAL_ALIGNMENT_LEFT,130,12,BRASS)
 
 func _draw() -> void:
+	_draw_wanted_stars()
 	if tutorial_reveal >= 9: _draw_ammo()
 	var rifle := player.get_node_or_null("RifleCombat")
 	var bow: Node = player.get_node_or_null("BowCombat")
@@ -281,3 +282,20 @@ func _draw() -> void:
 			draw_string(font,Vector2(x-5,94),direction,HORIZONTAL_ALIGNMENT_LEFT,-1,11,IVORY)
 	if gear == null or gear.stowed or gear.selected not in [1,3]:
 		draw_line(Vector2(size.x-295,size.y-219),Vector2(size.x-30,size.y-219),BRASS,1,true)
+
+func wanted_star_points(center: Vector2) -> PackedVector2Array:
+	var points:=PackedVector2Array()
+	for tip in 10:
+		var radius:=11.0 if tip%2==0 else 4.8
+		points.append(center+Vector2.from_angle(-PI*.5+float(tip)*PI/5.0)*radius)
+	return points
+
+func _draw_wanted_stars() -> void:
+	if wanted_level<=0:return
+	for index in 5:
+		var center:=Vector2(size.x-160+index*30,40)
+		var points:=wanted_star_points(center)
+		draw_colored_polygon(points,IVORY if index<wanted_level else Color(.10,.10,.08,.72))
+		points.append(points[0])
+		draw_polyline(points,Color(.02,.025,.02,.95),3.0,true)
+		draw_polyline(points,BRASS,1.0,true)

@@ -40,6 +40,7 @@ func prepare()->void:
 		if independent:
 			var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
 			work.work_kind="hospital" if spec[2]=="hospital_attendant" else "depot"
+			work.supplier_leg=53.0 if work.work_kind=="hospital" else 30.0
 			work.name="LinenDelivery" if work.work_kind=="hospital" else "StoresDelivery"
 			work.actor=actor;work.institution=institution;work.viewer=viewer;work.clock=clock;actor.add_child(work)
 			while work.waypoints.size()<5:await get_tree().process_frame
@@ -49,7 +50,7 @@ func prepare()->void:
 	await Startup.wait_for(self,"Western city")
 	await Startup.wait_for(self,"Households")
 	for job in [
-		["CustomsWarehouse","CustomsReceivingPorter","port",Vector3(10,0,0),PI/2,"res://characters/npcs/street_residents/workman_01.glb"],
+		["CustomsWarehouse","CustomsReceivingPorter","port",Vector3(10,0,5),PI/2,"res://characters/npcs/street_residents/workman_01.glb"],
 		["CityTradingMarket","MarketStockWorker","market",Vector3(-24,0,-12),0.0,"res://characters/npcs/street_residents/workman_03.glb"],
 		["MerchantHousehold","HouseholdSupplyServant","household",Vector3(23,0,-24),0.0,"res://characters/npcs/street_residents/female_02.glb"]
 	]:
@@ -62,13 +63,16 @@ func prepare()->void:
 		worker.set_meta("social_role",str(job[2])+"_laborer");worker.set_meta("assigned_workplace",str(workplace.get_path()));worker.set_meta("human_source",job[5]);worker.add_to_group("institution_post_residents")
 		var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
 		work.name="SupplyDelivery";work.work_kind=job[2];work.actor=worker;work.institution=station;work.viewer=viewer;work.clock=clock
-		if job[2]=="market":
+		work.supplier_leg={"port":24.0,"market":-24.0,"household":-24.0}[str(job[2])]
+		if job[2]=="port":
+			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(4.5,0,7),Vector3(4.5,0,4),Vector3(0,0,1)]
+		elif job[2]=="market":
 			work.store_base=Vector3(2.9,1.15,1);work.stand_base=Vector3(2.47,0,1)
-			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(4.5,0,7),Vector3(4.5,0,1),Vector3(0,0,1)]
+			work.route_points=[Vector3(4.5,0,15.28),Vector3(7,0,15.4),Vector3(7,0,7),Vector3(7,0,-1),Vector3(2.47,0,-1),Vector3(0,0,1)]
 		elif job[2]=="household":
 			work.source_side=1.0
 			# Covered rear service bay: goods and the supplier cart stay off the family drive.
-			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(-.85,0,7),Vector3(-.85,.24,4),Vector3(.1,.24,1)]
+			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(-.85,0,7),Vector3(.1,.24,4),Vector3(.1,.24,1)]
 			work.store_base=Vector3(.53,1.15,1);work.stand_base=Vector3(.1,.24,1)
 		worker.add_child(work)
 		while work.waypoints.size()<5:await get_tree().process_frame

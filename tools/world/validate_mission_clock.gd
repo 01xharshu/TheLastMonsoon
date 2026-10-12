@@ -53,9 +53,16 @@ func _initialize() -> void:
 	check(clock.get_clock_multiplier() == 1.0, "Travel to farm stays normal")
 	player.set_meta("farm_lesson_started", true)
 	story.sync_training_clock()
-	check(is_equal_approx(clock.get_clock_multiplier(), 1.0 / 3.0), "Started/restored Chacha training slows clock")
+	check(clock.get_clock_multiplier() == 0.0, "Started/restored Chacha training freezes clock")
+	check(clock.current_hour>=8 and clock.current_hour<17,"Training starts in daylight")
+	start=clock.total_game_minutes
+	clock._process(600);clock.advance_hours(8)
+	check(clock.total_game_minutes==start,"Training blocks elapsed time and time skips")
+	clock.set_mission_daylight_locked(&"second_training",true)
 	story.state = "complete"
 	story.sync_training_clock()
+	check(clock.get_clock_multiplier()==0.0,"One owner release preserves overlapping daylight mission")
+	clock.set_mission_daylight_locked(&"second_training",false)
 	check(clock.get_clock_multiplier() == 1.0, "Completed Chacha training restores clock")
 	story.state = "farm"
 	story.sync_training_clock()

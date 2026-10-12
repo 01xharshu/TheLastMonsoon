@@ -10,6 +10,7 @@ var captures := false
 var max_contact := 0.0
 var max_step := 0.0
 var last_position := Vector3.ZERO
+var large_step_reported:=false
 func _initialize() -> void: call_deferred("run")
 func check(value: bool,message: String) -> void:
 	if not value: errors.append(message)
@@ -30,17 +31,38 @@ func snap(label: String) -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://docs/characters/arjun/arrest_sequence_%s_back.png"%label+"")
 func measure_step() -> void:
+	if not large_step_reported and actor.global_position.distance_to(last_position)>.16:
+		large_step_reported=true
+		print("ARREST LARGE STEP ",police.to_local(last_position)," -> ",police.to_local(actor.global_position)," velocity ",actor.velocity," swim ",actor.is_swimming," phase ",coordinator.phase)
+		for index in actor.get_slide_collision_count():
+			var contact:=actor.get_slide_collision(index)
+			var collider: Object=contact.get_collider()
+			if collider is Node:print("ARREST BODY CONTACT ",collider.get_path())
 	max_step=maxf(max_step,actor.global_position.distance_to(last_position))
 	last_position=actor.global_position
+	actor.set_meta("station_position_trace",last_position)
 func run() -> void:
-	world=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
-	root.add_child(world)
-	current_scene=world
+	var loading:=preload("res://ui/journey_loading.gd").new();root.add_child(loading)
+	if not await loading.begin(0):await root.get_node("SaveManager").quit_game(1);return
+	world=current_scene
+	# This is the real main world: release its opening pose/control owner before
+	# placing Arjun at the station, otherwise it can move him during the escort.
+	for frame in 12:await process_frame
+	var opening:=world.get_node("OpeningSequence")
+	var skip:=InputEventKey.new();skip.keycode=KEY_ESCAPE;skip.pressed=true
+	opening._input(skip);await process_frame;opening._input(skip)
+	var opening_deadline:=Time.get_ticks_msec()+90000
+	while opening.state!="done" and Time.get_ticks_msec()<opening_deadline:await process_frame
+	check(opening.state=="done","Opening did not release the physical arrest fixture")
+	if opening.state!="done":await root.get_node("SaveManager").quit_game(1);return
+	var tutorial:=world.get_node_or_null("Player/UI/HUDRoot/MorningTutorial")
+	if tutorial!=null:tutorial.restore_step(11)
 	actor=world.get_node("Player")
 	police=world.get_node("Settlement/DistrictPolice")
 	coordinator=police.get_node_or_null("ThanaStaff/ArrestCoordinator")
 	if coordinator==null: print("POLICE ARREST FAIL missing coordinator");quit(1);return
 	coordinator.cinematic_transfers = false
+	coordinator.debug_contacts=true
 	captures=false # Historical physical escort regression; no retained captures.
 	if captures:
 		root.size=Vector2i(1280,720)
@@ -53,6 +75,7 @@ func run() -> void:
 		world.add_child(camera)
 		camera.make_current()
 	actor.global_position=police.to_global(Vector3(9.5,.9,9))
+	actor.set_meta("station_position_trace",actor.global_position)
 	actor.global_basis=police.global_basis
 	actor.get_node("VisualRoot").rotation.y=0
 	for i in 12:await physics_frame
@@ -71,7 +94,9 @@ func run() -> void:
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://docs/characters/npcs/thana_%s_uniform.png"%role.to_lower())
 	coordinator.custody_seconds=3.0
-	coordinator.phase_changed.connect(func(value: String): phases.append(value); print("ARREST PHASE ",value))
+	coordinator.phase_changed.connect(func(value: String):
+		phases.append(value);print("ARREST PHASE ",value)
+		if value=="idle":print("ARREST STOP actor ",police.to_local(actor.global_position)," officer ",police.to_local(coordinator.officer.global_position)," route ",coordinator.route_index,"/",coordinator.route.size()," blocker ",coordinator.last_clear_failure))
 	check(not coordinator.report_crime(actor,"unknown",actor.global_position),"Unknown offence accepted")
 	# A real damage receiver forwards the witnessed offence, rather than a test-only arrest call.
 	police.get_node("ThanaStaff/Daroga").take_damage(1.0)

@@ -9,7 +9,8 @@
   },
   "whole_character_width": 1.035,
   "runtime": "characters/npcs/street_residents/female_02.glb",
-  "wardrobe": "cotton sari and blouse",
+  "wardrobe": "plain work sari with narrow shoulder wrap",
   "hair_style": "short braid",
-  "visual_approved": false
+  "visual_approved": false,
+  "clothing_construction": "Connected cotton surface with shoulder-wrap regions; complete separate originals retained source-only"
 }

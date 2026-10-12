@@ -80,7 +80,11 @@ func travel_motion(target:Vector3,delta:float) -> Vector3:
  var next:=here+offset.normalized()*minf(offset.length(),current_speed*delta)
  var support:=ground_at(next)
  if support.is_empty() or support.normal.y<.6 or absf(support.position.y-actor.global_position.y)>.35:
-  last_obstacle="unsafe terrain support";return Vector3.ZERO
+  last_obstacle="unsafe terrain support"
+  # A rejected support step must trigger navigation recovery as a solid
+  # obstacle does; zero motion alone would otherwise be treated as success.
+  on_blocked(target,delta)
+  return Vector3.ZERO
  if street_surface!=null:street_surface.set_support(support)
  return Vector3(next.x,support.position.y,next.y)-actor.global_position
 
@@ -124,8 +128,8 @@ func on_blocked(target:Vector3,delta:float) -> void:
       if actor.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():detour_followup=onward
     if not detour_followup.is_finite():
      # A clear lateral toe-step alone can steer straight back into the blocker.
-     # Prefer a complete passing lane; retain the shortest escape only as fallback.
-     if not fallback.is_finite() or point.distance_squared_to(here)<fallback.distance_squared_to(here):fallback=point
+     # Prefer a complete passing lane; retain a substantial escape only as fallback.
+     if not fallback.is_finite() or point.distance_squared_to(here)>fallback.distance_squared_to(here):fallback=point
      continue
     detour=point;detours+=1;return
  if fallback.is_finite():detour=fallback;detour_followup=Vector2.INF;detours+=1

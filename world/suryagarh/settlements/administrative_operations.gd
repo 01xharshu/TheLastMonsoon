@@ -41,6 +41,9 @@ func staff(room: Node3D,label: String,at: Vector3,path: String) -> Node3D:
 	actor.movement_enabled = false
 	actor.set_meta("visual_status","candidate_unapproved")
 	actor.set_meta("source_model",path)
+	if "/british/" in path:
+		actor.set_meta("combat_faction","british")
+		actor.set_meta("british_official",true)
 	actor.add_to_group("administrative_staff")
 	actor.add_child(load(path).instantiate())
 	room.add_child(actor)

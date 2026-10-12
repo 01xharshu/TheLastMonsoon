@@ -35,6 +35,8 @@ def main():
         config = project/'project.godot'
         config.write_text(config.read_text().replace('[application]', '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="'+output.name+'"'))
         binary = shutil.which('godot') or '/Applications/Godot.app/Contents/MacOS/Godot'
+        previous_output = os.environ.get("TLM_TEST_OUTPUT_DIR")
+        os.environ["TLM_TEST_OUTPUT_DIR"] = str(output)
         try:
             if not checks.run_check(binary,project,output,'IMPORT',['--import'],240): return 1
             if args.native:
@@ -66,5 +68,7 @@ def main():
                     if line.startswith(('POPULATION EXPANSION','CROWD RESULT','POPULATION PROFILE','POPULATION BUDGET')):print(line,flush=True)
             return 0 if passed else 1
         finally:
+            if previous_output is None: os.environ.pop("TLM_TEST_OUTPUT_DIR",None)
+            else: os.environ["TLM_TEST_OUTPUT_DIR"] = previous_output
             shutil.rmtree(checks.user_data_directory(output.name),ignore_errors=True)
 if __name__ == '__main__':raise SystemExit(main())

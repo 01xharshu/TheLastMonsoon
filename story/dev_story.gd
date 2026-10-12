@@ -428,6 +428,15 @@ func update_acting(delta: float,t: float) -> void:
   camera_target=body.global_position+Vector3.UP*1.3
  if cue=="horse_dismount" and is_instance_valid(journey_horse) and journey_horse.get_meta("story_dismount_pending",false):
   if journey_horse.dismount():journey_horse.remove_meta("story_dismount_pending")
+ if cue=="horse_dismount":
+  var body: Node3D=journey_cart.cart if is_instance_valid(journey_cart) else journey_horse
+  if is_instance_valid(body):
+   var landing: Vector3=journey_cart.transition_ground if is_instance_valid(journey_cart) else journey_horse.transition_to
+   var side: Vector3=landing-body.global_position;side.y=0
+   if side.length_squared()<.1:side=-body.global_basis.x
+   camera_target=player.global_position+Vector3.UP*.55
+   camera_start=body.global_position+side.normalized()*5+body.global_basis.z*3+Vector3.UP*2.4
+   camera_end=camera_start;camera.global_position=camera_start;camera.look_at(camera_target)
  pose.apply(action,amount,delta,progress)
  if progress>=0:visual.motion_tree.advance(0)
  if cue in ["horse_departure","horse_arrival"] and is_instance_valid(journey_horse):visual._pose_horse_riding(delta)
@@ -659,7 +668,7 @@ func _input(event: InputEvent) -> void:
 func sync_training_clock() -> void:
  var clock = get_parent().get_node_or_null("GameTimeSystem")
  if clock!=null:
-  clock.set_mission_clock_slowed(&"chacha_weapon_training",state=="farm" and lesson<LESSONS.size() and player.get_meta("farm_lesson_started",false))
+  clock.set_mission_daylight_locked(&"chacha_weapon_training",state=="farm" and lesson<LESSONS.size() and player.get_meta("farm_lesson_started",false))
 func show_lesson() -> void:
  if lesson>=LESSONS.size():return
  sync_training_clock()
@@ -723,6 +732,10 @@ func refresh() -> void:
   objective.text="Chacha · Meet me at the farm" if not player.get_meta("farm_lesson_started",false) else "Training · "+str(LESSONS[mini(lesson,LESSONS.size()-1)][0])
   inquiry.destination.global_position=community.farm.global_position
   inquiry.destination.set_meta("parking_label","Chacha · Farm practice")
+  if player.get_meta("farm_lesson_started",false) and lesson in [1,4,6]:
+   var index:=0 if lesson==1 else 1 if lesson==4 else 2
+   inquiry.destination.global_position=community.members[index].global_position
+   inquiry.destination.set_meta("parking_label","Training · Practice partner "+str(index+1))
  elif state=="complete":
   objective.text="Find Dev · Explore the refreshment courtyard and college for another lead."
   inquiry.destination.global_position=community.courtyard.global_position
@@ -742,7 +755,7 @@ func restore_state(data: Dictionary) -> void:
  refresh()
 func _exit_tree() -> void:
  var clock = get_parent().get_node_or_null("GameTimeSystem")
- if is_instance_valid(clock):clock.set_mission_clock_slowed(&"chacha_weapon_training",false)
+ if is_instance_valid(clock):clock.set_mission_daylight_locked(&"chacha_weapon_training",false)
  if hero_expression!=null:hero_expression.restore()
  if police_expression!=null:police_expression.restore()
  if collar_cloth!=null:collar_cloth.restore()

@@ -22,6 +22,12 @@ static func resolve(actor: Node3D, include_manual := true) -> Dictionary:
 		var result: Dictionary=errands.destination().duplicate()
 		if not result.is_empty(): result.merge({"objective":errands.tracked_objective(),"owner":"errand"},true)
 		return result
+	var community:=world.get_node_or_null("CommunityStory")
+	if community!=null:
+		var result: Dictionary=community.destination().duplicate()
+		if not result.is_empty():
+			result.merge({"objective":community.objective(),"owner":"community"},true)
+			return result
 	var inquiry:=world.get_node_or_null("DevInquiry")
 	if inquiry!=null and inquiry.configured and inquiry.stage!="dormant" and is_instance_valid(inquiry.destination):
 		var label:=str(inquiry.destination.get_meta("parking_label",""))

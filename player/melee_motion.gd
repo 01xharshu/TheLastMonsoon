@@ -37,8 +37,11 @@ static func make(rig: Skeleton3D, idle: Animation, action: String) -> Animation:
 				var sweep:=smoothstep(.18,.72,phase)
 				effort=smoothstep(0,.12,phase)*(1.0-smoothstep(.76,1.0,phase))
 				angles={"spine_02":Vector3(-.1,lerpf(-.25,.38,sweep),0),"upperarm_r":Vector3(lerpf(-1.15,.35,sweep),lerpf(-.65,.65,sweep),lerpf(-.6,.1,sweep)),"lowerarm_r":Vector3(lerpf(-1.15,-.4,sweep),0,0),"upperarm_l":Vector3(-.5,0,.35),"lowerarm_l":Vector3(-.7,0,0)}
+				angles["pelvis"]=Vector3(.06,lerpf(-.14,.22,sweep),0)
+				angles["spine_01"]=Vector3(.10,lerpf(-.10,.16,sweep),0)
 			elif action == "grapple":
-				angles={"spine_01":Vector3(.28,0,0),"spine_02":Vector3(.12,0,0),"upperarm_l":Vector3(-1.2,0,.15),"upperarm_r":Vector3(-1.2,0,-.15),"lowerarm_l":Vector3(-1.25,0,0),"lowerarm_r":Vector3(-1.25,0,0)}
+				var settle:=smoothstep(.28,.68,phase)
+				angles={"spine_01":Vector3(lerpf(.28,.16,settle),0,0),"spine_02":Vector3(.12,0,0),"head":Vector3(.08,0,-.06),"upperarm_l":Vector3(-1.2,0,.15),"upperarm_r":Vector3(-1.2,0,-.15),"lowerarm_l":Vector3(-1.25,0,0),"lowerarm_r":Vector3(-1.25,0,0)}
 				effort=smoothstep(0,.25,phase)*(1.0-smoothstep(.82,1.0,phase))
 			elif action in ["kick","jump_kick"]:
 				var extension := smoothstep(.28,.46,phase)

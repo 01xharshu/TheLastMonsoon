@@ -158,8 +158,9 @@ func run()->void:
 			if depot_work.delivered>0:break
 			depot_work.tick(.1);await physics_frame
 	check(depot_work!=null and depot_work.delivered>0,"depot porter stores supplies inside the real building")
-	for label in ["CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"]:
-		var work:Node=world.get_node_or_null("CivicResidentPosts/"+label+"/SupplyDelivery")
+	for label in (["HospitalLinenPorter","DepotStoresPorter","CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"] if "--full-jobs" in OS.get_cmdline_user_args() else ["CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"]):
+		var controller:String={"HospitalLinenPorter":"LinenDelivery","DepotStoresPorter":"StoresDelivery"}.get(label,"SupplyDelivery")
+		var work:Node=world.get_node_or_null("CivicResidentPosts/"+label+"/"+controller)
 		check(work!=null and work.goods.size()==3,label+" integrated into main Continue")
 		if work==null:continue
 		work.set_physics_process(false)
@@ -168,6 +169,21 @@ func run()->void:
 			work.tick(.1);await physics_frame
 		print("RECEIVING_WORK ",label," delivered=",work.delivered," phase=",work.phase," blocked=",work.blocked," at=",work.actor.global_position)
 		check(work.delivered>0,label+" carries goods into assigned workplace")
+		if "--full-jobs" in OS.get_cmdline_user_args():
+			for frame in 4500:
+				if work.delivered==3 and work.phase=="rest":break
+				work.tick(.1);await physics_frame
+			check(work.delivered==3 and work.phase=="rest",label+" completes all three interior deliveries")
+			for frame in 2500:
+				if work.freight_phase=="awaiting_supply":break
+				work.tick(.1);await physics_frame
+			check(work.freight_phase=="awaiting_supply",label+" empty cart clears receiving bay")
+			work.day=work.clock.current_day-1
+			for frame in 6500:
+				work.tick(.1);await physics_frame
+				if work.freight_phase=="parked" and work.delivered>0:break
+			print("RECEIVING_WORK_FULL ",label," delivered=",work.delivered," phase=",work.phase," freight=",work.freight_phase," blocked=",work.blocked," actor=",work.actor.global_position," cart=",work.cart.global_position," obstacle=",work.freight_obstacle)
+			check(work.freight_phase=="parked" and work.delivered>0,label+" physically restocks and delivers the next consignment")
 	finish()
 func finish()->void:
 	print("RESIDENT_WORLD_RESULT ",JSON.stringify({"passed":failures.is_empty(),"failures":failures}))

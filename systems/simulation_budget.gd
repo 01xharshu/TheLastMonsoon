@@ -7,5 +7,11 @@ const FAR_SQUARED := 40000.0
 static func interval(subject: Node3D, viewer: Node3D, essential := false) -> float:
 	if essential or not is_instance_valid(viewer): return 0.0
 	var squared := subject.global_position.distance_squared_to(viewer.global_position)
+	# A cinematic can show a district far from the player's current transform.
+	# Preserve nearby player interactions and promote visible story-area residents.
+	if viewer.get_meta("story_cinematic", false):
+		var camera := viewer.get_viewport().get_camera_3d()
+		if is_instance_valid(camera):
+			squared = minf(squared, subject.global_position.distance_squared_to(camera.global_position))
 	if squared <= NEAR_SQUARED: return 0.0
 	return 0.1 if squared <= FAR_SQUARED else 0.5

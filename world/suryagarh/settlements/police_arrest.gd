@@ -74,7 +74,7 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	var best := 31.0
 	var chosen: Node3D
 	for candidate in get_parent().get_children():
-		if candidate==self or candidate.get_meta("thana_role","")=="mohurrir" or candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): continue
+		if candidate==self or candidate.get_meta("grappled",false) or candidate.get_meta("thana_role","")=="mohurrir" or candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): continue
 		if not candidate is Node3D: continue
 		var distance: float = candidate.global_position.distance_to(location)
 		if distance>=best: continue
@@ -143,6 +143,28 @@ func clear_at(at: Vector3, radius: float) -> bool:
 	floor_query.exclude = exclusions
 	return not station.get_world_3d().direct_space_state.intersect_ray(floor_query).is_empty()
 func path(from: Vector3, to: Vector3, radius: float) -> PackedVector3Array:
+	if not from.is_finite() or not to.is_finite() or radius<=0.0 or not is_finite(radius): return []
+	var local_goal:=station.to_local(to)
+	var goal:=station.to_global(Vector3(local_goal.x,0,local_goal.z))
+	# Nearest navigable cells are search endpoints, not permission to arrive at
+	# an occupied destination. Custody must never treat a partial path as arrival.
+	if not clear_at(goal,radius): return []
+	var was_cached:=nav_cache.has(radius)
+	var result:=cached_path(from,goal,radius)
+	var valid:=not result.is_empty()
+	for point in result:
+		if not clear_at(point,radius): valid=false;break
+	if valid: return result
+	# Doors, people and props can change after this grid was built. Rebuild once
+	# on a stale/failed cached request; never retry recursively or every tick.
+	if not was_cached: return []
+	nav_cache.erase(radius)
+	result=cached_path(from,goal,radius)
+	for point in result:
+		if not clear_at(point,radius): return []
+	return result
+
+func cached_path(from: Vector3, to: Vector3, radius: float) -> PackedVector3Array:
 	var grid: AStarGrid2D = nav_cache.get(radius)
 	if grid == null:
 		grid = AStarGrid2D.new()
@@ -291,8 +313,10 @@ func _physics_process(delta: float) -> void:
 				suspect.set_meta("detention_action","waiting")
 				detention.mode="waiting"
 				gate=station.get_node("GroundCell0Gate")
-				gate.set_open(true)
+				if not gate.opened: gate.set_open(true)
+				if gate.swing!=null and gate.swing.is_running(): return
 				route=path(suspect.global_position-Vector3.UP*.9,station.to_global(Vector3(7.2,0,15.2)),.43)
+				if route.is_empty(): abort(); return
 				route_index=0
 				set_phase("enter_cell")
 				return
@@ -319,11 +343,13 @@ func _physics_process(delta: float) -> void:
 				return
 		"stand":
 			if phase_age<1.3: return
-			gate.set_locked(false)
+			if gate.locked: gate.set_locked(false)
+			if gate.swing!=null and gate.swing.is_running(): return
 			nav_cache.clear()
 			detention.mode="waiting"
 			suspect.set_meta("detention_action","waiting")
 			route=path(suspect.global_position-Vector3.UP*.9,station.to_global(Vector3(8,0,17.2)),.43)
+			if route.is_empty(): abort(); return
 			route_index=0
 			set_phase("leave_cell")
 		"leave_cell":

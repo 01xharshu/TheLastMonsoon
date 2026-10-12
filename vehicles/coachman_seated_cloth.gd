@@ -1,4 +1,5 @@
 extends RefCounted
+const MeshInputs = preload("res://vehicles/coachman_mesh_inputs.gd")
 const CACHE_PATH := "res://vehicles/generated/coachman_startup_cloth.res"
 const BULLOCK_CACHE_PATH := "res://vehicles/generated/bullock_driver_startup_cloth.res"
 const CACHE_REVISION := 3
@@ -28,7 +29,7 @@ func configure(person: Node3D, vehicle: Node3D) -> void:
   if not ("wrapped dhoti" in label or "dhoti woven border" in label): continue
   var surfaces: Array[Dictionary] = []
   for index in node.mesh.get_surface_count():
-   surfaces.append({"arrays":node.mesh.surface_get_arrays(index),"material":node.get_active_material(index)})
+   surfaces.append({"arrays":MeshInputs.arrays(node.mesh,index,coach),"material":node.get_active_material(index)})
   pieces.append({"node":node,"surfaces":surfaces})
   node.skin = null
   node.skeleton = NodePath("")
@@ -237,7 +238,7 @@ func source_signature() -> String:
    # Hashing only includes full-body surfaces. Reject smaller surfaces from
    # metadata before asking the rendering device for their uploaded arrays.
    if node.mesh.surface_get_array_len(surface) < 14000: continue
-   var arrays: Array = node.mesh.surface_get_arrays(surface)
+   var arrays: Array = MeshInputs.arrays(node.mesh,surface,coach)
    if arrays[Mesh.ARRAY_VERTEX].size() >= 14000: digest.update(var_to_bytes(arrays))
  var rig: Skeleton3D = actor._skeleton
  var pose := PackedFloat32Array()

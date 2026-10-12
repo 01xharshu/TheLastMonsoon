@@ -70,8 +70,8 @@ func run() -> void:
  var grapple: Node=player.get_node("RearGrapple")
  check(story.rear_target()==guard,"Q rear eligibility")
  check(grapple.begin(),"real paired rear takedown begins")
- for i in 100:await physics_frame
- check(guard.get_meta("dead",false) and not grapple.active,"mission takedown is lethal and releases controls")
+ for i in 150:await physics_frame
+ check(guard.get_meta("knocked_out",false) and not guard.get_meta("dead",false) and not grapple.active,"mission takedown is nonlethal and releases controls")
  var hero: Node3D=player.get_node("VisualRoot/CharacterVisual")
  var body_counts: Dictionary={}
  for mesh in hero.find_children("*","MeshInstance3D",true,false):

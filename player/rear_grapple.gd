@@ -1,6 +1,12 @@
 extends Node
 const Startup = preload("res://systems/world_startup.gd")
 ## Paired rear restraint; range/heading/obstacle checks precede any control lock.
+const DURATION := 1.8
+const RELEASE_SECONDS := .45
+var resolved := false
+var lease := -1
+var reported := false
+var witness_timer := 0.0
 var actor: CharacterBody3D
 var visual: Node3D
 var victim: Node3D
@@ -23,17 +29,17 @@ func _ready() -> void:
 	set_physics_process(false)
 	if not InputMap.has_action("rear_grapple"):
 		InputMap.add_action("rear_grapple")
-		var key:=InputEventKey.new();key.physical_keycode=KEY_B
+		var key:=InputEventKey.new();key.physical_keycode=KEY_Q
 		InputMap.action_add_event("rear_grapple",key)
 	Startup.finish(startup_task)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("rear_grapple"):return
-	if active: cancel()
-	elif actor.get_node("CombatInput").available(): begin()
-	get_viewport().set_input_as_handled()
+	if event is InputEventKey and event.echo:return
+	if active or begin():get_viewport().set_input_as_handled()
 
 func begin() -> bool:
+	if actor.health<=0 or not actor.is_on_floor() or actor.get_meta("opening_active",false):return false
 	if not actor.get_node("CombatInput").available():return false
 	var closest:=1.05
 	var chosen: Node3D
@@ -46,12 +52,19 @@ func begin() -> bool:
 		offset.y=0
 		var distance:=offset.length()
 		if distance < .48 or distance>=closest or offset.normalized().dot(target.global_basis.z)>-.6:continue
-		if target.travel_speed>.2:continue
+		if target.get_meta("grappled",false) or absf(actor.global_position.y-.9-target.global_position.y)>.55:continue
+		if target.travel_speed>1.8:continue
 		var sight:=PhysicsRayQueryParameters3D.create(actor.global_position,target.global_position+Vector3.UP*.9,1)
 		sight.exclude=[actor.get_rid(),target.body_collider.get_rid()]
 		if not actor.get_world_3d().direct_space_state.intersect_ray(sight).is_empty():continue
 		chosen=target;closest=distance
 	if chosen==null:return false
+	if actor.get_meta("stealth_stance","")!="" and not actor.get_node("StealthStance").stand():return false
+	var domains:Array[StringName]=[&"attack",&"board",&"interact"]
+	lease=preload("res://systems/action_permissions.gd").install(actor).acquire(self,domains)
+	if lease<0:return false
+	actor.get_node("CombatInput").interrupt()
+	reported=false;witness_timer=0;resolved=false
 	victim=chosen;age=0;active=true
 	process_priority=140 if victim.get_meta("rebellion_guard",false) else 40
 	set_process(true)
@@ -61,32 +74,44 @@ func begin() -> bool:
 	victim.set_meta("grappled",true)
 	victim.movement_enabled=false
 	victim.combat_react("held")
+	var kit:=actor.get_node_or_null("ChachaKit")
+	if kit!=null:kit.equip("")
 	visual.equipment.stowed=true
 	visual.equipment._refresh()
 	actor.set_meta("paired_combat",true)
 	actor.velocity=Vector3.ZERO
-	if not victim.get_meta("training_partner",false) and not victim.get_meta("rebellion_guard",false):
-		actor.get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED,"police_crime_observers","report_assault",victim)
 	return true
 
 func _process(delta: float) -> void:
 	if not active:return
 	if not is_instance_valid(victim) or victim.get_meta("dead",false) or actor.health<=0 or actor.get_meta("detention_action","")!="":cancel();return
 	age+=delta
+	witness_timer-=delta
+	if not reported and witness_timer<=0 and not victim.get_meta("training_partner",false):
+		witness_timer=.15
+		reported=preload("res://combat/silent_knockout.gd").report(actor,victim)
+	if age>=DURATION:
+		if not resolved:
+			victim.get_node("Vitality").receive_hit(maxf(100,victim.get_node("Vitality").health),actor,"takedown" if victim.get_meta("training_partner",false) else "silent_takedown")
+			resolved=true
+		visual.motion_tree.set_melee(0,-1)
+		if age>=DURATION+RELEASE_SECONDS:cancel()
+		return
+	var pose_time:=age/DURATION*1.2
 	var offset:=victim.global_position-actor.global_position
 	offset.y=0
 	if offset.length()>1.2:cancel();return
 	actor.get_node("VisualRoot").global_rotation.y=atan2(offset.x,offset.z)
-	visual.motion_tree.set_melee(4,minf(age/1.2,1.0))
+	visual.motion_tree.set_melee(4,minf(age/DURATION,1.0))
 	visual.motion_tree.advance(0)
 	var rig: Skeleton3D=victim._skeleton
 	var chest:=rig.to_global(rig.get_bone_global_pose(neck_bone).origin)
 	var mission_hold: bool=victim.get_meta("rebellion_guard",false)
-	if mission_hold:victim.set_meta("mission_grapple_phase",minf(age/1.2,1.0))
+	if mission_hold:victim.set_meta("mission_grapple_phase",minf(age/DURATION,1.0))
 	contact_error=0
 	var hero_rig: Skeleton3D=visual.skeleton
 	var equipment: Node3D=visual.equipment
-	var weight:=smoothstep(0,.3,age)*(1.0-smoothstep(1.0,1.2,age))
+	var weight:=smoothstep(0,.3,pose_time)*(1.0-smoothstep(1.0,1.2,pose_time))
 	for side in ["l","r"]:
 		var sign_side:=1.0 if side=="l" else -1.0
 		var target:=chest+victim.global_basis*Vector3(.09*sign_side,.005,-.035)
@@ -117,11 +142,11 @@ func _process(delta: float) -> void:
 		equipment._grasp(side,.42*weight)
 		var palm: Vector3=hero_rig.to_global(hero_rig.get_bone_global_pose(hand_index)*equipment.palm_offsets[side])
 		contact_error=maxf(contact_error,palm.distance_to(target))
-	if age>=1.2:
-		victim.get_node("Vitality").receive_hit(100,actor,"silent_takedown" if victim.get_meta("rebellion_guard",false) else "takedown")
-		cancel()
 
 func cancel() -> void:
+	if lease>=0 and is_instance_valid(actor):
+		preload("res://systems/action_permissions.gd").install(actor).release(lease)
+	lease=-1
 	if is_instance_valid(victim):
 		victim.set_meta("grappled",false)
 		victim.remove_meta("mission_grapple_phase")
@@ -136,8 +161,17 @@ func cancel() -> void:
 	for solver in visual.climb_ik.values():solver.influence=0;solver.stop()
 	visual.motion_tree.set_melee(0,-1)
 
+func _exit_tree() -> void:
+	if active:cancel()
+
 func _physics_process(_delta: float) -> void:
 	if not active or not is_instance_valid(victim):return
+	if resolved:
+		# A short collision-constrained step clears the falling head/body.
+		actor.velocity=-victim.global_basis.z
+		actor.velocity.y=0
+		actor.move_and_slide()
+		return
 	var desired:=victim.global_position-victim.global_basis.z*.62
 	desired.y=actor.global_position.y
 	var offset:=desired-actor.global_position

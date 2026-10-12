@@ -179,29 +179,25 @@ func muzzle_effect(origin: Vector3) -> void:
 	flash.light_energy = 3.5
 	flash.omni_range = 4
 	get_tree().create_timer(.065).timeout.connect(flash.queue_free)
-	var smoke := CPUParticles3D.new()
-	smoke.emitting = false
+	var smoke := preload("res://world/suryagarh/settlements/village_combustion.gd").make_smoke(actor.get_parent())
 	smoke.one_shot = true
 	smoke.amount = 18
-	smoke.lifetime = .8
+	smoke.lifetime = 2.4
 	smoke.explosiveness = .95
 	smoke.direction = -camera.global_basis.z
 	smoke.spread = 24
 	smoke.initial_velocity_min = .8
 	smoke.initial_velocity_max = 2.2
-	smoke.gravity = Vector3(0,.4,0)
-	smoke.scale_amount_min = .07
-	smoke.scale_amount_max = .18
-	var puff := SphereMesh.new()
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(.65,.62,.55,.35)
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	puff.material = material
-	smoke.mesh = puff
-	actor.get_parent().add_child(smoke)
+	smoke.damping_min = .8
+	smoke.damping_max = 1.3
+	smoke.scale_amount_min = .12
+	smoke.scale_amount_max = .22
+	var wind := actor.get_tree().root.get_node_or_null("WindSystem")
+	var drift: Vector3 = wind.sample(origin)*.18 if wind != null else Vector3.ZERO
+	smoke.gravity = Vector3(drift.x,.18,drift.z)
 	smoke.global_position = origin
 	smoke.emitting = true
-	get_tree().create_timer(1.0).timeout.connect(smoke.queue_free)
+	get_tree().create_timer(2.7).timeout.connect(smoke.queue_free)
 
 func get_hud_text() -> String:
 	if visual.equipment.stowed or visual.equipment.selected != weapon_selection: return visual.equipment.held_name()

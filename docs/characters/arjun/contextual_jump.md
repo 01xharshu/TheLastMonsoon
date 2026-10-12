@@ -1,0 +1,9 @@
+# Contextual Space — 12 October 2026
+
+User requirement: Space does nothing on ordinary clear ground; use it for a nearby obstacle, jumpable gap or climb opportunity. The normal player input now checks contextual eligibility before applying the existing jump velocity and arming the existing airborne climb catch. It does not change jump height, animations, collision masks or held-Space climb progression.
+
+The press-only query uses Arjun's facing direction and collision mask. It admits nearby static obstacles above the automatic step height, authored climb walls, open registered windows with the existing facing/aperture/landing checks, and nearby gaps with approximately level support within 2.5 m. It rejects obstacles behind Arjun, ordinary unreachable high walls, blocked climb routes, obstructed takeoff headroom and unsupported cliffs. Window eligibility can be inspected without changing the player's shape, pose or control owner; the airborne catch still validates its actual path.
+
+Fresh native Forward+/Metal validation PASS: contextual behavior11/11, real rotated-house one-press Space crossings in both directions with actual shutter/grille restrictions, and the existing single-press window safety suite (closed/blocked/unsupported landings, moving-obstacle recovery and grip release). No test output retained. These checks establish functional behavior, not final animation/clothing appearance or exhaustive populated-world acceptance.
+
+Reproduce: `python3 tools/world/run_architecture_checks.py --cached --native contextual_jump window_house window_single_press`. Omit `--cached` for a fresh import. In normal play, press Space on a clear road (no jump), then face a nearby low obstacle, open side window or authored climb route and press Space; test the opposite facing direction and a closed shutter too.

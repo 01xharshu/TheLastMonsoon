@@ -1,0 +1,15 @@
+# Silent rear knockout
+
+12 October 2026. Q starts the shared paired rear action against a living British/police enemy within 0.48–1.05 m, behind its facing, at comparable ground height and with an unobstructed approach. Walking targets up to 1.8 m/s can be restrained; faster targets require catching up. Arjun must be grounded and free of modal, climbing, swimming, mounted or leased actions. Low stance stands only if clearance permits. Consenting training partners retain lesson checks. Ordinary secondary Q interaction remains the fallback when no target qualifies.
+
+The existing AnimationTree grapple clip now has a staged torso settle, a 1.8-second reach/hold/release and rig-relative palm contact. A 0.45-second collision-constrained backward step clears the falling body. The victim uses its held → fall → persistent down branch. Weapons/spear are stowed; the paired action and shared leases release on completion/cancellation. Mission guards now survive the same knockout; uniform acquisition and saved knocked-out state remain supported. Full MPFB bodies and foundations are unchanged.
+
+`combat/silent_knockout.gd` samples visual witnesses during the action at 0.15-second intervals and records at most one report. Only another conscious, awake British/police actor can report; the victim and civilians cannot. Facing, range, solid occlusion, smoke and stance visibility use the shared perception service. Damage itself does not broadcast a silent assault. The station excludes restrained officers from choosing a witness. British presiding-officer assets are tagged as British officials at creation.
+
+Wanted state now draws five brass/ivory star outlines at the top right, filling the active level. Zero wanted hides them. The crime notification was removed; crime escalation, fading, custody and restored values use existing state. Minimap placement and top-left guidance are unchanged.
+
+Focused headless and native Metal checks passed rear/front eligibility, high-health nonlethal outcome, palm error <4 cm, witness eligibility/facing/sleep/wall/smoke, no unseen crime, released control/lease, persistent down pose, HUD star state and no crime toast. Native hold/down/star pixels were inspected and deleted. Existing combat rescue regression passed, including grounded down-body/receiver contact. Extended normal-speed world acting, clothing and whole-world frame-budget approval remain open.
+
+Reusable checks: `tools/characters/validate_silent_knockout.gd`, `tools/characters/validate_combat_rescue.gd`, `tools/world/validate_main_knockout.gd`. Optional `TLM_KNOCKOUT_REVIEW` / `TLM_COMBAT_REVIEW` must use an OS temporary directory; the caller deletes output after inspection. Tests keep editable sources and produce no captures by default. Main journey result is recorded in the handoff.
+
+User review: finish the opening, approach an enemy from directly behind and press Q once. Watch the hold, fall and backward release. Repeat with a police/British witness facing the action: wanted stars should appear without a message. Repeat with that witness facing away or behind a wall: no new wanted level.

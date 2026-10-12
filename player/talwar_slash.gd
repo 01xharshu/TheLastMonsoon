@@ -17,11 +17,15 @@ func _ready() -> void:
 func strike() -> bool:
 	if not available(): return false
 	target = _find_target()
+	var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
+	var direction: Vector3 = -camera.global_basis.z
+	actor.get_node("VisualRoot").global_rotation.y = atan2(direction.x,direction.z)
 	visual.slash_target_world = target.global_position+Vector3.UP*ROPE_HEIGHT if is_instance_valid(target) else Vector3.ZERO
 	ControllerFeedback.pulse("melee")
 	set_process(true)
 	WorldAudio.play_at("blade_swoosh",actor.global_position,-17.0)
 	elapsed = 0.0
+	visual.slash_phase = 0.0
 	impact_done = false
 	struck_bodies.clear()
 	closest_target_contact=INF
@@ -31,7 +35,7 @@ func strike() -> bool:
 func available() -> bool:
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
-	return elapsed >= DURATION and visual.equipment != null and not visual.equipment.stowed and visual.equipment.selected == 0 and not actor.is_swimming and not actor.get_meta("scroll_open",false) and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.inventory_ui.is_open() and not actor.get_meta("climbing",false) and not actor.has_meta("mounted_vehicle")
+	return elapsed >= DURATION and visual.equipment != null and not visual.equipment.stowed and visual.equipment.selected == 0 and not actor.is_swimming and not actor.get_meta("scroll_open",false) and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.inventory_ui.is_open() and not actor.get_meta("climbing",false) and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and preload("res://systems/action_permissions.gd").allowed(actor,&"attack")
 
 func _find_target() -> Node3D:
 	var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")

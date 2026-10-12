@@ -50,6 +50,19 @@ var starting_minute: int = 0
 # Multiple missions request the same slowdown; they never compound it.
 const MISSION_CLOCK_MULTIPLIER: float = 1.0 / 3.0
 var _slow_clock_missions: Dictionary = {}
+var _daylight_missions: Dictionary = {}
+
+func set_mission_daylight_locked(mission_id: StringName, enabled: bool) -> void:
+	if mission_id == &"":return
+	if enabled:
+		_daylight_missions[mission_id] = true
+		var minute_of_day := fposmod(total_game_minutes,1440.0)
+		if minute_of_day < 480.0 or minute_of_day >= 1020.0:
+			# Move forward to daylight; never rewind schedules or save time.
+			total_game_minutes = floor(total_game_minutes/1440.0)*1440.0+540.0+(1440.0 if minute_of_day>=1020.0 else 0.0)
+			_update_readable_time(true)
+	else:
+		_daylight_missions.erase(mission_id)
 
 func set_mission_clock_slowed(mission_id: StringName, enabled: bool) -> void:
 	if mission_id == &"":
@@ -60,10 +73,12 @@ func set_mission_clock_slowed(mission_id: StringName, enabled: bool) -> void:
 		_slow_clock_missions.erase(mission_id)
 
 func get_clock_multiplier() -> float:
+	if not _daylight_missions.is_empty():return 0.0
 	return MISSION_CLOCK_MULTIPLIER if not _slow_clock_missions.is_empty() else 1.0
 
 func clear_mission_clock_slowdowns() -> void:
 	_slow_clock_missions.clear()
+	_daylight_missions.clear()
 
 
 # =========================================================
@@ -123,7 +138,7 @@ func _process(
 	delta: float
 ) -> void:
 
-	if clock_paused:
+	if clock_paused or not _daylight_missions.is_empty():
 		return
 
 
@@ -160,7 +175,7 @@ func advance_minutes(
 	minutes: float
 ) -> void:
 
-	if minutes <= 0.0:
+	if minutes <= 0.0 or not _daylight_missions.is_empty():
 		return
 
 

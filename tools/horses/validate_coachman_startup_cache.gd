@@ -11,6 +11,8 @@ func run() -> void:
 	var world := Node3D.new()
 	root.add_child(world)
 	current_scene = world
+	# Source-cache ownership marker for this isolated world (no running clock).
+	var clock := Node.new(); clock.name = "GameTimeSystem"; world.add_child(clock)
 	var bullock := "--bullock" in OS.get_cmdline_user_args()
 	baseline = "--baseline" in OS.get_cmdline_user_args()
 	var cart_script := load("res://vehicles/bullock_cart.gd" if bullock else "res://vehicles/family_carriage_candidate.gd")
@@ -85,6 +87,10 @@ func run() -> void:
 			check(signature == cloth.startup_signature,"Metadata filter changed exact-input body/garment/pose hash")
 	reference_times.sort();current_times.sort()
 	print("COACHMAN CACHE QUERY ",JSON.stringify({"original_signature_median_us":reference_times[2],"metadata_signature_median_us":current_times[2],"signature_equal":not failed,"scope":"signature query only; full-body inputs retained"}))
+	var readbacks: int = world.get_meta("coachman_mesh_readbacks", 0)
+	check(readbacks > 0, "Imported driver sources did not enter owning-world cache")
+	cloth.source_signature()
+	check(world.get_meta("coachman_mesh_readbacks", 0) == readbacks, "Repeated exact signature read uploaded meshes again")
 	var expected: Array = []
 	var body_meshes: Array = []
 	for node in driver.find_children("*","MeshInstance3D",true,false):

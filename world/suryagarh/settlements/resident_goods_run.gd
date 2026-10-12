@@ -30,6 +30,10 @@ var blocked_age:=0.0
 var navigation_pending:=false
 var freight_phase:="parked"
 var freight_distance:=0.0
+var supplier_leg:=0.0
+var freight_leg:=0
+var freight_blocked:=0.0
+var freight_obstacle:=""
 var shipment:=0
 var source_side:=-1.0
 var freight_loaded:=0
@@ -38,6 +42,13 @@ var route_points:Array[Vector3]=[]
 var receiving_door:Node3D
 var supply_bench:Node3D
 var loading_steps:Array[Node3D]=[]
+var parcels:Array[Node3D]=[]
+var issued:=0
+var issue_stage:=0
+var issue_waypoint:=1
+var issue_progress:=0.0
+var supply_service:Node
+var issue_hand_error:=0.0
 var store_base:=Vector3(.53,1.15,1)
 var stand_base:=Vector3(.1,.24,1)
 
@@ -52,21 +63,25 @@ func prepare()->void:
 	institution.add_child(cart);cart.position=Vector3(5,0,11)
 	cart.set_meta("assigned_workplace",str(institution.get_path()))
 	cart.set_meta("errand_transfer",true)
+	if work_kind in ["hospital","depot"]:supply_service=institution.get_parent().get_node_or_null("Operations")
+	if is_instance_valid(supply_service) and supply_service.has_signal("stock_changed"):supply_service.stock_changed.connect(update_issued_stock)
 	var builder:=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
 	var wood:=builder.material(Color(.28,.19,.11))
 	var shelf_name:String="LinenShelf" if linen else "StoresReceivingShelf"
 	builder.piece(institution,shelf_name,Vector3(store_base.x+.32,store_base.y-.05,store_base.z+.55),Vector3(.85,.10,2.2),wood)
 	for z in [.6,2.5]:builder.piece(institution,shelf_name+"Leg",Vector3(store_base.x+.42,.68,z),Vector3(.1,.88,.1),wood)
-	supply_bench=builder.piece(institution,"SupplierLoadingBench",Vector3(5+source_side*3.3,.85,21),Vector3(2,.1,.35),wood)
+	supply_bench=builder.piece(institution,"SupplierLoadingBench",Vector3(5+supplier_leg+source_side*3.3,.85,21),Vector3(2,.1,.35),wood)
 	for x in [-.85,.85]:builder.piece(supply_bench,"LoadingBenchLeg",Vector3(x,-.45,0),Vector3(.12,.80,.15),wood)
 	for index in 8:
 		var step:=builder.piece(institution,"SupplierLoadingStep",Vector3(5,0,17+4.15+index*.28),Vector3(2,.05,.28),wood)
 		step.visible=false
 		step.get_child(1).collision_layer=0
 		loading_steps.append(step)
+	builder.piece(institution,"ResidentIssueTable",Vector3(stand_base.x-.63,1.26,stand_base.z+.55),Vector3(.5,.08,2.1),wood)
+	for z in [stand_base.z-.3,stand_base.z+1.4]:builder.piece(institution,"ResidentIssueTableLeg",Vector3(stand_base.x-.63,.62,z),Vector3(.10,1.28,.10),wood)
 	builder.free()
 	await get_tree().physics_frame
-	var bench_at:=institution.to_global(Vector3(5+source_side*3.3,0,21))
+	var bench_at:=institution.to_global(Vector3(5+supplier_leg+source_side*3.3,0,21))
 	var bench_excluded:Array[RID]=[]
 	for collider in supply_bench.find_children("*","CollisionObject3D",true,false):bench_excluded.append(collider.get_rid())
 	var bench_ray:=PhysicsRayQueryParameters3D.create(bench_at+Vector3.UP*3,bench_at-Vector3.UP*5,1,bench_excluded)
@@ -85,24 +100,29 @@ func prepare()->void:
 		load_.name=("LinenConsignment%d" if linen else "StoresConsignment%d")%i;load_.scale=Vector3.ONE*.38;cart.add_child(load_);load_.position=Vector3(-.5+i*.5,1.185,3.75)
 		load_.set_meta("contents",{"hospital":"hospital linen","depot":"commissariat stores","port":"customs freight","market":"market merchandise","household":"household provisions"}.get(work_kind,"provisions"))
 		var body:=StaticBody3D.new();body.name="ConsignmentBody";body.collision_layer=0;body.collision_mask=0;load_.add_child(body)
-		var collision:=CollisionShape3D.new();var box:=BoxShape3D.new();box.size=Vector3(1.1,.95,1.2);collision.shape=box;collision.position.y=.475;body.add_child(collision)
+		var collision:=CollisionShape3D.new();var box:=BoxShape3D.new();box.size=Vector3(1.1,1.25,1.2);collision.shape=box;collision.position.y=.625;body.add_child(collision)
 		# The carrier owns manipulation clearance; other people retain goods collision.
 		collision_excluded.append(body.get_rid())
 		for mesh:GeometryInstance3D in load_.find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=150
 		goods.append(load_)
+		var parcel:Node3D=load("res://objects/household/supplies/supply_parcel.tscn").instantiate()
+		parcel.name="SupplyParcel%d"%i;load_.add_child(parcel);parcel.position=Vector3(0,.95,0);parcel.scale=Vector3.ONE*2.6
+		var parcel_body:=StaticBody3D.new();parcel_body.name="ConsignmentBody";parcel_body.collision_layer=1;parcel_body.collision_mask=0;parcel.add_child(parcel_body)
+		var parcel_collision:=CollisionShape3D.new();var parcel_box:=BoxShape3D.new();parcel_box.size=Vector3(.27,.085,.18);parcel_collision.shape=parcel_box;parcel_collision.position.y=.043;parcel_body.add_child(parcel_collision)
+		collision_excluded.append(parcel_body.get_rid());parcels.append(parcel)
 		await get_tree().process_frame
 	for side in ["l","r"]:ankles[side]=actor.foot_plant.ankle_height[side]-actor.global_position.y
 	work_tree()
 	# The open central aisle lies between the existing ward beds and divisions.
 	# The receiving orderly owns the center of the broad entrance. The porter
 	# uses its left side, so his mandatory stop never coincides with that body.
-	var points:Array=route_points if route_points.size()==5 else [Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(-.85,0,7),Vector3(-.85,.24,4),Vector3(0,.24,1)]
+	var points:Array=route_points if route_points.size()>=5 else [Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(-.85,0,7),Vector3(.1,.24,4),Vector3(0,.24,1)]
 	for at in points:waypoints.append(institution.to_global(at))
 	if not pending.is_empty():restore_state(pending);pending.clear()
 	elif clock!=null:day=clock.current_day
 
 func _physics_process(delta:float)->void:
-	if goods.size()!=3 or waypoints.size()!=5 or ankles.size()!=2:return
+	if goods.size()!=3 or waypoints.size()<5 or ankles.size()!=2:return
 	age+=delta
 	if age<Budget.interval(actor,viewer):return
 	# Consume remote elapsed time without jumping through an obstacle or dropping clocks.
@@ -111,17 +131,33 @@ func _physics_process(delta:float)->void:
 		var slice:=minf(age,.1);age-=slice;tick(slice)
 
 func tick(delta:float)->void:
-	if waypoints.size()!=5:return
+	if waypoints.size()<5:return
 	if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false):return
 	elapsed+=delta
 	if clock!=null and (clock.current_hour<7 or clock.current_hour>=18):
 		if cart.boarding.rider==null:cart.boarding.speed=0;cart.set_forward_motion(0,delta)
 		actor.travel_speed=0;actor._set_animation(&"idle",delta);contact();return
 	if phase=="rest":
-		var waiting_spot:Vector3=institution.to_global(Vector3(8,0,15.4))
+		if delivered>=3 and issued<3:
+			issue_supply(delta);return
+		if issue_stage==4:
+			var exit_goal:Vector3=waypoints[issue_waypoint]
+			var exit_floor:float=destination_floor(exit_goal)
+			if is_finite(exit_floor):exit_goal.y=exit_floor
+			walk(exit_goal,delta);actor._set_animation(&"walk" if actor.travel_speed>0 else &"idle",delta)
+			if actor.global_position.distance_to(exit_goal)<.035:
+				if issue_waypoint>1:issue_waypoint-=1
+				else:issue_stage=0
+			return
+		var waiting_spot:Vector3=institution.to_global(Vector3(16,0,20))
+		var waiting_floor:float=destination_floor(waiting_spot)
+		if is_finite(waiting_floor):waiting_spot.y=waiting_floor
 		var loading:bool=freight_phase.begins_with("loading_")
 		var stepping_aside:=walk(waiting_spot,delta) if not loading else false
 		if loading or actor.global_position.distance_to(waiting_spot)<.04:freight_tick(delta)
+		var loading_lean:float=.7*(1-progress) if freight_phase=="loading_lift" else (.6*sin(progress*PI) if freight_phase=="loading_lower" else 0.0)
+		lean_blend=move_toward(lean_blend,loading_lean,delta*5)
+		actor.animation_tree.set("parameters/linen_work/blend_amount",lean_blend)
 		actor._set_animation(&"walk" if actor.travel_speed>0 else &"idle",delta)
 		for side in ["l","r"]:actor.foot_plant.ankle_height[side]=actor.global_position.y+float(ankles.get(side,0.0))
 		contact()
@@ -132,7 +168,7 @@ func tick(delta:float)->void:
 		if receiving_door!=null and waypoint in [2,3] and not receiving_door.get("locked"):receiving_door.set_open(true)
 		var goal:Vector3=waypoints[waypoint]
 		if waypoint==0:goal=institution.to_global(Vector3(4.5+mini(delivered,2)*.5,0,15.28))
-		elif waypoint==4:goal=institution.to_global(stand_base+Vector3(0,0,delivered*.55))
+		elif waypoint==waypoints.size()-1:goal=institution.to_global(stand_base+Vector3(0,0,delivered*.55))
 		var supported_y:=destination_floor(goal)
 		if is_finite(supported_y):goal.y=supported_y
 		moving=walk(goal,delta)
@@ -140,13 +176,13 @@ func tick(delta:float)->void:
 			match phase:
 				"collect":
 					if waypoint>0:waypoint-=1
-					else:phase="lift";progress=0;actor.global_rotation.y=PI
+					else:phase="lift";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI
 				"inside":
 					if waypoint<waypoints.size()-1:waypoint+=1
-					else:phase="lower";progress=0;actor.global_rotation.y=PI/2
+					else:phase="lower";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI/2
 				"return":
 					if waypoint>0:waypoint-=1
-					else:phase="rest" if delivered>=3 else "lift";progress=0;actor.global_rotation.y=PI
+					else:phase="rest" if delivered>=3 else "lift";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI
 	else:
 		actor.travel_speed=0
 		if phase in ["lift","lower"]:
@@ -167,6 +203,57 @@ func tick(delta:float)->void:
 	for side in ["l","r"]:actor.foot_plant.ankle_height[side]=actor.global_position.y+float(ankles.get(side,0.0))
 	contact()
 
+func issue_supply(delta:float)->void:
+	var goal:Vector3=institution.to_global(stand_base+Vector3(0,0,issued*.55))
+	var height:float=destination_floor(goal)
+	if is_finite(height):goal.y=height
+	if issue_stage==0:
+		if issue_waypoint<waypoints.size()-1:
+			goal=waypoints[issue_waypoint]
+			height=destination_floor(goal)
+			if is_finite(height):goal.y=height
+		walk(goal,delta)
+		actor._set_animation(&"walk" if actor.travel_speed>0 else &"idle",delta)
+		if actor.global_position.distance_to(goal)<.035:
+			if issue_waypoint<waypoints.size()-1:issue_waypoint+=1;return
+			issue_stage=1;issue_progress=0;actor.global_rotation.y=institution.global_rotation.y+PI/2
+		return
+	actor.travel_speed=0;issue_progress=minf(1,issue_progress+delta/3)
+	var parcel:Node3D=parcels[issued]
+	var source:Vector3=goods[issued].to_global(Vector3(0,.95,0))
+	var held:Vector3=actor.to_global(Vector3(0,.91,.3))
+	var target:Vector3=institution.to_global(Vector3(stand_base.x-.5,1.31,stand_base.z+issued*.55))
+	if issue_stage==1:parcel.global_position=source.lerp(held,smoothstep(0,1,issue_progress))
+	elif issue_stage==2:
+		actor.global_rotation.y=institution.global_rotation.y+PI/2+PI*smoothstep(0,1,issue_progress)
+		parcel.global_position=actor.to_global(Vector3(0,.91,.3))
+	else:parcel.global_position=held.lerp(target,smoothstep(0,1,issue_progress))
+	lean_blend=move_toward(lean_blend,.4*sin(issue_progress*PI) if issue_stage!=2 else 0.0,delta*3)
+	actor.animation_tree.set("parameters/linen_work/blend_amount",lean_blend)
+	actor._set_animation(&"idle",delta)
+	for side in ["l","r"]:
+		var palm_target:Vector3=parcel.global_position+Vector3.UP*.04+actor.global_basis.x*(.11 if side=="l" else -.11)
+		actor.solve_hand_contact(side,palm_target);actor.set_grip(side,.3)
+		issue_hand_error=maxf(issue_hand_error,actor.palm_world(side).distance_to(palm_target))
+	if issue_progress<1:return
+	if issue_stage<3:
+		issue_stage+=1;issue_progress=0
+	else:
+		place(parcel,institution,institution.to_local(target));parcel.scale=Vector3.ONE*.988
+		if is_instance_valid(supply_service) and supply_service.has_method("receive_consignment"):supply_service.receive_consignment(work_kind,shipment,issued)
+		issued+=1;issue_stage=4 if issued>=3 else 0;issue_waypoint=waypoints.size()-2 if issued>=3 else waypoints.size()-1;issue_progress=0
+		institution.set_meta("resident_issued_supplies",issued)
+	actor.set_meta("daily_activity",work_kind+"_issuing")
+
+func update_issued_stock(kind:String,amount:int)->void:
+	if kind!=work_kind:return
+	for i in parcels.size():
+		if parcels[i].get_parent()!=institution:continue
+		var remaining:int=clampi(amount-i*3,0,3)
+		parcels[i].visible=remaining>0
+		parcels[i].get_node("ConsignmentBody").collision_layer=1 if remaining>0 else 0
+		parcels[i].set_meta("units_remaining",remaining)
+
 func freight_tick(delta:float)->void:
 	# The empty cart leaves before another consignment can be loaded. Its own
 	# draft team and boarding clearance remain authoritative during the trip.
@@ -176,7 +263,9 @@ func freight_tick(delta:float)->void:
 		if clock==null or clock.current_day==day:return
 		# Yesterday's linen has gone to laundry / stores have been issued. Reuse
 		# the bounded crate pool only at the supplier end of the visible journey.
-		day=clock.current_day;shipment+=1;delivered=0
+		day=clock.current_day;shipment+=1;delivered=0;issued=0;issue_stage=0;issue_waypoint=1;issue_progress=0
+		for i in parcels.size():
+			place(parcels[i],goods[i],Vector3(0,.95,0));parcels[i].scale=Vector3.ONE*2.6;parcels[i].visible=true
 		position_supply_bench()
 		for i in goods.size():
 			place(goods[i],cart,cart.to_local(supply_point(i)))
@@ -185,9 +274,24 @@ func freight_tick(delta:float)->void:
 		freight_loaded=0;freight_waypoint=0;progress=0;freight_phase="loading_collect"
 	if freight_phase.begins_with("loading_"):
 		load_supply(delta);return
+	if freight_phase in ["outbound","turn_home","returning"]:
+		var source_at:Vector3=institution.to_global(Vector3(5+supplier_leg,0,17))
+		var goal:Vector3=source_at
+		if freight_phase=="turn_home":goal=source_at+institution.global_basis.x*signf(supplier_leg)*10
+		elif freight_phase=="returning":goal=institution.to_global(Vector3(5,0,17))
+		if move_freight_towards(goal,delta):
+			if freight_phase=="outbound":freight_phase="awaiting_supply";position_supply_bench()
+			elif freight_phase=="turn_home":freight_phase="returning"
+			else:freight_phase="arriving"
+		return
 	if freight_phase not in ["departing","arriving"]:return
 	if cart.boarding.rider!=null or not cart.can_move():
 		cart.boarding.speed=0;cart.set_forward_motion(0,delta);return
+	if freight_phase=="arriving":
+		var old_yaw:float=cart.global_rotation.y
+		cart.global_rotation.y=rotate_toward(old_yaw,institution.global_rotation.y,delta*.22)
+		if not cart.boarding._clearance_at(cart.global_position):cart.global_rotation.y=old_yaw;return
+		if absf(angle_difference(cart.global_rotation.y,institution.global_rotation.y))>.03:return
 	var distance:float=minf(.65*delta,6.0-freight_distance) if freight_phase=="departing" else minf(.95*delta,freight_distance)
 	var next:Vector3=cart.global_position+institution.global_basis.z*distance*(1 if freight_phase=="departing" else -1)
 	var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*2,next-Vector3.UP*3,1,cart.boarding._vehicle_exclusions())
@@ -200,10 +304,37 @@ func freight_tick(delta:float)->void:
 	cart.boarding.speed=-.65 if freight_phase=="departing" else .95
 	cart.set_forward_motion(cart.boarding.speed,delta)
 	if freight_phase=="departing" and freight_distance>=5.99:
-		freight_phase="awaiting_supply";cart.boarding.speed=0;cart.set_forward_motion(0,delta)
+		freight_phase="outbound" if absf(supplier_leg)>.1 else "awaiting_supply";cart.boarding.speed=0;cart.set_forward_motion(0,delta)
 	elif freight_phase=="arriving" and freight_distance<=.01:
 		freight_distance=0;freight_phase="parked";phase="collect";waypoint=1
 		cart.boarding.speed=0;cart.set_forward_motion(0,delta)
+
+func move_freight_towards(goal:Vector3,delta:float)->bool:
+	if cart.boarding.rider!=null or not cart.can_move():
+		cart.boarding.speed=0;cart.set_forward_motion(0,delta);return false
+	var offset:Vector3=goal-cart.global_position;offset.y=0
+	if offset.length()<.10:
+		cart.boarding.speed=0;cart.set_forward_motion(0,delta);return true
+	var heading:float=atan2(-offset.x,-offset.z)
+	var old_yaw:float=cart.global_rotation.y
+	cart.global_rotation.y=rotate_toward(old_yaw,heading,delta*.22)
+	if not cart.boarding._clearance_at(cart.global_position):
+		for shape:CollisionShape3D in ([] if not freight_obstacle.is_empty() else cart.boarding.clearance_shapes):
+			var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=Transform3D(cart.global_basis,cart.global_position+cart.global_basis*shape.position);query.collision_mask=1;query.exclude=cart.boarding._vehicle_exclusions()
+			var hits:=cart.get_world_3d().direct_space_state.intersect_shape(query,1)
+			if not hits.is_empty():freight_obstacle=str(hits[0].collider.get_path());break
+		cart.global_rotation.y=old_yaw;cart.boarding.speed=0;cart.set_forward_motion(0,delta);freight_blocked+=delta;return false
+	var pace:float=1.05 if absf(angle_difference(cart.global_rotation.y,heading))<.08 else 0.0
+	var next:Vector3=cart.global_position-cart.global_basis.z*minf(pace*delta,offset.length())
+	var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*3,next-Vector3.UP*4,1,cart.boarding._vehicle_exclusions())
+	var ground:=cart.get_world_3d().direct_space_state.intersect_ray(ray)
+	if ground.is_empty() or ground.normal.y<.6 or absf(ground.position.y-cart.global_position.y)>.35:
+		cart.boarding.speed=0;cart.set_forward_motion(0,delta);freight_blocked+=delta;return false
+	next.y=ground.position.y
+	if not cart.boarding._clearance_at(next):
+		cart.boarding.speed=0;cart.set_forward_motion(0,delta);freight_blocked+=delta;return false
+	cart.global_position=next;cart.boarding.speed=pace;cart.set_forward_motion(pace,delta);freight_blocked=0;freight_obstacle=""
+	return false
 
 func position_supply_bench()->void:
 	var at:=cart.to_global(Vector3(source_side*3.3,0,4))
@@ -214,6 +345,7 @@ func position_supply_bench()->void:
 	var hit:=actor.get_world_3d().direct_space_state.intersect_ray(ray)
 	if not hit.is_empty():at.y=hit.position.y
 	supply_bench.global_position=at+Vector3.UP*.85
+	supply_bench.global_rotation.y=cart.global_rotation.y
 	for index in loading_steps.size():
 		var point:=cart.to_global(Vector3(0,0,4.15+index*.28))
 		var step_excluded:Array[RID]=excluded.duplicate()
@@ -224,6 +356,7 @@ func position_supply_bench()->void:
 		var height:float=maxf(.04,(cart.global_position.y-ground.position.y)*(1.0-float(index)/7.0))
 		var step:Node3D=loading_steps[index]
 		step.global_position=Vector3(point.x,ground.position.y+height*.5,point.z)
+		step.global_rotation.y=cart.global_rotation.y
 		step.get_child(0).mesh.size=Vector3(2,height,.28)
 		step.get_child(1).get_child(0).shape.size=Vector3(2,height,.28)
 		step.get_child(1).collision_layer=1;step.visible=true
@@ -233,14 +366,14 @@ func supply_point(index:int)->Vector3:
 
 func load_supply(delta:float)->void:
 	if freight_phase=="loading_clear":
-		var exits:Array=[cart.to_global(Vector3(.5,0,6.7)),cart.to_global(Vector3(3,0,6.7)),institution.to_global(Vector3(8,0,15.4))]
+		var exits:Array=[cart.to_global(Vector3(.5,0,6.7)),cart.to_global(Vector3(3,0,6.7)),institution.to_global(Vector3(16,0,20))]
 		var exit:Vector3=exits[freight_waypoint]
 		var height:=destination_floor(exit)
 		if is_finite(height):exit.y=height
 		walk(exit,delta)
 		if actor.global_position.distance_to(exit)<.035:
 			if freight_waypoint<2:freight_waypoint+=1
-			else:freight_phase="arriving";freight_waypoint=0
+			else:freight_phase="turn_home" if absf(supplier_leg)>.1 else "arriving";freight_waypoint=0
 		return
 	var item:Node3D=goods[freight_loaded]
 	var source:=supply_point(freight_loaded)
@@ -258,7 +391,7 @@ func load_supply(delta:float)->void:
 			if freight_waypoint<2:freight_waypoint+=1;return
 			freight_waypoint=0
 			freight_phase="loading_lift" if freight_phase=="loading_collect" else "loading_lower"
-			progress=0;actor.global_rotation.y=PI
+			progress=0;actor.global_rotation.y=cart.global_rotation.y+PI
 		return
 	actor.travel_speed=0;progress=minf(1,progress+delta/2)
 	var held:=actor.to_global(Vector3(0,1.0,.30))
@@ -379,14 +512,17 @@ func place(item:Node3D,parent:Node3D,at:Vector3)->void:
 	item.get_node("ConsignmentBody").collision_layer=1 if parent==institution else 0
 
 func export_state()->Dictionary:
-	return {"institution_anchor":[institution.global_position.x,institution.global_position.y,institution.global_position.z],"phase":phase,"progress":progress,"delivered":delivered,"day":day,"waypoint":waypoint,"position":[actor.position.x,actor.position.y,actor.position.z],"freight_phase":freight_phase,"freight_distance":freight_distance,"shipment":shipment,"freight_loaded":freight_loaded,"freight_waypoint":freight_waypoint,"cart_position":[cart.position.x,cart.position.y,cart.position.z]}
+	return {"institution_anchor":[institution.global_position.x,institution.global_position.y,institution.global_position.z],"issued":issued,"issue_waypoint":issue_waypoint,"issue_stage":issue_stage,"issue_progress":issue_progress,"phase":phase,"progress":progress,"delivered":delivered,"day":day,"waypoint":waypoint,"position":[actor.position.x,actor.position.y,actor.position.z],"freight_phase":freight_phase,"freight_distance":freight_distance,"shipment":shipment,"freight_loaded":freight_loaded,"freight_waypoint":freight_waypoint,"cart_yaw":cart.rotation.y,"cart_position":[cart.position.x,cart.position.y,cart.position.z]}
 
 func restore_state(data:Dictionary)->void:
 	if data.is_empty():return
 	if goods.size()!=3:pending=data.duplicate(true);return
+	issued=clampi(int(data.get("issued",3 if int(data.get("delivered",0))>=3 else 0)),0,3)
+	issue_waypoint=clampi(int(data.get("issue_waypoint",1)),1,waypoints.size()-1)
+	issue_stage=clampi(int(data.get("issue_stage",0)),0,4);issue_progress=clampf(float(data.get("issue_progress",0)),0,1)
 	phase=str(data.get("phase","collect"))
 	if phase not in ["collect","lift","inside","lower","return","rest"]:phase="collect"
-	delivered=clampi(int(data.get("delivered",0)),0,3);day=int(data.get("day",-1));waypoint=clampi(int(data.get("waypoint",0)),0,4);progress=clampf(float(data.get("progress",0)),0,1)
+	delivered=clampi(int(data.get("delivered",0)),0,3);day=int(data.get("day",-1));waypoint=clampi(int(data.get("waypoint",0)),0,waypoints.size()-1);progress=clampf(float(data.get("progress",0)),0,1)
 	if delivered>=3 and phase in ["lift","inside","lower"]:phase="return"
 	var at:Variant=data.get("position",[])
 	if at is Array and at.size()==3:
@@ -399,7 +535,7 @@ func restore_state(data:Dictionary)->void:
 				if old_anchor.is_finite():point+=actor.get_parent().global_basis.inverse()*(institution.global_position-old_anchor)
 			actor.position=point
 	freight_phase=str(data.get("freight_phase","parked"))
-	if freight_phase not in ["parked","departing","awaiting_supply","arriving","loading_collect","loading_lift","loading_carry","loading_lower","loading_clear"]:freight_phase="parked"
+	if freight_phase not in ["parked","departing","outbound","turn_home","returning","awaiting_supply","arriving","loading_collect","loading_lift","loading_carry","loading_lower","loading_clear"]:freight_phase="parked"
 	freight_distance=clampf(float(data.get("freight_distance",0)),0,6)
 	shipment=maxi(0,int(data.get("shipment",0)))
 	freight_loaded=clampi(int(data.get("freight_loaded",0)),0,3)
@@ -408,6 +544,7 @@ func restore_state(data:Dictionary)->void:
 	if cart_at is Array and cart_at.size()==3:
 		var cart_point:=Vector3(float(cart_at[0]),float(cart_at[1]),float(cart_at[2]))
 		if cart_point.is_finite():cart.position=cart_point
+	cart.rotation.y=float(data.get("cart_yaw",0.0))
 	if freight_phase.begins_with("loading_"):position_supply_bench()
 	for i in goods.size():
 		if freight_phase.begins_with("loading_"):
@@ -418,3 +555,11 @@ func restore_state(data:Dictionary)->void:
 		elif i<delivered:place(goods[i],institution,store_base+Vector3(0,0,i*.55))
 		elif i==delivered and phase in ["inside","lower"]:place(goods[i],actor,Vector3(0,.91,.34))
 		else:place(goods[i],cart,Vector3(-.5+i*.5,1.185,3.75))
+
+	for i in parcels.size():
+		if i<issued:
+			place(parcels[i],institution,Vector3(stand_base.x-.5,1.31,stand_base.z+i*.55));parcels[i].scale=Vector3.ONE*.988
+		elif i==issued and phase=="rest" and issue_stage>0:
+			place(parcels[i],actor,Vector3(0,.91,.3));parcels[i].scale=Vector3.ONE*.988
+		else:
+			place(parcels[i],goods[i],Vector3(0,.95,0));parcels[i].scale=Vector3.ONE*2.6

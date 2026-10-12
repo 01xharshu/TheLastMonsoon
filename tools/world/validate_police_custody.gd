@@ -41,6 +41,9 @@ func run() -> void:
 		review_camera.make_current()
 	var coordinator = station.get_node("ThanaStaff/ArrestCoordinator")
 	coordinator.set_physics_process(false)
+	var initial_staff:Dictionary={}
+	for person in station.get_node("ThanaStaff").get_children():
+		if person is Node3D and person.has_method("palm_world"):initial_staff[person]=person.global_transform
 	coordinator.custody_seconds = 2.0
 	player.inventory.add_item("talwar",1)
 	var visual = player.get_node("VisualRoot/CharacterVisual")
@@ -83,7 +86,12 @@ func run() -> void:
 			minimum_officer_gap = minf(minimum_officer_gap,Vector2(player.global_position.x-coordinator.officer.global_position.x,player.global_position.z-coordinator.officer.global_position.z).length())
 		if coordinator.phase == "fight" and not resisted_escape:
 			resisted_escape = true
-			player.global_position += station.global_basis * Vector3(-3,0,0)
+			# Back away within the officer's view. The old station-X teleport could
+			# put the player behind the officer and correctly exercise lost sight,
+			# rather than the continued visible pursuit this assertion requires.
+			var away:Vector3=player.global_position-coordinator.officer.global_position
+			away.y=0
+			player.global_position += away.normalized()*3.0
 			previous = player.global_position
 		detention._process(.1)
 		if coordinator.phase == "booking":
@@ -118,6 +126,11 @@ func run() -> void:
 	check(clock.current_day == initial_day+3,"Sentence did not advance three days")
 	check(clock.current_hour == 6 and clock.current_minute == 0,"Release was not at 6 AM")
 	check(player.health >= 20 and player.health < 40,"Police fight lacked nonlethal damage")
+	if not is_instance_valid(coordinator.gate):
+		print("POLICE CUSTODY: FAIL before jail entry; phases=",phases)
+		world.free()
+		root.get_node("SaveManager").quit_game(1)
+		return
 	check(not coordinator.gate.locked,"Release left cell locked")
 	check(coordinator.clear_at(player.global_position-Vector3.UP*.9,.43),"Release porch lacks safe standing clearance")
 	check(not coordinator.transfer.layer.visible,"Release left the fade visible")
@@ -137,6 +150,12 @@ func run() -> void:
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
 	coordinator.cooldown = 0.0
+	# Each witnessed-incident case starts with the authored staff placement,
+	# rather than a returning officer still facing away after the prior case.
+	for person in initial_staff:
+		person.global_transform=initial_staff[person]
+		person.body_collider.force_update_transform()
+	await physics_frame
 	for person in station.get_node("ThanaStaff").get_children():
 		if person.get_meta("thana_role","") in ["daroga","burkundaz"]: person.set_meta("knocked_out",true)
 	check(not coordinator.report_crime(player,"theft",player.global_position),"Incapacitated police witnessed an arrest")
@@ -167,6 +186,8 @@ func run() -> void:
 	coordinator.officer.set_meta("knocked_out",false)
 	coordinator.cooldown = 0.0
 	visual.equipment.stowed = false
+	var witness_direction:Vector3=player.global_position-coordinator.officer.global_position
+	coordinator.officer.global_rotation.y=atan2(witness_direction.x,witness_direction.z)
 	check(coordinator.report_crime(player,"assault",player.global_position),"Obstruction fixture could not start incident")
 	coordinator.officer.duty_state = "fight"
 	coordinator.fight_age = .4

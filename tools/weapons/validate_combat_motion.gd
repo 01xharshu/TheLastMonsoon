@@ -44,6 +44,16 @@ func run() -> void:
 	check(not combat.kick_landed,"kick has no contact before extension")
 	combat._process(.04)
 	check(combat.kick_landed,"kick contact occurs during extension")
+	combat.interrupt()
+	combat.kick_cooldown=0
+	combat._unhandled_input(click)
+	combat._process(combat.DOUBLE_CLICK_SECONDS+.01)
+	check(slash.elapsed<slash.DURATION,"slow frame can expire first click")
+	click.double_click=true
+	combat._unhandled_input(click)
+	check(combat.kick_time>=0 and visual.slash_phase<0,"OS double click replaces expired single slash with kick")
+	click.double_click=false
+	combat.interrupt()
 	combat.kick_time = -1.0
 	visual.kick_phase = -1.0
 	visual.equipment.stowed = true

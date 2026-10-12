@@ -6,9 +6,14 @@ static func build(world: Node = null) -> AStar2D:
  if world!=null and world.has_meta("coach_road_graph"): return world.get_meta("coach_road_graph")
  var graph := AStar2D.new()
  var layout := Layout.new()
- var paths: Array = Layout.ROUTES.values().duplicate()
+ var paths: Array = []
+ for label:String in Layout.ROUTES:
+  if label.begins_with("port_lower_service_"):continue # Grade-separated lower service road; never join it to the overpass in this 2D graph.
+  paths.append(Layout.ROUTES[label])
  var trunk: Array[Vector2] = []
- for z in range(-470,651,10): trunk.append(Vector2(layout.road_x(z),z))
+ for z in range(-470,369,10): trunk.append(Vector2(layout.road_x(z),z))
+ # The old straight trunk cannot cross the new gully without a bridge.
+ # Port traffic must use the winding upland road to reach the village.
  paths.append(trunk)
  paths.append([Vector2(layout.road_x(165),165),Vector2(273,165)])
  paths.append([Vector2(-230,180),Vector2(layout.road_x(180),180)])

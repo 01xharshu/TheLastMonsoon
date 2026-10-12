@@ -19,6 +19,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	var startup_task := Startup.begin("World")
+	add_child(preload("res://world/suryagarh/world_districts.gd").new())
 	await Startup.wait_others(self, startup_task)
 	# Default budget: 8 GB total device memory, 720p; measured validation in docs/world.
 	get_viewport().msaa_3d = Viewport.MSAA_DISABLED
@@ -72,6 +73,7 @@ func _ready() -> void:
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	add_child(preload("res://story/dev_story.gd").new())
 	add_child(preload("res://story/rebellion_story.gd").new())
+	add_child(preload("res://story/community_story.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	await Startup.wait_others(self, startup_task)
 	Startup.finish(startup_task)

@@ -6,8 +6,17 @@ var actor:Node3D
 var rig:Skeleton3D
 var garment:MeshInstance3D
 var previous:PackedVector3Array=[]
+var mesh: ArrayMesh
+var normal_offset := 0
+var normal_stride := 0
+var cosines: Array[float]=[]
+var sines: Array[float]=[]
+var folds: Array[float]=[]
 func _init(person:Node3D,skeleton:Skeleton3D)->void:
  actor=person;rig=skeleton
+ for side in SIDES:
+  var angle:=TAU*side/SIDES
+  cosines.append(cos(angle));sines.append(sin(angle));folds.append(.003*(1+cos(angle*8)))
  var cloth:Material
  for node:MeshInstance3D in actor.find_children("*","MeshInstance3D",true,false):
   if "Street folded dhoti" in node.name:
@@ -31,7 +40,10 @@ func update()->void:
    if pose[i].distance_squared_to(previous[i])>.00000025:dirty=true;break
   if not dirty:return
  previous=pose
- var points:=PackedVector3Array();var normals:=PackedVector3Array();var uv:=PackedVector2Array();var ids:=PackedInt32Array()
+ var points:=PackedVector3Array();points.resize(ROWS*SIDES)
+ var normals:=PackedVector3Array();normals.resize(ROWS*SIDES)
+ var uv:=PackedVector2Array();var ids:=PackedInt32Array()
+ var bounds:=AABB()
  var centres:PackedVector3Array=[]
  for row in ROWS:
   var t:=float(row)/(ROWS-1)
@@ -46,13 +58,43 @@ func update()->void:
   var depth:=.15+absf(span.dot(front))*.5
   if row==0:width=.235;depth=.18
   for side in SIDES:
-   var a:=TAU*side/SIDES;var fold:=.003*(1+cos(a*8))
-   points.append(centres[row]+right*cos(a)*(width+fold)+front*sin(a)*(depth+fold))
-   normals.append((right*cos(a)/width+front*sin(a)/depth).normalized());uv.append(Vector2(float(side)/SIDES,t))
- for row in ROWS-1:
-  for side in SIDES:
-   var a:=row*SIDES+side;var b:=row*SIDES+(side+1)%SIDES
-   ids.append_array(PackedInt32Array([a,b,a+SIDES,b,b+SIDES,a+SIDES]))
- var arrays:Array=[];arrays.resize(Mesh.ARRAY_MAX);arrays[Mesh.ARRAY_VERTEX]=points;arrays[Mesh.ARRAY_NORMAL]=normals
- arrays[Mesh.ARRAY_TEX_UV]=uv;arrays[Mesh.ARRAY_INDEX]=ids
- var mesh:=ArrayMesh.new();mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays);garment.mesh=mesh
+   var ca: float=cosines[side];var sa: float=sines[side];var fold: float=folds[side]
+   var vertex: Vector3=centres[row]+right*ca*(width+fold)+front*sa*(depth+fold)
+   points[row*SIDES+side]=vertex
+   bounds=AABB(vertex,Vector3.ZERO) if row==0 and side==0 else bounds.expand(vertex)
+   normals[row*SIDES+side]=(right*ca/width+front*sa/depth).normalized()
+   if mesh==null:uv.append(Vector2(float(side)/SIDES,t))
+ if mesh==null:
+  for row in ROWS-1:
+   for side in SIDES:
+    var a:=row*SIDES+side;var b:=row*SIDES+(side+1)%SIDES
+    ids.append_array(PackedInt32Array([a,b,a+SIDES,b,b+SIDES,a+SIDES]))
+  var arrays:Array=[];arrays.resize(Mesh.ARRAY_MAX);arrays[Mesh.ARRAY_VERTEX]=points;arrays[Mesh.ARRAY_NORMAL]=normals
+  arrays[Mesh.ARRAY_TEX_UV]=uv;arrays[Mesh.ARRAY_INDEX]=ids
+  mesh=ArrayMesh.new()
+  mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_DYNAMIC_UPDATE)
+  normal_offset=RenderingServer.mesh_surface_get_format_offset(mesh.surface_get_format(0),points.size(),Mesh.ARRAY_NORMAL)
+  normal_stride=RenderingServer.mesh_surface_get_format_normal_tangent_stride(mesh.surface_get_format(0),points.size())
+  garment.mesh=mesh
+ else:
+  mesh.surface_update_vertex_region(0,0,points.to_byte_array())
+  var packed:=PackedByteArray();packed.resize(normals.size()*normal_stride)
+  for i in normals.size():
+   var oct: Vector2=normals[i].octahedron_encode()
+   # Vector2 multiplication retains the engine's float32 quantisation before integer conversion.
+   var encoded: Vector2=oct*65535.0
+   packed.encode_u16(i*normal_stride,int(clampf(encoded.x,0,65535)))
+   packed.encode_u16(i*normal_stride+2,int(clampf(encoded.y,0,65535)))
+   # Godot generates a tangent even when only normals were supplied. Both are interleaved.
+   var n: Vector3=normals[i]
+   var tangent: Vector3=Vector3(n.z,-n.x,n.y).cross(n.normalized()).normalized()
+   var tangent_oct: Vector2=tangent.octahedron_encode()
+   tangent_oct.y=maxf(tangent_oct.y,1.0/32767.0)*.5+.5
+   var tangent_encoded: Vector2=tangent_oct*65535.0
+   var tx:=int(clampf(tangent_encoded.x,0,65535))
+   var ty:=int(clampf(tangent_encoded.y,0,65535))
+   if tx==0 and ty==65535:tx=65535
+   packed.encode_u16(i*normal_stride+4,tx);packed.encode_u16(i*normal_stride+6,ty)
+  mesh.surface_update_vertex_region(0,normal_offset,packed)
+ # Uploaded vertex changes do not recalculate the resource's bounds.
+ mesh.custom_aabb=bounds

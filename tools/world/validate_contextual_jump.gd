@@ -1,0 +1,40 @@
+extends "res://tools/world/validate_crime_perception.gd"
+func box(parent:Node3D,at:Vector3,size:Vector3)->StaticBody3D:
+	var body:=StaticBody3D.new();parent.add_child(body);body.position=at
+	var shape:=CollisionShape3D.new();shape.shape=BoxShape3D.new();shape.shape.size=size;body.add_child(shape)
+	return body
+func run()->void:
+	var world:=Node3D.new();root.add_child(world);current_scene=world
+	var clock:=GameTimeSystem.new();clock.name="GameTimeSystem";world.add_child(clock);clock.set_process(false)
+	var floor_body:=box(world,Vector3(0,-.1,0),Vector3(10,.2,10))
+	var actor:CharacterBody3D=load("res://player/player.tscn").instantiate();world.add_child(actor)
+	actor.set_physics_process(false);actor.position=Vector3(0,.901,0)
+	await sync();actor.velocity=Vector3.DOWN;actor.move_and_slide()
+	check(actor.is_on_floor(),"fixture has actual floor contact")
+	Input.action_press("jump");actor._handle_jump();Input.action_release("jump")
+	check(actor.velocity.y<=0 and actor.get_node("ClimbComponent").catch_seconds==0,"Space does not jump on clear ground")
+	var query:RefCounted=load("res://player/contextual_jump.gd").new()
+	var obstacle:=box(world,Vector3(0,.4,.9),Vector3(2,.8,.3));await sync()
+	check(query.available(actor,Vector3.FORWARD*-1,.38,1.28),"nearby obstacle permits takeoff")
+	await process_frame
+	Input.action_press("jump");actor._handle_jump();Input.action_release("jump")
+	check(actor.velocity.y==actor.jump_velocity and actor.get_node("ClimbComponent").catch_seconds>0,"Space uses existing jump and climb catch for an obstacle")
+	check(not query.available(actor,Vector3.FORWARD,.38,1.28),"obstacle behind player does not permit takeoff")
+	obstacle.position.y=2;obstacle.get_child(0).shape.size.y=4;await sync()
+	check(not query.available(actor,Vector3.BACK,.38,1.28),"plain unreachable high wall rejects takeoff")
+	obstacle.add_to_group("climbable_walls")
+	check(query.available(actor,Vector3.BACK,.38,1.28),"authored high climb route permits takeoff")
+	obstacle.set_meta("climb_blocked",true)
+	check(not query.available(actor,Vector3.BACK,.38,1.28),"blocked climb route rejects takeoff")
+	obstacle.queue_free();await sync()
+	var ceiling:=box(world,Vector3(0,2.1,0),Vector3(2,.2,2))
+	obstacle=box(world,Vector3(0,.4,.9),Vector3(2,.8,.3));await sync()
+	check(not query.available(actor,Vector3.BACK,.38,1.28),"low ceiling prevents obstacle takeoff")
+	ceiling.queue_free();obstacle.queue_free();floor_body.queue_free();await sync()
+	box(world,Vector3(0,-.1,-1),Vector3(3,.2,2.8));await sync()
+	check(not query.available(actor,Vector3.BACK,.38,1.28),"unsupported cliff rejects takeoff")
+	box(world,Vector3(0,-.1,2.5),Vector3(3,.2,1.5));await sync()
+	check(query.available(actor,Vector3.BACK,.38,1.28),"nearby gap with level landing permits takeoff")
+	world.queue_free();await sync()
+	print("CONTEXTUAL JUMP ",JSON.stringify({"checks":count,"failures":failures,"status":"PASS" if failures.is_empty() else "FAIL"}))
+	root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

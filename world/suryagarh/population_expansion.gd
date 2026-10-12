@@ -77,8 +77,9 @@ func discover(skeleton:Node) -> void:
  original.tree_exiting.connect(func():remove_colleague(key),CONNECT_ONE_SHOT)
  var index:=posmod(key.hash(),2147483647)
  var points:=route_points(label,index,1.7)
- # Start close to the colleague's region, at a supported road edge, never inside a service room.
- var phase:=closest_phase(points,origin,index)
+ # Keep the regional road, but spread colleagues over its full length.
+ # Projecting every station/service source to its nearest road produced a crowd at one gate.
+ var phase:=phase_on_route(points,fposmod(float(index)*.61803398875,1.0))
  var profile:String="female" if "woman" in source or "/female_" in source else "male"
  var faction:String=str(original.get_meta("combat_faction","british" if "/british/" in source else "indian"))
  var record:Dictionary={"kind":"person","route":label,"index":index,"count":1,"points":points,"phase":phase,"direction":1,"wait":0.0,"source":source,"source_id":key,"profile":profile,"faction":faction,"role":str(original.get_meta("social_role",original.name)),"police":original.is_in_group("thana_officers") or faction=="police"}
@@ -124,7 +125,7 @@ func spawn_record(record:Dictionary) -> void:
  var actor:Node3D
  if record.police:actor=preload("res://characters/npcs/thana/thana_officer.gd").new()
  elif record.faction=="british" and record.profile=="female" and record.source.get_file() in ["private_woman.glb","corporal_woman.glb","sergeant_woman.glb"]:
-  actor=preload("res://characters/npcs/british/candidates/private_skirt_actor.gd").new()
+  actor=preload("res://world/suryagarh/regional_uniform_actor.gd").new()
  elif record.faction=="british":actor=HouseholdActor.new()
  else:actor=Actor.new()
  var figure:=Human.instantiate(record.source,false)

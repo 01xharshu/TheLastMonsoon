@@ -151,7 +151,7 @@ func configure(model: Node3D) -> bool:
 	graph.add_node("detention_wait", _clip("motion/detention_wait"))
 	var detention_layer := AnimationNodeBlend2.new()
 	detention_layer.filter_enabled = true
-	for bone in ["spine_01","spine_02","head","upperarm_l","upperarm_r","lowerarm_l","lowerarm_r","hand_l","hand_r"]:
+	for bone in ["pelvis","spine_01","spine_02","head","upperarm_l","upperarm_r","lowerarm_l","lowerarm_r","hand_l","hand_r"]:
 		detention_layer.set_filter_path(NodePath("Arjun_Rig/Skeleton3D:"+bone),true)
 	graph.add_node("detention", detention_layer)
 	graph.connect_node("detention_pose", 0, "detention_wait")

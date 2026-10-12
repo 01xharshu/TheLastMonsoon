@@ -41,8 +41,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		dodge();get_viewport().set_input_as_handled();return
 	if not event.is_action_pressed("attack") or not available(): return
 	if event is InputEventMouseButton:
-		if pending_single and click_age <= DOUBLE_CLICK_SECONDS:
+		# Honour the OS double-click event even if a slow rendered frame has
+		# already expired our single-click timer between the two presses.
+		if event.double_click or (pending_single and click_age <= DOUBLE_CLICK_SECONDS):
 			pending_single = false
+			if punch_time >= 0 and not punch_damage_done:
+				punch_time = -1.0
+				visual.punch_phase = -1.0
 			kick()
 		else:
 			pending_single = true
@@ -123,8 +128,12 @@ func punch() -> void:
 	ControllerFeedback.pulse("melee")
 
 func kick() -> void:
-	if kick_cooldown > 0.0 or punch_time >= 0.0 or not available(): return
+	if kick_cooldown > 0.0 or punch_time >= 0.0 or kick_time >= 0.0 or dodge_time >= 0.0 or not available(): return
 	kick_cooldown = .65
+	var blade: Node = actor.get_node("TalwarSlash")
+	blade.elapsed = blade.DURATION
+	visual.slash_phase = -1.0
+	visual.slash_target_world = Vector3.ZERO
 	WorldAudio.play_at("cloth",actor.global_position)
 	kick_time = 0.0
 	air_kick = not actor.is_on_floor()

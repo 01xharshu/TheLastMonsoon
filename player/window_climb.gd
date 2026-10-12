@@ -55,7 +55,7 @@ func _begin(actor: CharacterBody3D) -> bool:
 	visual.equipment._refresh()
 	return true
 
-func try_start(actor: CharacterBody3D) -> bool:
+func try_start(actor: CharacterBody3D, takeoff_only: bool = false) -> bool:
 	var forward: Vector3 = actor.visual_root.global_basis.z.normalized()
 	for portal in actor.get_tree().get_nodes_in_group("climbable_windows"):
 		var point: Vector3 = portal.global_position
@@ -88,6 +88,9 @@ func try_start(actor: CharacterBody3D) -> bool:
 		opening.exclude = [actor.get_rid()]
 		opening.collision_mask = actor.collision_mask
 		if not space.intersect_ray(opening).is_empty(): continue
+		# Grounded contextual Space may inspect eligibility without changing the
+		# body, pose or control owner. The airborne catch still validates its path.
+		if takeoff_only:return true
 		sill = point
 		profile = "window"
 		surface = null

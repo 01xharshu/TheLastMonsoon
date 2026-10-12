@@ -334,14 +334,30 @@ func _cylinder(parent: Node3D,label: String,at: Vector3,radius: float,height: fl
 		body.add_child(collision)
 		node.add_child(body)
 
-func _pot(parent: Node3D,label: String,at: Vector3,size: float) -> void:
+func _pot(parent: Node3D,label: String,at: Vector3,size: float) -> Node3D:
+	var vessel = preload("res://objects/household/breakable_earthenware.gd").new()
+	vessel.name = label
+	vessel.position = at
+	vessel.vessel_size = size
+	vessel.unfired = label == "DryingPot" or label == "WheelVessel" or label == "WheelWorkpiece"
+	vessel.set_meta("earthen_vessel",true)
+	parent.add_child(vessel)
+	var collision := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = .23*size
+	shape.height = .44*size
+	collision.shape = shape
+	collision.position.y = .22*size
+	vessel.add_child(collision)
 	var mesh := MeshInstance3D.new()
-	mesh.name = label
 	mesh.mesh = _pot_mesh()
-	mesh.material_override = clay
-	mesh.position = at
+	mesh.set_surface_override_material(0,clay)
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+	mesh.visibility_range_end = 90
+	mesh.visibility_range_end_margin = 10
 	mesh.scale = Vector3.ONE*size
-	parent.add_child(mesh)
+	vessel.add_child(mesh)
+	return vessel
 
 func _pot_mesh() -> ArrayMesh:
 	var profile: Array[Vector2] = [Vector2(0,0),Vector2(.02,.11),Vector2(.12,.20),Vector2(.26,.23),Vector2(.38,.14),Vector2(.42,.11),Vector2(.44,.13),Vector2(.44,.09),Vector2(.38,.09)]

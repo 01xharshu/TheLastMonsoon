@@ -26,7 +26,9 @@ func run() -> void:
 	if world.has_node("Player"):
 		var player=world.get_node("Player");player.set_physics_process(false);player.hide();player.get_node("UI").hide();world.get_node("LandscapeUI").hide()
 	var camera:=Camera3D.new();viewport.add_child(camera);camera.current=true;camera.fov=35 if detail else 44
-	for shot in [{"name":"walk","time":1.0},{"name":"fill","time":17.0},{"name":"wash","time":29.0},{"name":"talk","time":43.0},{"name":"pickup","time":52.8}]:
+	var shots:Array=[{"name":"walk","time":1.0},{"name":"fill","time":17.0},{"name":"wash","time":29.0},{"name":"talk","time":43.0},{"name":"pickup","time":52.8}]
+	if "--extremes" in OS.get_cmdline_user_args():shots.append_array([{"name":"stand_up","time":48.25},{"name":"stand_mid","time":49.37},{"name":"stand_end","time":50.75},{"name":"pickup_deep","time":52.25},{"name":"deliver","time":65.25}])
+	for shot in shots:
 		for i in routine.women.size():
 			var woman=routine.women[i]
 			woman.travel_position=routine.shore+Vector3(-8.0-i*.35,0,(i-1)*1.1)
@@ -61,8 +63,12 @@ func run() -> void:
 			print("WORLD_RIVER_WALK frames=",frame," wall_seconds=",float(last-started)/1000.0," blocked=",routine.blocked_frames)
 
 		if detail and shot.name!="walk":
-			camera.position=routine.women[0].bank+Vector3(1.4,1.2,-1.7)
-			camera.look_at(routine.women[0].bank+Vector3(0,.45,0))
+			var focus:Vector3=routine.women[0].global_position
+			var skeleton:Skeleton3D=routine.women[0].skeleton
+			var head:Vector3=skeleton.to_global(skeleton.get_bone_global_pose(skeleton.find_bone("head")).origin)
+			var height:float=maxf(.8,head.y+.16-focus.y)
+			camera.position=focus+Vector3(1.4,1.2,-1.7)*maxf(1.0,height)
+			camera.look_at(focus+Vector3(0,height*.5,0))
 		await process_frame;RenderingServer.force_draw(false)
 		viewport.get_texture().get_image().save_png(output_dir+"/river_world_"+shot.name+".png")
 		print("WORLD_RIVER_CAPTURE ",shot.name)

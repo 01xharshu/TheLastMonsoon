@@ -1,6 +1,7 @@
 class_name SuryagarhLayout
 extends RefCounted
 const Density = preload("res://world/suryagarh/settlements/countryside_density.gd")
+const PortUplands = preload("res://world/suryagarh/port_village_uplands.gd")
 const FortShape = preload("res://world/ruined_fort/fort_shape.gd")
 const FORT_CENTER := Vector2(520.0, -350.0)
 const FORT_BASE_HEIGHT := 120.0
@@ -71,6 +72,9 @@ const ROUTES: Dictionary = {
 	"fort_trail": [Vector2(320, 150), Vector2(380, 90), Vector2(460, 10), Vector2(480, 0), Vector2(490, -10), Vector2(500, -20), Vector2(520, -50), Vector2(510, -120), Vector2(550, -140), Vector2(550, -170), Vector2(510, -170), Vector2(480, -180), Vector2(490, -200), Vector2(510, -230), Vector2(465, -250)],
 	"fort_access": [Vector2(465, -250), Vector2(565, -255), Vector2(460, -283), Vector2(520, -303)],
 	"port_approach": [Vector2(-185,500), Vector2(-200,560), Vector2(-194,623), Vector2(-194,650)],
+	"port_village_road": PortUplands.MAIN,
+	"port_lower_service_road": [Vector2(-800,385),Vector2(-350,385),Vector2(-100,385)],
+	"port_lower_service_branch": [Vector2(-550,480),Vector2(-350,480),Vector2(-350,385)],
 }
 const SITES: Dictionary = {
 	"Collectorate": Vector2(520,95),
@@ -214,7 +218,7 @@ func height(x: float, z: float) -> float:
 		var lane_distance := INF
 		for i in range(lane.size()-1): lane_distance = minf(lane_distance,segment_distance(sample,lane[i],lane[i+1]))
 		h = lerpf(h,8.5 if id == "cantonment_bazaar_lane" else 10.0,1.0-smoothstep(3.0,9.0,lane_distance))
-	return h
+	return PortUplands.grade(Vector2(x,z),h)
 
 func base_height(x: float, z: float) -> float:
 	var n: float = noise.get_noise_2d(x, z)
@@ -224,6 +228,7 @@ func base_height(x: float, z: float) -> float:
 	upland += hill(x, z, -760, -650, 210, 230, 47)
 	upland *= 1.0 + n * 0.5
 	h += upland
+	h = PortUplands.terrain(Vector2(x,z),h)
 	# Continuous channel and smooth banks; the water surface stays level.
 	var d: float = absf(x - river_x(z))
 	var channel: float = -4.5 + 0.65 * sin(z * 0.023) - 8.0 * smoothstep(500.0,850.0,z)
@@ -281,6 +286,7 @@ func normal(x: float, z: float) -> Vector3:
 
 func road_distance(x: float, z: float) -> float:
 	var main: float = absf(x - road_x(z))
+	if z > 369.0 and z < 500.0: main = INF # Upland road replaces the severed straight port trunk.
 	# A lane linking the village/plain road to the west riverbank.
 	var lane: float = absf(z - (160.0 + 12.0 * sin(x * 0.017)))
 	if x < -280.0 or x > river_x(z) - river_width(z) - 18.0:

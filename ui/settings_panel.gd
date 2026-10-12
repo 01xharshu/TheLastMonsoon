@@ -42,6 +42,8 @@ func show_category(title: String) -> void:
 		add_gyro_calibration();add_controller_test()
 	elif title=="Display":
 		add_toggle("Fullscreen","fullscreen");add_toggle("VSync","vsync")
+		add_child(preload("res://ui/night_preview.gd").new())
+		add_slider("Night brightness","night_brightness",0,1,.01)
 	elif title=="Graphics":
 		var quality:=OptionButton.new()
 		for item in ["Low · up to 540p / 40 m shadows","Medium · up to 720p / 80 m shadows","High · up to 1080p / 130 m shadows"]:quality.add_item(item)

@@ -97,6 +97,14 @@ func _build_homes() -> void:
 		_household_detail(house, site.size, i)
 		house_detail.house(house,site.size,i)
 		household_variety.house(house,site.size,i)
+		if i == 1:
+			preload("res://world/suryagarh/settlements/cultivating_household.gd").new().furnish(self, house)
+		if i == 25:
+			preload("res://world/suryagarh/settlements/carpenter_household.gd").new().furnish(self, house)
+		if i == 27:
+			preload("res://world/suryagarh/settlements/weaving_household.gd").new().furnish(self, house)
+		if i == 30:
+			preload("res://world/suryagarh/settlements/pottery_household.gd").new().furnish(self, house)
 		if i == 0:
 			preload("res://world/suryagarh/settlements/arjun_house.gd").new().furnish(settlement, house)
 
@@ -301,7 +309,13 @@ func _merge_static_geometry(node: Node3D) -> void:
 		var ancestor: Node = mesh.get_parent()
 		var dynamic := false
 		while ancestor != node and ancestor != null:
-			if ancestor is Interactable or ancestor is Skeleton3D or ancestor is CharacterBody3D or ancestor.get_script() != null:
+			if (
+				ancestor is Interactable
+				or ancestor is Skeleton3D
+				or ancestor is CharacterBody3D
+				or ancestor.get_script() != null
+				or ancestor.has_meta("earthen_vessel")
+			):
 				dynamic = true
 				break
 			ancestor = ancestor.get_parent()

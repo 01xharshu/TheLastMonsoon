@@ -69,11 +69,9 @@ func run() -> void:
  for frame in 20:await process_frame
  frame_start=Time.get_ticks_usec()
  if DisplayServer.get_name()!="headless":
-  var arguments:PackedStringArray=OS.get_cmdline_args()
-  var log_index:int=arguments.find("--log-file")
-  if log_index>=0 and log_index+1<arguments.size():
+  var output:String=OS.get_environment("TLM_TEST_OUTPUT_DIR")
+  if not output.is_empty():
    await RenderingServer.frame_post_draw
-   var output:String=arguments[log_index+1].get_base_dir()
    root.get_texture().get_image().save_png(output.path_join("population_transient.png"))
  frame_start=Time.get_ticks_usec()
  var sample_start:=Time.get_ticks_msec()

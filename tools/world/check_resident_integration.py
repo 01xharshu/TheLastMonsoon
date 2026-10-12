@@ -2,6 +2,7 @@
 import os
 import subprocess
 import tempfile
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,8 +15,8 @@ def main():
         result = subprocess.run(
             [ENGINE, "--headless", "--fixed-fps", "60", "--path", str(ROOT), "--log-file",
              str(Path(folder) / "engine.log"), "--script",
-             "res://tools/world/validate_resident_integration.gd", "--", "--continue"],
-            cwd=ROOT, env=environment, capture_output=True, text=True, timeout=720,
+             "res://tools/world/validate_resident_integration.gd", "--", "--continue", *sys.argv[1:]],
+            cwd=ROOT, env=environment, capture_output=True, text=True, timeout=1800 if "--full-jobs" in sys.argv else 720,
         )
         output = result.stdout + result.stderr
         failed = result.returncode != 0 or "SCRIPT ERROR:" in output or "\nERROR:" in output

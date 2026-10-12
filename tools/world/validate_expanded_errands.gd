@@ -18,7 +18,12 @@ func _run() -> void:
 	freight=load("res://vehicles/horse_cart_candidate.gd").new();freight.variant=1;freight.name="ErrandFreightProbe"
 	freight.set_meta("driver_permission","Player");world.add_child(freight);freight.add_to_group("live_travel_carts");freight.set_physics_process(false)
 	for frame in 8:await physics_frame
-	for id in ["port_delivery","urgent_medicine","emergency_money"]:
+	var job_cases:Array[String]=["port_delivery","urgent_medicine","emergency_money"]
+	var only:=OS.get_environment("TLM_ERRAND_ONLY")
+	if not only.is_empty():
+		assert(only in job_cases)
+		job_cases=[only]
+	for id in job_cases:
 		await _visit("board"); jobs.use_endpoint("board",actor); assert(jobs.accept(id))
 		var job: Dictionary = jobs.JOBS[id]
 		await _visit(job.goal); jobs.use_endpoint(job.goal,actor)
@@ -32,6 +37,11 @@ func _run() -> void:
 		if id=="port_delivery":freight.global_position=jobs.delivery.parking_position(job.goal)
 		await _visit(job.goal); jobs.use_endpoint(job.goal,actor)
 		if not await _await_handover(id):return
+	if not only.is_empty():
+		assert(actor.inventory.get_item_count("rupees")==int(jobs.JOBS[only].pay))
+		print("EXPANDED ERRANDS: PASS | focused physical handover ",only)
+		root.get_node("SaveManager").quit_game()
+		return
 	assert(actor.inventory.get_item_count("rupees") == 40)
 	await _visit("board"); jobs.use_endpoint("board",actor); assert(jobs.accept("family_cart"))
 	await _visit("passenger"); jobs.use_endpoint("passenger",actor)

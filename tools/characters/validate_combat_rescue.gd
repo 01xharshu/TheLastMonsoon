@@ -23,7 +23,7 @@ func snap(label: String) -> void:
 	if not captures:return
 	for i in 2:await process_frame
 	RenderingServer.force_draw(false, 1.0/60.0)
-	root.get_texture().get_image().save_png("res://docs/characters/arjun/combat_%s_2026-10-05.png"%label)
+	root.get_texture().get_image().save_png(OS.get_environment("TLM_COMBAT_REVIEW").path_join("combat_%s.png"%label))
 func run() -> void:
 	world=Node3D.new();root.add_child(world);current_scene=world
 	var clock:=preload("res://world/suryagarh/systems/game_time_system.gd").new();clock.name="GameTimeSystem";world.add_child(clock)
@@ -35,7 +35,7 @@ func run() -> void:
 	visual=player.get_node("VisualRoot/CharacterVisual")
 	british=make_actor("Enemy","res://characters/npcs/british/private_man.glb",Vector3(0,0,1),"british")
 	indian=make_actor("Peasant","res://characters/npcs/rescue_peasant.glb",Vector3(2,0,1),"indian")
-	captures=DisplayServer.get_name()!="headless"
+	captures=DisplayServer.get_name()!="headless" and not OS.get_environment("TLM_COMBAT_REVIEW").is_empty()
 	if captures:
 		root.size=Vector2i(1280,720);root.content_scale_size=root.size;root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
 		camera=Camera3D.new();camera.fov=45;world.add_child(camera);camera.position=Vector3(-2.5,1.7,4.0);camera.look_at(Vector3(.6,1,1));camera.make_current();player.get_node("UI").hide()
@@ -158,7 +158,7 @@ func run() -> void:
 	await snap("rear_hold")
 	if captures:
 		grapple.set_process(true);grapple.set_physics_process(true);visual.set_process(true)
-	grapple._process(1.3)
+	grapple._process(2.4)
 	check(british.get_meta("knocked_out",false) and not enemy_vitality.dead and not grapple.active,"rear hold ends in living knockout and releases controls")
 	for i in 80:await physics_frame
 	await snap("knockout")

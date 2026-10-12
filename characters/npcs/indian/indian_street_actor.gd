@@ -6,6 +6,11 @@ var drape_age := 0.0
 
 func _ready() -> void:
 	super._ready()
+	for mesh:MeshInstance3D in find_children("*","MeshInstance3D",true,false):
+		if not str(mesh.name).begins_with("Street coherent cotton"):continue
+		var cotton:=ShaderMaterial.new();cotton.shader=preload("res://characters/npcs/indian/street_cotton.gdshader")
+		cotton.set_shader_parameter("cloth_color",Color.WHITE)
+		mesh.material_override=cotton
 	if movement_profile == &"female" and _skeleton != null:
 		drape = preload("res://characters/npcs/indian/river_sari_drape.gd").new(self, _skeleton)
 		drape.update()

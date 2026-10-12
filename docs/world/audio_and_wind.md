@@ -48,3 +48,11 @@ River follow-up: [river flow realism](river_flow_realism.md) adds stronger upper
 ## Quieter ambient mix and category Settings — 2026-10-09
 
 User rejected the continuous buzz. Filtered quieter wind, PCM loop-seam smoothing, independent saved Ambient volume (40% default), and shared Settings submenus are integrated. Current evidence and listening instructions: [ambient audio settings](ambient_audio_settings.md). This supersedes the earlier wind gain increase.
+
+## Smoke, road dust and gust refinement — 12 October 2026
+
+Fire, weapon and escape smoke share a soft billboard shader with two scales of irregular density, world-position variation and the shared wind clock. Weapon smoke now expands, slows and fades over 2.4 seconds; escape smoke stops emission before removal, retaining its existing sight-cover contract. Wind combines three travelling gust variations rather than one repeating sine. Audio gain is unchanged.
+
+Existing live-cart wheel effects now add bounded dry-road dust: actual wheel ground contact, speed above 1.2 m/s, authored route proximity, no overhead roof and nearby-player gating. Wet road contact emits existing mud clods instead; stopped carts emit neither. Dust settles and disperses in shared wind. References are cached at setup. This is not weather-derived soil moisture or whole-world performance approval.
+
+Reusable checks: `tools/world/validate_air_effects.gd` (native shader review; optional OS-temporary `TLM_AIR_REVIEW` output, caller must delete), `tools/world/validate_air_world.gd` (native actual-world dry/wet/stopped cart contact), and existing `validate_audio_wind_isolated.gd`. Isolated checks passed; native smoke pixels were inspected and deleted. Initial main-world fixture checks removed terrain collision when freezing the world; the focused fixture now retains collision with KEEP_ACTIVE. The corrected native Forward+/Metal actual-world check passed wet mud/dry dust exclusion and stopped-cart emission. Extended normal-play visual/motion and frame-budget approval remain open.

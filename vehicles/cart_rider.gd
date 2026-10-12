@@ -190,8 +190,47 @@ func dismount() -> bool:
 	rider.inventory.message_requested.emit("No clear ground beside the cart")
 	return false
 
+var falling_speed := 0.0
+
+func _fall_horizontal_motion(delta: float) -> Vector3:
+	var motion := -cart.global_basis.z*speed*delta
+	if motion.length_squared() < 0.000001: return Vector3.ZERO
+	var fraction := 1.0
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.motion = motion
+	query.collision_mask = 1
+	query.exclude = _vehicle_exclusions()
+	for volume in clearance_shapes:
+		query.shape = volume.shape
+		query.transform = cart.global_transform*volume.transform
+		var result := cart.get_world_3d().direct_space_state.cast_motion(query)
+		if result.size() == 2: fraction = minf(fraction,result[0])
+	if fraction < 1.0:
+		speed = 0.0
+		fraction = maxf(0.0,fraction-0.03/maxf(motion.length(),0.001))
+	return motion*fraction
+
+func _fall_step(delta: float) -> bool:
+	var support := PhysicsRayQueryParameters3D.create(cart.global_position+Vector3.UP*.1,cart.global_position-Vector3.UP*.4)
+	support.exclude = _vehicle_exclusions()
+	if falling_speed == 0.0 and not cart.get_world_3d().direct_space_state.intersect_ray(support).is_empty(): return false
+	falling_speed -= 9.8*delta
+	var next_at: Vector3 = cart.global_position+_fall_horizontal_motion(delta)+Vector3.UP*falling_speed*delta
+	var floor_ray := PhysicsRayQueryParameters3D.create(cart.global_position+Vector3.UP*.1,next_at-Vector3.UP*.1)
+	floor_ray.exclude = _vehicle_exclusions()
+	var hit := cart.get_world_3d().direct_space_state.intersect_ray(floor_ray)
+	if not hit.is_empty() and hit.normal.y >= 0.55:
+		next_at.y = hit.position.y
+		if falling_speed <= -15.3 and rider != null: rider.take_damage(rider.MAX_HEALTH)
+		falling_speed = 0.0; speed = 0.0
+	cart.global_position = next_at
+	cart.set_forward_motion(speed,delta)
+	_sync_rider()
+	return true
+
 func _physics_process(delta: float) -> void:
 	if rider == null or not is_instance_valid(cart): return
+	if _fall_step(delta): return
 	if transition != "":
 		transition_progress = minf(1.0, transition_progress + delta / TRANSITION_SECONDS)
 		if role == "passenger" and cart.has_method("set_boarding_door"):
@@ -255,6 +294,8 @@ func _physics_process(delta: float) -> void:
 		var hit := cart.get_world_3d().direct_space_state.intersect_ray(road)
 		if not hit.is_empty() and absf(hit.position.y - cart.global_position.y) < 0.35 and _clearance_at(Vector3(next_at.x, hit.position.y, next_at.z)):
 			cart.global_position = Vector3(next_at.x, hit.position.y, next_at.z)
+		elif hit.is_empty() and _clearance_at(next_at):
+			cart.global_position = next_at
 		else:
 			speed = 0.0
 	else:

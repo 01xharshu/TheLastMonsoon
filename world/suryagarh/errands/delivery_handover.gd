@@ -111,6 +111,12 @@ func _physics_process(delta:float)->void:
 		var offset:Vector3=stand-receiver.global_position;offset.y=0
 		if offset.length()>(.08 if is_instance_valid(vehicle) else .65):
 			if not _step(offset.normalized()*minf(delta*.85,maxf(.02,offset.length()-(.08 if is_instance_valid(vehicle) else .65))),delta):
+				retry_age=maxf(0,retry_age-delta)
+				if retry_age<=0 and not is_instance_valid(vehicle):
+					retry_age=4.0
+					var approach:=stand-offset.normalized()*.60
+					approach.y=receiver.global_position.y
+					route=_route_to(approach)
 				if age>45:manager._message("The unloading path is blocked. Move the cart and try again.");abort()
 			return
 		var facing:=goods.global_position-receiver.global_position;receiver.global_rotation.y=atan2(facing.x,facing.z)

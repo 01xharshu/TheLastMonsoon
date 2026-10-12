@@ -26,6 +26,10 @@ corrections={name:(c@Matrix(rest)@inv).inverted()@rig.data.bones[name].matrix_lo
 rig.animation_data_clear();rig.data.pose_position='POSE'
 objects={name:bpy.data.objects[name] for name in ['Fitted cotton upper base','Wrapped sari lower drape','Sari lower border','Woven sari pallu over blouse','Opaque fitted bra and thong foundation']}
 if objects['Fitted cotton upper base'].get('river_composite',False):objects['Woven sari pallu over blouse']=objects['Fitted cotton upper base']
+if '--fair-upper' in sys.argv or '--fair-posed-upper' in sys.argv or '--sew-upper' in sys.argv:
+ from river_cloth_fairing import fair_upper
+ sewn='--sew-upper' in sys.argv
+ fair_upper(objects['Fitted cotton upper base'],rounds=0 if sewn else 6,posed=(rig,data,c,corrections) if '--fair-posed-upper' in sys.argv or sewn else None,sew=sewn)
 for obj in objects.values():
  if obj.data.shape_keys is None:continue
  for key in obj.data.shape_keys.key_blocks:key.value=0
@@ -70,6 +74,7 @@ for sweep in range(6 if '--foundation-only' in sys.argv or '--finish-upper' in s
   tree=VolumeSurface.FromPolygons(points,faces,all_triangles=True,strict='--finish-upper' in sys.argv)
   handled=set()
   for entry in record['garments']:
+   if '--upper-only' in sys.argv and entry['name'] not in ['Fitted cotton upper base','Woven sari pallu over blouse']:continue
    if '--foundation-only' in sys.argv and entry['name']!='Opaque fitted bra and thong foundation':continue
    obj=objects[entry['name']]
    if obj.name in handled:continue
@@ -93,6 +98,7 @@ for sweep in range(6 if '--foundation-only' in sys.argv or '--finish-upper' in s
        for key,_ in active:key.data[index].co+=delta
    finally:obj.shape_key_remove(temporary)
  print('RIVER_INTERPOLATION_SWEEP',sweep,'changed_surfaces',changed,'max_shift_m',worst,flush=True)
+ if changed==0:break # Repeating an unchanged sweep cannot improve the same pose constraints.
 for bone in rig.pose.bones:bone.matrix_basis=Matrix.Identity(4)
 rig.data.pose_position='REST'
 export_river_asset(ROOT,rig,body,len(objects['Opaque fitted bra and thong foundation'].data.polygons))

@@ -1,6 +1,6 @@
 # Women’s morning river routine
 
-Updated 2026-10-11 IST, /root, IN_PROGRESS. Route/save/nested-world budget viewer checks PASS. The pallu repair passes five main layer poses, but the extended layer/body audits fail; combined fitting and performance correction are underway. Final motion, art and whole-game approval remain open.
+Updated 2026-10-12 02:12 IST, /root, IN_PROGRESS. Fresh route/save/lifecycle checks PASS. Lower sari GPU normal/tangent upload repaired and native readback PASS. Current retopology body audit PASS207 poses; cloth-to-cloth audit FAIL8742. Runtime-only fairing/refit candidate is running. Lower lap ridges, final motion/art and whole-game performance remain open.
 
 Three clearly adult women reuse the original MakeHuman/MPFB village-woman body and rig. They depart together, fill earthen pots, rub/rinse/wring laundry, sit and converse, pick up the filled pots, walk home, and deliver them. No human primitives or substitute physique are used.
 
@@ -29,8 +29,8 @@ Run from the repository root:
 
 ```sh
 python3 tools/characters/rebuild_river_woman.py
-python3 tools/characters/check_women_river.py
-python3 tools/characters/check_river_cloth.py
+python3 tools/characters/check_women_river.py --buffers
+python3 tools/characters/check_river_cloth.py --layers
 ```
 
 `check_women_river.py --render` additionally checks focused native Metal rendering. Its temporary images are discarded in a finally cleanup. Capture tools require an OS temporary `TLM_RIVER_TEST_OUTPUT` whose caller cleans in finally. Reusable test code remains; generated screenshots, videos, reports and logs are disposable under the 2026-10-07 policy.
@@ -88,3 +88,37 @@ The single primitive still reveals genuine inherited cloth sliver/self-fold inte
 The3mm cloth weld introduced39 body-face violations and did not resolve the reported layer gate, so it is removed; the retained full original blouse restores the fitted geometry. Layer narrow phase now uses double-precision NumPy rather than float32 mathutils, and world-space interior/plane tolerances rather than dimensionless barycentrics for tiny cloth facets. Seven geometric reference fixtures cover true crossings, finite disjoint edges, folded shared seams, coplanar contact, degenerate triangles and tiny facets at world coordinates. Next reference fixture PASS plus both fresh native audits.
 
 Double-precision narrow phase still confirms13662 strict contacts in the skin-derived cloth detail. Runtime cloth basis now receives a35% topology retopology/decimation, with all674 original correction samples transferred through barycentric bindings. Full detailed original blouse/pallu, complete human body and foundations are preserved. New combined garment keys map to one source object for native body fitting; source-only garments are not modified by that fit. Next rebuild, body fitting and both fresh native audits.
+
+2026-10-12 01:56 IST resume: current runtime retopology layer audit FAIL8552 over207 actual native poses; seven geometric checker fixtures PASS. Current retopology body contact is unverified; the older2739645-sample PASS belongs to the previous candidate. Next run `python3 tools/characters/check_river_cloth.py`, then fit current native retopology with `refine_river_interpolation.py --finish-upper`, import and repeat both audits. Full retained bodies, foundations and source-only original garments remain preserved.
+
+Current retopology body audit FAIL:1716444 samples,303 violations (16 vertices/287 triangle centres), worst26.39mm in member1 seated talk; lower cloth, opaque foundations and ground zero violations. Rebuild runner now fits the post-retopology mesh after native import and supports `python3 tools/characters/rebuild_river_woman.py --fit-current` for incremental fitting without replacing current topology. This fixes the pipeline ordering that left transferred cloth keys unchecked on the new triangles. Running that fit next; both audit gates remain open.
+
+2026-10-12 02:02 IST: focused1280×720 Metal close capture completed (43 native walking frames/3.005s under concurrent fitting/audit load, blocked0), filling/washing/talk/pickup inspected. Visible sharp lower lap ridges and uneven upper hems remain defects; captures deleted. Current scalar/support/grid parity PASS30 poses/28800 vertices/max0.000298mm; this confirms math-equivalence, not final appearance or FPS. Native upper fit remains running.
+
+Added `tools/characters/validate_river_drape_buffers.gd`: seven actual action poses compare uploaded Metal vertex/normal buffers with CPU-generated cloth points. Native readback running while upper retopology fitting continues. This closes a verification gap: CPU envelopes alone cannot establish uploaded fabric correctness.
+
+Native buffer regression found a real upload defect: lower sari vertex positions match exactly, but normal gap approaches2.0 because the controller assumed4-byte records while Godot supplies interleaved8-byte normal/generated-tangent records. Fixed renderer-derived stride/offset and packed generated tangents in `river_sari_drape.gd`. Rechecking seven native poses before visual review. This changes shading only; it does not establish smooth lower-drape construction.
+
+Upload repair verified: native Metal readback PASS7 poses/6720 vertices; vertex gap0m, maximum normal gap0.000124848. Added `python3 tools/characters/check_women_river.py --buffers` to run the route/lifecycle checks plus native buffer validation with temporary-log cleanup. Retopology upper fit remains running; layering/body and lower-ridge art gates stay open.
+
+`check_women_river.py --buffers` PASS: focused lifecycle plus actual-terrain route/save/near-far checks and native buffer readback. Planted drift0.000627mm; ankle target gap0.0610mm; wrist target gap13.34mm (bone-target measurements only). Incremental upper fitting now imports the current GLB first and can restrict fitting to changed upper cloth with `--upper-only`; full audits continue to inspect all garments/body/ground.
+
+Incremental native fit completed: source/native body alignment0.06185mm; first sweep changed123 surfaces, maximum accumulated displacement0.5797m; subsequentfive sweeps zero changes. This large correction is not art approval and must be reviewed. Source/runtime rebuilt and importing; next unified `python3 tools/characters/check_river_cloth.py --layers` checks all207 native snapshots for body and layers, plus seven geometric reference fixtures, with one export and automatic temporary cleanup. Unposed retopology basis itself has9 strict blouse/pallu-region intersections, so pose inheritance is not the sole source of folds.
+
+Fresh post-retopology fit body audit PASS207 poses/1716444 samples, all five garments/body/ground zero violations. Layer audit FAIL8742. Native close review shows corrected lower shading but persistent lap ridges; upper silhouette is not catastrophically enlarged in inspected washing/talk views, yet layering remains unapproved. Added runtime-only alternating Laplacian fairing of all keyed cloth coordinates (original detailed blouse/pallu/body/foundations unchanged) and stop fitting after an unchanged sweep. Next `python3 tools/characters/rebuild_river_woman.py --fit-current --fair-upper`, then unified native audits and ordinary-speed close review; this fairing candidate is unverified.
+
+Source cleanup: removed obsolete2026-10-05 WorkingAssets GLB (the active imported runtime is under `characters/npcs/motion/river_woman/`) and its stale generated `river_routine_evidence.json` report. Consumer search found only that report referencing the obsolete export; no game/rebuild consumer. Current editable29MB blend, original detailed garments within it,9MB authored pose input, runtime and source/export manifest retained.
+
+Runtime-only fairing/refit completed:675 keys/708 cloth vertices, six alternating fairing rounds (maximum bind-space shift0.1739m); native fit changed64 surfaces, second sweep unchanged. Imported source/runtime identities updated. Running `check_river_cloth.py --layers` on this new candidate next; the previous body PASS and8742 layer FAIL apply to its predecessor. Large source changes still require native appearance review.
+
+Bind-space fairing candidate:207-pose body audit PASS1716444 samples/all garments/body/ground zero; layer contacts reduced8742→3419 (still FAIL). Next improve fairing in rendered pose space: transform each of675 retained keys through its authored skin pose, smooth that fabric surface, then invert each vertex skin transform. This preserves necessary skin-compensation coordinates rather than averaging them away. Running `python3 tools/characters/rebuild_river_woman.py --fit-current --fair-posed-upper`, then both audits and native close review.
+
+2026-10-12 10:21 IST resume: prior posed-fit run was interrupted before export; manifest/runtime remain the bind-faired candidate (body PASS/layer3419 FAIL). No own Blender/Godot process remained. Removed its owned temporary input folder. Rebuild runner now streams progress from temporary logs, enforces its step timeout and kills/waits for its own child on interruption before temporary cleanup. Restarting the same rendered-pose fairing command.
+
+Rendered-pose fairing processed all675 keys/708 cloth vertices and reproduced the native body space within0.06185mm; first native body-fit sweep changed123 surfaces (maximum accumulated displacement0.6139m). Second sweep still running. Close capture now supports `--extremes` for stand-up48.25s and home delivery65.25s and follows the actual actor position for framing. Next fresh audits and those extreme-pose close views; neither smoothing progress nor convergence alone grants cloth approval.
+
+Rendered-pose candidate audits:207 poses/1716444 samples body/ground PASS(all five garments zero), strict layers FAIL2619 (down from3419). Native Metal7 action captures including stand-up/home delivery completed,134 walking frames/2.996s/blocked0 under concurrent audit load; close inspection confirms ragged cuff edges and stiff lap silhouette. Temporary captures/logs discarded. Next inspect source opening topology with `audit_river_cloth_topology.py` and repair construction, then rerun all contacts/native review.
+
+Topology diagnostic:708 vertices/1264 triangles; no nonmanifold edges or branched boundaries. Four intended closed openings: neckline50 vertices, cuffs33 each, waist40. Ragged edges therefore come from boundary deformation, not missing cloth patches. Added pose-conforming ellipse constraints to the existing cuff/waist loops, with three adjacency bands spreading each seam correction into nearby fabric. All675 key poses keep their original topology/skin weights; body/foundations/original garments unchanged. Running `rebuild_river_woman.py --fit-current --sew-upper`, then fresh contacts and corrected full-height close framing.
+
+Seam construction has processed three intended openings/106 boundary vertices in all675 poses. Maximum posed seam shift0.1282m; native body-space alignment0.06185mm. Body fitting remains active; candidate is unverified. The close camera now scales with actual head height to include the whole standing figure, and extreme captures include early/mid/late stand-up and deepest pickup.
