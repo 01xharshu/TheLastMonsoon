@@ -35,3 +35,24 @@ Native Metal samples before the latest contact/navigation repairs, Medium, actua
 Performance FAIL; no smooth-FPS approval. GPU timer returned zero and is unavailable as evidence. These are whole-world samples, not attribution of cost solely to city traffic. Clothing appearance/deformation, cart contact/turns and full play remain open.
 
 Repeat `python3 tools/world/run_city_population.py --city-budget`: disposable clean import, exhaustive 30 simulated-second movement, then native four-region timing only if movement passes. The native stage uses normal nearby spawning and wall-clock frames, without a fixed-FPS override. `--diagnose-import` adds verbose asset context for import failures. Logs, snapshots and test user data delete automatically. Reusable tests: `validate_city_route_population.gd`, `validate_city_population_budget.gd`, `validate_city_contact_recovery.gd`.
+
+## Imported driver input readback — 2026-10-12
+
+IN_PROGRESS. `vehicles/coachman_mesh_inputs.gd` retains immutable imported source surface arrays in the owning world, keyed by mesh instance/surface. Returned packed arrays are explicitly duplicated; generated meshes remain uncached. Coachman garment setup, exact body/pose signature and retained-body fitting use it. Isolated copy/mutation, resource identity, world lifetime scope and generated-refresh regression PASS. A shallow-copy failure was caught and repaired before integration approval. Existing source/geometry/native parity is extended to assert repeated signatures perform no further imported readback. Run `python3 tools/world/run_city_population.py --driver-inputs --import-timeout 600`; fresh import plus isolated input, coach/bullock headless and native parity. Earlier import retry timed out240s, later interruption yielded no parity result. No native/fence/FPS acceptance yet. Later shared city audit15/16 cart progress is retained alongside owner16/16 result; consistent movement still needs verification.
+
+Driver gate completed: fresh import75.4s; isolated source cache PASS; coach/bullock headless PASS12.0s/5.5s and native Metal PASS13.6s/6.7s. Exact body/garment/pose signatures, zero fitted vertex difference,8 retained skinned meshes per driver, stale/changed-pose cache rejection and dynamic runtime cache restore PASS. Both native cached/rebuilt images are byte-identical, with stable repeated frames and zero difference metrics; no fence/script diagnostics. The parity fixture now waits for deferred runtime creation and synchronizes one carriage scene/exact bone values, avoiding independent draft-rig and quaternion-round-trip differences; pose-review keeps its original scene comparison. This completes focused driver input parity, not full-world rendering, motion contact or FPS acceptance. Next full-city repeat uses `python3 tools/world/run_city_population.py --city-budget --import-timeout 600`.
+
+## Movement and native continuation — 2026-10-12 22:03 IST
+
+Current functional baseline PASS. Genuine failures repaired: clear cart yaw movement no longer triggers passing replans during U-turns; police-compound lane avoids the mounted patrol; walkers finish supported horizontal waypoints despite cached floor-height differences; shorter fully swept detour legs handle gradients. Reverse legs now finish within5mm instead of trapping on sub-ULP residuals at large world coordinates. Collision/support checks remain; no teleport or phantom distance is credited. `validate_city_cart_retreat.gd` reproduces the actual5.9e-6m unrepresentable remainder and verifies unchanged position, zero credited travel and released motion/state.
+
+Latest fresh `--city-budget --import-timeout 600`: import PASS55.8s, reverse fixture PASS0.5s, movement PASS64.3s:188/188 walkers,18/20 police,16/16 carts on12 routes, no blocked/stopped actors. Native Metal four-region run completed204.5s with no script/render/fence diagnostics. Actual1280x720 Medium,120 frames per region:
+
+| Region | Median ms | p95 ms | Instantiated walkers |
+| --- | ---: | ---: | ---: |
+| Village |189.660|208.032|76|
+| City market |152.458|224.428|132|
+| Civil lines |93.087|163.932|188|
+| Bazaar |149.185|224.028|188|
+
+Frame budget FAIL against33.3ms for30FPS. GPU timer0 is unavailable and these measurements do not attribute global cost to traffic. No generated output remains. Keep earlier intermittent15/16 and14/16 failures as history; this repaired snapshot passes the current30-second sample. Sustained loops/boarding/contact, garment action review and performance remain OPEN; preserve their existing owners and the deferred FPS scope.

@@ -12,6 +12,7 @@ var skeleton: Skeleton3D
 var model: Node3D
 var weapon: Node3D
 var phase := 0.0
+var consignment_conceal_blend=0.0
 var breath := 0.0
 var horse_riding_fold := 0.0
 var motion := 0.0
@@ -108,7 +109,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if actor.get_meta("detention_action","")!="": return
 	if equipment == null or not actor.is_physics_processing(): return
-	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
+	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or ((actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)!=null and not preload("res://story/rear_passenger_combat.gd").allowed(actor)) or actor.get_meta("climbing",false): return
 	if event.is_action_pressed("stow_weapon"):
 		equipment.toggle_stowed()
 		get_viewport().set_input_as_handled()
@@ -436,18 +437,23 @@ func _pose_seated(delta: float) -> void:
 		pose("upperarm_"+side,Vector3(.28,0,spread*.22),weight)
 		pose("lowerarm_"+side,Vector3(-.72,0,0),weight)
 	pose("pelvis",Vector3(0,0,0),weight)
+	var concealed:bool=actor.get_meta("consignment_concealed",false) and actor.get_meta("cart_role","")=="passenger"
+	consignment_conceal_blend=move_toward(consignment_conceal_blend,1.0 if concealed else 0.0,delta*1.8)
+	actor.set_meta("consignment_conceal_blend",consignment_conceal_blend)
 	var rowing_lean: float = sin(boat.row_phase)*boat.row_effort*.10 if is_instance_valid(boat) and boat.has_method("paddle_grip_world") else 0.0
-	pose("spine_01",Vector3(-.10+rowing_lean,0,0),weight)
-	pose("spine_02",Vector3(sin(breath)*.015,0,0),weight)
-	pose("head",Vector3(.04,0,0),weight)
+	pose("spine_01",Vector3(lerpf(-.10+rowing_lean,.60,consignment_conceal_blend),0,0),weight)
+	pose("spine_02",Vector3(lerpf(sin(breath)*.015,.40,consignment_conceal_blend),0,0),weight)
+	pose("head",Vector3(lerpf(.04,.30,consignment_conceal_blend),0,0),weight)
 	if is_instance_valid(boat) and actor.get_meta("cart_role", "") == "passenger":
-		pose("spine_01", Vector3(-.10 + boat.rider_acceleration*.02, 0, -boat.rider_turn*.04), weight)
-		pose("spine_02", Vector3(sin(breath)*.01, 0, boat.rider_turn*.025), weight)
+		pose("spine_01", Vector3(lerpf(-.10,.60,consignment_conceal_blend) + boat.rider_acceleration*.02, 0, -boat.rider_turn*.04), weight)
+		pose("spine_02", Vector3(lerpf(sin(breath)*.01,.40,consignment_conceal_blend), 0, boat.rider_turn*.025), weight)
 		if boat.has_method("foot_support_world"):
 			boat._sync_rider()
 			for side in ["l", "r"]:
 				_horse_foot_contact(side, boat.foot_support_world(side), 1.0)
-		if boat.has_method("passenger_hand_world"):
+		if preload("res://story/rear_passenger_combat.gd").allowed(actor) and not equipment.stowed:
+			equipment.apply_rifle_grip()
+		elif boat.has_method("passenger_hand_world"):
 			for pass_index in 4:
 				for side in ["l", "r"]:
 					var target: Vector3 = skeleton.to_local(boat.passenger_hand_world(side))

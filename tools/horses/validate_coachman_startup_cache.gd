@@ -141,8 +141,16 @@ func run() -> void:
 	var runtime_cart: Node3D = cart_script.new()
 	runtime_cart.transform = cart.transform
 	world.add_child(runtime_cart)
-	await process_frame
-	var runtime_driver: Node3D = runtime_cart.visual_root.get_node(driver_name)
+	var runtime_driver: Node3D
+	var deadline := Time.get_ticks_msec() + 60000
+	while Time.get_ticks_msec() < deadline:
+		runtime_driver = runtime_cart.visual_root.get_node_or_null(driver_name)
+		if runtime_driver != null and runtime_driver.has_meta("startup_cloth_usec"): break
+		await process_frame
+	if runtime_driver == null or not runtime_driver.has_meta("startup_cloth_usec"):
+		check(false, "Runtime driver did not finish deferred creation and fitting within 60 seconds")
+		await root.get_node("SaveManager").quit_game(1)
+		return
 	check(runtime_driver.get_meta("startup_cloth_cache",false),"Runtime traffic rejected the exact-input cloth cache")
 	print("COACHMAN CACHE PARITY ",JSON.stringify({"status":"FAIL" if failed else "PASS","bullock":bullock,"max_position_error_m":max_position_error,"retained_skinned_meshes":body_meshes.size(),"cached_setup_us":driver.get_meta("startup_cloth_usec",0),"rebuild_setup_us":reference.get_meta("startup_cloth_usec",0),"runtime_cached_setup_us":runtime_driver.get_meta("startup_cloth_usec",0)}))
 	await root.get_node("SaveManager").quit_game(1 if failed else 0)
@@ -279,15 +287,21 @@ func compare_native_driver_pixels(world: Node3D, cart: Node3D, reference_cart: N
 	environment.environment.ambient_light_color = Color.WHITE
 	environment.environment.ambient_light_energy = .5
 	world.add_child(environment)
-	cart.hide();reference_cart.show()
-	for frame in 10: await process_frame
-	await RenderingServer.frame_post_draw
-	var before := root.get_texture().get_image()
-	reference_cart.hide();cart.show()
-	for frame in 10: await process_frame
-	await RenderingServer.frame_post_draw
-	var after := root.get_texture().get_image()
 	var pose_review := "--pose-review" in OS.get_cmdline_user_args()
+	var before: Image
+	var after: Image
+	if pose_review:
+		cart.hide(); reference_cart.show()
+		for frame in 10: await process_frame
+		await RenderingServer.frame_post_draw
+		before = root.get_texture().get_image()
+		reference_cart.hide(); cart.show()
+		for frame in 10: await process_frame
+		await RenderingServer.frame_post_draw
+		after = root.get_texture().get_image()
+	else:
+		var images: Array[Image] = await matched_driver_pixels(cart, reference_cart, driver)
+		before = images[0]; after = images[1]
 	if not pose_review: check(before.get_data()==after.get_data(),"Cached versus rebuilt driver pixels changed")
 	print("COACHMAN CACHE PIXEL PARITY | equal ",before.get_data()==after.get_data())
 	if pose_review:
@@ -299,6 +313,52 @@ func compare_native_driver_pixels(world: Node3D, cart: Node3D, reference_cart: N
 			if not failed:
 				after.save_png(directory.path_join("coachman_cache.png"))
 				if pose_review: before.save_png(directory.path_join("local_driver.png"))
+
+func matched_driver_pixels(cart: Node3D, reference_cart: Node3D, driver: Node3D) -> Array[Image]:
+	# Hold the carriage/horse scene and body pose constant. Switching complete
+	# vehicle instances also switches independently initialized draft-team rigs.
+	var reference_driver: Node3D = reference_cart.visual_root.get_node(str(driver.name))
+	var reference_parent := reference_driver.get_parent()
+	var reference_transform := reference_driver.transform
+	var reference_rig: Skeleton3D = reference_driver._skeleton
+	var reference_rig_transform := reference_rig.transform
+	var saved_poses: Array[Dictionary] = []
+	for index in reference_rig.get_bone_count():
+		saved_poses.append({"position":reference_rig.get_bone_pose_position(index), "rotation":reference_rig.get_bone_pose_rotation(index), "scale":reference_rig.get_bone_pose_scale(index)})
+	reference_driver.reparent(cart.visual_root, false)
+	reference_driver.transform = driver.transform
+	reference_rig.transform = driver._skeleton.transform
+	for index in reference_rig.get_bone_count():
+		reference_rig.set_bone_pose_position(index, driver._skeleton.get_bone_pose_position(index))
+		reference_rig.set_bone_pose_rotation(index, driver._skeleton.get_bone_pose_rotation(index))
+		reference_rig.set_bone_pose_scale(index, driver._skeleton.get_bone_pose_scale(index))
+	reference_rig.force_update_all_bone_transforms()
+	driver._skeleton.force_update_all_bone_transforms()
+	cart.show(); reference_cart.hide(); driver.hide(); reference_driver.show()
+	for frame in 10: await process_frame
+	await RenderingServer.frame_post_draw
+	var before := root.get_texture().get_image()
+	for frame in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var reference_repeat := root.get_texture().get_image()
+	reference_driver.hide(); driver.show()
+	for frame in 10: await process_frame
+	await RenderingServer.frame_post_draw
+	var after := root.get_texture().get_image()
+	for frame in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var cached_repeat := root.get_texture().get_image()
+	print("COACHMAN PIXEL STABILITY ", JSON.stringify({"reference_stable": before.get_data() == reference_repeat.get_data(), "cached_stable": after.get_data() == cached_repeat.get_data(), "metrics": before.compute_image_metrics(after, false)}))
+	reference_driver.reparent(reference_parent, false)
+	reference_driver.transform = reference_transform
+	reference_rig.transform = reference_rig_transform
+	for index in saved_poses.size():
+		var pose: Dictionary = saved_poses[index]
+		reference_rig.set_bone_pose_position(index, pose.position)
+		reference_rig.set_bone_pose_rotation(index, pose.rotation)
+		reference_rig.set_bone_pose_scale(index, pose.scale)
+	reference_rig.force_update_all_bone_transforms()
+	return [before, after]
 
 func reference_signature(cloth: RefCounted) -> String:
 	# Previous full readback filter retained as the exact-input reference.

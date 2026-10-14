@@ -8,6 +8,7 @@ static func build(world: Node = null) -> AStar2D:
  var layout := Layout.new()
  var paths: Array = []
  for label:String in Layout.ROUTES:
+  if label=="consignment_wilderness":continue # Reserved convoy surface; not a public coach shortcut through the uplands.
   if label.begins_with("port_lower_service_"):continue # Grade-separated lower service road; never join it to the overpass in this 2D graph.
   paths.append(Layout.ROUTES[label])
  var trunk: Array[Vector2] = []

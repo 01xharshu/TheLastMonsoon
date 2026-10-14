@@ -211,6 +211,8 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"dev_story":world.get_node("DevStory").export_state() if world.has_node("DevStory") else {},
 		"community_story":world.get_node("CommunityStory").export_state() if world.has_node("CommunityStory") else {},
 		"rebellion_story":world.get_node("RebellionStory").export_state() if world.has_node("RebellionStory") else {},
+		"weapon_seller":world.get_node("CityWeaponSeller").export_state() if world.has_node("CityWeaponSeller") else {},
+		"consignment_story":world.get_node("ConsignmentStory").export_state() if world.has_node("ConsignmentStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"population_expansion":world.get_node("PopulationExpansion").export_route_state() if world.has_node("PopulationExpansion") else {},
 		"city_route_population":world.get_node("CityRoutePopulation").export_route_state() if world.has_node("CityRoutePopulation") else {},
@@ -280,12 +282,14 @@ func save_game(world: Node3D, slot: int) -> bool:
 func start_new_game() -> void:
 	WorldAudio.set_opening_quiet(true)
 	pending_slot = 0
+	preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
 	get_tree().change_scene_to_file(WORLD)
 
 func start_loaded_game(slot: int) -> bool:
 	if read_slot(slot).is_empty(): return false
 	pending_slot = slot
 	get_tree().paused = false
+	preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
 	get_tree().change_scene_to_file(WORLD)
 	return true
 
@@ -335,6 +339,10 @@ func apply_pending(world: Node3D) -> void:
 		world.get_node("RebellionStory").restore_state(data.get("rebellion_story",{}))
 	if world.has_node("CommunityStory"):
 		world.get_node("CommunityStory").restore_state(data.get("community_story",{}))
+	if world.has_node("CityWeaponSeller"):
+		world.get_node("CityWeaponSeller").restore_state(data.get("weapon_seller",{}))
+	if world.has_node("ConsignmentStory"):
+		world.get_node("ConsignmentStory").restore_state(data.get("consignment_story",{}))
 	if world.has_node("ErrandSystem") and data.get("errands",{}) is Dictionary:
 		world.get_node("ErrandSystem").restore_state(data.get("errands",{}))
 	if world.has_node("CombatEncounters") and data.get("crime",{}) is Dictionary:
@@ -653,4 +661,5 @@ func quit_game(exit_code: int = 0) -> void:
 	var deadline := Time.get_ticks_msec() + 150
 	while Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
+	await preload("res://systems/scene_retirement.gd").retire_current(get_tree())
 	get_tree().quit(exit_code)

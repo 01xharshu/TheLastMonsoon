@@ -12,9 +12,11 @@ var segments: int = int(DIMENSIONS.segments)
 var rings: int = int(DIMENSIONS.rings)
 var previous_inputs: PackedVector4Array=[]
 var previous_world := Transform3D.IDENTITY
+var waist_adjustment:=0.0
 
-func _init(owner: Node3D, skeleton: Skeleton3D) -> void:
+func _init(owner: Node3D, skeleton: Skeleton3D,waist_offset_adjustment:float=0.0) -> void:
 	actor=owner;rig=skeleton
+	waist_adjustment=waist_offset_adjustment
 	for i in PLANE_COUNT:planes.append(Vector2(cos(TAU*i/PLANE_COUNT),sin(TAU*i/PLANE_COUNT)))
 	for i in segments:
 		var direction := Vector2(cos(TAU*i/segments),sin(TAU*i/segments))
@@ -66,7 +68,7 @@ func update() -> void:
 	var bone: int=rig.find_bone(str(DIMENSIONS.waist_bone))
 	var pose: Transform3D=rig.get_bone_global_pose(bone)
 	var delta: Basis=pose.basis*rig.get_bone_global_rest(bone).basis.inverse()
-	var waist := actor.to_local(rig.to_global(pose.origin+delta*Vector3.UP*float(DIMENSIONS.waist_offset)))
+	var waist := actor.to_local(rig.to_global(pose.origin+delta*Vector3.UP*(float(DIMENSIONS.waist_offset)+waist_adjustment)))
 	var pelvis := _point("pelvis")
 	var spheres := _capsules()
 	var floor_y := 0.0

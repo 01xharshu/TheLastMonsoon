@@ -4,6 +4,9 @@ const Trace = preload("res://combat/ballistic_trace.gd")
 const SCALE = preload("res://player/arjun_equipment.gd").ENFIELD_SCALE
 const Loading = preload("res://player/enfield_loading_sequence.gd")
 const RELOAD = Loading.RELOAD_SECONDS
+var reload_seconds: float=RELOAD
+var shot_damage:=18.0
+var aim_delay:=.65
 var target: CharacterBody3D
 var hostile := false
 var cartridges := 4
@@ -39,12 +42,12 @@ func _process(delta: float) -> void:
 		cartridge.hide()
 		return
 	var aiming: bool = can_engage()
-	if aiming:
+	if aiming and turn_owner_to_target():
 		var toward := target.global_position-owner_actor.global_position
 		owner_actor.global_rotation.y = atan2(toward.x,toward.z)
 	var grip := owner_actor.to_global(Vector3(-.16,1.35,.13))
 	var forward: Vector3 = (target.global_position-grip).normalized() if aiming else owner_actor.global_basis.z
-	var loading_progress := 1.0-cooldown/RELOAD
+	var loading_progress := 1.0-cooldown/reload_seconds
 	var loading_pose: Dictionary = Loading.state(loading_progress)
 	loading_left = Vector3(.20,-.032,0)
 	if cooldown > 0.0:
@@ -67,6 +70,8 @@ func _process(delta: float) -> void:
 		aim_age = 0.0
 		return
 	var excluded: Array[RID] = [owner_actor.body_collider.get_rid()]
+	for rid in owner_actor.get_meta("firearm_exclusions",[]):
+		if typeof(rid)==TYPE_RID:excluded.append(rid)
 	var muzzle := gun.to_global(Vector3(1.04,.057,0))
 	var space := get_world_3d().direct_space_state
 	if not Trace.sight(space,get_tree(),grip,muzzle,excluded).is_empty():
@@ -77,16 +82,19 @@ func _process(delta: float) -> void:
 		aim_age = 0.0
 		return
 	aim_age += delta
-	if aim_age >= .65:
+	if aim_age >= aim_delay:
 		cartridges -= 1
 		shots += 1
 		recoil = .055
-		cooldown = RELOAD
+		cooldown = reload_seconds
 		aim_age = 0.0
 		sound.play()
-		Trace.shoot(space,get_tree(),muzzle,target.global_position+forward*.5,18,excluded,owner_actor)
+		Trace.shoot(space,get_tree(),muzzle,target.global_position+forward*.5,shot_damage,excluded,owner_actor)
 
 func can_engage() -> bool:
 	if not hostile or not is_instance_valid(target): return false
 	if owner_actor.global_position.distance_to(target.global_position) > 45.0: return false
 	return bool(target.get_meta("climbing",false)) or not target.is_on_floor() or target.global_position.y-owner_actor.global_position.y>2.5
+
+func turn_owner_to_target() -> bool:
+	return true

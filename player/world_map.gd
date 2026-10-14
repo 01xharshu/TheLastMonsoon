@@ -51,7 +51,7 @@ func _ready() -> void:
 	add_child(map_canvas)
 	resized.connect(func(): _update_map_area(); queue_redraw())
 	_update_map_area.call_deferred()
-	for kind in ["house", "port", "military", "trade", "nature", "water", "bridge", "parking", "clinic", "church", "stable", "jail", "civic", "treasury", "cemetery"]:
+	for kind in ["house", "port", "military", "trade", "nature", "water", "bridge", "parking", "clinic", "church", "stable", "jail", "civic", "treasury", "cemetery", "weapon"]:
 		icons[kind] = load("res://assets/ui/map_icons/%s.svg" % kind)
 	marker = preload("res://player/world_waypoint.gd").new()
 	marker.map = self
@@ -263,6 +263,7 @@ func _draw() -> void:
 
 func site_kind(label: String) -> String:
 	var name_lower := label.to_lower()
+	if "weapon seller" in name_lower:return "weapon"
 	for pair in [["hospital","clinic"],["church","church"],["cemetery","cemetery"],["stable","stable"],["jail","jail"],["treasury","treasury"],["court","civic"],["hall","civic"],["collectorate","civic"],["parking","parking"],["bridge","bridge"],["port","port"],["ship","port"],["landing","port"],["well","water"],["hospital","military"],["barrack","military"],["cantonment","military"],["police","military"],["armoury","military"],["fort","military"],["bazaar","trade"],["store","trade"],["warehouse","trade"],["shrine","nature"],["forest","nature"]]:
 		if pair[0] in name_lower: return pair[1]
 	return "house"
@@ -290,7 +291,7 @@ func draw_map_contents() -> void:
 	map_canvas.draw_texture_rect_region(terrain,map_rect,source)
 	map_canvas.draw_rect(map_rect,INK,false,1)
 	var road: Array[Vector2] = []
-	for z in range(-864,865,8): road.append(Vector2(layout.road_x(z),z))
+	for z in range(-int(Layout.HALF),int(Layout.HALF)+1,8): road.append(Vector2(layout.road_x(z),z))
 	draw_route(road,Color(0.48,0.31,0.17),maxf(2.0,zoom))
 	var lane: Array[Vector2] = []
 	for x in range(-280,90,4): lane.append(Vector2(x,160+12*sin(x*0.017)))

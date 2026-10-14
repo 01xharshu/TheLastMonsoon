@@ -37,6 +37,7 @@ func _run() -> void:
 		if id=="port_delivery":freight.global_position=jobs.delivery.parking_position(job.goal)
 		await _visit(job.goal); jobs.use_endpoint(job.goal,actor)
 		if not await _await_handover(id):return
+		jobs.close_panel() # Automatic parking may finish before the talk callback.
 	if not only.is_empty():
 		assert(actor.inventory.get_item_count("rupees")==int(jobs.JOBS[only].pay))
 		print("EXPANDED ERRANDS: PASS | focused physical handover ",only)
@@ -125,6 +126,7 @@ func _run() -> void:
 	root.get_node("SaveManager").quit_game()
 
 func _await_handover(id: String) -> bool:
+	if jobs.active.is_empty():return true # Cart cargo completes on stopped parking.
 	# The frozen test player must step out of the receiver's physical return lane.
 	actor.global_position+=Vector3(4,0,0)
 	var started:=Time.get_ticks_msec()

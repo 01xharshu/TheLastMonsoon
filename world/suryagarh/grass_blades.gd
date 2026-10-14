@@ -88,9 +88,12 @@ static func surface_frame(layout: RefCounted, origin: Vector2, point: Vector2, s
 
 static func baked_frame(vertices: PackedVector3Array,origin: Vector2,point: Vector2,step: float,tile_size: float) -> Transform3D:
 	var local := (point-origin)/step
-	var cell := local.floor()
-	var uv := local-cell
 	var stride := int(round(tile_size/step))+1
+	assert(local.x>=-.001 and local.y>=-.001 and local.x<=stride-1+.001 and local.y<=stride-1+.001,"Baked surface query used the wrong terrain tile")
+	local=local.clamp(Vector2.ZERO,Vector2.ONE*(stride-1))
+	# The exact outer edge interpolates the last cell rather than its LOD skirt.
+	var cell := local.floor().clamp(Vector2.ZERO,Vector2.ONE*(stride-2))
+	var uv := local-cell
 	var index := int(cell.y)*stride+int(cell.x)
 	var a := vertices[index].y
 	var b := vertices[index+1].y

@@ -30,6 +30,20 @@ func configure(visual: Node3D) -> void:
     var value: Vector3=visual.skeleton.get_bone_pose_position(i)+axis*.72
     clip.position_track_insert_key(pos,0,value);clip.position_track_insert_key(pos,2,value)
   library.add_animation(action,clip)
+ # Carried legs bend at the knees instead of keeping the boots against the
+ # leg carrier's face. Use the same complete-body AnimationTree pose branch.
+ var carry:=library.get_animation("down").duplicate() as Animation
+ carry.loop_mode=Animation.LOOP_NONE
+ for track in carry.get_track_count():
+  var bone:=str(carry.track_get_path(track)).get_slice(":",1)
+  if not bone.begins_with("calf"):continue
+  var initial:Quaternion=carry.track_get_key_value(track,0)
+  var bent:Quaternion=visual.base_rotations[bone]*Quaternion(visual.axes[bone]*Vector3.RIGHT,1.2 if bone.ends_with("l") else 1.1)
+  while carry.track_get_key_count(track)>0:carry.track_remove_key(track,0)
+  carry.rotation_track_insert_key(track,0,initial)
+  carry.rotation_track_insert_key(track,.6,bent)
+  carry.rotation_track_insert_key(track,2,bent)
+ library.add_animation("carry",carry)
  # Collapse transfers weight through the knees before settling to the floor.
  var fall:=library.get_animation("down").duplicate() as Animation
  fall.loop_mode=Animation.LOOP_NONE

@@ -37,3 +37,33 @@ Project Made in India source was retained in its own original Git repository, in
 - `51ed`: `refs/heads/codex/storage-recovery-20261012-51ed` (`5e4439d39eac35ab36dd53f7023c8f4f31397365`).
 
 Final measurement: ~/.codex14231944KiB (13.57GiB), worktrees7276416KiB (6.94GiB); available disk~64GiB. Removed14 inactive worktrees;13 recovery commits verified to exist in the original repositories (11 TheLastMonsoon,2 Project Made in India). Main HEADs remain8bac978a and0d252a9 respectively.
+
+## Continuation — 2026-10-13
+
+Reconciled current main6e0ada13 and4 remaining real worktrees. Removed inactive296c generated `.godot` cache (~576MiB), after verifying no tracked files, symlink or open file handles. Source worktree retained. Current f9b2 active;8eab recently active;new a7a8 unfinished clothing/motion candidate retained. Prior source-recovery snapshots are not equivalent to completed feature ports. Scoped recovery audit underway.
+
+296c retired on2026-10-13: `refs/heads/codex/storage-recovery-20261013-296c` (`827091268fa30d566f2d8b747738a7e184b8ac9d`), all3476 retained files verified against snapshot blobs. Initial verification compared through the original index and treated new snapshot files as deleted; full working-file/hash-set verification corrected that check. No source loss or main-index change. Consumer-aware disposable cleaner removed0files. Deferred cart fix ported; remaining cloth/render/profiler source stays recoverable without gameplay activation.
+
+## Recovery disposition after current-main audit
+
+The following distinction is explicit: source snapshots retain work; they do not mean every historical gameplay candidate has been merged. Current main and concurrent owners take precedence over older full-file replacements.
+
+| Recovery | Current disposition |
+| --- | --- |
+|15a3|AreaArrival HUD component/UID and current-contract reusable check ported. Existing façade removals already contained. Old fort-outpost dressing still a candidate; current fort geometry differs substantially.|
+|1ce9|Older story-planning documents retained; current Dev/rebellion/consignment story owns the latest narrative and implementation. No old narrative replacement applied.|
+|36d7|Historical cleanup changes/notes retained; no unique runtime implementation to promote.|
+|290b|Implementation/test/doc copies already identical to main; retired as redundant.|
+|296c (20261013)|Functional delayed-cart restore, occupied priority, quick re-save and player-control hold ported; current identity/permission/doubled/cart-gravity contracts preserved. Physical boarding-completion and paid re-save/idempotence races repaired. Experimental cloth/render/shadow/profiling material retained as candidates.|
+|4df9/ceff|Older startup/render/firearm/save optimization candidates retained. Shared runtime/save/firearm implementations have since changed; no wholesale replacement.|
+|584b|Coastal lighthouse/watchtower source remains unmerged candidate. Requires current port geometry/support/traversal integration before activation.|
+|6546|Communications/dak district source remains unmerged candidate. Requires current terrain, staffing/body, errands/identity/save contracts before activation.|
+|9746|Crime/settings source largely superseded by current integration; older conflicts/import metadata retained only for recovery. No rollback of current mounted patrol/custody/sight.|
+|d4e5/fabe|Old roster/editable character inputs and horse-parking/recall candidates retained. No replacement of current complete-body/foundation/motion/horse ownership contracts.|
+|Project Made in India1dbd/51ed|Vehicle/cabin and cleanup sources remain in their own original repository's verified recovery refs. Separate current-project integration is not falsely marked complete.|
+
+2026-10-13 final verified implementation checks: AreaArrival headless/native Metal PASS incl tutorial gating; actual-world morning tutorial PASS; cart delayed-spawn/queue/control/pause/paid re-save/replacement/idempotence/headless and native Metal PASS; final actual-world SaveManager Continue PASS (fresh world, passenger seat/destination,6rupees, full carts/patrols ready), zero script diagnostics. Tests use OS temporary directories and remove output; no screenshots/reports/logs/saves retained. Reusable runner: `python3 tools/world/run_cart_continue.py [--native] [--integrated]`. No commit/push or history rewrite performed.
+
+Remaining3source checkouts8eab/a7a8/f9b2 retained for their unfinished owners. Unopened8eab/a7a8 `.godot` caches removed (1107224+790120KiB), with identical Git source status before/after and no tracked contents/open handles. Their next Godot use will reimport. Activef9b2 and original-main cache untouched; initializing registrations retained.
+
+Final continuation measurement: `.codex`13005552KiB (**12.40GiB**), worktrees5940812KiB (**5.67GiB**); disk available86GiB. Overall15inactive worktrees removed across passes;14source-recovery commits remain reachable (12TheLastMonsoon,2Project Made in India), verified with `git cat-file -e <ref>^{commit}`. Remaining historical feature ports are explicitly open above. No owned test processes/output remain.

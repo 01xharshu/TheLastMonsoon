@@ -79,18 +79,21 @@ func run() -> void:
 	actor.get_node("UI/HUDRoot/MorningTutorial").restore_step(11)
 	Input.mouse_mode=Input.MOUSE_MODE_CAPTURED;root.grab_focus()
 	print("NATIVE PLAY READY viewport=",root.size," scale=",root.scaling_3d_scale)
-	await travel("village",Vector2(-340,231),Vector2(1,0))
+	if not "--actions-only" in OS.get_cmdline_user_args():await travel("village",Vector2(-340,231),Vector2(1,0))
 	if "--village-only" in OS.get_cmdline_user_args():
 		print("NATIVE VILLAGE PLAY ","PASS" if failures.is_empty() else "FAIL"," | ",JSON.stringify(failures))
 		saves.quit_game(0 if failures.is_empty() else 1);return
-	await travel("market",Vector2(-346,275),Vector2(1,0))
-	await travel("mountain",Vector2(520,-170),Vector2(1,0))
-	await travel("bazaar",Vector2(605,470),Vector2(1,0))
+	if not "--actions-only" in OS.get_cmdline_user_args():
+		await travel("market",Vector2(-346,275),Vector2(1,0))
+		await travel("mountain",Vector2(520,-170),Vector2(1,0))
+		await travel("bazaar",Vector2(605,470),Vector2(1,0))
 	await place(Vector2(-346,275),Vector2(1,0))
+	for frame in 180:await physics_frame
 	var stamina_start: float=actor.survival.stamina
 	var start := actor.global_position
 	button("move_forward",true);button("sprint",true)
-	for frame in 150:await physics_frame
+	for frame in 150:
+		await physics_frame;face(Vector3.RIGHT)
 	button("sprint",false);button("move_forward",false)
 	check(actor.global_position.distance_to(start)>3.0 and actor.survival.stamina<stamina_start,"sprint moves and consumes stamina")
 	await create_timer(.5).timeout
@@ -98,11 +101,12 @@ func run() -> void:
 	button("jump",true)
 	for frame in 2:await physics_frame
 	button("jump",false)
-	var jump_stop:=Time.get_ticks_msec()+2500
-	while Time.get_ticks_msec()<jump_stop:
+	var jump_elapsed:=0.0;var jump_stop:=Time.get_ticks_msec()+30000
+	while jump_elapsed<2.5 and Time.get_ticks_msec()<jump_stop:
 		await physics_frame;high_y=maxf(high_y,actor.global_position.y)
-	check(high_y-base_y>.2,"jump leaves the ground")
-	check(actor.is_on_floor(),"jump lands on market lane")
+		jump_elapsed+=actor.get_physics_process_delta_time()
+	check(jump_elapsed>=2.5,"clear-ground Space sample completes")
+	check(high_y-base_y<.2 and actor.is_on_floor(),"clear market ground correctly refuses an unjustified jump")
 	await capture("jump_landed")
 	var well: Interactable=world.get_node("Settlement/BhairavpurVillageWell/WellBody")
 	var point:=Vector2(well.global_position.x,well.global_position.z+1.95)

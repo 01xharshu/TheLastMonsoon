@@ -148,6 +148,17 @@ static func add_batch(parent: Node3D, transforms: Array[Transform3D], segments: 
 	body.set_meta("tree_count",transforms.size())
 	return body
 
+static func consignment_road_reserved(point: Vector2) -> bool:
+	if preload("res://world/suryagarh/settlements/indigo_factory_data.gd").reserved(point,2.0):return true
+	# Permanent authored roadway reservation, not distance-driven collision removal.
+	# Rounded bends remain inside the wider shoulder; original tree slots survive.
+	var road=preload("res://story/consignment_route_data.gd").WAYPOINTS
+	for i in road.size()-1:
+		var a: Vector2=road[i];var b: Vector2=road[i+1]
+		if point.x<minf(a.x,b.x)-13 or point.x>maxf(a.x,b.x)+13 or point.y<minf(a.y,b.y)-13 or point.y>maxf(a.y,b.y)+13:continue
+		var delta:=b-a;var closest:=a+delta*clampf((point-a).dot(delta)/delta.length_squared(),0,1)
+		if point.distance_squared_to(closest)<169:return true
+	return false
 static func repair_landscape(landscape: Node3D) -> int:
 	var nature := landscape.get_node_or_null("NatureTiles")
 	if nature == null: return 0
@@ -181,6 +192,10 @@ static func repair_landscape(landscape: Node3D) -> int:
 			var base: Vector3 = segments[0].centre
 			base.y -= float(segments[0].height)*.5
 			var world_base := parent.to_global(tree*base)
+			if consignment_road_reserved(Vector2(world_base.x,world_base.z)):
+				original_roots[Vector2(snappedf(tree.origin.x,.01),snappedf(tree.origin.z,.01))]=true
+				copy.set_instance_transform(index,Transform3D(Basis(Vector3.ZERO,Vector3.ZERO,Vector3.ZERO),instances[index].origin))
+				continue
 			terrain_ray.from = world_base+Vector3.UP*50
 			terrain_ray.to = world_base-Vector3.UP*50
 			var support := space.intersect_ray(terrain_ray)
@@ -223,6 +238,9 @@ static func ground_batch(batch: MultiMeshInstance3D, segments: Array[Dictionary]
 		var base: Vector3 = segments[0].centre
 		base.y -= float(segments[0].height)*.5
 		var root := batch.get_parent_node_3d().to_global(tree*base)
+		if consignment_road_reserved(Vector2(root.x,root.z)):
+			copy.set_instance_transform(index,Transform3D(Basis(Vector3.ZERO,Vector3.ZERO,Vector3.ZERO),instances[index].origin))
+			continue
 		ray.from = root+Vector3.UP*50
 		ray.to = root-Vector3.UP*50
 		var ground := space.intersect_ray(ray)

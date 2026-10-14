@@ -1,6 +1,7 @@
 extends Node3D
-## Physical goods and a receiver own a cancellable, unpaid-until-finished handover.
+## Cart cargo finishes in its parking bay; hand parcels retain receiver handover.
 const Crate=preload("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf")
+const PARKING_HALF_SIZE := Vector2(2.5,4.0)
 var manager:Node3D
 var goods:Node3D
 var vehicle:Node3D
@@ -22,7 +23,7 @@ func configure(owner:Node3D)->void:
 	manager=owner
 	marker=MeshInstance3D.new();marker.name="DeliveryArrivalArea"
 	var lines:=SurfaceTool.new();lines.begin(Mesh.PRIMITIVE_LINES)
-	for edge in [[Vector3(-1.5,0,-3),Vector3(1.5,0,-3)],[Vector3(1.5,0,-3),Vector3(1.5,0,3)],[Vector3(1.5,0,3),Vector3(-1.5,0,3)],[Vector3(-1.5,0,3),Vector3(-1.5,0,-3)]]:
+	for edge in [[Vector3(-2.5,0,-4),Vector3(2.5,0,-4)],[Vector3(2.5,0,-4),Vector3(2.5,0,4)],[Vector3(2.5,0,4),Vector3(-2.5,0,4)],[Vector3(-2.5,0,4),Vector3(-2.5,0,-4)]]:
 		for point in edge:lines.add_vertex(point)
 	marker.mesh=lines.commit()
 	var gold:=StandardMaterial3D.new();gold.albedo_color=Color(.94,.72,.28);gold.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -38,6 +39,38 @@ func parking_position(endpoint:String)->Vector3:
 	at.y=manager.get_parent().layout.height(at.x,at.z)+.06
 	if endpoint=="port_cargo":at.y=manager.floor_levels.get(endpoint,at.y)+.04
 	return at
+
+func cart_parked(cart:Node3D,endpoint:String)->bool:
+	if not is_instance_valid(cart) or cart.get("boarding")==null:return false
+	if absf(cart.boarding.speed)>.15 or not cart.boarding.transition.is_empty():return false
+	var center:=parking_position(endpoint)
+	if not center.is_finite() or absf(cart.global_position.y-center.y)>.5:return false
+	if cart.boarding.clearance_shapes.is_empty():return false
+	# Check every corner of the actual cart/shaft collision footprint. Parking
+	# the root near the box is insufficient when a wheel or cart body is outside.
+	for volume:CollisionShape3D in cart.boarding.clearance_shapes:
+		if not volume.shape is BoxShape3D:return false
+		var half:Vector3=volume.shape.size*.5
+		for x in [-half.x,half.x]:
+			for y in [-half.y,half.y]:
+				for z in [-half.z,half.z]:
+					var corner:Vector3=volume.to_global(Vector3(x,y,z))-center
+					if absf(corner.x)>PARKING_HALF_SIZE.x or absf(corner.z)>PARKING_HALF_SIZE.y:return false
+	return true
+
+func finish_parked_cart()->bool:
+	var id:String=manager.active
+	if not id in ["port_delivery","road_warehouse_crate"] or manager.stages.get(id,"")!="carrying":return false
+	var loaded:Node3D=vehicle if id=="port_delivery" else manager.roadside.cargo_cart
+	if not is_instance_valid(loaded) or not loaded.has_meta("errand_cargo"):return false
+	if id=="port_delivery" and not is_instance_valid(goods):return false
+	if not cart_parked(loaded,manager.JOBS[id].goal):return false
+	# The saved job ledger owns the unique wage. No receiver movement or money
+	# exchange animation occurs once the loaded cart is stopped inside the box.
+	if id=="port_delivery":clear()
+	manager._finish(id,true)
+	manager._message("Delivery complete — %d rupees paid."%int(manager.JOBS[id].pay))
+	return true
 
 func pickup(id:String)->bool:
 	if id!="port_delivery":return true
@@ -55,6 +88,10 @@ func pickup(id:String)->bool:
 	return true
 
 func begin(id:String)->bool:
+	if id in ["port_delivery","road_warehouse_crate"]:
+		if finish_parked_cart():return true
+		manager._message("Park the loaded cart fully inside the marked rectangle and stop.")
+		return false
 	if not phase.is_empty():return phase!="recovering" and request==id
 	if manager.active!=id or manager.stages.get(id,"")!="carrying":return false
 	var endpoint:String=manager.JOBS[id].goal
@@ -83,14 +120,14 @@ func _physics_process(delta:float)->void:
 		pending_cart_age+=delta
 		_resolve_saved_cart()
 	var endpoint:String=manager.next_endpoint()
-	marker.visible=not manager.active.is_empty() and (manager.active=="port_delivery" or manager.JOBS[manager.active].kind=="escort") and manager.targets.has(endpoint) and not manager.player.get_meta("morning_tutorial_active",false) and not manager.player.get_meta("opening_active",false) and not get_tree().paused
+	marker.visible=not manager.active.is_empty() and (manager.active in ["port_delivery","road_warehouse_crate"] or manager.JOBS[manager.active].kind=="escort") and manager.targets.has(endpoint) and not manager.player.get_meta("morning_tutorial_active",false) and not manager.player.get_meta("opening_active",false) and not get_tree().paused
 	if marker.visible:marker.global_position=parking_position(endpoint)
+	if phase.is_empty() and not get_tree().paused and finish_parked_cart():return
 	if phase.is_empty() and manager.active=="port_delivery" and not get_tree().paused:
 		var mounted:Node=manager.player.get_meta("mounted_vehicle") if manager.player.has_meta("mounted_vehicle") else null
 		if mounted!=null and mounted.role=="driver" and absf(mounted.speed)<.15 and mounted.transition.is_empty():
 			if manager.stages[manager.active]=="accepted" and mounted.cart.global_position.distance_to(parking_position("port_cargo"))<4:
 				if pickup(manager.active):manager.stages[manager.active]="carrying";manager._message("Consignment loaded. Return to the marked counting-house bay.")
-			elif manager.stages[manager.active]=="carrying" and mounted.cart==vehicle and vehicle.global_position.distance_to(parking_position("office"))<4:begin(manager.active)
 	if phase.is_empty() or get_tree().paused:return
 	if phase=="recovering":
 		age+=delta
@@ -106,7 +143,7 @@ func _physics_process(delta:float)->void:
 		var stand:Vector3=vehicle.to_global(Vector3(-1.8,0,2.65)) if is_instance_valid(vehicle) else goods.global_position
 		if not route.is_empty():
 			if not _follow_route(delta):
-				if age>45:manager._message("The unloading path is blocked. Move the cart and try again.");abort()
+				if age>45:manager._message("The receiver cannot reach the parcel. Move to clear ground nearby and try again.");abort()
 				return
 		var offset:Vector3=stand-receiver.global_position;offset.y=0
 		if offset.length()>(.08 if is_instance_valid(vehicle) else .65):
@@ -117,7 +154,7 @@ func _physics_process(delta:float)->void:
 					var approach:=stand-offset.normalized()*.60
 					approach.y=receiver.global_position.y
 					route=_route_to(approach)
-				if age>45:manager._message("The unloading path is blocked. Move the cart and try again.");abort()
+				if age>45:manager._message("The receiver cannot reach the parcel. Move to clear ground nearby and try again.");abort()
 			return
 		var facing:=goods.global_position-receiver.global_position;receiver.global_rotation.y=atan2(facing.x,facing.z)
 		target=receiver.to_global(Vector3(0,.95,.32))

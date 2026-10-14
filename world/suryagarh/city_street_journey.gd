@@ -55,6 +55,21 @@ func _ready() -> void:
  tier_age = float(actor.get_instance_id()%13)*.02
  accumulated = float(actor.get_instance_id()%7)*.01
 
+func tick(delta:float) -> void:
+ var old_goal:=goal
+ var old_detour:=detour
+ var target:=route_target(route[goal])
+ var was_waiting:=wait>0
+ super.tick(delta)
+ if paused or was_waiting or wait>0 or actor.get_meta("dead",false):return
+ if goal!=old_goal or detour!=old_detour or (closing and goal==0):return
+ var here:=Vector2(actor.global_position.x,actor.global_position.z)
+ if here.distance_to(Vector2(target.x,target.z))>=.035:return
+ # Reached the waypoint on its actual supporting surface. A cached endpoint
+ # height can differ from a raised floor and must not trap a zero-length step.
+ var support:=ground_at(here)
+ if not support.is_empty() and support.normal.y>=.6 and absf(support.position.y-actor.global_position.y)<.035:arrive()
+
 func ground_at(point:Vector2) -> Dictionary:
  var height:float=layout.height(point.x,point.y)
  var ray:=PhysicsRayQueryParameters3D.create(Vector3(point.x,height+8,point.y),Vector3(point.x,height-8,point.y),Ground.TERRAIN_SUPPORT_LAYER)
@@ -103,7 +118,7 @@ func on_blocked(target:Vector3,delta:float) -> void:
  var fallback:=Vector2.INF
  for distance in [.65,1.1,2.0,3.0,.35]:
   for sign in [preference,-preference]:
-   for advance in [1.2,0.0,-.6,-1.2,-2.4]:
+   for advance in [1.2,.6,.3,0.0,-.3,-.6,-1.2,-2.4]:
     var point: Vector2=here+side*distance*sign+forward*advance
     if layout.road_distance(point.x,point.y)>4.5:continue
     var support:=ground_at(point)
@@ -118,14 +133,19 @@ func on_blocked(target:Vector3,delta:float) -> void:
     if not actor.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():continue
     # Hold the passing lane until beyond a long cart, instead of immediately
     # steering back into its rear when the first lateral step finishes.
-    var onward:=point+forward*5.0
-    var onward_support:=ground_at(onward)
     detour_followup=Vector2.INF
-    if layout.road_distance(onward.x,onward.y)<=4.5 and not onward_support.is_empty() and onward_support.normal.y>=.6 and absf(onward_support.position.y-support.position.y)<.35:
-     query.motion=Vector3(onward.x,onward_support.position.y,onward.y)-query.transform.origin+Vector3.UP*(shape.global_position.y-actor.global_position.y+.025)
-     if actor.get_world_3d().direct_space_state.cast_motion(query)[0]>=.99:
-      query.transform.origin+=query.motion;query.motion=Vector3.ZERO
-      if actor.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():detour_followup=onward
+    for length in [5.0,3.0,1.5]:
+     var onward:Vector2=point+forward*length
+     var onward_support:=ground_at(onward)
+     if layout.road_distance(onward.x,onward.y)>4.5 or onward_support.is_empty() or onward_support.normal.y<.6 or absf(onward_support.position.y-support.position.y)>.35:continue
+     var onward_query:=PhysicsShapeQueryParameters3D.new()
+     onward_query.shape=query.shape;onward_query.transform=query.transform;onward_query.margin=query.margin
+     onward_query.collision_mask=query.collision_mask;onward_query.exclude=query.exclude
+     onward_query.motion=Vector3(onward.x,onward_support.position.y,onward.y)-query.transform.origin+Vector3.UP*(shape.global_position.y-actor.global_position.y+.025)
+     if actor.get_world_3d().direct_space_state.cast_motion(onward_query)[0]<.99:continue
+     onward_query.transform.origin+=onward_query.motion;onward_query.motion=Vector3.ZERO
+     if not actor.get_world_3d().direct_space_state.intersect_shape(onward_query,1).is_empty():continue
+     detour_followup=onward;break
     if not detour_followup.is_finite():
      # A clear lateral toe-step alone can steer straight back into the blocker.
      # Prefer a complete passing lane; retain a substantial escape only as fallback.

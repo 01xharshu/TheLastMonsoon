@@ -77,6 +77,18 @@ func _export(folder:String,woman:Node3D,rig:Skeleton3D,sample:int,label:String) 
 				for vertex in arrays[Mesh.ARRAY_VERTEX]:world_points.append(node.global_transform*vertex)
 			var garment_name:String="Woven sari pallu over blouse" if str(node.name)=="Fitted cotton upper base" and surface>0 else str(node.name)
 			var entry:Dictionary={"name":garment_name,"vertices":serialize_points(world_points),"indices":arrays[Mesh.ARRAY_INDEX]}
+			if garment_name=="Opaque fitted bra and thong foundation":
+				# Stable rest-space regions: pose height can bring the lower
+				# foundation close to bent upper cloth, but it is not its support.
+				var rest_points:PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+				var foundation_ids:PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+				var bra_ids:=PackedInt32Array()
+				for j in range(0,foundation_ids.size(),3):
+					if minf(rest_points[foundation_ids[j]].y,minf(rest_points[foundation_ids[j+1]].y,rest_points[foundation_ids[j+2]].y))>.94:
+						bra_ids.append_array(foundation_ids.slice(j,j+3))
+				if bra_ids.is_empty():push_error("Upper foundation region missing");quit(1);return
+				if bra_ids.size()==foundation_ids.size():push_error("Lower foundation region missing");quit(1);return
+				entry["upper_foundation_indices"]=bra_ids
 			if body and woman.action=="talk":
 				for point in world_points:seated_points.append(woman.to_local(point))
 			if body:

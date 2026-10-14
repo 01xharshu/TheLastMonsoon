@@ -47,7 +47,7 @@ func _mountain() -> void:
 			var edge := p+normal*side*6.1
 			if layout.road_distance(edge.x,edge.y)<5.4: continue
 			for course in 2:
-				_stone(edge+tangent*(.25 if course==1 else 0.0),Vector3(rng.randf_range(.8,1.1),.42,rng.randf_range(.45,.65)),atan2(tangent.y,tangent.x),course*.32)
+				_stone(edge+tangent*(.25 if course==1 else 0.0)+normal*rng.randf_range(-.06,.06),Vector3(rng.randf_range(1.15,1.35),rng.randf_range(.39,.46),rng.randf_range(.45,.65)),-atan2(tangent.y,tangent.x)+rng.randf_range(-.07,.07),course*.32)
 			if step%5==0:
 				_stone(p-normal*side*rng.randf_range(7,10),Vector3(rng.randf_range(.6,1.4),rng.randf_range(.4,.9),rng.randf_range(.6,1.1)),rng.randf()*TAU)
 		_drain(a,b,normal)
@@ -108,6 +108,10 @@ func _batch_stones() -> void:
 func _prop(parent: Node3D,path: String,at: Vector3,yaw := 0.0) -> void:
 	var prop: Node3D = load("res://objects/household/"+path+".tscn").instantiate()
 	prop.name="PeriodDetail%d"%prop_count;parent.add_child(prop);prop.position=at;prop.rotation.y=yaw;prop_count+=1
+	if at.y<.1:
+		var support := parent.to_global(at)
+		support.y=layout.height(support.x,support.z)+at.y
+		prop.global_position=support
 
 func _dress_settlement() -> void:
 	var settlement := get_parent().get_node("Settlement")
@@ -131,6 +135,41 @@ func _dress_settlement() -> void:
 			_prop(stall,"storage/crate",Vector3(2.9,.16,-2.2),-.08)
 			_prop(stall,"storage/brass_pot",Vector3(2.9,.16,-.5),.3)
 
+static func bazaar_roof(stall: Node3D) -> void:
+	var old_roof: Node3D=stall.get_node("ShadeRoof")
+	var source := PackedVector3Array()
+	# Ridge runs across the shop; rain drains to the front/back overhangs.
+	for side in [-1.0,1.0]:
+		var a := Vector3(-5,3.22,side*4.5)
+		var b := Vector3(5,3.22,side*4.5)
+		var c := Vector3(-5,3.86,0)
+		var d := Vector3(5,3.86,0)
+		var points: Array=[a,b,c,c,b,d] if side>0 else [a,c,b,c,d,b]
+		for point in points:source.append(point)
+	var st := SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for point in source:
+		st.set_uv(Vector2(point.x+5,point.z+4.5));st.add_vertex(point)
+	st.generate_normals();st.generate_tangents();st.index()
+	var material := ShaderMaterial.new();material.shader=preload("res://world/suryagarh/shaders/market_roof_tile.gdshader")
+	var roof := MeshInstance3D.new();roof.name="PitchedClayRoof";roof.mesh=st.commit();roof.material_override=material;stall.add_child(roof)
+	var body := StaticBody3D.new();body.name="PitchedRoofContact"
+	var collision := CollisionShape3D.new();var shape := ConcavePolygonShape3D.new();shape.backface_collision=true;shape.set_faces(source);collision.shape=shape;body.add_child(collision);stall.add_child(body)
+	old_roof.free()
+	var timber := StandardMaterial3D.new();timber.albedo_color=Color(.22,.13,.07);timber.roughness=.95
+	var frame := SurfaceTool.new();frame.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var box := BoxMesh.new();box.size=Vector3(.13,.14,4.55)
+	var faces := box.get_faces()
+	for x in [-4.0,0.0,4.0]:
+		for side in [-1.0,1.0]:
+			var transform := Transform3D(Basis(Vector3.RIGHT,side*atan2(.64,4.5)),Vector3(x,3.46,side*2.25))
+			for vertex in faces:frame.add_vertex(transform*vertex)
+	var fascia := BoxMesh.new();fascia.size=Vector3(10,.12,.12)
+	var edge_faces := fascia.get_faces()
+	for side in [-1.0,1.0]:
+		for vertex in edge_faces:frame.add_vertex(vertex+Vector3(0,3.15,side*4.5))
+	frame.generate_normals()
+	var rafters := MeshInstance3D.new();rafters.name="RoofRafters";rafters.mesh=frame.commit();rafters.material_override=timber;stall.add_child(rafters)
+
 static func canopy(parent: Node3D, material: Material,index: int) -> void:
 	var st := SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var width := 4.9;var depth := 2.9
@@ -139,13 +178,38 @@ static func canopy(parent: Node3D, material: Material,index: int) -> void:
 			for corner in [Vector2(0,0),Vector2(0,1),Vector2(1,0),Vector2(1,0),Vector2(0,1),Vector2(1,1)]:
 				var u: float = (x+corner.x)/16.0;var v: float = (z+corner.y)/8.0
 				var sag := .20*sin(PI*u)*sin(PI*v)
-				st.set_uv(Vector2(u,v));st.add_vertex(Vector3((u-.5)*width,2.57-sag-v*.12+.018*sin(u*TAU*7+index)*sin(PI*v),(v-.5)*depth))
+				st.set_uv(Vector2(u,v));st.add_vertex(Vector3((u-.5)*width,2.52-sag+.018*sin(u*TAU*7+index)*sin(PI*v),(v-.5)*depth))
 	st.generate_normals();st.index()
 	var mesh := MeshInstance3D.new();mesh.name="TensionedClothShade";mesh.mesh=st.commit()
 	var cloth := ShaderMaterial.new();cloth.shader=preload("res://world/suryagarh/shaders/market_cloth.gdshader")
 	var tint: Color=material.get_shader_parameter("tint") if material is ShaderMaterial else material.get("albedo_color")
 	cloth.set_shader_parameter("tint",tint)
 	mesh.material_override=cloth;parent.add_child(mesh)
+	# The four visible wooden posts stand inside the cloth's overhang.
+	# Tie each supported corner to its post; the outer edge is a folded cloth hem.
+	var rope := StandardMaterial3D.new();rope.albedo_color=Color(.36,.29,.19);rope.roughness=1.0
+	var ties := SurfaceTool.new();ties.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for side in [-1.0,1.0]:
+		for end in [-1.0,1.0]:
+			var top := Vector3(side*2.45,2.52,end*1.45)
+			var anchor := Vector3(side*2.0,2.38,end*1.1)
+			var axis := (anchor-top).normalized()
+			var normal := axis.cross(Vector3.UP).normalized()
+			var binormal := axis.cross(normal).normalized()
+			for ring in 6:
+				var a := normal*cos(ring*TAU/6.0)+binormal*sin(ring*TAU/6.0)
+				var b := normal*cos((ring+1)*TAU/6.0)+binormal*sin((ring+1)*TAU/6.0)
+				for point in [top+a*.012,anchor+a*.012,top+b*.012,top+b*.012,anchor+a*.012,anchor+b*.012]:ties.add_vertex(point)
+	ties.generate_normals()
+	var tie_mesh := MeshInstance3D.new();tie_mesh.name="CornerClothTies";tie_mesh.mesh=ties.commit();tie_mesh.material_override=rope;parent.add_child(tie_mesh)
+	var hem := SurfaceTool.new();hem.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for x in 24:
+		for corner in [Vector2(0,0),Vector2(0,1),Vector2(1,0),Vector2(1,0),Vector2(0,1),Vector2(1,1)]:
+			var u: float=(x+corner.x)/24.0
+			var drop := .12+.025*sin(u*TAU*3+index)
+			hem.set_uv(Vector2(u,corner.y*.07));hem.add_vertex(Vector3((u-.5)*width,2.52-corner.y*drop,depth*.5+.015*sin(u*TAU*6+index)))
+	hem.generate_normals();hem.index()
+	var hem_mesh := MeshInstance3D.new();hem_mesh.name="FoldedCanvasHem";hem_mesh.mesh=hem.commit();hem_mesh.material_override=cloth;parent.add_child(hem_mesh)
 
 func _apron(parent: Node3D, size: Vector2, center: Vector2) -> void:
 	var st := SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)

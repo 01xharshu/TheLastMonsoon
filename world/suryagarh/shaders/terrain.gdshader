@@ -26,7 +26,8 @@ void fragment() {
 	float rock = smoothstep(0.10, 0.29, slope) * 0.85 + smoothstep(65.0, 125.0, world_pos.y) * 0.4;
 	rock = clamp(rock, 0.0, 1.0);
 	float wet = 1.0 - smoothstep(0.1, 3.8, world_pos.y);
-	float road = texture(road_mask_tex, (p + vec2(864.0)) / 1728.0).r;
+	float core_mask = 1.0-step(864.0,max(abs(p.x),abs(p.y)));
+	float road = texture(road_mask_tex, (p + vec2(864.0)) / 1728.0).r*core_mask;
 	float urban_edge = max(max(urban_bounds.x-p.x,p.x-urban_bounds.z),max(urban_bounds.y-p.y,p.y-urban_bounds.w));
 	float urban = (urban_bounds.z>urban_bounds.x) ? 1.0-smoothstep(0.0,12.0,urban_edge) : 0.0;
 	float fields = (1.0-smoothstep(-125.0,-80.0,p.x))*smoothstep(-730.0,-660.0,p.x)*(1.0-smoothstep(470.0,570.0,abs(p.y)));
@@ -47,7 +48,7 @@ void fragment() {
 	base = mix(base, grass*0.72, fields*bund);
 	base = mix(base, stone, rock);
 	base = mix(base,soil*vec3(0.68,0.62,0.52),urban*0.92);
-	vec2 authored_land = texture(density_mask_tex, (p + vec2(864.0)) / 1728.0).rg;
+	vec2 authored_land = texture(density_mask_tex, (p + vec2(864.0)) / 1728.0).rg*core_mask;
 	float authored_field = authored_land.r;
 	base = mix(base, soil * vec3(0.68,0.58,0.43) * (0.94+0.06*sin(p.x*6.283)), authored_field);
 	base = mix(base, soil * vec3(0.78,0.67,0.50), authored_land.g);

@@ -8,7 +8,8 @@ const FORT_BASE_HEIGHT := 120.0
 const FORT_ACCESS_GRADES := [109.8, 112.1, 117.5, 120.0]
 const FORT_TRAIL_GRADES := [10.5, 13.7, 31.3, 38.0, 42.0, 46.0, 56.0, 68.0, 76.0, 79.5, 84.5, 94.0, 100.0, 108.0, 109.8]
 ## Metres, Y-up. Stable deterministic source shared by baking, runtime and validation.
-const SIZE: float = 1728.0
+const CORE_HALF: float = 864.0
+const SIZE: float = 2304.0
 const HALF: float = SIZE / 2.0
 const TILE: float = 144.0
 const GRID: int = 48
@@ -37,6 +38,7 @@ const PLOTS: Dictionary = {
 ## Each spur ends at an actual entrance or joins another route. A road endpoint
 ## may terminate at a doorstep, but cannot silently stop inside a building.
 const ROUTES: Dictionary = {
+	"consignment_wilderness": preload("res://story/consignment_route_data.gd").WAYPOINTS,
 	"city_college_front_street": [Vector2(-250,-418),Vector2(-350,-418)],
 	"city_college_rear_lane": [Vector2(-250,-442),Vector2(-350,-442)],
 	"city_east_high_street": [Vector2(-250,-310),Vector2(-250,-442)],
@@ -228,6 +230,9 @@ func base_height(x: float, z: float) -> float:
 	upland += hill(x, z, -760, -650, 210, 230, 47)
 	upland *= 1.0 + n * 0.5
 	h += upland
+	# Added wilderness fades to zero at the retained central terrain boundary.
+	var outer:float=smoothstep(CORE_HALF,CORE_HALF+100.0,maxf(absf(x),absf(z)))
+	h += outer*(hill(x,z,-1040,-650,170,260,68)+hill(x,z,1000,-700,175,250,92)+hill(x,z,-350,-1080,320,130,44))
 	h = PortUplands.terrain(Vector2(x,z),h)
 	# Continuous channel and smooth banks; the water surface stays level.
 	var d: float = absf(x - river_x(z))
@@ -303,6 +308,7 @@ func segment_distance(point: Vector2, a: Vector2, b: Vector2) -> float:
 	return point.distance_to(a+ab*clampf((point-a).dot(ab)/ab.length_squared(),0.0,1.0))
 
 func plot_clearance(x: float,z: float) -> float:
+	if preload("res://world/suryagarh/settlements/indigo_factory_data.gd").reserved(Vector2(x,z)):return 0.0
 	if x >= -660 and x <= -230 and z >= -450 and z <= 350 and Density.clearance(Vector2(x,z)): return 0.0
 	var distance := INF
 	for plot in PLOTS.values():

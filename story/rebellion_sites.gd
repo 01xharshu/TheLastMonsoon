@@ -80,11 +80,11 @@ func configure(owner: Node) -> void:
  mangal=person("MangalPandey",cellar,Vector3(-3,.2,2),"res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb","indian")
  for i in 4:
   await get_tree().process_frame
-  var member=person("Rebel%d"%i,cellar,Vector3(-6+i*4,.2,-2),"res://characters/npcs/households/merchant.glb","indian")
+  var member=person("Rebel%d"%i,cellar,Vector3(-6+i*4,.2,-2),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian")
   trainees.append(member);equip(member)
  for i in 2:
   await get_tree().process_frame
-  companions.append(person("RaidCompanion%d"%i,cellar,Vector3(-2+i*4,.2,4),"res://characters/npcs/households/merchant.glb","indian"));equip(companions[-1])
+  companions.append(person("RaidCompanion%d"%i,cellar,Vector3(-2+i*4,.2,4),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian"));equip(companions[-1])
  prompt("briefing","Speak to Mangal Pandey",cellar,Vector3(-3,1.1,2))
  prompt("weapons","Inspect the stolen weapons",cellar,Vector3(5,1.1,-4))
  prompt("raid","Begin the cantonment weapons raid",cellar,Vector3(-3,1.1,3.5))

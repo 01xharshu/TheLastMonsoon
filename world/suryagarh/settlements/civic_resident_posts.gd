@@ -23,7 +23,7 @@ func prepare()->void:
 	for spec in [
 		["MilitaryHospital","HospitalGateGuard","guard",Vector3(-3,0,9),"res://characters/npcs/british/private_man.glb"],
 		["MilitaryHospital","HospitalLinenPorter","hospital_attendant",Vector3(3,0,9),"res://characters/npcs/street_residents/workman_02.glb"],
-		["MilitarySupplyDepot","DepotStoresPorter","depot_laborer",Vector3(3,0,9),"res://characters/npcs/street_residents/workman_04.glb"],
+		["MilitarySupplyDepot","DepotStoresPorter","depot_laborer",Vector3(3,0,15.4),"res://characters/npcs/street_residents/workman_04.glb"],
 		["Collectorate","CollectorateGuard","guard",Vector3(3,0,11),"res://characters/npcs/thana/burkundaz_motion.glb"],
 		["DistrictTreasury","TreasuryGuard","guard",Vector3(-3,0,13),"res://characters/npcs/thana/daroga_motion.glb"],
 		["MilitarySupplyDepot","DepotGateGuard","guard",Vector3(-3,0,9),"res://characters/npcs/british/corporal_man.glb"]
@@ -40,7 +40,9 @@ func prepare()->void:
 		if independent:
 			var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
 			work.work_kind="hospital" if spec[2]=="hospital_attendant" else "depot"
-			work.supplier_leg=53.0 if work.work_kind=="hospital" else 30.0
+			work.supplier_leg=53.0 if work.work_kind=="hospital" else 33.0
+			if work.work_kind=="depot":
+				work.cart_origin=Vector3(4.4,0,11);work.supplier_turn_clearance=5.0
 			work.name="LinenDelivery" if work.work_kind=="hospital" else "StoresDelivery"
 			work.actor=actor;work.institution=institution;work.viewer=viewer;work.clock=clock;actor.add_child(work)
 			while work.waypoints.size()<5:await get_tree().process_frame
@@ -58,14 +60,17 @@ func prepare()->void:
 		if workplace==null:continue
 		var station:=Node3D.new();station.name="ResidentReceivingStation";workplace.add_child(station);station.position=job[3];station.rotation.y=job[4]
 		var worker:=StreetActor.new();worker.name=job[1];worker.movement_enabled=false
+		worker.movement_profile=&"female" if job[2]=="household" else &"male"
 		worker.add_child(Human.instantiate(job[5],false));add_child(worker)
 		worker.global_position=station.to_global(Vector3(3,0,15.4));worker.global_position.y=layout.height(worker.global_position.x,worker.global_position.z)
 		worker.set_meta("social_role",str(job[2])+"_laborer");worker.set_meta("assigned_workplace",str(workplace.get_path()));worker.set_meta("human_source",job[5]);worker.add_to_group("institution_post_residents")
 		var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
 		work.name="SupplyDelivery";work.work_kind=job[2];work.actor=worker;work.institution=station;work.viewer=viewer;work.clock=clock
-		work.supplier_leg={"port":24.0,"market":-24.0,"household":-24.0}[str(job[2])]
+		work.supplier_leg={"port":24.0,"market":-24.0,"household":24.0}[str(job[2])]
 		if job[2]=="port":
-			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(4.5,0,7),Vector3(4.5,0,4),Vector3(0,0,1)]
+			work.store_base=Vector3(.53,1.15,-2);work.stand_base=Vector3(.1,0,-2)
+			# Pass beyond the open cargo-door leaf before turning to the interior shelf.
+			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(3,0,7),Vector3(4.5,0,4),Vector3(4.5,0,-3.5),Vector3(-.85,0,-3.5),Vector3(.1,0,-3.5),Vector3(0,0,-2)]
 		elif job[2]=="market":
 			work.store_base=Vector3(2.9,1.15,1);work.stand_base=Vector3(2.47,0,1)
 			work.route_points=[Vector3(4.5,0,15.28),Vector3(7,0,15.4),Vector3(7,0,7),Vector3(7,0,-1),Vector3(2.47,0,-1),Vector3(0,0,1)]

@@ -1,0 +1,10 @@
+{
+  "body_source": "WorkingAssets/NPCs/households/merchant/merchant.blend",
+  "clothing_donor": "WorkingAssets/NPCs/village_farmer/village_farmer_motion_candidate.blend",
+  "rebuild": "Blender --background --python tools/characters/build_mangal_rebels.py",
+  "body_vertex_sha256": "c90e55728f0bcaa46f73c035b8b845bae499ff7d9fcb06794d426b6125c6b59e",
+  "body_vertices": 13380,
+  "foundation_retained": true,
+  "style": "madder cotton tunic, indigo tailored knee breeches/headcloth, undyed woven waist sash and edging",
+  "status": "Body hash/full foundation retained; bounded native idle, walk, faster walk, turn and seated front/side samples reviewed; uninterrupted all-extreme contact/cloth approval remains separate"
+}

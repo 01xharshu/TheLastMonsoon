@@ -37,6 +37,10 @@ func available() -> bool:
 	return actor.is_physics_processing() and not actor.is_swimming and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless")
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("attack") and preload("res://story/rear_passenger_combat.gd").allowed(actor):
+		var choice:int=visual.equipment.selected
+		if choice in [1,3,5]:actor.get_node("RifleCombat" if choice==1 else "PistolCombat" if choice==3 else "DoubleGunCombat").fire()
+		get_viewport().set_input_as_handled();return
 	if event.is_action_pressed("combat_dodge") and available():
 		dodge();get_viewport().set_input_as_handled();return
 	if not event.is_action_pressed("attack") or not available(): return

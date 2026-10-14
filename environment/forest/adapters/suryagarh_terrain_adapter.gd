@@ -12,9 +12,11 @@ func _world_point(x: float, z: float) -> Vector2:
 	return Vector2(origin.x + x, origin.z + z)
 
 func _surface_frame(p: Vector2) -> Transform3D:
-	var cell := Vector2i(((p + Vector2.ONE * Layout.HALF) / Layout.TILE).floor())
+	var cell := Vector2i(((p + Vector2.ONE * Layout.CORE_HALF) / Layout.TILE).floor())
 	if not _surface_cache.has(cell):
 		var tile := get_node_or_null("../../Landscape/TerrainTiles/Terrain_%02d_%02d" % [cell.x, cell.y]) as MeshInstance3D
+		if tile==null:
+			tile=get_node_or_null("../../WildernessExpansion/TerrainTiles/Terrain_%02d_%02d"%[cell.x,cell.y]) as MeshInstance3D
 		if tile != null and tile.mesh != null:
 			var vertices: PackedVector3Array = tile.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 			var step := vertices[1].x - vertices[0].x

@@ -91,6 +91,36 @@ func run() -> void:
 	check(opening.shade.color == Color.BLACK,"First prologue frame is not black")
 	check(not opening.visual.model.find_child("Arjun_Boot_1",true,false).visible,"Night boots remain visible")
 	check(opening.visual.model.find_child("Arjun_MakeHuman_Body",true,false).visible,"Barefoot staging hides complete body")
+	if OS.get_environment("TLM_OPENING_CUT_ONLY") == "1":
+		opening.set_process(false)
+		opening.state = "night"
+		opening.titles.hide()
+		var lighting_camera := Vector3.ZERO
+		for sample in [5.9,6.21]:
+			for frame in 8:
+				await process_frame
+				opening.elapsed = sample
+				opening._process(0.0)
+			if sample < opening.WICK_CAMERA_CUT:
+				lighting_camera = opening.camera.global_position
+				check(opening.match_prop.visible and opening.lamp.get_node("Flame").visible,"Ignition disappears before diya catches")
+			else:
+				check(is_equal_approx(opening.elapsed,opening.WINDOW_SCENE_START),"Spent-match placement segment still plays")
+				check(not opening.match_prop.visible and opening.match_light.light_energy == 0,"Burnt match remains in the next shot")
+				check(opening.camera.global_position.distance_to(lighting_camera) > .5 and is_equal_approx(opening.camera.fov,52),"Diya ignition does not cut to the window angle")
+				check(opening.lamp.get_node("Flame").visible and opening.lamp.position.is_equal_approx(Vector3(-2.6,.96,.70)),"Camera cut moves or extinguishes diya")
+			var temporary := OS.get_environment("TLM_OPENING_TEST_OUTPUT")
+			if DisplayServer.get_name() != "headless" and not temporary.is_empty():
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png(temporary.path_join("wick_cut_before.png" if sample < opening.WICK_CAMERA_CUT else "wick_cut_after.png"))
+		opening.morning()
+		opening._update_morning(20.36)
+		check(opening.state == "done" and world.player.is_physics_processing(),"Revised opening breaks morning control handoff")
+		recorder.set_recording_active(false)
+		AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
+		print("OPENING WICK CUT: ","FAIL" if failed else "PASS"," | ignition, direct window angle, omitted match disposal, dawn controls")
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1 if failed else 0)
+		return
 	if OS.get_environment("TLM_OPENING_HANDOFF_ONLY") == "1":
 		var press := InputEventKey.new()
 		press.pressed = true

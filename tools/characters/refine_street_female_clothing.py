@@ -5,7 +5,7 @@ from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools/characters'))
 from whole_body_contract import retain_complete_body
-from street_garment_tools import trim_work_sleeves
+from street_female_garments import smooth_hems,natural_hairline,back_tail
 import numpy as np
 
 def refine(index):
@@ -19,7 +19,7 @@ def refine(index):
  if old:bpy.data.objects.remove(old,do_unlink=True)
  blouse=bpy.data.objects['Fitted cotton upper base'];pallu=bpy.data.objects['Woven sari pallu over blouse']
  garment=blouse.copy();garment.data=blouse.data.copy();bpy.context.collection.objects.link(garment)
- garment.name='Street coherent cotton blouse and pallu';garment.hide_render=False;garment.hide_set(False)
+ garment.name='Street coherent cotton blouse and pallu';garment['street_source_only']=False;garment.hide_render=False;garment.hide_set(False)
  if garment.data.shape_keys:garment.shape_key_clear()
  bpy.ops.object.select_all(action='DESELECT');garment.select_set(True);bpy.context.view_layer.objects.active=garment
  # Simplify the cloth's inherited sliver folds, never the human body.
@@ -34,7 +34,7 @@ def refine(index):
   total=np.zeros_like(points);np.add.at(total,neighbours[:,0],points[neighbours[:,1]])
   points+=(total/np.maximum(counts[:,None],1)-points)*.18
  for vertex,point in zip(garment.data.vertices,points):vertex.co=point
- garment.data.update()
+ garment.data.update();smooth_hems(garment)
  material=blouse.data.materials[0].copy();material.name='Street connected cotton regions'
  material.diffuse_color=(1,1,1,1)
  if material.use_nodes:
@@ -50,7 +50,8 @@ def refine(index):
  sari_tint=[(.31,.115,.105),(.12,.19,.29),(.25,.28,.13),(.39,.23,.11)][index]
  for vertex in garment.data.vertices:
   point=vertex.co;centre=.14-(point.z-.85)*.29/.39;width=[.125,.105,.16,.085][index]
-  edge=min(point.z-.83,1.27-point.z,.02-point.y,width-abs(point.x-centre))
+  edge=min(point.z-.83,1.34-point.z,.02-point.y,width-abs(point.x-centre))
+  if point.y>=.02 and point.z>1.22:edge=min(point.z-1.22,1.34-point.z,.11-abs(point.x+.125))
   region=max(0,min(1,edge/.015+.5))
   colours.data[vertex.index].color=tuple(a*(1-region)+b*region for a,b in zip(blouse_tint,sari_tint))+(1,)
  for face in garment.data.polygons:
@@ -59,7 +60,9 @@ def refine(index):
   width=[.125,.105,.16,.085][index]
   face.material_index=0
   face.use_smooth=True
- garment['construction']='Connected cotton surface with shoulder-wrap regions; complete separate originals retained source-only'
+ garment['construction']='Connected cotton surface and a separate fitted shoulder tail; complete separate originals retained source-only'
+ natural_hairline(index)
+ back_tail(rig,body,index,pallu.data.materials[0])
  for original in [blouse,pallu]:original.hide_render=True;original.hide_set(True);original['street_source_only']=True
  bpy.ops.wm.save_as_mainfile(filepath=str(folder/f'{slug}.blend'))
  # Export the unchanged full human volume; exclude only MPFB helpers.
@@ -73,6 +76,9 @@ def refine(index):
   if obj.type=='MESH' and obj!=body and not obj.get('street_source_only',False):obj.select_set(True)
  bpy.context.view_layer.objects.active=rig
  bpy.ops.export_scene.gltf(filepath=str(ROOT/'characters/npcs/street_residents'/f'{slug}.glb'),export_format='GLB',use_selection=True,export_animations=False,export_skins=True,export_all_influences=True,export_cameras=False,export_lights=False,export_morph=False)
+ import struct
+ exported=(ROOT/'characters/npcs/street_residents'/f'{slug}.glb').read_bytes();chunk_size=struct.unpack_from('<I',exported,12)[0];document=json.loads(exported[20:20+chunk_size])
+ if not any(n.get('name')=='Street coherent cotton blouse and pallu' and 'mesh' in n for n in document['nodes']):raise RuntimeError('Refined cotton garment missing from runtime export')
  report=json.loads((folder/'manifest.json').read_text());report['clothing_construction']=garment['construction'];report['visual_approved']=False;report['wardrobe']=['broad shoulder-wrap cotton sari','plain work sari with narrow shoulder wrap','wide folded shoulder-wrap sari','narrow side-wrap cotton sari'][index]
  (folder/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')
  print('STREET_CLOTHING_REFINED',slug,'body',len(body.data.vertices),'cloth',len(garment.data.vertices),flush=True)

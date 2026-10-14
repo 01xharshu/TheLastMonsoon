@@ -82,8 +82,9 @@ func bazaar() -> void:
 		b.piece(stall,"RaisedEarthFloor",Vector3(0,0.08,0),Vector3(9,0.16,8),b.ochre)
 		b.piece(stall,"RearWall",Vector3(0,1.55,-3.8),Vector3(9,2.9,0.3),b.brick)
 		b.piece(stall,"ShadeRoof",Vector3(0,3.15,0),Vector3(10,0.18,9),b.tile)
+		preload("res://world/suryagarh/route_and_market_detail.gd").bazaar_roof(stall)
 		for x in [-4.0,4.0]:
-			for z in [-3.4,3.4]: b.piece(stall,"ShadePost",Vector3(x,1.65,z),Vector3(0.18,3.0,0.18),b.wood)
+			for z in [-3.4,3.4]: b.piece(stall,"ShadePost",Vector3(x,1.69,z),Vector3(0.18,3.08,0.18),b.wood)
 		b.piece(stall,"ServiceCounter",Vector3(0,0.91,1.7),Vector3(5,0.12,1),b.wood)
 		for x in [-2.0,2.0]: b.piece(stall,"CounterLeg",Vector3(x,0.48,1.7),Vector3(0.15,0.8,0.8),b.wood)
 		for x in [-2.5,2.5]:

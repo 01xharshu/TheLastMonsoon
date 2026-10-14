@@ -3,6 +3,8 @@ extends "res://characters/npcs/households/household_npc_actor.gd"
 var riding_cart: Node3D
 var riding_socket: Node3D
 var driving=false
+var seated_foot_drop=.65
+var seated_foot_forward=-.35
 var rope_contact=Vector3.ZERO
 var rope_axis=Vector3.FORWARD
 const ContactBudget=preload("res://systems/simulation_budget.gd")
@@ -46,7 +48,7 @@ func _process(delta: float) -> void:
   var pelvis=_skeleton.find_bone("pelvis")
   global_position+=riding_socket.global_position+Vector3.UP*.10-_skeleton.to_global(_skeleton.get_bone_global_pose(pelvis).origin)
   for side in ["l","r"]:
-   var foot=riding_socket.global_position+riding_cart.global_basis*Vector3(-.18 if side=="l" else .18,-.65,-.35)
+   var foot=riding_socket.global_position+riding_cart.global_basis*Vector3(-.18 if side=="l" else .18,-seated_foot_drop,seated_foot_forward)
    foot_plant._solve(foot_plant.legs[side],_skeleton.to_local(foot))
    solve_hand_contact(side,riding_cart.rein_grip_world(side) if driving else to_global(Vector3(-.2 if side=="r" else .2,.75,.25)));set_grip(side,.6 if driving else .15)
  elif rope_contact!=Vector3.ZERO:

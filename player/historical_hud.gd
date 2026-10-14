@@ -90,6 +90,9 @@ func _ready() -> void:
 		node.add_theme_font_size_override("font_size",24)
 		node.add_theme_color_override("font_outline_color",Color(0.025,0.035,0.025,0.95))
 		node.add_theme_constant_override("outline_size",6)
+	var arrival := preload("res://player/area_arrival.gd").new()
+	arrival.name = "AreaArrival"
+	add_child(arrival)
 	resized.connect(_layout)
 	_layout()
 	tutorial = preload("res://story/morning_tutorial.gd").new()
@@ -116,6 +119,7 @@ func _layout() -> void:
 func _process(delta: float) -> void:
 	var crime := player.get_parent().get_node_or_null("CombatEncounters")
 	wanted_level = crime.wanted_level if crime != null and crime.wanted else 0
+	wanted_level = maxi(wanted_level,int(player.get_meta("mission_wanted_level",0)))
 	_update_gun_sight(delta)
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera: heading = fposmod(-rad_to_deg(camera.global_rotation.y),360.0)

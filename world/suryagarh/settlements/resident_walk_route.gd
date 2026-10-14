@@ -105,10 +105,10 @@ static func find(actor: Node3D,goal: Vector3,extra_excluded: Array[RID]=[]) -> A
 	while not search.done:search.step()
 	return search.result
 
-static func find_budgeted(actor: Node3D,goal: Vector3,budget: Node) -> Array[Vector3]:
-	var empty: Array[RID]=[]
-	var search:=Search.new(actor,goal,empty,support)
+static func find_budgeted(actor: Node3D,goal: Vector3,budget: Node,extra_excluded:Array[RID]=[]) -> Array[Vector3]:
+	var search:=Search.new(actor,goal,extra_excluded,support)
 	while not search.done:
-		await budget.checkpoint()
+		if not is_instance_valid(budget) or not budget.is_inside_tree():return []
+		if not await budget.checkpoint():return []
 		search.step()
 	return search.result

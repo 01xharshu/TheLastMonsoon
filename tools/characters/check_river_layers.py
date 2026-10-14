@@ -1,4 +1,4 @@
-"""Native pallu/blouse crossing check with automatic disposable-output cleanup."""
+"""Native foundation/blouse/pallu crossing check with automatic disposable-output cleanup."""
 import os,subprocess,tempfile,argparse
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]

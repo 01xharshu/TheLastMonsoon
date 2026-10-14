@@ -19,7 +19,7 @@ static func catalogue() -> Dictionary:
  var specs := [
   ["road_letter","A letter for a family","money_receiver",8,"delivery","Please take this sealed letter to my family by the port.","Hand the sealed letter to the family receiver at the port."],
   ["road_office_bag","A bag for the dispatch office","road_office_desk",10,"delivery","Please leave my dispatch bag on the counting-house desk. The clerk is expecting it.","Place the dispatch bag on the counting-house dispatch desk."],
-  ["road_warehouse_crate","A stranded warehouse consignment","port_cargo",16,"delivery","My goods cannot continue on foot. Bring a cart, load this sealed crate and take it to the port warehouse.","Bring the loaded cart beside the port warehouse and hand over the crate."],
+  ["road_warehouse_crate","A stranded warehouse consignment","port_cargo",16,"delivery","My goods cannot continue on foot. Bring a cart, load this sealed crate and take it to the port warehouse.","Park the loaded cart fully inside the warehouse rectangle and stop."],
   ["road_injured","An injured traveller needs the hospital","road_hospital",24,"escort","I hurt my leg and cannot walk to the hospital. Please bring a passenger cart and take me there. The relief fund pays for safe arrival.","Drive to the hospital, stop and help the injured traveller step down."]]
  for row in specs:
   result[row[0]]={"title":row[1],"offer":row[0]+"_caller","pickup":row[0]+"_caller","goal":row[2],"pay":row[3],"kind":row[4],"description":row[5],"roadside":true,"road_objective":row[6],"road_pickup":"Bring a passenger cart beside the injured traveller and stop." if row[4]=="escort" else "Collect the entrusted item from the caller."}
@@ -134,9 +134,7 @@ func use_endpoint(endpoint: String) -> bool:
    manager._clear_job_waypoint();manager._message("Crate loaded. Take this cart to the port warehouse.");return true
   manager._message("Bring a cart beside the crate and stop to load it.");return true
  if endpoint=="port_cargo" and manager.stages.get(id,"")=="carrying":
-  if not is_instance_valid(cargo_cart) or cargo_cart.global_position.distance_to(manager.targets.port_cargo.global_position)>8 or absf(cargo_cart.boarding.speed)>.15:
-   manager._message("Bring the cart carrying the crate beside the warehouse and stop.");return true
-  manager._finish(id);return true
+  manager.delivery.begin(id);return true
  return false
 
 func _physics_process(delta: float) -> void:

@@ -12,7 +12,7 @@ func _ready() -> void:
 		cotton.set_shader_parameter("cloth_color",Color.WHITE)
 		mesh.material_override=cotton
 	if movement_profile == &"female" and _skeleton != null:
-		drape = preload("res://characters/npcs/indian/river_sari_drape.gd").new(self, _skeleton)
+		drape = preload("res://characters/npcs/indian/river_sari_drape.gd").new(self, _skeleton,-.045)
 		drape.update()
 	elif _skeleton != null:
 		drape=preload("res://characters/npcs/indian/indian_street_dhoti.gd").new(self,_skeleton)

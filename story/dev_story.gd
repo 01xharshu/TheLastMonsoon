@@ -27,6 +27,7 @@ var beats: Array[Dictionary]=[]
 var beat_index:=0
 var age:=0.0
 var cue:=""
+var released_guard_goals:Array[Vector3]=[]
 var camera: Camera3D
 var gameplay_camera: Camera3D
 var shade: ColorRect
@@ -168,7 +169,7 @@ func start_inquiry(_id:="police") -> bool:
  list.append(line("","",6,Vector3(-10.5,1.8,-3),Vector3(-7.8,1.3,-5.3),"collar"))
  list.append(line("District officer","Guards! Get him off me!",8,Vector3(-10.5,1.8,-4),Vector3(-5.5,1.15,-7),"guards"))
  list.append(line("Guard","Down!",7,Vector3(-11.8,2.8,-3.0),Vector3(-7.8,1.1,-4.6),"beating"))
- list.append(line("","",4,Vector3(-11.8,1.8,-2.0),Vector3(-7.8,.4,-4.6),"collapse"))
+ list.append(line("","",4,Vector3(-7.8,3.8,-2.0),Vector3(-7.8,.4,-4.6),"collapse"))
  list.append(line("Guard","Throw him outside. Let everyone see what comes of his insolence.",4,Vector3(4,1.4,27),Vector3(0,.35,25),"discard","station_exterior"))
  list.append(line("","",2.5,Vector3(3,1.1,29),Vector3(0,.5,26),"throw","station_exterior"))
  list.append(line("Chacha","Arjun! What have they done to you? Let me help you.",7,Vector3(-2.5,1.8,30),Vector3(.25,.8,27),"rescue","station_exterior"))
@@ -249,7 +250,7 @@ func keep_camera_inside_room() -> void:
  camera.look_at(camera_target)
 
 func stage_action(action: String) -> void:
- for guard in inquiry.guards:guard.cinematic_style="";guard.cinematic_palms.clear();guard.cinematic_carry=false
+ for guard in inquiry.guards:guard.cinematic_style="";guard.cinematic_palms.clear();guard.cinematic_carry=false;guard.walk_direction=1.0
  var station: Node3D=inquiry.station
  if action in ["horse_departure","horse_arrival","horse_dismount"] and is_instance_valid(journey_cart):
   stage_cart_arrival(action)
@@ -304,10 +305,18 @@ func stage_action(action: String) -> void:
   swing_age=0;last_strike=-1
  elif action=="collapse":player.health=maxf(20,minf(player.health,25))
  elif action=="discard":
+  released_guard_goals.clear()
   start_position=station.to_global(Vector3(0,1.75,23));finish_position=station.to_global(Vector3(0,1.75,25))
   player.global_position=start_position;face(player,station.to_global(Vector3(0,1,29)))
  elif action=="throw":
   start_position=player.global_position;finish_position=station.to_global(Vector3(0,.9,27))
+  released_guard_goals.clear()
+  var first_left:bool=station.to_local(inquiry.guards[0].global_position).x<=station.to_local(inquiry.guards[1].global_position).x
+  for i in 2:
+   var guard:Node3D=inquiry.guards[i]
+   guard.global_position=guard_floor_position(guard,guard.global_position)
+   released_guard_goals.append(guard_floor_position(guard,station.to_global(Vector3(-1.25 if (i==0)==first_left else 1.25,0,25))))
+   guard.travel_speed=0;reset_actor_grounding(guard)
  elif action=="rescue":
   chacha.global_position=player.global_position+station.global_basis.x*.58-Vector3.UP*.9;face(chacha,player.global_position)
   reset_actor_grounding(chacha)
@@ -332,6 +341,14 @@ func reset_actor_grounding(actor: Node3D) -> void:
  for side in ["l","r"]:
   var foot: int=actor._bones["foot_"+side]
   actor.foot_plant.ankle_height[side]=actor._skeleton.to_global(actor._skeleton.get_bone_global_rest(foot).origin).y
+
+func guard_floor_position(guard:Node3D,at:Vector3)->Vector3:
+ var height:float=get_parent().layout.height(at.x,at.z)
+ var ground=preload("res://world/suryagarh/settlements/resident_walk_route.gd")
+ ground.support(guard,at) # Refresh the world-scoped human-body exclusions.
+ var ray:=PhysicsRayQueryParameters3D.create(Vector3(at.x,height+1.4,at.z),Vector3(at.x,height-2,at.z),1,ground.floor_excluded)
+ var hit:Dictionary=get_parent().get_world_3d().direct_space_state.intersect_ray(ray)
+ return Vector3(at.x,hit.position.y if not hit.is_empty() else height,at.z)
 
 func face(actor: Node3D,target: Vector3) -> void:
  var offset:=target-actor.global_position
@@ -395,6 +412,7 @@ func update_acting(delta: float,t: float) -> void:
  if cue=="collar":amount=smoothstep(3.9,4.8,age)
  var progress:=-1.0
  if cue=="collapse":action="fall";progress=clampf(age/2.1,0,1)
+ if cue=="discard":action="carry";amount=1
  if cue=="support_walk":action="pain";amount=1
 
  if cue=="rescue":action="fall";amount=1;progress=1-smoothstep(.22,.92,t)
@@ -489,24 +507,43 @@ func update_acting(delta: float,t: float) -> void:
   var hip_height: Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones["thigh_l"]).origin)
   player.global_position.y+=floor_y+.92-(shoulder_height.y+hip_height.y)*.5
   rig.force_update_all_bone_transforms()
+  var shoulders:Vector3=(rig.to_global(rig.get_bone_global_pose(visual.bones["upperarm_l"]).origin)+rig.to_global(rig.get_bone_global_pose(visual.bones["upperarm_r"]).origin))*.5
+  var leg_left:Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones["calf_l"]).origin)
+  var leg_right:Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones["calf_r"]).origin)
+  var legs:Vector3=(leg_left+leg_right)*.5
+  var body_axis:Vector3=legs-shoulders;body_axis.y=0;body_axis=body_axis.normalized()
   for i in 2:
    var guard: Node3D=inquiry.guards[i]
-   var body_side: String="l" if i==0 else "r"
-   var shoulder: Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones["upperarm_"+body_side]).origin)
-   var hip: Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones["thigh_"+body_side]).origin)
-   var support_midpoint: Vector3=shoulder.lerp(hip,.5)
-   guard.global_position=Vector3(support_midpoint.x,player.global_position.y-1.75,support_midpoint.z)+inquiry.station.global_basis.x*(-.22 if i==0 else .22)
-   guard.global_rotation.y=inquiry.station.global_rotation.y;guard.travel_speed=.5
+   var support_midpoint:Vector3=shoulders if i==0 else legs
+   var carry_at:Vector3=support_midpoint+body_axis*(-.45 if i==0 else .45)
+   guard.global_position=guard_floor_position(guard,carry_at)
+   face(guard,support_midpoint);guard.travel_speed=.5
+   guard.walk_direction=-1.0 if guard.global_basis.z.dot(finish_position-start_position)<0 else 1.0
    guard._set_animation(&"walk",0)
    guard.cinematic_carry=true;guard.pose_carry()
+   var prefix:String="upperarm_"
+   var left_point:Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones[prefix+"l"]).origin) if i==0 else leg_left
+   var right_point:Vector3=rig.to_global(rig.get_bone_global_pose(visual.bones[prefix+"r"]).origin) if i==0 else leg_right
+   if (left_point-right_point).dot(guard.global_basis.x)<0:
+    var swap:Vector3=left_point;left_point=right_point;right_point=swap
    for side in ["l","r"]:
-    var bone: String=("upperarm_" if side=="r" else "thigh_")+("l" if i==0 else "r")
-    guard.cinematic_palms[side]=rig.to_global(rig.get_bone_global_pose(visual.bones[bone]).origin)
+    guard.cinematic_palms[side]=left_point if side=="l" else right_point
     guard.solve_hand_contact(side,guard.cinematic_palms[side]);guard.set_grip(side,.6)
     carry_contact_error=maxf(carry_contact_error,guard.palm_world(side).distance_to(guard.cinematic_palms[side]))
  if cue=="throw":
   var flight:=clampf(age/1.0,0,1)
   player.global_position=start_position.lerp(finish_position,flight)+Vector3.UP*sin(flight*PI)*.28
+ if cue in ["throw","rescue"]:
+  for i in released_guard_goals.size():
+   var guard:Node3D=inquiry.guards[i]
+   var offset:=released_guard_goals[i]-guard.global_position;offset.y=0
+   var step:Vector3=offset.normalized()*minf(offset.length(),delta*.9)
+   if offset.length()>.02 and not guard._patrol_body_blocked(step):
+    guard.global_position=guard_floor_position(guard,guard.global_position+step)
+    guard.global_rotation.y=rotate_toward(guard.global_rotation.y,atan2(step.x,step.z),delta*5)
+    guard.travel_speed=.9;guard._set_animation(&"walk",delta)
+   else:
+    guard.travel_speed=0;guard._set_animation(&"idle",delta)
  if cue=="support_walk":
   player.global_position=start_position.lerp(finish_position,t)
   player.velocity=inquiry.station.global_basis.z*.5
@@ -737,9 +774,11 @@ func refresh() -> void:
    inquiry.destination.global_position=community.members[index].global_position
    inquiry.destination.set_meta("parking_label","Training · Practice partner "+str(index+1))
  elif state=="complete":
-  objective.text="Find Dev · Explore the refreshment courtyard and college for another lead."
-  inquiry.destination.global_position=community.courtyard.global_position
-  inquiry.destination.set_meta("parking_label","Find Dev · Refreshment courtyard")
+  # RebellionStory owns the post-training continuation, including restored games.
+  objective.text=""
+  var continuation=get_parent().get_node_or_null("RebellionStory")
+  if continuation==null or continuation.stage in ["dormant","complete"]:
+   inquiry.destination.set_meta("parking_label","")
  else:objective.text=""
 func export_state() -> Dictionary:
  return {"state":state,"first_chacha_seen":first_chacha_seen,"lesson":lesson,"partners":completed_partners,"started":player.get_meta("farm_lesson_started",false),"community_routes":community.export_route_state()}

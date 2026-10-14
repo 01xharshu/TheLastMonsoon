@@ -35,6 +35,8 @@ func run() -> void:
  var station=load("res://world/suryagarh/settlements/civic_building.gd").new();station.name="DistrictPolice";station.police=true;settlement.add_child(station);station.position=Vector3(310,0,150)
  var fort:=Node3D.new();fort.name="OldFort";world.add_child(fort);fort.position=Vector3(520,120,-350)
  var cantonment:=Node3D.new();cantonment.name="BritishCantonment";world.add_child(cantonment);cantonment.position=Vector3(500,8.5,470)
+ fixture_ground(world,Rect2(Vector2(430,-420),Vector2(200,230)))
+ fixture_ground(world,Rect2(Vector2(540,420),Vector2(100,120)))
  var prior:=PriorStory.new();prior.name="DevStory";world.add_child(prior)
  var inquiry:=Inquiry.new();inquiry.name="DevInquiry";inquiry.station=station;world.add_child(inquiry);inquiry.destination=Node3D.new();world.add_child(inquiry.destination)
  var environment:=WorldEnvironment.new();var settings:=Environment.new();settings.background_mode=Environment.BG_COLOR;settings.background_color=Color(.55,.66,.75);settings.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;settings.ambient_light_color=Color.WHITE;settings.ambient_light_energy=.7;environment.environment=settings;world.add_child(environment)
@@ -49,6 +51,8 @@ func run() -> void:
  check(not story.restore_waiting and story.follow_index==1,"queued restore applies once after complete site readiness")
  story.follow_index=0
  story.set_process(false)
+ story._process(.1)
+ check(story.stage=="dormant" and not story.active,"rebellion cannot precede completed equipment training")
  prior.state="complete"
  var occupied_domains: Array[StringName]=[&"move"]
  var conflict=story.action_service.acquire(prior,occupied_domains)
@@ -66,7 +70,8 @@ func run() -> void:
  police.complete_custody(player)
  story.set_stage("infiltrate")
  var guard: Node3D=story.sites.guards[0]
- guard.travel_speed=0;player.global_position=guard.global_position-guard.global_basis.z*.65+Vector3.UP*.9
+ guard.travel_speed=0;player.global_position=guard.global_position-guard.global_basis.z*.65+Vector3.UP*.9;player.velocity=Vector3.ZERO
+ for i in 15:await physics_frame
  var grapple: Node=player.get_node("RearGrapple")
  check(story.rear_target()==guard,"Q rear eligibility")
  check(grapple.begin(),"real paired rear takedown begins")
@@ -108,7 +113,11 @@ func run() -> void:
 
 
  story.set_stage("collect")
- for i in 4:check(story.request("bundle%d"%i,player),"bundle collected %d"%i)
+ for invalid in ["bundle-1","bundle4","bundle99","bundlenonsense"]:
+  check(not story.request(invalid,player),"invalid bundle rejected "+invalid)
+ for i in 4:
+  check(story.request("bundle%d"%i,player),"bundle collected %d"%i)
+  if i<3:check(story.stage=="collect" and not story.can_request("rope"),"rope remains locked until all four bundles")
  check(story.stage=="rope" and story.collected.size()==4,"four bundles required")
  check(not story.request("bundle0",player),"duplicate reward prevented")
  var data: Dictionary=story.export_state();story.restore_state(data)
@@ -147,6 +156,8 @@ func run() -> void:
   print("UNDERCROFT ROUTE ",goal," -> ",story.sites.cellar.to_local(player.global_position))
  check(absf(player.global_position.y-story.sites.cellar.global_position.y-1.1)<.4,"controller descends into undercroft")
  story.set_stage("inspect");check(story.request("weapons",player),"weapons introduction grants usable rifle and cartridges")
+ check("(G)" in story.objective(),"firearm lesson uses existing G draw control")
+ check(not story.can_request("raid"),"raid locked before firearm loading and two target hits")
  var gear: Node=hero.equipment;gear.select_weapon(1);gear.stowed=false;gear._refresh()
  player.global_position=story.sites.cellar.to_global(Vector3(0,1.1,3));player.velocity=Vector3.ZERO
  for i in 20:await physics_frame
@@ -160,6 +171,7 @@ func run() -> void:
   gun.aiming=true;gun.fire();story._process(.01)
   if shot==0:
    check(story.stage=="shoot","one target hit cannot finish two-hit lesson")
+   check(not story.can_request("raid"),"one target hit cannot unlock raid")
    gun.start_reload()
    for i in 120:await physics_frame
  print("RIFLE LESSON hits=",story.target_hits," shots=",gun.shots_fired," stage=",story.stage)
@@ -222,3 +234,16 @@ func walk(actor: CharacterBody3D,goal: Vector3,frames: int) -> void:
   await physics_frame
  button.pressed=false;Input.parse_input_event(button)
  for i in 10:await physics_frame
+
+func fixture_ground(world: Node3D,region: Rect2) -> void:
+ # The production cart now has gravity/fatal-fall support and Q requires grounded
+ # control. Supply the same terrain sampler in this otherwise isolated fixture.
+ var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+ var columns:=ceili(region.size.x/4);var rows:=ceili(region.size.y/4)
+ for x in columns:
+  for z in rows:
+   var a:=region.position+Vector2(x*4,z*4);var b:=a+Vector2(4,0);var c:=a+Vector2(0,4);var d:=a+Vector2(4,4)
+   for point: Vector2 in [a,c,b,b,c,d]:surface.add_vertex(Vector3(point.x,world.layout.height(point.x,point.y),point.y))
+ var mesh:=surface.commit();var body:=StaticBody3D.new();body.name="FixtureTerrain";world.add_child(body)
+ var collision:=CollisionShape3D.new();var shape:=mesh.create_trimesh_shape();shape.backface_collision=true;collision.shape=shape;body.add_child(collision)
+ preload("res://world/suryagarh/tree_trunk_collision.gd").register_terrain_support(world,body)

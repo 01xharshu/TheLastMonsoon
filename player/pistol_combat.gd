@@ -38,7 +38,7 @@ func available() -> bool:
 	if actor.get_meta("telescope_open", false): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	var equipment: Node3D = visual.equipment
-	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
+	var mounted: bool = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)!=null and not preload("res://story/rear_passenger_combat.gd").fire_ready(actor)
 	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not mounted and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == 3
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -86,7 +86,7 @@ func fire() -> bool:
 	var target := camera.global_position-camera.global_basis.z*90.0
 	var camera_query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
 	camera_query.exclude = [actor.get_rid()]
-	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(actor.get_world_3d().direct_space_state,get_tree(),camera_query.from,camera_query.to,[actor.get_rid()])
+	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(actor.get_world_3d().direct_space_state,get_tree(),camera_query.from,camera_query.to,preload("res://story/rear_passenger_combat.gd").camera_exclusions(actor))
 	if not camera_hit.is_empty(): target = camera_hit.position
 	var shot_query := PhysicsRayQueryParameters3D.create(origin,target+(target-origin).normalized()*.05)
 	shot_query.exclude = [actor.get_rid()]

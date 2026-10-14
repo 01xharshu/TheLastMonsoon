@@ -54,7 +54,7 @@ func run() -> void:
  check(road.cargo_cart==freight and freight.global_position.distance_to(loaded_position)<.01,"cargo cart position restored")
  await visit("port_cargo");jobs.use_endpoint("port_cargo",actor)
  check(jobs.active=="road_warehouse_crate" and inv.get_item_count("rupees")==18,"arrival without loaded cart pays nothing")
- freight.global_position=jobs.targets.port_cargo.global_position+Vector3(2,0,0);freight.boarding.speed=2;jobs.use_endpoint("port_cargo",actor)
+ freight.global_position=jobs.delivery.parking_position("port_cargo");freight.boarding.speed=2;jobs.use_endpoint("port_cargo",actor)
  check(jobs.active=="road_warehouse_crate","moving loaded cart cannot deliver")
  freight.boarding.speed=0;jobs.use_endpoint("port_cargo",actor)
  check(jobs.active.is_empty() and inv.get_item_count("rupees")==34,"loaded crate exact wage")

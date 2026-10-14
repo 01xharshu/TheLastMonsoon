@@ -44,6 +44,10 @@ def main():
      for line in (directory/(label+".log")).read_text().splitlines():
       if line.startswith("COACHMAN "):print(line,flush=True)
     return 0
+   if args.city_budget:
+    if not checks.run_check(binary,project,directory,"CART_RETREAT",["--script","res://tools/world/validate_city_cart_retreat.gd"],60):return 1
+    for line in (directory/"CART_RETREAT.log").read_text().splitlines():
+     if line.startswith("CITY CART RETREAT "):print(line,flush=True)
    movement_passed=True
    if args.city_budget:
     movement_passed=checks.run_check(binary,project,directory,"CITY_MOVEMENT",["--fixed-fps","20","--script","res://tools/world/validate_city_route_population.gd"],600)

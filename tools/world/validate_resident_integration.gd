@@ -3,6 +3,8 @@ var failures:Array[String]=[]
 var world:Node3D
 var player:CharacterBody3D
 var jobs:Node3D
+var player_start:=Vector3.ZERO
+var only_job:=""
 func _initialize()->void:run.call_deferred()
 func check(ok:bool,label:String)->void:
 	if not ok:failures.append(label)
@@ -10,6 +12,10 @@ func visit(endpoint:String)->void:
 	player.global_position=jobs.targets[endpoint].global_position+Vector3(0,0,1)
 	await physics_frame
 func run()->void:
+	var arguments:=OS.get_cmdline_user_args()
+	if "--only-job" in arguments:
+		var index:int=arguments.find("--only-job")+1
+		if index<arguments.size():only_job=arguments[index]
 	if "--continue" in OS.get_cmdline_user_args():
 		var folder:=OS.get_environment("TLM_TEST_SAVE_ROOT")
 		if folder.is_empty():push_error("Temporary save root required for Continue test");quit(2);return
@@ -30,7 +36,12 @@ func run()->void:
 		check(opening.state=="done","opening releases player before resident work")
 		if opening.state!="done":finish();return
 	paused=false
+	# The parking-bay ending has no manually accelerated receiver. Keep the
+	# populated world on its ordinary clock; only the focused worker ticks below
+	# accelerate elapsed job time while retaining actual physics/collision.
+	Engine.time_scale=1.0
 	player=world.get_node("Player");player.set_physics_process(false);player.set_process_unhandled_input(false)
+	player_start=player.global_position
 	world.get_node("GameTimeSystem").clock_paused=true;world.get_node("GameTimeSystem").current_hour=10
 	jobs=world.get_node("ErrandSystem")
 	var population:Node=world.get_node("CityRoutePopulation")
@@ -126,24 +137,23 @@ func run()->void:
 		check(freight!=null and jobs.stages.get("port_delivery","")=="carrying","Continue resolves deferred cargo cart")
 		if freight==null:finish();return
 		check(freight.visual_root.get_node_or_null("EntrustedConsignment")!=null,"Continue restores physical goods")
+	check(player.inventory.get_item_count("rupees")==0,"no payment before arriving in the delivery bay")
 	freight.global_position=jobs.delivery.parking_position("office");freight.rotation.y=0;freight.boarding.speed=0
 	player.global_position=freight.global_position+Vector3(3,0,-3)
-	for frame in 2:await physics_frame
-	check(jobs.delivery.begin("port_delivery"),"unloading begins in bay")
-	check(player.inventory.get_item_count("rupees")==0,"no payment before handover")
-	# Accelerate only this receiver's elapsed time; retain actual physics steps,
-	# physical obstacles and the real New Journey/Continue owners.
-	jobs.delivery.set_physics_process(false)
-	for frame in 900:
-		jobs.delivery._physics_process(.1)
+	# The shared errand owner completes cart jobs automatically once the whole
+	# stopped vehicle is inside its marked bay. Independent worker unloading
+	# remains a separate visible job cycle, tested below.
+	for frame in 60:
 		await physics_frame
-		if frame%100==0:print("DELIVERY_PROGRESS ",jobs.delivery.phase," age=",jobs.delivery.age," route=",jobs.delivery.route.size()," receiver=",jobs.targets.office.person.global_position)
-		if jobs.active.is_empty() or jobs.delivery.phase.is_empty():break
-	check(jobs.active.is_empty() and player.inventory.get_item_count("rupees")==18,"physical unloading thanks and payment")
-	print("DELIVERY_BEFORE_DUPLICATE active=",jobs.active," phase=",jobs.delivery.phase," wage=",player.inventory.get_item_count("rupees")," receiver=",jobs.targets.office.person.global_position)
+		if jobs.active.is_empty():break
+	check(jobs.active.is_empty() and player.inventory.get_item_count("rupees")==18,"marked cart bay completes delivery and pays once")
+	print("DELIVERY_BEFORE_DUPLICATE active=",jobs.active," phase=",jobs.delivery.phase," wage=",player.inventory.get_item_count("rupees"))
 	if jobs.active.is_empty():jobs._finish("port_delivery",true)
 	check(player.inventory.get_item_count("rupees")==18,"no duplicate wage")
 	print("DELIVERY_END_STATE ",jobs.delivery.phase," ",jobs.toast.text)
+	# The delivery test leaves Arjun beside the port doorway. Clear that real
+	# obstacle before testing independent routines; blocking remains tested separately.
+	player.global_position=player_start;player.force_update_transform();await physics_frame
 	var hospital_work:Node=world.get_node_or_null("CivicResidentPosts/HospitalLinenPorter/LinenDelivery")
 	if hospital_work!=null:
 		hospital_work.set_physics_process(false)
@@ -159,6 +169,7 @@ func run()->void:
 			depot_work.tick(.1);await physics_frame
 	check(depot_work!=null and depot_work.delivered>0,"depot porter stores supplies inside the real building")
 	for label in (["HospitalLinenPorter","DepotStoresPorter","CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"] if "--full-jobs" in OS.get_cmdline_user_args() else ["CustomsReceivingPorter","MarketStockWorker","HouseholdSupplyServant"]):
+		if not only_job.is_empty() and label!=only_job:continue
 		var controller:String={"HospitalLinenPorter":"LinenDelivery","DepotStoresPorter":"StoresDelivery"}.get(label,"SupplyDelivery")
 		var work:Node=world.get_node_or_null("CivicResidentPosts/"+label+"/"+controller)
 		check(work!=null and work.goods.size()==3,label+" integrated into main Continue")
@@ -170,10 +181,20 @@ func run()->void:
 		print("RECEIVING_WORK ",label," delivered=",work.delivered," phase=",work.phase," blocked=",work.blocked," at=",work.actor.global_position)
 		check(work.delivered>0,label+" carries goods into assigned workplace")
 		if "--full-jobs" in OS.get_cmdline_user_args():
+			var previous_at:Vector3=work.actor.global_position;var stationary:=0.0
 			for frame in 4500:
 				if work.delivered==3 and work.phase=="rest":break
 				work.tick(.1);await physics_frame
+				stationary=stationary+.1 if Vector2(work.actor.global_position.x,work.actor.global_position.z).distance_to(Vector2(previous_at.x,previous_at.z))<.001 else 0.0
+				previous_at=work.actor.global_position
+				if stationary>60:
+					print("RECEIVING_STALLED ",label," phase=",work.phase," waypoint=",work.waypoint," hour=",work.clock.current_hour," meta_dead=",work.actor.get_meta("dead",false)," knocked_out=",work.actor.get_meta("knocked_out",false)," navigation_pending=",work.navigation_pending," detour=",work.detour)
+					var shape:CollisionShape3D=work.actor.body_collider.get_node("BodyShape")
+					var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform;query.collision_mask=1;query.exclude=work.collision_excluded
+					for hit in work.actor.get_world_3d().direct_space_state.intersect_shape(query,8):print("RECEIVING_OVERLAP ",hit.collider.get_path())
+					break
 			check(work.delivered==3 and work.phase=="rest",label+" completes all three interior deliveries")
+			if work.delivered<3 or work.phase!="rest":continue
 			for frame in 2500:
 				if work.freight_phase=="awaiting_supply":break
 				work.tick(.1);await physics_frame

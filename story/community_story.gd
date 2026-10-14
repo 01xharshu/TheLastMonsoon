@@ -80,6 +80,7 @@ func _process(delta: float) -> void:
   return
  if stage == "dormant" and rebellion.stage == "complete": stage = "available"
 func can_request(id: String) -> bool:
+ if id=="contact" and not consignment_finished():return false
  if not configured or player == null or player.health <= 0: return false
  if not preload("res://systems/action_permissions.gd").allowed(player, &"interact") or player.get_meta("opening_active", false): return false
  if player.get_meta("detention_action", "") != "" or remaining > 0: return false
@@ -106,6 +107,7 @@ func objective() -> String:
  if witness_mission != null and not witness_mission.objective().is_empty(): return witness_mission.objective()
  return "Speak to Mangal about helping the villages." if stage == "available" else "Deliver Mangal’s offer of shelter to Chacha." if stage == "message" else ""
 func destination() -> Dictionary:
+ if stage=="available" and not consignment_finished():return {}
  if not configured: return {}
  if witness_mission != null:
   var point: Dictionary = witness_mission.destination()
@@ -113,6 +115,9 @@ func destination() -> Dictionary:
  if stage not in ["available", "message"]: return {}
  var prompt: Node3D = prompts["contact" if stage == "available" else "message"]
  return {"position": prompt.global_position, "label": objective(), "endpoint": ""}
+func consignment_finished() -> bool:
+ var next_mission=get_parent().get_node_or_null("ConsignmentStory")
+ return next_mission==null or next_mission.stage=="complete"
 func export_state() -> Dictionary:
  if not configured and not pending.is_empty(): return pending.duplicate(true)
  return {"version": 2, "stage": stage, "serious_leads": serious_leads.duplicate(), "witness_mission": witness_mission.export_state() if witness_mission != null else pending_witness.duplicate(true)}

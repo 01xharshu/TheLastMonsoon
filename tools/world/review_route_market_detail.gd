@@ -3,6 +3,7 @@ func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	create_timer(160).timeout.connect(func():push_error("Route market world timed out");quit(2))
 	root.size=Vector2i(960,540);root.content_scale_size=root.size
+	root.disable_3d=true
 	var world: Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world);current_scene=world
 	var viewport:=SubViewport.new();viewport.size=Vector2i(960,540);viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
@@ -15,6 +16,18 @@ func run() -> void:
 	assert(detail!=null)
 	assert(detail.stones.size()>100)
 	assert(detail.prop_count>=64)
+	for stall in get_nodes_in_group("bhairavpur_market_stall"):
+		if "--reference-details" in OS.get_cmdline_user_args():continue
+		# The established village merger consumes the cloth/tie/hem mesh nodes.
+		var merged: MeshInstance3D=stall.get_node("VillageMergedGeometry")
+		var cloth_found := false
+		for surface in merged.mesh.get_surface_count():
+			var material := merged.mesh.surface_get_material(surface)
+			if material is ShaderMaterial and material.shader==preload("res://world/suryagarh/shaders/market_cloth.gdshader"):cloth_found=true
+		assert(cloth_found and not stall.has_node("ShadeHem"))
+	for stall in get_nodes_in_group("cantonment_bazaar_stalls"):
+		if "--reference-details" in OS.get_cmdline_user_args():continue
+		assert(stall.has_node("PitchedRoofContact") and not stall.has_node("ShadeRoof"))
 	for point: Vector3 in detail.stone_positions:
 		assert(world.layout.road_distance(point.x,point.z)>5.3)
 	var capsule := CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.7
@@ -39,15 +52,19 @@ func run() -> void:
 	var camera:=Camera3D.new();viewport.add_child(camera);camera.make_current();camera.fov=65;camera.far=450
 	for path in ["Player","Player/UI","LandscapeUI"]:world.get_node(path).hide()
 	world.get_node("Player").set_physics_process(false)
-	var views: Array = [["mountain",Vector2(533,-170),Vector2(513,-170)],["village",Vector2(-352,224),Vector2(-339,214)],["market",Vector2(-342,272),Vector2(-336,268)],["bazaar",Vector2(643,456),Vector2(640,450)]]
+	var views: Array = [["mountain",Vector2(533,-170),Vector2(513,-170)],["village",Vector2(-352,224),Vector2(-339,214)],["market",Vector2(-342,272),Vector2(-336,268)],["market_under",Vector2(-337,268),Vector2(-335,268)],["bazaar",Vector2(643,456),Vector2(640,450)],["bazaar_exterior",Vector2(647,462),Vector2(640,450)]]
 	for view in views:
 		camera.global_position=detail.ground(view[1])+Vector3.UP*1.8
-		camera.look_at(detail.ground(view[2])+Vector3.UP*1.2)
+		camera.look_at(detail.ground(view[2])+Vector3.UP*(2.6 if view[0]=="market_under" else 1.2))
 		print("REVIEW VIEW ",view[0])
 		for frame in 4:await process_frame
 		if DisplayServer.get_name()!="headless":
 			RenderingServer.force_draw()
 			var output:=OS.get_environment("TLM_TEST_OUTPUT_DIR")
 			if not output.is_empty():viewport.get_texture().get_image().save_png(output+"/"+view[0]+".png")
-	print("ROUTE MARKET MAIN WORLD PASS stones=",detail.stones.size()," props=",detail.prop_count," verge clear >5.3m; four views")
-	world.queue_free();await process_frame;quit()
+	print("ROUTE MARKET MAIN WORLD PASS stones=",detail.stones.size()," props=",detail.prop_count," verge clear >5.3m; views=",views.size())
+	# Retire the review viewport before freeing its shared world's materials.
+	viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	viewport.queue_free()
+	for frame in 3:await process_frame
+	preload("res://tools/test_audio_cleanup.gd").finish(self)

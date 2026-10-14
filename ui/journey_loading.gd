@@ -139,6 +139,7 @@ func begin(slot: int) -> bool:
 				nature.remove_child(tile)
 			scenery_task = Startup.begin("Landscape scenery")
 	phase_start = Time.get_ticks_usec()
+	preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
 	error = get_tree().change_scene_to_node(instance)
 	if error != OK:
 		saves.pending_slot = previous_slot

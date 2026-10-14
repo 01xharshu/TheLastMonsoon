@@ -1,11 +1,11 @@
 """Rebuild retained river assets while removing all disposable build logs."""
-import os,subprocess,tempfile,argparse,time,signal
+import os,subprocess,tempfile,argparse,time,signal,json,hashlib
 from collections import deque
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 GODOT='/Applications/Godot.app/Contents/MacOS/Godot'
 BLENDER='/Applications/Blender.app/Contents/MacOS/Blender'
-PREFIXES=('RIVER_POSES','RIVER_SOURCE','RIVER_LOCAL_FIT_LIMIT','RIVER_NATIVE','RIVER_INTERPOLATION','RIVER_UPPER_FAIRING','RIVER_UPPER_SEAMS')
+PREFIXES=('RIVER_POSES','RIVER_SOURCE','RIVER_LOCAL_FIT_LIMIT','RIVER_NATIVE','RIVER_INTERPOLATION','RIVER_UPPER_FAIRING','RIVER_UPPER_SEAMS','RIVER_FIT_CHECKPOINT','RIVER_CHEST_CONSTRUCTION','RIVER_CANONICAL_PHYSIQUE')
 def run_step(command,env,log_path):
     tail=deque(maxlen=20);pending='';failed=False
     with log_path.open('w') as sink, log_path.open('r') as reader:
@@ -43,7 +43,29 @@ def main():
     parser.add_argument('--fair-upper',action='store_true',help='Smooth inherited upper-cloth folds before current-topology fitting')
     parser.add_argument('--fair-posed-upper',action='store_true',help='Smooth rendered upper-cloth poses while preserving their skin compensation')
     parser.add_argument('--sew-upper',action='store_true',help='Regularize the existing waist and sleeve boundary loops in authored poses')
+    parser.add_argument('--remesh-chest',action='store_true',help='Replace folded front-cloth detail with a connected fabric patch')
+    parser.add_argument('--subdivide-upper',action='store_true',help='Subdivide existing cloth faces with all corrective shapes retained')
+    parser.add_argument('--fit-foundation-envelope',action='store_true',help='Fit upper fabric over the actual opaque foundation as well as skin')
+    parser.add_argument('--foundation-only',action='store_true',help='Repair only the complete retained foundation')
+    parser.add_argument('--canonical-foundation',action='store_true',help='Reattach intermediate foundation poses to the unchanged canonical body')
+    parser.add_argument('--subdivide-foundation',action='store_true',help='Refine foundation faces with every corrective shape and skin weight retained')
     args=parser.parse_args()
+    if (ROOT/'WorkingAssets/NPCs/river_woman/upper_rebind_checkpoint.json').exists():
+        raise RuntimeError('Canonical upper rebind pending; resume python3 tools/characters/run_river_upper_rebind.py before other fitting')
+    checkpoint=ROOT/'WorkingAssets/NPCs/river_woman/fit_checkpoint.json'
+    if checkpoint.exists():
+        if not args.fit_current:checkpoint.unlink() # Explicit full rebuild replaces pending authoring state.
+        else:
+            state=json.loads(checkpoint.read_text());digest=hashlib.sha256()
+            with (ROOT/state['source']).open('rb') as source:
+                for chunk in iter(lambda:source.read(1024*1024),b''):digest.update(chunk)
+            if digest.hexdigest()!=state['source_sha256']:raise RuntimeError('Pending fit checkpoint differs from editable source; reconcile before rebuilding')
+            args.fair_upper=False;args.fair_posed_upper=False;args.sew_upper=False;args.remesh_chest=False;args.subdivide_upper=False
+            args.subdivide_foundation=False
+            args.fit_foundation_envelope=args.fit_foundation_envelope or state.get('fit_foundation_envelope',False)
+            args.foundation_only=args.foundation_only or state.get('fit_scope')=='foundation'
+            args.canonical_foundation=args.canonical_foundation or state.get('canonical_foundation',False)
+            print('RIVER_FIT_CHECKPOINT resuming saved source; construction already applied; completed_sweeps='+str(state['completed_sweeps']),flush=True)
     with tempfile.TemporaryDirectory(prefix='tlm_river_build_') as folder:
         poses=str(Path(folder)/'poses.json')
         env=dict(os.environ,TLM_RIVER_POSE_OUTPUT=poses,TLM_RIVER_TEST_OUTPUT=folder)
@@ -72,6 +94,15 @@ def main():
         if args.fair_upper:final_fit[1].append('--fair-upper')
         if args.fair_posed_upper:final_fit[1].append('--fair-posed-upper')
         if args.sew_upper:final_fit[1].append('--sew-upper')
+        if args.remesh_chest:final_fit[1].append('--remesh-chest')
+        if args.subdivide_upper:final_fit[1].append('--subdivide-upper')
+        if args.fit_foundation_envelope:final_fit[1].append('--fit-foundation-envelope')
+        if args.foundation_only:
+            final_fit[1].remove('--upper-only');final_fit[1].append('--foundation-only')
+        if args.canonical_foundation:final_fit[1].append('--canonical-foundation')
+        if args.subdivide_foundation:
+            if not args.foundation_only or not args.canonical_foundation:raise RuntimeError('Foundation subdivision requires --foundation-only --canonical-foundation')
+            final_fit[1].append('--subdivide-foundation')
         current_import=[GODOT,'--headless','--editor','--path',str(ROOT),'--log-file',str(Path(folder)/'current_import.log'),'--import']
         commands=[current_import]+final_fit if args.fit_current else commands+final_fit
         for index,command in enumerate(commands):

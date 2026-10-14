@@ -37,6 +37,6 @@ func _physics_process(delta: float) -> void:
 
 func _rein_anchors(side: String) -> Array[Vector3]:
 	var anchors := super._rein_anchors(side)
-	if is_instance_valid(officer) and officer.patrol_mount==self:
+	if is_instance_valid(officer) and officer.patrol_mount==self and not officer.get_meta("riding_reins_released",false):
 		anchors[1]=officer.palm_world(side)
 	return anchors

@@ -584,6 +584,16 @@ func _update_weapon_camera(delta: float) -> void:
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
 	var arm: SpringArm3D = $CameraPivot/SpringArm3D
 	climb_camera_blend = move_toward(climb_camera_blend,1.0 if get_meta("climbing",false) or ($ClimbComponent.catch_seconds>0 and not is_on_floor()) else 0.0,delta*3.0)
+	if get_meta("consignment_camera",false):
+		var chasing:bool=get_meta("consignment_camera_chase",false)
+		arm.spring_length=lerpf(1.45 if chasing else 4.2,1.25,aim_blend)
+		var rear_camera:Node=$CameraPivot/SpringArm3D/Camera3D
+		rear_camera.desired_shoulder_offset=lerpf(.42 if chasing else .65,.28,aim_blend)
+		arm.position.x=rear_camera.desired_shoulder_offset*rear_camera.shoulder_scale
+		camera_pivot.position.y=float(get_meta("consignment_camera_pivot_height",1.0))+lerpf(.04 if chasing else 0.0,0.0,aim_blend)
+		rear_camera.fov=lerpf(72.0,58.0,aim_blend)
+		rear_camera.rotation.x=0
+		return
 	var travel_distance := lerpf(third_person_distance,maxf(third_person_distance,2.8),climb_camera_blend)
 	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
 	var camera_clearance: Camera3D = $CameraPivot/SpringArm3D/Camera3D

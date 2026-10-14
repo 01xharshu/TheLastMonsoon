@@ -9,7 +9,8 @@
   },
   "whole_character_width": 1.075,
   "runtime": "characters/npcs/street_residents/female_03.glb",
-  "wardrobe": "cotton sari and blouse",
+  "wardrobe": "wide folded shoulder-wrap sari",
   "hair_style": "coiled back bun",
-  "visual_approved": false
+  "visual_approved": false,
+  "clothing_construction": "Connected cotton surface and a separate fitted shoulder tail; complete separate originals retained source-only"
 }

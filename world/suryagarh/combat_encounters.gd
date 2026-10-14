@@ -92,6 +92,8 @@ func ground(point: Vector3, terrain_only: bool = false) -> Vector3:
 
 func report_assault(victim: Node3D, attacker: Node = null) -> void:
 	if not is_instance_valid(victim): return
+	var mission=get_parent().get_node_or_null("ConsignmentStory")
+	if mission!=null and mission.stage=="chase" and victim in mission.riders and preload("res://story/rear_passenger_combat.gd").allowed(player):return
 	if attacker == null: attacker= victim.get_meta("last_attacker",null)
 	if attacker!=player or victim.get_meta("combat_faction","indian") not in ["british","police"]: return
 	var kind: String = victim.get_meta("last_hit_kind","weapon")
@@ -129,6 +131,7 @@ func recruit_visible_police() -> void:
 	if not wanted: return
 	for actor in get_tree().get_nodes_in_group("combat_actors"):
 		if not actor is Node3D or actor.get_meta("combat_faction","")!="police": continue
+		if actor.get_meta("mission_police_owner","")!="":continue
 		var already := false
 		for patrol in patrols:
 			if patrol.actor==actor: already=true;break
@@ -316,6 +319,7 @@ func _tick(delta: float) -> void:
 	if coordinator.phase in ["approach","fight"] and coordinator.has_method("officer_has_sight"):
 		seen=coordinator.officer_has_sight()
 	for patrol in patrols.duplicate():
+		if not is_instance_valid(patrol.get("actor")):patrols.erase(patrol);continue
 		var actor: Node3D=patrol.actor
 		if not is_instance_valid(actor): continue
 		actor.set_meta("police_engaged",wanted and patrol.state=="pursue")

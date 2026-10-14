@@ -1,0 +1,5 @@
+# Area arrival
+
+Recovered into main on 2026-10-13 from `codex/storage-recovery-20261012-15a3`. The current surveyed plots drive a short centered location title below the compass. A stable-area debounce and exit buffer prevent boundary flicker; the Estate Office overrides its enclosing village. Titles wait until the existing tutorial has revealed the compass, preserving top-left instructions and the bottom-right minimap. Façade label removals were already present in main. No old fort dressing or world geometry replaced.
+
+Run `/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/world/validate_area_arrival.gd`; omit `--headless` for native. The fixture creates no captures or reports. Verify normal play by entering Thana, leaving its approach, returning, and visiting Estate Office; title should fade once per entry. Focused headless and native Metal entry/fade/hysteresis/re-entry/nested-estate/tutorial-reveal checks PASS. Current actual-world morning tutorial regression PASS. Full-world appearance and owner acceptance remain separate.

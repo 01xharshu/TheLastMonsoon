@@ -39,6 +39,13 @@ func _initialize() -> void:
 	clock.set_mission_clock_slowed(&"mission_a", true)
 	clock.clear_mission_clock_slowdowns()
 	check(clock.get_clock_multiplier() == 1.0, "Reset clears mission owners")
+	clock.total_game_minutes=1320.0;clock._update_readable_time(true)
+	clock.set_mission_daylight_locked(&"night_restore",true)
+	check(clock.total_game_minutes==1980.0 and clock.current_hour==9,"Night entry advances to next morning without rewinding")
+	clock.clock_paused=true
+	clock.set_mission_daylight_locked(&"night_restore",false)
+	check(clock.clock_paused,"Mission release preserves pause state")
+	clock.clock_paused=false
 	# Exercise actual story entry/restore synchronization without loading the world.
 	var world := Node.new()
 	clock.name = "GameTimeSystem"
@@ -67,7 +74,7 @@ func _initialize() -> void:
 	story.state = "farm"
 	story.sync_training_clock()
 	story._exit_tree()
-	check(clock.get_clock_multiplier() == 1.0, "Story teardown releases slowdown")
+	check(clock.get_clock_multiplier() == 1.0, "Story teardown releases daylight lock")
 	player.free()
 	world.free()
 	for failure in failures:

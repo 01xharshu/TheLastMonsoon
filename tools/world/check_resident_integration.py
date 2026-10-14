@@ -21,7 +21,7 @@ def main():
         output = result.stdout + result.stderr
         failed = result.returncode != 0 or "SCRIPT ERROR:" in output or "\nERROR:" in output
         for line in output.splitlines():
-            if line.startswith(("RESIDENT_WORLD_RESULT", "DELIVERY_", "GOODS_BLOCKER", "RECEIVING_WORK")):
+            if line.startswith(("RESIDENT_WORLD_RESULT", "DELIVERY_", "GOODS_BLOCKER", "RECEIVING_WORK", "RECEIVING_STALLED", "RECEIVING_OVERLAP")):
                 print(line)
         if failed:
             errors=[i for i,line in enumerate(output.splitlines()) if line.startswith(("SCRIPT ERROR:","ERROR:"))]

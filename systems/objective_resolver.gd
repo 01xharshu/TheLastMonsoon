@@ -17,6 +17,11 @@ static func resolve(actor: Node3D, include_manual := true) -> Dictionary:
 		var result: Dictionary=rebellion.destination().duplicate()
 		if not result.is_empty(): result.merge({"objective":rebellion.objective(),"owner":"rebellion"},true)
 		return result
+	var consignment:=world.get_node_or_null("ConsignmentStory")
+	if consignment!=null and consignment.stage not in ["dormant","complete"]:
+		var result: Dictionary=consignment.destination().duplicate()
+		if not result.is_empty():result.merge({"objective":consignment.objective(),"owner":"consignment"},true)
+		return result
 	var errands:=world.get_node_or_null("ErrandSystem")
 	if errands!=null and not errands.active.is_empty():
 		var result: Dictionary=errands.destination().duplicate()

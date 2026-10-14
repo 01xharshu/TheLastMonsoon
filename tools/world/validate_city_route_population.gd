@@ -56,7 +56,7 @@ func run() -> void:
    moved+=1;moving_routes[label]=int(moving_routes.get(label,0))+1
   else:
    var journey:Node=person.get_node("CityStreetJourney")
-   blocked[str(person.name)]={"distance":distance,"walked":journey.distance_walked,"obstacle":journey.last_obstacle,"blocked_frames":journey.blocked_frames,"action":person.get_meta("street_action",""),"position":str(person.global_position),"goal":journey.goal,"target":str(journey.route[journey.goal]),"wait":journey.wait,"clock_hour":journey.clock.current_hour if journey.clock!=null else -1}
+   blocked[str(person.name)]={"distance":distance,"walked":journey.distance_walked,"obstacle":journey.last_obstacle,"blocked_frames":journey.blocked_frames,"action":person.get_meta("street_action",""),"position":str(person.global_position),"detour":str(journey.detour),"detour_followup":str(journey.detour_followup),"detours":journey.detours,"current_speed":journey.current_speed,"pace":journey.pace_scale,"goal":journey.goal,"target":str(journey.route[journey.goal]),"wait":journey.wait,"clock_hour":journey.clock.current_hour if journey.clock!=null else -1}
   if not person.global_position.is_finite():errors.append(str(person.name)+": invalid position")
  for label:String in population.ROUTE_COUNTS:
   if int(moving_routes.get(label,0))<2:errors.append(label+": fewer than two walkers made progress")
@@ -65,7 +65,7 @@ func run() -> void:
   if cart.get_node("CityRoadJourney").distance_travelled-float(cart_origins[cart])>2:moved_carts+=1
   else:
    var journey:Node=cart.get_node("CityRoadJourney")
-   stopped_carts.append(str(cart.name)+" | at="+str(cart.global_position)+" goal="+str(journey.route[journey.direction])+" blocked="+str(journey.blocked_seconds)+" reason="+journey.blocked_reason+" wait="+str(journey.wait)+" can_move="+str(cart.can_move()))
+   stopped_carts.append(str(cart.name)+" | at="+str(cart.global_position)+" goal="+str(journey.route[journey.direction])+" blocked="+str(journey.blocked_seconds)+" reason="+journey.blocked_reason+" wait="+str(journey.wait)+" lane="+str(journey.road_lane)+" passing="+str(journey.passing_target)+" retreat="+str(journey.retreat_remaining)+" can_move="+str(cart.can_move()))
  var moved_police:=0
  for officer:Node3D in population.patrols:
   if officer.global_position.distance_to(police_origins[officer])>1:moved_police+=1

@@ -95,6 +95,4 @@ func validate() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.settings_path))
 	var report := {"status":"PASS" if failures.is_empty() else "FAIL","slot":2,"restored_position":player.global_position,"restored_water_liters":inventory.stored_water_liters,"door_closed_restored":not door.opened,"shutters_open_restored":shutters.opened,"failures":failures}
 	print("SAVE FLOW VALIDATION ",JSON.stringify(report))
-	world.queue_free()
-	await process_frame
-	preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
+	saves.quit_game(0 if failures.is_empty() else 1)

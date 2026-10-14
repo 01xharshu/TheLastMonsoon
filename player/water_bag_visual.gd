@@ -1,10 +1,15 @@
 extends Node3D
 ## Fit the shared leather asset to the hip without changing the world pickup mesh.
+const SourceArrays = preload("res://player/water_bag_source_arrays.gd")
 const MODEL_SCALE := 0.8
 const HIP_ANGLE := PI * 5.0 / 6.0
 const HIP_SUPPORT := 0.036
 const BELT_PIN := Vector3(0.0, 0.41, 0.0)
 const PROFILE := [Vector2(0.0, 0.0), Vector2(0.065, 0.008), Vector2(0.11, 0.05), Vector2(0.13, 0.12), Vector2(0.125, 0.21), Vector2(0.105, 0.265), Vector2(0.055, 0.29), Vector2(0.032, 0.31), Vector2(0.028, 0.335)]
+var use_source_cpu_cache := "--water-bag-source-reference" not in OS.get_cmdline_user_args()
+var source_readbacks := 0
+var source_cache_hits := 0
+var source_prepare_usec := 0
 var fullness := 0.0
 var target_fullness := 0.0
 var built_fullness := -1.0
@@ -50,14 +55,24 @@ func _ready() -> void:
 	thread.albedo_color = Color(0.43, 0.29, 0.16)
 	thread.roughness = 0.95
 	stitches.material_override = _contact_material(thread.albedo_color)
+	var source_started := Time.get_ticks_usec()
 	for node in [body, cord, stopper]:
 		var source_transform: Transform3D = pouch.global_transform.affine_inverse() * node.global_transform
 		var surfaces: Array = []
-		for index in node.mesh.get_surface_count():
-			surfaces.append({"arrays": node.mesh.surface_get_arrays(index), "material": node.mesh.surface_get_material(index)})
+		# Body and binding are rebuilt procedurally; only the stopper consumes its
+		# original arrays. The reference switch retains the old three readbacks.
+		if node == stopper or not use_source_cpu_cache:
+			for index in node.mesh.get_surface_count():
+				var arrays: Array = SourceArrays.arrays(node.mesh,index) if use_source_cpu_cache else []
+				if arrays.is_empty():
+					arrays = node.mesh.surface_get_arrays(index)
+					source_readbacks += 1
+				else: source_cache_hits += 1
+				surfaces.append({"arrays": arrays, "material": node.mesh.surface_get_material(index)})
 		sources.append({"node": node, "transform": source_transform, "surfaces": surfaces})
 		# Vertices are rebuilt in the pouch's model space, including the stopper.
 		node.transform = Transform3D.IDENTITY
+	source_prepare_usec = Time.get_ticks_usec()-source_started
 	for marker in pouch.find_children("*", "Marker3D", true, false):
 		marker_sources[marker] = marker.position
 	var keeper := MeshInstance3D.new()

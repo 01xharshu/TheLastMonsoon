@@ -19,4 +19,7 @@ while pending:
             if adjacent not in component:component.add(adjacent);pending.discard(adjacent);stack.append(adjacent)
     bounds=[[min(points[i].co[axis] for i in component),max(points[i].co[axis] for i in component)] for axis in range(3)]
     loops.append({'vertices':len(component),'bounds':bounds,'closed':all(len(graph[i])==2 for i in component)})
-print('RIVER_CLOTH_TOPOLOGY',{'vertices':len(obj.data.vertices),'triangles':len(obj.data.loop_triangles),'nonmanifold_edges':sum(count>2 for count in counts.values()),'branched_boundary_vertices':sum(len(neighbors)!=2 for neighbors in graph.values()),'openings':loops},flush=True)
+rig=next(modifier.object for modifier in obj.modifiers if modifier.type=='ARMATURE')
+bad_weights=sum(abs(sum(group.weight for group in vertex.groups if obj.vertex_groups[group.group].name in rig.data.bones)-1.0)>.005 for vertex in obj.data.vertices)
+print('RIVER_CLOTH_TOPOLOGY',{'vertices':len(obj.data.vertices),'triangles':len(obj.data.loop_triangles),'nonmanifold_edges':sum(count>2 for count in counts.values()),'branched_boundary_vertices':sum(len(neighbors)!=2 for neighbors in graph.values()),'bad_skin_weight_vertices':bad_weights,'openings':loops},flush=True)
+if bad_weights:raise RuntimeError('Runtime garment skin weights failed')

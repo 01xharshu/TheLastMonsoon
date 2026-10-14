@@ -59,6 +59,7 @@ func discover(skeleton:Node) -> void:
  if figure==world:return
  var original:=figure.get_parent() as Node3D
  if original==null:return
+ if original.get_meta("population_expansion_exempt",false):return
  # City officers live under CombatEncounters, not the city manager. That cohort
  # already doubled its records; discovering it here would double it a second time.
  if original.is_in_group("city_route_patrols") or original.is_in_group("city_route_pedestrians"):return
@@ -94,7 +95,7 @@ func nearest_route(point:Vector2) -> String:
  var label:=""
  for route_name:String in Layout.ROUTES:
   # Colleagues use public streets; reserved coach drives stay clear.
-  if route_name in ["village_estate_approach","merchant_city_drive","collector_bungalow_drive","officer_bungalow_drive","government_house_avenue","compound_court","compound_stores"]:continue
+  if route_name in ["consignment_wilderness","port_village_road","port_approach","village_estate_approach","merchant_city_drive","collector_bungalow_drive","officer_bungalow_drive","government_house_avenue","compound_court","compound_stores"]:continue
   var points:Array=Layout.ROUTES[route_name]
   for index in points.size()-1:
    var on_road:=Geometry2D.get_closest_point_to_segment(point,points[index],points[index+1])

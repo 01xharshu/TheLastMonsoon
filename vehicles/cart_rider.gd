@@ -1,5 +1,6 @@
 extends Node
 ## Shared seat, collision and input contract for live horse carts.
+signal transition_finished
 var travel: Node
 var cart: Node3D
 var rider: CharacterBody3D
@@ -76,6 +77,9 @@ func _cart_handle_exclusions() -> Array[RID]:
 
 func _vehicle_exclusions() -> Array[RID]:
 	var exclusions := _cart_handle_exclusions() + [collision_body.get_rid()]
+	# Solid resident freight is part of this vehicle while stowed. Other
+	# bodies still collide with it; only its own clearance query excludes it.
+	exclusions.append_array(cart.get_meta("resident_cargo_rids",[]))
 	if is_instance_valid(rider): exclusions.append(rider.get_rid())
 	return exclusions
 
@@ -97,6 +101,7 @@ func rein_grip_world(side: String) -> Vector3:
 func foot_support_world(side: String) -> Vector3:
 	var socket: Node3D = cart.seat_sockets.get(seat_name)
 	var x: float = socket.position.x + (-.18 if side == "l" else .18)
+	if seat_name=="ConsignmentRearSeat":return cart.to_global(Vector3(x,.845,4.0))
 	if role=="passenger" and cart.get_meta("public_passenger_service",false):
 		return cart.to_global(Vector3(x,1.185,socket.position.z-.55))
 	if cart.has_method("show_coachman_blockout"):
@@ -111,7 +116,9 @@ func foot_support_world(side: String) -> Vector3:
 
 func passenger_hand_world(side: String) -> Vector3:
 	var socket: Node3D = cart.seat_sockets.get(seat_name)
-	return socket.to_global(Vector3(-.19 if side == "l" else .19, .12, -.28))
+	var hand_height:=.12
+	if seat_name=="ConsignmentRearSeat" and is_instance_valid(rider):hand_height=lerpf(.12,-.24,float(rider.get_meta("consignment_conceal_blend",0.0)))
+	return socket.to_global(Vector3(-.19 if side == "l" else .19, hand_height, -.28))
 
 func transition_step_world() -> Vector3:
 	if cart.has_method("show_coachman_blockout"):
@@ -166,6 +173,7 @@ func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
 	return true
 
 func dismount() -> bool:
+	if cart.get_meta("consignment_locked",false):return false
 	if rider == null or transition != "": return false
 	var shape: CollisionShape3D = rider.get_node("CollisionShape3D")
 	for side in [transition_side, -transition_side]:
@@ -250,6 +258,7 @@ func _physics_process(delta: float) -> void:
 				actor.velocity = Vector3.ZERO
 				if cart.has_method("show_coachman_blockout"): cart.show_coachman_blockout()
 			transition = ""
+			transition_finished.emit()
 		return
 	if (role == "driver" or travel.payer != null) and (not cart.has_method("can_move") or cart.can_move()) and not rider.get_meta("story_cinematic",false) and not rider.inventory_ui.is_open() and not rider.get_meta("map_open", false):
 		var throttle := Input.get_axis("move_backward", "move_forward")

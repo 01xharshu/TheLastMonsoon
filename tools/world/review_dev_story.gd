@@ -143,7 +143,7 @@ func run() -> void:
  check(story.community.members.size()==3,"farm partners present in main world")
  check(story.community.college.has_meta("parking_label") and story.community.courtyard.has_meta("parking_label"),"main map gathering places discoverable")
  print("DEV STORY WORLD: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
- world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1)
+ await preload("res://systems/scene_retirement.gd").retire_current(self);call_deferred("finish",0 if failures.is_empty() else 1)
 func finish(code: int) -> void:preload("res://tools/test_audio_cleanup.gd").finish(self,code)
 
 func check_arrival_variants(story: Node,inquiry: Node,player: CharacterBody3D,world: Node3D) -> void:

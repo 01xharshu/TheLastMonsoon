@@ -91,7 +91,7 @@ func bake() -> void:
 	attach(nature, world)
 	for tz in 12:
 		for tx in 12:
-			var origin := Vector2(-Layout.HALF + tx * Layout.TILE, -Layout.HALF + tz * Layout.TILE)
+			var origin := Vector2(-Layout.CORE_HALF + tx * Layout.TILE, -Layout.CORE_HALF + tz * Layout.TILE)
 			bake_tile(origin, tx, tz, terrain)
 			bake_nature(origin, tx, tz, nature)
 		print("BAKE ROW ", tz + 1, "/12")
@@ -130,7 +130,7 @@ func bake_road_mask() -> ImageTexture:
 	var image := Image.create(PIXELS, PIXELS, false, Image.FORMAT_L8)
 	for z in PIXELS:
 		for x in PIXELS:
-			var p := (Vector2(x+0.5,z+0.5)/PIXELS-Vector2.ONE*0.5)*Layout.SIZE
+			var p := (Vector2(x+0.5,z+0.5)/PIXELS-Vector2.ONE*0.5)*(Layout.CORE_HALF*2.0)
 			var d: float = layout.road_distance(p.x,p.y)
 			image.set_pixel(x,z,Color(1.0-smoothstep(2.0,4.8,d),0,0))
 	var texture := ImageTexture.create_from_image(image)

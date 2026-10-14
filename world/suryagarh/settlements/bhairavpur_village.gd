@@ -226,7 +226,6 @@ func _build_market() -> void:
 			for z in [-1.1,1.1]:
 				_piece(stall,"ShadePost",Vector3(side*2.0,1.25,z),Vector3(.14,2.5,.14),settlement.wood)
 		preload("res://world/suryagarh/route_and_market_detail.gd").canopy(stall,fabric[i%fabric.size()],i)
-		_piece(stall,"ShadeHem",Vector3(0,2.38,1.4),Vector3(4.9,.23,.055),fabric[i%fabric.size()],false)
 		house_detail.stock(stall,i,produce_materials)
 		var storage: Node3D = Basket.instantiate() if i%2==0 else Bucket.instantiate()
 		storage.name = "MarketStorage"

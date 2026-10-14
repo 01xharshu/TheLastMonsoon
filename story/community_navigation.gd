@@ -21,7 +21,7 @@ func receive_navigation(points: Array[Vector3], target: Vector3) -> void:
  pending = false
  path = points.duplicate()
  retry = 1.0
-func advance(target: Vector3, speed: float, delta: float) -> bool:
+func advance(target: Vector3, speed: float, delta: float, arrival_radius := .65) -> bool:
  if not is_instance_valid(actor) or actor.get_meta("dead", false) or actor.get_meta("knocked_out", false):
   cancel()
   return false
@@ -30,7 +30,7 @@ func advance(target: Vector3, speed: float, delta: float) -> bool:
   goal = target
   path.clear()
   pending = false
- if actor.global_position.distance_to(target)<.65:
+ if actor.global_position.distance_to(target)<arrival_radius:
   actor.travel_speed = 0
   return true
  if path.is_empty():
@@ -41,6 +41,10 @@ func advance(target: Vector3, speed: float, delta: float) -> bool:
   return false
  var before := actor.global_position
  if encounters.move_actor(actor, path[0], speed, delta): path.pop_front()
+ var height_change := actor.global_position.y-before.y
+ if absf(height_change)>.000001:
+  for side in actor.foot_plant.ankle_height: actor.foot_plant.ankle_height[side]+=height_change
+  actor.foot_plant.planted_world.y+=height_change
  blocked = blocked+delta if actor.global_position.distance_squared_to(before)<.000001 else 0.0
  if blocked>1.5:
   path.clear()

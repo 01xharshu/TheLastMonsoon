@@ -17,6 +17,7 @@ func run()->void:
 		for index in 4:
 			if not only.is_empty() and only!="%s_%02d"%[sex,index+1]:continue
 			var actor:Node3D=load("res://characters/npcs/indian/indian_street_actor.gd").new();actor.name="%s_%02d"%[sex,index+1];actor.movement_enabled=false
+			actor.movement_profile=&"female" if sex=="female" else &"male"
 			actor.add_child(load("res://characters/human_scene.gd").instantiate("res://characters/npcs/street_residents/%s.glb"%actor.name,false));world.add_child(actor);actor.position=Vector3(index*3,0,0 if sex=="female" else 4);actors.append(actor)
 			await physics_frame
 	

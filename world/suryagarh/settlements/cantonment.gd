@@ -103,13 +103,7 @@ func build(builder: Node3D) -> void:
 		for offset in [-0.3,0.0,0.3]:
 			await Startup.checkpoint(b, "Preparing the cantonment…")
 			b.piece(magazine,"VentBar",Vector3(x+offset,3.1,-5.22),Vector3(0.035,0.4,0.035),b.iron,false)
-	# Delineated drill yard and clear east-side approach; no closed checkpoint gameplay.
-	for z in [-59.0,59.0]:
-		await Startup.checkpoint(b, "Preparing the cantonment…")
-		for x in range(-68,69,8):
-			await Startup.checkpoint(b, "Preparing the cantonment…")
-			if z < 0 and x > 48: continue
-			b.piece(district,"BoundaryPost",Vector3(x,0.6,z),Vector3(0.16,1.2,0.16),b.wood)
+	await install_boundary()
 	var church := shell("CantonmentChurch",Vector3(0,0,-33),Vector2(12,14),"")
 	await Startup.checkpoint(b, "Preparing the cantonment…")
 	church.add_to_group("cantonment_church")
@@ -214,3 +208,12 @@ func rear_windows(room: Node3D, w: float, d: float, mat: Material) -> void:
 		for shutter in [-1,1]: b.piece(room,"RearOpenShutter",Vector3(x+shutter*1.2,2.075,-d/2-.3),Vector3(.7,1.15,.09),timber_surface,false)
 		edge = x+opening/2
 	b.piece(room,"RearEndPier",Vector3((edge+w/2)/2,2.075,-d/2),Vector3(w/2-edge,1.2,.4),mat)
+
+func install_boundary()->void:
+	# Delineated drill yard and clear east-side approach; no closed checkpoint gameplay.
+	for z in [-59.0,59.0]:
+		await Startup.checkpoint(b, "Preparing the cantonment…")
+		for x in range(-68,69,8):
+			await Startup.checkpoint(b, "Preparing the cantonment…")
+			if z < 0 and x > 48: continue
+			b.piece(district,"BoundaryPost",Vector3(x,0.6,z),Vector3(0.16,1.2,0.16),b.wood)

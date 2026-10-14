@@ -23,7 +23,16 @@ var logical_cursor := 0
 var population_clock: Node
 var restored_states: Dictionary = {}
 const PREPARE_RADIUS_SQUARED := 160000.0
-var ready_population := false
+signal cart_spawned(cart: Node3D)
+signal population_ready
+var _saved_cart_path := ""
+var _saved_cart_record: Dictionary = {}
+var _saved_cart_original_index := -1
+var ready_population := false:
+ set(value):
+  var became_ready := value and not ready_population
+  ready_population=value
+  if became_ready:population_ready.emit()
 var prepared := false
 var encounters: Node
 var player: Node3D
@@ -83,6 +92,7 @@ func prepare() -> void:
   record["direction"]=1;record["wait"]=0.0
   apply_record_state(record)
  prepared=true
+ _apply_saved_cart_priority()
  set_process(true)
 
 func _process(delta: float) -> void:
@@ -117,6 +127,10 @@ func _process(delta: float) -> void:
  if candidate<0:return
  var record:Dictionary=pending[candidate]
  pending.remove_at(candidate)
+ if record==_saved_cart_record:
+  _saved_cart_record={}
+  _saved_cart_original_index=-1
+  _saved_cart_path=""
  spawn_record(record)
  # Delivery booking waits for carts/patrols, not invisible logical civilians.
  ready_population=pending.is_empty() if eager_population else pending.all(func(item:Dictionary)->bool:return item.kind=="person")
@@ -217,11 +231,13 @@ func spawn_record(record: Dictionary) -> void:
   journey.preferred_lane=-1.8 if index<CART_ROUTES.size() else 1.8
   if record.route=="government_house_road":journey.preferred_lane=-2.5 if index<CART_ROUTES.size() else 2.5
   if record.route in ["village_west_lane","village_north_lane"]:journey.preferred_lane=0.0
+  if record.route=="police_to_compound":journey.preferred_lane=3.5
   cart.add_child(journey)
   carts.append(cart)
   if index%CART_ROUTES.size() in [0,1,3,6]:_passenger.call_deferred(cart,index)
   for mesh:GeometryInstance3D in cart.find_children("*","GeometryInstance3D",true,false):
    mesh.visibility_range_end=300;mesh.visibility_range_end_margin=20
+  cart_spawned.emit(cart)
 
 func _passenger(cart:Node3D,index:int)->void:
  var socket:Node3D
@@ -380,3 +396,35 @@ func clear_spawn(at:Vector2,extra_excluded:Array[RID]=[]) -> Vector3:
   query.transform=Transform3D(Basis.IDENTITY,hit.position+Vector3.UP*.875)
   if space.intersect_shape(query,1).is_empty():return hit.position
  return Vector3.INF
+
+func set_saved_cart_priority(path: String) -> bool:
+ if not _saved_cart_record.is_empty():
+  var current:=pending.find(_saved_cart_record)
+  if current>=0:
+   pending.remove_at(current)
+   pending.insert(mini(_saved_cart_original_index,pending.size()),_saved_cart_record)
+ _saved_cart_record={}
+ _saved_cart_original_index=-1
+ _saved_cart_path=""
+ if path.is_empty():return true
+ for index in CART_ROUTES.size()*POPULATION_MULTIPLIER:
+  var route:String=CART_ROUTES[index%CART_ROUTES.size()]
+  if path==_cart_path(route,index):
+   _saved_cart_path=path
+   if prepared:_apply_saved_cart_priority()
+   return true
+ return false
+
+func _cart_path(route:String,index:int)->String:
+ return "CityRoutePopulation/"+(("CityCart_%s"%route) if index<CART_ROUTES.size() else ("CityCart_%s_%02d"%[route,index]))
+
+func _apply_saved_cart_priority()->void:
+ if _saved_cart_path.is_empty():return
+ for index in pending.size():
+  var record:Dictionary=pending[index]
+  if record.kind=="cart" and _cart_path(str(record.route),int(record.index))==_saved_cart_path:
+   _saved_cart_record=record
+   _saved_cart_original_index=index
+   pending.remove_at(index)
+   pending.push_front(record)
+   return

@@ -19,6 +19,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	var startup_task := Startup.begin("World")
+	$Landscape/DistantTerrain_NoCollision.hide()
 	add_child(preload("res://world/suryagarh/world_districts.gd").new())
 	await Startup.wait_others(self, startup_task)
 	# Default budget: 8 GB total device memory, 720p; measured validation in docs/world.
@@ -74,11 +75,14 @@ func _ready() -> void:
 	add_child(preload("res://story/dev_story.gd").new())
 	add_child(preload("res://story/rebellion_story.gd").new())
 	add_child(preload("res://story/community_story.gd").new())
+	add_child(preload("res://story/city_weapon_seller.gd").new())
+	add_child(preload("res://story/consignment_story.gd").new())
+	add_child(preload("res://world/suryagarh/settlements/indigo_factory.gd").new())
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	await Startup.wait_others(self, startup_task)
 	Startup.finish(startup_task)
 	SaveManager.call_deferred("apply_pending",self)
-	print("SURYAGARH READY | 1728 x 1728 m | 8 GB memory target | surface swimming enabled")
+	print("SURYAGARH READY | ",Layout.SIZE," x ",Layout.SIZE," m | 8 GB memory target | surface swimming enabled")
 
 func move_to_review_point(index: int) -> void:
 	review_index = posmod(index, REVIEW_POINTS.size())
@@ -88,7 +92,7 @@ func move_to_review_point(index: int) -> void:
 	player.rotation.y = -PI * 0.5 if REVIEW_NAMES[review_index] == "Forest biome patch" else -0.85
 	player.camera_pitch = deg_to_rad(-10.0)
 	player.get_node("CameraPivot").rotation.x = player.camera_pitch
-	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · 2.986 km²"
+	location_label.text = "SURYAGARH  /  " + REVIEW_NAMES[review_index] + "\nLandscape foundation · %.3f km²"%(Layout.SIZE*Layout.SIZE/1000000.0)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if player.get_meta("map_open", false) or player.has_meta("mounted_vehicle") or player.get_meta("climbing",false): return
@@ -124,5 +128,7 @@ func _repair_tree_trunks() -> void:
 	await Startup.wait_for(self, "Terrain collision")
 	await get_tree().physics_frame
 	await preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($Landscape)
+	await preload("res://world/suryagarh/tree_trunk_collision.gd").repair_landscape($WildernessExpansion)
 	await preload("res://world/suryagarh/broadleaf_render_records.gd").configure_landscape($Landscape)
+	await preload("res://world/suryagarh/broadleaf_render_records.gd").configure_landscape($WildernessExpansion)
 	Startup.finish(startup_tree_task)

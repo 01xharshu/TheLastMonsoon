@@ -76,7 +76,7 @@ func run_world() -> void:
  root.add_child(world)
  current_scene = world
  if focused:
-  var clock := Node.new()
+  var clock: Node = load("res://world/suryagarh/systems/game_time_system.gd").new()
   clock.name = "GameTimeSystem"
   world.add_child(clock)
   var landscape: Node = load("res://world/suryagarh/generated/landscape.scn").instantiate()
@@ -102,6 +102,19 @@ func run_world() -> void:
   world.add_child(movement)
   movement.player = hero
   world.add_child(load("res://story/community_story.gd").new())
+  if DisplayServer.get_name() != "headless":
+   var environment := WorldEnvironment.new()
+   var settings := Environment.new()
+   settings.background_mode = Environment.BG_COLOR
+   settings.background_color = Color(.55,.65,.75)
+   settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+   settings.ambient_light_color = Color.WHITE
+   settings.ambient_light_energy = .65
+   environment.environment = settings
+   world.add_child(environment)
+   var sun := DirectionalLight3D.new()
+   sun.rotation_degrees = Vector3(-45,-25,0)
+   world.add_child(sun)
  var story: Node
  for i in 3600:
   await process_frame
@@ -117,7 +130,11 @@ func run_world() -> void:
   prior.stage = "complete"
   story.restore_state({})
   story._process(.5)
-  check(story.stage == "available", "actual delivered state unlocks contact")
+  check(story.stage == "available", "actual delivered state preserves pending community contact")
+  var consignment=world.get_node_or_null("ConsignmentStory")
+  if consignment!=null:
+   check(not story.can_request("contact") and story.destination().is_empty(), "community contact waits for next consignment mission")
+   consignment.stage="complete"
   var player: CharacterBody3D = world.get_node("Player")
   player.set_physics_process(false)
   player.set_meta("opening_active", false)
@@ -137,6 +154,8 @@ func run_world() -> void:
    check(mission.stage == "available", "community introduction unlocks witness lead")
    player.global_position = story.prompts.witness_start.global_position
    check(story.request("witness_start", player), "Chacha accepts physical rescue start")
+   check(not mission.witness.visible and mission.witness.process_mode == Node.PROCESS_MODE_DISABLED, "first actor stays hidden/non-colliding until state is applied")
+   check(float(mission.witness.foot_plant.ankle_height.l)>7, "first-frame ankle cache uses real spawn height")
    for i in 120:
     await process_frame
     if mission.built: break
@@ -145,6 +164,56 @@ func run_world() -> void:
    if mission.built:
     check(mission.witness.get_meta("human_source", "") != "", "witness retains sourced human asset")
     check(not story.request("witness_report",player), "cannot report safety before rescue")
+    var helpers: Node = mission.helpers
+    check(helpers.members.size()==3, "exactly one bounded three-member group")
+    helpers.witness_attack(mission.enforcer)
+    check(helpers.responders.is_empty(), "untrusted group does not recruit")
+    story.remaining = 0
+    player.global_position = story.prompts.witness_allies.global_position
+    check(story.request("witness_allies",player), "meet local protectors through real interaction")
+    player.global_position = mission.enforcer.global_position+Vector3(0,0,2)
+    helpers.witness_attack(mission.enforcer)
+    helpers.witness_attack(mission.enforcer)
+    check(helpers.responders.size()>0 and helpers.responders.size()<=3, "visible attack recruits capped responders without duplicates")
+    var member: Node3D = helpers.members[0]
+    var actor_state: Dictionary = helpers.export_state()
+    helpers.responders.clear()
+    member.global_rotation.y = PI
+    for other in helpers.members: other.global_rotation.y = PI
+    helpers.witness_attack(mission.enforcer)
+    check(helpers.responders.is_empty(), "rear-facing protectors do not see the attack")
+    helpers.restore_state(actor_state)
+    check(helpers.trusted and not helpers.responders.is_empty(), "trust and responders survive restore")
+    helpers.responders.clear()
+    var wall := StaticBody3D.new()
+    var wall_shape := CollisionShape3D.new()
+    var box := BoxShape3D.new()
+    box.size = Vector3(20,3,.2)
+    wall_shape.shape = box
+    wall.add_child(wall_shape)
+    world.add_child(wall)
+    wall.global_position = mission.enforcer.global_position+Vector3(0,1.5,-3)
+    await physics_frame
+    await physics_frame
+    helpers.witness_attack(mission.enforcer)
+    check(helpers.responders.is_empty(), "occluded protectors cannot recruit through a wall")
+    wall.queue_free()
+    await physics_frame
+    helpers.restore_state(actor_state)
+    var guard_health: float = mission.enforcer.get_node("Vitality").health
+    for step in 600:
+     await physics_frame
+     helpers.tick(1.0/60)
+     if mission.enforcer.get_node("Vitality").health < guard_health: break
+    var travelled := false
+    for i in helpers.members.size():
+     travelled = travelled or helpers.members[i].global_position.distance_to(helpers.homes[i])>1
+    check(travelled, "protectors physically approach the attacker")
+    for i in helpers.members.size():
+     var protector: Node3D = helpers.members[i]
+     print("ALLY CONTACT ",i," distance ",protector.global_position.distance_to(mission.enforcer.global_position)," at ",protector.global_position," nav ",helpers.navigation[i].path)
+    check(mission.enforcer.get_node("Vitality").health < guard_health, "protector punch makes real shared hand contact")
+    await snapshot(world,mission.enforcer.global_position,"ally_contact")
     var saved: Dictionary = story.export_state()
     story.restore_state(saved)
     check(mission.stage == "rescue", "rescue stage roundtrip")
@@ -169,6 +238,7 @@ func run_world() -> void:
     print("COMMUNITY CHECK: escort ended at ",mission.witness.global_position," stage ",mission.stage," path ",mission.witness_nav.path," goal ",mission.witness_nav.goal," pending ",mission.witness_nav.pending)
     check(mission.stage == "report", "witness physically navigates through real courtyard gate")
     check(mission.witness.global_position.distance_to(before)>5, "escort made actual travel")
+    await snapshot(world,mission.witness.global_position,"shelter")
     story.restore_state(story.export_state())
     story.remaining = 0
     player.global_position = story.prompts.witness_report.global_position
@@ -184,17 +254,51 @@ func run_world() -> void:
      var manager: Node = root.get_node("SaveManager")
      manager.save_root = temporary
      world.get_node("CombatEncounters").restore_crime_state({})
+     world.get_node("DevStory").state = "complete"
+     player.get_node("UI/HUDRoot/MorningTutorial").restore_step(11)
+     world.get_node("RebellionStory").captured_rifles = 12
      check(manager.save_game(world,1), "real SaveManager writes temporary completed mission")
      var disk: Dictionary = manager.read_slot(1)
      check(disk.get("community_story",{}).get("witness_mission",{}).get("stage","") == "complete", "disk save contains completed witness mission")
      check(disk.get("community_story",{}).get("witness_mission",{}).get("help_awarded",false), "disk save retains reward guard")
+     var old_id: int = world.get_instance_id()
+     check(manager.start_loaded_game(1), "real Continue load route starts from temporary slot")
+     var loaded: Node
+     for frame in 3600:
+      await process_frame
+      loaded = current_scene
+      if loaded != null and loaded.get_instance_id() != old_id:
+       var chapter: Node = loaded.get_node_or_null("CommunityStory")
+       if chapter != null and chapter.configured and chapter.witness_mission != null and chapter.witness_mission.built: break
+     check(loaded != null and loaded.get_instance_id()!=old_id, "Continue replaced the old world")
+     if loaded != null and loaded.get_instance_id()!=old_id:
+      world = loaded
+      var chapter: Node = world.get_node("CommunityStory")
+      var restored: Node = chapter.witness_mission
+      check(restored.built and restored.stage == "complete" and restored.help_awarded, "Continue rebuilds completed witness mission")
+      check(restored.enforcer.get_meta("knocked_out",false), "Continue preserves nonlethal enforcer outcome")
+      check(restored.helpers.trusted and restored.helpers.members.size()==3, "Continue restores trusted protection group")
+      check(world.get_node("Player/FameComponent").points == before_fame+4, "Continue does not award help twice")
 
- world.queue_free()
- await process_frame
  if failures.is_empty(): print(("COMMUNITY FOCUSED PASS" if focused else "COMMUNITY WORLD PASS")+": installation/contacts/combat/physical-escort/restore/reward")
- quit(0 if failures.is_empty() else 1)
+ root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)
 
 func freeze_callbacks(node: Node) -> void:
  node.set_process(false)
  node.set_physics_process(false)
  for child in node.get_children(): freeze_callbacks(child)
+
+func snapshot(world: Node, at: Vector3, label: String) -> void:
+ var folder := OS.get_environment("TLM_COMMUNITY_IMAGES")
+ if folder.is_empty() or not folder.begins_with(OS.get_environment("TMPDIR")) or DisplayServer.get_name() == "headless": return
+ var camera := Camera3D.new()
+ world.add_child(camera)
+ camera.global_position = at+Vector3(4,2,-4)
+ camera.look_at(at+Vector3.UP)
+ camera.make_current()
+ root.disable_3d = false
+ for frame in 20: await process_frame
+ RenderingServer.force_draw()
+ print("COMMUNITY PIXELS ",label," camera ",root.get_camera_3d()," 3D disabled ",root.disable_3d)
+ root.get_texture().get_image().save_png(folder.path_join(label+".png"))
+ camera.queue_free()

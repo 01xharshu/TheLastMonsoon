@@ -61,9 +61,10 @@ func _build_world() -> void:
 		for body in sack.find_children("*","CollisionObject3D",true,false): body.collision_layer = 0
 	targets.work.hold_duration = 3.0
 	targets.work.interaction_text = "Sort market stores"
-	for id in ["road","market","board","work"]:
+	for id in ["road","office","market","board","parcel","work"]:
 		var target: Node3D = targets[id]
-		var query := PhysicsRayQueryParameters3D.create(Vector3(target.global_position.x,9.1,target.global_position.z),Vector3(target.global_position.x,0,target.global_position.z))
+		var expected:float=get_parent().layout.height(target.global_position.x,target.global_position.z)
+		var query := PhysicsRayQueryParameters3D.create(Vector3(target.global_position.x,expected+1.4,target.global_position.z),Vector3(target.global_position.x,expected-2.0,target.global_position.z))
 		var excluded: Array[RID] = []
 		for entry in targets.values():
 			excluded.append(entry.get_rid())
@@ -71,11 +72,10 @@ func _build_world() -> void:
 		query.exclude = excluded
 		query.collision_mask = 1
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
-		var ground: float = hit.position.y if not hit.is_empty() else 7.2
+		var ground: float = hit.position.y if not hit.is_empty() else expected
 		floor_levels[id] = ground
 		if target.person != null: target.person.global_position.y = ground
-		else: target.global_position.y = ground + (1.25 if id == "board" else .65)
-	floor_levels.office = 7.44; floor_levels.parcel = 7.44
+		else: target.global_position.y = ground + (1.25 if id == "board" else .90 if id=="parcel" else .65)
 	expanded = preload("res://world/suryagarh/errands/expanded_jobs.gd").new()
 	expanded.name = "ExpandedJobs"; add_child(expanded); expanded.configure(self)
 	roadside = preload("res://world/suryagarh/errands/roadside_opportunities.gd").new()
@@ -204,6 +204,7 @@ func cancel() -> void:
 
 func objective(id: String) -> String:
 	var job: Dictionary = JOBS[id]
+	if id=="port_delivery" and stages.get(id,"")=="carrying":return "Park the loaded cart fully inside the counting-house rectangle and stop."
 	if job.has("road_objective"):
 		return job.road_objective if stages.get(id,"")=="carrying" else job.road_pickup
 	if job.has("pickup"):
@@ -361,6 +362,8 @@ func tracked_objective() -> String:
 
 func destination() -> Dictionary:
 	var next := next_endpoint()
+	if delivery!=null and (active=="port_delivery" or (active=="road_warehouse_crate" and stages.get(active,"")=="carrying")):
+		return {"position":delivery.parking_position(next)+Vector3.UP*.3,"label":"Delivery parking area" if stages.get(active,"")=="carrying" else "Port cargo loading area","endpoint":""}
 	if targets.has(next):
 		var target: Interactable = targets[next]
 		if not target.interaction_available(): return {}
@@ -378,12 +381,14 @@ func _clear_job_waypoint() -> void:
 	if not targets.has(next): return
 	var map: Control = player.get_node("UI/WorldMap")
 	var p: Vector3 = targets[next].global_position
-	if map.waypoint.distance_to(Vector2(p.x,p.z)) < .1: map.waypoint = Vector2(INF,INF)
+	var goal:Dictionary=destination()
+	var at:Vector3=goal.get("position",p)
+	if map.waypoint.distance_to(Vector2(p.x,p.z)) < .1 or map.waypoint.distance_to(Vector2(at.x,at.z)) < .1: map.waypoint = Vector2(INF,INF)
 
 func _mark_next() -> void:
 	var next := next_endpoint()
 	if not targets.has(next): return
-	var pos: Vector3 = targets[next].global_position
+	var pos: Vector3 = destination().get("position",targets[next].global_position)
 	player.get_node("UI/WorldMap").waypoint = Vector2(pos.x,pos.z)
 	close_panel(); _message("Follow the destination marker. Distance updates as you travel.")
 

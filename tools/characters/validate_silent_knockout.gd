@@ -20,6 +20,7 @@ func human(world:Node3D,label:String,at:Vector3,faction:String)->Node3D:
  npc.name=label;npc.position=at;npc.movement_enabled=false;npc.set_meta("combat_faction",faction)
  npc.add_child(load("res://characters/npcs/british/private_man.glb").instantiate());world.add_child(npc);return npc
 func run()->void:
+ check(load("res://assets/ui/map_icons/weapon.svg")!=null,"generated map icon loads")
  var world:=Node3D.new();root.add_child(world);current_scene=world
  var clock:=preload("res://world/suryagarh/systems/game_time_system.gd").new();clock.name="GameTimeSystem";world.add_child(clock)
  var floor:=StaticBody3D.new();var collision:=CollisionShape3D.new();var shape:=BoxShape3D.new();shape.size=Vector3(20,.2,20);collision.shape=shape;collision.position.y=-.1;floor.add_child(collision);world.add_child(floor)

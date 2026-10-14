@@ -39,11 +39,10 @@ func update_walk(scene, delta: float) -> void:
 func update(scene, t: float) -> void:
 	var rig: Skeleton3D = scene.visual.skeleton
 	var equipment = scene.visual.equipment
-	if equipment == null or t >= 9.0: return
+	if equipment == null or t >= scene.WICK_CAMERA_CUT: return
 	var lean := smoothstep(3.0,5.0,t)*(1.0-smoothstep(6.0,6.8,t))
-	var bend := smoothstep(6.7,8.0,t)*(1.0-smoothstep(8.3,9.0,t))
 	var low_wick := smoothstep(3.0,5.0,t)*(1.0-smoothstep(5.9,6.6,t))
-	scene.actor.global_position = scene.home.to_global(Vector3(-2.6,1.14-.065*bend-.22*low_wick,1.27))
+	scene.actor.global_position = scene.home.to_global(Vector3(-2.6,1.14-.22*low_wick,1.27))
 	scene.visual.pose("spine_01",Vector3(.30*lean,0,0),1.0)
 	scene.visual.pose("spine_02",Vector3(.25*lean,0,0),1.0)
 	scene.visual.pose("head",Vector3(.10+.08*lean,.10,0),1.0)
@@ -58,19 +57,15 @@ func update(scene, t: float) -> void:
 		tip = wick
 	else:
 		tip = wick.lerp(scene.home.to_global(Vector3(-2.5,1.32,1.03)),smoothstep(5.9,6.6,t))
-	# Keep the spent match visible: lower it onto the table before releasing.
-	var put_down := smoothstep(6.7,8.1,t)
-	tip = tip.lerp(scene.home.to_global(Vector3(-2.43,.958,.93)),put_down)
 	# Burning head sits above the thumb/index pinch, never pointing down.
 	var axis: Vector3 = (scene.home.global_basis*Vector3(0,.94,-.342)).normalized()
-	axis = axis.lerp((scene.home.global_basis*Vector3.RIGHT).normalized(),put_down).normalized()
-	# Choose a perpendicular axis even when the stick lies along the table.
+	# Keep the match upright throughout the visible ignition shot.
 	var across: Vector3 = (scene.home.global_basis*Vector3.UP).cross(axis).normalized()
 	var basis := Basis(across,axis,across.cross(axis)).orthonormalized()
 	# Cylinder head and flame sit at local y .0275 / .038 respectively.
 	scene.match_prop.global_transform = Transform3D(basis,tip-axis*.038)
 	var pinch: Vector3 = tip-axis*.058
-	palm_gap = _hand(scene,"r",pinch,1.0-smoothstep(8.1,9.0,t),.32)
+	palm_gap = _hand(scene,"r",pinch,1.0,.32)
 	wick_gap = tip.distance_to(wick)
 	scene.actor.set_meta("opening_wick_gap",wick_gap)
 	scene.actor.set_meta("opening_palm_gap",palm_gap)

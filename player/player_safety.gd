@@ -164,6 +164,7 @@ func show_death() -> void:
 	column.add_child(reload)
 	var back := Style.button("Back to Main Menu",func():
 		get_tree().paused = false
+		preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
 		get_tree().change_scene_to_file("res://ui/main_menu.tscn")
 	)
 	column.add_child(back)

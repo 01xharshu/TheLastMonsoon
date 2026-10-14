@@ -20,7 +20,7 @@ def apply_river_pose(rig, bones, conversion, corrections):
     if error>.0001:raise RuntimeError('River pose did not reproduce target matrices: '+str(error))
 
 
-def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None, pose_data=None):
+def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None, pose_data=None,start_sample=0,checkpoint_callback=None):
     data=pose_data if pose_data is not None else json.loads((root/'WorkingAssets/NPCs/river_woman/poses.json').read_text())
     conversion=Matrix(((1,0,0,0),(0,0,-1,0),(0,1,0,0),(0,0,0,1)))
     inverse=conversion.inverted()
@@ -40,6 +40,7 @@ def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None, 
     for obj in objects:
         if not obj.data.shape_keys: obj.shape_key_add(name='Basis')
     for sample,pose in enumerate(data['poses']):
+        if sample<start_sample:continue
         if pose_filter is not None and not pose_filter(pose):continue
         apply_river_pose(rig,pose['bones'],conversion,corrections)
         bpy.context.view_layer.update()
@@ -71,5 +72,6 @@ def fit_river_cloth(root, rig, body, objects, existing=False, pose_filter=None, 
             fit_key(rig,obj,tree,key,reset_key=False)
             key.value=0
         print('RIVER_CLOTH_SAMPLE',sample,flush=True)
+        if checkpoint_callback is not None and (sample%32==31 or sample==len(data['poses'])-1):checkpoint_callback(sample+1)
     for bone in rig.pose.bones: bone.matrix_basis=Matrix.Identity(4)
     rig.data.pose_position='REST'

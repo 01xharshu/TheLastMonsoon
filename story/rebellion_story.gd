@@ -6,6 +6,7 @@ const Sight=preload("res://systems/visual_perception.gd")
 const Actions=preload("res://systems/action_permissions.gd")
 const Budget=preload("res://systems/simulation_budget.gd")
 const STAGES=["dormant","ambush","confront","escape","follow","briefing","inspect","load","shoot","raid_ready","infiltrate","collect","rope","return","complete"]
+const HIDEOUT_FOLLOW_ROUTE=[Vector3(0,3.8,24),Vector3(0,3.8,18),Vector3(0,.2,7),Vector3(0,.2,2),Vector3(-3,.2,2)]
 var world: Node3D
 var player: CharacterBody3D
 var encounters: Node
@@ -97,7 +98,7 @@ func objective() -> String:
   "follow":return "Follow Mangal Pandey into the fort hideout."
   "briefing":return "Speak to Mangal Pandey in the hideout."
   "inspect":return "Inspect the captured weapons."
-  "load":return "Select the Enfield (2), draw it (H), then load a paper cartridge (R)."
+  "load":return "Select the Enfield (2), draw it (G), then load a paper cartridge (R)."
   "shoot":return "Aim at the wooden target and fire. Reload and hit it twice."
   "raid_ready":return "Speak to Mangal to begin the weapons raid with two companions."
   "infiltrate":return "Enter the magazine unseen. Use the left stairs to the second-floor weapons room. Q behind a sentry; E to take his uniform."
@@ -197,11 +198,12 @@ func move_actor(actor: Node3D,goal: Vector3,delta: float,speed: float) -> bool:
  if not actor.get_world_3d().direct_space_state.intersect_ray(query).is_empty():actor.travel_speed=0;return false
  actor.global_position+=step;actor.rotation.y=atan2(offset.x,offset.z);actor.travel_speed=speed;return false
 func advance_follow(delta: float) -> void:
- var goals=[sites.cellar.to_global(Vector3(0,3.8,24)),sites.cellar.to_global(Vector3(0,3.8,18)),sites.cellar.to_global(Vector3(0,.2,7)),sites.cellar.to_global(Vector3(-3,.2,2))]
+ # Stay in the central aisle until past the companions at either side of entry.
+ # The former diagonal crossed RaidCompanion0's physical capsule and stalled.
  if not near(sites.mangal.global_position,9):sites.mangal.travel_speed=0;return
- if move_actor(sites.mangal,goals[follow_index],delta,1.4):
+ if move_actor(sites.mangal,sites.cellar.to_global(HIDEOUT_FOLLOW_ROUTE[follow_index]),delta,1.4):
   follow_index+=1
-  if follow_index==goals.size():set_stage("briefing")
+  if follow_index==HIDEOUT_FOLLOW_ROUTE.size():set_stage("briefing")
 func officer_defeated() -> void:
  if stage not in ["ambush","confront"]:return
  var police: Node=encounters
@@ -218,7 +220,11 @@ func can_request(id: String) -> bool:
  if id=="weapons":return stage=="inspect"
  if id=="raid":return stage=="raid_ready"
  if id=="rope":return stage=="rope" and collected.size()==4
- if id.begins_with("bundle"):return stage=="collect" and int(id.trim_prefix("bundle")) not in collected
+ if id.begins_with("bundle"):
+  var suffix:=id.trim_prefix("bundle")
+  if not suffix.is_valid_int():return false
+  var index:=int(suffix)
+  return stage=="collect" and index>=0 and index<sites.bundles.size() and index not in collected
  return false
 func request(id: String,actor: CharacterBody3D) -> bool:
  if actor!=player or not can_request(id):return false
@@ -468,7 +474,7 @@ func restore_state(data: Dictionary) -> void:
   var index=int(value)
   if index>=0 and index<4 and index not in collected:collected.append(index)
  disguise_guard=clampi(int(data.get("disguise_guard",0)),0,3)
- disguise=bool(data.get("disguise",false));target_hits=clampi(int(data.get("target_hits",0)),0,2);reload_seen=bool(data.get("reload_seen",false));officer_age=maxf(0,float(data.get("officer_age",0)));follow_index=clampi(int(data.get("follow_index",0)),0,3)
+ disguise=bool(data.get("disguise",false));target_hits=clampi(int(data.get("target_hits",0)),0,2);reload_seen=bool(data.get("reload_seen",false));officer_age=maxf(0,float(data.get("officer_age",0)));follow_index=clampi(int(data.get("follow_index",0)),0,HIDEOUT_FOLLOW_ROUTE.size()-1)
  stripped_guards.clear()
  for value in data.get("stripped_guards",[]):
   if typeof(value) not in [TYPE_INT,TYPE_FLOAT]:continue

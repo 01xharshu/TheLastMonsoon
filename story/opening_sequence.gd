@@ -1,6 +1,8 @@
 extends Node3D
 ## Live opening: prologue cards, night scene, automatic dawn and gate handoff.
 const DURATION := 32.0
+const WICK_CAMERA_CUT := 6.2
+const WINDOW_SCENE_START := 13.0
 const Titles = preload("res://story/opening_titles.gd")
 var cart_passage = preload("res://story/opening_cart_passage.gd").new()
 @export var prologue_music: AudioStream = preload("res://assets/audio/opening/prologue_tension_draft.wav")
@@ -344,6 +346,10 @@ func _process(delta: float) -> void:
 		_update_morning(delta)
 		return
 	elapsed += delta
+	# Cut as soon as the wick is established. The spent-match disposal beat is
+	# omitted; the next composition shows Arjun already waiting at the window.
+	if elapsed >= WICK_CAMERA_CUT and elapsed < WINDOW_SCENE_START:
+		elapsed = WINDOW_SCENE_START
 	var t := elapsed
 	score.volume_db = lerpf(-14.0,-60.0,smoothstep(0,2.0,t))
 	if t >= 2.0 and score.playing: score.stop()
@@ -361,14 +367,14 @@ func _process(delta: float) -> void:
 		sigh_played = true
 		sigh_audio.play()
 	shade.color = Color(0,0,0,1.0-smoothstep(.12,.55,t))
-	match_prop.visible = true
-	match_prop.get_node("Flame").visible = t >= .12 and t < 6.5
-	match_light.light_energy = (.65+sin(t*31.0)*.035)*smoothstep(.12,.2,t) if t >= .12 and t < 6.5 else 0.0
+	match_prop.visible = t < WICK_CAMERA_CUT
+	match_prop.get_node("Flame").visible = t >= .12 and t < WICK_CAMERA_CUT
+	match_light.light_energy = (.65+sin(t*31.0)*.035)*smoothstep(.12,.2,t) if t >= .12 and t < WICK_CAMERA_CUT else 0.0
 	var lit := t >= 5.5 and t < 29
 	lamp.get_node("Flame").visible = lit
 	light.light_energy = (0.85 + sin(t*17)*0.045)*smoothstep(5.5,6.2,t) if lit else 0.0
 	subtitle.text = "Still no word from Dev…" if t >= 15 and t < 19 else ""
-	if t < 9:
+	if t < WICK_CAMERA_CUT:
 		contact.update(self,t)
 		# Face, forward hand and table share a steady upper-body composition.
 		_shot(Vector3(-1.15,1.85,-.30),Vector3(-2.6,1.40,1.05))

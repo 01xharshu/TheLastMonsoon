@@ -70,6 +70,7 @@ func _physics_process(delta: float) -> void:
   contact_age=0.0
   preload("res://world/suryagarh/city_contact_recovery.gd").recover(cart,cart.boarding.collision_body,cart.boarding._vehicle_exclusions())
  align_road_grade()
+ var yaw_before:=cart.rotation.y
  var road_target:Vector2=route[direction]
  var road_direction:=direction
  if passing_target.is_finite():route[direction]=passing_target
@@ -80,6 +81,10 @@ func _physics_process(delta: float) -> void:
  distance_travelled+=before.distance_to(cart.global_position)
  if before.distance_squared_to(cart.global_position)>.0000001:
   blocked_reason="";stalled_age=0
+ elif absf(angle_difference(yaw_before,cart.rotation.y))>.00001:
+  # A clear in-place turn is progress, not a jam. Replanning every few
+  # seconds during a U-turn prevents its heading from ever settling.
+  blocked_reason="turning";stalled_age=0
  elif wait<=0:
   blocked_reason=clearance_reason()
   stalled_age+=delta
@@ -124,6 +129,12 @@ func plan_pass() -> void:
  retreat_remaining=2.5
 
 func retreat(delta:float) -> void:
+ # Vector3 world coordinates cannot represent the final micrometres of a
+ # reverse leg hundreds of metres from origin. Finish without a phantom step.
+ if retreat_remaining<=.005:
+  retreat_remaining=0;stalled_age=0;passing_retry=0
+  cart.boarding.speed=0;cart.set_forward_motion(0,delta)
+  return
  var before:=cart.global_position
  var next:Vector3=before+cart.global_basis.z*minf(.65*delta,retreat_remaining)
  var space:=cart.get_world_3d().direct_space_state
@@ -145,6 +156,7 @@ func retreat(delta:float) -> void:
   cart.global_position=next
   var travelled:=before.distance_to(next)
   distance_travelled+=travelled;retreat_remaining=maxf(0,retreat_remaining-travelled)
+  if retreat_remaining<=.005:retreat_remaining=0
   cart.boarding.collision_body.force_update_transform()
   cart.boarding.speed=-.65;cart.set_forward_motion(-.65,delta)
  else:

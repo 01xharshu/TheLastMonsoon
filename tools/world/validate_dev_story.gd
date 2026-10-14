@@ -149,6 +149,7 @@ func run() -> void:
  check(story.state=="complete" and story.completed_partners.size()==3,"all three knockout practices complete tutorial")
  var saved: Dictionary=story.export_state();story.state="complete";story.restore_state(saved)
  check(story.state=="complete" and story.lesson==8,"completed lesson progress restoration")
+ check(story.objective.text.is_empty() and str(inquiry.destination.get_meta("parking_label","" )).is_empty(),"completed training releases obsolete courtyard guidance")
  check(story.community.college!=null and story.community.courtyard!=null,"gathering places integrated")
  print("DEV STORY: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
  world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1)

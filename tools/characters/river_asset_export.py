@@ -12,6 +12,8 @@ def asset_digest(path):
             time.sleep(.1*(attempt+1))
 from pathlib import Path
 def export_river_asset(ROOT,rig,body,foundation_faces):
+    from river_body_physique import restore_donor_physique
+    restore_donor_physique(ROOT,body)
     from river_identity_shapes import retain_source_shapes,add_export_shapes
     retain_source_shapes(rig,body)
     OUT=ROOT/"WorkingAssets/NPCs/river_woman"

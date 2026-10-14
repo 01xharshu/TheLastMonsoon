@@ -121,4 +121,4 @@ func _run() -> void:
 	print("GAME ERROR ROUTE: ","FAIL" if failed else "PASS")
 	preload("res://tools/test_audio_cleanup.gd").stop(root)
 	await preload("res://tools/test_audio_cleanup.gd").settle(self)
-	quit(1 if failed else 0)
+	root.get_node("SaveManager").quit_game(1 if failed else 0)

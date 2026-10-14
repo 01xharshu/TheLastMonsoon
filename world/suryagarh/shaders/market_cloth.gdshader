@@ -4,7 +4,8 @@ uniform vec4 tint : source_color = vec4(.66,.54,.35,1.0);
 varying vec3 cloth_point;
 void vertex(){cloth_point=VERTEX;}
 void fragment(){
- float warp=sin(cloth_point.x*430.0)*sin(cloth_point.z*430.0);
+ float weave_visibility=1.0-smoothstep(.003,.012,length(fwidth(cloth_point.xz)));
+ float warp=sin(cloth_point.x*430.0)*sin(cloth_point.z*430.0)*weave_visibility;
  float seam=1.0-smoothstep(.008,.02,abs(fract(UV.x*4.0)-.5));
  float stain=sin(cloth_point.x*1.7+cloth_point.z*2.1)*.04;
  ALBEDO=tint.rgb*(.96+warp*.035+stain-seam*.12);

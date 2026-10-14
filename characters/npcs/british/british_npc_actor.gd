@@ -28,6 +28,7 @@ var _turn_progress: float = 0.0
 var nominal_walk_speed: float = 0.0
 var travel_speed: float = 0.0
 var walk_playback_rate: float = 1.0
+var walk_direction: float = 1.0 # Cinematic backward carrying; ordinary actors stay +1.
 var foot_plant = preload("res://characters/npcs/british/british_foot_plant.gd").new()
 var _walk_phase: float = 0.0
 var _last_facing: float = 0.0
@@ -359,6 +360,7 @@ func _set_animation(state: StringName, delta: float) -> void:
 	locomotion_blend = move_toward(locomotion_blend, target, maxf(delta, 0.0) / 0.2)
 	if state == &"walk" and travel_speed > 0.001:
 		walk_playback_rate = clampf(travel_speed / nominal_walk_speed, 0.1, 3.0)
+		walk_playback_rate *= -1.0 if walk_direction < 0.0 else 1.0
 	animation_tree.set("parameters/walk_rate/scale", walk_playback_rate)
 	animation_tree.set("parameters/locomotion/blend_amount", locomotion_blend)
 	turn_blend = move_toward(turn_blend, 1.0 if state == &"turn" else 0.0, maxf(delta, 0.0) / 0.08)
@@ -371,6 +373,7 @@ func _set_animation(state: StringName, delta: float) -> void:
 	_pose_fingers()
 	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
 		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
+		if _walk_phase < 0.0:_walk_phase += 1.0
 		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:
 			foot_plant.clear()
 		_last_facing = rotation.y

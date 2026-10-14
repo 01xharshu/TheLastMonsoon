@@ -15,15 +15,17 @@ class ReviewWorld extends Node3D:
 		player.set_meta('river_current',preload('res://world/suryagarh/river_dynamics.gd').current_at(p) if deep else Vector3.ZERO)
 var output := ''
 var selected_case := ''
+var save_captures := true
 func _initialize() -> void: run.call_deferred()
 func capture(label: String) -> void:
-	if DisplayServer.get_name() == 'headless': return
+	if DisplayServer.get_name() == 'headless' or not save_captures: return
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(output+'/'+label+'.png')
 func run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with('--output='): output = arg.trim_prefix('--output=')
 		if arg.begins_with('--case='): selected_case = arg.trim_prefix('--case=')
+		if arg=='--no-captures': save_captures = false
 	if output.is_empty(): quit(2); return
 	root.get_node('SaveManager').settings_path = output+'/settings.cfg'
 	root.get_node('SaveManager').save_root = output+'/saves'
@@ -47,6 +49,8 @@ func run() -> void:
 	var actor: CharacterBody3D = load('res://player/player.tscn').instantiate()
 	actor.position = Vector3(world.layout.river_x(165),1,165); world.add_child(actor); world.player = actor
 	actor.get_node('PlayerSafety').checkpoint_elapsed = -1000.0
+	var bag: Node = actor.get_node('VisualRoot/EquipmentVisuals/WaterBagVisual')
+	print('POUCH SOURCE PREP ',JSON.stringify({'readbacks':bag.source_readbacks,'cache_hits':bag.source_cache_hits,'microseconds':bag.source_prepare_usec}))
 	actor.get_node('UI').hide(); actor.set_physics_process(false)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var camera := Camera3D.new(); camera.fov = 55; camera.far = 1200; world.add_child(camera); camera.current = true

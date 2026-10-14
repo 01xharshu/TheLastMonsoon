@@ -7,6 +7,7 @@ func _ready()->void:
 	var district:=Node3D.new();district.name="BritishCantonment";district.position=Vector3(500,8.5,470);add_child(district)
 	var cantonment:=preload("res://world/suryagarh/settlements/cantonment.gd").new()
 	cantonment.b=self;cantonment.district=district;cantonment.wall_surface=plaster;cantonment.roof_surface=tile
+	await cantonment.install_boundary()
 	var hospital:=cantonment.shell("MilitaryHospital",Vector3(-43,0,45),Vector2(24,10),"")
 	for x in [-9,-3,3,9]:
 		for z in [-2,2]:cantonment.bed(hospital,Vector3(x,.24,z),true)

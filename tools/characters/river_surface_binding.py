@@ -26,12 +26,15 @@ def bind_surface(obj,body,rest_body,human_indices):
 
 def inverse_skin(rig,obj):
     result=[]
+    bones={group.index:rig.pose.bones.get(group.name) for group in obj.vertex_groups}
+    transforms={index:bone.matrix@bone.bone.matrix_local.inverted() for index,bone in bones.items() if bone}
+    rig_world=rig.matrix_world.copy();rig_inverse=rig_world.inverted();object_world=obj.matrix_world.copy()
     for vertex in obj.data.vertices:
         matrix=Matrix.Identity(4)*0;total=0
         for assignment in vertex.groups:
-            bone=rig.pose.bones.get(obj.vertex_groups[assignment.group].name)
-            if bone:matrix+=(bone.matrix@bone.bone.matrix_local.inverted())*assignment.weight;total+=assignment.weight
-        transform=rig.matrix_world@(matrix*(1/total) if total else Matrix.Identity(4))@rig.matrix_world.inverted()@obj.matrix_world
+            transform=transforms.get(assignment.group)
+            if transform is not None:matrix+=transform*assignment.weight;total+=assignment.weight
+        transform=rig_world@(matrix*(1/total) if total else Matrix.Identity(4))@rig_inverse@object_world
         result.append(transform.inverted_safe())
     return result
 
