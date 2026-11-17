@@ -65,6 +65,8 @@ static func make_mesh(detail := false) -> ArrayMesh:
 				st.set_uv(Vector2(float(i)/16.0,v.y/height))
 				st.add_vertex(v)
 	st.generate_normals()
+	# Index only after normals: preserve the authored flat bends and exact shading.
+	st.index()
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://world/suryagarh/shaders/grass_blades.gdshader")
 	mat.set_shader_parameter("fade_start",18.0 if detail else 48.0)

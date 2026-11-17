@@ -32,4 +32,12 @@ class Home extends "res://world/suryagarh/settlements/wealthy_households.gd":
 func _ready()->void:
 	var workplace:Node3D=Port.new() if site=="port" else (Market.new() if site=="market" else Home.new())
 	add_child(workplace)
+	if site=="market":
+		# Retain the actual nearby weapon seller's cart as a freight obstruction.
+		# The former west supplier turn passed its body in the populated world.
+		var parked:=preload("res://vehicles/horse_cart_candidate.gd").new()
+		parked.variant=1;parked.name="WeaponSalesCart";add_child(parked)
+		var layout:=preload("res://world/suryagarh/landscape_layout.gd").new()
+		parked.global_position=Vector3(-395,layout.height(-395,-290)+.08,-290)
+		parked.boarding.set_physics_process(false)
 	complete=true

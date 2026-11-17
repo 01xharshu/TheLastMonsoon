@@ -12,6 +12,9 @@ var foot_contact_offset := 0.0
 var skeleton: Skeleton3D
 var idle_foot_y := 0.0
 var rest_blend := 0.0
+var ambient_blend := 0.0
+var ambient_time := 0.0
+var ambient_action := ""
 var sit_down_seconds := 1.5
 var stand_up_seconds := 1.5
 var climb_blend := 0.0
@@ -65,6 +68,9 @@ func configure(model: Node3D) -> bool:
 	library.add_animation("detention_wait", _detention_clip(source.get_animation("idle"), false))
 	for action in ["punch","punch_left","kick","jump_kick","grapple","sword","knife","hit","block","dodge"]:
 		library.add_animation(action,preload("res://player/melee_motion.gd").make(skeleton,source.get_animation("idle"),action))
+	library.add_animation("ground_idle",preload("res://player/ground_idle_motion.gd").make(skeleton,source.get_animation("idle")))
+	for beat in ["look","scratch","clothes","stretch"]:
+		library.add_animation("idle_"+beat,preload("res://player/long_idle_clips.gd").make(skeleton,source.get_animation("idle"),beat))
 	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
@@ -178,7 +184,24 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("melee_seek",0,"melee_action")
 	graph.connect_node("melee",0,"detention")
 	graph.connect_node("melee",1,"melee_seek")
-	graph.connect_node("output", 0, "melee")
+	graph.add_node("ambient",AnimationNodeBlend2.new())
+	var ambient := AnimationNodeBlendSpace1D.new()
+	ambient.min_space = 0.0
+	ambient.max_space = 3.0
+	ambient.blend_mode = AnimationNodeBlendSpace1D.BLEND_MODE_DISCRETE
+	for i in 4: ambient.add_blend_point(_clip("motion/idle_"+["look","scratch","clothes","stretch"][i]),float(i),-1,["look","scratch","clothes","stretch"][i])
+	graph.add_node("ambient_pose",ambient)
+	graph.add_node("ambient_seek",AnimationNodeTimeSeek.new())
+	graph.connect_node("ambient_seek",0,"ambient_pose")
+	graph.add_node("ground_idle_pose",_clip("motion/ground_idle"))
+	graph.add_node("ground_idle_seek",AnimationNodeTimeSeek.new())
+	graph.add_node("ground_idle",AnimationNodeBlend2.new())
+	graph.connect_node("ground_idle_seek",0,"ground_idle_pose")
+	graph.connect_node("ground_idle",0,"melee")
+	graph.connect_node("ground_idle",1,"ground_idle_seek")
+	graph.connect_node("ambient",0,"ground_idle")
+	graph.connect_node("ambient",1,"ambient_seek")
+	graph.connect_node("output", 0, "ambient")
 	tree_root = graph
 	callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	active = true
@@ -286,15 +309,19 @@ func _walk_clip(skeleton: Skeleton3D, idle: Animation, running := false) -> Anim
 		var stride := 0.80 if running else 0.52
 		var knee := 1.05 if running else 0.72
 		var arm_swing := 0.72 if running else 0.30
+		# The swing leg folds more during recovery, then opens before landing.
+		# Keep the support leg softly bent instead of snapping straight.
+		var left_recovery := maxf(0.0, -sin(cycle))
+		var right_recovery := maxf(0.0, sin(cycle))
 		var angles := {
 			"pelvis": Vector3(0.0, sin(cycle) * (0.085 if running else 0.06), sin(cycle) * 0.025),
-			"spine_01": Vector3(0.17 if running else 0.07, -sin(cycle) * 0.045, 0.0),
-			"spine_02": Vector3(-0.025, -sin(cycle) * 0.035, 0.0),
-			"head": Vector3(-0.045, 0.0, 0.0),
+			"spine_01": Vector3(0.22 if running else 0.07, -sin(cycle) * 0.045, 0.0),
+			"spine_02": Vector3(0.025 if running else -0.025, -sin(cycle) * 0.035, 0.0),
+			"head": Vector3(-0.10 if running else -0.045, 0.0, 0.0),
 			"thigh_l": Vector3(left * stride, 0.0, 0.0),
 			"thigh_r": Vector3(right * stride, 0.0, 0.0),
-			"calf_l": Vector3(maxf(0.0, -sin(cycle)) * knee + 0.10, 0.0, 0.0),
-			"calf_r": Vector3(maxf(0.0, sin(cycle)) * knee + 0.10, 0.0, 0.0),
+			"calf_l": Vector3(left_recovery * knee + (0.16 if running else 0.10), 0.0, 0.0),
+			"calf_r": Vector3(right_recovery * knee + (0.16 if running else 0.10), 0.0, 0.0),
 			"foot_l": Vector3(-left * 0.20, 0.0, 0.0),
 			"foot_r": Vector3(-right * 0.20, 0.0, 0.0),
 			"upperarm_l": Vector3(-left * arm_swing, 0.0, 0.0),
@@ -344,7 +371,7 @@ func update_motion(delta: float, ground_speed: float, water_speed: float, in_wat
 	var correction := clampf((_lowest_foot_y() - idle_foot_y) + ground_blend * 0.04, 0.0, 0.20)
 	foot_contact_offset = lerpf(foot_contact_offset, correction * (1.0 - swim_blend) * (1.0 - air_blend), weight)
 
-func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false) -> void:
+func update_rest(delta: float, seated_weight: float, progress: float = 0.38, waking: bool = false, ground_only: bool = false) -> void:
 	preload("res://player/pistol_motion_layer.gd").clear(self)
 	pistol_aim_blend = 0.0
 	pistol_reload_blend = 0.0
@@ -352,7 +379,7 @@ func update_rest(delta: float, seated_weight: float, progress: float = 0.38, wak
 	pistol_aim_phase = 0.0
 	pistol_reload_phase = 0.0
 	var recline := clampf((progress - 0.38) / 0.52, 0.0, 1.0)
-	set("parameters/sleep/blend_amount", smoothstep(0.36, 0.42, progress))
+	set("parameters/sleep/blend_amount", 0.0 if ground_only else smoothstep(0.36, 0.42, progress))
 	set("parameters/sleep_motion/blend_amount", 1.0 if waking else 0.0)
 	set("parameters/lie_down_seek/seek_request", recline * 0.52)
 	set("parameters/rise_from_lie_seek/seek_request", (1.0 - recline) * 0.36)
@@ -460,3 +487,21 @@ func set_melee(action: int, progress: float) -> void:
 	set("parameters/melee_action/blend_position",float(action))
 	if progress >= 0.0:
 		set("parameters/melee_seek/seek_request",clampf(progress,0,1)*(.45 if action==7 else .5 if action==8 else .42 if action==9 else .68 if action==5 else .55 if action==6 else 1.2 if action == 4 else .52 if action >= 2 else .42))
+
+func update_ambient(action: String, time: float, delta: float) -> void:
+	var performing := action in ["look","scratch","clothes","stretch"]
+	ambient_blend = move_toward(ambient_blend,1.0 if performing else 0.0,minf(delta,1.0/60.0)*4.0)
+	set("parameters/ambient/blend_amount",ambient_blend)
+	if performing:
+		ambient_action = action
+		ambient_time = time
+		set("parameters/ambient_pose/blend_position",float(["look","scratch","clothes","stretch"].find(action)))
+	if ambient_blend > 0.0: set("parameters/ambient_seek/seek_request",ambient_time)
+
+func update_ground_idle(delta: float, progress: float) -> void:
+	rest_blend = 0.0
+	set("parameters/ground_idle/blend_amount",1.0)
+	set("parameters/ground_idle_seek/seek_request",clampf(progress,0.0,1.0)*preload("res://player/ground_idle_motion.gd").LENGTH)
+	set("parameters/melee/blend_amount",0.0)
+	set("parameters/detention/blend_amount",0.0)
+	update_motion(delta,0.0,0.0,false,true,0.0)

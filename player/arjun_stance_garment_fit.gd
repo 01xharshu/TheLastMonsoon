@@ -1,7 +1,7 @@
 extends RefCounted
 ## Refit existing garments; preserve body geometry and the editable source rig.
 const CACHE_DIR := "res://characters/arjun/stance_fit"
-const INPUTS := ["res://characters/arjun/arjun.glb","res://characters/arjun/arjun_riding_cloth.glb","res://player/arjun_clothing.gd","res://player/arjun_trouser_fit.gd","res://player/arjun_stance_garment_fit.gd"]
+const INPUTS := ["res://characters/arjun/arjun.glb","res://characters/arjun/arjun_opening_fit.glb","res://player/arjun_complete_fit.gd","res://characters/arjun/arjun_riding_cloth.glb","res://player/arjun_clothing.gd","res://player/arjun_trouser_fit.gd","res://player/arjun_stance_garment_fit.gd"]
 static func fingerprint() -> String:
 	var value := ""
 	for path in INPUTS: value += FileAccess.get_sha256(path)
@@ -108,7 +108,8 @@ static func prepare_low_waist(model: Node3D, rebuild := false) -> Array[Dictiona
 	for candidate in model.find_children("*","MeshInstance3D",true,false):
 		var node := candidate as MeshInstance3D
 		var footwear := str(node.name).begins_with("Arjun_Boot_") or str(node.name).begins_with("Boot outsole")
-		if not footwear and not "DrapedTrousers" in str(node.name): continue
+		var hem:bool=node.name=="Arjun_Kurta_SplitHem"
+		if not footwear and not hem and not "DrapedTrousers" in str(node.name): continue
 		if not rebuild:
 			var path := CACHE_DIR+"/"+str(node.name).validate_filename()+".res"
 			if cache_valid and ResourceLoader.exists(path): records.append({"node":node,"normal":node.mesh,"low":load(path)})
@@ -174,7 +175,8 @@ static func prepare_low_waist(model: Node3D, rebuild := false) -> Array[Dictiona
 					weights[i*influences+slot] = combined[ranked[slot]]/total
 				var closest: Dictionary = nearest[0].sample
 				var clearance: float = (point-closest.point).dot(closest.normal)
-				if not footwear and clearance < .009: vertices[i] += closest.normal*minf(.009-clearance,.04)
+				var ease:=.040 if hem else .009
+				if not footwear and clearance < ease: vertices[i] += closest.normal*minf(ease-clearance,.04)
 			arrays[Mesh.ARRAY_VERTEX] = vertices
 			arrays[Mesh.ARRAY_BONES] = bones
 			arrays[Mesh.ARRAY_WEIGHTS] = weights
@@ -185,5 +187,8 @@ static func prepare_low_waist(model: Node3D, rebuild := false) -> Array[Dictiona
 
 static func use_low_waist(records: Array[Dictionary], active: bool) -> void:
 	for record in records:
-		var target: Mesh = record.low if active else record.normal
+		# The body-derived trouser weights also prevent knee/boot intersections
+		# during ordinary running; footwear keeps its dedicated stance switch.
+		var trousers:bool="DrapedTrousers" in str(record.node.name) or record.node.name=="Arjun_Kurta_SplitHem"
+		var target: Mesh = record.low if active or trousers else record.normal
 		if record.node.mesh != target: record.node.mesh = target

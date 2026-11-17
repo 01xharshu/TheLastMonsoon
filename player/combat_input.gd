@@ -1,8 +1,5 @@
 extends Node
-## One attack dispatcher: mouse double click kicks; a single click uses the held weapon.
-const DOUBLE_CLICK_SECONDS := 0.26
-var pending_single := false
-var click_age := 0.0
+## Dispatch attacks immediately; the separate kick action uses its configured key.
 var kick_time := -1.0
 var punch_time := -1.0
 var kick_cooldown := 0.0
@@ -11,6 +8,7 @@ var punch_landed := false
 var punch_damage_done:=false
 var kick_damage_done:=false
 var last_melee_contact:=Vector3.ZERO
+var melee_aim_point:=Vector3.INF
 var left_punch := false
 var air_kick := false
 var blocking := false
@@ -37,28 +35,21 @@ func available() -> bool:
 	return actor.is_physics_processing() and not actor.is_swimming and (not actor.has_meta("mounted_vehicle") or actor.get_meta("mounted_vehicle") == null) and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless")
 
 func _unhandled_input(event: InputEvent) -> void:
+	if actor.get_meta("rifle_lesson",false):
+		if event.is_action_pressed("attack"):
+			actor.get_node("RifleCombat").fire()
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("attack") and preload("res://story/rear_passenger_combat.gd").allowed(actor):
 		var choice:int=visual.equipment.selected
 		if choice in [1,3,5]:actor.get_node("RifleCombat" if choice==1 else "PistolCombat" if choice==3 else "DoubleGunCombat").fire()
 		get_viewport().set_input_as_handled();return
 	if event.is_action_pressed("combat_dodge") and available():
 		dodge();get_viewport().set_input_as_handled();return
+	if event.is_action_pressed("kick") and available():
+		kick();get_viewport().set_input_as_handled();return
 	if not event.is_action_pressed("attack") or not available(): return
-	if event is InputEventMouseButton:
-		# Honour the OS double-click event even if a slow rendered frame has
-		# already expired our single-click timer between the two presses.
-		if event.double_click or (pending_single and click_age <= DOUBLE_CLICK_SECONDS):
-			pending_single = false
-			if punch_time >= 0 and not punch_damage_done:
-				punch_time = -1.0
-				visual.punch_phase = -1.0
-			kick()
-		else:
-			pending_single = true
-			click_age = 0.0
-	else:
-		# Controller trigger presses remain immediate; there is no mouse double-click delay.
-		single_attack()
+	single_attack()
 	get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
@@ -71,18 +62,12 @@ func _process(delta: float) -> void:
 		if dodge_time>=.42 or not available():
 			dodge_time=-1;actor.remove_meta("combat_dodge");actor.remove_meta("combat_dodge_phase")
 	if actor.get_meta("detention_action", "") != "":
-		pending_single = false
 		kick_time = -1.0
 		punch_time = -1.0
 		visual.kick_phase = -1.0
 		visual.punch_phase = -1.0
 		return
 	kick_cooldown = maxf(0.0,kick_cooldown-delta)
-	if pending_single:
-		click_age += delta
-		if click_age > DOUBLE_CLICK_SECONDS:
-			pending_single = false
-			if available(): single_attack()
 	if kick_time >= 0.0:
 		kick_time += delta
 		visual.kick_phase = minf(kick_time/.52,1.0)
@@ -147,6 +132,7 @@ func kick() -> void:
 	ControllerFeedback.pulse("melee")
 
 func _face_attack() -> void:
+	melee_aim_point=preload("res://combat/attack_aim.gd").point(actor,camera,8.0)
 	var direction: Vector3=-camera.global_basis.z
 	actor.get_node("VisualRoot").global_rotation.y=atan2(direction.x,direction.z)
 
@@ -169,7 +155,7 @@ func _melee_hit(_reach: float, damage: float) -> bool:
 		sight.exclude=[actor.get_rid()]
 		var hit:=actor.get_world_3d().direct_space_state.intersect_ray(sight)
 		if not hit.is_empty() and policy.receiver(hit.collider)!=policy.receiver(body):continue
-		if policy.apply(body,damage,actor,"kick" if kick_active else "punch"):
+		if policy.apply(body,damage,actor,"kick" if kick_active else "punch",point,(point-(actor.global_position+Vector3.UP*.2)).normalized()):
 			WorldAudio.play_at("impact",point,-13.0)
 			return true
 	return false
@@ -185,7 +171,7 @@ func dodge() -> bool:
 	return true
 
 func interrupt() -> void:
-	pending_single=false;punch_time=-1;kick_time=-1;dodge_time=-1
+	punch_time=-1;kick_time=-1;dodge_time=-1
 	visual.punch_phase=-1;visual.kick_phase=-1
 	actor.remove_meta("combat_dodge");actor.remove_meta("combat_dodge_phase")
 	var blade:=actor.get_node("TalwarSlash");blade.elapsed=blade.DURATION

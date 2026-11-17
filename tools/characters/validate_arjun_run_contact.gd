@@ -6,7 +6,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var stage := Node3D.new()
-	root.add_child(stage)
+	root.add_child(stage);current_scene=stage
 	var clock := Node.new()
 	clock.name = "GameTimeSystem"
 	clock.set_script(load("res://world/suryagarh/systems/game_time_system.gd"))
@@ -25,6 +25,7 @@ func _run() -> void:
 	for i in 30: await physics_frame
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	var skeleton: Skeleton3D = visual.skeleton
+	var contact:Node=visual.get_node("LocomotionFootContact")
 	var start := actor.global_position
 	var low := INF
 	var high := -INF
@@ -32,6 +33,7 @@ func _run() -> void:
 	var contact_samples := 0
 	var drifts: Array[float] = []
 	var last_positions: Dictionary = {}
+	var last_planted: Dictionary = {}
 	Input.action_press("move_forward")
 	Input.action_press("sprint")
 	for frame in 90:
@@ -44,13 +46,18 @@ func _run() -> void:
 			low = minf(low,height)
 			high = maxf(high,height)
 			# Only the lowest stance portion represents a planted-foot candidate.
-			if last_positions.has(side) and height < -.87:
+			var sole_y:=INF
+			var foot_pose:Transform3D=skeleton.global_transform*skeleton.get_bone_global_pose(index)
+			for point:Vector3 in contact.sole_points[side]:sole_y=minf(sole_y,(foot_pose*point).y)
+			var planted:bool=contact.contacts.has(side) and contact.plant_weights.get(side,0.0)>.9 and sole_y < .06
+			if last_positions.has(side) and planted and last_planted.get(side,false):
 				var previous: Vector3 = last_positions[side]
 				var drift := Vector2(foot.x-previous.x,foot.z-previous.z).length()
 				contact_drift = maxf(contact_drift,drift)
 				drifts.append(drift)
 				contact_samples += 1
 			last_positions[side] = foot
+			last_planted[side] = planted
 	Input.action_release("move_forward")
 	Input.action_release("sprint")
 	var distance := actor.global_position.distance_to(start)
@@ -59,6 +66,6 @@ func _run() -> void:
 	print("ARJUN RUN CONTACT | %.2f m in 90 frames, foot-relative %.3f..%.3f m, low-foot drift p90 %.3f / max %.3f m/frame across %d samples" % [distance,low,high,p90,contact_drift,contact_samples])
 	if not actor.is_on_floor() or distance < 7.0 or contact_samples < 4 or p90 > .12 or contact_drift > .4:
 		push_error("ARJUN RUN CONTACT: sprint travel or low-foot drift failed")
-		quit(1)
+		root.get_node("SaveManager").quit_game(1)
 		return
-	quit()
+	root.get_node("SaveManager").quit_game(0)

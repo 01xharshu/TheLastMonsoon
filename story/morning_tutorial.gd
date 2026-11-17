@@ -12,7 +12,10 @@ const COPY := [
 	"Vitality: this bar shows your health. Damage lowers it. Keep an eye on it during danger.",
 	"Rupees: this is the money in your satchel. Work earns it; purchases spend it.",
 	"The compass shows direction. Your weapon and ammunition appear when you carry them.",
-	"Go to the marked horse beside the village house. Approach it and press %s to mount."]
+	"Explore the village, then ride the marked coach as a passenger. Hold %s to board and choose Police Station · 2 rupees."]
+const UI_SECONDS := 10.0
+var ui_age := 0.0
+var skip_hint: Label
 var step := 11
 var age := 0.0
 var responded := false
@@ -20,7 +23,7 @@ var hud: Control
 var player: CharacterBody3D
 var map: Control
 var prompt: Label
-var horse: Node3D
+var coach: Node3D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -40,6 +43,13 @@ func _ready() -> void:
 	prompt.add_theme_constant_override("outline_size",6)
 	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(prompt)
+	skip_hint = Label.new()
+	skip_hint.position = Vector2(24,158)
+	skip_hint.add_theme_font_override("font",FONT)
+	skip_hint.add_theme_font_size_override("font_size",18)
+	skip_hint.add_theme_constant_override("outline_size",5)
+	skip_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(skip_hint)
 	hide()
 
 func key(action: String) -> String:
@@ -52,6 +62,7 @@ func begin() -> void:
 
 func restore_step(value: int) -> void:
 	step = clampi(value,0,11)
+	ui_age = float(step) if step < 10 else UI_SECONDS
 	player.set_meta("morning_tutorial_active",step < 11)
 	_enter()
 
@@ -61,17 +72,19 @@ func _enter() -> void:
 	player.set_meta("tutorial_reading",false)
 	_apply_reveal()
 	visible = step < 11
+	skip_hint.visible = step < 10
+	skip_hint.text = "Tab · Skip UI tutorial (%ds)" % ceili(UI_SECONDS-ui_age)
 	if step >= 11: return
 	var text: String = COPY[step]
 	if step == 0: text = text % key("move_forward")
 	if step == 1: text = text % [key("move_left"),key("move_right"),key("move_backward")]
 	if step == 10:
 		text = text % key("interact")
-		horse = player.get_parent().get_node_or_null("VillageHorse")
-		if is_instance_valid(horse):
+		coach = player.get_parent().get_node_or_null("LiveCarts/VillageStationCoach")
+		if is_instance_valid(coach):
 			map.follow_story = false
 			map.selected_site = ""
-			map.waypoint = Vector2(horse.global_position.x,horse.global_position.z)
+			map.waypoint = Vector2(coach.global_position.x,coach.global_position.z)
 	prompt.text = text
 
 func _apply_reveal() -> void:
@@ -97,6 +110,10 @@ func _apply_reveal() -> void:
 func _input(event: InputEvent) -> void:
 	if step >= 11 or get_tree().paused or player.get_meta("opening_active",false): return
 	if event is InputEventKey and event.echo: return
+	if step < 10 and event is InputEventKey and event.pressed and (event.physical_keycode == KEY_TAB or event.keycode == KEY_TAB):
+		skip_ui()
+		get_viewport().set_input_as_handled()
+		return
 	if step == 0 and event.is_action_pressed("move_forward"):
 		advance()
 	elif step == 1 and (event.is_action_pressed("move_left") or event.is_action_pressed("move_right") or event.is_action_pressed("move_backward")):
@@ -111,14 +128,24 @@ func _process(delta: float) -> void:
 		return
 	if get_tree().paused: return
 	age += delta
+	if step < 10:
+		ui_age = minf(UI_SECONDS,ui_age+delta)
+		skip_hint.text = "Tab · Skip UI tutorial (%ds)" % ceili(UI_SECONDS-ui_age)
+		var timed_step := mini(10,int(floor(ui_age)))
+		if timed_step > step:
+			step = timed_step
+			_enter()
 	_apply_reveal()
-	if step >= 2 and step <= 9 and ((responded and age >= 10.0) or age >= 20.0): advance()
-	if step == 10 and is_instance_valid(horse):
-		var mount: Node = player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null
-		if mount == horse and horse.rider == player and horse.transition.is_empty(): advance()
+
+func skip_ui() -> void:
+	if step >= 10: return
+	ui_age = UI_SECONDS
+	step = 10
+	_enter()
 
 func advance() -> void:
 	step += 1
+	ui_age = maxf(ui_age,minf(float(step),UI_SECONDS))
 	if step >= 11:
 		player.set_meta("morning_tutorial_active",false)
 		var inquiry := player.get_parent().get_node_or_null("DevInquiry")

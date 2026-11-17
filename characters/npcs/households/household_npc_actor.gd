@@ -49,6 +49,9 @@ func _ready() -> void:
 func _process(delta:float) -> void:
 	if get_meta("dead",false) or get_meta("knocked_out",false): return
 	super._process(delta)
+	# Walking contact can move the pelvis between animation samples. Re-solve
+	# the carried vessel grip after that correction, even on an unsampled tick.
+	if not resident_pose_updated and not foot_plant.active: return
 	if household_job=="WaterBearer" and _skeleton!=null:
 		var pot:=get_node_or_null("CarriedWaterPot") as Node3D
 		if pot!=null:
@@ -79,6 +82,39 @@ func solve_hand_contact(side:String,target_world:Vector3) -> void:
 			_skeleton.force_update_all_bone_transforms()
 		if palm_world(side).distance_to(target_world)<.001:break
 	set_meta("hand_contact_"+side,palm_world(side).distance_to(target_world))
+
+func solve_hand_with_elbow(side:String,target_world:Vector3,elbow_world:Vector3) -> void:
+	var target:=_skeleton.to_local(target_world)
+	var upper:=_skeleton.find_bone("upperarm_"+side)
+	var lower:=_skeleton.find_bone("lowerarm_"+side)
+	var hand:=_skeleton.find_bone("hand_"+side)
+	var shoulder:=_skeleton.get_bone_global_pose(upper).origin
+	var elbow:=_skeleton.get_bone_global_pose(lower).origin
+	var wrist:=_skeleton.get_bone_global_pose(hand).origin
+	var orientation:=_skeleton.get_bone_global_pose(hand).basis.get_rotation_quaternion()
+	var wrist_target:=target-_skeleton.get_bone_global_pose(hand).basis*Vector3(0,.055,0)
+	var upper_length:=shoulder.distance_to(elbow)
+	var lower_length:=elbow.distance_to(wrist)
+	var direction:Vector3=(wrist_target-shoulder).normalized()
+	if direction.length_squared()<.5:direction=(wrist-shoulder).normalized()
+	var reach:=clampf(shoulder.distance_to(wrist_target),absf(upper_length-lower_length)+.001,upper_length+lower_length-.0001)
+	var along:float=(upper_length*upper_length-lower_length*lower_length+reach*reach)/(2.0*reach)
+	var height:=sqrt(maxf(0.0,upper_length*upper_length-along*along))
+	var pole:Vector3=_skeleton.to_local(elbow_world)-shoulder
+	pole-=direction*pole.dot(direction)
+	if pole.length_squared()<.000001:pole=direction.cross(Vector3.UP if absf(direction.y)<.9 else Vector3.FORWARD)
+	var desired_elbow:=shoulder+direction*along+pole.normalized()*height
+	foot_plant._rotate_world(upper,elbow-shoulder,desired_elbow-shoulder)
+	_skeleton.force_update_all_bone_transforms()
+	elbow=_skeleton.get_bone_global_pose(lower).origin
+	wrist=_skeleton.get_bone_global_pose(hand).origin
+	foot_plant._rotate_world(lower,wrist-elbow,shoulder+direction*reach-elbow)
+	_skeleton.force_update_all_bone_transforms()
+	var current:=_skeleton.get_bone_global_pose(hand).basis.get_rotation_quaternion()
+	_skeleton.set_bone_pose_rotation(hand,_skeleton.get_bone_pose_rotation(hand)*current.inverse()*orientation)
+	_skeleton.force_update_all_bone_transforms()
+	set_meta("hand_contact_"+side,palm_world(side).distance_to(target_world))
+	set_grip(side,.45)
 
 func set_grip(side:String,strength:float) -> void:
 	for index in _finger_rest:

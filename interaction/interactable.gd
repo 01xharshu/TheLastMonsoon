@@ -177,3 +177,18 @@ func _notification(what: int) -> void:
 	elif what==NOTIFICATION_EXIT_TREE and has_meta("interaction_spatial_index"):
 		var index: Node=get_meta("interaction_spatial_index")
 		if is_instance_valid(index):index.remove_subject(get_instance_id())
+
+# Proxy prompts can nominate a specific visual without highlighting their whole building.
+@export var highlight_root_path: NodePath
+func highlight_visual_root() -> Node3D:
+	if not highlight_root_path.is_empty():
+		var explicit:=get_node_or_null(highlight_root_path) as Node3D
+		if explicit!=null:return explicit
+	if has_meta("attendant") and is_instance_valid(get_meta("attendant")):return get_meta("attendant")
+	# Service/vehicle proxies expose these explicit visual references, not a building parent.
+	if find_children("*","GeometryInstance3D",true,false).is_empty():
+		for property in get_property_list():
+			if property.name in ["attendant","staff","person","cart","chacha","horse","model"]:
+				var visual: Variant=get(property.name)
+				if visual is Node3D and is_instance_valid(visual):return visual
+	return self

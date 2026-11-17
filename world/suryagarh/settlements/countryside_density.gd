@@ -19,8 +19,16 @@ static func fields() -> Array[Vector2]:
 		for x in [-520.0,-632.0]:result.append(Vector2(x,z))
 	for z in [194.0,238.0,282.0,326.0]:result.append(Vector2(-530,z))
 	return result
+static func additional_fields() -> Array[Vector2]:
+	return [Vector2(-632,-348),Vector2(-632,-304),Vector2(-632,282),Vector2(-632,326)]
 static func lanes() -> Array[Array]:
 	return [
+		[Vector2(-570,152),Vector2(-570,342),Vector2(-464,342)],
+		[Vector2(-570,-368),Vector2(-570,-264)],
+		[Vector2(-570,-348),Vector2(-611,-348)],
+		[Vector2(-570,-304),Vector2(-611,-304)],
+		[Vector2(-570,282),Vector2(-611,282)],
+		[Vector2(-570,326),Vector2(-585,335),Vector2(-603,335),Vector2(-611,326)],
 		[Vector2(-464,155),Vector2(-464,342),Vector2(-374,342),Vector2(-374,312)],
 		[Vector2(-464,155),Vector2(-374,155),Vector2(-374,162)],
 		[Vector2(-355,152),Vector2(-250,152),Vector2(-250,174)],
@@ -32,7 +40,7 @@ static func clearance(p: Vector2) -> bool:
 		var half_extent: Vector2 = site.size*.5+Vector2(4,4)
 		if absf(sin(site.yaw))>.5:half_extent=Vector2(half_extent.y,half_extent.x)
 		if Rect2(site.p-half_extent,half_extent*2).has_point(p):return true
-	for center in fields():
+	for center in fields()+additional_fields():
 		if Rect2(center-FIELD_SIZE*.5-Vector2.ONE,FIELD_SIZE+Vector2.ONE*2).has_point(p):return true
 	for lane in lanes():
 		for i in range(lane.size()-1):

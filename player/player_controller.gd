@@ -24,6 +24,8 @@ var step_ground_grace: float = 0.0
 var step_up_grace: float = 0.0
 const MAX_HEALTH := 100.0
 var health: float = MAX_HEALTH
+var melee_reaction_attacker: Node3D
+var melee_reaction_turn_time := 0.0
 
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or health <= 0.0: return
@@ -41,6 +43,9 @@ func receive_combat_hit(amount: float, attacker: Node3D) -> void:
 		if toward.normalized().dot($VisualRoot.global_basis.z)>.2:
 			survival.stamina-=5;take_damage(amount*.2);return
 	take_damage(amount)
+	if is_instance_valid(attacker):
+		melee_reaction_attacker = attacker
+		melee_reaction_turn_time = .65
 	var combat:=get_node_or_null("CombatInput")
 	if combat!=null:combat.interrupt()
 	var grapple:=get_node_or_null("RearGrapple")
@@ -184,6 +189,8 @@ var interaction_index: Node
 # =========================================================
 
 func _ready() -> void:
+	# Fresh starting cash; SaveManager replaces inventory with the saved balance on Continue.
+	inventory.items["rupees"] = 100
 	var safety := preload("res://player/player_safety.gd").new()
 	safety.name = "PlayerSafety"
 	add_child(safety)
@@ -233,7 +240,7 @@ func _unhandled_input(
 	# While the inventory is open, gameplay input
 	# should not control Arjun.
 
-	if get_meta("tutorial_reading",false) or inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "" or get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
+	if get_meta("provision_shop_open",false) or get_meta("tutorial_reading",false) or inventory_ui.is_open() or get_meta("map_open", false) or get_meta("weapon_wheel_open", false) or get_meta("scroll_open", false) or get_meta("river_action", "") != "" or get_meta("rest_action", "") != "" or get_meta("detention_action", "") != "":
 		return
 
 
@@ -330,6 +337,7 @@ func _physics_process(
 	delta: float
 ) -> void:
 	if health <= 0.0: return
+	melee_reaction_turn_time = maxf(0.0, melee_reaction_turn_time - delta)
 	var escape_remaining := float(get_meta("river_escape_remaining", 0.0))
 	if escape_remaining > 0.0:
 		set_meta("river_escape_remaining", maxf(0.0, escape_remaining-delta))
@@ -337,7 +345,20 @@ func _physics_process(
 		_move_with_fall_damage()
 		if escape_remaining <= delta: get_node("PlayerSafety").finish_river_escape()
 		return
-	if get_meta("tutorial_reading",false):
+	if get_meta("rifle_lesson",false):
+		velocity.x=0
+		velocity.z=0
+		survival.set_sprinting(false)
+		_apply_gravity(delta)
+		_move_with_fall_damage()
+		_hide_interaction_labels()
+		return
+	if $LongIdle.tick(delta):
+		velocity = Vector3.ZERO
+		survival.set_sprinting(false)
+		_hide_interaction_labels()
+		return
+	if get_meta("tutorial_reading",false) or get_meta("provision_shop_open",false):
 		velocity = Vector3.ZERO
 		survival.set_sprinting(false)
 		return
@@ -519,7 +540,7 @@ func _try_walk_step_down() -> void:
 func _handle_mouse_look(
 	event: InputEventMouseMotion
 ) -> void:
-	if SaveManager.active_input_device == "controller": return
+	if SaveManager.active_input_device == "controller" or has_meta("consignment_fpv_camera"): return
 
 	if (
 		Input.mouse_mode
@@ -567,6 +588,7 @@ func _process(delta: float) -> void:
 		if device in Input.get_connected_joypads() and Input.has_joy_motion_sensors(device) and Input.is_joy_motion_sensors_calibrated(device):
 			var gyro := Input.get_joy_gyroscope(device)
 			stick += Vector2(gyro.x,gyro.y) * 0.42
+	if has_meta("consignment_fpv_camera"): return
 	if stick.length_squared() < 0.0001: return
 	camera_pivot.rotate_y(-stick.x * 2.4 * delta)
 	camera_pitch = clampf(camera_pitch - stick.y * 1.9 * delta,deg_to_rad(min_camera_angle),deg_to_rad(max_camera_angle))
@@ -575,7 +597,7 @@ func _process(delta: float) -> void:
 func _update_weapon_camera(delta: float) -> void:
 	if first_person:
 		$CameraPivot/SpringArm3D/Camera3D.rotation.x = 0.0
-		camera_pivot.position.y = maxf(.45,$StealthStance.camera_height()-.05)
+		camera_pivot.position.y = maxf(-.42 if $StealthStance.is_low() else .45,$StealthStance.camera_height()-.05)-$LongIdle.camera_drop()
 		return
 	var equipment: Node = $VisualRoot/CharacterVisual.equipment
 	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming) or (equipment.selected == 5 and $DoubleGunCombat.aiming))
@@ -594,12 +616,23 @@ func _update_weapon_camera(delta: float) -> void:
 		rear_camera.fov=lerpf(72.0,58.0,aim_blend)
 		rear_camera.rotation.x=0
 		return
+	var mount: Node = get_meta("mounted_vehicle") if has_meta("mounted_vehicle") else null
+	if is_instance_valid(mount) and mount.is_in_group("horses"):
+		# Frame horse and rider together; keep the normal orbit and wall clearance.
+		var riding_camera: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+		arm.spring_length = 5.8
+		riding_camera.desired_shoulder_offset = 0.0
+		arm.position.x = 0.0
+		camera_pivot.position.y = 0.65
+		riding_camera.fov = 70.0
+		riding_camera.rotation.x = deg_to_rad(-8.0)
+		return
 	var travel_distance := lerpf(third_person_distance,maxf(third_person_distance,2.8),climb_camera_blend)
 	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
 	var camera_clearance: Camera3D = $CameraPivot/SpringArm3D/Camera3D
 	camera_clearance.desired_shoulder_offset = lerpf(lerpf(.6,.35,climb_camera_blend), .50, aim_blend)
 	arm.position.x = camera_clearance.desired_shoulder_offset * camera_clearance.shoulder_scale
-	var stance_height: float = $StealthStance.camera_height()
+	var stance_height: float = $StealthStance.camera_height()-$LongIdle.camera_drop()
 	var aimed_height := stance_height if $StealthStance.is_low() else maxf(.45,stance_height-1.00)
 	camera_pivot.position.y = lerpf(stance_height, aimed_height, aim_blend)
 	$CameraPivot/SpringArm3D/Camera3D.fov = lerpf(75.0, 54.0, aim_blend)
@@ -719,6 +752,13 @@ func _handle_movement(
 	# -----------------------------------------------------
 
 	else:
+		# Regain awareness of a melee attacker while idle; movement and special
+		# poses keep their own facing authority.
+		if melee_reaction_turn_time > 0.0 and is_instance_valid(melee_reaction_attacker) and not get_meta("story_cinematic", false):
+			var toward_attacker := melee_reaction_attacker.global_position - global_position
+			toward_attacker.y = 0.0
+			if toward_attacker.length_squared() > .001:
+				_rotate_character_visual(toward_attacker, delta)
 
 		survival.set_sprinting(
 			false
@@ -798,6 +838,10 @@ func _apply_gravity(
 # =========================================================
 
 func _handle_jump() -> void:
+	# The key that completed a cutscene must not also launch the player.
+	if get_meta("cinematic_jump_block_until_released",false):
+		if Input.is_action_pressed("jump"):return
+		remove_meta("cinematic_jump_block_until_released")
 	if Input.is_action_just_pressed("jump") and $ClimbComponent.try_start():
 		return
 

@@ -3,7 +3,7 @@ import bpy
 from mathutils import Matrix,Vector
 from purpose_cloth_volume import inside_surface
 
-def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True,foundation=None):
+def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True,foundation=None,minimum_clearance_m=.004,jacobi=False):
     basis=obj.data.shape_keys.key_blocks['Basis']
     if reset_key:
         for i in range(len(key.data)):key.data[i].co=basis.data[i].co
@@ -68,11 +68,11 @@ def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True,foundation=None
             if amount>.001:
                 direct=direction*amount
                 occupied,gap=state(point+direct)
-                if not occupied and gap>=.004:return direct
-        if not inside and distance>=.004:return Vector()
-        direct=near+normal*.008-point
+                if not occupied and gap>=minimum_clearance_m:return direct
+        if not inside and distance>=minimum_clearance_m:return Vector()
+        direct=near+normal*(minimum_clearance_m+.004)-point
         target_inside,target_distance=state(point+direct)
-        if not target_inside and target_distance>=.004:return direct
+        if not target_inside and target_distance>=minimum_clearance_m:return direct
         directions=[normal,(near-point).normalized()]+axes
         best=None
         for direction in directions:
@@ -81,11 +81,11 @@ def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True,foundation=None
             for step in [.008,.016,.032,.064,.128,.256,.512]:
                 if best is not None and step>best.length*2:break
                 occupied,gap=state(point+direction*step)
-                if not occupied and gap>=.004:
+                if not occupied and gap>=minimum_clearance_m:
                     high=step
                     for _ in range(7):
                         mid=(low+high)*.5;occupied,gap=state(point+direction*mid)
-                        if not occupied and gap>=.004:high=mid
+                        if not occupied and gap>=minimum_clearance_m:high=mid
                         else:low=mid
                     shift=direction*high
                     if best is None or shift.length<best.length:best=shift
@@ -102,19 +102,31 @@ def fit_key(rig,obj,tree,key,floor=None,slope=0.0,reset_key=True,foundation=None
         points[index]+=shift
         key.data[index].co+=inverse_transforms[index]@shift
         offsets[index]+=shift.length
-    for iteration in range(48):
+    for iteration in range(96 if jacobi else 48):
         hits=0
+        pending=[Vector() for point in points] if jacobi else []
+        counts=[0 for point in points] if jacobi else []
         for index,point in enumerate(points):
             shift=correction(point,vertex_support[index])
-            if shift.length>.001:apply(index,shift);hits+=1
+            if shift.length>.001:
+                if jacobi:pending[index]+=shift;counts[index]+=1
+                else:apply(index,shift)
+                hits+=1
         for face_index,face in enumerate(faces):
             point=sum((points[i] for i in face),Vector())/len(face)
             shift=correction(point,face_support[face_index])
             if shift.length>.001:
-                for index in face:apply(index,shift)
+                for index in face:
+                    if jacobi:pending[index]+=shift;counts[index]+=1
+                    else:apply(index,shift)
                 hits+=1
+        if jacobi:
+            # Simultaneous damped updates avoid serial face corrections pushing
+            # already-correct neighbouring triangles through an opposing fold.
+            for index,count in enumerate(counts):
+                if count:apply(index,pending[index]*(.65/count))
         if not hits:break
     else:
-        if foundation is not None:raise RuntimeError('Foundation fit did not converge; refusing to export this candidate')
+        if foundation is not None or jacobi:raise RuntimeError('Foundation fit did not converge; refusing to export this candidate')
         print('RIVER_LOCAL_FIT_LIMIT',obj.name,key.name,flush=True)
     return max(offsets,default=0.0)

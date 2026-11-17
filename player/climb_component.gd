@@ -124,6 +124,7 @@ func try_start() -> bool:
 		if surface.survey(actor,hit):
 			if not window.start_ledge(actor,surface.edge,surface.normal,surface.landing,surface.highest-(actor.global_position.y-.9)): return false
 			window.surface = surface
+			window_committed = true
 			catch_seconds = 0.0
 			active = true
 			return true
@@ -180,6 +181,7 @@ func try_start() -> bool:
 		var ledge_height: float = top-(actor.global_position.y-.9)
 		if ledge_height>2.15: return false
 		if not window.start_ledge(actor,Vector3(hit.position.x,top,hit.position.z),wall_normal,landing,ledge_height): return false
+		window_committed = true
 		catch_seconds = 0.0
 		active = true
 		return true

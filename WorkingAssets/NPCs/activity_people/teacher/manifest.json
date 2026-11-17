@@ -1,0 +1,39 @@
+{
+  "role": "teacher",
+  "adult": true,
+  "provenance": "Reused Blender MakeHuman/MPFB donor",
+  "donor": "WorkingAssets/NPCs/indian_street_variants/male_03/male_03.blend",
+  "donor_sha256": "38939f4307802144e53c1497692ac3d5c1946b4467390911cb4a233772412c91",
+  "runtime": "characters/npcs/activity_people/teacher.glb",
+  "complete_body_vertices": 14517,
+  "source_body_vertices": 14517,
+  "facial_vertices": {
+    "speech": 1037,
+    "fear": 2854,
+    "blink": 1380
+  },
+  "exported_meshes": [
+    "Activity cotton shirt",
+    "Activity cotton trousers",
+    "Farmer_eyes",
+    "Farmer_hair",
+    "Fitted turban crown",
+    "Fitted turban fold 0",
+    "Fitted turban fold 1",
+    "Fitted turban fold 2",
+    "Icosphere",
+    "Street leather shoe l",
+    "Street leather shoe r",
+    "Street opaque foundation",
+    "Tailored moustache -1",
+    "Tailored moustache 1",
+    "teacher_complete_MakeHuman_body"
+  ],
+  "complete_body": true,
+  "clothing_masks": false,
+  "visual_approved": false,
+  "runtime_donor": "characters/npcs/street_residents/male_03.glb",
+  "runtime_donor_sha256": "d0f95c95dd2615de3c919ed96a5b4121dd87c097b17a8f7fb8e73d6dfbbdf8e6",
+  "editable_source": "WorkingAssets/NPCs/activity_people/teacher/teacher.blend",
+  "foundation_retained": true
+}

@@ -10,6 +10,7 @@ var viewer: Node3D
 var seated:=false
 var ground_y:=0.0
 func _process(delta: float) -> void:
+ if is_instance_valid(person) and person.get_meta("civilian_reacting",false):return
  if person==null or person.get_meta("dead",false) or person.get_meta("knocked_out",false):return
  if not is_instance_valid(viewer) or (viewer is Camera3D and not viewer.current):viewer=get_viewport().get_camera_3d()
  elapsed+=delta

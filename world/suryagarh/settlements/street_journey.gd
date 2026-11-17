@@ -33,6 +33,7 @@ func configure(person: Node3D, points: Array[Vector2], offset: float) -> void:
 func _physics_process(delta: float) -> void: tick(delta)
 
 func tick(delta: float) -> void:
+	if actor.get_meta("civilian_reacting",false) or actor.get_meta("defending",false):return
 	if paused or actor.get_meta("dead",false):return
 	if clock != null:
 		var open: bool = clock.current_hour >= 6 and clock.current_hour < 18

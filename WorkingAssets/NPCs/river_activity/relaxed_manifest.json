@@ -1,0 +1,10 @@
+{
+  "source_sha256": "39dbe67ed763a5d0411161240a60f675564ee24aa189b045b34c56518a2f8778",
+  "pose_sha256": "1312b46109029780c01d893387d95fae0d7191cae0eef2743811473af7c1d1e6",
+  "relaxed_sha256": "622cb1102962dcc0ec7c77d900778c703855b890c4c8bae48893f85de58ae5d1",
+  "seated_keys": 63,
+  "maximum_adjustment_m": 0.14000003242864828,
+  "reference_time": 43.0,
+  "complete_body_unchanged": true,
+  "visual_approved": false
+}

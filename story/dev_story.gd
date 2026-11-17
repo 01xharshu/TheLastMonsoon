@@ -16,6 +16,7 @@ var visual: Node3D
 var community: Node
 var chacha: Node3D
 var chacha_home:=Transform3D.IDENTITY
+var opening_chacha_at_farm:=false
 var pose=Pose.new()
 var state:="awaiting_inquiry"
 var first_chacha_seen:=false
@@ -27,6 +28,7 @@ var beats: Array[Dictionary]=[]
 var beat_index:=0
 var age:=0.0
 var cue:=""
+var skipping_cinematic:=false
 var released_guard_goals:Array[Vector3]=[]
 var camera: Camera3D
 var gameplay_camera: Camera3D
@@ -48,6 +50,8 @@ var idle_age:=0.0
 var swing_age:=0.0
 var journey_horse: Node3D
 var horse_physics:=true
+var reception_attendant: Node3D
+var reception_post := Transform3D.IDENTITY
 var journey_cart: Node
 var cart_physics:=true
 var camera_exclusions: Array[RID]=[]
@@ -55,6 +59,12 @@ var hero_path:=PackedVector3Array()
 var path_origin:=Vector3.ZERO
 var tea_start:=Vector3.ZERO
 var official_start:=Vector3.ZERO
+const CHAMBER_VISITOR := Vector3(-9.5,.9,-4.55)
+const CHAMBER_GRAB := Vector3(-7.75,.9,-8.3)
+const CHAMBER_GUARD_POSTS := [
+ Vector3(-8.02,0,-7.52),Vector3(-7.04,0,-7.95),
+ Vector3(-7.04,0,-8.85),Vector3(-7.78,0,-9.65)
+]
 var last_strike:=-1
 var strike_contact_error:=INF
 var collar_contact_error:=INF
@@ -67,11 +77,14 @@ var impact_direction:=Vector3.ZERO
 var cup: MeshInstance3D
 var demonstration_weapon: Node3D
 var configured:=false
+var station_alert_remaining:=0.0
 var entrance_paths: Array[PackedVector3Array]=[]
 var hero_expression: RefCounted
 var police_expression: RefCounted
 var collar_cloth: RefCounted
 var gear_snapshot: Dictionary={}
+var dialogue_voice: AudioStreamPlayer
+var mocking_laughter: AudioStreamPlayer
 func _ready() -> void:
  name="DevStory";process_priority=90;call_deferred("configure")
 func configure() -> void:
@@ -80,6 +93,8 @@ func configure() -> void:
  chacha=get_parent().get_node("ChachaHouse/Chacha");chacha_home=chacha.global_transform
  visual=player.get_node("VisualRoot/CharacterVisual");pose.configure(visual)
  gameplay_camera=player.get_node("CameraPivot/SpringArm3D/Camera3D")
+ dialogue_voice=AudioStreamPlayer.new();dialogue_voice.name="DialogueVoice";add_child(dialogue_voice)
+ mocking_laughter=AudioStreamPlayer.new();mocking_laughter.name="MockingLaughter";mocking_laughter.stream=load("res://assets/audio/dialogue/mocking_laugh.mp3");mocking_laughter.volume_db=-8;add_child(mocking_laughter)
  camera=Camera3D.new();camera.name="StoryCamera";camera.fov=48;camera.near=.05;add_child(camera)
  var layer:=CanvasLayer.new();layer.layer=80;add_child(layer)
  shade=ColorRect.new();layer.add_child(shade);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.color=Color(0,0,0,0);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -91,6 +106,7 @@ func configure() -> void:
   bars.append(bar);bar.hide()
  caption=Label.new();layer.add_child(caption);caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
  caption.offset_left=70;caption.offset_right=-70;caption.offset_top=-115;caption.offset_bottom=-25
+ caption.z_index=1
  caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;caption.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
  caption.add_theme_font_size_override("font_size",23);caption.add_theme_constant_override("outline_size",5);caption.hide()
  objective=Label.new();layer.add_child(objective);objective.position=Vector2(32,140);objective.add_theme_font_size_override("font_size",21);objective.add_theme_constant_override("outline_size",5)
@@ -100,6 +116,7 @@ func configure() -> void:
  tea.mesh=liquid;var tea_mat:=StandardMaterial3D.new();tea_mat.albedo_color=Color(.18,.08,.03);tea_mat.roughness=.2;tea.material_override=tea_mat
  cup.add_child(tea);tea.position.y=.053
  camera_exclusions.append(player.get_rid())
+ camera_exclusions.append(chacha.body_collider.get_rid())
  for actor in inquiry.officials+inquiry.guards+[inquiry.police_prompt.get_meta("attendant")]:
   camera_exclusions.append(actor.body_collider.get_rid())
  match_station_heights()
@@ -133,6 +150,19 @@ func begin_optional() -> bool:
  for record in preload("res://world/suryagarh/settlements/chacha_advice.gd").LINES:
   list.append(line(record.speaker,record.text,record.seconds,Vector3(2,1.7,6),Vector3(-.85,1.3,3.3),"optional","house"))
  start("optional",list);return true
+func start_opening_coach(boarding: Node) -> bool:
+ if not configured or active or state!="awaiting_inquiry":return false
+ if boarding.rider!=player or boarding.role!="passenger" or boarding.cart.name!="VillageStationCoach" or not boarding.transition.is_empty():return false
+ if not player.get_meta("morning_tutorial_active",false):return false
+ journey_cart=boarding;cart_physics=boarding.is_physics_processing()
+ start("opening_coach",[
+  line("","",4.0,Vector3.ZERO,Vector3.ZERO,"horse_departure","station_exterior"),
+  line("","",4.0,Vector3(5,2.8,32),Vector3(0,1.4,25),"horse_arrival"),
+  line("","",3.0,Vector3(3,1.8,25),Vector3(0,1,23),"horse_dismount"),
+  line("","",3.0,Vector3(5,2.2,27),Vector3(0,1,31),"coach_pull_away")
+ ])
+ return true
+
 func start_horse_journey(horse: Node3D) -> bool:
  if not configured or active or horse.rider!=player or not horse.transition.is_empty():return false
  journey_horse=horse;horse_physics=horse.is_physics_processing()
@@ -165,11 +195,14 @@ func start_inquiry(_id:="police") -> bool:
    list.append(line("District officer","Mind your tongue. You are in a government office.",4.5,Vector3(-8,1.7,-4),Vector3(-9.5,1.4,-8),"warning"))
   else:
    list.append(line(record[0],record[1],record[2],Vector3(-8,1.7,-4),Vector3(-9.5,1.4,-8),"humiliation" if i<5 else "objection"))
+  if i==3:
+   var reaction:=line("","",2.6,Vector3(-8,1.7,-4),Vector3(-9.5,1.4,-8),"humiliation")
+   reaction["laughter"]=true;list.append(reaction)
  # Give the approach and physical escalation their own silent beat before the alarm.
  list.append(line("","",6,Vector3(-10.5,1.8,-3),Vector3(-7.8,1.3,-5.3),"collar"))
- list.append(line("District officer","Guards! Get him off me!",8,Vector3(-10.5,1.8,-4),Vector3(-5.5,1.15,-7),"guards"))
- list.append(line("Guard","Down!",7,Vector3(-11.8,2.8,-3.0),Vector3(-7.8,1.1,-4.6),"beating"))
- list.append(line("","",4,Vector3(-7.8,3.8,-2.0),Vector3(-7.8,.4,-4.6),"collapse"))
+ list.append(line("District officer","Guards! Get him off me!",8,Vector3(-6.7,1.85,-6.1),CHAMBER_GRAB+Vector3.UP*.35,"guards"))
+ list.append(line("Guard","Down!",7,Vector3(-6.7,2.6,-6.4),CHAMBER_GRAB+Vector3.UP*.2,"beating"))
+ list.append(line("","",4,Vector3(-6.7,3.6,-6.4),CHAMBER_GRAB-Vector3.UP*.5,"collapse"))
  list.append(line("Guard","Throw him outside. Let everyone see what comes of his insolence.",4,Vector3(4,1.4,27),Vector3(0,.35,25),"discard","station_exterior"))
  list.append(line("","",2.5,Vector3(3,1.1,29),Vector3(0,.5,26),"throw","station_exterior"))
  list.append(line("Chacha","Arjun! What have they done to you? Let me help you.",7,Vector3(-2.5,1.8,30),Vector3(.25,.8,27),"rescue","station_exterior"))
@@ -181,6 +214,7 @@ func start_inquiry(_id:="police") -> bool:
  list.append(line("Chacha","Bare hands against armed men will only get you hurt. First heal. Then meet me at the farm. I will teach you.",8,Vector3(-5.6,1.65,2.3),Vector3(-3.8,1.1,.3),"heal","house"))
  inquiry.stage="cinematic";inquiry.refresh_objective();start("inquiry",list);return true
 func start(which: String,list: Array[Dictionary]) -> void:
+ station_alert_remaining=0.0
  active=true;kind=which;beats=list;beat_index=0;age=0;cue=""
  if which in ["inquiry","optional"]:
   hero_expression=preload("res://story/dialogue_expression.gd").new();hero_expression.configure(visual)
@@ -205,26 +239,60 @@ func enter_beat() -> void:
  age=0;var record: Dictionary=beats[beat_index]
  var previous:=cue;cue=record.cue
  caption.text=(record.speaker+": " if not record.speaker.is_empty() else "")+record.text
+ dialogue_voice.stop();mocking_laughter.stop()
+ if not skipping_cinematic and record.get("laughter",false):mocking_laughter.play()
+ if not skipping_cinematic and not record.speaker.is_empty() and not record.text.is_empty():
+  var key: String=(record.speaker+"\n"+record.text).sha256_text()
+  var path: String="res://assets/audio/dialogue/"+key+".wav"
+  if ResourceLoader.exists(path):
+   var stream:=load(path) as AudioStream
+   if stream!=null:
+    dialogue_voice.stream=stream
+    record.seconds=maxf(float(record.seconds),stream.get_length()+.25)
+    dialogue_voice.play()
  var place: Node3D=inquiry.station if record.place in ["station","station_exterior"] else get_tree().get_first_node_in_group("arjun_home") if record.place=="home" else get_parent().get_node("ChachaHouse") if record.place=="house" else community.farm
  camera_start=place.to_global(record.at);camera_end=camera_start+place.global_basis.x*.22
  camera_target=place.to_global(record.target)
  if cue=="optional":
   camera_target=(player.global_position+chacha.global_position)*.5+Vector3.UP*.65
-  camera_start=camera_target+chacha.global_basis.x*2.2+chacha.global_basis.z*2.5+Vector3.UP*.35
-  camera_end=camera_start+chacha.global_basis.x*.22
+  camera_start=optional_conversation_camera(camera_target)
+  camera_end=camera_start
  if cue!=previous:
-  if beat_index==0 or beats[beat_index-1].place!=record.place:
+  if not skipping_cinematic and (beat_index==0 or beats[beat_index-1].place!=record.place):
    shade.color.a=1;create_tween().tween_property(shade,"color:a",0,.65)
   else:shade.color.a=0
   stage_action(cue)
- if cue in ["reception","humiliation","objection","warning"]:frame_conversation(record.speaker)
+ if cue in ["reception","humiliation","objection","warning"]:frame_conversation("Second official" if record.get("laughter",false) else record.speaker)
  camera.global_position=camera_start;camera.look_at(camera_target)
  for i in inquiry.officials.size():
   inquiry.officials[i].attention=player.global_position+Vector3.UP*.6
-  inquiry.officials[i].speaking=record.speaker==["District officer","First official","Second official"][i]
+  inquiry.officials[i].speaking=record.speaker==["District officer","First official","Second official"][i] or (record.get("laughter",false) and i==2)
   var mocking: bool=cue=="humiliation" and beat_index>0 and record.speaker!="Arjun" and inquiry.officials[i].speaking
   inquiry.officials[i].attitude="mocking" if mocking else "neutral"
   inquiry.expressions[i].apply(0,.45 if mocking else 0)
+func optional_conversation_camera(focus: Vector3) -> Vector3:
+ # Choose the clearest side of the conversation, avoiding room partitions and
+ # ensuring that both participants, not just their midpoint, are visible.
+ var axis: Vector3=chacha.global_position-player.global_position;axis.y=0
+ if axis.length_squared()<.01:axis=get_parent().get_node("ChachaHouse").global_basis.z
+ axis=axis.normalized()
+ var side:=axis.cross(Vector3.UP).normalized()
+ var eyes: Array[Vector3]=[focus,player.global_position+Vector3.UP*.55,chacha.global_position+Vector3.UP*1.35]
+ var best:=focus+side*1.4+Vector3.UP*.3
+ var best_score:=-1.0
+ for distance: float in [2.4,1.9,1.4]:
+  for direction: Vector3 in [side,-side,axis,-axis]:
+   var candidate: Vector3=focus+direction*distance+Vector3.UP*.35
+   var score:=0.0
+   for eye in eyes:
+    var query:=PhysicsRayQueryParameters3D.create(eye,candidate,1,camera_exclusions)
+    var hit:=get_world_3d().direct_space_state.intersect_ray(query)
+    if hit.is_empty():score+=1.0
+    else:score+=clampf(eye.distance_to(hit.position)/eye.distance_to(candidate),0,1)*.3
+   if score>best_score:best_score=score;best=candidate
+   if score>=3.0:return candidate
+ return best
+
 func frame_conversation(speaker: String) -> void:
  # Keep every reverse angle on the entrance side of the conversation axis.
  var station: Node3D=inquiry.station
@@ -232,15 +300,16 @@ func frame_conversation(speaker: String) -> void:
  if speaker=="Station officer":subject=inquiry.police_prompt.get_meta("attendant")
  elif speaker in ["District officer","First official","Second official"]:
   subject=inquiry.officials[["District officer","First official","Second official"].find(speaker)]
- var focus: Vector3=subject.global_position+Vector3.UP*(.6 if subject==player else 1.6 if subject in inquiry.officials and subject.seated else 1.5)
+ var focus: Vector3=subject.global_position+Vector3.UP*(.6 if subject==player else 1.6 if subject.get_meta("inquiry_at_desk",false) or (subject in inquiry.officials and subject.seated) else 1.5)
  camera_target=focus
  var offset:=Vector3(1.65,.20,-2.7) if subject==player else Vector3(1.65,.20,2.7)
+ if subject==reception_attendant:offset=Vector3(2.65,.38,2.25)
  camera_start=focus+station.global_basis*offset
  camera_end=camera_start+station.global_basis.x*.08
  camera.fov=48
 
 func keep_camera_inside_room() -> void:
- if cue not in ["entry","chamber","reception","humiliation","objection","warning","collar","guards","beating","collapse"]:return
+ if cue not in ["optional","entry","chamber","reception","humiliation","objection","warning","collar","guards","beating","collapse"]:return
  var ray:=PhysicsRayQueryParameters3D.create(camera_target,camera.global_position,1)
  ray.exclude=camera_exclusions
  var hit:=get_world_3d().direct_space_state.intersect_ray(ray)
@@ -254,6 +323,13 @@ func stage_action(action: String) -> void:
  var station: Node3D=inquiry.station
  if action in ["horse_departure","horse_arrival","horse_dismount"] and is_instance_valid(journey_cart):
   stage_cart_arrival(action)
+ elif action=="coach_pull_away" and is_instance_valid(journey_cart):
+  var cart: Node3D=journey_cart.cart
+  if skipping_cinematic and journey_cart.transition=="exiting":
+   journey_cart._physics_process(3.0)
+  start_position=cart.global_position
+  finish_position=opening_coach_departure_goal(cart) if journey_cart.rider==null else start_position
+  camera_target=player.global_position+Vector3.UP*.55
  elif action=="horse_departure":
   journey_horse.set_physics_process(false);journey_horse.pace=2.0
   start_position=journey_horse.global_position;finish_position=departure_goal(journey_horse,journey_horse)
@@ -275,32 +351,55 @@ func stage_action(action: String) -> void:
   if not journey_horse.dismount():
    # A physics tick establishes ground contact before the dismount request.
    journey_horse.set_meta("story_dismount_pending",true)
- elif action=="entry":
-  var arrived_by_horse:=is_instance_valid(journey_horse) or is_instance_valid(journey_cart)
-  release_story_horse()
-  if not arrived_by_horse:player.velocity=Vector3.ZERO
-  set_hero_path(station.to_global(Vector3(8.3,.9,9)))
- elif action=="reception":player.global_position=station.to_global(Vector3(8.3,.9,9));player.velocity=Vector3.ZERO;face(player,station.to_global(Vector3(9,1,6.8)))
- elif action=="chamber":set_hero_path(station.to_global(Vector3(-9.5,.9,-5.2)))
+ elif action in ["entry","reception"]:
+  if not is_instance_valid(reception_attendant):
+   reception_attendant=inquiry.police_prompt.get_meta("attendant")
+   reception_post=reception_attendant.global_transform
+   reception_attendant.global_transform=station.global_transform*Transform3D(Basis.IDENTITY,Vector3(3,-.43,9.12))
+   reception_attendant.set_meta("inquiry_at_desk",true)
+  if action=="entry":
+   var arrived_mounted:=is_instance_valid(journey_horse) or is_instance_valid(journey_cart)
+   release_story_horse()
+   if not arrived_mounted:player.velocity=Vector3.ZERO
+   set_hero_path(station.to_global(Vector3(3,.9,11.6)))
+  else:
+   player.global_position=station.to_global(Vector3(3,.9,11.6));player.velocity=Vector3.ZERO
+   face(player,reception_attendant.global_position)
+
+ elif action=="chamber":
+  release_reception_seat()
+  set_hero_path(station.to_global(CHAMBER_VISITOR),.4)
  elif action=="collar":
-  inquiry.officials[0].seated=false
   official_start=inquiry.officials[0].global_position
-  camera_start=station.to_global(Vector3(-10.5,1.8,-3));camera_end=camera_start+station.global_basis.x*.22;camera_target=station.to_global(Vector3(-7.8,1.3,-5.3))
-  start_position=player.global_position;finish_position=station.to_global(Vector3(-7.8,.9,-4.82));face(player,inquiry.officials[0].global_position)
+  set_hero_path(station.to_global(CHAMBER_GRAB),.4)
+  camera_start=station.to_global(Vector3(-12.3,2.15,-7.1))
+  camera_end=camera_start+station.global_basis.z*.22
+  camera_target=station.to_global(CHAMBER_GRAB+Vector3.UP*.3)
+  camera.fov=54.0
  elif action=="guards":
   entrance_paths.clear()
   for i in 4:
    var guard: Node3D=inquiry.guards[i]
    guard.global_position=station.to_global(Vector3(-3,0,[-4.2,-5.8,-8.8,-10.4][i]))
-   var goal:=station.to_global(Vector3(-7.8+[-.85,.60,-.6,.6][i],0,-4.6+[.4,.4,-.5,-.5][i]))
-   entrance_paths.append(inquiry.coordinator.path(guard.global_position,goal,.29))
+   var goal:=station.to_global(CHAMBER_GUARD_POSTS[i])
+   var route: PackedVector3Array
+   if i>=2:
+    # Keep the rear pair in the open aisle until they have passed Arjun.
+    var aisle_z: float = CHAMBER_GUARD_POSTS[i].z
+    var aisle:=station.to_global(Vector3(-6.65,0,aisle_z))
+    route=inquiry.coordinator.path(guard.global_position,aisle,.29)
+    var finish_route: PackedVector3Array=inquiry.coordinator.path(aisle,goal,.29)
+    if not route.is_empty() and not finish_route.is_empty():route.append_array(finish_route)
+   else:
+    route=inquiry.coordinator.path(guard.global_position,goal,.29)
+   entrance_paths.append(route)
    guard.duty_state="restraint";guard.travel_speed=0
   swing_age=0
  elif action=="beating":
   start_position=player.global_position;impact_clock=10.0;impact_direction=Vector3.ZERO
-  inquiry.officials[0].global_position=station.to_global(Vector3(-10.5,0,-8.3))
+  inquiry.officials[0].global_position=station.to_global(Vector3(-9.5,0,-8.3))
   for i in 4:
-   inquiry.guards[i].global_position=station.to_global(Vector3(-7.8+[-.85,.60,-.6,.6][i],0,-4.6+[.4,.4,-.5,-.5][i]))
+   inquiry.guards[i].global_position=station.to_global(CHAMBER_GUARD_POSTS[i])
    face(inquiry.guards[i],player.global_position);inquiry.guards[i].travel_speed=0
   swing_age=0;last_strike=-1
  elif action=="collapse":player.health=maxf(20,minf(player.health,25))
@@ -346,25 +445,37 @@ func guard_floor_position(guard:Node3D,at:Vector3)->Vector3:
  var height:float=get_parent().layout.height(at.x,at.z)
  var ground=preload("res://world/suryagarh/settlements/resident_walk_route.gd")
  ground.support(guard,at) # Refresh the world-scoped human-body exclusions.
- var ray:=PhysicsRayQueryParameters3D.create(Vector3(at.x,height+1.4,at.z),Vector3(at.x,height-2,at.z),1,ground.floor_excluded)
- var hit:Dictionary=get_parent().get_world_3d().direct_space_state.intersect_ray(ray)
+ var space:=get_world_3d().direct_space_state
+ var ray:=PhysicsRayQueryParameters3D.create(at+Vector3.UP*.4,at-Vector3.UP*2.0,1,ground.floor_excluded)
+ var hit:=space.intersect_ray(ray)
+ if hit.is_empty():
+  ray.from=Vector3(at.x,height+1.4,at.z)
+  ray.to=Vector3(at.x,height-2,at.z)
+  hit=space.intersect_ray(ray)
  return Vector3(at.x,hit.position.y if not hit.is_empty() else height,at.z)
 
 func face(actor: Node3D,target: Vector3) -> void:
- var offset:=target-actor.global_position
- if actor==player:player.get_node("VisualRoot").global_rotation.y=atan2(offset.x,offset.z)
- else:actor.global_rotation.y=atan2(offset.x,offset.z)
+ preload("res://story/conversation_facing.gd").toward(actor,target)
+func show_station_witness_alert() -> void:
+ if not configured or active or player.get_meta("story_cinematic",false):return
+ station_alert_remaining=2.6
+ caption.text="Constable: There! He struck him! Sound the alarm!"
+ caption.show()
+ for bar in bars:bar.show()
+
 func _process(delta: float) -> void:
  if not configured:return
- if not active and state=="awaiting_inquiry" and not player.get_meta("morning_tutorial_active",false) and inquiry.stage=="police":
-  var mount: Node=player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null
-  if mount!=null and str(mount.name)=="VillageHorse" and mount.rider==player and mount.transition.is_empty():start_horse_journey(mount)
  if active:
   age+=delta;swing_age+=delta
   var record: Dictionary=beats[beat_index];var t:=clampf(age/float(record.seconds),0,1)
   camera.global_position=camera_start.lerp(camera_end,smoothstep(0,1,t));camera.look_at(camera_target)
   if beat_index+1<beats.size() and record.place!=beats[beat_index+1].place and age>float(record.seconds)-.45:
    shade.color.a=smoothstep(float(record.seconds)-.45,float(record.seconds),age)
+  if cue in ["optional","rescue","bed_sit","tea_offer","drink","heal","demo"]:preload("res://story/conversation_facing.gd").pair(player,chacha)
+  elif cue=="reception":preload("res://story/conversation_facing.gd").pair(player,inquiry.police_prompt.get_meta("attendant"))
+  elif cue in ["humiliation","objection","warning"]:
+   face(player,inquiry.officials[0].global_position)
+   for official in inquiry.officials:face(official,player.global_position)
   update_acting(delta,t)
   keep_camera_inside_room()
   if age>=float(record.seconds):
@@ -372,8 +483,14 @@ func _process(delta: float) -> void:
    if beat_index>=beats.size():finish()
    else:enter_beat()
   return
+ if station_alert_remaining>0.0:
+  station_alert_remaining=maxf(0.0,station_alert_remaining-delta)
+  if station_alert_remaining==0.0 or player.get_meta("story_cinematic",false):
+   station_alert_remaining=0.0
+   caption.hide()
+   for bar in bars:bar.hide()
  pose.apply("",0,delta)
- if state=="awaiting_inquiry" and inquiry.stage=="police" and not player.get_meta("opening_active",false):
+ if state=="awaiting_inquiry" and inquiry.stage=="police" and not player.get_meta("opening_active",false) and not player.get_meta("morning_tutorial_active",false):
   var local: Vector3=inquiry.station.to_local(player.global_position)
   if absf(local.x)<3 and local.z>18 and local.z<22 and absf(local.y-.9)<.6:start_inquiry()
  if state=="farm":
@@ -383,13 +500,14 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
  if not active or cue!="guards":return
  for i in entrance_paths.size():
+  if age<[1.45,2.15,.85,0.0][i]:continue
   var guard: Node3D=inquiry.guards[i]
   var path: PackedVector3Array=entrance_paths[i]
   if path.is_empty():guard.travel_speed=0;face(guard,player.global_position);continue
   var offset:=path[0]-guard.global_position;offset.y=0
   if offset.length()<.09:path.remove_at(0);entrance_paths[i]=path;continue
-  var step:=offset.normalized()*minf(offset.length(),delta*1.6)
-  if not guard._patrol_body_blocked(step):guard.global_position+=step;guard.travel_speed=1.6
+  var step:=offset.normalized()*minf(offset.length(),delta*2.0)
+  if not guard._patrol_body_blocked(guard.get_parent_node_3d().global_basis.inverse()*step):guard.global_position+=step;guard.travel_speed=2.0
   else:guard.travel_speed=0
   guard.global_rotation.y=rotate_toward(guard.global_rotation.y,atan2(offset.x,offset.z),delta*5)
 func update_acting(delta: float,t: float) -> void:
@@ -399,12 +517,13 @@ func update_acting(delta: float,t: float) -> void:
  var record: Dictionary=beats[beat_index]
  var face_script=preload("res://story/dialogue_expression.gd")
  var speaking: float=face_script.speech_weight(age,float(record.seconds)) if not str(record.text).is_empty() else 0.0
+ if record.get("laughter",false):speaking=.45+.35*absf(sin(age*8.0))
  var hurt: bool=cue in ["beating","collapse","discard","throw","rescue","support_walk"]
  if hero_expression!=null:hero_expression.apply(.55 if cue in ["reception","optional","rescue"] else .20,0,.55 if cue in ["objection","collar","guards"] or hurt else 0,speaking if record.speaker=="Arjun" else 0,.8 if cue in ["discard","throw"] else face_script.blink_weight(age,.9))
  chacha.facial_expression.apply(.55 if cue in ["optional","rescue","drink","heal"] else 0,0,0,speaking if record.speaker=="Chacha" else 0,face_script.blink_weight(age,2.1))
  if police_expression!=null:police_expression.apply(0,.15,0,speaking if record.speaker=="Station officer" else 0,face_script.blink_weight(age,3.3))
  for index in inquiry.officials.size():
-  var officer_speaking: bool=record.speaker==["District officer","First official","Second official"][index]
+  var officer_speaking: bool=record.speaker==["District officer","First official","Second official"][index] or (record.get("laughter",false) and index==2)
   var disdain: float=.35 if cue=="humiliation" and officer_speaking and record.speaker!="Arjun" else 0.0
   inquiry.expressions[index].apply(0,disdain,.3 if cue=="guards" and index==0 else 0,speaking if officer_speaking else 0,face_script.blink_weight(age,float(index)*1.3+.4))
  var action: String="collar" if cue in ["collar","guards"] else "down" if cue in ["collapse","discard","throw"] else "pain" if cue in ["beating","rescue","heal"] else "drink" if cue=="drink" else ""
@@ -429,7 +548,7 @@ func update_acting(delta: float,t: float) -> void:
   else:eye.x=clampf(eye.x,-2.0,10.5);eye.z=clampf(eye.z,6.0,25.0)
   camera.global_position=inquiry.station.to_global(eye);camera.look_at(camera_target)
   if cue=="chamber" and t>.94:face(player,inquiry.officials[0].global_position)
- if cue in ["horse_departure","horse_arrival"]:
+ if cue in ["horse_departure","horse_arrival","coach_pull_away"]:
   var body: Node3D=journey_cart.cart if is_instance_valid(journey_cart) else journey_horse
   body.global_position=start_position.lerp(finish_position,smoothstep(0,1,t))
   body.global_position.y=get_parent().layout.height(body.global_position.x,body.global_position.z)+.1
@@ -443,7 +562,7 @@ func update_acting(delta: float,t: float) -> void:
    journey_horse.rigged_anim.advance(delta)
    journey_horse.tack_root.transform=journey_horse._animated_frame_delta("Torso")
    journey_horse._update_hoof_contacts(delta);journey_horse._sync_rider()
-  camera_target=body.global_position+Vector3.UP*1.3
+  if cue!="coach_pull_away":camera_target=body.global_position+Vector3.UP*1.3
  if cue=="horse_dismount" and is_instance_valid(journey_horse) and journey_horse.get_meta("story_dismount_pending",false):
   if journey_horse.dismount():journey_horse.remove_meta("story_dismount_pending")
  if cue=="horse_dismount":
@@ -461,12 +580,18 @@ func update_acting(delta: float,t: float) -> void:
  if cue=="collar":
   var official: Node3D=inquiry.officials[0]
   var station: Node3D=inquiry.station
-  var a:=station.to_global(Vector3(-7.4,0,-8.3));var b:=station.to_global(Vector3(-7.4,0,-5.3));var c:=station.to_global(Vector3(-7.8,0,-5.3))
-  if age<.8:official.global_position=official_start.lerp(official_start+Vector3.UP*.48,smoothstep(0,.8,age));official.travel_speed=0
-  elif age<2.2:official.global_position=(official_start+Vector3.UP*.48).lerp(a,(age-.8)/1.4);face(official,a+station.global_basis.x);official.travel_speed=1.5
-  elif age<4.2:official.global_position=a.lerp(b,(age-2.2)/2);face(official,b+station.global_basis.z);official.travel_speed=1.5
-  else:official.global_position=b.lerp(c,clampf((age-4.2)/.4,0,1));face(official,player.global_position);official.travel_speed=0
-  player.global_position=start_position.lerp(finish_position,smoothstep(3.8,4.8,age))
+  var approach:=clampf((age-.3)/2.45,0.0,1.0)
+  move_hero_path(smoothstep(0.0,1.0,approach),2.45,6.0*approach*(1.0-approach))
+  var rise:=smoothstep(3.65,4.6,age)
+  official.seated=age<3.65
+  official.global_position=official_start.lerp(station.to_global(Vector3(-8.30,0,-8.3)),rise)
+  official.travel_speed=0.0
+  face(official,player.global_position)
+  camera_target=(player.global_position+official.global_position)*.5+Vector3.UP*.8
+  camera.look_at(camera_target)
+  if approach>=1.0:
+   player.velocity=Vector3.ZERO
+   face(player,official.global_position)
  if cue in ["collar","guards"] and (cue=="guards" or age>=4.8):
   var official: Node3D=inquiry.officials[0]
   face(player,official.global_position)
@@ -477,9 +602,9 @@ func update_acting(delta: float,t: float) -> void:
    collar_contact_error=maxf(collar_contact_error,solve_collar_palm(side,target,official))
   player.velocity=Vector3.ZERO
   if cue=="collar":
-   var close: Vector3=inquiry.station.to_global(Vector3(-9.9,1.7,-5.1))
+   var close: Vector3=inquiry.station.to_global(Vector3(-10.35,1.8,-10.55))
    camera.global_position=camera_start.lerp(close,smoothstep(4.6,5.4,age))
-   camera.look_at((player.global_position+official.global_position)*.5+Vector3.UP*.75)
+   camera.look_at(camera_target)
  if cue in ["reception","humiliation","objection","warning"]:
   player.velocity=Vector3.ZERO
   face(player,inquiry.police_prompt.get_meta("attendant").global_position if cue=="reception" else inquiry.officials[0].global_position)
@@ -488,6 +613,12 @@ func update_acting(delta: float,t: float) -> void:
   var strike:=int(age/1.35)
   var phase:=fmod(age,1.35)/1.35
   var index:=strike%4
+  var kicker: Node3D=inquiry.guards[3]
+  var kick_post: Vector3=inquiry.station.to_global(CHAMBER_GUARD_POSTS[3])
+  var step_in:=smoothstep(.08,.37,phase)*(1.0-smoothstep(.59,.94,phase)) if index==3 else 0.0
+  var kick_direction: Vector3=start_position-kick_post
+  kick_direction.y=0.0
+  kicker.global_position=kick_post+kick_direction.normalized()*.48*step_in
   var striking: Node3D=inquiry.guards[index]
   var target:=player.global_position+Vector3(0,.30 if index!=3 else .05,0)
   var near: Vector3=striking.global_position-player.global_position;near.y=0
@@ -515,7 +646,7 @@ func update_acting(delta: float,t: float) -> void:
   for i in 2:
    var guard: Node3D=inquiry.guards[i]
    var support_midpoint:Vector3=shoulders if i==0 else legs
-   var carry_at:Vector3=support_midpoint+body_axis*(-.45 if i==0 else .45)
+   var carry_at:Vector3=support_midpoint+body_axis*(-.37 if i==0 else .37)
    guard.global_position=guard_floor_position(guard,carry_at)
    face(guard,support_midpoint);guard.travel_speed=.5
    guard.walk_direction=-1.0 if guard.global_basis.z.dot(finish_position-start_position)<0 else 1.0
@@ -661,8 +792,17 @@ func solve_palm(side: String,target: Vector3,curl: float) -> void:
  var hand: int=visual.bones["hand_"+side]
  var basis:=rig.get_bone_global_pose(hand).basis
  gear._solve_arm(side,rig.to_local(target)-basis*gear.palm_offsets[side]);gear._grasp(side,curl)
+func release_reception_seat() -> void:
+ if not is_instance_valid(reception_attendant):return
+ reception_attendant.remove_meta("inquiry_at_desk")
+ reception_attendant.global_transform=reception_post
+ reception_attendant=null
+
 func finish() -> void:
+ dialogue_voice.stop();mocking_laughter.stop()
+ release_reception_seat()
  var completed:=kind
+ for person in [player,chacha,inquiry.police_prompt.get_meta("attendant")]+inquiry.officials+inquiry.guards:preload("res://story/conversation_facing.gd").release(person)
  if hero_expression!=null:hero_expression.restore();hero_expression=null
  if police_expression!=null:police_expression.restore();police_expression=null
  if collar_cloth!=null:collar_cloth.restore();collar_cloth=null
@@ -684,6 +824,8 @@ func finish() -> void:
  if demonstration_weapon!=null:demonstration_weapon.queue_free();demonstration_weapon=null
  chacha.global_transform=chacha_home;reset_actor_grounding(chacha);chacha.set_process(prior_chacha_process);chacha.state="settled"
  if completed=="optional":first_chacha_seen=true;get_parent().get_node("ChachaHouse").set_meta("advice_given",true)
+ elif completed=="opening_coach":
+  player.get_node("UI/HUDRoot/MorningTutorial").advance()
  elif completed=="inquiry":
   for guard in inquiry.guards:guard.position=guard.get_meta("inquiry_post");guard.duty_state="guard";guard.travel_speed=0;guard.cinematic_style="";guard.cinematic_palms.clear();guard.cinematic_carry=false
   for official in inquiry.officials:official.transform=official.get_meta("inquiry_seat");official.seated=true
@@ -696,9 +838,7 @@ func finish() -> void:
 func _input(event: InputEvent) -> void:
  if not configured:return
  if active and event.is_action_pressed("jump"):
-  # Finish at a safe checkpoint; a skip cannot bypass the interactive lessons.
-  if kind=="inquiry":stage_action("heal")
-  finish();get_viewport().set_input_as_handled()
+  skip_cinematic();get_viewport().set_input_as_handled()
  elif not active and state=="farm" and lesson==7 and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode==KEY_Q:
   if player.global_position.distance_to(community.farm.global_position)<12:
    player.get_node("RearGrapple").begin();get_viewport().set_input_as_handled()
@@ -781,13 +921,20 @@ func refresh() -> void:
    inquiry.destination.set_meta("parking_label","")
  else:objective.text=""
 func export_state() -> Dictionary:
- return {"state":state,"first_chacha_seen":first_chacha_seen,"lesson":lesson,"partners":completed_partners,"started":player.get_meta("farm_lesson_started",false),"community_routes":community.export_route_state()}
+ return {"state":state,"first_chacha_seen":first_chacha_seen,"lesson":lesson,"partners":completed_partners,"started":player.get_meta("farm_lesson_started",false),"community_routes":community.export_route_state(),"opening_chacha_at_farm":opening_chacha_at_farm}
 func restore_state(data: Dictionary) -> void:
  community.restore_route_state(data.get("community_routes",{}))
  state=str(data.get("state","awaiting_inquiry"));first_chacha_seen=bool(data.get("first_chacha_seen",false));lesson=clampi(int(data.get("lesson",0)),0,LESSONS.size())
+ opening_chacha_at_farm=bool(data.get("opening_chacha_at_farm",false))
+ if opening_chacha_at_farm and state=="awaiting_inquiry":
+  chacha.global_position=community.farm.to_global(Vector3(-5,0,2));chacha.state="training";chacha_home=chacha.global_transform
+  var advice: Node3D=get_parent().get_node_or_null("ChachaHouse/ChachaAdvice")
+  if advice!=null:advice.global_position=chacha.global_position+Vector3.UP
  completed_partners.assign(data.get("partners",[]));player.set_meta("farm_lesson_started",bool(data.get("started",false)))
- if state=="farm" and player.get_meta("farm_lesson_started",false):
+ if state=="farm":
   chacha.global_position=community.farm.to_global(Vector3(-5,0,2));chacha.state="training";chacha.set_process(false)
+  var farm_advice: Node3D=get_parent().get_node_or_null("ChachaHouse/ChachaAdvice")
+  if farm_advice!=null:farm_advice.global_position=chacha.global_position+Vector3.UP
   for i in completed_partners:
    if i>=0 and i<community.members.size():community.members[i].set_meta("training_hit","takedown");community.members[i].set_meta("knocked_out",true);community.members[i].combat_react("down")
  if state not in ["awaiting_inquiry","farm","complete"]:state="awaiting_inquiry"
@@ -801,19 +948,22 @@ func _exit_tree() -> void:
  if is_instance_valid(player) and active:
   player.set_meta("document_busy",prior_busy);player.set_meta("story_cinematic",false);player.set_physics_process(actor_physics)
 
-func set_hero_path(goal: Vector3) -> void:
+func set_hero_path(goal: Vector3,radius:=.29) -> void:
  path_origin=player.global_position
  var local_origin: Vector3=inquiry.station.to_local(path_origin)
+ var excluded_player: bool = player.get_rid() in inquiry.coordinator.exclusions
+ if not excluded_player:inquiry.coordinator.exclusions.append(player.get_rid())
  if cue=="entry" and local_origin.z>18:
   # Station navigation starts inside the gate; retain the visible outside approach.
   var gate: Vector3=inquiry.station.to_global(Vector3(0,inquiry.station.to_local(goal).y,19.2))
-  hero_path=inquiry.coordinator.path(gate,goal,.29)
+  hero_path=inquiry.coordinator.path(gate,goal,radius)
   if not hero_path.is_empty():hero_path.insert(0,gate)
  else:
-  hero_path=inquiry.coordinator.path(path_origin,goal,.29)
+  hero_path=inquiry.coordinator.path(path_origin,goal,radius)
+ if not excluded_player:inquiry.coordinator.exclusions.erase(player.get_rid())
  for i in hero_path.size():hero_path[i].y=goal.y
  if hero_path.is_empty():push_error("Story approach path is blocked")
-func move_hero_path(t: float,seconds: float) -> void:
+func move_hero_path(t: float,seconds: float,speed_factor:=1.0) -> void:
  if hero_path.is_empty():return
  var total:=0.0;var previous:=path_origin
  for point in hero_path:total+=previous.distance_to(point);previous=point
@@ -822,7 +972,7 @@ func move_hero_path(t: float,seconds: float) -> void:
   var distance:=previous.distance_to(point)
   if remaining<=distance and distance>.001:
    player.global_position=previous.lerp(point,remaining/distance);face(player,point)
-   player.velocity=(point-previous).normalized()*total/seconds;return
+   player.velocity=(point-previous).normalized()*total/seconds*speed_factor;return
   remaining-=distance;previous=point
  player.global_position=hero_path[-1];player.velocity=Vector3.ZERO
 func departure_goal(body: Node3D,mount: Node) -> Vector3:
@@ -840,17 +990,38 @@ func departure_goal(body: Node3D,mount: Node) -> Vector3:
  body.global_rotation.y=heading
  return origin
 
+func opening_coach_departure_goal(cart: Node3D) -> Vector3:
+ var origin:=cart.global_position
+ var forward:=-cart.global_basis.z
+ var last_clear:=origin
+ for sample in range(1,17):
+  var at:=origin+forward*float(sample)*.5
+  at.y=get_parent().layout.height(at.x,at.z)+.1
+  if not journey_cart._clearance_at(at):break
+  last_clear=at
+ return last_clear
+
 func stage_cart_arrival(action: String) -> void:
  var body: Node3D=journey_cart.cart
  if action=="horse_dismount":
   journey_cart.speed=0;body.set_forward_motion(0,0)
-  journey_cart.set_physics_process(true);journey_cart.dismount();return
+  journey_cart.set_physics_process(true)
+  if kind=="opening_coach":
+   var toward_gate: Vector3=inquiry.station.to_global(Vector3(0,0,20))-body.global_position
+   var gate_side:=signf(toward_gate.dot(body.global_basis.x))
+   if not is_zero_approx(gate_side):journey_cart.transition_side=gate_side
+  journey_cart.dismount();return
  journey_cart.set_physics_process(false)
  start_position=body.global_position;finish_position=departure_goal(body,journey_cart)
  if action=="horse_arrival":
   body.global_rotation.y=inquiry.station.global_rotation.y
   start_position=inquiry.station.to_global(Vector3(7,0,40))
   finish_position=inquiry.station.to_global(Vector3(7,0,32))
+  if kind=="opening_coach":
+   # Pull up parallel to the frontage so the gate-side door opens away from traffic.
+   body.global_rotation.y+=PI*.5
+   start_position=inquiry.station.to_global(Vector3(13,0,37))
+   finish_position=inquiry.station.to_global(Vector3(5,0,37))
   body.global_position=start_position
   var bay: Node3D=get_parent().get_node("InquiryVehicleStanding")
   bay.configure(body,"Police station · horse and cart standing")
@@ -876,3 +1047,18 @@ func release_story_horse() -> void:
   player.collision_layer=journey_horse.saved_layer;player.collision_mask=journey_horse.saved_mask
  journey_horse.remove_meta("story_dismount_pending");journey_horse.set_physics_process(horse_physics)
  journey_horse=null
+
+func skip_cinematic() -> void:
+ if not active:return
+ player.set_meta("cinematic_jump_block_until_released",true)
+ # Apply each remaining beat endpoint once, using the same stage/motion owners.
+ skipping_cinematic=true
+ dialogue_voice.stop()
+ while beat_index<beats.size():
+  var record: Dictionary=beats[beat_index]
+  age=float(record.seconds)
+  update_acting(0.0,1.0)
+  beat_index+=1
+  if beat_index<beats.size():enter_beat()
+ skipping_cinematic=false
+ finish()

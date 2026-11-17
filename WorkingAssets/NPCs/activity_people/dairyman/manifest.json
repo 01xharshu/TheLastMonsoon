@@ -1,0 +1,39 @@
+{
+  "role": "dairyman",
+  "adult": true,
+  "provenance": "Reused Blender MakeHuman/MPFB donor",
+  "donor": "WorkingAssets/NPCs/indian_street_variants/workman_02/workman_02.blend",
+  "donor_sha256": "9f60aa521f968d94197e6c64d3fdfe1c104e554375fa053901b9917e240002df",
+  "runtime": "characters/npcs/activity_people/dairyman.glb",
+  "complete_body_vertices": 14517,
+  "source_body_vertices": 14517,
+  "facial_vertices": {
+    "speech": 1045,
+    "fear": 3184,
+    "blink": 1428
+  },
+  "exported_meshes": [
+    "Activity cotton shirt",
+    "Activity cotton trousers",
+    "dairyman_complete_MakeHuman_body",
+    "Farmer_eyes",
+    "Farmer_hair",
+    "Fitted turban crown",
+    "Fitted turban fold 0",
+    "Fitted turban fold 1",
+    "Fitted turban fold 2",
+    "Icosphere",
+    "Street leather shoe l",
+    "Street leather shoe r",
+    "Street opaque foundation",
+    "Tailored moustache -1",
+    "Tailored moustache 1"
+  ],
+  "complete_body": true,
+  "clothing_masks": false,
+  "visual_approved": false,
+  "runtime_donor": "characters/npcs/street_residents/workman_02.glb",
+  "runtime_donor_sha256": "71dbdb720aac0479e474fb7c5ca32e448fa9c54afc1d3386709cc796f4ad423c",
+  "editable_source": "WorkingAssets/NPCs/activity_people/dairyman/dairyman.blend",
+  "foundation_retained": true
+}

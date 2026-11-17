@@ -35,15 +35,12 @@ func fire() -> bool:
 	if not actor.inventory.remove_item("arrow",1):
 		actor.inventory.message_requested.emit("No arrows in the quiver")
 		return false
-	var origin: Vector3 = visual.equipment.bow_hand.to_global(Vector3(-.12,0,0))
-	var target := camera.global_position - camera.global_basis.z * 180.0
-	var aim_query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
-	aim_query.exclude = [actor.get_rid()]
-	var camera_hit := actor.get_world_3d().direct_space_state.intersect_ray(aim_query)
-	if not camera_hit.is_empty(): target = camera_hit.position
+	var nock: Vector3=visual.equipment.bow_hand.to_global(Vector3(-.12-.3*draw_fraction,0,0))
+	var origin: Vector3 = visual.equipment.bow_hand.to_global(Vector3(-.12-.3*draw_fraction+PROJECTILE.TIP_OFFSET,0,0))
+	var target := preload("res://combat/attack_aim.gd").point(actor,camera)
 	var arrow: Node3D = PROJECTILE.new()
 	actor.get_parent().add_child(arrow)
-	arrow.launch(origin,(target-origin).normalized(),actor)
+	arrow.launch(origin,preload("res://combat/attack_aim.gd").launch_direction(origin,target,PROJECTILE.SPEED,PROJECTILE.GRAVITY),actor,nock)
 	WorldAudio.play_at("bow_loose",origin,-15.0)
 	arrows_fired += 1
 	ControllerFeedback.pulse("bow")

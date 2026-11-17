@@ -71,6 +71,10 @@ func _ready() -> void:
 	ramp.get_child(0).hide()
 	preload("res://world/suryagarh/settlements/stair_contact_surface.gd").add_flight(self,stair_x,0,18.0,floor_y,3.5,36,true,1.0,0.0,wood)
 	stair_guard(self,stair_x,0,18.0,floor_y,true,3.4)
+	if police:
+		for side in [-1.0,1.0]:
+			var stringer := piece(self,"StationStairTimberStringer",Vector3(stair_x+side*1.48,floor_y*.5-.29,0),Vector3(.20,.40,sqrt(18.0*18.0+floor_y*floor_y)),wood,false)
+			stringer.rotation.x=atan2(floor_y,18.0)
 	piece(self,"GalleryGuard",Vector3(cut_right,floor_y+.55,0),Vector3(.14,1.1,17.5),wood)
 	# Low clay-tile pitch sheds monsoon rain behind a plain masonry parapet.
 	for side in [-1,1]:
@@ -124,7 +128,7 @@ func _ready() -> void:
 	sidearm_display()
 	if police:
 		preload("res://world/suryagarh/settlements/police_interior.gd").furnish(self)
-		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, self, Vector3(width * 0.5 - 3, 0, -depth * 0.5 + 7), "district_police/ammunition")
+		preload("res://world/suryagarh/settlements/ammunition_display.gd").furnish(self, self, Vector3(width * 0.5 - 1.15, 0, -depth * 0.5 + 7), "district_police/ammunition")
 		preload("res://world/suryagarh/settlements/medical_supply.gd").furnish(self, self, Vector3(width*0.5-4.7,0,-depth*0.5+7), "district_police/bandage")
 		preload("res://world/suryagarh/settlements/police_refinement.gd").furnish(self)
 	preload("res://world/suryagarh/settlements/building_realism.gd").civic(self)

@@ -11,6 +11,9 @@ static func support(actor:Node3D,at:Vector3)->float:
 		floor_space=space;floor_refresh=now;floor_excluded.clear()
 		for other in actor.get_tree().get_nodes_in_group("combat_actors"):
 			if is_instance_valid(other) and other.is_inside_tree() and other.get("body_collider")!=null:floor_excluded.append(other.body_collider.get_rid())
+		var scene:=actor.get_tree().current_scene
+		var player: Node=scene.get_node_or_null("Player") if is_instance_valid(scene) else null
+		if player is CollisionObject3D:floor_excluded.append(player.get_rid())
 	var excluded:Array[RID]=floor_excluded
 	var ray:=PhysicsRayQueryParameters3D.create(at+Vector3.UP*1.4,at-Vector3.UP*.7,1,excluded)
 	var hit:=actor.get_world_3d().direct_space_state.intersect_ray(ray)
@@ -32,17 +35,19 @@ class Search extends RefCounted:
 	var query: PhysicsShapeQueryParameters3D
 	var relative: Vector3
 	var ground_query: Callable
+	var require_goal_height := false
 	const SPACING:=.8
-	func _init(actor: Node3D, target: Vector3, extra: Array[RID], ground: Callable) -> void:
+	func _init(actor: Node3D, target: Vector3, extra: Array[RID], ground: Callable, start:=Vector3.INF) -> void:
 		ground_query=ground
-		actor_ref=weakref(actor);goal=target;origin=actor.global_position
+		actor_ref=weakref(actor);goal=target;origin=start if start.is_finite() else actor.global_position
+		require_goal_height=start.is_finite()
 		destination=Vector2i(roundi((goal.x-origin.x)/SPACING),roundi((goal.z-origin.z)/SPACING))
 		if absi(destination.x)>90 or absi(destination.y)>90:done=true;return
 		points[Vector2i.ZERO]=origin
 		var shape: CollisionShape3D=actor.body_collider.get_node("BodyShape")
 		query=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.collision_mask=1
 		var excluded: Array[RID]=[actor.body_collider.get_rid()];excluded.append_array(extra)
-		query.exclude=excluded;query.margin=.02;relative=shape.global_transform.origin-origin
+		query.exclude=excluded;query.margin=.02;relative=shape.global_transform.origin-actor.global_position
 		push(Vector2i.ZERO,0.0)
 	func before(a: Dictionary,b: Dictionary) -> bool:
 		return a.score<b.score or (a.score==b.score and a.serial<b.serial)
@@ -72,7 +77,7 @@ class Search extends RefCounted:
 		var entry:=pop();var cell: Vector2i=entry.cell
 		if float(entry.cost)>float(costs[cell]):return
 		attempts+=1
-		if cell==destination:
+		if cell==destination and (not require_goal_height or absf(points[cell].y-goal.y)<.3):
 			result=[goal]
 			while cell!=Vector2i.ZERO:result.push_front(points[cell]);cell=parents[cell]
 			done=true;return
@@ -84,6 +89,7 @@ class Search extends RefCounted:
 			var cost:=float(costs[cell])+Vector2(direction).length()
 			if costs.has(next) and float(costs[next])<=cost:continue
 			var at: Vector3=points[cell];var to:=origin+Vector3(next.x*SPACING,0,next.y*SPACING)
+			to.y=at.y
 			var height:float=ground_query.call(actor,to)
 			if not is_finite(height) or absf(height-at.y)>.30:continue
 			to.y=height
@@ -105,8 +111,8 @@ static func find(actor: Node3D,goal: Vector3,extra_excluded: Array[RID]=[]) -> A
 	while not search.done:search.step()
 	return search.result
 
-static func find_budgeted(actor: Node3D,goal: Vector3,budget: Node,extra_excluded:Array[RID]=[]) -> Array[Vector3]:
-	var search:=Search.new(actor,goal,extra_excluded,support)
+static func find_budgeted(actor: Node3D,goal: Vector3,budget: Node,extra_excluded:Array[RID]=[],start:=Vector3.INF) -> Array[Vector3]:
+	var search:=Search.new(actor,goal,extra_excluded,support,start)
 	while not search.done:
 		if not is_instance_valid(budget) or not budget.is_inside_tree():return []
 		if not await budget.checkpoint():return []

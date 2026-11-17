@@ -27,14 +27,19 @@ func run() -> void:
 	check(absf(routine.shore.z-235.0)>20.0,"collection clear of boat boarding route")
 	check(absf(routine.journeys[0].path[5].z-routine.journeys[2].path[5].z)>1.5,"separate companion walking lanes")
 	check(routine.shore.y<.06,"water access ramp ends at river level")
-	var reached := {};var max_hand := 0.0;var max_ankle := 0.0;var worst := {}
+	var reached := {};var max_hand := 0.0;var max_ankle := 0.0;var worst := {};var min_knee:=INF
 	for step in 8000:
 		routine.tick(.5)
 		for woman in routine.women:
 			woman.get_node("BodyCollider").force_update_transform()
 			reached[woman.action]=true
+			if woman.action in ["wash","sit_down","talk","stand_up"]:
+				for side in ["l","r"]:
+					var knee:Vector3=woman.skeleton.to_global(woman.Contact.point(woman.skeleton,"calf_"+side))
+					var clearance:float=knee.y-float(routine._ground_height(knee.x,knee.z))-.06*woman.scale.y
+					if clearance<min_knee: min_knee=clearance;worst["knee"]={"time":woman.elapsed,"action":woman.action,"member":woman.member_index,"side":side,"position":knee}
 			for error in woman.hand_errors.values():
-				if error>max_hand: worst["hand"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed};max_hand=error
+				if error>max_hand: worst["hand"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed,"reach":woman.hand_diagnostics.duplicate(true)};max_hand=error
 			for error in woman.foot_errors.values():
 				if error>max_ankle: worst["ankle"]={"stage":woman.action,"position":woman.global_position,"time":woman.elapsed,"slope":woman.travel_slope,"heading":woman.rotation.y,"direction":woman.travel_direction,"figure":woman.animation_player.get_node(woman.animation_player.root_node).position,"ankles":[woman.skeleton.to_global(woman.Contact.point(woman.skeleton,"foot_l")),woman.skeleton.to_global(woman.Contact.point(woman.skeleton,"foot_r"))]};max_ankle=error
 		if step%1000==0: print("RIVER_ROUTE_PROGRESS ",step," ",routine.mode," ",routine.journeys[0].position)
@@ -52,6 +57,7 @@ func run() -> void:
 			break
 		if routine.mode=="home" and routine.completed_day==1: break
 	check(max_hand<.015 and max_ankle<.015,"live wrist and ankle targets within 15mm")
+	check(min_knee>=-.002,"working knees remain above actual bank")
 	check(routine.completed_day==1,"physical journey returns and delivers")
 	check(routine.blocked_frames==0,"route unobstructed by real world collision")
 	for stage in ["depart","fill","wash","talk","pickup_pot","return","deliver","home"]:check(reached.has(stage),"stage visited "+stage)
@@ -75,7 +81,24 @@ func run() -> void:
 	routine._physics_process(.02)
 	check(routine.journeys[0].position.distance_to(nearby_before)>.01,"approaching a companion wakes the group immediately")
 	for woman in routine.women:check(woman.get_node("BodyCollider").collision_layer==1,"budget never removes companion collision")
+	var preserved: Dictionary=routine.export_state()
+	routine.mode="visit";routine.visit_seconds=27.0
+	for index in routine.women.size():
+		routine.journeys[index].position=routine.women[index].bank;routine.journeys[index].goal=routine.journeys[index].path.size()-1
+		routine.women[index].sample(27.0-index*.7)
+	routine.witness(observer,true)
+	check(routine.escape_age==0 and routine.women[1].fear_amount>.5,"riverside group reacts to witnessed danger")
+	for step in 5:routine.tick(.2)
+	var frightened: Dictionary=routine.export_state()
+	routine.restore_state(JSON.parse_string(JSON.stringify(frightened)))
+	check(absf(routine.escape_age-1.0)<.001 and routine.alarm_seconds>0,"fear preparation survives JSON save")
+	for step in 11:routine.tick(.2)
+	check(routine.mode=="return","women stand and take existing physical route home")
+	var escape_position: Vector3=routine.journeys[0].position
+	routine.tick(.1)
+	check(routine.journeys[0].position.distance_to(escape_position)>.1 and routine.journeys[0].position.distance_to(escape_position)<.25,"frightened return uses bounded swept steps")
+	routine.restore_state(preserved)
 	clock.clock_paused=true
-	var report:={"passed":issues.is_empty(),"issues":issues,"blocked_frames":routine.blocked_frames,"worst":worst,"max_hand_m":max_hand,"max_ankle_m":max_ankle,"shore":[routine.shore.x,routine.shore.y,routine.shore.z],"actions":reached.keys(),"in_world":true,"visual_approved":false}
+	var report:={"passed":issues.is_empty(),"issues":issues,"blocked_frames":routine.blocked_frames,"worst":worst,"max_hand_m":max_hand,"max_ankle_m":max_ankle,"minimum_knee_clearance_m":min_knee,"shore":[routine.shore.x,routine.shore.y,routine.shore.z],"actions":reached.keys(),"in_world":true,"visual_approved":false}
 	print("RIVER_WORLD ",JSON.stringify(report))
 	world.queue_free();await process_frame;quit(0 if issues.is_empty() else 1)

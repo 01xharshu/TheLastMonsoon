@@ -35,10 +35,10 @@ func _run() -> void:
   for i in 2: await physics_frame
   assert(actor._find_interactable() == pickup)
   assert(actor.interaction_overlay.marker_world_positions.has(pickup), "Weapon interaction card has no visible anchor: " + weapon_id)
-  actor._begin_interaction_hold(pickup,"interact")
-  Input.action_press("interact")
-  for i in 65: await physics_frame
-  Input.action_release("interact")
+  pickup.interact(actor)
+  assert(not actor.inventory.has_item(weapon_id), "Inspection granted before confirmation")
+  actor.get_node("UI").get_children().back().confirm(true)
+  await process_frame
   assert(actor.inventory.has_item(weapon_id))
   assert(gear.selected == slots[weapon_id] and not gear.stowed)
   gear.stowed = true
@@ -56,12 +56,13 @@ func _run() -> void:
  gear.stowed = true
  gear._refresh()
  owned_pickup.interact(actor)
+ actor.get_node("UI").get_children().back().confirm(true)
  assert(gear.selected == slots["talwar"] and not gear.stowed)
  assert_visible_weapon(gear, "talwar")
  owned_pickup.queue_free()
  gear.toggle_stowed()
  assert_visible_weapon(gear, "")
- print("EQUIP HOLD: PASS | all five store weapons")
+ print("INSPECT AND EQUIP: PASS | all five store weapons")
  quit()
 
 func assert_visible_weapon(gear: Node, expected: String) -> void:

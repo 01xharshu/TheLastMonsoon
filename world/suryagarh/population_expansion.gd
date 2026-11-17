@@ -72,17 +72,17 @@ func discover(skeleton:Node) -> void:
  var source:=figure.scene_file_path
  if not ResourceLoader.exists(source):unresolved[key]="missing MPFB source";return
  var origin:=Vector2(original.global_position.x,original.global_position.z)
- var label:=nearest_route(origin)
+ var faction:String=str(original.get_meta("combat_faction","british" if "/british/" in source else "indian"))
+ var index:=posmod(key.hash(),2147483647)
+ var label:=distributed_route(origin,index,faction in ["police","british"] or original.is_in_group("thana_officers"))
  if label.is_empty():unresolved[key]="no surveyed road in this region";return
  originals[key]=source;discovered_count+=1
  original.tree_exiting.connect(func():remove_colleague(key),CONNECT_ONE_SHOT)
- var index:=posmod(key.hash(),2147483647)
  var points:=route_points(label,index,1.7)
  # Keep the regional road, but spread colleagues over its full length.
  # Projecting every station/service source to its nearest road produced a crowd at one gate.
  var phase:=phase_on_route(points,fposmod(float(index)*.61803398875,1.0))
  var profile:String="female" if "woman" in source or "/female_" in source else "male"
- var faction:String=str(original.get_meta("combat_faction","british" if "/british/" in source else "indian"))
  var record:Dictionary={"kind":"person","route":label,"index":index,"count":1,"points":points,"phase":phase,"direction":1,"wait":0.0,"source":source,"source_id":key,"profile":profile,"faction":faction,"role":str(original.get_meta("social_role",original.name)),"police":original.is_in_group("thana_officers") or faction=="police"}
  source_keys[key]=record_key(record)
  inactive_states.erase(record_key(record))
@@ -90,18 +90,129 @@ func discover(skeleton:Node) -> void:
  pending.append(record)
  ready_population=false
 
-func nearest_route(point:Vector2) -> String:
+func nearest_route(point:Vector2, avoid_hideout:bool=false) -> String:
  var best:=INF
  var label:=""
  for route_name:String in Layout.ROUTES:
+  # Only story actors and the player use the abandoned fort approaches.
+  if route_name in ["fort_trail","fort_access"]:continue
   # Colleagues use public streets; reserved coach drives stay clear.
   if route_name in ["consignment_wilderness","port_village_road","port_approach","village_estate_approach","merchant_city_drive","collector_bungalow_drive","officer_bungalow_drive","government_house_avenue","compound_court","compound_stores"]:continue
   var points:Array=Layout.ROUTES[route_name]
+  if avoid_hideout and (not preload("res://world/suryagarh/settlement_police_routes.gd").allows_route(route_name) or route_near_hideout(points)):continue
   for index in points.size()-1:
    var on_road:=Geometry2D.get_closest_point_to_segment(point,points[index],points[index+1])
    var distance:=point.distance_squared_to(on_road)
    if distance<best:best=distance;label=route_name
  return label
+
+
+# Select a stable nearby public route per identity rather than putting every
+# colleague from the same institution on the same nearest road. Restrict the
+# choice to the local area and retain the existing authority exclusions.
+func distributed_route(point:Vector2,identity:int,avoid_hideout:bool=false) -> String:
+ var nearest:=nearest_route(point,avoid_hideout)
+ if nearest.is_empty():return nearest
+ var distances:Dictionary={}
+ var nearest_distance:=INF
+ for label:String in Layout.ROUTES:
+  if label in ["fort_trail","fort_access","consignment_wilderness","port_village_road","port_approach","village_estate_approach","merchant_city_drive","collector_bungalow_drive","officer_bungalow_drive","government_house_avenue","compound_court","compound_stores"]:continue
+  var points:Array=Layout.ROUTES[label]
+  if avoid_hideout and (not preload("res://world/suryagarh/settlement_police_routes.gd").allows_route(label) or route_near_hideout(points)):continue
+  var distance:=INF
+  for i in points.size()-1:
+   distance=minf(distance,point.distance_to(Geometry2D.get_closest_point_to_segment(point,points[i],points[i+1])))
+  distances[label]=distance;nearest_distance=minf(nearest_distance,distance)
+ var selected:=nearest;var best:=INF
+ for label:String in distances:
+  var distance:float=distances[label]
+  if distance>nearest_distance+65.0:continue
+  # Rendezvous hashing is stable when actors are discovered in a different order.
+  var rank:float=float(posmod((str(identity)+":"+label).hash(),100000))/100000.0
+  var score:float=rank+(distance-nearest_distance)/130.0
+  if score<best:best=score;selected=label
+ return selected
+
+# Route names were historically part of the save key. Move legacy state to the
+# selected route without carrying an old road position or waypoint onto it.
+func migrate_route_state(states:Dictionary,record:Dictionary) -> void:
+ var key:=record_key(record)
+ if states.has(key):return
+ for label:String in Layout.ROUTES:
+  var old_key:="%s:%d"%[label,int(record.index)]
+  if old_key==key or not states.get(old_key) is Dictionary:continue
+  var state:Dictionary=states[old_key].duplicate(true)
+  state["point"]=[record.phase.point.x,record.phase.point.y]
+  state["goal"]=record.phase.goal
+  state["direction"]=1;state["wait"]=0.0
+  states[key]=state;states.erase(old_key)
+  return
+
+# Keep routine uniformed counterparts away from the actual undercroft, including
+# whole route segments and a margin for lane offsets and obstacle detours.
+const HIDEOUT_CENTER := Layout.FORT_CENTER+Vector2(-56,48)
+const HIDEOUT_PATROL_BUFFER := 160.0
+func route_near_hideout(points:Array) -> bool:
+ for i in range(points.size()-1):
+  if layout.segment_distance(HIDEOUT_CENTER,points[i],points[i+1])<HIDEOUT_PATROL_BUFFER:return true
+ return false
+
+func safe_authority_save(states:Dictionary,key:String,index:int,point:Vector2,goal:int) -> Dictionary:
+ var state:Dictionary=states.get(key,{}).duplicate(true)
+ if state.is_empty():
+  for old_route: String in Layout.ROUTES:
+   if preload("res://world/suryagarh/settlement_police_routes.gd").allows_route(old_route):continue
+   var old_key:="%s:%d"%[old_route,index]
+   if states.get(old_key) is Dictionary:
+    state=states[old_key].duplicate(true)
+    # A new route must never inherit the former route's coordinate/waypoint.
+    state["point"]=[point.x,point.y];state["goal"]=goal
+    break
+ if state.get("point") is Array and state.point.size()==2:
+  var old:=Vector2(float(state.point[0]),float(state.point[1]))
+  if old.distance_to(HIDEOUT_CENTER)<HIDEOUT_PATROL_BUFFER or not preload("res://world/suryagarh/settlement_police_routes.gd").inhabited(old):
+   state["point"]=[point.x,point.y];state["goal"]=goal
+ return state
+
+func reset_private_fort_position(states:Dictionary,key:String,point:Vector2,goal:int) -> void:
+ var state:Variant=states.get(key)
+ if not state is Dictionary or not state.get("point") is Array or state.point.size()!=2:return
+ var old:=Vector2(float(state.point[0]),float(state.point[1]))
+ if old.distance_to(Layout.FORT_CENTER)<140.0:
+  states[key]=state.duplicate(true)
+  states[key]["point"]=[point.x,point.y]
+  states[key]["goal"]=goal
+
+func apply_record_state(record:Dictionary) -> void:
+ migrate_route_state(restored_states,record)
+ reset_private_fort_position(restored_states,record_key(record),record.phase.point,int(record.phase.goal))
+ if record.get("faction","") in ["police","british"] or record.get("police",false):
+  var key:=record_key(record)
+  var safe:Dictionary=safe_authority_save(restored_states,key,int(record.index),record.phase.point,int(record.phase.goal))
+  if not safe.is_empty():restored_states[key]=safe
+ super.apply_record_state(record)
+
+func restore_route_state(states:Dictionary) -> void:
+ var repaired:=states.duplicate(true)
+ for record in pending:
+  migrate_route_state(repaired,record)
+  reset_private_fort_position(repaired,record_key(record),record.phase.point,int(record.phase.goal))
+  if record.get("faction","") in ["police","british"] or record.get("police",false):
+   var key:=record_key(record)
+   var safe:=safe_authority_save(repaired,key,int(record.index),record.phase.point,int(record.phase.goal))
+   if not safe.is_empty():repaired[key]=safe
+ for actor in pedestrians:
+  if not is_instance_valid(actor):continue
+  var journey:Node=actor.get_node_or_null("CityStreetJourney")
+  if journey==null:continue
+  var key:="%s:%d"%[actor.get_meta("population_route"),actor.get_meta("population_index")]
+  var migrated:Dictionary={"route":actor.get_meta("population_route"),"index":actor.get_meta("population_index"),"phase":{"point":Vector2(actor.global_position.x,actor.global_position.z),"goal":journey.goal}}
+  migrate_route_state(repaired,migrated)
+  reset_private_fort_position(repaired,key,Vector2(actor.global_position.x,actor.global_position.z),int(journey.goal))
+  if actor.get_meta("combat_faction","") not in ["police","british"]:continue
+  var safe:=safe_authority_save(repaired,key,int(actor.get_meta("population_index")),Vector2(actor.global_position.x,actor.global_position.z),int(journey.goal))
+  if not safe.is_empty():repaired[key]=safe
+ super.restore_route_state(repaired)
 
 func closest_phase(points:Array[Vector2],point:Vector2,salt:int=0) -> Dictionary:
  var best:=INF;var phase:Dictionary={"point":points[0],"goal":1}

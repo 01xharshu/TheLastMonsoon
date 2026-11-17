@@ -1,10 +1,13 @@
 shader_type spatial;
-render_mode diffuse_burley, specular_schlick_ggx;
+render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
 uniform sampler2D base_atlas : source_color, filter_linear_mipmap, repeat_disable;
 uniform bool has_atlas = false;
 uniform vec4 cloth_color : source_color = vec4(0.035, 0.04, 0.05, 1.0);
 uniform vec4 blouse_color : source_color = vec4(0.2,0.25,0.28,1.0);
 uniform vec4 pallu_color : source_color = vec4(0.36,0.18,0.12,1.0);
+uniform bool lower_wrap = false;
+uniform vec4 border_color : source_color = vec4(0.46,0.28,0.22,1.0);
+uniform float border_fraction = 0.035;
 uniform float wetness : hint_range(0.0, 1.0) = 0.0;
 uniform int garment_kind = 0;
 uniform vec2 fabric_sway = vec2(0.0);
@@ -17,7 +20,15 @@ void vertex() {
 }
 float grain(vec3 p) { return fract(sin(dot(p, vec3(127.1,311.7,74.7))) * 43758.5453); }
 void fragment() {
- vec3 base = mix(blouse_color.rgb, pallu_color.rgb, clamp(COLOR.r,0.0,1.0));
+ float edge_width=max(fwidth(COLOR.r),0.003);
+ float panel=smoothstep(0.5-edge_width,0.5+edge_width,COLOR.r);
+ vec3 base = mix(blouse_color.rgb, pallu_color.rgb, panel);
+ if (lower_wrap) {
+  float hem = 1.0 - UV.y;
+  float width = max(fwidth(hem),0.0005);
+  float border = 1.0 - smoothstep(border_fraction-width,border_fraction+width,hem);
+  base = mix(cloth_color.rgb,border_color.rgb,border);
+ }
  // Millimetre-scale warp/weft, filtered before it becomes distant moire.
  vec2 p = vec2(cloth_position.x + cloth_position.z * 0.37, cloth_position.y);
  vec2 frequency = p * 850.0;

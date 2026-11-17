@@ -121,8 +121,13 @@ func build() -> void:
 			var base:=point(Vector2(x,z))-position
 			piece(geometry,"EstateBoundary",base+Vector3.UP*.55,Vector3(.45,1.1,11.8),"brick")
 	for z in [-24.0,24.0]:
-		for x in [-21.0,18.0]:
-			piece(geometry,"BoundaryReturn",point(Vector2(x,z))-position+Vector3.UP*.55,Vector3(24,1.1,.45),"brick")
+		# Leave a real gate across each west building ramp: the office to the
+		# south and the packing store to the north. Retain the surrounding wall.
+		var opening_x:float=-21.0 if z<0 else -19.0
+		for span in [Vector2(-33.0,opening_x-1.9),Vector2(opening_x+1.9,-9.0)]:
+			var middle:float=(span.x+span.y)*.5
+			piece(geometry,"BoundaryReturn",point(Vector2(middle,z))-position+Vector3.UP*.55,Vector3(span.y-span.x,1.1,.45),"brick")
+		piece(geometry,"BoundaryReturn",point(Vector2(18.0,z))-position+Vector3.UP*.55,Vector3(24,1.1,.45),"brick")
 	leaf_field()
 	await Startup.checkpoint(self,"Preparing the factory's working day…")
 	merge_static()

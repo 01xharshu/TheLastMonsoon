@@ -25,10 +25,13 @@ var social_speaker := false
 var awareness_age := 0.0
 var yield_age := 0.0
 var social_time := 0.0
+var social_voice_sent := false
+var player_dialogue: Node
 var shadow_meshes:Array[GeometryInstance3D]=[]
 var shadow_modes:Array[int]=[]
 var shadows_near:=true
 var street_surface:RefCounted
+var traffic_encounters:Node
 
 func _ready() -> void:
  super._ready()
@@ -36,7 +39,8 @@ func _ready() -> void:
  personal_seed=int(actor.get_meta("population_index",0))+int(actor.get_meta("street_identity",0))*17
  social_enabled=personal_seed%4<2
  social_cooldown=5.0+float(personal_seed%19)
- if is_instance_valid(crowd):crowd.register(self)
+ if is_instance_valid(crowd):
+  crowd.register(self);player_dialogue=crowd.get_parent().get_node_or_null("PlayerStreetConversation")
  for mesh:GeometryInstance3D in actor.find_children("*","GeometryInstance3D",true,false):
   shadow_meshes.append(mesh);shadow_modes.append(mesh.cast_shadow)
  terrain_cache=Ground.terrain_cache(actor)
@@ -106,11 +110,13 @@ func travel_motion(target:Vector3,delta:float) -> Vector3:
 func on_blocked(target:Vector3,delta:float) -> void:
  retry_age+=delta
  if retry_age<.5:return
+ var elapsed_recovery:=retry_age
  retry_age=0
  var recovered:float=preload("res://world/suryagarh/city_contact_recovery.gd").recover(actor,actor.body_collider)
  if recovered>0:
   distance_walked+=recovered;detour=Vector2.INF;detour_followup=Vector2.INF
   return
+ if escape_cart_overlap(elapsed_recovery):return
  var here:=Vector2(actor.global_position.x,actor.global_position.z)
  var forward:Vector2=(route[goal]-here).normalized()
  var side:=Vector2(-forward.y,forward.x)
@@ -154,11 +160,50 @@ func on_blocked(target:Vector3,delta:float) -> void:
     detour=point;detours+=1;return
  if fallback.is_finite():detour=fallback;detour_followup=Vector2.INF;detours+=1
 
+func escape_cart_overlap(delta:float) -> bool:
+ if not is_instance_valid(traffic_encounters):
+  var world:=preload("res://systems/world_context.gd").find_world(actor)
+  if world!=null:traffic_encounters=world.get_node_or_null("CombatEncounters")
+ if not is_instance_valid(traffic_encounters):return false
+ var shape:CollisionShape3D=actor.body_collider.get_node("BodyShape")
+ var query:=PhysicsShapeQueryParameters3D.new()
+ query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin+=Vector3.UP*.025
+ query.margin=.002;query.collision_mask=1;query.exclude=[actor.body_collider.get_rid()]
+ for hit in actor.get_world_3d().direct_space_state.intersect_shape(query,16):
+  var body:Node=hit.collider
+  if not body.is_in_group("cart_clearance_bodies") or not body.get_parent() is Node3D:continue
+  var cart:Node3D=body.get_parent()
+  var local:=cart.to_local(actor.global_position)
+  var side:float=-1.0 if local.x<0 else 1.0
+  var target:=actor.global_position+cart.global_basis.x*side*4.0
+  var previous:=actor.global_position
+  var remaining:=delta
+  while remaining>.0001:
+   var step:=minf(remaining,.0625)
+   if not traffic_encounters.separate_patrol_from_cart(actor,cart,target,step):break
+   remaining-=step
+  var moved:=previous.distance_to(actor.global_position)
+  if moved>.0001:
+   distance_walked+=moved;detour=Vector2.INF;detour_followup=Vector2.INF;last_obstacle=""
+   return true
+ return false
+
 func arrive() -> void:
  if detour.is_finite():
   detour=detour_followup;detour_followup=Vector2.INF;return
  super.arrive()
 func _physics_process(delta: float) -> void:
+ if actor.get_meta("civilian_reacting",false) or actor.get_meta("defending",false):return
+ if actor.get_meta("player_street_chat",false) and is_instance_valid(viewer):
+  current_speed=0;actor.travel_speed=0
+  var toward:Vector3=viewer.global_position-actor.global_position
+  if Vector2(toward.x,toward.z).length_squared()>.01:
+   actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(toward.x,toward.z),delta*2.5)
+  social_time+=delta;simulation_interval=0.0
+  update_animation(&"idle",delta)
+  actor.set_meta("street_action","talking" if actor.get_meta("speaking",false) else "listening")
+  apply_conversation_gesture()
+  return
  accumulated+=delta
  tier_age-=delta
  if tier_age<=0:
@@ -216,25 +261,37 @@ func clear_sight(other:Node3D) -> bool:
  return actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 func converse(delta:float) -> void:
+ if actor.get_meta("civilian_reacting",false) or actor.get_meta("defending",false):return
  social_time+=delta
  current_speed=0;actor.travel_speed=0;update_animation(&"idle",delta)
  var offset:Vector3=social_partner.actor.global_position-actor.global_position
  actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.2)
  actor.body_collider.force_update_transform()
  var speaking:bool=(int((crowd.age-(social_end-10.0))/2.7)%2==0)==social_speaker
+ if is_instance_valid(player_dialogue):
+  var audible_turn:int=player_dialogue.peer_speaking_status(self)
+  if audible_turn>=0:speaking=audible_turn==1
  actor.set_meta("street_action","talking" if speaking else "listening")
+ if speaking and not social_voice_sent and actor.get_meta("social_tone","")!="argument" and is_instance_valid(viewer) and actor.global_position.distance_squared_to(viewer.global_position)<196.0:
+  var status:int=player_dialogue.try_peer_speech(self) if is_instance_valid(player_dialogue) else -1
+  if status>0:social_voice_sent=true
+  elif status<0:social_voice_sent=WorldAudio.play_social_voice(actor,viewer,personal_seed)
  apply_conversation_gesture()
 
 func apply_conversation_gesture() -> void:
  var speaking:bool=actor.get_meta("street_action","")=="talking"
  # Idle is sampled first, so gesture deltas cannot accumulate into the next walk.
  if simulation_interval>0.1 or actor._skeleton==null:return
- var gesture:float=sin(social_time*2.1+float(personal_seed))*.035
- actor.solve_hand_contact("r",actor.to_global(Vector3(-.20,1.02+gesture,.29)) if speaking else actor.to_global(Vector3(-.30,.81,.07)))
+ var arguing:bool=actor.get_meta("social_tone","")=="argument"
+ var gesture:float=sin(social_time*(3.1 if arguing else 2.1)+float(personal_seed))*(.06 if arguing else .035)
+ actor.solve_hand_contact("r",actor.to_global(Vector3(-.20,(1.12 if arguing else 1.02)+gesture,.34 if arguing else .29)) if speaking else actor.to_global(Vector3(-.30,.81,.07)))
  actor.set_grip("r",.12 if speaking else 0.0)
+ var warmth:float=actor.get_meta("social_warmth",0.0)
+ actor.solve_hand_contact("l",actor.to_global(Vector3(.24,.93+gesture*.6,.19)) if speaking else actor.to_global(Vector3(.30,.81,.07)))
+ actor.set_grip("l",.08 if speaking else 0.0)
  var head:int=actor._bones.get("head",-1)
  if head>=0:
-  actor._skeleton.set_bone_pose_rotation(head,actor._base_rotations["head"]*Quaternion(actor._pitch_axes["head"],.025*sin(social_time*2.4) if not speaking else .015*sin(social_time*4.1)))
+  actor._skeleton.set_bone_pose_rotation(head,actor._base_rotations["head"]*Quaternion(actor._pitch_axes["head"],.025*sin(social_time*2.4) if not speaking else .015*sin(social_time*4.1))*Quaternion(actor._yaw_axes["head"],warmth*.08*sin(social_time*.9)))
 
 func _exit_tree() -> void:
  if is_instance_valid(crowd):crowd.unregister(self)

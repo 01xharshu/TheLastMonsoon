@@ -17,6 +17,8 @@ func interaction_available() -> bool:
 	if is_instance_valid(cart) and seat_name in cart.get_meta("npc_occupied_seats",[]):return false
 	if is_instance_valid(cart) and cart.get_meta("booking_status", "public") != "public": return false
 	if not super.interaction_available() or not is_instance_valid(cart) or cart.rider != null: return false
+	var player := get_tree().get_first_node_in_group("player")
+	if is_instance_valid(player) and player.get_meta("morning_tutorial_active",false) and (role!="passenger" or cart.name!="VillageStationCoach"):return false
 	if role == "passenger" and cart.has_meta("errand_passenger"): return false
 	if role == "passenger" and absf(position.x) > .8:
 		var camera := get_viewport().get_camera_3d()
@@ -25,3 +27,6 @@ func interaction_available() -> bool:
 
 func interact(player: CharacterBody3D) -> void:
 	if is_instance_valid(cart): cart.board_at(player, seat_name, role)
+
+func highlight_visual_root() -> Node3D:
+	return cart if is_instance_valid(cart) else self

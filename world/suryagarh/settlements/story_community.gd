@@ -39,7 +39,7 @@ func _ready() -> void:
    var table_x: float=-4 if i%4<2 else 1.2
    var at:=Vector3(table_x+(-1.05 if i%2==0 else 1.05),0,-2 if i<4 else 2)
    pending.append({"parent":site_node,"at":at,"index":i,"talk":true,"seated":i<4})
-   if i<4:
+   if i<4 and not (site_node==college and i==2):
     b.piece(site_node,"DiscussionSeat",at+Vector3(0,.40,0),Vector3(.7,.1,.7),b.wood)
     for dx in [-.28,.28]:b.piece(site_node,"SeatLeg",at+Vector3(dx,.18,0),Vector3(.10,.36,.6),b.wood)
   var talk=preload("res://story/community_conversation.gd").new();site_node.add_child(talk);talk.position=Vector3(2.25,.9,3.2)
@@ -129,7 +129,9 @@ func _process(delta: float) -> void:
   if population!=null:
    supported=population.clear_spawn(record.world)
    if not supported.is_finite():pending.append(record);return
- var actor=Actor.new();actor.name=record.get("identity","CommunityResident%d"%residents.size());actor.movement_enabled=false;actor.cycle_offset=residents.size()*.43
+ var academic: bool=record.parent==college
+ var actor=preload("res://characters/npcs/activity_actor.gd").new() if academic else Actor.new()
+ actor.name=record.get("identity","CommunityResident%d"%residents.size());actor.movement_enabled=false;actor.cycle_offset=residents.size()*.43
  if record.parent==college or record.parent==courtyard:
   actor.set_meta("district","college_neighbourhood")
   actor.set_meta("world_role","student" if record.index<6 else ("lecturer" if record.index==6 else "printer"))
@@ -138,7 +140,7 @@ func _process(delta: float) -> void:
  var variant:=1+residents.size()%4
  var sex: String="female" if (record.parent==courtyard and record.index%2==1) or (record.has("world") and record.index==1) else "male"
  actor.movement_profile=&"female" if sex=="female" else &"male"
- actor.add_child(load("res://characters/npcs/street_residents/%s_%02d.glb"%[sex,variant]).instantiate())
+ actor.add_child(load("res://characters/npcs/activity_people/"+("teacher" if record.index==2 else "scholar")+".glb" if academic else "res://characters/npcs/street_residents/%s_%02d.glb"%[sex,variant]).instantiate())
  record.parent.add_child(actor)
  if record.has("world"):
   var p: Vector2=record.world;actor.global_position=supported if supported.is_finite() else Vector3(p.x,layout.height(p.x,p.y),p.y)
@@ -150,10 +152,16 @@ func _process(delta: float) -> void:
   var walking_route: Array[Vector2]=[];walking_route.assign(record.route)
   journey.configure(actor,walking_route,float(record.index)*1.7)
   journey.goal=record.goal;journey.speed=.85+float(record.index)*.07
-  journey.viewer=get_parent().get_node("Player");actor.add_child(journey)
+  journey.viewer=get_parent().get_node("Player");journey.crowd=get_parent().get_node_or_null("PopulationSocial");actor.add_child(journey)
+  journey.social_enabled=false
   road_journeys.append(journey);apply_road_state(journey)
   residents.append(actor);return
- var social=preload("res://story/community_social.gd").new();actor.add_child(social);social.person=actor;social.offset=residents.size()*.73;social.seated=record.get("seated",false);social.ground_y=actor.global_position.y
+ if academic:
+  actor.set_meta("world_role","student" if record.index<2 else "lecturer" if record.index==2 else "printer")
+  preload("res://world/suryagarh/settlements/occupation_wardrobe.gd").apply(actor,actor.get_meta("world_role"))
+  var lesson=preload("res://story/college_activity.gd").new();lesson.name="CollegeActivity";lesson.person=actor;lesson.offset=float(record.index)*3.7;actor.add_child(lesson)
+ else:
+  var social=preload("res://story/community_social.gd").new();actor.add_child(social);social.person=actor;social.offset=residents.size()*.73;social.seated=record.get("seated",false);social.ground_y=actor.global_position.y
  residents.append(actor)
 func _exit_tree() -> void:b.free()
 

@@ -6,18 +6,22 @@ var store_id := ""
 func persistence_id() -> String:
 	return store_id if not store_id.is_empty() else "%s/%s/%s" % [get_parent().name,weapon_id,position]
 func _ready() -> void:
-	interaction_text = "Take and equip " + {"enfield":"Enfield rifle","talwar":"talwar","bow":"bow and quiver","pistol":"Adams pistol","double_gun":"double-barrel gun"}.get(weapon_id,weapon_id)
+	interaction_text = "Inspect " + {"enfield":"Enfield rifle","talwar":"talwar","bow":"bow and quiver","pistol":"Adams pistol","double_gun":"double-barrel gun"}.get(weapon_id,weapon_id)
 	interaction_icon = preload("res://interaction/item_catalog.gd").icon(weapon_id)
-	hold_duration = .9
+	hold_duration = 0.0
 	interaction_max_distance = 3.0
 	marker_height = 0.0
 	add_to_group("weapon_pickups")
 func interact(actor: CharacterBody3D) -> void:
+	if taken:return
+	preload("res://interaction/weapon_inspection.gd").open_for(self,actor)
+
+func collect(actor: CharacterBody3D, equip:=true) -> void:
 	if taken or actor.global_position.distance_to(global_position)>3.0: return
 	if (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)!=null or actor.get_meta("climbing",false): return
 	if actor.inventory.has_item(weapon_id):
-		_equip(actor)
-		actor.inventory.message_requested.emit("Equipped " + weapon_id.capitalize())
+		if equip:_equip(actor)
+		actor.inventory.message_requested.emit(("Equipped " if equip else "Already carrying ") + weapon_id.capitalize())
 		return
 	if not actor.inventory.add_item(weapon_id,1): return
 	preload("res://player/ammunition_loadout.gd").grant_for_weapon(actor, weapon_id)
@@ -25,7 +29,7 @@ func interact(actor: CharacterBody3D) -> void:
 	var owner: Node = get_parent()
 	while owner != null and owner.name != "DistrictPolice": owner=owner.get_parent()
 	if owner != null: get_tree().call_group("police_crime_observers","report_crime",actor,"theft",global_position)
-	_equip(actor)
+	if equip:_equip(actor)
 	actor.set_meta("stolen_weapons",int(actor.get_meta("stolen_weapons",0))+1)
 	queue_free()
 

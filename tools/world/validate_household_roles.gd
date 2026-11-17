@@ -41,6 +41,14 @@ func _run() -> void:
  assert(is_equal_approx(inv.stored_water_liters,2.0),"water allowance/capacity")
  ledger.request(cook,player)
  assert(inv.get_item_count("roti")==2,"cook pantry meal")
+ ledger.stock["british_home"].roti=1
+ assert(cook.interaction_available() and "3 rupees" in cook.interaction_text,"scarce stock price is visible")
+ var balance_before_scarcity:int=inv.get_item_count("rupees")
+ ledger.request(cook,player)
+ assert(inv.get_item_count("rupees")==balance_before_scarcity-3 and ledger.stock["british_home"].roti==0,"scarce stock transaction")
+ assert(cook.interaction_available() and "empty" in cook.interaction_text,"empty pantry shown")
+ ledger.stock["british_home"].roti=2
+ assert(cook.interaction_available() and "2 rupees" in cook.interaction_text,"ordinary price restored after replenishment")
  ledger.request(lord,player)
  assert(ledger.survey_active and ledger.fields.size()==3,"estate survey not offered")
  var map:=MapFixture.new();root.add_child(map);ledger.navigation_map=map

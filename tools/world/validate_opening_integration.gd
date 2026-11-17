@@ -3,6 +3,8 @@ extends SceneTree
 class ReviewWorld extends Node3D:
 	var player: CharacterBody3D
 	var player_camera: Camera3D
+class ReviewCommunity extends Node3D:
+	var farm: Node3D
 
 var failed := false
 func _initialize() -> void: run.call_deferred()
@@ -62,6 +64,20 @@ func run() -> void:
 	detail.configure(builder,palette)
 	detail.house(home,Vector2(9.5,7.2),0)
 	load("res://world/suryagarh/settlements/arjun_house.gd").new().furnish(builder,home)
+	if OS.get_environment("TLM_OPENING_POV_ONLY") == "1":
+		var chacha_house := Node3D.new()
+		chacha_house.name = "ChachaHouse"
+		world.add_child(chacha_house)
+		var chacha: Node3D = load("res://world/suryagarh/settlements/chacha_actor.gd").new()
+		chacha.name = "Chacha"
+		chacha.add_child(load("res://characters/npcs/households/merchant.glb").instantiate())
+		chacha_house.add_child(chacha)
+		var community := ReviewCommunity.new()
+		community.name = "StoryCommunity"
+		world.add_child(community)
+		community.farm = Node3D.new()
+		community.farm.position = Vector3(-440,7,220)
+		community.add_child(community.farm)
 	world.player = load("res://player/player.tscn").instantiate()
 	world.player.name = "Player"
 	world.add_child(world.player)
@@ -83,12 +99,50 @@ func run() -> void:
 	world.add_child(opening)
 	opening.start(world)
 	opening.set_process_input(false)
+	if OS.get_environment("TLM_OPENING_POV_ONLY") == "1":
+		opening.set_process(false)
+		opening.morning()
+		opening._update_morning(4.8)
+		await process_frame
+		var out := OS.get_environment("TLM_OPENING_TEST_OUTPUT")
+		if out != "" and DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png(out+"/waking_pov.png")
+		check(opening.waking_chacha != null and opening.camera.fov >= 65 and opening.wake_fill.visible,"POV wake-up did not stage Chacha and dawn fill")
+		for delta in [1.4,1.0,1.8]:
+			opening._update_morning(delta)
+			await process_frame
+			if out != "" and DisplayServer.get_name() != "headless":
+				RenderingServer.force_draw()
+				root.get_texture().get_image().save_png(out+"/waking_%02d.png" % int(opening.morning_elapsed))
+		var uncle: Node3D = world.get_node("ChachaHouse/Chacha")
+		check(uncle.global_position.distance_to(world.get_node("StoryCommunity").farm.to_global(Vector3(-5,0,2))) < .1,"Chacha did not leave for farm")
+		check(opening.visual.visible and not opening.wake_fill.visible,"Wake-up did not restore the player view and lighting")
+		print("OPENING POV: ","FAIL" if failed else "PASS")
+		preload("res://tools/test_audio_cleanup.gd").finish(self,1 if failed else 0)
+		return
 	check(opening.lamp.scale.is_equal_approx(Vector3.ONE*.35),"Diya size was not integrated")
 	check(opening.lamp.get_child_count() == 9,"Lantern case geometry remains")
 	check(opening.sound.players.size() == 6,"Night/morning synthetic ambience remains")
 	check(world.player.get_node("VisualRoot/CharacterVisual").model.get_meta("opening_clothing_fitted",0) >= 4,"Complete body/clothes fit missing")
 	check(opening.state == "prologue" and opening.titles.CARDS.size() == 8,"Story/studio/title cards missing")
 	check(opening.shade.color == Color.BLACK,"First prologue frame is not black")
+	if OS.get_environment("TLM_OPENING_VOICE_ONLY")=="1":
+		opening.set_process(false)
+		opening.state="night"
+		opening.titles.hide()
+		opening.elapsed=15.0
+		opening._process(0.0)
+		check(opening.murmur.playing and opening.murmur.stream!=null,"Arjun opening voice starts at the subtitle")
+		check(absf(opening.expression.speech_duration-opening.murmur.stream.get_length())<.03,"facial envelope matches the generated speech duration")
+		check(opening.expression.speech_envelope.max()>.5,"speech envelope contains audible articulation")
+		opening.skip_cinematic()
+		check(not opening.murmur.playing and opening.state=="done","skip stops the opening voice and returns control")
+		recorder.set_recording_active(false)
+		AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
+		print("OPENING VOICE ","FAIL" if failed else "PASS")
+		await preload("res://tools/test_audio_cleanup.gd").finish(self,1 if failed else 0)
+		return
 	check(not opening.visual.model.find_child("Arjun_Boot_1",true,false).visible,"Night boots remain visible")
 	check(opening.visual.model.find_child("Arjun_MakeHuman_Body",true,false).visible,"Barefoot staging hides complete body")
 	if OS.get_environment("TLM_OPENING_CUT_ONLY") == "1":
@@ -114,7 +168,7 @@ func run() -> void:
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(temporary.path_join("wick_cut_before.png" if sample < opening.WICK_CAMERA_CUT else "wick_cut_after.png"))
 		opening.morning()
-		opening._update_morning(20.36)
+		if opening.state!="done":opening._update_morning(20.36)
 		check(opening.state == "done" and world.player.is_physics_processing(),"Revised opening breaks morning control handoff")
 		recorder.set_recording_active(false)
 		AudioServer.remove_bus_effect(0,AudioServer.get_bus_effect_count(0)-1)
@@ -133,10 +187,14 @@ func run() -> void:
 		press.echo = false
 		press.keycode = KEY_SPACE
 		opening._input(press)
-		check(opening.state == "dawn" and not opening.hint.visible,"Second key fails to skip or leaves prompt visible")
-		opening._update_morning(20.36)
+		check(opening.state == "done","Second key fails to resolve complete opening endpoint")
+		if opening.state!="done":opening._update_morning(20.36)
 		check(opening.state == "done" and world.player.is_physics_processing(),"Automatic gate handoff failed")
 		check(home.to_local(world.player.global_position).distance_to(Vector3(0,.94,8.2)) < .05,"Gate handoff moved back to cot")
+		Input.action_press("jump");world.player.velocity=Vector3.ZERO;world.player._handle_jump()
+		check(world.player.velocity.y==0 and world.player.get_meta("cinematic_jump_block_until_released",false),"Skip key does not also start a jump")
+		Input.action_release("jump");world.player._handle_jump()
+		check(not world.player.has_meta("cinematic_jump_block_until_released"),"Jump returns after skip key release")
 		var tutorial := world.player.get_node_or_null("UI/HUDRoot/MorningTutorial")
 		if tutorial != null: check(tutorial.step == 0,"Onboarding did not begin at gate")
 		recorder.set_recording_active(false)

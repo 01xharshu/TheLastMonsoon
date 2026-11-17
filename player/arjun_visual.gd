@@ -15,6 +15,7 @@ var phase := 0.0
 var consignment_conceal_blend=0.0
 var breath := 0.0
 var horse_riding_fold := 0.0
+var horse_light_seat := 0.0
 var motion := 0.0
 var swim_blend := 0.0
 var slash_phase := -1.0
@@ -23,6 +24,9 @@ var punch_phase := -1.0
 var kick_phase := -1.0
 var knife_phase := -1.0
 var hit_phase := -1.0
+var idle_hand_roll := {"l":0.0,"r":0.0}
+var idle_axis_sign := {}
+var idle_bend := {}
 var bones: Dictionary = {}
 var base_rotations: Dictionary = {}
 var axes: Dictionary = {}
@@ -98,15 +102,21 @@ func _ready() -> void:
 	add_child(equipment)
 	equipment.inventory = actor.get_node("InventoryComponent")
 	equipment.setup(skeleton)
+	var balance := preload("res://player/arjun_locomotion_balance.gd").new()
+	balance.name = "LocomotionBalance"
+	add_child(balance)
 	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	weapon = equipment.talwar_hand
 	var wheel := WeaponWheel.new()
 	wheel.actor = actor
 	wheel.equipment = equipment
 	actor.get_node("UI").add_child.call_deferred(wheel)
+	preload("res://player/arjun_complete_fit.gd").new().apply(self)
 	Startup.finish(startup_task)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if actor.get_meta("rifle_lesson",false):return
+	if not preload("res://systems/action_permissions.gd").allowed(actor,&"equip"): return
 	if actor.get_meta("detention_action","")!="": return
 	if equipment == null or not actor.is_physics_processing(): return
 	if actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or actor.get_meta("weapon_wheel_open", false) or ((actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)!=null and not preload("res://story/rear_passenger_combat.gd").allowed(actor)) or actor.get_meta("climbing",false): return
@@ -158,6 +168,10 @@ func _process(delta: float) -> void:
 		hit_phase+=delta/.45
 		if hit_phase>=1:hit_phase=-1
 	if actor.get_meta("detention_action","")=="": detention_contacts.update(self)
+	var ambient: Node = actor.get_node("LongIdle")
+	if motion_tree != null:
+		motion_tree.update_ambient(ambient.action,ambient.clock,delta)
+		motion_tree.set("parameters/ground_idle/blend_amount",0.0)
 	var mounted: bool = actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null
 	# Keep locomotion advancing under low stances; StealthStance blends its
 	# body layer after the tree, including recovery into walking/running.
@@ -176,6 +190,9 @@ func _process(delta: float) -> void:
 		if not actor.get_meta("climbing", false): motion_tree.release_climb(delta)
 	if actor.get_meta("detention_action", "") != "":
 		_pose_detention(delta)
+		return
+	if ambient.seat > 0.0:
+		_pose_ambient_seated(delta,ambient)
 		return
 	if actor.get_meta("rest_action", "") != "":
 		if motion_tree != null:
@@ -313,14 +330,14 @@ func _process(delta: float) -> void:
 		match equipment.selected:
 			Equipment.Selection.ENFIELD:
 				reload_node = actor.get_node_or_null("RifleCombat")
-				duration = preload("res://player/enfield_loading_sequence.gd").RELOAD_SECONDS
+				duration = reload_node.reload_total if reload_node.reload_total > 0.0 else preload("res://player/enfield_loading_sequence.gd").RELOAD_SECONDS
 			Equipment.Selection.PISTOL:
 				reload_node = actor.get_node_or_null("PistolCombat")
 				duration = reload_node.reload_duration
 				equipment.pistol_reload_charges = reload_node.reload_charges
 			Equipment.Selection.DOUBLE_GUN:
 				reload_node = actor.get_node_or_null("DoubleGunCombat")
-				duration = preload("res://player/rifle_combat.gd").DOUBLE_RELOAD_SECONDS
+				duration = reload_node.reload_total if reload_node.reload_total > 0.0 else preload("res://player/rifle_combat.gd").DOUBLE_RELOAD_SECONDS
 		if reload_node != null and reload_node.reload_remaining > 0.0:
 			equipment.reload_progress = clampf(1.0-reload_node.reload_remaining/duration,0.0,1.0)
 	if motion_tree != null:
@@ -335,6 +352,14 @@ func _process(delta: float) -> void:
 	var stance_layer: Node = actor.get_node("StealthStance")
 	if actor.get_meta("stealth_stance", "") == "" and stance_layer.blend <= .001:
 		equipment.apply_rifle_grip((armed and slash_phase >= 0.0) or knife_phase >= 0.0)
+	if punch_phase>=0.0:
+		var punch_input: Node=actor.get_node("CombatInput")
+		if punch_input.melee_aim_point.is_finite() and actor.global_position.distance_to(punch_input.melee_aim_point)<1.4:
+			var side: String="l" if punch_input.left_punch else "r"
+			var hand: Transform3D=skeleton.get_bone_global_pose(bones["hand_"+side])
+			var weight: float=smoothstep(.18,.43,punch_phase)*(1.0-smoothstep(.58,1.0,punch_phase))
+			var goal: Vector3=skeleton.to_local(punch_input.melee_aim_point)-hand.basis*equipment.palm_offsets[side]
+			equipment._solve_arm(side,hand.origin.lerp(goal,weight))
 	var interaction: Node = actor.get_node_or_null("InteractionPoseComponent")
 	var reaching: bool = actor.get_meta("interaction_reach", false) or (interaction != null and (interaction.amount > 0.0 or interaction.ground_pickup))
 	var door_action = actor.get_node_or_null("DoorLatchAction")
@@ -343,6 +368,10 @@ func _process(delta: float) -> void:
 		reaching=true
 	if equipment.stowed and punch_phase < 0 and kick_phase < 0 and hit_phase < 0 and not actor.has_meta("combat_dodge") and not actor.get_meta("combat_blocking",false) and not actor.get_meta("paired_combat",false) and not reaching and not actor.is_swimming and not special_pose:
 		equipment.keep_relaxed_hands_clear()
+	if motion_tree.ambient_action == "clothes" and motion_tree.ambient_blend > 0.0:
+		_ambient_clothing_contact(motion_tree.ambient_time,motion_tree.ambient_blend)
+	if motion_tree.ambient_action == "scratch" and motion_tree.ambient_blend > 0.0:
+		_ambient_hair_contact(motion_tree.ambient_time,motion_tree.ambient_blend)
 
 
 func _pose_river_action(delta: float) -> void:
@@ -443,14 +472,20 @@ func _pose_seated(delta: float) -> void:
 	var rowing_lean: float = sin(boat.row_phase)*boat.row_effort*.10 if is_instance_valid(boat) and boat.has_method("paddle_grip_world") else 0.0
 	pose("spine_01",Vector3(lerpf(-.10+rowing_lean,.60,consignment_conceal_blend),0,0),weight)
 	pose("spine_02",Vector3(lerpf(sin(breath)*.015,.40,consignment_conceal_blend),0,0),weight)
-	pose("head",Vector3(lerpf(.04,.30,consignment_conceal_blend),0,0),weight)
-	if is_instance_valid(boat) and actor.get_meta("cart_role", "") == "passenger":
+	var passenger: bool = is_instance_valid(boat) and actor.get_meta("cart_role", "") == "passenger"
+	var look := 0.0
+	if passenger and equipment.stowed and consignment_conceal_blend < .01:
+		# Check the verge before returning to a forward resting gaze.
+		var glance := sin(breath * .42)
+		look = signf(glance) * smoothstep(.45, .95, absf(glance))
+	pose("head", Vector3(lerpf(.04,.30,consignment_conceal_blend), look*.28, -look*.035), weight)
+	if passenger:
 		pose("spine_01", Vector3(lerpf(-.10,.60,consignment_conceal_blend) + boat.rider_acceleration*.02, 0, -boat.rider_turn*.04), weight)
-		pose("spine_02", Vector3(lerpf(sin(breath)*.01,.40,consignment_conceal_blend), 0, boat.rider_turn*.025), weight)
+		pose("spine_02", Vector3(lerpf(sin(breath)*.01,.40,consignment_conceal_blend), look*.085, boat.rider_turn*.025), weight)
 		if boat.has_method("foot_support_world"):
 			boat._sync_rider()
 			for side in ["l", "r"]:
-				_horse_foot_contact(side, boat.foot_support_world(side), 1.0)
+				_horse_foot_contact(side, boat.foot_support_world(side), 1.0,Vector3(0,0,1),boat.cart.global_basis.y if boat.get("seat_name")=="ConsignmentRearSeat" else Vector3.UP)
 		if preload("res://story/rear_passenger_combat.gd").allowed(actor) and not equipment.stowed:
 			equipment.apply_rifle_grip()
 		elif boat.has_method("passenger_hand_world"):
@@ -485,7 +520,8 @@ func _pose_cart_transition(delta: float, vehicle: Node) -> void:
 		if solver.is_running(): solver.stop()
 	var u: float = vehicle.transition_progress if vehicle.transition == "boarding" else 1.0 - vehicle.transition_progress
 	var cabin_transfer: bool = vehicle.role == "passenger" and vehicle.cart.has_method("show_coachman_blockout")
-	var sit: float = smoothstep(.72 if cabin_transfer else .55, 1.0, u)
+	var rear_transfer:bool=vehicle.seat_name=="ConsignmentRearSeat"
+	var sit: float = smoothstep(.82 if rear_transfer else (.72 if cabin_transfer else .55), 1.0, u)
 	var step: float = sin(PI * clampf(u / .55, 0.0, 1.0)) * (1.0 - sit)
 	model.rotation.x = 0.0
 	model.position = Vector3(0, -.9, 0)
@@ -505,7 +541,12 @@ func _pose_cart_transition(delta: float, vehicle: Node) -> void:
 	vehicle._sync_rider()
 	var contact: float = smoothstep(.20, .36 if cabin_transfer else .45, u) * (1.0 - smoothstep(.50 if cabin_transfer else .65, .64 if cabin_transfer else .90, u))
 	var leading_side := "l" if vehicle.transition_side < 0.0 else "r"
-	if cabin_transfer:
+	if rear_transfer:
+		var lower_weight:float=smoothstep(.25,.38,u)*(1.0-smoothstep(.43,.60,u))
+		_horse_foot_contact(leading_side,vehicle.cart.to_global(Vector3(0,.50,4.55)),lower_weight)
+		var upper_weight:float=smoothstep(.52,.65,u)*(1.0-smoothstep(.80,.94,u))
+		_horse_foot_contact(leading_side,vehicle.transition_step_world(),upper_weight)
+	elif cabin_transfer:
 		for side in ["l", "r"]:
 			var leading: bool = side == leading_side
 			var foot_contact := smoothstep(.20 if leading else .48, .36 if leading else .66, u)
@@ -568,11 +609,17 @@ func _pose_horse_riding(delta: float) -> void:
 		if clip != null and clip.length > 0.0:
 			cycle = TAU * mount.rigged_anim.current_animation_position / clip.length
 	var airborne: bool = not mount._walk_supported()
-	var desired_fold: float = lerpf(.65,1.0,clampf(mount.velocity.y/5.7,0.0,1.0)) if airborne else 0.0
+	var flight: float = clampf(1.0-absf(mount.velocity.y)/5.7,0.0,1.0)
+	var desired_fold: float = lerpf(.38,1.0,flight) if airborne else 0.0
 	horse_riding_fold = lerpf(horse_riding_fold,desired_fold,1.0-exp(-12.0*delta))
 	var jump_fold: float = horse_riding_fold
 	var landing: float = mount.rider_landing
-	var lean: float = stride*.08 + gallop*.22 + jump_fold*.38 + landing*.16
+	var acceleration: float = clampf(mount.rider_acceleration/6.5,-1,1)
+	var grade: float = clampf(mount.rider_grade,-.45,.45)
+	var lean: float = stride*.08 + gallop*.24 + jump_fold*.47 + landing*.16 + grade*.33 + acceleration*.09
+	var roll: float = clampf(mount.turning_rate,-1,1)*.085
+	var walk_shift: float = sin(cycle)*smoothstep(.03,.25,stride)*(1.0-gallop)*.038
+	horse_light_seat = lerpf(horse_light_seat, gallop*.028+jump_fold*.06, weight)
 	var follow: float = sin(cycle)*stride*(.025 + gallop*.035) if not airborne else 0.0
 	model.rotation.x = lerpf(model.rotation.x,0.0,weight)
 	model.position = model.position.lerp(Vector3(0,-.9,0),weight)
@@ -585,9 +632,9 @@ func _pose_horse_riding(delta: float) -> void:
 		pose("upperarm_"+side,Vector3(-.30,0,-s*.40),weight)
 		pose("lowerarm_"+side,Vector3(-.50,0,0),weight)
 	pose("pelvis",Vector3(lean*.12,0,0),weight)
-	pose("spine_01",Vector3(.06+lean*.55-follow,0,0),weight)
-	pose("spine_02",Vector3(lean*.30-follow*.55+sin(breath)*.008,0,0),weight)
-	pose("head",Vector3(.03-lean*.55+follow*.3,0,0),weight)
+	pose("spine_01",Vector3(.025+lean*.55-follow*.65,walk_shift,roll+walk_shift),weight)
+	pose("spine_02",Vector3(lean*.30-follow*.35+sin(breath)*.008,-walk_shift*.45,-roll*.35),weight)
+	pose("head",Vector3(.015-lean*.40+follow*.2,0,0),weight)
 	# Seat alignment must use this frame's pelvis pose before solving limbs.
 	skeleton.force_update_all_bone_transforms()
 	mount._sync_rider()
@@ -857,6 +904,16 @@ func _pose_cell_seated(delta: float) -> void:
 	var seated: float = actor.get_meta("detention_seat_blend",0.0)
 	motion_tree.set("parameters/detention/blend_amount",0.0)
 	motion_tree.update_rest(delta,seated,seated*.38,component.seat_rising)
+	# Shift the chest above the boots before rising, then settle over the seat.
+	# Keep the hip and limb contact solves downstream of these pose layers.
+	breath += delta * 1.8
+	var transfer := sin(PI * seated)
+	var settle := smoothstep(.85, 1.0, seated)
+	var scan := sin(breath * .36)
+	var glance := signf(scan) * smoothstep(.5, .96, absf(scan)) * settle
+	pose("spine_01", Vector3(transfer*.19, glance*.035, glance*.018), 1.0)
+	pose("spine_02", Vector3(transfer*.08 + sin(breath)*.012*settle, glance*.065, 0), 1.0)
+
 	model.position=Vector3(0,-.9,0)
 	model.quaternion=Quaternion.IDENTITY
 	skeleton.force_update_all_bone_transforms()
@@ -865,12 +922,26 @@ func _pose_cell_seated(delta: float) -> void:
 	var desired: Vector3 = hip.lerp(component.seat_world,seated)
 	model.global_position += desired-hip
 	skeleton.force_update_all_bone_transforms()
+	# Establish support while the hips are still moving, then release it as
+	# the body straightens. A linear blend left the hands inside the tunic.
+	var hand_support := smoothstep(.015, .21, seated)
+	var boot_support := smoothstep(.06, .65, seated)
 	for side in ["l","r"]:
 		var sign_side := 1.0 if side=="l" else -1.0
 		var foot: Vector3 = component.floor_world+actor.global_basis*Vector3(sign_side*.20,.025,0)
-		_horse_foot_contact(side,foot,seated)
+		_horse_foot_contact(side,foot,boot_support)
 		var knee := skeleton.get_bone_global_pose(bones["calf_"+side]).origin
-		var target := knee+Vector3(0,.095,-.06)
+		var hand_side := sign_side*.018*transfer
+		var hand_height := .095 + transfer*.085
+		var hand_forward := -.06 + transfer*.07
+		if side == "r":
+			# Sweep around the outside of the hanging tail before reaching
+			# inward over the thigh. Reverse the same path when standing.
+			var around_sash := smoothstep(0.0,.14,seated)*(1.0-smoothstep(.24,.53,seated))
+			hand_side += .035*smoothstep(.08,.65,seated) + .065*transfer - .15*around_sash
+			hand_height += .035*transfer
+			hand_forward += .035*transfer
+		var target := knee+Vector3(hand_side,hand_height,hand_forward)
 		var hand_index: int=bones["hand_"+side]
 		var arm_before: Dictionary={}
 		for bone in ["upperarm_"+side,"lowerarm_"+side,"hand_"+side]: arm_before[bone]=skeleton.get_bone_pose_rotation(bones[bone])
@@ -885,6 +956,64 @@ func _pose_cell_seated(delta: float) -> void:
 			skeleton.force_update_all_bone_transforms()
 		for bone in arm_before:
 			var index: int=bones[bone]
-			skeleton.set_bone_pose_rotation(index,arm_before[bone].slerp(skeleton.get_bone_pose_rotation(index),seated))
-		equipment._grasp(side,.13*seated)
-	pose("head",Vector3(.08,0,0),seated)
+			skeleton.set_bone_pose_rotation(index,arm_before[bone].slerp(skeleton.get_bone_pose_rotation(index),hand_support))
+		equipment._grasp(side,(.13-transfer*.07)*hand_support)
+	pose("head",Vector3(.055 + transfer*.08, glance*.24, -glance*.025),seated)
+
+
+func _pose_ambient_seated(delta: float, component: Node) -> void:
+	var motion := preload("res://player/ground_idle_motion.gd")
+	var u: float = component.seat
+	motion_tree.update_ground_idle(delta,u)
+	# Preserve the actual relaxed pose at ownership transfer, including wrists.
+	for bone in component.entry_pose:
+		var index: int = bones[bone]
+		skeleton.set_bone_pose_rotation(index,(component.entry_pose[bone] as Quaternion).slerp(skeleton.get_bone_pose_rotation(index),smoothstep(0,.08,u)))
+	model.position = Vector3(0,-.9,0)
+	model.quaternion = Quaternion.IDENTITY
+	skeleton.force_update_all_bone_transforms()
+	var hip := skeleton.to_global(skeleton.get_bone_global_pose(bones["pelvis"]).origin)
+	var lowering: float = motion.hip_fraction(u)
+	var desired: Vector3 = component.floor_world+component.facing*Vector3(0,lerpf(component.stand_hip_height,.16,lowering),-.10*lowering)
+	model.global_position += desired-hip
+	skeleton.force_update_all_bone_transforms()
+	for side in ["l","r"]:
+		var sign_side := 1.0 if side == "l" else -1.0
+		var leg: float = motion.leg_fraction(u,side)
+		var finish: Vector3 = component.floor_world+component.facing*Vector3(sign_side*.27,.015,.72)
+		var target: Vector3 = (component.foot_start[side] as Vector3).lerp(finish,leg)
+		target.y += sin(leg*PI)*.065
+		var pole: Vector3 = skeleton.global_basis.inverse()*component.facing*Vector3(sign_side*.12,smoothstep(.25,.85,u),1.0-.8*smoothstep(.25,.85,u))
+		motion.foot_contact(self,side,target,pole,smoothstep(0,.06,u))
+		var live_hip := skeleton.to_global(skeleton.get_bone_global_pose(bones["pelvis"]).origin)
+		# Keep balance hands outside the folding knees and below the shoulder.
+		# A knee-height target can pass through the shoulder in a deep squat,
+		# making the elbow pole singular even when the final lap pose is valid.
+		var balance: Vector3 = live_hip+component.facing*Vector3(sign_side*.32,.05,.26)
+		var lap: Vector3 = component.floor_world+component.facing*Vector3(sign_side*.24,.31,.28)
+		var hand_target := balance.lerp(lap,smoothstep(.78,1.0,u))
+		var hand_weight := smoothstep(.08,.32,u)
+		motion.hand_contact(self,side,hand_target,component.facing*Vector3(0,0,1),Vector3.DOWN,hand_weight)
+
+func _ambient_clothing_contact(time: float, fade: float = 1.0) -> void:
+	var u := clampf(time/5.0,0.0,1.0)
+	var weight := smoothstep(0,.18,u)*(1.0-smoothstep(.76,1.0,u))*fade
+	var hip := skeleton.to_global(skeleton.get_bone_global_pose(bones["pelvis"]).origin)
+	var facing: Basis = actor.get_node("VisualRoot").global_basis.orthonormalized()
+	for side in ["l","r"]:
+		var sign_side := 1.0 if side == "l" else -1.0
+		var target: Vector3 = hip+facing*Vector3(sign_side*.20,.22+sin(u*TAU*2)*.018,.195)
+		preload("res://player/ground_idle_motion.gd").hand_contact(self,side,target,Vector3.DOWN,-facing.z,weight)
+
+func _ambient_hair_contact(time: float, fade: float) -> void:
+	var u := clampf(time/5.0,0.0,1.0)
+	var weight := smoothstep(0,.24,u)*(1.0-smoothstep(.70,1.0,u))*fade
+	var facing: Basis = actor.get_node("VisualRoot").global_basis.orthonormalized()
+	var head := skeleton.to_global(skeleton.get_bone_global_pose(bones["head"]).origin)
+	# Right side above the ear; approach from outside, away from the face.
+	var rub := sin(u*TAU*5.0)*.004*smoothstep(.24,.32,u)*(1.0-smoothstep(.62,.70,u))
+	var target := head+facing*Vector3(-.108,.075+rub,.005)
+	preload("res://player/ground_idle_motion.gd").hand_contact(self,"r",target,facing.y,facing.x,weight)
+	var scratching := smoothstep(.24,.32,u)*(1.0-smoothstep(.62,.70,u))*weight
+	equipment._grasp("r",(.40+.065*sin(u*TAU*5.0))*scratching)
+	skeleton.force_update_all_bone_transforms()

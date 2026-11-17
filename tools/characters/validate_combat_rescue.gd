@@ -16,6 +16,7 @@ func check(ok: bool,label: String) -> void:
 func make_actor(label: String, model: String, at: Vector3, faction: String) -> Node3D:
 	var actor:=preload("res://characters/npcs/households/household_npc_actor.gd").new()
 	actor.name=label;actor.position=at;actor.movement_enabled=false;actor.foot_plant_enabled=false
+	actor.set_meta("external_combat_motion",true) # Arena owns position while testing individual contacts.
 	actor.set_meta("combat_faction",faction)
 	actor.add_child(load(model).instantiate());world.add_child(actor)
 	return actor
@@ -63,6 +64,21 @@ func run() -> void:
 	player.receive_combat_hit(10,british)
 	check(is_equal_approx(player.health,old_health-2),"frontal guard absorbs 80 percent of melee damage")
 	player.set_meta("combat_blocking",false)
+	# A stationary player hit from behind turns to face the attacker, but
+	# moving input remains authoritative over the recovery turn.
+	player.get_node("VisualRoot").global_rotation.y=PI
+	player.receive_combat_hit(1,british)
+	for frame in 30:player._handle_movement(1.0/60.0)
+	var toward: Vector3=british.global_position-player.global_position;toward.y=0
+	check(player.get_node("VisualRoot").global_basis.z.dot(toward.normalized())>.9,"idle melee-hit recovery faces attacker")
+	player.get_node("VisualRoot").global_rotation.y=PI
+	Input.action_press("move_forward")
+	for frame in 30:player._handle_movement(1.0/60.0)
+	Input.action_release("move_forward")
+	check(player.get_node("VisualRoot").global_basis.z.dot(toward.normalized())<.5,"movement input retains facing during melee-hit recovery")
+	player.melee_reaction_turn_time=0;player.health=old_health-2
+	player.velocity=Vector3.ZERO;player.get_node("VisualRoot").global_rotation.y=0
+	visual.hit_phase=-1
 	player.set_physics_process(true)
 	check(combat.dodge(),"grounded stamina-cost dodge starts")
 	combat._process(.5)
@@ -189,10 +205,8 @@ func run() -> void:
 	check(peasant_lowest>=-.025 and peasant_lowest<.03,"fallen rescue peasant meets floor without penetration")
 	check(enemy_vitality.receive_hit(35,player,"gun") and enemy_vitality.dead,"gun can kill a knocked-out enemy")
 	var report={"rear_hold_target_error_m":hold_error,"status":"PASS" if errors.is_empty() else "FAIL","errors":errors,"fallen_head_y_m":head_y,"fallen_mesh_minimum_y_m":lowest,"peasant_mesh_minimum_y_m":peasant_lowest,"renderer":RenderingServer.get_current_rendering_method(),"visual_approved":false}
-	var file:=FileAccess.open("res://docs/characters/arjun/combat_rescue_validation%s.json"%("_metal" if captures else ""),FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	print("COMBAT RESCUE ",report.status," ",errors)
-	world.queue_free();await process_frame;await process_frame
-	quit(0 if errors.is_empty() else 1)
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if errors.is_empty() else 1)
 
 func _physics_ticks(count: int) -> void:
 	for i in count:await physics_frame

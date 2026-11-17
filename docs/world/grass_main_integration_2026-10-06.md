@@ -23,3 +23,13 @@ The first refresh stopped before save because main has an extra non-numbered Nat
 |wide|6.904/7.254|6.884/7.547|206→233|
 
 After: 14516 grass batches, 11789 sampled roots, maximum collision surface discrepancy 0.008176m. Blades visually replace large foliage cards; final density/organic variation remain open. Metal GPU timers return0; render-CPU close value is inconsistent with wall sampling and is not used for acceptance. Desktop presentation can limit the wall measurement; these numbers establish only the observed isolated comparison. Whole game, active traversal and target budget remain unverified.
+
+
+2026-10-23 continuation: grass indexing is applied to each shared ArrayMesh in place once during the existing startup task. This replaces per-batch mesh rebinding. Native direct-scene setup measured main 942.202→13.591 ms and wilderness 1000.311→10.079 ms; these are grass-setup timings, not total load time or FPS. All 22,102 grass instance buffers, mesh identities and culling bounds passed parity; repeated setup is idempotent. Future bakes index after normal generation. Core90→42/detail270→126vertices retain triangle counts; normal encoding tolerance<0.0002 and native image channel delta≤2/255.
+
+The blade shader skips wake calculations for inactive emitters or vertices outside their exact8m/3.5m influence, skips wind/wake calculations after full distance fade, and shares the inverse model matrix. The original18m chunks, fade thresholds, density and shadows remain. Whole-world FPS improvement is unestablished. Three larger-batch candidates were tested and removed because extra submitted geometry outweighed draw savings; production does not consolidate grass chunks.
+
+Reusable checks (temporary logs/userdata cleaned by the runners):
+- `python3 tools/world/run_grass_shader_check.py`: git-HEAD shader baseline versus current shader, native1280×720 actual-landscape A/B/A, frozen nonzero wind and active/inactive wake; exact pixel parity required. HEAD must contain the intended baseline.
+- `python3 tools/world/run_grass_world_check.py`: actual populated-world startup/opening skip/grass-village-city sample using disposable user data. Post-change observations only, not A/B attribution.
+- `Godot --path . --rendering-driver metal --resolution 1280x720 --disable-vsync --script res://tools/world/validate_grass_indexing.gd`: geometry/buffers/bounds/idempotence; use OS-temp `--log-file` and cleanup.

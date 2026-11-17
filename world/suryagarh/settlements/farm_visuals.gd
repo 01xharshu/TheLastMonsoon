@@ -25,21 +25,21 @@ static func plant_mesh() -> ArrayMesh:
 				st.set_uv(uv[index]);st.add_vertex(points[index])
 	st.generate_normals();leaf_mesh=st.commit();return leaf_mesh
 
-static func build(parent:Node3D,layout:RefCounted,size:Vector2,seed_value:int,young:=false) -> void:
+static func build(parent:Node3D,layout:RefCounted,size:Vector2,seed_value:int,young:=false, bed_rows:=0, plant_spacing:=.32) -> void:
 	if foliage==null:
 		foliage=ShaderMaterial.new();foliage.shader=preload("res://world/suryagarh/settlements/farm_foliage.gdshader")
 	if soil==null:
 		soil=StandardMaterial3D.new();soil.albedo_texture=preload("res://assets/nature/materials/brown_mud_dry_diff_1k.jpg")
 		soil.uv1_scale=Vector3(2,2,1);soil.albedo_color=Color(.67,.59,.46);soil.roughness=1
 	var rng:=RandomNumberGenerator.new();rng.seed=seed_value
-	var rows:=3 if size.y<5 else 6
-	var columns:=maxi(1,int((size.x-1)/.32))
+	var rows:=bed_rows if bed_rows>0 else (3 if size.y<5 else 6)
+	var columns:=maxi(1,int((size.x-1)/plant_spacing))
 	var mm:=MultiMesh.new();mm.transform_format=MultiMesh.TRANSFORM_3D;mm.use_colors=true
 	mm.mesh=plant_mesh();mm.instance_count=rows*columns
 	for row in rows:
 		for column in columns:
 			var index:=row*columns+column
-			var x:float=-size.x*.5+.5+column*.32+rng.randf_range(-.045,.045)
+			var x:float=-size.x*.5+.5+column*plant_spacing+rng.randf_range(-.045,.045)
 			var z:float=-size.y*.5+.65+row*(size.y-1.3)/maxi(1,rows-1)+rng.randf_range(-.06,.06)
 			var point:=parent.to_global(Vector3(x,0,z));point.y=layout.height(point.x,point.z)+.065
 			var scale_value:=rng.randf_range(.65,1.2)*(.5 if young else 1.0)

@@ -28,7 +28,15 @@ func _run() -> void:
 	if world_mode:
 		var world: Node3D = current_scene
 		var actor: CharacterBody3D = world.get_node("Player")
-		var opening := world.get_node("OpeningSequence")
+		var opening := world.get_node_or_null("OpeningSequence")
+		var startup_deadline := Time.get_ticks_msec() + 120000
+		while opening == null and Time.get_ticks_msec() < startup_deadline:
+			await process_frame
+			opening = world.get_node_or_null("OpeningSequence")
+		if opening == null:
+			require(false, "New Journey creates the opening sequence")
+			saves.quit_game(1)
+			return
 		var skip := InputEventKey.new()
 		skip.keycode = KEY_ESCAPE
 		skip.pressed = true

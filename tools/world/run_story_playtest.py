@@ -49,20 +49,30 @@ CHECKS = {
     "safety": "validate_player_safety.gd",
     "parking": "validate_delivery_parking.gd",
     "guard_release": "validate_dev_guard_release.gd",
+    "carry": "../characters/validate_arjun_carry.gd",
+    "run_contact": "../characters/validate_arjun_run_contact.gd",
+    "walk_contact": "../characters/validate_arjun_walk_contact.gd",
+    "ground_stance": "../characters/validate_arjun_ground_stance_isolated.gd",
+    "stealth_world": "validate_stealth_stance.gd",
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--native", action="store_true")
+    parser.add_argument("--opening-fit", action="store_true", help="Exercise the actual New Journey body/foundation fitting on the carry actor")
     parser.add_argument("--manual", action="store_true")
     parser.add_argument("--natural", action="store_true", help="Play Dev acting at normal elapsed time")
     parser.add_argument("--timeout", type=int, default=600)
+    parser.add_argument("--fixed-fps", type=int, choices=[30, 60, 120], help="Force simulation cadence for contact checks; not a performance measurement")
     parser.add_argument("--quality", type=int, choices=[0, 1, 2], help="Graphics preset for the disposable test only")
     parser.add_argument("--review-seconds", type=int, choices=range(0, 61), default=0, help="Keep temporary frames briefly for inspection")
     parser.add_argument("--keep-going", action="store_true", help="Run independent branches even after a failed check")
     parser.add_argument("--diagnose-delivery", action="store_true", help="Instrument only the disposable snapshot's collision and shutdown failures")
     parser.add_argument("--diagnose-teardown", action="store_true", help="Test orderly drawable/resource retirement in the disposable snapshot")
+
+    parser.add_argument("--reference-hem", action="store_true", help="Compare unfitted original hem in disposable copy only")
+    parser.add_argument("--reference-garments", action="store_true", help="Compare tracked trouser fits in the disposable copy only")
     parser.add_argument("--checks", nargs="+", choices=CHECKS, default=list(CHECKS))
     args = parser.parse_args()
     spec = importlib.util.spec_from_file_location("game_checks", ROOT / "tools/maintenance/check_game.py")
@@ -71,7 +81,7 @@ def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     binary = shutil.which("godot") or "/Applications/Godot.app/Contents/MacOS/Godot"
-    keys = ["TLM_STORY_TEST_DIR", "TLM_SAVE_TEST_DIR", "TLM_STORY_NATURAL", "TLM_EXPECT_USER_DATA", "TLM_OPENING_CUT_ONLY", "TLM_OPENING_TEST_OUTPUT", "TLM_ERRAND_ONLY"]
+    keys = ["TLM_STORY_TEST_DIR", "TLM_SAVE_TEST_DIR", "TLM_STORY_NATURAL", "TLM_EXPECT_USER_DATA", "TLM_OPENING_CUT_ONLY", "TLM_OPENING_TEST_OUTPUT", "TLM_ERRAND_ONLY", "TLM_CARRY_OPENING"]
     previous = {key: os.environ.get(key) for key in keys}
     with tempfile.TemporaryDirectory(prefix="tlm-story-playtest-") as temporary:
         directory = Path(temporary)
@@ -79,6 +89,13 @@ def main():
         try:
             shutil.copytree(ROOT, project, copy_function=checks.copy_stable_file,
                             ignore=shutil.ignore_patterns(".git", "WorkingAssets", "__pycache__", "node_modules", ".next"))
+            if args.reference_garments:
+                for name in ("Arjun_DrapedTrousers_1.res", "Arjun_DrapedTrousers_-1.res"):
+                    relative = "characters/arjun/stance_fit/" + name
+                    result = subprocess.run(["git", "show", "HEAD:" + relative], cwd=ROOT, capture_output=True, check=True)
+                    (project / relative).write_bytes(result.stdout)
+            if args.reference_hem:
+                (project / "characters/arjun/stance_fit/Arjun_Kurta_SplitHem.res").unlink(missing_ok=True)
             config = project / "project.godot"
             config.write_text(config.read_text().replace("[application]", '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="' + directory.name + '"'))
             if args.diagnose_delivery:
@@ -133,6 +150,7 @@ def main():
                 finally:
                     checks.stop_process(process)
                     process.wait()
+            os.environ["TLM_CARRY_OPENING"] = "1" if args.opening_fit else "0"
             passed = True
             for label in args.checks:
                 os.environ["TLM_OPENING_CUT_ONLY"] = "1" if label == "wick_cut" else "0"
@@ -141,18 +159,20 @@ def main():
                 command = ["--script", "res://tools/world/" + CHECKS[label]]
                 if label == "safety":
                     command += ["--", "--output=" + temporary]
-                if not args.native:
-                    command = ["--fixed-fps", "20", *command]
-                if not run_compact(checks, binary, project, directory, label.upper(), command, args.timeout, native=args.native):
+                if not args.native or args.fixed_fps:
+                    cadence = args.fixed_fps or (60 if label in ("run_contact", "walk_contact", "ground_stance", "carry") else 20)
+                    command = ["--fixed-fps", str(cadence), *command]
+                ok = run_compact(checks, binary, project, directory, label.upper(), command, args.timeout, native=args.native)
+                if not ok:
                     passed = False
-                    if not args.keep_going:
-                        return 1
                 for line in (directory / (label.upper() + ".log")).read_text().splitlines():
-                    if any(marker in line for marker in ("DEV STORY WORLD:", "DEV GUARD RELEASE", "OPENING MENU:", "OPENING WICK CUT:", "MISSION CLOCK:", "DAILY ERRANDS:", "EXPANDED ERRANDS:", "FOCUSED_GRIP", "PLAYER SAFETY:", "DELIVERY PARKING:", "DELIVERY_GROUND", "DELIVERY_SUPPORT_DIAGNOSTIC", "DELIVERY_CAST_DIAGNOSTIC", "STORY_TEST_QUIT_BEGIN", "STORY_TEST_RETIRED_DRAWABLES")):
+                    if any(marker in line for marker in ("ARJUN CROUCH CONTACT", "ARJUN LAYER ROLES", "ARJUN CLOTH LAYERS", "STEALTH STANCE:", "ARJUN RUN CONTACT", "ARJUN WALK CONTACT:", "GROUND STANCE", "ARJUN CARRY:", "DEV STORY WORLD:", "DEV GUARD RELEASE", "OPENING MENU:", "OPENING WICK CUT:", "MISSION CLOCK:", "DAILY ERRANDS:", "EXPANDED ERRANDS:", "FOCUSED_GRIP", "PLAYER SAFETY:", "DELIVERY PARKING:", "DELIVERY_GROUND", "DELIVERY_SUPPORT_DIAGNOSTIC", "DELIVERY_CAST_DIAGNOSTIC", "STORY_TEST_QUIT_BEGIN", "STORY_TEST_RETIRED_DRAWABLES")):
                         print(line, flush=True)
                 if args.review_seconds:
                     print("REVIEW_READY " + temporary, flush=True)
                     time.sleep(args.review_seconds)
+                if not ok and not args.keep_going:
+                    return 1
             return 0 if passed else 1
         finally:
             shutil.rmtree(checks.user_data_directory(directory.name), ignore_errors=True)

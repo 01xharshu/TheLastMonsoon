@@ -1,4 +1,5 @@
 extends Node3D
+const GATE_COACH_PARK:=Vector3(21.5,0,94.0)
 ## Mission-owned additions. Existing MPFB people, vehicle systems and world terrain.
 const Builder=preload("res://world/suryagarh/settlements/settlement_builder.gd")
 const Human=preload("res://characters/human_scene.gd")
@@ -26,6 +27,8 @@ var prompts: Dictionary={}
 var return_bay: Node3D
 var rope: MeshInstance3D
 var target: StaticBody3D
+var rack_rifle:Node3D
+var firing_line: Node3D
 var cargo: Node3D
 var cargo_seats: Array[Node3D]=[]
 var shared_officer=false
@@ -50,7 +53,8 @@ func configure(owner: Node) -> void:
  horse=preload("res://horses/stable_horse.gd").new();horse.name="SuperiorHorse";parking.add_child(horse);horse.position=Vector3(3,0,-4)
  coach=preload("res://vehicles/family_carriage_candidate.gd").new();coach.name="MangalCoveredCoach";coach.add_to_group("household_coach");add_child(coach)
  coach.set_meta("npc_occupied_seats",["CoachmanSeat"])
- coach.global_position=director.ground(fort.to_global(Vector3(0,0,66)))
+ var coach_parking:=GATE_COACH_PARK if fort.get("embedded_in_world")==true else Vector3(0,0,66)
+ coach.global_position=director.ground(fort.to_global(coach_parking))
  goods=preload("res://vehicles/horse_cart_candidate.gd").new();goods.variant=1;goods.name="RebellionGoodsCart";add_child(goods)
  goods.set_meta("player_owned",true)
  goods.global_position=director.ground(fort.to_global(Vector3(13,0,63)));goods.add_to_group("live_travel_carts")
@@ -76,25 +80,92 @@ func configure(owner: Node) -> void:
  b.piece(cellar,"UpperTerrace",Vector3(0,3.6,21),Vector3(8,.2,6),b.stone)
  for side in [-1,1]:
   b.piece(cellar,"PassageWall",Vector3(side*1.7,3.1,12.5),Vector3(.3,3.7,11),b.stone)
+ preload("res://story/rebel_hideout_environment.gd").build(b,cellar)
+ var courtyard=site("RebelTrainingCourtyard",fort.to_global(Vector3(0,0,0)))
+ firing_line=site("CourtyardFiringLine",fort.to_global(Vector3(0,0,10)))
  var lamp=OmniLight3D.new();lamp.position=Vector3(0,2.6,0);lamp.light_color=Color(1,.68,.35);lamp.omni_range=13;lamp.light_energy=1.5;cellar.add_child(lamp)
- mangal=person("MangalPandey",cellar,Vector3(-3,.2,2),"res://characters/npcs/motion/village_farmer/village_farmer_rigged_candidate.glb","indian")
+ mangal=person("MangalPandey",cellar,Vector3(-3,.2,2),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian")
  for i in 4:
   await get_tree().process_frame
-  var member=person("Rebel%d"%i,cellar,Vector3(-6+i*4,.2,-2),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian")
+  var at:Vector3=director.ground(fort.to_global(Vector3(-8+i*5.4,0,13)))
+  var member=person("Rebel%d"%i,courtyard,courtyard.to_local(at),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian")
   trainees.append(member);equip(member)
  for i in 2:
   await get_tree().process_frame
   companions.append(person("RaidCompanion%d"%i,cellar,Vector3(-2+i*4,.2,4),"res://characters/npcs/mangal_rebels/mangal_rebel.glb","indian"));equip(companions[-1])
  prompt("briefing","Speak to Mangal Pandey",cellar,Vector3(-3,1.1,2))
- prompt("weapons","Inspect the stolen weapons",cellar,Vector3(5,1.1,-4))
- prompt("raid","Begin the cantonment weapons raid",cellar,Vector3(-3,1.1,3.5))
+ var rack:=Node3D.new()
+ rack.name="CapturedRifleRack"
+ rack.position=Vector3(5,.2,-5.45)
+ cellar.add_child(rack)
+ var iron:=StandardMaterial3D.new()
+ iron.albedo_color=Color(.16,.145,.13)
+ iron.roughness=.91
+ iron.metallic=.72
+ for side in [-1.0,1.0]:
+  b.piece(rack,"WroughtIronUpright",Vector3(side*1.65,.85,0),Vector3(.075,1.7,.075),iron,false)
+  b.piece(rack,"RackFoot",Vector3(side*1.65,.05,0),Vector3(.14,.1,.58),iron,false)
+ b.piece(rack,"StockCradle",Vector3(0,.16,0),Vector3(3.4,.13,.36),b.wood,true)
+ b.piece(rack,"IronBarrelRail",Vector3(0,1.34,-.07),Vector3(3.4,.085,.075),iron,false)
  for i in 8:
-  var rifle=preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate();cellar.add_child(rifle);rifle.position=Vector3(3+i*.45,.8,-4);rifle.rotation.z=PI/2;rifle.scale=Vector3.ONE*.85
- b.piece(cellar,"CapturedWeaponsTable",Vector3(5,.7,-4),Vector3(5,.2,1.6),b.wood)
- target=StaticBody3D.new();target.name="TrainingTarget";cellar.add_child(target);target.position=Vector3(0,1.5,-5)
- var hit=CollisionShape3D.new();var box=BoxShape3D.new();box.size=Vector3(1.2,1.5,.16);hit.shape=box;target.add_child(hit)
- var board=MeshInstance3D.new();var board_mesh=BoxMesh.new();board_mesh.size=box.size;board.mesh=board_mesh;board.material_override=b.wood;target.add_child(board)
+  var x:float=(float(i)-3.5)*.39
+  for side in [-1.0,1.0]:
+   b.piece(rack,"BarrelRest",Vector3(x+side*.075,1.33,.025),Vector3(.032,.075,.21),iron,false)
+  var gun:Node3D=preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate()
+  rack.add_child(gun)
+  gun.position=Vector3(x,.43,.09)
+  gun.rotation.z=PI*.5
+  gun.scale=Vector3.ONE*.86
+  if i==4:rack_rifle=gun
+ prompt("weapons","Take an Enfield from the rack",rack,Vector3(.2,.92,.26))
+ prompt("raid","Begin the cantonment weapons raid",cellar,Vector3(-3,1.1,3.5))
+ target=StaticBody3D.new()
+ target.name="TrainingTarget"
+ courtyard.add_child(target)
+ target.global_position=director.ground(fort.to_global(Vector3(0,0,-14)))+Vector3.UP*1.35
+ var hit:=CollisionShape3D.new()
+ var round_shape:=CylinderShape3D.new()
+ round_shape.radius=.64
+ round_shape.height=.29
+ hit.shape=round_shape
+ hit.rotation.x=PI*.5
+ target.add_child(hit)
+ var bark:=StandardMaterial3D.new()
+ bark.albedo_color=Color(.31,.20,.11)
+ bark.roughness=.91
+ bark.albedo_texture=preload("res://assets/architecture/materials/dark_wood_Diffuse.jpg")
+ var log_face:=CylinderMesh.new()
+ log_face.top_radius=.64
+ log_face.bottom_radius=.64
+ log_face.height=.28
+ var log_visual:=MeshInstance3D.new()
+ log_visual.name="SplitLogRound"
+ log_visual.mesh=log_face
+ log_visual.rotation.x=PI*.5
+ log_visual.material_override=bark
+ target.add_child(log_visual)
+ var paint_dark:=StandardMaterial3D.new()
+ paint_dark.albedo_color=Color(.27,.16,.095)
+ paint_dark.roughness=.91
+ var paint_light:=StandardMaterial3D.new()
+ paint_light.albedo_color=Color(.72,.59,.39)
+ paint_light.roughness=.91
+ for ring in 5:
+  var disc:=CylinderMesh.new()
+  disc.top_radius=.52-float(ring)*.095
+  disc.bottom_radius=disc.top_radius
+  disc.height=.008
+  var mark:=MeshInstance3D.new()
+  mark.name="PaintedTargetCircle"
+  mark.mesh=disc
+  mark.rotation.x=PI*.5
+  mark.position.z=.143+float(ring)*.002
+  mark.material_override=paint_light if ring%2==0 else paint_dark
+  target.add_child(mark)
+ for side in [-1.0,1.0]:
+  b.piece(target,"TargetStanchion",Vector3(side*.48,-.64,-.1),Vector3(.12,1.46,.15),b.wood,false)
  for i in trainees.size():trainees[i].practice_target=target.global_position;trainees[i].practice_clock=i*2.5
+ var daily=preload("res://story/hideout_daily_life.gd").new();daily.setup(self);cellar.add_child(daily)
  return_bay=site("HideoutDeliveryBay",fort.to_global(Vector3(13,0,64)))
  outline(return_bay,Vector2(6,12))
  # Independent two-storey magazine occupies a clear edge of the cantonment.
@@ -151,7 +222,7 @@ func site(label: String,at: Vector3) -> Node3D:
    for z in [-half.y,half.y]:node.global_position.y=maxf(node.global_position.y,director.ground(at+Vector3(x,0,z)).y)
  return node
 func person(label: String,parent: Node3D,at: Vector3,path: String,faction: String) -> Node3D:
- var actor=Actor.new();actor.name=label;actor.viewer=director.player;actor.movement_enabled=false;actor.set_meta("combat_faction",faction);actor.set_meta("external_combat_motion",true);actor.set_meta("rebellion_guard",label.begins_with("MagazineGuard"));actor.set_meta("human_source",path);actor.add_child(Human.instantiate(path));parent.add_child(actor);actor.position=at;return actor
+ var actor=Actor.new();actor.name=label;actor.viewer=director.player;actor.movement_enabled=false;actor.set_meta("combat_faction",faction);actor.set_meta("external_combat_motion",true);actor.set_meta("rebellion_guard",label.begins_with("MagazineGuard"));actor.set_meta("human_source",path);actor.set_meta("rebel_travel","/mangal_rebels/" in path);actor.set_meta("mangal_leader",label=="MangalPandey");actor.set_meta("population_expansion_exempt",parent==cellar or label.begins_with("Rebel"));actor.add_child(Human.instantiate(path));parent.add_child(actor);actor.position=at;return actor
 func equip(actor: Node3D) -> void:
  var gun=preload("res://environment/weapons/enfield_p53/weapon_enfield_p53_01.glb").instantiate();gun.name="RebelEnfield";actor.add_child(gun);actor.held_rifle=gun;gun.position=Vector3(.2,1,-.2);gun.rotation.z=.2;gun.scale=Vector3.ONE*.85
  # Non-human ammunition bandolier is worn over the retained complete MPFB body.

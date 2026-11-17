@@ -12,6 +12,7 @@ var pending_rounds := 0
 const MUZZLE := Vector3(1.04,0.057,0)
 var loaded := true
 var reload_remaining := 0.0
+var reload_total := 0.0
 var aiming := false
 var recoil := 0.0
 var shots_fired := 0
@@ -22,7 +23,9 @@ func pistol() -> bool: return weapon_selection == 3
 func double_gun() -> bool: return weapon_selection == 5
 func capacity() -> int: return 5 if pistol() else (2 if double_gun() else 1)
 func ammo_id() -> String: return "pistol_ball" if pistol() else ("shot_charge" if double_gun() else "paper_cartridges")
-func reload_duration() -> float: return 3.5 if pistol() else (DOUBLE_RELOAD_SECONDS if double_gun() else RELOAD_SECONDS)
+func reload_duration() -> float:
+	if preload("res://story/rear_passenger_combat.gd").allowed(actor): return 1.0
+	return 3.5 if pistol() else (DOUBLE_RELOAD_SECONDS if double_gun() else RELOAD_SECONDS)
 @onready var actor: CharacterBody3D = get_parent()
 @onready var visual = actor.get_node("VisualRoot/CharacterVisual")
 @onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
@@ -67,7 +70,9 @@ func _process(delta: float) -> void:
 	if not available():
 		aiming = false
 	else:
-		aiming = Input.is_action_pressed("aim") and reload_remaining<=0
+		if rounds == 0 and reload_remaining <= 0.0 and actor.inventory.get_item_count(ammo_id()) > 0 and preload("res://story/rear_passenger_combat.gd").allowed(actor):
+			start_reload()
+		aiming = (Input.is_action_pressed("aim") or actor.has_meta("consignment_fpv_camera")) and reload_remaining<=0
 		if reload_remaining>0:
 			reload_remaining = maxf(0,reload_remaining-delta)
 			if reload_remaining==0:
@@ -79,8 +84,8 @@ func _process(delta: float) -> void:
 	if visual.equipment.selected == weapon_selection:
 		visual.equipment.aiming = aiming
 		visual.equipment.recoil = recoil
-		visual.equipment.aim_direction = -camera.global_basis.z
-	if aiming:
+		visual.equipment.aim_direction = preload("res://story/rear_passenger_combat.gd").aim_direction(actor,camera)
+	if aiming and not preload("res://story/rear_passenger_combat.gd").allowed(actor):
 		var local_direction: Vector3 = actor.global_basis.inverse()*(-camera.global_basis.z)
 		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
 
@@ -105,7 +110,8 @@ func start_reload() -> void:
 		sound.stream = EMPTY
 		sound.play()
 		return
-	reload_remaining = reload_duration()
+	reload_total = reload_duration()
+	reload_remaining = reload_total
 	sound.stream = RELOAD
 	sound.pitch_scale = maxf(1.0, RELOAD.get_length() / reload_remaining)
 	sound.play()
@@ -123,10 +129,11 @@ func fire() -> void:
 	ControllerFeedback.pulse("shot")
 	visual.equipment.apply_rifle_grip()
 	var origin: Vector3 = visual.equipment.pistol_hand.to_global(Vector3(.17,0,.064)) if pistol() else (visual.equipment.double_hand.to_global(Vector3(1.0,0,.035)) if double_gun() else visual.equipment.enfield_hand.to_global(MUZZLE))
-	var direction: Vector3 = -camera.global_basis.z
-	var target := camera.global_position+direction*350.0
+	var aim_camera:Camera3D=preload("res://story/rear_passenger_combat.gd").aim_camera(actor,camera)
+	var direction: Vector3 = preload("res://story/rear_passenger_combat.gd").aim_direction(actor,camera)
+	var target := aim_camera.global_position+direction*350.0
 	var space := actor.get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
+	var query := PhysicsRayQueryParameters3D.create(aim_camera.global_position,target)
 	query.exclude = [actor.get_rid()]
 	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(space,get_tree(),query.from,query.to,preload("res://story/rear_passenger_combat.gd").camera_exclusions(actor))
 	if not camera_hit.is_empty(): target = camera_hit.position
@@ -185,7 +192,7 @@ func muzzle_effect(origin: Vector3) -> void:
 	smoke.amount = 18
 	smoke.lifetime = 2.4
 	smoke.explosiveness = .95
-	smoke.direction = -camera.global_basis.z
+	smoke.direction = preload("res://story/rear_passenger_combat.gd").aim_direction(actor,camera)
 	smoke.spread = 24
 	smoke.initial_velocity_min = .8
 	smoke.initial_velocity_max = 2.2

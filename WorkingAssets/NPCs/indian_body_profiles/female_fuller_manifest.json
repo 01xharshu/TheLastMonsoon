@@ -1,0 +1,79 @@
+{
+  "donor": "WorkingAssets/NPCs/river_woman/river_woman_motion.blend",
+  "donor_sha256": "9164a39827b6df293000bc98907b9e177cdbb6ff2d07074fa69b953c408c3990",
+  "body": "village_woman_MakeHuman_body",
+  "vertices": 19158,
+  "adult_age": 0.6299999952316284,
+  "method": "MPFB TargetService.reapply_macro_details, relative to normalized donor macro",
+  "donor_normalization_max_m": 0.0,
+  "profiles": [
+    {
+      "id": "female_01",
+      "macro": {
+        "weight": 0.3,
+        "muscle": 0.28,
+        "proportions": 0.43,
+        "cupsize": 0.44,
+        "buttock": 0.0
+      },
+      "max_delta_m": 0.013433678075671196
+    },
+    {
+      "id": "female_02",
+      "macro": {
+        "weight": 0.42,
+        "muscle": 0.36,
+        "proportions": 0.55,
+        "cupsize": 0.53,
+        "buttock": 0.44999999999999996
+      },
+      "max_delta_m": 0.01541905663907528
+    },
+    {
+      "id": "female_03",
+      "macro": {
+        "weight": 0.5,
+        "muscle": 0.3,
+        "proportions": 0.43,
+        "cupsize": 0.71,
+        "buttock": 0.63
+      },
+      "max_delta_m": 0.03719717264175415
+    },
+    {
+      "id": "female_04",
+      "macro": {
+        "weight": 0.59,
+        "muscle": 0.4,
+        "proportions": 0.56,
+        "cupsize": 0.6000000000000001,
+        "buttock": 0.22999999999999998
+      },
+      "max_delta_m": 0.01470979955047369
+    },
+    {
+      "id": "female_05",
+      "macro": {
+        "weight": 0.68,
+        "muscle": 0.27,
+        "proportions": 0.45,
+        "cupsize": 0.79,
+        "buttock": 0.77
+      },
+      "max_delta_m": 0.052272289991378784
+    },
+    {
+      "id": "female_06",
+      "macro": {
+        "weight": 0.39,
+        "muscle": 0.52,
+        "proportions": 0.57,
+        "cupsize": 0.66,
+        "buttock": 0.38999999999999996
+      },
+      "max_delta_m": 0.021778248250484467
+    }
+  ],
+  "output": "WorkingAssets/NPCs/indian_body_profiles/female_fuller_mpfb_deltas.npz",
+  "status": "authoring inputs only; rig, clothing and runtime unverified"
+}

@@ -44,6 +44,7 @@ func export_state()->Dictionary:
 		if not world.is_ancestor_of(animal):continue
 		var p:Vector3=animal.global_position
 		state.animals[animal.identity]={"position":[p.x,p.y,p.z],"heading":animal.global_rotation.y,"health":animal.vitality.health,"kind":animal.kind}
+		if animal.has_method("export_grazing_state"):state.animals[animal.identity]["grazing"]=animal.export_grazing_state()
 	return state
 
 func restore_state(state:Dictionary)->void:
@@ -102,7 +103,9 @@ func _process(delta:float)->void:
 		if (health is int or health is float) and is_finite(float(health)) and float(health)>=0:found.vitality.take_damage(maxf(0,found.vitality.health-float(health)))
 		var heading:Variant=record.get("heading",0)
 		if found.team==null and (heading is int or heading is float) and is_finite(float(heading)):found.global_rotation.y=float(heading)
-		found.leader=null;animals.erase(id)
+		found.leader=null
+		if found.has_method("restore_grazing_state") and record.get("grazing",{}) is Dictionary:found.restore_grazing_state(record.get("grazing",{}))
+		animals.erase(id)
 	if teams.is_empty() and animals.is_empty():pending_state.clear()
 
 func _exit_tree() -> void:

@@ -26,7 +26,7 @@ func _process(delta: float) -> void:
 		rifle.global_transform=Transform3D(back_basis.scaled(Vector3.ONE*.85),to_global(Vector3(.16,.8,-.23)))
 		for side in cinematic_palms:solve_hand_contact(side,cinematic_palms[side]);set_grip(side,.6)
 		return
-	if duty_state in ["restraint","escort","fight"]:
+	if station_alarm_pose or duty_state in ["restraint","escort","fight"]:
 		var back_basis:=global_basis*Basis(Vector3(-.25,.968,0).normalized(),Vector3.FORWARD,Vector3(-.25,.968,0).normalized().cross(Vector3.FORWARD))
 		rifle.global_transform=Transform3D(back_basis.scaled(Vector3.ONE*.85),to_global(Vector3(.16,.8,-.23)))
 		return
@@ -40,6 +40,7 @@ func _process(delta: float) -> void:
 	solve_hand_contact("l",rifle.to_global(Vector3(.20,-.032,0)));set_grip("l",.35)
 
 func pose_carry() -> void:
+	_skeleton.set_bone_pose_rotation(_bones["spine_02"],_base_rotations["spine_02"]*Quaternion(_pitch_axes["spine_02"],.14))
 	_skeleton.set_bone_pose_position(foot_plant.pelvis,foot_plant.pelvis_position+foot_plant.pelvis_down*.22)
 	_skeleton.force_update_all_bone_transforms()
 	for side in ["l","r"]:

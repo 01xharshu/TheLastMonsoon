@@ -101,11 +101,6 @@ func roof_structure(room: Node3D,w: float,d: float) -> void:
 		b.piece(room,"KingPost",Vector3(0,3.6+w*.03,z),Vector3(.13,w*.06,.13),timber,false)
 	b.piece(room,"VerandaSoffit",Vector3(0,3.04,d/2+2),Vector3(w+.4,.055,4.5),timber,false)
 func writing_station(room: Node3D,at: Vector3) -> void:
-	for side in [-1,1]:
-		b.piece(room,"DeskApron",at+Vector3(0,.67,side*.43),Vector3(2.0,.17,.07),timber,false)
-		b.piece(room,"DeskStretcher",at+Vector3(0,.23,side*.35),Vector3(1.8,.075,.075),timber,false)
-	b.piece(room,"DeskDrawer",at+Vector3(0,.66,.49),Vector3(.78,.14,.03),timber,false)
-	b.piece(room,"DrawerPull",at+Vector3(0,.66,.52),Vector3(.16,.025,.025),iron,false)
 	b.piece(room,"InkPot",at+Vector3(.73,.89,-.10),Vector3(.085,.1,.085),iron,false)
 	b.piece(room,"ReedPen",at+Vector3(.7,.86,.16),Vector3(.19,.009,.009),timber,false).rotation.y = .35
 	var folio: Node3D = load("res://objects/household/supplies/record_folio.tscn").instantiate()

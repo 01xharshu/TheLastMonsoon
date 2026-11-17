@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--native", action="store_true", help="Show the actual player sequence at normal speed.")
     parser.add_argument("--world", action="store_true", help="Check the placed world cover and stance route.")
-    parser.add_argument("--rebuild", action="store_true", help="Rebuild the six runtime garment fits from the retained complete body.")
+    parser.add_argument("--rebuild", action="store_true", help="Rebuild the seven runtime garment fits from the retained complete body.")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     godot = "/Applications/Godot.app/Contents/MacOS/Godot"

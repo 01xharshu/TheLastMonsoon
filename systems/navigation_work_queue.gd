@@ -44,7 +44,13 @@ func drain() -> void:
 		await get_tree().physics_frame
 		if not is_instance_valid(self) or not is_inside_tree() or is_queued_for_deletion():return
 		if not is_instance_valid(actor) or not actor.is_inside_tree() or actor.is_queued_for_deletion() or not is_instance_valid(owner_node) or owner_node.is_queued_for_deletion():continue
-		var path: Array[Vector3]=await preload("res://world/suryagarh/settlements/resident_walk_route.gd").find_budgeted(actor,request.goal,self,request.excluded)
+		var station: Node3D=get_parent().get_node_or_null("Settlement/DistrictPolice")
+		var station_routes=preload("res://world/suryagarh/settlements/station_floor_route.gd")
+		var path: Array[Vector3]
+		if station_routes.contains(station,actor.global_position) and station_routes.contains(station,request.goal):
+			path=await station_routes.find_budgeted(actor,request.goal,station,self,request.excluded)
+		else:
+			path=await preload("res://world/suryagarh/settlements/resident_walk_route.gd").find_budgeted(actor,request.goal,self,request.excluded)
 		if not is_instance_valid(self) or not is_inside_tree() or is_queued_for_deletion():return
 		if is_instance_valid(owner_node) and owner_node.is_inside_tree() and not owner_node.is_queued_for_deletion():owner_node.call("receive_navigation",path,request.goal)
 	draining=false

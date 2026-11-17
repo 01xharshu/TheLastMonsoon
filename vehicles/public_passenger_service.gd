@@ -7,6 +7,8 @@ var lantern_pivot: Node3D
 var caption: Label
 var speech_remaining := 0.0
 var speech_age := 0.0
+var speech_duration := 4.2
+var dialogue_voice: AudioStreamPlayer3D
 var speech_started_ms := 0
 var motion_age := 0.0
 var last_inside := false
@@ -23,23 +25,27 @@ static func install(vehicle:Node3D) -> Node3D:
 
 func _ready() -> void:
  process_priority=130
+ dialogue_voice=AudioStreamPlayer3D.new();dialogue_voice.name="DriverVoice";dialogue_voice.max_distance=25;dialogue_voice.unit_size=6;add_child(dialogue_voice)
  _cache_world()
  cart.set_meta("public_passenger_service",true)
  cart.set_meta("booking_status","public")
  for part in cart.visual_root.get_children():
   var label:String=str(part.get_meta("part_label",part.name))
   if label.begins_with("ProduceBundle") or label.begins_with("LoadTie"):part.hide()
- var wood:=StandardMaterial3D.new();wood.albedo_color=Color(.25,.16,.08);wood.roughness=.9
+ var wood:=_build_open_body()
  for row in 2:
   var z:=2.40+row*.85
-  _box("PassengerBench",Vector3(0,1.46,z),Vector3(1.60,.14,.52),wood)
-  _box("PassengerBackrest",Vector3(0,1.77,z+.31),Vector3(1.60,.48,.075),wood)
+  for slat in [-1.0,0.0,1.0]:
+   _box("SeatPlank",Vector3(0,1.46,z+slat*.175),Vector3(1.60,.14,.166),wood)
+  for height in [1.65,1.91]:
+   _box("BackrestRail",Vector3(0,height,z+.43),Vector3(1.60,.14,.065),wood)
   for side in [-1.0,1.0]:
-   _box("BenchLeg",Vector3(side*.65,1.30,z),Vector3(.07,.28,.07),wood)
+   _box("BenchSupport",Vector3(side*.65,1.295,z),Vector3(.075,.28,.40),wood)
+   _box("BackrestStile",Vector3(side*.69,1.71,z+.47),Vector3(.075,.54,.075),wood)
    var socket:=Node3D.new();socket.name="PublicPassenger_%d_%s"%[row,"Left" if side<0 else "Right"]
    socket.position=Vector3(side*.43,1.54,z);cart.visual_root.add_child(socket);cart.seat_sockets[socket.name]=socket
    var point:=preload("res://vehicles/cart_boarding_point.gd").new()
-   point.name=socket.name+"Boarding";point.configure(cart,socket.name,"passenger");point.position=Vector3(side*1.1,1.45,z)
+   point.name=socket.name+"Boarding";point.configure(cart,socket.name,"passenger");point.interaction_text="Board shared bullock cart";point.position=Vector3(side*1.1,1.45,z)
    var shape:=CollisionShape3D.new();var sphere:=SphereShape3D.new();sphere.radius=.18;shape.shape=sphere;point.add_child(shape);cart.add_child(point)
    point.add_to_group("cart_boarding_handles")
   _passenger(row,cart.seat_sockets["PublicPassenger_%d_Left"%row])
@@ -54,6 +60,29 @@ func _ready() -> void:
  caption.add_theme_font_size_override("font_size",24);caption.add_theme_color_override("font_shadow_color",Color.BLACK)
  caption.add_theme_constant_override("shadow_offset_x",2);caption.add_theme_constant_override("shadow_offset_y",2)
  caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;caption.hide()
+
+func _build_open_body() -> StandardMaterial3D:
+ var wood:=StandardMaterial3D.new()
+ wood.albedo_texture=preload("res://assets/architecture/materials/dark_wood_Diffuse.jpg")
+ wood.roughness=.91
+ var framing:=wood.duplicate() as StandardMaterial3D
+ framing.albedo_color=Color(.68,.59,.49)
+ for part in cart.visual_root.get_children():
+  var label:=str(part.get_meta("part_label",part.name))
+  if label.begins_with("SlattedSide") or label.begins_with("SideSlatGap") or label.begins_with("EndBoard"):
+   part.hide()
+  elif label.begins_with("PlankedDeck") or label.begins_with("DriverBench") or label.begins_with("DriverFootboard"):
+   part.material_override=wood
+ for side in [-1.0,1.0]:
+  # Match the side transfer target, ahead of the wheel’s swept envelope.
+  _box("PublicBoardingTreadLeft" if side<0 else "PublicBoardingTreadRight",Vector3(side*1.12,.55,1.40),Vector3(.38,.09,.44),wood)
+  cart._beam("PublicTreadBrace",Vector3(side*1.12,.53,1.40),Vector3(side*.76,1.08,1.58),.055,framing)
+  _box("LowerSideBoard",Vector3(side*.87,1.25,2.75),Vector3(.075,.15,2.45),wood)
+  _box("HandRail",Vector3(side*.87,1.58,2.75),Vector3(.075,.09,2.46),wood)
+  for z in [1.56,2.68,3.93]:
+   _box("RailStake",Vector3(side*.87,1.40,z),Vector3(.09,.48,.09),framing)
+ _box("RearSill",Vector3(0,1.28,3.94),Vector3(1.75,.22,.09),framing)
+ return wood
 
 func _cache_world() -> void:
  var world:Node=cart
@@ -84,13 +113,25 @@ func _build_lantern() -> void:
  lantern.configure(lantern_pivot);lantern.name="ExteriorPassengerLantern";lantern.visible=true
 
 func announce_arrival(place:String="Bhairavpur") -> void:
- speech_age=0; speech_remaining=4.2
+ speech_age=0; speech_duration=4.2; speech_remaining=speech_duration
  speech_started_ms=Time.get_ticks_msec()
- caption.text="Driver: We’re in %s. Mind your step!"%place
+ var text: String="We’re in %s. Mind your step!"%place
+ caption.text="Driver: "+text
+ dialogue_voice.stop()
+ var key: String=("Driver\n"+text).sha256_text()
+ var path: String="res://assets/audio/dialogue/"+key+".wav"
+ if ResourceLoader.exists(path):
+  var stream:=load(path) as AudioStream
+  if stream!=null:
+   dialogue_voice.stream=stream
+   speech_duration=maxf(speech_duration,stream.get_length()+.2)
+   speech_remaining=speech_duration
+   if is_instance_valid(cart.driver):dialogue_voice.global_position=cart.driver.global_position+Vector3.UP*1.4
+   dialogue_voice.play()
  caption.visible=not cart.get_meta("opening_cart_passage",false)
 
 func cancel_announcement() -> void:
- speech_remaining=0;caption.hide()
+ speech_remaining=0;caption.hide();dialogue_voice.stop()
  if is_instance_valid(cart.driver):cart.driver.set_meta("driver_speaking",false)
 
 func _process(delta:float) -> void:
@@ -101,7 +142,7 @@ func _process(delta:float) -> void:
  last_inside=inside
  if speech_remaining>0:
   speech_age=float(Time.get_ticks_msec()-speech_started_ms)/1000.0
-  speech_remaining=maxf(0,4.2-speech_age)
+  speech_remaining=maxf(0,speech_duration-speech_age)
  var camera:=get_viewport().get_camera_3d()
  caption.visible=speech_remaining>0 and not cinematic and camera!=null and camera.global_position.distance_squared_to(cart.global_position)<625
  var night:bool=cinematic or (is_instance_valid(clock) and (clock.current_hour<6 or clock.current_hour>=18))

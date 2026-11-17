@@ -5,6 +5,7 @@ uniform sampler2D earth_normal : hint_normal, filter_linear_mipmap_anisotropic, 
 uniform float lane_width = 4.0;
 uniform float wheel_wear = 1.0;
 uniform float wet_earth = 0.0;
+uniform bool terrain_wheel_tracks = false;
 varying vec3 world_position;
 void vertex(){world_position=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -24,5 +25,10 @@ void fragment(){
  ALBEDO*=mix(1.0,.56,wet);
  ROUGHNESS=mix(.94,.38,wet);
  SPECULAR=mix(.14,.43,wet);
- ALPHA=(1.0-smoothstep(.74+noise(world_position.xz*1.7)*.12,.99,abs(UV.x-.5)*2.0))*.90;
+ float overlay=1.0;
+ if (terrain_wheel_tracks) {
+  float x=world_position.x;
+  overlay-=smoothstep(-422.0,-411.0,x)*(1.0-smoothstep(-316.0,-301.0,x));
+ }
+ ALPHA=overlay*(1.0-smoothstep(.74+noise(world_position.xz*1.7)*.12,.99,abs(UV.x-.5)*2.0))*.90;
 }

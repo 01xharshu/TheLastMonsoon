@@ -1,6 +1,9 @@
 extends Node3D
 ## Clock-linked lamps, gathering fires and existing village residents.
 const OilLamp = preload("res://objects/oil_lamp.tscn")
+const EXTERIOR_HOMES := [14, 16, 17, 19, 22, 24, 27, 30]
+var exterior_lights: Array[OmniLight3D] = []
+var exterior_flames: Array[MeshInstance3D] = []
 var lamps: Array[Node] = []
 var fires: Array[Node3D] = []
 var clock: GameTimeSystem
@@ -48,6 +51,7 @@ func build(builder: Node3D) -> void:
 		light.distance_fade_length = 15
 		light.distance_fade_shadow = 18
 		lamps.append(lamp)
+	_build_exterior_lanterns(builder)
 	for point in [Vector2(-393,230),Vector2(-265,259)]:
 		var site := Node3D.new()
 		site.name = "GatheringFire%d"%fires.size()
@@ -87,6 +91,57 @@ func build(builder: Node3D) -> void:
 	add_child(gathering)
 	call_deferred("_connect_clock")
 
+func _build_exterior_lanterns(builder: Node3D) -> void:
+	var iron := StandardMaterial3D.new()
+	iron.albedo_color = Color(.15,.106,.074)
+	iron.metallic = .35
+	iron.roughness = .68
+	var glass := StandardMaterial3D.new()
+	glass.albedo_color = Color(.84,.70,.47,.14)
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.roughness = .28
+	for index in EXTERIOR_HOMES:
+		var home: Node3D = builder.get_node("BhairavpurHouse%d" % index)
+		var pier: Node3D = home.get_node("DoorPier")
+		var fixture := Node3D.new()
+		fixture.name = "ExteriorOilLantern"
+		# Door piers define each house's real frontage in its own local frame.
+		fixture.position = Vector3(1.86 if index % 2 == 0 else -1.86,1.77,pier.position.z+.51)
+		home.add_child(fixture)
+		fixture.add_to_group("village_exterior_lantern")
+		_lantern_piece(builder,fixture,"WallPlate",Vector3(0,.16,-.30),Vector3(.10,.29,.035),iron)
+		_lantern_piece(builder,fixture,"HangingArm",Vector3(0,.19,-.13),Vector3(.035,.035,.36),iron)
+		_lantern_piece(builder,fixture,"OilReservoir",Vector3(0,-.145,0),Vector3(.21,.068,.20),iron)
+		_lantern_piece(builder,fixture,"VentedHood",Vector3(0,.14,0),Vector3(.24,.06,.22),iron)
+		_lantern_piece(builder,fixture,"Glazing",Vector3(0,-.002,0),Vector3(.163,.23,.156),glass)
+		for x in [-.087,.087]:
+			for z in [-.084,.084]:
+				_lantern_piece(builder,fixture,"CageUpright",Vector3(x,0,z),Vector3(.016,.26,.016),iron)
+		var flame := _flame(fixture,Vector3(0,-.058,0),Vector3(.052,.132,.052))
+		flame.name = "OilFlame"
+		flame.hide()
+		exterior_flames.append(flame)
+		var light := OmniLight3D.new()
+		light.name = "ExteriorLight"
+		light.position = flame.position
+		light.light_color = Color(1.0,.67,.34)
+		light.light_energy = 2.0
+		light.omni_range = 7.4
+		light.omni_attenuation = 1.7
+		light.shadow_enabled = true
+		light.distance_fade_enabled = true
+		light.distance_fade_begin = 30.0
+		light.distance_fade_length = 12.0
+		light.distance_fade_shadow = 19.0
+		light.hide()
+		fixture.add_child(light)
+		exterior_lights.append(light)
+
+func _lantern_piece(builder: Node3D, fixture: Node3D, label: String, at: Vector3, size: Vector3, material: Material) -> void:
+	var piece: Node3D = builder.piece(fixture,label,at,size,material,false)
+	# The small cage should not occlude the wick's entire shadow map.
+	piece.get_child(0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
 func _flame(parent: Node3D,position_: Vector3,size: Vector3) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
 	var shape := SphereMesh.new()
@@ -118,6 +173,8 @@ func _time_changed(_day: int,hour: int,_minute: int) -> void:
 	for lamp in lamps:
 		lamp.is_lit = night
 		lamp._apply_lamp_state()
+	for light in exterior_lights: light.visible = night
+	for flame in exterior_flames: flame.visible = night
 
 func _process(delta: float) -> void:
 	elapsed += delta

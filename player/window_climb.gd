@@ -10,6 +10,7 @@ var start := Vector3.ZERO
 var landing := Vector3.ZERO
 var saved_mask := 0
 var profile := "window"
+var deep_sill := false
 var body_clearance := .50
 var bend_amount := 1.0
 var solid := preload("res://player/climb_collision.gd").new()
@@ -93,6 +94,7 @@ func try_start(actor: CharacterBody3D, takeoff_only: bool = false) -> bool:
 		if takeoff_only:return true
 		sill = point
 		profile = "window"
+		deep_sill = portal.get_meta("deep_sill",false)
 		surface = null
 		duration = 3.2
 		body_clearance = .50
@@ -143,7 +145,11 @@ func pose(visual: Node, delta: float) -> void:
 		visual.motion_tree.advance(delta)
 	var crouch := smoothstep(.08,.30,u)*(1.0-smoothstep(.78,1.0,u))
 	visual.model.position = Vector3(0,-.9,0)
-	if profile == "window": visual.model.position.y -= .34*crouch
+	if profile == "window":
+		visual.model.position.y -= .34*crouch
+		if deep_sill:
+			# Keep the hips above thick masonry while the two feet cross in turn.
+			visual.model.position.y += .34*smoothstep(.17,.34,u)*(1.0-smoothstep(.71,.94,u))
 	visual.model.rotation.x = .30*crouch*bend_amount
 	visual.model.rotation.z = 0.0
 	var press := crouch*(1.0-.30*smoothstep(.42,.68,u))
@@ -222,6 +228,8 @@ func pose(visual: Node, delta: float) -> void:
 		visual.equipment._grasp(side,.18*contact)
 		var foot_transfer: float = smoothstep(.30 if lead else .50,.50 if lead else .74,u)
 		var foot_lift: float = smoothstep(.12 if lead else .36,.28 if lead else .50,u)
+		if profile == "window" and deep_sill and not lead:
+			foot_lift = smoothstep(.25,.42,u)
 		var foot: Vector3 = sill+normal*lerpf(.65,-.65,foot_transfer)+tangent*(-.22 if lead else .22)
 		foot.y = lerpf(start.y-.86,sill.y+.13,foot_lift)
 		var lower_start: float = (.50 if lead else .76) if profile == "window" else .82

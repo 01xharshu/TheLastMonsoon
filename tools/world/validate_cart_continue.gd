@@ -29,7 +29,7 @@ func delayed_spawn() -> void:
 	actor.name = "Player"
 	world.add_child(actor)
 	actor.set_physics_process(false)
-	var population := preload("res://world/suryagarh/city_route_population.gd").new()
+	var population = load("res://world/suryagarh/city_route_population.gd").new()
 	population.process_mode=Node.PROCESS_MODE_DISABLED
 	world.add_child(population)
 	var required := "CityRoutePopulation/CityCart_civil_lines_avenue"
@@ -73,6 +73,7 @@ func delayed_spawn() -> void:
 	await physics_frame
 	actor.global_position = expected + Vector3(1,1,0)
 	actor.inventory.add_item("rupees",6)
+	var expected_rupees: int = actor.inventory.get_item_count("rupees")
 	actor.set_physics_process(true)
 	var previous_input := actor.is_processing_unhandled_input()
 	actor.velocity = Vector3(7,0,0)
@@ -105,13 +106,13 @@ func delayed_spawn() -> void:
 	check(States.collect(world)[0].get("paid_destination","")=="Police Station","Replacement while boarding lost paid destination")
 	paused = true
 	await create_timer(1.7).timeout
-	check(actor.inventory.get_item_count("rupees")==6 and cart.boarding.travel.payer==null,"Pausing restored boarding refunded an already-paid journey")
+	check(actor.inventory.get_item_count("rupees")==expected_rupees and cart.boarding.travel.payer==null,"Pausing restored boarding refunded an already-paid journey")
 	paused = false
 	await create_timer(1.7).timeout
 	check(cart.boarding.rider==actor and cart.boarding.travel.payer==actor and cart.boarding.travel.destination=="Police Station","Delayed paid restore did not survive pending-node retirement")
-	check(actor.inventory.get_item_count("rupees")==6,"Delayed paid restore charged or refunded the saved fare")
+	check(actor.inventory.get_item_count("rupees")==expected_rupees,"Delayed paid restore charged or refunded the saved fare")
 	States.restore(world,States.collect(world))
-	check(actor.inventory.get_item_count("rupees")==6 and cart.boarding.travel.destination=="Police Station", "Already-running paid restore duplicated fare/refund")
+	check(actor.inventory.get_item_count("rupees")==expected_rupees and cart.boarding.travel.destination=="Police Station", "Already-running paid restore duplicated fare/refund")
 	population.ready_population = true
 	for frame in 2: await process_frame
 	check(not world.has_node("PendingCityCartRestore"),"Completed restore retained a polling node")

@@ -179,6 +179,7 @@ func spawn_record(record: Dictionary) -> void:
   var work_route:bool=record.route in ["village_spine","village_market_lane","village_west_lane","cantonment_bazaar_lane","port_approach"]
   var source:="res://characters/npcs/street_residents/%s_%02d.glb"%["female" if female else ("workman" if work_route else "male"),identity/2+1]
   actor.movement_profile=&"female" if female else &"male"
+  actor.set_meta("adult_character",true)
   actor.ground_height=layout.height
   var stature: float=[.97,1.02,1.03,.98,1.0,1.05,1.04,1.0][identity]
   actor.scale=Vector3.ONE*stature
@@ -223,6 +224,11 @@ func spawn_record(record: Dictionary) -> void:
    if points[i].distance_to(points[i+1])>points[best].distance_to(points[best+1]):best=i
   var a:=points[best];var b:=points[best+1]
   var unit:Vector2=(b-a).normalized();a+=unit*9;b-=unit*9
+  if record.route=="police_to_compound":
+   # Keep ambient turning and waiting outside the station passenger-coach approach.
+   var station_end: Vector2=Layout.ROUTES["police_to_compound"][0]
+   if a.distance_squared_to(station_end)<b.distance_squared_to(station_end):a+=unit*20.0
+   else:b-=unit*20.0
   at=a.lerp(b,.20+float(index/ CART_ROUTES.size())*.42)
   var cart:Node3D=preload("res://vehicles/bullock_cart.gd").new() if index%2==0 else preload("res://vehicles/family_carriage_candidate.gd").new()
   cart.name=("CityCart_%s"%record.route) if index<CART_ROUTES.size() else ("CityCart_%s_%02d"%[record.route,index]);cart.position=Vector3(at.x,layout.height(at.x,at.y),at.y);cart.rotation.y=atan2(-unit.x,-unit.y)

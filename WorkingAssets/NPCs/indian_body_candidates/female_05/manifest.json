@@ -1,0 +1,17 @@
+{
+  "profile": 5,
+  "source": "WorkingAssets/NPCs/indian_street_variants/female_01/female_01.blend",
+  "body_vertices": 19158,
+  "garments": {
+    "Opaque fitted bra and thong foundation": 1008,
+    "Fitted cotton upper base": 1939,
+    "Woven sari pallu over blouse": 511,
+    "Street coherent cotton blouse and pallu": 1193,
+    "Street sari back tail": 117,
+    "Wrapped sari lower drape": 840,
+    "Sari lower border": 120
+  },
+  "method": "MPFB body deltas; nearest complete body displacement transfer to clothing",
+  "visual_approved": false,
+  "runtime_integrated": false
+}

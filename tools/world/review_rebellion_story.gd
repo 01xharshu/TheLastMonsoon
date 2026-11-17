@@ -9,6 +9,8 @@ func run() -> void:
  if temporary.is_empty() or not temporary.begins_with(OS.get_environment("TMPDIR")):quit(2);return
  root.get_node("SaveManager").save_root=temporary
  if OS.get_environment("TLM_REBELLION_NATIVE")=="1":root.scaling_3d_scale=minf(1.0,720.0/root.get_visible_rect().size.y)
+ var rifle_review:=OS.get_environment("TLM_RIFLE_LESSON_REVIEW")=="1" and OS.get_environment("TLM_TUTORIAL_OUTPUT")!=""
+ var fort_review:=OS.get_environment("TLM_FORT_REVIEW")=="1" and OS.get_environment("TLM_TUTORIAL_OUTPUT")!=""
  var world: Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate();root.add_child(world);current_scene=world
  for i in 1800:
   await physics_frame
@@ -32,13 +34,21 @@ func run() -> void:
  for i in 100:await physics_frame
  story._process(.1)
  check(story.active and story.cinematic=="rescue","main world horse approach starts Mangal rescue")
- for i in 161:story.update_cinematic(.1);await physics_frame
+ for i in 161:
+  story.update_cinematic(.1);await physics_frame
+  if i==105:
+   var leader:Node3D=story.sites.mangal
+   check(leader.travel_scarf!=null and leader.travel_scarf.visible,"Mangal covers his face while travelling on the cart")
+   if fort_review:
+    story.camera.global_position=leader.to_global(Vector3(.45,1.57,1.05))
+    story.camera.look_at(leader.to_global(Vector3(0,1.46,.05)))
+    await capture("fort_travel_scarf",temporary)
  check(story.active and story.cinematic=="arrival","main world rescue precedes fort arrival")
  for i in 75:story.update_cinematic(.1);await physics_frame
  check(story.stage=="follow","main world arrival returns follow gameplay")
  var last_follow_position: Vector3=story.sites.mangal.global_position
  var stalled_frames:=0
- for i in 1000:
+ for i in 1250:
   if story.stage!="follow":break
   player.global_position=story.sites.mangal.global_position+Vector3(2,.9,0)
   story._process(.1)
@@ -47,37 +57,71 @@ func run() -> void:
   else:stalled_frames=0
   last_follow_position=story.sites.mangal.global_position
   if stalled_frames>30:
-   print("MANGAL FOLLOW BLOCKED index=",story.follow_index," local=",story.sites.cellar.to_local(last_follow_position))
-   var goals=story.HIDEOUT_FOLLOW_ROUTE
-   var goal: Vector3=story.sites.cellar.to_global(goals[story.follow_index])
+   print("HIDEOUT MANGAL FOLLOW BLOCKED index=",story.follow_index," local=",story.sites.cellar.to_local(last_follow_position))
+   var goal: Vector3=story.follow_destination(story.follow_index)
    var query=PhysicsRayQueryParameters3D.create(last_follow_position+Vector3.UP*.9,last_follow_position+(goal-last_follow_position).normalized()*.14+Vector3.UP*.9,1)
    query.exclude=[story.sites.mangal.body_collider.get_rid(),story.sites.mangal.get_node("Vitality").hit_body.get_rid()]
    var blocker=story.sites.mangal.get_world_3d().direct_space_state.intersect_ray(query)
-   if not blocker.is_empty():print("MANGAL FOLLOW COLLIDER ",blocker.collider.get_path()," at=",blocker.position)
+   if not blocker.is_empty():print("HIDEOUT MANGAL FOLLOW COLLIDER ",blocker.collider.get_path()," at=",blocker.position)
    break
+ print("HIDEOUT MANGAL GATE FOLLOW index=",story.follow_index," stage=",story.stage," at=",story.sites.fort.to_local(story.sites.mangal.global_position))
  check(story.stage=="briefing","Mangal physically reaches hideout before briefing")
  if story.stage!="briefing":
   root.get_node("SaveManager").quit_game(1);return
  check(story.request("briefing",player),"main world hideout briefing action")
+ for frame in 4:await process_frame
+ var daily:Node=story.sites.cellar.get_node("HideoutDailyLife")
+ check(daily.seat_owned and story.sites.mangal.riding_socket==daily.mangal_seat and not story.sites.mangal.travel_scarf.visible,"Mangal briefs seated with face uncovered")
+ if fort_review:
+  var leader:Node3D=story.sites.mangal
+  story.camera.global_position=leader.to_global(Vector3(.55,1.63,1.35))
+  story.camera.look_at(leader.to_global(Vector3(0,1.29,.08)))
+  await capture("fort_mangal_briefing",temporary)
  story.update_cinematic(19.1)
+ if rifle_review:
+  var rack:Node3D=story.sites.cellar.get_node("CapturedRifleRack")
+  story.camera.make_current()
+  story.camera.global_position=rack.to_global(Vector3(.45,1.47,2.35))
+  story.camera.look_at(rack.to_global(Vector3(0,.9,0)))
+  await capture("rifle_rack",temporary)
+  story.gameplay_camera.make_current()
  check(story.stage=="inspect" and story.request("weapons",player),"briefing precedes captured weapons inspection")
- var gear: Node=player.get_node("VisualRoot/CharacterVisual").equipment
- gear.select_weapon(1);gear.stowed=false;gear._refresh()
- player.global_position=story.sites.cellar.to_global(Vector3(0,1.1,3));player.velocity=Vector3.ZERO
- for i in 20:await physics_frame
- var gun: Node=player.get_node("RifleCombat")
- gun.start_reload();story._process(.1)
- for i in 120:await physics_frame
+ var gear:Node=player.get_node("VisualRoot/CharacterVisual").equipment
+ gear.select_weapon(1)
  story._process(.1)
- check(story.stage=="shoot","main world real reload unlocks target practice")
- for shot in 2:
-  player.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(story.sites.target.global_position)
-  gun.aiming=true;gun.fire();story._process(.1)
-  if shot==0:
-   check(story.stage=="shoot" and not story.can_request("raid"),"main world first hit keeps raid locked")
-   gun.start_reload()
-   for i in 120:await physics_frame
- check(story.stage=="raid_ready" and story.target_hits==2,"main world two real hits unlock raid")
+ check(story.cinematic=="range_entry","equipping starts the range fade in the main world")
+ story.update_cinematic(.55)
+ story.update_cinematic(.7)
+ for frame in 15:await physics_frame
+ var gun:Node=player.get_node("RifleCombat")
+ check(story.stage=="shoot" and player.get_meta("rifle_lesson",false),"main world firing line locks movement")
+ Input.action_press("aim")
+ gun._process(.01)
+ if rifle_review:
+  story._process(.01)
+  await capture("rifle_practice",temporary)
+ player.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(story.sites.target.global_position)
+ gun.fire()
+ Input.action_release("aim")
+ story._process(.1)
+ check(story.stage=="raid_ready" and story.target_hits==1 and not player.get_meta("rifle_lesson",false),"main world target hit releases practice and unlocks raid")
+
+ if rifle_review:
+  print("RIFLE LESSON REVIEW READY")
+  var review_deadline:=Time.get_ticks_msec()+55000
+  while Time.get_ticks_msec()<review_deadline and not FileAccess.file_exists(temporary.path_join("rifle_review_done")):await process_frame
+  await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
+  return
+ if fort_review:
+  story.camera.make_current()
+  story.camera.global_position=story.sites.fort.to_global(Vector3(0,12,23))
+  story.camera.look_at(story.sites.target.global_position)
+  await capture("fort_open_courtyard",temporary)
+  print("HIDEOUT ENVIRONMENT REVIEW READY")
+  var deadline:=Time.get_ticks_msec()+60000
+  while Time.get_ticks_msec()<deadline and not FileAccess.file_exists(temporary.path_join("fort_review_done")):await process_frame
+  await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
+  return
  world.get_node("CombatEncounters").complete_custody(player)
  check(story.request("raid",player),"raid briefing action")
  story.update_cinematic(6.1)

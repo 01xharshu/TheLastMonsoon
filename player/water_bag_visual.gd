@@ -36,6 +36,10 @@ var contact_usec := 0
 var mesh_rebuilds := 0
 var contact_ready := false
 var contact_prepare_calls := 0
+var use_contact_groups := "--water-bag-contact-reference" not in OS.get_cmdline_user_args()
+var contact_groups: Array[Dictionary] = []
+var contact_reference_groups: Array[Dictionary] = []
+var contact_samples_scanned := 0
 var use_contact_width_bound := true # Exact rejection; full_scan retains the reference path.
 var contact_width_limit := _contact_width_bound()
 @onready var inventory: InventoryComponent = $"../../../InventoryComponent"
@@ -319,8 +323,59 @@ func _prepare_cloth_contact() -> void:
 				contact_indices.append(palette_index)
 				contact_weights.append(amounts[slot])
 			contact_offsets.append(contact_indices.size())
+	_prepare_contact_groups(inverse * cloth.global_transform)
 	contact_ready = true
 	if trace: print("CONTACT INIT END ",JSON.stringify({"call":contact_prepare_calls,"samples":contact_points.size(),"added":contact_points.size()-previous_samples,"bones":contact_bones.size(),"frame":Engine.get_process_frames(),"width_bound_active":use_contact_width_bound,"width_limit_m":contact_width_limit}))
+
+func _prepare_contact_groups(rest_transform: Transform3D) -> void:
+	contact_groups.clear()
+	contact_reference_groups = [{"samples":PackedInt32Array(range(contact_points.size()))}]
+	# Group nearby source points in attachment space. Mesh index order need
+	# not be spatially coherent. This does not weld or remove any sample.
+	var cells := {}
+	for sample in contact_points.size():
+		var point := rest_transform * contact_points[sample]
+		var cell := Vector3i(floori(point.x/.04), floori(point.y/.04), floori(point.z/.04))
+		if not cells.has(cell):
+			cells[cell] = {"samples":[],"bounds":{},"minimum_weight":INF,"maximum_weight":0.0}
+		var group: Dictionary = cells[cell]
+		group.samples.append(sample)
+		var weight := 0.0
+		for slot in range(contact_offsets[sample], contact_offsets[sample+1]):
+			var index := contact_indices[slot]
+			var vertex := contact_points[sample]
+			group.bounds[index] = group.bounds[index].expand(vertex) if group.bounds.has(index) else AABB(vertex, Vector3.ZERO)
+			weight += contact_weights[slot]
+		group.minimum_weight = minf(group.minimum_weight, weight)
+		group.maximum_weight = maxf(group.maximum_weight, weight)
+	for group in cells.values():
+		group.samples = PackedInt32Array(group.samples)
+		contact_groups.append(group)
+
+func _contact_group_rejected(group: Dictionary, palette: Array[Transform3D], inverse: Transform3D, required := -1.0) -> bool:
+	# Nonnegative skin weights put each vertex in the convex hull of its
+	# influencing posed points, scaled by that vertex's retained weight sum.
+	var box := AABB()
+	var initialized := false
+	for index in group.bounds:
+		var posed: AABB = palette[index] * group.bounds[index]
+		box = box.merge(posed) if initialized else posed
+		initialized = true
+	if not initialized: return false
+	var scaled := AABB(box.position * group.minimum_weight, box.size * group.minimum_weight)
+	scaled = scaled.merge(AABB(box.position * group.maximum_weight, box.size * group.maximum_weight))
+	# Matrix/AABB rounding must only admit extra samples, never reject one.
+	var local: AABB = (inverse * scaled).grow(0.0001)
+	if local.end.y < .005 or local.position.y > .285 or local.position.x > contact_width_limit or local.end.x < -contact_width_limit: return true
+	if required >= 0.0:
+		# Within the query's y interval, the blend decreases monotonically.
+		# This is an upper bound even if the largest z and y are different
+		# vertices. Cells unable to increase the current maximum need no scan.
+		var highest_y := minf(local.end.y, .285)
+		var least_blend := maxf(smoothstep(0.0,1.0,clampf((.41-highest_y)/.29,0.0,1.0)),.1)
+		var upper_support := maxf(0.0, local.end.z + .018) / least_blend - HIP_SUPPORT
+		if upper_support + .00001 < required: return true
+	return false
 
 static func _contact_width_bound() -> float:
 	# Hermite endpoint bases sum to one; tangent bases are bounded by 4/27.
@@ -345,18 +400,23 @@ func _cloth_contact_required(full_scan := false) -> float:
 	for index in contact_bones.size():
 		palette.append(cloth_rig.get_bone_global_pose(contact_bones[index]) * contact_bind_poses[index])
 	var required := 0.0
-	for sample in contact_offsets.size()-1:
-		var vertex := Vector3.ZERO
-		for slot in range(contact_offsets[sample],contact_offsets[sample+1]):
-			var pose := palette[contact_indices[slot]]
-			vertex += (pose * contact_points[sample]) * contact_weights[slot]
-		var point := inverse * vertex
-		if point.y < .005 or point.y > .285: continue
-		var horizontal := absf(point.x)
-		if use_contact_width_bound and not full_scan and horizontal > contact_width_limit: continue
-		if horizontal > _radius_at(point.y)*.84+.018: continue
-		var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
-		required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
+	contact_samples_scanned = 0
+	var groups: Array = contact_groups if use_contact_groups and not full_scan else contact_reference_groups
+	for group in groups:
+		if use_contact_groups and not full_scan and _contact_group_rejected(group,palette,inverse,required): continue
+		contact_samples_scanned += group.samples.size()
+		for sample in group.samples:
+			var vertex := Vector3.ZERO
+			for slot in range(contact_offsets[sample],contact_offsets[sample+1]):
+				var pose := palette[contact_indices[slot]]
+				vertex += (pose * contact_points[sample]) * contact_weights[slot]
+			var point := inverse * vertex
+			if point.y < .005 or point.y > .285: continue
+			var horizontal := absf(point.x)
+			if use_contact_width_bound and not full_scan and horizontal > contact_width_limit: continue
+			if horizontal > _radius_at(point.y)*.84+.018: continue
+			var blend := smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0))
+			required = maxf(required, (point.z + .018) / maxf(blend,.1) - HIP_SUPPORT)
 	return required
 
 func _update_cloth_contact(delta: float) -> void:

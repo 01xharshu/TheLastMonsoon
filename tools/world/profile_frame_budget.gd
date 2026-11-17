@@ -49,14 +49,27 @@ func _run() -> void:
 	for frame in 4: await process_frame
 	var world: Node3D = current_scene
 	var actor: CharacterBody3D = world.get_node("Player")
-	var opening := world.get_node("OpeningSequence")
+	var opening := world.get_node_or_null("OpeningSequence")
+	var opening_deadline := Time.get_ticks_msec() + 120000
+	while opening == null and Time.get_ticks_msec() < opening_deadline:
+		await process_frame
+		opening = world.get_node_or_null("OpeningSequence")
+	if opening == null:
+		push_error("Frame profile could not find the opening sequence before timeout")
+		await saves.quit_game(1)
+		return
 	var skip := InputEventKey.new()
 	skip.keycode = KEY_ESCAPE
 	skip.pressed = true
 	opening._input(skip)
 	for frame in 2: await process_frame
 	opening._input(skip)
-	while opening.state != "done": await process_frame
+	var release_deadline := Time.get_ticks_msec() + 120000
+	while is_instance_valid(opening) and opening.state != "done" and Time.get_ticks_msec() < release_deadline: await process_frame
+	if not is_instance_valid(opening) or opening.state != "done":
+		push_error("Frame profile opening did not release control before timeout")
+		await saves.quit_game(1)
+		return
 	actor.set_physics_process(false)
 	world.get_node("GameTimeSystem").set_process(false)
 	var camera := Camera3D.new()

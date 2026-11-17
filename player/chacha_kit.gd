@@ -9,6 +9,8 @@ var cooldown := 0.0
 var thrust := -1.0
 var rest := Transform3D.IDENTITY
 var landed := false
+var previous_tip := Vector3.INF
+var support_error := 0.0
 func _ready() -> void:
 	var startup_task := Startup.begin("Player family equipment")
 	await Startup.wait_for(self, "Player appearance")
@@ -45,21 +47,24 @@ func _process(delta: float) -> void:
 	var rig: Skeleton3D=gear.skeleton
 	var hand: Transform3D=rig.get_bone_global_pose(rig.find_bone("hand_r"))
 	var camera: Camera3D=actor.get_node("CameraPivot/SpringArm3D/Camera3D")
-	var direction: Vector3=-camera.global_basis.z;direction.y=0;direction=direction.normalized()
+	var aim_point: Vector3=preload("res://combat/attack_aim.gd").point(actor,camera)
+	var carry_world: Vector3=rig.to_global(hand*gear.palm_offsets["r"])
+	var direction: Vector3=(aim_point-carry_world).normalized()
 	var axis:=Vector3.UP
 	if thrust>=0:
 		thrust+=delta
 		var raise: float=smoothstep(0,.12,thrust)*(1.0-smoothstep(.35,.5,thrust))
 		axis=Vector3.UP.slerp(direction,raise).normalized()
-		var extension: float=sin(minf(thrust/.5,1)*PI)*.35
-		# Bring the shaft toward the player's aim line as it levels. Leaving
-		# the palm at its carry-side offset made centred human targets miss.
-		var carry_palm: Vector3=rig.to_global(hand*gear.palm_offsets["r"])
-		var across_aim: Vector3=camera.global_basis.x
-		var centre: Vector3=across_aim*clampf((actor.global_position-carry_palm).dot(across_aim),-.32,.32)*raise
+		var extension: float=sin(minf(thrust/.5,1)*PI)*.15
+		# Aim from the solved palm so carry offsets are corrected only once.
+		var centre: Vector3=camera.global_basis.x*clampf((actor.global_position-carry_world).dot(camera.global_basis.x),-.30,.30)*raise
 		gear._solve_arm("r",hand.origin+rig.global_basis.inverse()*(direction*extension+Vector3.UP*.15+centre))
 		if thrust>=.5:thrust=-1;axis=Vector3.UP
 	hand=rig.get_bone_global_pose(rig.find_bone("hand_r"))
+	if thrust>=0:
+		var current_palm: Vector3=rig.to_global(hand*gear.palm_offsets["r"])
+		var aim_blend: float=smoothstep(0,.12,thrust)*(1.0-smoothstep(.35,.5,thrust))
+		axis=Vector3.UP.slerp((aim_point-current_palm).normalized(),aim_blend).normalized()
 	var grip_contact: Vector3=hand*gear.palm_offsets["r"]
 	# Align the shaft across the curled palm, rather than twisting the prop
 	# independently of the wrist as it changes from carry to thrust.
@@ -78,15 +83,38 @@ func _process(delta: float) -> void:
 	var palm: Vector3=rig.to_global(hand*gear.palm_offsets["r"])
 	spear.global_transform=Transform3D(Basis(Quaternion(Vector3.UP,axis)),palm-axis*.8)
 	gear._grasp("r",.85)
-	if thrust>=.15 and not landed:
-		landed=true
-		var query:=PhysicsRayQueryParameters3D.create(palm,palm+axis*1.11)
-		query.exclude=[actor.get_rid()]
-		var hit:=actor.get_world_3d().direct_space_state.intersect_ray(query)
-		if not hit.is_empty():preload("res://combat/damage_policy.gd").apply(hit.collider,28,actor,"spear")
+	var support: Vector3=rig.to_local(palm+axis*.22)
+	var left_basis: Basis=Basis(local_axis,-across,-local_axis.cross(across))*(gear.palm_axes["l"] as Basis).inverse()
+	var left: int=rig.find_bone("hand_l")
+	for iteration in 3:
+		gear._solve_arm("l",support-left_basis*gear.palm_offsets["l"])
+		var parent: int=rig.get_bone_parent(left)
+		rig.set_bone_pose_rotation(left,(rig.get_bone_global_pose(parent).basis.inverse()*left_basis).orthonormalized().get_rotation_quaternion())
+		rig.force_update_all_bone_transforms()
+	gear._grasp("l",.85)
+	support_error=rig.to_global(rig.get_bone_global_pose(left)*gear.palm_offsets["l"]).distance_to(palm+axis*.22)
+
+	var tip := palm+axis*1.11
+	if thrust>=.12 and thrust<=.36 and not landed:
+		var segments: Array=[[palm,tip]]
+		if previous_tip.is_finite():segments.append([previous_tip,tip])
+		for segment in segments:
+			var query:=PhysicsRayQueryParameters3D.create(segment[0],segment[1],9,[actor.get_rid()])
+			var hit:=actor.get_world_3d().direct_space_state.intersect_ray(query)
+			if hit.is_empty():continue
+			var sight:=PhysicsRayQueryParameters3D.create(palm,hit.position,9,[actor.get_rid()])
+			var obstacle:=actor.get_world_3d().direct_space_state.intersect_ray(sight)
+			var policy=preload("res://combat/damage_policy.gd")
+			if not obstacle.is_empty() and policy.receiver(obstacle.collider)!=policy.receiver(hit.collider):continue
+			landed=true
+			policy.apply(hit.collider,28,actor,"spear",hit.position,axis)
+			break
+	previous_tip=tip
+
 func strike() -> bool:
 	if not active or cooldown>0 or not available():return false
-	cooldown=.75;thrust=0;landed=false
+	cooldown=.75;thrust=0;landed=false;previous_tip=Vector3.INF
+	actor.get_node("CombatInput")._face_attack()
 	WorldAudio.play_at("blade_swoosh",actor.global_position,-18)
 	return true
 func throw_smoke() -> bool:

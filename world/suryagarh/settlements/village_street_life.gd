@@ -38,6 +38,7 @@ func _lane(label:String,points:Array,width:float,wear:float) -> void:
 	material.set_shader_parameter("earth_normal",preload("res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg"))
 	material.set_shader_parameter("lane_width",width);material.set_shader_parameter("wheel_wear",wear)
 	material.set_shader_parameter("wet_earth",1.0 if wear>0 else 0.0)
+	material.set_shader_parameter("terrain_wheel_tracks",label=="village_spine")
 	var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var run:=0.0
 	for i in points.size()-1:

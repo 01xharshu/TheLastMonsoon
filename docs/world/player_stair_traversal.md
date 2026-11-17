@@ -55,3 +55,18 @@ Run the real-world scenes:
 ```
 
 These passes approve movement access on the tested geometry. They do not approve Arjun's appearance, precise boot/hoof planting through the whole stair cycle, or galloping and sharp turns on every staircase. Next: refine full-motion foot/hoof contact and test further world routes as their geometry stabilizes.
+
+## Ordinary riding camera and posture (2026-11-03)
+
+Boarding a horse starts the camera behind its heading. Ordinary third-person riding uses a centered 5.8 m spring arm, 70° field of view and 8° downward camera tilt, framing the entire horse and rider on an unobstructed rear view. Mouse/controller orbit and spring-arm obstruction clearance remain active. Mission camera ownership retains priority; dismount returns to the existing on-foot camera.
+
+The rider has a quieter upright seated torso and a smaller sustained gallop lean, retaining the airborne/landing response, pelvis-to-saddle alignment, rein IK and stirrup contact. No body or outfit asset changed.
+
+Reusable isolated check (temporary project and private userdata cleaned automatically):
+
+```sh
+python3 tools/world/run_tutorial_guard_check.py --checks validate_riding_view
+python3 tools/world/run_tutorial_guard_check.py --native --checks validate_riding_view
+```
+
+The check exercises boarding heading, rear-view projected horse/rider envelope, rein and stirrup contact, gallop, jump/landing and on-foot camera restoration. A close obstacle can necessarily shorten the spring arm. These bounded checks do not approve all terrain, clothing deformation or continuous motion.

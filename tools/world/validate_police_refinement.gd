@@ -28,9 +28,36 @@ func run() -> void:
 	for light in lights:
 		if light.shadow_enabled or not light.distance_fade_enabled or light.omni_range>7.5:
 			errors.append("Local lamp exceeds shadow/range budget")
-	if get_nodes_in_group("station_furnishing_chairs").size()!=5: errors.append("Office/reception chairs absent")
+	var chair_count := get_nodes_in_group("station_furnishing_chairs").size()
+	if chair_count < 5: errors.append("Office/reception chairs absent: " + str(chair_count))
+	var doors := get_nodes_in_group("station_office_doors")
+	if doors.size()!=12: errors.append("Expected twelve paired office doors")
+	for door in doors:
+		if not door.opened or door.leaf_pivots.size()!=2: errors.append("Office door not open with paired leaves: "+str(door.name))
+	if not doors.is_empty():
+		var sample = doors[0]
+		sample.restore_state(false)
+		if sample.opened or not is_zero_approx(sample.swing): errors.append("Office door did not close")
+		await physics_frame
+		var close_from: Vector3 = sample.to_global(Vector3(.25,.52,-.8))
+		var close_to: Vector3 = sample.to_global(Vector3(.25,.52,.8))
+		var closed_hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(close_from,close_to))
+		if closed_hit.is_empty() or closed_hit.collider != sample: errors.append("Closed office door has no physical leaf")
+		sample.restore_state(true)
+		if not sample.opened or not is_equal_approx(sample.swing,1.0): errors.append("Office door did not reopen")
+	await physics_frame
+	for level in 2:
+		for z in [-7.0,4.0]:
+			var a := police.to_global(Vector3(-4.8,level*5.4+1.0,z))
+			var c := police.to_global(Vector3(-7.2,level*5.4+1.0,z))
+			if not world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(a,c)).is_empty(): errors.append("Hall door obstructs entrance: "+str(Vector2(level,z)))
+	for level in 2:
+		var a := police.to_global(Vector3(16,level*5.4+1.0,-8.7))
+		var c := police.to_global(Vector3(16,level*5.4+1.0,-11.3))
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(a,c))
+		if not hit.is_empty(): errors.append("Records door obstructs entrance: "+str(level)+" collider "+str(hit.collider.get_path()))
+	if police.find_children("SeniorWallMap","Node3D",true,false).size()!=1: errors.append("Senior chamber map absent")
 	if police.find_children("DutyStorageChest","Node3D",true,false).size()!=1: errors.append("Duty room furnishing absent")
 	var report := {"passed":errors.is_empty(),"open_vent_rays":rays,"local_lamps":lights.size(),"errors":errors,"scope":"actual open collision paths and fixture budget; airflow simulation and historical reconstruction unclaimed"}
-	FileAccess.open("res://docs/world/police_refinement_validation.json",FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
 	print("POLICE REFINEMENT ",JSON.stringify(report))
 	quit(0 if errors.is_empty() else 1)

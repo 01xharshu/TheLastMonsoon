@@ -1,0 +1,85 @@
+{
+  "status": "active_candidate_native_motion_pending",
+  "body_source": "WorkingAssets/NPCs/activity_people/artisan/artisan.blend",
+  "body_retention": "Complete retained adult MPFB body and separate opaque foundation",
+  "garment_source": "MPFB male_casualsuit02, explicitly CC0 asset",
+  "parameters": {
+    "shirt_hem_m": 0.91,
+    "shirt_waist_ease_m": 0.025,
+    "trouser_ease_m": 0.006,
+    "interlayer_gap_m": 0.003
+  },
+  "builder": "tools/characters/study_occupation_workwear.py",
+  "build_flags": [
+    "--shirt-hem",
+    ".91",
+    "--pattern-foundation",
+    "--smooth-transfer",
+    "--layered-fit",
+    "--exact-layers",
+    "--cloth-foundation",
+    "--visual-probe"
+  ],
+  "pose_keys": [
+    "Study walk correction",
+    "Study seated correction",
+    "Study walk foundation",
+    "Study seated foundation"
+  ],
+  "textures": "Packed into editable blend",
+  "runtime_export": "pending",
+  "garment_build_inputs": "WorkingAssets/NPCs/occupation_wardrobe/source_patterns/male_casualsuit02",
+  "sleeveless_candidate": {
+    "source": "artisan_sleeveless_workwear.blend",
+    "status": "editable_candidate_settled_native_checks_pass_motion_pending",
+    "half_width_m": 0.15,
+    "native_fitting": "Cut and fit upper, then transport and fit lower layers against actual seated IK",
+    "rebuild": "python3 tools/characters/run_occupation_native.py --cut-vest --fit-shirt --transport-seat --review",
+    "remaining": [
+      "Sit, rise and reverse step motion contacts",
+      "Armhole, shoulder and hem finish"
+    ],
+    "verification": "Seven terminal samples pass exact body, self, interlayer and foundation visibility checks. Native front and side show knees covered."
+  },
+  "motion_candidate": {
+    "source": "artisan_motion_workwear.blend",
+    "status": "editable_candidate_standard_height_native_motion_verified",
+    "seat_height_m": 0.45,
+    "verification": "119 of 119 exact body, self, interlayer and coverage samples passed with nominal root motion and planted gait.",
+    "source_base": "artisan_sleeveless_workwear.blend",
+    "rebuild_flags": [
+      "--fit-motion",
+      "--moving-walk",
+      "--all-samples",
+      "--repair-frames",
+      "repair_01",
+      "repair_04",
+      "repair_05",
+      "repair_06",
+      "rise_02",
+      "rise_04",
+      "walk_01",
+      "walk_02",
+      "walk_07",
+      "walk_12",
+      "walk_13"
+    ],
+    "remaining": [
+      "Fit at actual 0.27 m cart maker and 0.26 m potter seats",
+      "Check workplace hand contacts, real motion and visual seams before runtime replacement"
+    ]
+  },
+  "repair_yard_candidate": {
+    "source": "cartmaker_repair_workwear.blend",
+    "source_base": "artisan_motion_workwear.blend",
+    "status": "installed_cartmaker_workplace",
+    "seat_height_m": 0.45,
+    "seat_offset_m": 0.02,
+    "verification": "53 village activity checks and 39 imported cloth samples pass in headless and Metal runs. Native real-time candidate playback passed the 8 second repair sequence.",
+    "rebuild_command": "python3 tools/world/run_npc_activities.py --village --repair-stance .35 .17 .02 0 .45 --repair-outfit WorkingAssets/NPCs/occupation_wardrobe/artisan/artisan_motion_workwear.blend --refit-repair --refit-entry --repair-cycle --refit-cycle --keep-fitted-source",
+    "remaining": [
+      "Review clothing in other activities and on other workers"
+    ],
+    "runtime_export": "characters/npcs/activity_people/cartmaker.glb"
+  }
+}

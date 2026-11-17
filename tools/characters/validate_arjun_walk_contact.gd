@@ -7,7 +7,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var stage := Node3D.new()
-	root.add_child(stage)
+	root.add_child(stage);current_scene=stage
 	var clock := Node.new()
 	clock.name = "GameTimeSystem"
 	clock.set_script(load("res://world/suryagarh/systems/game_time_system.gd"))
@@ -26,7 +26,7 @@ func _run() -> void:
 	for i in 30: await physics_frame
 	if not actor.is_on_floor():
 		push_error("ARJUN WALK CONTACT: player did not settle on the floor")
-		quit(1)
+		root.get_node("SaveManager").quit_game(1)
 		return
 	var skeleton: Skeleton3D = actor.get_node("VisualRoot/CharacterVisual").skeleton
 	var idle_foot_y := _lowest_foot_y(skeleton)
@@ -54,10 +54,10 @@ func _run() -> void:
 	var distance := actor.global_position.distance_to(start)
 	if not actor.is_on_floor() or distance < 3.0 or lowest < -0.09 or highest > 0.08 or largest_step > 0.35:
 		push_error("ARJUN WALK CONTACT: floor=%s travel=%.2f m foot_delta=%.3f..%.3f m max_step=%.3f rad" % [actor.is_on_floor(), distance, lowest, highest, largest_step])
-		quit(1)
+		root.get_node("SaveManager").quit_game(1)
 		return
 	print("ARJUN WALK CONTACT: PASS | travel %.2f m, foot-bone delta %.3f..%.3f m, max pose step %.3f rad" % [distance, lowest, highest, largest_step])
-	quit()
+	root.get_node("SaveManager").quit_game(0)
 
 func _lowest_foot_y(skeleton: Skeleton3D) -> float:
 	var lowest := INF

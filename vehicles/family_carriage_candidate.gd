@@ -16,6 +16,7 @@ var boarding: Node
 var boarding_doors: Dictionary = {}
 var hoof_players: Array[AudioStreamPlayer3D] = []
 var sound_cycle := 0.0
+var draft_gait := preload("res://vehicles/draft_gait_speed.gd").new()
 var hoof_events := 0
 var rider: CharacterBody3D:
 	get:
@@ -27,6 +28,7 @@ func _ready() -> void:
 	add_to_group("cart_parking_vehicles")
 	_build_boarding_doors()
 	_build_audio()
+	var rolling:=preload("res://vehicles/cart_wheel_motion.gd").new();rolling.name="WheelMotion";add_child(rolling)
 	_create_coachman.call_deferred()
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
@@ -340,14 +342,12 @@ func can_move() -> bool:
 
 func set_forward_motion(speed: float, delta: float) -> void:
 	if not can_move(): speed = 0.0
-	for wheel in wheels:
-		var radius := .57 if wheel.name == "FrontWheel" else .76
-		wheel.rotation.x += speed*delta/radius
+	speed = draft_gait.sample(self,speed,delta)
 	for anim in horse_animations:
 		if combat != null and combat.animation_dead(anim): continue
 		var clip := "AnimalArmature|Gallop" if absf(speed) > 6.0 else ("AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle")
 		if anim.current_animation != clip: anim.play(clip,.15)
-		anim.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.65,1.7) if clip != "AnimalArmature|Idle" else 1.0
+		anim.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.18,1.7) if clip != "AnimalArmature|Idle" else 1.0
 	if absf(speed) > .25 and not horse_animations.is_empty() and not hoof_players.is_empty():
 		var anim: AnimationPlayer = horse_animations[0]
 		var length: float = anim.get_animation(anim.current_animation).length

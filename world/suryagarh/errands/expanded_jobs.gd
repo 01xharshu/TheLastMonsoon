@@ -137,8 +137,8 @@ func _physics_process(delta: float) -> void:
 		manager._message(request[2] + " — Speak to the person calling.")
 		var voice := AudioStreamPlayer3D.new()
 		var clip: String = {"medicine_request":"medicine", "money_sender":"money", "road":"food"}[request[0]]
-		voice.stream = (load("res://audio/errands/"+clip+"_help.wav") as AudioStreamWAV)
-		voice.max_distance = 22; voice.unit_size = 7; voice.volume_db = 3
+		voice.stream = (load("res://assets/audio/dialogue/errand_"+clip+".wav") as AudioStreamWAV)
+		voice.max_distance = 22; voice.unit_size = 7; voice.volume_db = -8
 		person.add_child(voice); voice.finished.connect(voice.queue_free); voice.play()
 		call_cooldown = 45.0
 		break

@@ -59,6 +59,14 @@ func _patrol_body_blocked(local_motion: Vector3) -> bool:
 	return false
 
 func _ready() -> void:
+	# Only autonomous ordinary actors opt in. Specialized work, seated, mission
+	# and driver subclasses retain their own pose/contact controllers.
+	_resident_pose_eligible = get_script().resource_path in [
+		"res://characters/npcs/british/british_npc_actor.gd",
+		"res://characters/npcs/households/household_npc_actor.gd",
+		"res://characters/npcs/indian/indian_street_actor.gd"]
+	var owning_world := preload("res://systems/world_context.gd").find_world(self)
+	if owning_world != null: _resident_pose_viewer = owning_world.get_node_or_null("Player")
 	if not has_meta("combat_faction"): set_meta("combat_faction","british")
 	add_to_group("combat_actors")
 	call_deferred("_configure_combat")
@@ -278,10 +286,26 @@ func _make_clip(walking: bool, turning: bool = false) -> Animation:
 	_clip_templates[cache_key] = {"clip":template_clip,"times":times,"time_corrections":corrections}
 	return clip
 
+var resident_pose_budget_enabled := true
+var resident_walk_pose_budget_enabled := true
+var resident_pose_updates := 0
+var resident_pose_time := 0.0
+var resident_pose_updated := false
+var _resident_pose_elapsed := 0.0
+var _resident_pose_state: StringName = &"idle"
+var _resident_walk_seconds := 0.0
+var _resident_contact_delta := -1.0
+var _resident_contact_rate := 1.0
+var _resident_leg_pose: Array[Quaternion] = []
+var _resident_leg_bones: Array[int] = []
+var _resident_pose_viewer: Node3D
+var _resident_pose_eligible := false
 var _remote_pose_elapsed := 0.0
 const SimulationBudget = preload("res://systems/simulation_budget.gd")
 
 func _process(delta: float) -> void:
+	resident_pose_updated = false
+	if get_meta("civilian_reacting",false):return
 	if animation_player == null or get_meta("dead",false) or get_meta("knocked_out",false):
 		return
 	if get_meta("external_combat_motion",false):
@@ -294,12 +318,13 @@ func _process(delta: float) -> void:
 		if _remote_pose_elapsed < cadence: return
 		delta = _remote_pose_elapsed
 		_remote_pose_elapsed = 0.0
+		resident_pose_updated = true
 		_set_animation(&"turn" if get_meta("patrol_turning",false) else (&"walk" if travel_speed > .02 else &"idle"),delta)
 		return
 	if not movement_enabled:
 		contact_blocked = false
 		travel_speed = 0.0
-		_set_animation(&"idle", delta)
+		_update_autonomous_pose(&"idle", delta)
 		return
 	var previous_clock := _clock
 	_clock += delta
@@ -339,7 +364,7 @@ func _process(delta: float) -> void:
 		travel_speed = 0.0
 		rotation.y = rotate_toward(rotation.y, atan2(direction.x, direction.z), TAU * maxf(delta, 0.0))
 		body_collider.force_update_transform()
-		_set_animation(&"idle", delta)
+		_update_autonomous_pose(&"idle", delta)
 		return
 	position = desired
 	travel_speed = position.distance_to(previous) / delta if delta > 0.0 else 0.0
@@ -348,10 +373,65 @@ func _process(delta: float) -> void:
 		rotation.y = rotate_toward(rotation.y, target_yaw, TAU * maxf(delta, 0.0))
 	if body_collider != null:
 		body_collider.force_update_transform()
-	_set_animation(&"turn" if turning else (&"walk" if walking else &"idle"), delta)
+	_update_autonomous_pose(&"turn" if turning else (&"walk" if walking else &"idle"), delta)
 
 func take_damage(amount: float) -> void:
 	get_node("Vitality").take_damage(amount)
+
+func _update_autonomous_pose(state: StringName, delta: float) -> void:
+	# Complete held time in its original state before a gait transition.
+	if state != _resident_pose_state and _resident_pose_elapsed > 0.0:
+		_sample_resident_pose(_resident_pose_state, 0.0 if _resident_pose_state == &"walk" else -1.0)
+	_resident_pose_state = state
+	_resident_pose_elapsed += delta
+	var cadence := 0.0
+	if _resident_pose_eligible and resident_pose_budget_enabled:
+		var settled_idle := state == &"idle" and locomotion_blend == 0.0 and turn_blend == 0.0
+		var settled_walk := resident_walk_pose_budget_enabled and state == &"walk" and locomotion_blend == 1.0 and turn_blend == 0.0
+		if settled_idle or settled_walk:
+			var viewer: Node3D = _resident_pose_viewer if is_instance_valid(_resident_pose_viewer) else get_viewport().get_camera_3d()
+			var essential: bool = get_meta("mission_active",false) or get_meta("police_engaged",false) or get_meta("grappled",false) or get_meta("combat_action","") != ""
+			cadence = SimulationBudget.interval(self,viewer,essential)
+			# Walking samples never fall to the distant idle 2Hz tier.
+			if settled_walk: cadence = minf(cadence, 0.1)
+	if state == &"walk":
+		# Integrate actual swept travel, including speed changes between samples.
+		_resident_walk_seconds += delta * clampf(travel_speed / nominal_walk_speed, 0.1, 3.0) * (-1.0 if walk_direction < 0.0 else 1.0)
+	var cache_walk := cadence > 0.0 and state == &"walk"
+	if state == &"walk" and _resident_leg_pose.is_empty(): cadence = 0.0
+	if delta > 0.0 and _resident_pose_elapsed < cadence:
+		if state == &"walk" and not _resident_leg_pose.is_empty():
+			# Restore animation-space legs before solving this frame's planted foot;
+			# never accumulate IK corrections onto last frame's corrected pose.
+			foot_plant.reset_pose()
+			for index in _resident_leg_bones.size():
+				_skeleton.set_bone_pose_rotation(_resident_leg_bones[index], _resident_leg_pose[index])
+			_apply_foot_contact(state, delta, clampf(travel_speed / nominal_walk_speed, 0.1, 3.0) * (-1.0 if walk_direction < 0.0 else 1.0))
+		return
+	_sample_resident_pose(state, delta if state == &"walk" and not _resident_leg_pose.is_empty() else -1.0, cache_walk)
+
+func _sample_resident_pose(state: StringName, contact_delta: float, cache_legs := false) -> void:
+	var elapsed := _resident_pose_elapsed
+	_resident_pose_elapsed = 0.0
+	resident_pose_updated = true
+	resident_pose_updates += 1
+	resident_pose_time += elapsed
+	var speed := travel_speed
+	if state == &"walk" and elapsed > 0.0 and contact_delta >= 0.0:
+		travel_speed = absf(_resident_walk_seconds) * nominal_walk_speed / elapsed
+	_resident_contact_delta = contact_delta
+	_resident_contact_rate = clampf(speed / nominal_walk_speed, 0.1, 3.0) * (-1.0 if walk_direction < 0.0 else 1.0)
+	# A nonempty bone list requests capture before IK in _set_animation.
+	if cache_legs and _resident_leg_bones.is_empty() and foot_plant.skeleton != null:
+		for side in ["l", "r"]:
+			for bone in foot_plant.legs[side]: _resident_leg_bones.append(bone)
+	_set_animation(state,elapsed)
+	travel_speed = speed
+	_resident_contact_delta = -1.0
+	_resident_walk_seconds = 0.0
+	if not cache_legs:
+		_resident_leg_pose.clear()
+		_resident_leg_bones.clear()
 
 func _set_animation(state: StringName, delta: float) -> void:
 	animation_state = state
@@ -371,8 +451,14 @@ func _set_animation(state: StringName, delta: float) -> void:
 		foot_plant.reset_pose()
 	animation_tree.advance(maxf(delta, 0.0))
 	_pose_fingers()
+	if not _resident_leg_bones.is_empty():
+		_resident_leg_pose.clear()
+		for bone in _resident_leg_bones: _resident_leg_pose.append(_skeleton.get_bone_pose_rotation(bone))
+	_apply_foot_contact(state, delta if _resident_contact_delta < 0.0 else _resident_contact_delta, walk_playback_rate if _resident_contact_delta < 0.0 else _resident_contact_rate)
+
+func _apply_foot_contact(state: StringName, delta: float, phase_rate: float) -> void:
 	if foot_plant.skeleton != null and get_meta("combat_action","")=="":
-		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*walk_playback_rate/animation_player.get_animation("walk").length, 1.0)
+		_walk_phase = fmod(_walk_phase + maxf(delta, 0.0)*phase_rate/animation_player.get_animation("walk").length, 1.0)
 		if _walk_phase < 0.0:_walk_phase += 1.0
 		if absf(angle_difference(_last_facing, rotation.y)) > 0.2:
 			foot_plant.clear()
@@ -388,6 +474,11 @@ func _pose_fingers() -> void:
 func combat_react(action: String) -> void:
 	var motion := get_node_or_null("CombatMotion")
 	if motion != null: motion.play(action)
+	if action in ["hit","fall"]:
+		var world := preload("res://systems/world_context.gd").find_world(self)
+		var awareness := world.get_node_or_null("CivilianAwareness") if world!=null else null
+		var attacker: Node3D=get_meta("last_attacker") if has_meta("last_attacker") else null
+		if awareness!=null and is_instance_valid(attacker):awareness.incident(self,attacker,get_meta("last_hit_kind","") not in ["punch","kick","abuse"])
 
 func _configure_combat() -> void:
 	if animation_tree == null: return
@@ -398,3 +489,5 @@ func _configure_combat() -> void:
 		var vitality := preload("res://combat/npc_vitality.gd").new()
 		vitality.name = "Vitality"
 		add_child(vitality)
+	if get_meta("combat_faction","")=="indian" and not get_meta("external_combat_motion",false) and get_script().resource_path in ["res://characters/npcs/households/household_npc_actor.gd","res://characters/npcs/indian/indian_street_actor.gd","res://characters/npcs/activity_actor.gd"]:
+		var reaction:=preload("res://characters/npcs/civilian_reaction.gd").new();reaction.name="CivilianReaction";add_child(reaction)

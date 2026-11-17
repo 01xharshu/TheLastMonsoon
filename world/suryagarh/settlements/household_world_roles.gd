@@ -55,12 +55,30 @@ func _stock_today(home:String) -> Dictionary:
   for pantry in stock.values():pantry.roti=maxi(0,int(pantry.roti)-elapsed);pantry.mango=maxi(0,int(pantry.mango)-elapsed)
   stock_day=day()
  return stock[home]
+func roti_price(home:String) -> int:
+ var pantry := _stock_today(home)
+ return 3 if int(pantry.roti) == 1 else 2
 func _record(id:String) -> Dictionary:
  if not state.has(id):state[id]={}
  return state[id]
 func _business_open(service:Node) -> bool:
  if service.role not in ["merchant","official"]:return true
  return not is_instance_valid(clock) or (clock.current_hour>=9 and clock.current_hour<17)
+func sell_cart_salvage(service:Node,actor:CharacterBody3D) -> bool:
+ if actor!=player or service.role!="merchant" or not service.interaction_available():return false
+ var salvage=preload("res://world/suryagarh/cart_salvage.gd")
+ var inventory:InventoryComponent=actor.get_node("InventoryComponent")
+ var item:String=salvage.available_good(inventory)
+ if item.is_empty():return false
+ if not _business_open(service):
+  message("The merchant buys salvage from 9 in the morning to 5 in the afternoon.")
+  return true
+ if inventory.remove_item(item,1):
+  var price:int=salvage.GOODS[item].price
+  inventory.add_item("rupees",price)
+  message("Sold %s · %d rupees" % [salvage.label(item),price])
+ return true
+
 func request(service:Node,actor:CharacterBody3D) -> void:
  if actor!=player or not service.interaction_available():return
  if not _business_open(service):message("Business hours are 9 in the morning to 5 in the afternoon.");return
@@ -90,8 +108,9 @@ func request(service:Node,actor:CharacterBody3D) -> void:
   "host":supply(service,actor,2,true)
   "cook":
    if int(pantry.roti)<=0:message("The pantry is empty. Use the supply interaction to bring roti.");return
-   if not inv.remove_item("rupees",2):message("A kitchen roti costs 2 rupees.");return
-   pantry.roti-=1;refresh_cooks();inv.add_item("roti",1);message("One roti supplied from the household pantry.")
+   var price := roti_price(service.home_id)
+   if not inv.remove_item("rupees",price):message("A kitchen roti costs %d rupees."%price);return
+   pantry.roti-=1;refresh_cooks();inv.add_item("roti",1);message("One roti supplied from the household pantry for %d rupees."%price)
   "water":
    var used:float=float(record.get("liters",0)) if int(record.get("day",-1))==day() else 0.0
    if used>=2:message("Today's two-litre household water allowance is used.");return

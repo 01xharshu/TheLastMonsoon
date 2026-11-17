@@ -77,7 +77,9 @@ func _harness()->void:
 	var reins:=cart.get_node_or_null("FlexibleReins")
 	if reins!=null:reins.set_process(complete);reins.set_physics_process(complete);reins.visible=complete
 	for i in cart.boarding.clearance_shapes.size():
-		if i>0 and (i<3 if cart.has_method("show_coachman_blockout") else i==1):cart.boarding.clearance_shapes[i].set_deferred("disabled",not complete)
+		var shape: CollisionShape3D = cart.boarding.clearance_shapes[i]
+		var draft_shape: bool = shape.has_meta("draft_clearance") if cart.has_method("add_cart_clearance") else (i>0 and (i<3 if cart.has_method("show_coachman_blockout") else i==1))
+		if draft_shape: shape.set_deferred("disabled",not complete)
 
 func _physics_process(_delta:float)->void:
 	if absf(cart.rotation.z)>.65 or absf(cart.rotation.x)>.65:

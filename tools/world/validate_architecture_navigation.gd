@@ -51,11 +51,12 @@ func run() -> void:
 	check(survivor.received and survivor.result==path,"queue continues after cancelled actor request")
 	survivor.received=false
 	preload("res://systems/navigation_work_queue.gd").request(survivor,actor,Vector3(29,0,29))
-	await physics_frame
+	# Remove the world before allowing completion. Waiting a physics frame here
+	# let fast machines finish legally before teardown and falsely fail the test.
 	survivor.reparent(root)
 	world.queue_free();current_scene=null
 	for frame in 3:await process_frame
-	check(not survivor.received,"world teardown cancels pending search without a late callback")
+	check(not survivor.received,"world teardown cancels deferred search without a late callback")
 	survivor.queue_free()
 	print("ARCHITECTURE NAVIGATION ",JSON.stringify({"checks":count,"status":"PASS" if failures.is_empty() else "FAIL","failures":failures}))
 	root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

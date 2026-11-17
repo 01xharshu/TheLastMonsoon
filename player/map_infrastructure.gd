@@ -28,6 +28,8 @@ static func collect(world: Node) -> Dictionary:
  var sites: Dictionary = {}
  for node in world.find_children("*","Node3D",true,false):
   var label: String = str(node.get_meta("parking_label", NAMED.get(str(node.name),"")))
+  if label == "" and node.is_in_group("bhairavpur_workshop"):
+   label = "Bhairavpur %s workshop" % str(node.get_meta("craft","craft")).capitalize()
   if label == "":
    for group in GROUPS:
     if node.is_in_group(group):

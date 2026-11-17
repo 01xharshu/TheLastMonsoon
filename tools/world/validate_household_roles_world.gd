@@ -26,20 +26,40 @@ func _run() -> void:
   timings.sort()
   print("HOUSEHOLD_NATIVE_FRAME_SAMPLE ",JSON.stringify({"median_ms":timings[90],"p95_ms":timings[171],"frames":180,"render_scale":root.scaling_3d_scale,"window_pixels":[root.size.x,root.size.y],"msaa":root.msaa_3d,"renderer":RenderingServer.get_current_rendering_method(),"scope":"live full world at estate, HUD hidden only when requested; timing sample, not FPS approval"}))
  var player:CharacterBody3D=world.get_node("Player");player.set_physics_process(false);player.first_person=false
- for coach in get_nodes_in_group("household_coach"):coach.get_node("HouseholdTravel").set_physics_process(false)
+ for coach in get_nodes_in_group("household_coach"):
+  var travel: Node = coach.get_node_or_null("HouseholdTravel")
+  if travel!=null:travel.set_physics_process(false)
+ var deadline:=Time.get_ticks_msec()+120000
  var services:=get_nodes_in_group("household_role_services")
+ while services.size()<13 and Time.get_ticks_msec()<deadline:
+  await process_frame
+  services=get_nodes_in_group("household_role_services")
  var errors:Array[String]=[]
  if services.size()!=13:errors.append("expected 13 household role services, got "+str(services.size()))
  var merchant:Node
  var landlord:Node
+ var cook:Node
  for service in services:
   service.person.set_process(false);service.person.set_meta("household_action","home")
   if service.role=="merchant":merchant=service
   if service.role=="landowner":landlord=service
+  if service.role=="cook" and cook==null:cook=service
   await _stand_at(player,service)
   if player.call("_find_interactable")!=service:errors.append(str(service.person.name)+": normal interaction cannot select role")
  var saver:Node=root.get_node("SaveManager")
  var ledger:Node=world.get_node("WealthyHouseholds/WorldRoles")
+ if cook!=null:
+  await _stand_at(player,cook)
+  var pantry:Dictionary=ledger._stock_today(cook.home_id)
+  pantry.roti=1
+  var inv:Node=player.get_node("InventoryComponent")
+  inv.add_item("rupees",3)
+  var previous_money:int=inv.get_item_count("rupees")
+  var previous_roti:int=inv.get_item_count("roti")
+  if not cook.interaction_available() or "3 rupees" not in cook.interaction_text:errors.append("scarce pantry price is not displayed")
+  cook.interact(player)
+  if inv.get_item_count("rupees")!=previous_money-3 or inv.get_item_count("roti")!=previous_roti+1 or int(pantry.roti)!=0:errors.append("scarce pantry sale failed")
+  pantry.roti=1
  if landlord!=null:
   await _stand_at(player,landlord);landlord.interact(player)
   if not ledger.survey_active:errors.append("placed landowner survey unavailable")
@@ -65,8 +85,10 @@ func _run() -> void:
     var data:Dictionary=saver.read_slot(1)
     if not data.has("household_roles"):errors.append("role ledger missing from save")
     ledger.state.clear();inv.items.mango=99
+    if cook!=null:ledger.stock[cook.home_id].roti=8
     saver.pending_slot=1;saver.apply_pending(world)
+    if cook!=null and (int(ledger.stock[cook.home_id].roti)!=1 or ledger.roti_price(cook.home_id)!=3):errors.append("scarce pantry stock or price not restored")
     if int(ledger.state.get(merchant.role_id,{}).get("sold",0))!=1 or inv.get_item_count("mango")!=1 or ledger.survey_checked.size()!=1:errors.append("role/inventory/survey save restore failed: sold=%s mango=%s checked=%s saved_checked=%s"%[ledger.state.get(merchant.role_id,{}).get("sold",0),inv.get_item_count("mango"),ledger.survey_checked,data.get("household_roles",{}).get("survey_checked",[])])
    saver.save_root=original_root;saver.pending_slot=original_pending
  print("HOUSEHOLD_ROLES_WORLD ",JSON.stringify({"passed":errors.is_empty(),"services":services.size(),"errors":errors,"scope":"placed NPC interaction selection, merchant trade and temporary real save/load"}))
- quit(0 if errors.is_empty() else 1)
+ saver.quit_game(0 if errors.is_empty() else 1)

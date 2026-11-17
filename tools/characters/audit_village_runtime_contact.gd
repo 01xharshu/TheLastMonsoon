@@ -1,7 +1,7 @@
 extends SceneTree
 ## Sample imported skinned/morphed triangles rather than source Blender alone.
 func _initialize() -> void:call_deferred("run")
-func posed_points(node:MeshInstance3D,rig:Skeleton3D,surface:int) -> PackedVector3Array:
+static func posed_points(node:MeshInstance3D,rig:Skeleton3D,surface:int, from_world:Transform3D = Transform3D.IDENTITY) -> PackedVector3Array:
  var arrays:=node.mesh.surface_get_arrays(surface)
  var vertices:PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
  var base:PackedVector3Array=vertices.duplicate()
@@ -11,11 +11,13 @@ func posed_points(node:MeshInstance3D,rig:Skeleton3D,surface:int) -> PackedVecto
   if is_zero_approx(amount):continue
   var positions:PackedVector3Array=morphs[shape][Mesh.ARRAY_VERTEX]
   for index in vertices.size():vertices[index]+=(positions[index] if node.mesh.blend_shape_mode==Mesh.BLEND_SHAPE_MODE_RELATIVE else positions[index]-base[index])*amount
+ # Transform the palette before weighting so a non-unit weight sum cannot amplify world offsets.
+ var rig_to_output := from_world * rig.global_transform
  var palette:Array[Transform3D]=[]
  for bind in node.skin.get_bind_count():
   var bone:=node.skin.get_bind_bone(bind)
   if bone<0:bone=rig.find_bone(node.skin.get_bind_name(bind))
-  palette.append(rig.global_transform*rig.get_bone_global_pose(bone)*node.skin.get_bind_pose(bind))
+  palette.append(rig_to_output*rig.get_bone_global_pose(bone)*node.skin.get_bind_pose(bind))
  var bones:PackedInt32Array=arrays[Mesh.ARRAY_BONES];var weights:PackedFloat32Array=arrays[Mesh.ARRAY_WEIGHTS]
  var slots:int=bones.size()/vertices.size();var points:=PackedVector3Array()
  for index in vertices.size():

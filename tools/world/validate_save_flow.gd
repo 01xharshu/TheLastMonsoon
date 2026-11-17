@@ -85,6 +85,27 @@ func validate() -> void:
 	check(absf(inventory.stored_water_liters-1.25)<0.01,"Pouch water did not restore")
 	check(absf(survival.hydration-43.0)<0.01,"Hydration did not restore")
 	check(equipment.selected==1 and not equipment.stowed,"Weapon state did not restore")
+	# A multi-charge pistol reload must survive a disk roundtrip at its real pace.
+	inventory.add_item("pistol",1)
+	inventory.add_item("pistol_ball",3)
+	equipment.selected = 3
+	equipment.stowed = false
+	equipment._refresh()
+	var pistol: Node = player.get_node("PistolCombat")
+	pistol.rounds = 0
+	pistol.reload_charges = 3
+	pistol.reload_duration = 10.0
+	pistol.reload_remaining = 7.5
+	check(saves.save_game(world,3),"Could not save multi-charge pistol reload")
+	pistol.rounds = 4
+	pistol.reload_charges = 1
+	pistol.reload_duration = 4.0
+	pistol.reload_remaining = .2
+	saves.pending_slot = 3
+	saves.apply_pending(world)
+	check(pistol.rounds == 0 and pistol.reload_charges == 3 and is_equal_approx(pistol.reload_duration,10.0) and is_equal_approx(pistol.reload_remaining,7.5),"Pistol reload lost charges or elapsed time during restore")
+	pistol._finish_reload()
+	check(pistol.rounds == 3 and inventory.get_item_count("pistol_ball") == 0,"Restored pistol reload lost or duplicated ammunition")
 	saves.set_option("mouse",1.4)
 	saves.options["mouse"] = 1.0
 	saves.load_options()

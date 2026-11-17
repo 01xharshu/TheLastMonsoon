@@ -39,7 +39,11 @@ func run() -> void:
 		await physics_frame
 	check(police.to_local(player.global_position).x < -7.5, "New office doorway blocks the player: " + str(police.to_local(player.global_position)))
 	var supplies: Array = get_nodes_in_group("ammunition_pickups")
-	check(supplies.size() == 6, "Both gun locations need all three ammunition supplies")
+	for site in ["district_police/ammunition/", "company_armoury/ammunition/", "fort_armoury/ammunition/"]:
+		var types := {}
+		for pickup in supplies:
+			if pickup.supply_id.begins_with(site): types[pickup.item_id] = true
+		check(types.size() == 3 and types.has("paper_cartridges") and types.has("pistol_ball") and types.has("shot_charge"), "Missing ammunition types at " + site)
 	for pickup in supplies:
 		check(pickup.find_children("*","MeshInstance3D",true,false).size() >= 9, "Ammunition supply lacks 3D meshes")
 		player.global_position = pickup.global_position + Vector3(0,0,1)
@@ -57,6 +61,7 @@ func run() -> void:
 	player.global_position = gun.global_position + Vector3(0,0,1)
 	var spare_before: int = player.inventory.get_item_count("paper_cartridges")
 	gun.interact(player)
+	player.get_node("UI").get_children().back().confirm(true)
 	check(player.inventory.get_item_count("paper_cartridges") == spare_before+24, "New rifle did not grant 24 spare cartridges")
 	check(player.get_node("RifleCombat").rounds == 1, "New rifle must have one loaded chamber")
 	var saves: Node = root.get_node("SaveManager")

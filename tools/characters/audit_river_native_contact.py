@@ -6,9 +6,10 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from purpose_cloth_volume import VolumeSurface,inside_surface
 folder=Path(sys.argv[sys.argv.index('--')+1]);summary={}
 for path in sorted(folder.glob('*.json')):
- data=json.loads(path.read_text());vertices=[];faces=[]
+ data=json.loads(path.read_text());vertices=[];faces=[];upper=set();lower=set()
  for body in data['body']:
   offset=len(vertices);vertices.extend(body['vertices']);ids=body['indices']
+  upper.update(offset+i for i in body.get('upper_torso_indices',[]));lower.update(offset+i for i in body.get('lower_body_indices',[]))
   reverse=body.get('winding_sign',1)<0
   faces.extend(tuple(offset+i for i in (reversed(ids[j:j+3]) if reverse else ids[j:j+3])) for j in range(0,len(ids),3))
  if not vertices or not faces:raise RuntimeError('Missing full native river body')
@@ -22,13 +23,13 @@ for path in sorted(folder.glob('*.json')):
   points += [sum((points[index] for index in ids[j:j+3]),Vector())/3 for j in range(0,len(ids),3)]
   cloth=result['garments'].setdefault(garment['name'],{'violations':0,'worst_mm':0})
   for index,point in enumerate(points):
-   _,_,_,distance=tree.find_nearest(point);result['samples']+=1
+   nearest,normal,nearest_face,distance=tree.find_nearest(point);result['samples']+=1
    if distance>.002 and inside_surface(tree,point):
     result['violations']+=1;cloth['violations']+=1
     result['vertex_violations' if index<count else 'face_violations']+=1
     result['worst_mm']=max(result['worst_mm'],distance*1000)
     if distance*1000>cloth['worst_mm']:
      cloth['worst_mm']=distance*1000
-     cloth['worst_pose']={'walking':data['walking'],'sample':data['sample'],'label':data['label'],'point':list(point),'active_keys':garment.get('active_keys',[])}
+     cloth['worst_pose']={'nearest_region':'torso' if all(i in upper for i in faces[nearest_face]) else 'leg' if all(i in lower for i in faces[nearest_face]) else 'waist','point_index':index,'vertex_count':count,'walking':data['walking'],'sample':data['sample'],'label':data['label'],'point':list(point),'nearest':list(nearest),'normal':list(normal),'triangle':[vertices[i] for i in faces[nearest_face]],'active_keys':garment.get('active_keys',[])}
 for role,result in summary.items():print('NATIVE_CONTACT',role,json.dumps(result),flush=True)
 raise SystemExit(0 if summary and all(result['violations']==0 and result['ground_violations']==0 for result in summary.values()) else 1)

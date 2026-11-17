@@ -16,6 +16,7 @@ var turning_rate := 0.0
 var cart_handle_rids: Array[RID] = []
 var collision_body: AnimatableBody3D
 var clearance_shapes: Array[CollisionShape3D] = []
+var wheel_terrain_cache: Dictionary={}
 var transition := ""
 var transition_progress := 0.0
 var transition_start := Vector3.ZERO
@@ -33,6 +34,7 @@ func configure(owner_cart: Node3D) -> void:
 
 func _ready() -> void:
 	_build_collision()
+	wheel_terrain_cache=preload("res://world/suryagarh/tree_trunk_collision.gd").terrain_cache(cart)
 	travel = preload("res://vehicles/paid_coach_travel.gd").new()
 	travel.configure(self)
 	add_child(travel)
@@ -45,18 +47,35 @@ func _build_collision() -> void:
 	collision_body.collision_mask = 1
 	cart.add_child(collision_body)
 	collision_body.add_to_group("cart_clearance_bodies")
-	var family: bool = cart.has_method("show_coachman_blockout")
-	_add_clearance(Vector3(0, 1.68, 2.8), Vector3(2.25, 2.0, 3.15)) if family else _add_clearance(Vector3(0, 1.30, 2.55), Vector3(1.8, .65, 2.25))
-	if family:
-		_add_clearance(Vector3(-.79, 1.16, -1.88), Vector3(.8, 1.25, 2.1))
-		_add_clearance(Vector3(.79, 1.16, -1.88), Vector3(.8, 1.25, 2.1))
-		for side in [-1.0, 1.0]:
-			_add_clearance(Vector3(side * 1.27, .84, 2.79), Vector3(.38, .07, .57))
-			_add_clearance(Vector3(side * 1.18, .62, .30), Vector3(.38, .09, .50))
+	if cart.has_method("add_cart_clearance"):
+		cart.add_cart_clearance(self)
 	else:
-		_add_clearance(Vector3(0, 1.16, -1.15), Vector3(.85, 1.25, 2.1))
-		for side in [-1.0, 1.0]:
-			_add_clearance(Vector3(side * 1.12, .55, 1.40), Vector3(.38, .09, .50))
+		var family: bool = cart.has_method("show_coachman_blockout")
+		_add_clearance(Vector3(0, 1.68, 2.8), Vector3(2.25, 2.0, 3.15)) if family else _add_clearance(Vector3(0, 1.30, 2.55), Vector3(1.8, .65, 2.25))
+		if family:
+			_add_clearance(Vector3(-.79, 1.16, -1.88), Vector3(.8, 1.25, 2.1))
+			_add_clearance(Vector3(.79, 1.16, -1.88), Vector3(.8, 1.25, 2.1))
+			for side in [-1.0, 1.0]:
+				_add_clearance(Vector3(side * 1.27, .84, 2.79), Vector3(.38, .07, .57))
+				_add_clearance(Vector3(side * 1.18, .62, .30), Vector3(.38, .09, .50))
+		else:
+			_add_clearance(Vector3(0, 1.16, -1.15), Vector3(.85, 1.25, 2.1))
+			for side in [-1.0, 1.0]:
+				_add_clearance(Vector3(side * 1.12, .55, 1.40), Vector3(.38, .09, .50))
+
+		# Fill the undercarriage and full wheel envelopes, not only the raised deck.
+		# Keep original shape indices: draught teams refer to the horse clearance slot.
+		_add_clearance(Vector3(0,.72,2.8 if family else 2.55),Vector3(2.25 if family else 1.8,.60,3.15 if family else 2.25))
+	for wheel in cart.wheels:
+		var radius: float=wheel.position.y-.05
+		var points:=PackedVector3Array()
+		for side in [-.13,.13]:
+			for index in 20:
+				var angle:=TAU*index/20.0
+				points.append(Vector3(side,sin(angle)*radius,cos(angle)*radius))
+		var shape:=ConvexPolygonShape3D.new();shape.points=points
+		var collision:=CollisionShape3D.new();collision.shape=shape;collision.position=wheel.position;collision.set_meta("wheel_contact",true)
+		collision_body.add_child(collision);clearance_shapes.append(collision)
 
 func _add_clearance(at: Vector3, size: Vector3) -> void:
 	var collision := CollisionShape3D.new()
@@ -76,7 +95,9 @@ func _cart_handle_exclusions() -> Array[RID]:
 	return cart_handle_rids
 
 func _vehicle_exclusions() -> Array[RID]:
-	var exclusions := _cart_handle_exclusions() + [collision_body.get_rid()]
+	var exclusions: Array[RID]=[]
+	exclusions.assign(_cart_handle_exclusions())
+	exclusions.append(collision_body.get_rid())
 	# Solid resident freight is part of this vehicle while stowed. Other
 	# bodies still collide with it; only its own clearance query excludes it.
 	exclusions.append_array(cart.get_meta("resident_cargo_rids",[]))
@@ -90,7 +111,11 @@ func _clearance_at(next_at: Vector3) -> bool:
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = collision.shape
 		query.transform = Transform3D(next_basis, next_at + next_basis * collision.position)
-		query.exclude = _vehicle_exclusions()
+		var exclusions: Array[RID]=_vehicle_exclusions()
+		# Tyres may contact registered drivable terrain; their physical bodies stay solid.
+		# Walls, actors, trees, other carts and unregistered structures remain obstacles.
+		if collision.get_meta("wheel_contact",false):exclusions.append_array(wheel_terrain_cache.get("rids",[]))
+		query.exclude=exclusions
 		query.collision_mask = 1
 		if not space.intersect_shape(query, 1).is_empty(): return false
 	return true
@@ -101,7 +126,12 @@ func rein_grip_world(side: String) -> Vector3:
 func foot_support_world(side: String) -> Vector3:
 	var socket: Node3D = cart.seat_sockets.get(seat_name)
 	var x: float = socket.position.x + (-.18 if side == "l" else .18)
-	if seat_name=="ConsignmentRearSeat":return cart.to_global(Vector3(x,.845,4.0))
+	if seat_name=="ConsignmentRearSeat":
+		# Keep soles on the deck until the hips finish sliding back; then cross
+		# its edge before lowering onto the actual exterior footboard.
+		var extension:float=float(rider.get_meta("consignment_foot_extension",0.0)) if is_instance_valid(rider) else 0.0
+		var along:float=lerpf(minf(socket.position.z+.50,3.85),4.10,smoothstep(0,.55,extension))
+		return cart.to_global(Vector3(x,lerpf(1.19,.98,smoothstep(.55,1,extension)),along))
 	if role=="passenger" and cart.get_meta("public_passenger_service",false):
 		return cart.to_global(Vector3(x,1.185,socket.position.z-.55))
 	if cart.has_method("show_coachman_blockout"):
@@ -121,6 +151,7 @@ func passenger_hand_world(side: String) -> Vector3:
 	return socket.to_global(Vector3(-.19 if side == "l" else .19, hand_height, -.28))
 
 func transition_step_world() -> Vector3:
+	if seat_name=="ConsignmentRearSeat":return cart.to_global(Vector3(0,.98,4.10))
 	if cart.has_method("show_coachman_blockout"):
 		return cart.to_global(Vector3(transition_side * (1.27 if role == "passenger" else 1.18), .875 if role == "passenger" else .665, 2.79 if role == "passenger" else .30))
 	return cart.to_global(Vector3(transition_side * 1.12, .595, 1.40))
@@ -134,12 +165,14 @@ func cabin_transfer_foot_world(side: String, progress: float) -> Vector3:
 	return plant.lerp(foot_support_world(side), smoothstep(.82, 1.0, progress))
 
 func transition_hand_world() -> Vector3:
+	if seat_name=="ConsignmentRearSeat":return cart.to_global(Vector3(transition_side*.65,2.05,4.10))
 	if role == "passenger" and cart.has_method("show_coachman_blockout"):
 		return cart.to_global(Vector3(transition_side * 1.13, 1.95, 2.40))
 	var step := cart.to_local(transition_step_world())
 	return cart.to_global(Vector3(transition_side * .85, step.y + 1.0, step.z + .30))
 
 func board_at(actor: CharacterBody3D, seat: String, kind: String) -> bool:
+	if actor.get_meta("morning_tutorial_active",false) and (kind!="passenger" or cart.name!="VillageStationCoach" or actor.get_node("UI/HUDRoot/MorningTutorial").step!=10): return false
 	if seat in cart.get_meta("npc_occupied_seats",[]):return false
 	if is_instance_valid(cart) and cart.get_meta("booking_status", "public") != "public": return false
 	if kind == "passenger" and cart.has_meta("errand_passenger"): return false
@@ -240,7 +273,7 @@ func _physics_process(delta: float) -> void:
 	if rider == null or not is_instance_valid(cart): return
 	if _fall_step(delta): return
 	if transition != "":
-		transition_progress = minf(1.0, transition_progress + delta / TRANSITION_SECONDS)
+		transition_progress = minf(1.0, transition_progress + delta / (2.4 if seat_name=="ConsignmentRearSeat" else TRANSITION_SECONDS))
 		if role == "passenger" and cart.has_method("set_boarding_door"):
 			var door_open := smoothstep(0.0, .18, transition_progress) * (1.0 - smoothstep(.82, 1.0, transition_progress))
 			cart.set_boarding_door(transition_side, door_open)
@@ -336,16 +369,28 @@ func _sync_rider() -> void:
 	var pelvis: int = visual.skeleton.find_bone("pelvis")
 	if pelvis < 0: return
 	var seated_yaw := socket.global_rotation.y + PI
+	var rear_transfer:bool=seat_name=="ConsignmentRearSeat" and transition!=""
 	var cabin_transfer: bool = role == "passenger" and cart.has_method("show_coachman_blockout") and transition != ""
 	var u: float = transition_progress if transition == "boarding" else 1.0 - transition_progress
-	rider.visual_root.global_rotation.y = lerp_angle(cart.global_rotation.y - transition_side * PI * .5, seated_yaw, smoothstep(.55, .86, u)) if cabin_transfer else seated_yaw
+	var public_side_transfer:bool=role=="passenger" and transition!="" and cart.get_meta("public_passenger_service",false)
+	rider.visual_root.global_rotation.y = lerp_angle(cart.global_rotation.y - transition_side * PI * .5, seated_yaw, smoothstep(.55, .86, u)) if cabin_transfer or public_side_transfer else seated_yaw
+	if rear_transfer:rider.visual_root.global_rotation.y=lerp_angle(cart.global_rotation.y+PI,seated_yaw,smoothstep(.60,.95,u))
 	var hip_world: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin)
 	var target: Vector3 = socket.global_position
 	if transition != "":
 		var boarding_progress := transition_progress if transition == "boarding" else 1.0 - transition_progress
 		var outside: Vector3 = transition_start if transition == "boarding" else transition_ground
 		var step: Vector3 = transition_step_world() + Vector3.UP * .90
-		if cabin_transfer:
+		if rear_transfer:
+			var rear_step:=cart.to_global(Vector3(0,1.88,4.25))
+			var inside:=cart.to_global(Vector3(0,1.82,3.65))
+			var lower:=cart.to_global(Vector3(0,1.40,4.62))
+			if u<.15:target=outside
+			elif u<.40:target=outside.lerp(lower,smoothstep(.15,.40,u))
+			elif u<.65:target=lower.lerp(rear_step,smoothstep(.40,.65,u))
+			elif u<.82:target=rear_step.lerp(inside,smoothstep(.65,.82,u))
+			else:target=inside.lerp(socket.global_position,smoothstep(.82,1.0,u))
+		elif cabin_transfer:
 			var inside: Vector3 = cart.to_global(Vector3(transition_side * .68, 2.23, 2.88))
 			if u < .40:
 				target = outside.lerp(step, smoothstep(0.0, .40, u))

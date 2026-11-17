@@ -23,7 +23,7 @@ static func make(rig: Skeleton3D, idle: Animation, action: String) -> Animation:
 			var strike := smoothstep(.25,.43,phase)
 			var angles: Dictionary
 			if action == "hit":
-				angles={"spine_01":Vector3(-.22,0,.10),"spine_02":Vector3(-.25,0,0),"head":Vector3(-.12,0,0),"upperarm_l":Vector3(-.55,0,.3),"upperarm_r":Vector3(-.5,0,-.3)}
+				angles={"spine_01":Vector3(-.20,-.06,.10),"spine_02":Vector3(-.24,-.08,.04),"head":Vector3(-.15,.06,-.06),"upperarm_l":Vector3(-.58,0,.3),"upperarm_r":Vector3(-.48,0,-.3),"lowerarm_l":Vector3(-.60,0,0),"lowerarm_r":Vector3(-.45,0,0)}
 				effort=sin(phase*PI)
 			elif action == "block":
 				angles={"spine_02":Vector3(.08,0,0),"upperarm_l":Vector3(-1.25,0,.15),"upperarm_r":Vector3(-1.2,0,-.15),"lowerarm_l":Vector3(-1.3,0,0),"lowerarm_r":Vector3(-1.3,0,0)}

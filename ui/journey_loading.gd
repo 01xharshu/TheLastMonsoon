@@ -76,27 +76,32 @@ func _draw_frame() -> void:
 func begin(slot: int) -> bool:
 	var saves := get_tree().root.get_node("SaveManager")
 	if slot > 0 and saves.read_slot(slot).is_empty():
+		saves.last_error = "This save is unavailable or damaged."
 		queue_free()
 		return false
 	# Present artwork before any expensive loading or world construction.
 	await _draw_frame()
 	if not ResourceLoader.exists(world_path):
+		saves.last_error = "The world data is unavailable."
 		queue_free()
 		return false
 	# Compile script metadata on the main thread before the loader reads it.
 	# Godot 4.7.2 otherwise leaves zero-reference objects after this scene load.
 	var scripts_to_keep: Array[Script] = []
 	if not await _prepare_scene_scripts(world_path, scripts_to_keep):
+		saves.last_error = "The world scripts or assets could not be prepared."
 		queue_free()
 		return false
 	var error := ResourceLoader.load_threaded_request(world_path)
 	if error != OK:
+		saves.last_error = "The world loading request failed."
 		queue_free()
 		return false
 	var progress: Array = []
 	while true:
 		var state := ResourceLoader.load_threaded_get_status(world_path, progress)
 		if state == ResourceLoader.THREAD_LOAD_FAILED or state == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			saves.last_error = "The world data could not be loaded."
 			queue_free()
 			return false
 		if not progress.is_empty(): progress_bar.value = 25.0 + float(progress[0]) * 65.0
@@ -105,6 +110,7 @@ func begin(slot: int) -> bool:
 	var packed := ResourceLoader.load_threaded_get(world_path) as PackedScene
 	scripts_to_keep.clear()
 	if packed == null:
+		saves.last_error = "The world scene could not be opened."
 		queue_free()
 		return false
 	status.text = "Entering India, 1857…" if slot == 0 else "Returning to your journey…"
@@ -142,6 +148,7 @@ func begin(slot: int) -> bool:
 	preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
 	error = get_tree().change_scene_to_node(instance)
 	if error != OK:
+		saves.last_error = "The world scene could not be started."
 		saves.pending_slot = previous_slot
 		get_tree().paused = false
 		Startup.close(session)

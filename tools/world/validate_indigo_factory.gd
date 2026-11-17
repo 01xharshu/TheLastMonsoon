@@ -153,7 +153,7 @@ func review(factory:Node3D) -> void:
 	for i in 120:
 		var started:=Time.get_ticks_usec();await process_frame;frames.append((Time.get_ticks_usec()-started)/1000.0)
 	frames.sort()
-	print("FACTORY NATIVE frames120 median_ms=",frames[60]," p95_ms=",frames[114]," window=",root.size," texture_metadata=",root.get_texture().get_size()," scale=",root.scaling_3d_scale," whole world; no isolated attribution")
+	print("FACTORY NATIVE frames120 median_ms=",frames[60]," p95_ms=",frames[114]," window=",root.size," texture_metadata=",root.get_texture().get_size()," scale=",root.scaling_3d_scale," factory-only construction fixture" if OS.get_environment("TLM_FACTORY_ARCHITECTURE")=="1" else " whole world; no isolated attribution")
 
 func architecture_review() -> void:
 	# Bounded construction fixture, explicitly separate from the real journey gate.
@@ -165,8 +165,10 @@ func architecture_review() -> void:
 	var environment:=WorldEnvironment.new();environment.environment=Environment.new();environment.environment.background_mode=Environment.BG_COLOR
 	environment.environment.background_color=Color(.65,.70,.73);environment.environment.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
 	environment.environment.ambient_light_color=Color(.75,.78,.82);environment.environment.ambient_light_energy=.65;world.add_child(environment)
-	var factory:=preload("res://world/suryagarh/settlements/indigo_factory.gd").new();world.add_child(factory)
+	var factory:Node3D=load("res://world/suryagarh/settlements/indigo_factory.gd").new();world.add_child(factory)
 	while not factory.configured:await process_frame
+	check(factory.operations.configured and factory.operations.workers.size()==3,"component fixture retains three configured workers")
+	if not failures.is_empty():root.get_node("SaveManager").quit_game(1);return
 	var faces:Array[Vector3]=[]
 	for x in range(-90,90,3):
 		for z in range(-90,90,3):

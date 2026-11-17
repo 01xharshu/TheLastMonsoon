@@ -7,6 +7,10 @@ func available(actor: CharacterBody3D, forward: Vector3, step_height: float, jum
 	forward=forward.normalized()
 	if preload("res://player/window_climb.gd").new().try_start(actor,true):return true
 	if actor.test_move(actor.global_transform,Vector3.UP*jump_height):return false
+	# Chacha explicitly asks for an airborne attack on level practice ground.
+	# Keep ceiling clearance and the normal action gates, then allow that lesson.
+	var director:=actor.get_parent().get_node_or_null("DevStory")
+	if director!=null and director.configured and director.state=="farm" and not director.active and director.lesson in [2,5] and actor.global_position.distance_to(director.community.farm.global_position)<12.0:return true
 	var space:=actor.get_world_3d().direct_space_state
 	var feet:=actor.global_position-Vector3.UP*.9
 	for height in [step_height+.08,.9,1.4]:

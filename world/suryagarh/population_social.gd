@@ -39,6 +39,7 @@ func neighbours(point:Vector3) -> Array[Node]:
 func available(journey:Node) -> bool:
  if not is_instance_valid(journey) or not is_instance_valid(journey.actor):return false
  var person:Node3D=journey.actor
+ if person.get_meta("civilian_reacting",false) or person.get_meta("defending",false):return false
  return not journey.paused and not person.get_meta("dead",false) and not person.get_meta("knocked_out",false) and not person.get_meta("grappled",false) and person.get_meta("combat_action","")=="" and not person.get_meta("mission_active",false)
 
 func _process(delta:float) -> void:
@@ -78,15 +79,36 @@ func _process(delta:float) -> void:
    journey.social_partner=other;other.social_partner=journey
    journey.social_end=age+duration;other.social_end=age+duration
    journey.social_speaker=true;other.social_speaker=false
+   journey.social_voice_sent=false;other.social_voice_sent=false
+   var tone:="friendly"
+   if posmod(journey.personal_seed+other.personal_seed,13)==0:tone="argument"
+   var warm:=.3
+   var mutual_adults:bool=journey.actor.get_meta("adult_character",false) and other.actor.get_meta("adult_character",false)
+   if mutual_adults and tone=="friendly" and posmod(journey.personal_seed+other.personal_seed,5)==0:
+    warm=.7;tone="flirt"
+   if tone=="argument":warm=0.0
+   journey.actor.set_meta("social_tone",tone);other.actor.set_meta("social_tone",tone)
+   if tone=="argument":
+    var awareness:=get_parent().get_node_or_null("CivilianAwareness")
+    if awareness!=null:awareness.argument(journey.actor,other.actor)
+   journey.actor.set_meta("social_warmth",warm);other.actor.set_meta("social_warmth",warm)
    conversations_started+=1
    break
 
 func end_conversation(journey:Node) -> void:
  if not is_instance_valid(journey) or journey.social_partner==null:return
  var partner:Node=journey.social_partner
+ if is_instance_valid(journey.actor):
+  journey.actor.set_meta("social_warmth",0.0)
+  journey.actor.set_meta("social_tone","")
+  if journey.actor.get_meta("street_action","") in ["talking","listening"]:journey.actor.set_meta("street_action","conversation_finished")
  journey.social_partner=null;journey.social_cooldown=age+35+float(journey.personal_seed%20)
  journey.current_speed=0
  if is_instance_valid(partner):
+  if is_instance_valid(partner.actor):
+   partner.actor.set_meta("social_warmth",0.0)
+   partner.actor.set_meta("social_tone","")
+   if partner.actor.get_meta("street_action","") in ["talking","listening"]:partner.actor.set_meta("street_action","conversation_finished")
   partner.social_partner=null;partner.social_cooldown=age+35+float(partner.personal_seed%20);partner.current_speed=0
  conversations_finished+=1
 

@@ -1,0 +1,39 @@
+{
+  "role": "scholar",
+  "adult": true,
+  "provenance": "Reused Blender MakeHuman/MPFB donor",
+  "donor": "WorkingAssets/NPCs/indian_street_variants/male_02/male_02.blend",
+  "donor_sha256": "9402faa40846f32d4d1cf96bffcd6feb89cbc00f4a53469aaead9724c1668a67",
+  "runtime": "characters/npcs/activity_people/scholar.glb",
+  "complete_body_vertices": 14517,
+  "source_body_vertices": 14517,
+  "facial_vertices": {
+    "speech": 1045,
+    "fear": 3184,
+    "blink": 1428
+  },
+  "exported_meshes": [
+    "Activity cotton shirt",
+    "Activity cotton trousers",
+    "Farmer_eyes",
+    "Farmer_hair",
+    "Fitted turban crown",
+    "Fitted turban fold 0",
+    "Fitted turban fold 1",
+    "Fitted turban fold 2",
+    "Icosphere",
+    "scholar_complete_MakeHuman_body",
+    "Street leather shoe l",
+    "Street leather shoe r",
+    "Street opaque foundation",
+    "Tailored moustache -1",
+    "Tailored moustache 1"
+  ],
+  "complete_body": true,
+  "clothing_masks": false,
+  "visual_approved": false,
+  "runtime_donor": "characters/npcs/street_residents/male_02.glb",
+  "runtime_donor_sha256": "9ecf9c0b8375925760c23b31d09dccad1fbf48fe571f923a82683382c7502427",
+  "editable_source": "WorkingAssets/NPCs/activity_people/scholar/scholar.blend",
+  "foundation_retained": true
+}

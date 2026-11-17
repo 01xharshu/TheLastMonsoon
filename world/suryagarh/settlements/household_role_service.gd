@@ -1,4 +1,5 @@
 extends Interactable
+const Salvage = preload("res://world/suryagarh/cart_salvage.gd")
 var ledger:Node
 var person:Node3D
 var role_id:=""
@@ -15,6 +16,9 @@ func _ready() -> void:
  if vitality!=null and vitality.has_signal("died"):vitality.died.connect(_person_died)
  refresh_physics()
 func interaction_available() -> bool:
+ if role=="cook" and is_instance_valid(ledger):
+  var pantry: Dictionary = ledger._stock_today(home_id)
+  interaction_text = "Kitchen pantry empty" if int(pantry.roti) <= 0 else "Buy kitchen roti · %d rupees" % ledger.roti_price(home_id)
  var available:=super.interaction_available() and is_instance_valid(person)
  if available:
   available=not person.get_meta("dead",false) and not person.get_meta("knocked_out",false)
@@ -27,7 +31,13 @@ func refresh_physics() -> void:interaction_available()
 func _person_died() -> void:collision_layer=0
 func interact(player:CharacterBody3D) -> void:
  if interaction_available() and player.global_position.distance_to(global_position)<=interaction_max_distance:ledger.request(self,player)
+func has_secondary_interaction() -> bool:
+ if role=="merchant" and is_instance_valid(ledger) and is_instance_valid(ledger.player):
+  var item:=Salvage.available_good(ledger.player.inventory)
+  secondary_interaction_text="Ask about duties" if item.is_empty() else "Sell %s · %d rupees" % [Salvage.label(item),Salvage.GOODS[item].price]
+ return super.has_secondary_interaction()
 func secondary_interact(player:CharacterBody3D) -> void:
  if not interaction_available() or player.global_position.distance_to(global_position)>interaction_max_distance:return
  if role=="cook":ledger.supply(self,player,1,false)
+ elif role=="merchant" and ledger.sell_cart_salvage(self,player):return
  else:ledger.explain(self,player)

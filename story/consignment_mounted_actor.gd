@@ -7,6 +7,16 @@ func _process(delta: float) -> void:
  set_meta("riding_reins_released",is_instance_valid(firearm))
  super._process(delta)
  if is_instance_valid(patrol_mount) and not patrol_mount.vitality.dead and dismount_age<0 and not get_meta("dead",false) and not get_meta("knocked_out",false):
+  # Flush the sampled animation before reading the pelvis. Deferred skeleton
+  # evaluation otherwise leaves an occasional visible gap after a hit/reload.
+  _skeleton.force_update_all_bone_transforms()
+  if mount_age<0:
+   var hip:Vector3=_skeleton.to_global(_skeleton.get_bone_global_pose(foot_plant.pelvis).origin)
+   var correction:Vector3=patrol_mount.seat_world()-hip
+   if correction.length_squared()>.000004:
+    global_position+=correction
+    for side in ["l","r"]:foot_plant._solve(foot_plant.legs[side],_skeleton.to_local(patrol_mount.stirrup_world(side)+Vector3.UP*.10))
+    body_collider.force_update_transform()
   riding_age+=delta
   var effort:float=clampf(patrol_mount.pace/13.0,0,1)
   var turn:=0.0

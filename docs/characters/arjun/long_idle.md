@@ -1,0 +1,43 @@
+# Arjun unattended idle routine
+
+Integration note: this document records the original worktree implementation and historical tests. The main-project merge has passed the focused idle and morning tutorial fixtures; full-world, native motion and clothing acceptance must be re-established against current main.
+
+`player/long_idle.gd` owns the stationary on-foot timer. Defaults: look around at45s, scratch hair at58s, adjust kurta at70s, stretch at95s and sit at120s. Each standing action lasts5s. Timings are exported. Mouse, keyboard, gamepad and touch reset the routine; held movement rises from the ground before travel resumes. Entry is3.6s and rise3.2s at normal render cadence. Catch-up is bounded so a rendering stall cannot skip an entire transfer.
+
+Four dedicated AnimationTree clips blend over the complete original MPFB character. Hair scratching adds a slight head tilt, right-side hand reach above the ear, restrained repeated finger curl and4mm rubbing motion. Elbows approach from outside, forearm roll is limited and wrist deviation is capped at0.55rad. Standing cancellation uses the same fade for skeletal clips and hand contact.
+
+The dedicated ground branch lowers the visual pelvis in stages, keeps feet planted through initial lowering, transfers each leg separately and settles with hands on the lap. Analytical limb solving uses the imported rig's actual anatomical hinge axes and continuous bend planes. A short recovery owner runs after normal foot contact when standing resumes; ordinary foot planting uses the correct player-forward axis and bounded rotation changes. The gameplay root and collider stay in place; no sleep, healing or time skip is invoked.
+
+Seven support rays and a seat-clearance query reject edges, uneven/sloped ground and obstacles; seated support is checked every0.5s. Menus, story/tutorial locks, mounts, swimming, climbing, low stance, interactions, combat, death, drawn weapons and wanted pursuit inhibit the routine. State is transient, never saved. The idempotent complete-fit now runs during normal player appearance setup, so new game, Continue and direct player scenes use the same body/outfit. Its fitted clothes/boot references are retained when stance restores normal meshes. Six retained stance assets were rebuilt with the complete-fit source included in their fingerprint; boot sole samples refresh after final stance fitting. Body, foundation, GLB and Blender sources are unchanged; no masks or removed body surfaces.
+
+The game integration uses the existing actor-owned ActionPermissions service. Seated entry/idle/rise hold attack, boarding, stance, equipment and interaction domains; movement is held by the existing player physics owner. A first discrete body-action press requests standing and is consumed; repeat it once standing to act. Held movement and aim resume after standing. Menus/camera controls remain available. Story, damage, mount transitions, loss of support and external position restoration cancel the transient pose and release its leases. Police suppression uses the shared per-actor pending-case API for both pursuit and local arrest owners. The normal third-/first-person camera follows the same lowering curve as the pelvis.
+
+During eligible long idle (from45s), `IdleUI` fades gameplay canvases over1.25s and keeps them faded between actions and during sitting. Any nonzero mouse motion, pressed key/button or touch activity restores opacity immediately and resets idle. A first mouse click still reaches the restored GUI. The fade leaves original button state, child tutorial pulses, visibility and layout intact. Pause/map/menu and story transitions restore UI; their owners retain visibility control. The minimap placement and tutorial progression are unchanged. Canvas layers are cached on fade entry, with late layers registered only while fading; no full-tree walk runs per frame.
+
+## Reusable verification
+
+```sh
+python3 tools/characters/run_long_idle.py --world
+python3 tools/characters/run_long_idle.py --regressions
+python3 tools/characters/run_long_idle.py --native --world
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/characters/validate_arjun_long_idle.gd
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/characters/validate_arjun_motion_tree.gd
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/characters/validate_arjun_walk_contact.gd
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --script res://tools/characters/validate_arjun_run_contact.gd
+```
+
+Native focused modes: `TLM_IDLE_SCRATCH_ONLY=1` for reach/cancel and `TLM_IDLE_GROUND_ONLY=1` for seat/rise plus gameplay exclusions. Set `TLM_TEST_OUTPUT_DIR` to an OS TemporaryDirectory for review images, always remove it in finally. Optional `TLM_IDLE_REVIEW_SCALE=.5` reduces the review fixture's3D resolution; that review is not a performance measurement. No captures/logs/reports are retained.
+
+For ordinary in-game review: finish opening/tutorial, stow weapon with G, stand on a wide clear flat patch and leave controls untouched for two minutes. Observe all four standing beats and ground entry. Move the mouse to rise; hold a movement key to confirm standing then travel. Repeat beside an edge/obstacle and with a menu open. Inspect shoulders, wrists, waist, seat, knees and boot soles at1.0x.
+
+## Current evidence and open limits
+
+2026-10-12, a7a8: full actual-opening-fit headless idle PASS2260 sampled poses and0 failures, clean stderr. Minimum knee/hand/elbow separation .295/.501/.536m; wrist max .550rad, knee/elbow flex2.600/2.316rad, boot minimum-.002m, planted drift .018m, maximum sampled rotation .307rad. Existing motion-tree regression PASS. Native Metal/Forward+ scratching PASS120poses, maximum sampled rotation .248rad; revised hand/hair pose inspected. Final focused native ground entry/exit PASS 498 poses, maximum sampled rotation 0.314rad, planted drift 0.018m and minimum sole height -0.016m. Front, side and rear views inspected; balance hands lowered to relax the squat arms. Visible-step bounds and captured entry poses prevent rendering stalls or pose-owner handoffs from snapping limbs. The full native four-beat run previously timed out after 240s; focused native reviews and full headless checks supply the current evidence.
+
+Normal walk check PASS5.83m/max pose step .239rad. The improved run test measures actual boot material-point drift rather than only ankle position: FAILp90 .243m/frame. Original pre-task contact code also fails that physical check (.270m/frame); sprint sliding is pre-existing and remains open.
+
+The current fitted kurta exposes light trousers/foundation through its lower front even in standing; seated sash drape, residual shoulder cloth deformation and continuous cloth fitting remain open. Numerical contact and sampled visual success do not approve all clothing deformation, full-world behavior or FPS.
+
+Integration checks on 2026-10-14: complete headless routine with real viewport input dispatch and action ownership PASS; actual title → new journey → populated-world loading → opening/body fit → village support → all four AnimationTree actions → seat/rise/movement handoff PASS with clean diagnostics. The runner uses a disposable project and isolated user data and deletes logs, captures and saves on exit. Optional `--world-only --native --review` pauses for transient rendered-world inspection before cleanup. Final headless new-game/seated-save/Continue integration PASS (51.9s), with full idle PASS (41.9s), AnimationTree/walk/crouch-prone regressions PASS and a clean six-garment cache rebuild. Continue restores standing with no transient idle pose or leases, and loading does not advance the idle timer. Native checks with this same complete-fit/load path PASS (focused15.0s, populated new-game/save/Continue118.1s), with seated/loaded-standing pixels inspected. Latest UI-fade native focused PASS20.0s and normal populated-world/pause/map/seated-save/Continue PASS107.9s, clean diagnostics; actual camera pixels confirmed hidden HUD during idle/sitting and restored HUD during standing/Continue; the 2026-10-12 clothing and sprint limits above remain open.
+
+UI-fade checks on 2026-10-14: full headless pose/input/UI suite PASS45.9s; normal-world fade/pause/map/paused-key/Continue integration PASS59.1s; final native focused/world PASS20.0s/107.9s, clean diagnostics. A0.1px mouse motion and an unbound keyboard press restore UI synchronously; the first GUI click also activates its button. No generated captures/logs/reports or disposable saves are retained after review.

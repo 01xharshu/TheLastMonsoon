@@ -170,6 +170,10 @@ func _ready() -> void:
 	)
 
 
+	var glow:=preload("res://interaction/focus_glow.gd").new()
+	glow.name="FocusGlow"
+	add_child(glow)
+
 	# -----------------------------------------------------
 	# MAIN PROMPT BACKGROUND
 	# -----------------------------------------------------

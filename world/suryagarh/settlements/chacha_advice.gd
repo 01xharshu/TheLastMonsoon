@@ -12,9 +12,13 @@ var speaking := false
 var line := 0
 var elapsed := 0.0
 var subtitle: Label
+var dialogue_voice: AudioStreamPlayer
+var line_duration := 0.0
 var listener: CharacterBody3D
 var listener_expression=preload("res://story/dialogue_expression.gd").new()
 func _ready() -> void:
+	dialogue_voice=AudioStreamPlayer.new()
+	add_child(dialogue_voice)
 	interaction_text = "Speak with Chacha"
 	interaction_icon = "hand"
 	var layer:=CanvasLayer.new();add_child(layer)
@@ -38,16 +42,30 @@ func show_line() -> void:
 	current_speaker=LINES[line].speaker
 	listener_expression.apply(.7 if line<3 else .15,0)
 	subtitle.text=current_speaker+": "+str(LINES[line].text)
+	dialogue_voice.stop()
+	line_duration=float(LINES[line].seconds)
+	var key: String=(current_speaker+"\n"+str(LINES[line].text)).sha256_text()
+	var path: String="res://assets/audio/dialogue/"+key+".wav"
+	if ResourceLoader.exists(path):
+		var stream:=load(path) as AudioStream
+		if stream!=null:
+			dialogue_voice.stream=stream
+			line_duration=maxf(line_duration,stream.get_length()+.25)
+			dialogue_voice.play()
 func _process(delta: float) -> void:
 	if not speaking:return
 	if not is_instance_valid(listener) or listener.health<=0 or listener.global_position.distance_to(global_position)>6:
 		finish();return
+	preload("res://story/conversation_facing.gd").pair(listener,get_parent().get_node("Chacha"))
 	elapsed+=delta
-	while speaking and elapsed>=float(LINES[line].seconds):
-		elapsed-=float(LINES[line].seconds);line+=1
+	while speaking and elapsed>=line_duration:
+		elapsed-=line_duration;line+=1
 		if line==LINES.size():finish()
 		else:show_line()
 func finish() -> void:
+	dialogue_voice.stop()
+	preload("res://story/conversation_facing.gd").release(listener)
+	preload("res://story/conversation_facing.gd").release(get_parent().get_node("Chacha"))
 	speaking=false;current_speaker="";subtitle.hide();listener_expression.restore()
 func _exit_tree() -> void:
 	listener_expression.restore()

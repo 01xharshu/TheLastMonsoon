@@ -36,9 +36,14 @@ func run() -> void:
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	combat._unhandled_input(click)
-	check(combat.pending_single and slash.elapsed >= slash.DURATION,"first click waits for double-click window")
+	check(slash.elapsed < slash.DURATION and combat.kick_time < 0.0,"single click immediately starts sword slash")
+	click.double_click=true
 	combat._unhandled_input(click)
-	check(not combat.pending_single and combat.kick_time >= 0.0 and slash.elapsed >= slash.DURATION,"double click kicks without slashing")
+	check(combat.kick_time < 0.0 and slash.elapsed < slash.DURATION,"double click does not kick or cancel sword slash")
+	click.double_click=false
+	var kick_key:=InputEventKey.new();kick_key.physical_keycode=KEY_K;kick_key.pressed=true
+	combat._unhandled_input(kick_key)
+	check(combat.kick_time >= 0.0 and slash.elapsed >= slash.DURATION,"kick key starts kick and cancels sword slash")
 	check(not combat.kick_landed,"kick has no contact at windup")
 	combat._process(.20)
 	check(not combat.kick_landed,"kick has no contact before extension")
@@ -46,16 +51,6 @@ func run() -> void:
 	check(combat.kick_landed,"kick contact occurs during extension")
 	combat.interrupt()
 	combat.kick_cooldown=0
-	combat._unhandled_input(click)
-	combat._process(combat.DOUBLE_CLICK_SECONDS+.01)
-	check(slash.elapsed<slash.DURATION,"slow frame can expire first click")
-	click.double_click=true
-	combat._unhandled_input(click)
-	check(combat.kick_time>=0 and visual.slash_phase<0,"OS double click replaces expired single slash with kick")
-	click.double_click=false
-	combat.interrupt()
-	combat.kick_time = -1.0
-	visual.kick_phase = -1.0
 	visual.equipment.stowed = true
 	combat.punch()
 	check(combat.punch_time >= 0.0 and not combat.punch_landed,"punch begins without contact")
@@ -65,8 +60,7 @@ func run() -> void:
 	visual.punch_phase = -1.0
 	visual.equipment.stowed = false
 	combat._unhandled_input(click)
-	combat._process(combat.DOUBLE_CLICK_SECONDS+.01)
-	check(slash.elapsed < slash.DURATION,"single click starts sword slash")
+	check(slash.elapsed < slash.DURATION,"single click starts sword slash immediately")
 	slash._process(.35)
 	check(visual.slash_phase >= 0.0,"sword strike phase reaches visual")
 	actor.set_physics_process(false)

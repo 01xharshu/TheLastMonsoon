@@ -13,6 +13,7 @@ class PriorStory:
  func restore_state(data: Dictionary) -> void:state=str(data.get("state","complete"))
 class Inquiry:
  extends Node
+ var guards:Array[Node3D]=[]
  var station: Node3D
  var configured:=true
  var stage:="released"
@@ -49,6 +50,20 @@ func run() -> void:
  check(story.configured,"mission configured")
  if not story.configured:quit(1);return
  check(not story.restore_waiting and story.follow_index==1,"queued restore applies once after complete site readiness")
+ # Every mandatory opening continuation remains in daylight, including restored
+ # legacy night saves; accepting the next mission is a free-roam boundary.
+ for saved_stage in ["ambush","confront","escape","follow","briefing","inspect","load","shoot","infiltrate","collect","rope","return"]:
+  clock.total_game_minutes=1320
+  story.set_stage(saved_stage)
+  var frozen: float=clock.total_game_minutes
+  clock._process(600);clock.advance_hours(24)
+  check(clock.total_game_minutes==frozen and clock.current_hour>=8 and clock.current_hour<17,"daylight holds through "+saved_stage)
+ for free_stage in ["raid_ready","complete"]:
+  story.set_stage(free_stage)
+  var before: float=clock.total_game_minutes
+  clock._process(1)
+  check(clock.total_game_minutes>before,"free roam resumes clock at "+free_stage)
+ story.set_stage("dormant")
  story.follow_index=0
  story.set_process(false)
  story._process(.1)
@@ -60,7 +75,8 @@ func run() -> void:
  story.action_service.release(conflict);story._process(.1)
  check(story.active and story.cinematic=="days","training completion hands off")
  check(not root.get_node("SaveManager").save_game(world,1),"cinematic save blocked")
- story.update_cinematic(4.1)
+ story.skip_cinematic()
+ check(player.global_position.distance_to(story.sites.tree.global_position+Vector3(0,.9,-4))<.01,"days skip reaches intended tree arrival")
  check(story.stage=="ambush" and player.is_physics_processing(),"days fade releases ambush")
  player.global_position=story.sites.tree.global_position+Vector3(0,.9,-1.5);story._process(.1)
  check(story.stage=="confront","tree ambush triggers official walk")
@@ -141,9 +157,10 @@ func run() -> void:
  for i in 100:await physics_frame
  story._process(.01)
  check(story.active and story.cinematic=="rescue","approaching fort on horse begins rescue")
- for i in 161:
+ for i in 300:
   story.update_cinematic(.1);await physics_frame
   if i==75 and OS.get_environment("TLM_REBELLION_NATIVE")=="1":await capture("rescue",temporary)
+  if story.cinematic=="arrival":break
  check(story.active and story.cinematic=="arrival","rescue transitions to fort arrival")
  for i in 75:
   story.update_cinematic(.1);await physics_frame
@@ -151,31 +168,83 @@ func run() -> void:
  # Traverse the terrace and descending passage with normal controller physics.
  var approach: Vector3=story.ground(story.sites.cellar.to_global(Vector3(0,0,34)))
  story.sites.b.piece(world,"FixtureCellarGround",approach+Vector3(0,-.1,2),Vector3(12,.2,6),story.sites.b.stone)
+ player.global_position=approach+Vector3.UP*.96
+ player.velocity=Vector3.ZERO
+ for frame in 5:await physics_frame
  for goal in [Vector3(0,4.6,24),Vector3(0,4.6,18),Vector3(0,1.1,7),Vector3(0,1.1,3)]:
   await walk(player,story.sites.cellar.to_global(goal),420)
   print("UNDERCROFT ROUTE ",goal," -> ",story.sites.cellar.to_local(player.global_position))
  check(absf(player.global_position.y-story.sites.cellar.global_position.y-1.1)<.4,"controller descends into undercroft")
- story.set_stage("inspect");check(story.request("weapons",player),"weapons introduction grants usable rifle and cartridges")
- check("(G)" in story.objective(),"firearm lesson uses existing G draw control")
- check(not story.can_request("raid"),"raid locked before firearm loading and two target hits")
- var gear: Node=hero.equipment;gear.select_weapon(1);gear.stowed=false;gear._refresh()
- player.global_position=story.sites.cellar.to_global(Vector3(0,1.1,3));player.velocity=Vector3.ZERO
- for i in 20:await physics_frame
- var gun: Node=player.get_node("RifleCombat")
- gun.start_reload();check(gun.reload_remaining>0,"real cartridge reload starts")
+ story.set_stage("inspect")
+ check(story.request("weapons",player),"taking the rack rifle grants Enfield and cartridges")
+ check(not story.sites.rack_rifle.visible and story.stage=="load","one rifle disappears and the lesson waits for equip")
+ check(not story.can_request("raid"),"raid locked before the target hit")
+ var equip:=InputEventKey.new()
+ equip.physical_keycode=KEY_2
+ equip.pressed=true
+ hero._unhandled_input(equip)
+ await process_frame
  story._process(.01)
- for i in 120:await physics_frame
- story._process(.01);check(story.stage=="shoot","reload completes first firearm lesson")
- for shot in 2:
-  player.get_node("CameraPivot/SpringArm3D/Camera3D").look_at(story.sites.target.global_position)
-  gun.aiming=true;gun.fire();story._process(.01)
-  if shot==0:
-   check(story.stage=="shoot","one target hit cannot finish two-hit lesson")
-   check(not story.can_request("raid"),"one target hit cannot unlock raid")
-   gun.start_reload()
-   for i in 120:await physics_frame
- print("RIFLE LESSON hits=",story.target_hits," shots=",gun.shots_fired," stage=",story.stage)
- check(story.target_hits==2 and story.stage=="raid_ready","two real target contacts complete firearm lesson")
+ check(story.active and story.cinematic=="range_entry","equipping starts the mandatory fade")
+ if story.cinematic!="range_entry":
+  await preload("res://tools/test_audio_cleanup.gd").finish(self,1)
+  return
+ story.skip_cinematic()
+ check(story.active and story.cinematic=="range_entry","range fade cannot be skipped")
+ story.update_cinematic(.55)
+ check(story.shade.color.a>.99 and player.global_position.distance_to(story.sites.firing_line.global_position)<1.2,"player is transferred while black")
+ story.update_cinematic(.7)
+ check(story.stage=="shoot" and player.get_meta("rifle_lesson",false),"fade ends in the locked range")
+ for frame in 20:await physics_frame
+ var lock_start:=player.global_position
+ Input.action_press("move_forward")
+ Input.action_press("jump")
+ for frame in 36:await physics_frame
+ Input.action_release("move_forward")
+ Input.action_release("jump")
+ check(player.global_position.distance_to(lock_start)<.1,"movement and jumping cannot leave the firing line")
+ var gun:Node=player.get_node("RifleCombat")
+ var fire:=InputEventAction.new()
+ fire.action="attack"
+ fire.pressed=true
+ var shots:int=gun.shots_fired
+ player.get_node("CombatInput")._unhandled_input(fire)
+ check(gun.shots_fired==shots,"fire input without aiming cannot discharge")
+ Input.action_press("aim")
+ await process_frame
+ gun._process(.01)
+ var view:Camera3D=player.get_node("CameraPivot/SpringArm3D/Camera3D")
+ player.camera_pivot.global_rotation=Vector3(.62,PI,0)
+ view.rotation=Vector3.ZERO
+ player.camera_pivot.force_update_transform()
+ view.force_update_transform()
+ fire.pressed=true
+ player.get_node("CombatInput")._unhandled_input(fire)
+ story._process(.01)
+ print("HIDEOUT ENVIRONMENT RIFLE MISS shots=",gun.shots_fired-shots," stage=",story.stage," hit=",story.target_hits," remaining=",gun.reload_remaining," rounds=",gun.rounds," aiming=",gun.aiming," input=",Input.is_action_pressed("aim"))
+ check(gun.shots_fired==shots+1 and story.stage=="shoot" and gun.reload_remaining>0,"missing keeps the player locked and reloads automatically")
+ gun._process(gun.reload_remaining+.01)
+ gun._process(.01)
+ view.look_at(story.sites.target.global_position)
+ view.force_update_transform()
+ fire.pressed=true
+ player.get_node("CombatInput")._unhandled_input(fire)
+ print("RIFLE LESSON retry shots=",gun.shots_fired," rounds=",gun.rounds," impacts=",gun.impacts.size())
+ story._process(.01)
+ Input.action_release("aim")
+ check(story.target_hits==1 and story.stage=="raid_ready" and not player.get_meta("rifle_lesson",false),"one aimed hit on the log releases the lesson")
+ var release_start:=player.global_position
+ Input.action_press("move_forward")
+ for frame in 24:await physics_frame
+ Input.action_release("move_forward")
+ check(Vector2(player.global_position.x-release_start.x,player.global_position.z-release_start.z).length()>.25,"normal movement returns after the hit")
+ var input_settings:Node=root.get_node("SaveManager")
+ input_settings._set_active_input_device("controller")
+ check(story.input_label("aim","")=="Left trigger" and story.input_label("attack","")=="Right trigger","controller instruction follows trigger bindings")
+ input_settings._set_active_input_device("keyboard_mouse")
+ check(story.input_label("aim","")=="Right click" and story.input_label("attack","")=="Left click","mouse instruction follows click bindings")
+
+
  var saves: Node=root.get_node("SaveManager")
  police.complete_custody(player);story.set_stage("collect");story.collected.assign([0,1])
  check(saves.save_game(world,1),"SaveManager saves partial rifle collection")
@@ -184,7 +253,7 @@ func run() -> void:
  check(story.stage=="collect" and story.collected==[0,1],"SaveManager restores exact collection checkpoint")
  for i in [2,3]:check(story.request("bundle%d"%i,player),"remaining saved bundles collected")
  check(story.request("rope",player),"saved collection unlocks rope")
- story.update_cinematic(18.1)
+ story.skip_cinematic()
  for i in 100:await physics_frame
  check(saves.save_game(world,1),"driving return checkpoint saves")
  story.release_mount(story.sites.goods);story.stage="collect";saves.pending_slot=1;saves.apply_pending(world)
@@ -197,7 +266,7 @@ func run() -> void:
  story.sites.goods.boarding.speed=0;story._process(.01)
  check(story.active and story.cinematic=="delivery","stopped whole cart inside bay begins completion")
  check(not saves.save_game(world,2),"delivery cinematic cannot be saved")
- story.update_cinematic(7.1)
+ story.skip_cinematic()
  check(story.stage=="complete" and story.captured_rifles==12 and not story.sites.return_bay.visible,"delivery records twelve rifles and retires rectangle")
  var reward_count: int=player.inventory.get_item_count("paper_cartridges");story._process(1)
  check(player.inventory.get_item_count("paper_cartridges")==reward_count,"delivery reward cannot repeat")
@@ -205,6 +274,87 @@ func run() -> void:
  saves.pending_slot=2;saves.apply_pending(world)
  check(story.stage=="complete" and story.captured_rifles==12,"completed continuation restores without reward replay")
 
+ # Early skips still resolve the actual connected rescue/arrival and rope endpoints.
+ story.release_mount(player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
+ story.sites.set_enabled(true)
+ player.global_position=story.sites.horse.global_position+Vector3(1,.9,0)
+ check(story.sites.horse.board(player),"skip fixture boards real rescue horse")
+ for i in 100:await physics_frame
+ check(story.begin_cinematic("rescue"),"rescue skip fixture starts")
+ story.update_cinematic(.1)
+ check(story.dialogue_voice.playing and story.dialogue_voice.stream!=null,"Mangal rescue line plays on the authored caption")
+ var spoken_age: float=story.age
+ story.update_cinematic(.1)
+ check(story.age-spoken_age<.1,"long rescue voice extends its caption interval")
+ story.skip_cinematic()
+ check(not story.dialogue_voice.playing,"skipping connected shots stops Mangal's voice")
+ var arrival: Vector3=story.sites.mangal.global_position+Vector3(2,.9,2)
+ check(not story.active and story.stage=="follow" and player.global_position.distance_to(arrival)<.01,"rescue skip resolves linked arrival at hideout")
+ check((player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)==null,"rescue skip restores dismounted player")
+ check(story.begin_cinematic("briefing"),"briefing skip fixture starts")
+ story.skip_cinematic()
+ check(not story.active and story.stage=="inspect","briefing skip reaches inspect objective")
+ story.set_stage("rope")
+ check(story.begin_cinematic("rope"),"rope skip fixture starts")
+ story.skip_cinematic()
+ check(not story.active and story.stage=="return" and story.sites.goods.rider==player,"rope skip puts player on cart at return objective")
+
+ # Actual mission-owned camp population is staged after arriving at the hideout.
+ story.release_mount(story.sites.goods);story.set_stage("complete")
+ var daily:Node=story.sites.cellar.get_node("HideoutDailyLife")
+ player.global_position=story.sites.cellar.to_global(Vector3(0,1.0,4))
+ player.velocity=Vector3.ZERO
+ for frame in 240:await physics_frame
+ check(daily.records.size()==daily.JOBS.size(),"all stable hideout daily assignments are spawned")
+ var roles:Array=[]
+ for record in daily.records:roles.append(record.job)
+ check(roles.has("watch_roof_left") and roles.has("gate_watch") and roles.has("seated_talk") and roles.has("relax") and roles.has("sleep") and roles.has("carry_supplies") and roles.has("mangal_listener"),"watch, talk, rest, sleeping, carrying and Mangal discussion roles exist")
+ check(story.sites.trainees.all(func(t):return not t.visible),"training sentries are not left standing inside at idle")
+ print("HIDEOUT MANGAL stage=",story.stage," active=",story.active," cinematic=",player.get_meta("story_cinematic",false)," seat_owned=",daily.seat_owned," socket=",story.sites.mangal.riding_socket)
+ check(daily.seat_owned and story.sites.mangal.riding_socket==daily.mangal_seat,"original Mangal sits for off-mission discussion")
+ var sleeper:Node3D=daily.get_node("Camp_sleep")
+ check(sleeper.visible and absf(sleeper.rotation.x-PI*.5)<.01 and daily.get_node("Camp_sleep_right").visible,"two sleeping residents lie on interior bedrolls")
+ var talker:Node3D=daily.get_node("Camp_seated_talk")
+ check(talker.visible and talker.get_meta("activity","")=="read","conversation participant uses seated activity graph")
+ var carrier:Node3D=daily.get_node("Camp_carry_supplies")
+ check(carrier.visible and is_instance_valid(carrier.get_meta("carried_load",null)),"worker carries actual load on terrace")
+ var terrace_top:float=story.sites.cellar.to_global(Vector3(0,3.7,0)).y
+ check(absf(float(carrier.foot_plant.ankle_height["l"])-terrace_top)<.4 and absf(float(carrier.foot_plant.ankle_height["r"])-terrace_top)<.4,"carrier foot plant is rebased to terrace, not cellar floor")
+ var carrier_travel_before:float=daily.records[7].travelled
+ for frame in 300:
+  await physics_frame
+  if daily.records[7].travelled-carrier_travel_before>.3:break
+ var carrier_travel:float=daily.records[7].travelled-carrier_travel_before
+ print("HIDEOUT CARRIER walked=",carrier_travel," progress=",daily.records[7].distance," direction=",daily.records[7].direction)
+ check(carrier_travel>.25,"carrier actually walks while holding supplies")
+ for side in ["l","r"]:
+  var hand_bone:int=carrier._skeleton.find_bone("hand_"+side)
+  var rest_hand:Vector3=carrier.to_local(carrier._skeleton.to_global(carrier._skeleton.get_bone_global_rest(hand_bone).origin))
+  var target:Vector3=carrier.to_local(carrier.get_meta("camp_grip_target_"+side,Vector3.ZERO))
+  check(rest_hand.x*target.x>0,"carrier "+side+" hand grips on its own side")
+ var saved_daily:Dictionary=daily.export_state()
+ check(daily.JOBS.all(func(role):return saved_daily.has(role)) and saved_daily.has("_routine_clock") and story.export_state().get("hideout_daily",{}).has("_routine_clock"),"individual camp roles and routine clock are saved")
+ daily.set_process(false)
+ var carrier_record:Dictionary=daily.records[7]
+ carrier_record.distance=1.25;carrier_record.direction=-1
+ var carry_state:Dictionary=daily.export_state()
+ carrier_record.distance=0.0;carrier_record.direction=1
+ daily.restore_state(carry_state)
+ check(is_equal_approx(carrier_record.distance,1.25) and carrier_record.direction==-1 and absf(carrier.position.z-21.25)<.01,"carrier identity and progress restore without route jump")
+ var carrier_vitality:Node=carrier.get_node("Vitality")
+ carrier_vitality.health=20.0;carrier.set_meta("knocked_out",true)
+ var injured_state:Dictionary=daily.export_state()
+ carrier_vitality.health=5.0;carrier.set_meta("knocked_out",false)
+ daily.restore_state(injured_state)
+ check(is_equal_approx(carrier_vitality.health,20.0) and carrier.get_meta("knocked_out",false),"camp member health and knockout restore")
+ daily.restore_state(saved_daily)
+ daily.set_process(true)
+ story.set_stage("inspect")
+ for frame in 4:await process_frame
+ check(story.sites.trainees.all(func(t):return t.visible),"weapon lesson restores actual training participants")
+ story.set_stage("complete")
+ for frame in 3:await physics_frame
+ check(story.sites.trainees.all(func(t):return not t.visible),"training participants return to ordinary camp outside lesson")
 
  print("REBELLION STORY: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
  world.queue_free();await process_frame;root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

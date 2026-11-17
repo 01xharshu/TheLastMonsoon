@@ -21,6 +21,9 @@ func strike() -> bool:
 	var direction: Vector3 = -camera.global_basis.z
 	actor.get_node("VisualRoot").global_rotation.y = atan2(direction.x,direction.z)
 	visual.slash_target_world = target.global_position+Vector3.UP*ROPE_HEIGHT if is_instance_valid(target) else Vector3.ZERO
+	if not is_instance_valid(target):
+		var aim_point: Vector3=preload("res://combat/attack_aim.gd").point(actor,camera,8.0)
+		if actor.global_position.distance_to(aim_point)<1.8:visual.slash_target_world=aim_point
 	ControllerFeedback.pulse("melee")
 	set_process(true)
 	WorldAudio.play_at("blade_swoosh",actor.global_position,-17.0)
@@ -96,7 +99,10 @@ func _process(delta: float) -> void:
 			var policy=preload("res://combat/damage_policy.gd")
 			var receiver: Node=policy.receiver(hit.collider)
 			if receiver in struck_bodies:continue
-			if policy.apply(hit.collider,45.0,actor,"sword"):
+			var clearance:=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*.25,hit.position,9,[actor.get_rid()])
+			var obstruction:=actor.get_world_3d().direct_space_state.intersect_ray(clearance)
+			if not obstruction.is_empty() and policy.receiver(obstruction.collider)!=receiver:continue
+			if policy.apply(hit.collider,45.0,actor,"sword",hit.position,(segment[1]-segment[0]).normalized()):
 				WorldAudio.play_at("impact",hit.position,-16.0)
 				struck_bodies.append(receiver)
 	previous_blade = blade

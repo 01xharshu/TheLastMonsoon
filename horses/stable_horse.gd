@@ -20,7 +20,12 @@ var stolen := false
 var pace := 0.0
 var steering := 0.0
 var turning_rate := 0.0
+const JUMP_SPEED := 5.7
+const JUMP_CONTACT_KEY := 1.0
+var rider_jump := false
 var rider_landing := 0.0
+var rider_acceleration := 0.0
+var rider_grade := 0.0
 var gait := 0.0
 const WALK_SPEED := 6.0
 const GALLOP_SPEED := 13.5
@@ -423,8 +428,13 @@ func _update_rigged_animation() -> void:
 	elif absf(pace) > .5:
 		clip = "AnimalArmature|Walk"
 	if rigged_anim.current_animation != clip:
-		rigged_anim.play(clip,.18)
+		rigged_anim.play(clip,.09 if rider_jump and clip.ends_with("Jump") else .18)
 	rigged_anim.speed_scale = clampf(absf(pace) / (9.0 if clip.ends_with("Gallop") else 4.2),.7,1.7) if clip.ends_with("Walk") or clip.ends_with("Gallop") else 1.0
+	if rider_jump and clip.ends_with("Jump"):
+		var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity"))
+		# The source reaches its tuck halfway to the contact key. Fit that
+		# interval to the capsule flight and let the grounded gait take over.
+		rigged_anim.speed_scale = JUMP_CONTACT_KEY * gravity / (2.0 * JUMP_SPEED)
 
 func _walk_supported() -> bool:
 	if is_on_floor(): return true
@@ -445,12 +455,14 @@ func stirrup_world(side: String) -> Vector3:
 	return tack_root.to_global(Vector3(-0.48 if side == "l" else 0.48, 1.42, 0.02))
 
 func can_board(actor: CharacterBody3D) -> bool:
+	if actor.get_meta("morning_tutorial_active",false): return false
 	if vitality != null and vitality.dead: return false
 	return rider == null and not actor.get_meta("climbing",false) and actor.global_position.distance_to(global_position) < 3.0
 
 func board(actor: CharacterBody3D) -> bool:
 	if not can_board(actor): return false
 	rider = actor
+	actor.get_node("VisualRoot/CharacterVisual").horse_light_seat = 0.0
 	var first_take := not stolen
 	preload("res://systems/vehicle_permissions.gd").take(self,actor,"horse_theft")
 	stolen = get_meta("owner","") != "Arjun"
@@ -463,6 +475,9 @@ func board(actor: CharacterBody3D) -> bool:
 	actor.collision_layer = 0
 	actor.collision_mask = 0
 	actor.set_meta("mounted_vehicle",self)
+	# Begin riding behind the horse; subsequent mouse/controller orbit stays free.
+	actor.camera_pivot.global_rotation = Vector3(0.0, rotation.y, 0.0)
+	actor.camera_pitch = 0.0
 	actor.is_swimming = false
 	actor.velocity = Vector3.ZERO
 	actor.survival.set_sprinting(false)
@@ -483,7 +498,7 @@ func _sync_rider() -> void:
 	var pelvis: int = visual.skeleton.find_bone("pelvis")
 	if pelvis < 0: return
 	var hip_local: Vector3 = rider.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin))
-	rider.global_position = seat_world() - hip_local
+	rider.global_position = seat_world() + tack_root.global_basis.y * visual.horse_light_seat - hip_local
 	rider.visual_root.global_rotation.y = rotation.y + PI
 	rider.velocity = Vector3.ZERO
 
@@ -534,13 +549,20 @@ func _physics_process(delta: float) -> void:
 		steer = Input.get_axis("move_right","move_left")
 		gallop = Input.is_action_pressed("sprint") and not gallop_exhausted and stamina > 0.0
 		if Input.is_action_just_pressed("jump") and is_on_floor():
-			velocity.y = 5.7
+			velocity.y = JUMP_SPEED
+			rider_jump = true
 			tack_player.play()
 	stamina = clampf(stamina + delta * (-1.6 if gallop and absf(throttle)>.1 else 2.5),0.0,MAX_STAMINA)
-	var target := throttle * (GALLOP_SPEED if gallop else WALK_SPEED)
+	var grade := -get_floor_normal().dot(-global_basis.z) if is_on_floor() else 0.0
+	rider_grade = lerpf(rider_grade,grade,1.0-exp(-6.0*delta))
+	# Shorten the stride and ease off the gallop on a sustained grade.
+	var slope_speed := lerpf(1.0,.68,smoothstep(.13,.44,absf(rider_grade)))
+	var target := throttle * (GALLOP_SPEED if gallop else WALK_SPEED) * slope_speed
+	var prior_pace := pace
 	if stair_activity > 0.0:
 		target = clampf(target, -2.8, 2.8)
 	pace = move_toward(pace,target,delta * (6.5 if throttle != 0.0 else 9.0))
+	rider_acceleration = lerpf(rider_acceleration, (pace-prior_pace)/maxf(delta,.001), 1.0-exp(-8.0*delta))
 	steering = move_toward(steering, steer, delta * 4.0)
 	var turn_limit := lerpf(1.35, .55, clampf(absf(pace) / GALLOP_SPEED, 0.0, 1.0))
 	var target_turn := steering * turn_limit * clampf(absf(pace) / 2.0, 0.0, 1.0) * (-1.0 if pace < 0.0 else 1.0)
@@ -558,6 +580,13 @@ func _physics_process(delta: float) -> void:
 	velocity.y -= ProjectSettings.get_setting("physics/3d/default_gravity") * delta
 	move_and_slide()
 	_walk_stairs(intended_horizontal)
+	if is_on_floor():
+		rider_jump = false
+	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
+	var stride := clampf(absf(pace)/GALLOP_SPEED,0.0,1.0)
+	body_root.position.y = (absf(sin(gait*2.0)) * .035 * stride) if is_on_floor() else .03
+	var slope_pitch := clampf(asin(rider_grade)*.40,-.13,.13) if _walk_supported() else 0.0
+	body_root.rotation.x = lerpf(body_root.rotation.x,slope_pitch,1.0-exp(-8.0*delta))
 	_update_rigged_animation()
 	rigged_anim.advance(delta)
 	tack_root.transform = _animated_frame_delta("Torso")
@@ -594,14 +623,12 @@ func _physics_process(delta: float) -> void:
 					transition_actor.velocity = Vector3.ZERO
 				transition = ""
 				transition_actor.set_meta("horse_transition", "")
-	gait += delta * (1.8 + absf(pace) * .65) * clampf(absf(pace),0.0,1.0)
 	if rider == null:
 		idle_voice_timer -= delta
 		if idle_voice_timer <= 0.0:
 			voice_player.stream = Snort
 			voice_player.play()
 			idle_voice_timer = 17.0 + float(randi() % 9)
-	var stride := clampf(absf(pace)/GALLOP_SPEED,0.0,1.0)
 	for i in legs.size():
 		# Four-beat walk blends towards diagonal pairs at speed; bend the lower
 		# segment on the lifted half of each step rather than swinging a rigid leg.
@@ -612,8 +639,6 @@ func _physics_process(delta: float) -> void:
 		legs[i].position.y = 1.18
 		legs[i].rotation.x = (swing * .48 * stride) if is_on_floor() else (-.58 if i<2 else .32)
 		lower_legs[i].rotation.x = maxf(0.0,swing) * .44 * stride if is_on_floor() else (1.05 if i<2 else -.55)
-	body_root.position.y = (absf(sin(gait*2.0)) * .035 * stride) if is_on_floor() else .03
-	body_root.rotation.x = 0.0 if is_on_floor() else (-.09 if velocity.y > 0.0 else .05)
 	# Keep the planted hoof at ground height while the body bobs; lift the
 	# advancing hoof clear of the surface. These are small corrections to the
 	# procedural joints, not a full anatomical leg solver.

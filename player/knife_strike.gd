@@ -34,7 +34,7 @@ func _process(delta: float) -> void:
 			var obstacle:=actor.get_world_3d().direct_space_state.intersect_ray(sight)
 			var policy=preload("res://combat/damage_policy.gd")
 			if not obstacle.is_empty() and policy.receiver(obstacle.collider)!=policy.receiver(hit.collider):continue
-			if policy.apply(hit.collider,18,actor,"knife"):
+			if policy.apply(hit.collider,18,actor,"knife",hit.position,(segment[1]-segment[0]).normalized()):
 				WorldAudio.play_at("impact",hit.position,-18.0)
 				landed=true;break
 	previous_blade=blade

@@ -34,4 +34,4 @@ func _run() -> void:
 	encounter.restore_state({"completed":true})
 	assert(encounter.chest.opened and not encounter.chest.interaction_available(),"Completed objective paid again")
 	print("FORT ENCOUNTER PASS | 4 MPFB rigs/trees | lethal/nonlethal clearance | chest gating | save restore")
-	quit()
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,0)

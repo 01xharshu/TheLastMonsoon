@@ -7,7 +7,7 @@ func validate() -> void:
 	var world: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 5: await physics_frame
+	for i in 30: await process_frame
 	var actor: CharacterBody3D = world.get_node("Player")
 	var gear: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var store: Node3D = world.get_node("Settlement/CompanyArmoury")
@@ -23,6 +23,9 @@ func validate() -> void:
 	assert(pickups.size() == 5)
 	var saves: Node = root.get_node("SaveManager")
 	saves.save_root = "user://codex_weapon_validation"
+	if OS.get_environment("TLM_WEAPON_RESTORE_ONLY")=="1":
+		await verify_continue(world)
+		return
 	var occupied: Array[AABB] = []
 	if DisplayServer.get_name() != "headless":
 		actor.get_node("UI").hide()
@@ -52,6 +55,7 @@ func validate() -> void:
 		var hit := actor.get_world_3d().direct_space_state.intersect_ray(ray)
 		assert(hit.get("collider") == pickup)
 		pickup.interact(actor)
+		actor.get_node("UI").get_children().back().confirm(true)
 		assert(actor.inventory.has_item(pickup.weapon_id))
 		assert(not gear.stowed)
 		assert(gear.owns(gear.selected))
@@ -59,12 +63,11 @@ func validate() -> void:
 	await process_frame
 	assert(gear.owns(0) and gear.owns(1))
 	assert(saves.save_game(world,3))
-	world.queue_free()
-	await process_frame
-	var restored: Node3D = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
-	root.add_child(restored)
-	current_scene = restored
-	for i in 3: await process_frame
+	print("WEAPON STORE ACQUISITION: PASS | all five inspection confirmations and disk saves")
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,0)
+
+func verify_continue(restored: Node3D) -> void:
+	var saves: Node=root.get_node("SaveManager")
 	saves.pending_slot = 2
 	saves.apply_pending(restored)
 	var restored_actor: CharacterBody3D = restored.get_node("Player")
@@ -82,4 +85,4 @@ func validate() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.slot_path(2)))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(saves.save_root))
 	print("WEAPON STORE: PASS | unarmed start, reachable shelf, pickup, saved ownership")
-	quit()
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,0)

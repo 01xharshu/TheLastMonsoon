@@ -5,6 +5,18 @@ var player:CharacterBody3D
 var jobs:Node3D
 var player_start:=Vector3.ZERO
 var only_job:=""
+var budgeted_jobs:bool="--budgeted-jobs" in OS.get_cmdline_user_args()
+
+func advance_worker(work:Node)->float:
+	# Exercise the production remote-update accumulator, including every swept
+	# state step. Slow down to ordinary time while traffic/navigation blocks it.
+	var delta:=.1
+	if budgeted_jobs:
+		delta=1.0/60.0 if work.blocked_age>0 or work.navigation_pending or work.freight_blocked>0 or not work.freight_obstacle.is_empty() else .5
+	if delta>.1:work._physics_process(delta)
+	else:work.tick(delta)
+	await physics_frame
+	return delta
 func _initialize()->void:run.call_deferred()
 func check(ok:bool,label:String)->void:
 	if not ok:failures.append(label)
@@ -177,15 +189,15 @@ func run()->void:
 		work.set_physics_process(false)
 		for frame in 1000:
 			if work.delivered>0:break
-			work.tick(.1);await physics_frame
+			await advance_worker(work)
 		print("RECEIVING_WORK ",label," delivered=",work.delivered," phase=",work.phase," blocked=",work.blocked," at=",work.actor.global_position)
 		check(work.delivered>0,label+" carries goods into assigned workplace")
 		if "--full-jobs" in OS.get_cmdline_user_args():
 			var previous_at:Vector3=work.actor.global_position;var stationary:=0.0
 			for frame in 4500:
 				if work.delivered==3 and work.phase=="rest":break
-				work.tick(.1);await physics_frame
-				stationary=stationary+.1 if Vector2(work.actor.global_position.x,work.actor.global_position.z).distance_to(Vector2(previous_at.x,previous_at.z))<.001 else 0.0
+				var advanced:float=await advance_worker(work)
+				stationary=stationary+advanced if Vector2(work.actor.global_position.x,work.actor.global_position.z).distance_to(Vector2(previous_at.x,previous_at.z))<.001 else 0.0
 				previous_at=work.actor.global_position
 				if stationary>60:
 					print("RECEIVING_STALLED ",label," phase=",work.phase," waypoint=",work.waypoint," hour=",work.clock.current_hour," meta_dead=",work.actor.get_meta("dead",false)," knocked_out=",work.actor.get_meta("knocked_out",false)," navigation_pending=",work.navigation_pending," detour=",work.detour)
@@ -197,13 +209,13 @@ func run()->void:
 			if work.delivered<3 or work.phase!="rest":continue
 			for frame in 2500:
 				if work.freight_phase=="awaiting_supply":break
-				work.tick(.1);await physics_frame
+				await advance_worker(work)
 			check(work.freight_phase=="awaiting_supply",label+" empty cart clears receiving bay")
 			work.day=work.clock.current_day-1
 			for frame in 6500:
-				work.tick(.1);await physics_frame
+				await advance_worker(work)
 				if work.freight_phase=="parked" and work.delivered>0:break
-			print("RECEIVING_WORK_FULL ",label," delivered=",work.delivered," phase=",work.phase," freight=",work.freight_phase," blocked=",work.blocked," actor=",work.actor.global_position," cart=",work.cart.global_position," obstacle=",work.freight_obstacle)
+			print("RECEIVING_WORK_FULL ",label," delivered=",work.delivered," phase=",work.phase," freight=",work.freight_phase," blocked=",work.blocked," actor=",work.actor.global_position," cart=",work.cart.global_position," obstacle=",work.freight_obstacle," contact_recoveries=",work.overlap_separations)
 			check(work.freight_phase=="parked" and work.delivered>0,label+" physically restocks and delivers the next consignment")
 	finish()
 func finish()->void:

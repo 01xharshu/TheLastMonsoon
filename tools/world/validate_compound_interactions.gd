@@ -27,6 +27,7 @@ func run()->void:
 		seen[id]=true
 		actor.global_position=pickup.global_position+Vector3(0,.4,.5)
 		pickup.interact(actor)
+		actor.get_node("UI").get_children().back().confirm(true)
 		check(actor.inventory.has_item(id),"E takes "+id)
 		var gear:Node=actor.get_node("VisualRoot/CharacterVisual").equipment
 		print("GEAR ",id," held=",gear.held_name()," selected=",gear.selected," stowed=",gear.stowed," owns=",gear.owns(1 if id=="enfield" else 0))

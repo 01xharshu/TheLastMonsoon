@@ -18,10 +18,14 @@ var ramp: Array[Vector3] = []
 var shore := Vector3.ZERO
 const SPEED := 1.15
 const ROUTE_VERSION := 3
+var alarm_seconds := 0.0
+var escape_age := -1.0
+var escape_water: Array[bool] = []
 
 func _ready() -> void:
 	name = "VillageRiverRoutine"
 	add_to_group("village_river_routine")
+	add_to_group("civilian_activity_observers")
 	clock = get_tree().root.find_child("GameTimeSystem",true,false)
 	# The owner is nested under Settlement/VillageStreetLife, not beside Player.
 	# Resolve once against the containing world; do not pin another scene's actor.
@@ -35,6 +39,7 @@ func _ready() -> void:
 		var woman := Woman.new()
 		woman.name = "BhairavpurRiverWoman%d"%index
 		woman.member_index = index
+		woman.riverside_role=["laundry","bathing","conversation"][index]
 		woman.scale=Vector3.ONE*[.97,1.03,1.0][index]
 		woman.water_level = Layout.WATER_LEVEL
 		var start := Vector2(-277.0-index*1.3,208.5)
@@ -66,6 +71,9 @@ func _ready() -> void:
 		path.append(woman.bank)
 		women.append(woman)
 		journeys.append({"path":path,"goal":1,"position":woman.home,"walk_seconds":index*.31,"delay":index*.65,"arrived":false})
+	var access := preload("res://world/suryagarh/settlements/river_access_path.gd").new()
+	access.points.assign(journeys[1].path)
+	add_child(access)
 
 func _physics_process(delta: float) -> void:
 	if clock != null and clock.clock_paused: return
@@ -79,9 +87,21 @@ func _physics_process(delta: float) -> void:
 	tick(elapsed)
 
 func tick(delta: float) -> void:
+	alarm_seconds=maxf(0,alarm_seconds-delta)
+	for woman in women:woman.fear_amount=.85 if alarm_seconds>0 else 0.0
+	if escape_age>=0:
+		escape_age+=delta
+		for index in women.size():
+			var woman=women[index]
+			woman.elapsed=lerpf(48.0,55.0,clampf(escape_age/3.0,0,1))-delta;woman.tick_routine(delta)
+			retain_escape_water(index)
+		if escape_age>=3.0:
+			escape_age=-1.0;start_escape_return(false)
+		return
 	if mode == "home":
+		if alarm_seconds>0:return
 		if clock == null or clock.current_hour<6 or clock.current_hour>=9 or clock.current_day<=completed_day: return
-		departure_day=clock.current_day;mode="depart";visit_seconds=0
+		departure_day=clock.current_day;mode="depart";visit_seconds=0;escape_water.clear()
 		for journey in journeys:
 			journey.goal=1;journey.arrived=false;journey.walk_seconds=float(journeys.find(journey))*.31;journey.delay=float(journeys.find(journey))*.65
 	if mode in ["depart","return"]:
@@ -102,6 +122,7 @@ func tick(delta: float) -> void:
 			woman.travel_speed=0.0 if journey.arrived or journey.get("delay",0.0)>0.0 else _walking_speed(index)
 			if journey.arrived: woman.elapsed=11.0 if mode=="depart" else 65.0
 			woman._evaluate(delta)
+			retain_escape_water(index)
 		if all_arrived:
 			mode="visit" if mode=="depart" else "deliver"
 			visit_seconds=10.0 if mode=="visit" else 65.0
@@ -109,7 +130,9 @@ func tick(delta: float) -> void:
 		visit_seconds+=delta
 		for index in women.size():
 			var woman=women[index]
+			woman.travel_speed=0.0 # Group visit owns a stationary actor until the physical return begins.
 			woman.elapsed=visit_seconds-delta-(index*.7 if mode=="visit" else 0.0);woman.tick_routine(delta)
+			retain_escape_water(index)
 		if mode=="visit" and visit_seconds>=56.4:
 			mode="return"
 			for journey in journeys:
@@ -155,7 +178,27 @@ func _move(index: int, delta: float) -> void:
 
 func _walking_speed(index: int) -> float:
 	# Small individual changes keep companions together without marching in lockstep.
-	return SPEED*(1.0+.035*sin(float(journeys[index].walk_seconds)*.13+index*2.1))
+	return SPEED*(1.7 if alarm_seconds>0 else 1.0)*(1.0+.035*sin(float(journeys[index].walk_seconds)*.13+index*2.1))
+
+func witness(_threat: Node3D, _armed: bool) -> void:
+	alarm_seconds=12.0
+	for woman in women:woman.fear_amount=.85;woman.river_face.update(woman.elapsed,false,.85)
+	if escape_water.is_empty():
+		for woman in women:escape_water.append(woman.water_full)
+	if mode=="visit" and escape_age<0:
+		escape_age=0.0
+		for woman in women:woman.begin_alarm_transition()
+	elif mode=="depart":start_escape_return(true)
+
+func start_escape_return(reverse_departure: bool) -> void:
+	mode="return";visit_seconds=55.0
+	for journey in journeys:
+		journey.goal=maxi(0,int(journey.goal)-1) if reverse_departure else journey.path.size()-2
+		journey.arrived=false;journey.delay=0.0;journey.walk_seconds=0.0
+
+func retain_escape_water(index: int) -> void:
+	if escape_water.size()!=women.size():return
+	women[index].water_full=escape_water[index];women[index].pot.set_meta("contains_water",escape_water[index])
 
 func _ground_height(x: float,z: float) -> float:
 	if x>=ramp[0].x and x<=shore.x+.5 and absf(z-shore.z)<2.3:
@@ -193,7 +236,10 @@ func _build_ghat() -> void:
 	var max_drop := (finish-start)/64*.45
 	for i in range(63,-1,-1): ramp[i].y=maxf(ramp[i].y,ramp[i+1].y-max_drop)
 	for i in range(1,65): ramp[i].y=maxf(ramp[i].y,ramp[i-1].y-max_drop)
-	shore=ramp[-1]
+	# Extend the surveyed approach a short distance toward the water so the
+	# group can work on a level edge without cutting the underlying terrain.
+	shore=ramp[-1]+Vector3(.5,0,0)
+	ramp.append(shore)
 	var material := StandardMaterial3D.new();material.albedo_color=Color(.43,.39,.30);material.roughness=.97
 	# A continuous earth surface with shoulders meeting the surveyed terrain.
 	# No rectangular seating deck at the collection point.
@@ -215,16 +261,19 @@ func _build_ghat() -> void:
 	var earth := MeshInstance3D.new();earth.name="ShoreEarthAccess"
 	earth.mesh=surface.commit();earth.material_override=material
 	add_child(earth);earth.create_trimesh_collision()
+	preload("res://world/suryagarh/settlements/river_ghat.gd").build(self,shore,layout)
 
 func export_state() -> Dictionary:
 	var members := []
 	for journey in journeys:
 		var p: Vector3=journey.position
 		members.append({"goal":journey.goal,"position":[p.x,p.y,p.z],"walk_seconds":journey.walk_seconds,"arrived":journey.arrived,"delay":journey.get("delay",0.0)})
-	return {"route_version":ROUTE_VERSION,"mode":mode,"completed_day":completed_day,"departure_day":departure_day,"visit_seconds":visit_seconds,"members":members}
+	return {"route_version":ROUTE_VERSION,"mode":mode,"completed_day":completed_day,"departure_day":departure_day,"visit_seconds":visit_seconds,"members":members,"alarm_seconds":alarm_seconds,"escape_age":escape_age,"escape_water":escape_water}
 
 func restore_state(state: Dictionary) -> void:
 	if state.is_empty(): return
+	alarm_seconds=maxf(0,float(state.get("alarm_seconds",0)));escape_age=float(state.get("escape_age",-1));escape_water.clear()
+	for value in state.get("escape_water",[]):escape_water.append(bool(value))
 	mode=str(state.get("mode","home"));completed_day=int(state.get("completed_day",0));departure_day=int(state.get("departure_day",0));visit_seconds=float(state.get("visit_seconds",0))
 	for i in mini(journeys.size(),state.get("members",[]).size()):
 		var saved: Dictionary=state.members[i];var p: Array=saved.position
@@ -241,4 +290,7 @@ func restore_state(state: Dictionary) -> void:
 		var direction: Vector3=journeys[i].path[journeys[i].goal]-journeys[i].position
 		if direction.length()>.001: women[i].travel_direction=direction.normalized()
 		women[i].elapsed=(0.0 if mode=="depart" else 55.0)+fposmod(journeys[i].walk_seconds,9.6) if mode in ["depart","return"] else visit_seconds-(i*.7 if mode=="visit" else 0.0)
+		if escape_age>=0:women[i].elapsed=lerpf(48.0,55.0,clampf(escape_age/3.0,0,1))
+		women[i].fear_amount=.85 if alarm_seconds>0 else 0.0
 		women[i].sample(women[i].elapsed if mode!="home" else 72.0)
+		retain_escape_water(i)

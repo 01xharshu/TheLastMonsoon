@@ -159,9 +159,21 @@ func show_death() -> void:
 	centre.add_child(column)
 	column.add_child(Style.heading("You died",38))
 	var checkpoint: int = saves.CHECKPOINT_SLOT if not saves.read_slot(saves.CHECKPOINT_SLOT).is_empty() else saves.newest_slot()
-	var reload := Style.button("Load from last checkpoint",func(): saves.start_loaded_game(checkpoint))
-	reload.disabled = checkpoint == 0
+	var mission:Node=world.get_node_or_null("ConsignmentStory")
+	var chase_retry:bool=mission!=null and mission.can_retry_chase()
+	if chase_retry:mission.register_chase_death()
+	var reload := Style.button("Restart from last chase checkpoint" if chase_retry else "Load from last checkpoint",func():
+		if chase_retry:
+			get_tree().paused=false;death_open=false;canvas.queue_free();mission.retry_chase_checkpoint();Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+		else:saves.start_loaded_game(checkpoint)
+	)
+	reload.disabled = not chase_retry and checkpoint == 0
 	column.add_child(reload)
+	if chase_retry and mission.can_skip_chase():
+		var skip := Style.button("Skip mission (forfeit reward)",func():
+			get_tree().paused=false;death_open=false;canvas.queue_free();actor.set_meta("dead",false);mission.skip_chase_after_deaths();Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+		)
+		column.add_child(skip)
 	var back := Style.button("Back to Main Menu",func():
 		get_tree().paused = false
 		preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)

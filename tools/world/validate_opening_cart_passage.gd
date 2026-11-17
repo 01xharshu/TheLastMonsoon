@@ -49,14 +49,21 @@ func run() -> void:
 	check(cart.get_meta("npc_occupied_seats",[]).size()==2,"Opening carries two existing MPFB passengers")
 	var previous := cart.global_position
 	var wheel_rotation: float = cart.wheels[0].rotation.x
+	var wheel_travel := 0.0
 	check(passage.people.size() >= 2,"Existing people are staged before reveal")
 	var fixed_camera := Vector3.INF
 	var photographed: Dictionary = {}
 	var gathering: Node = world.find_child("FireGatheringResidents",true,false)
 	check(gathering != null,"Existing night gathering is integrated")
 	if DisplayServer.get_name() == "headless":
+		var wheel_motion := cart.get_node("WheelMotion")
+		wheel_motion.reset()
 		for frame in range(1,230):
 			opening._process(.1)
+			# This synthetic loop does not yield to the wheel node’s process callback.
+			wheel_motion.update_roll(.1)
+			wheel_travel += absf(angle_difference(wheel_rotation,cart.wheels[0].rotation.x))
+			wheel_rotation = cart.wheels[0].rotation.x
 			check(cart.global_position.z > previous.z,"Cart moves forward without stopping during fades")
 			previous = cart.global_position
 			if passage.age>=8.5 and passage.age<12.7:
@@ -73,6 +80,8 @@ func run() -> void:
 			last = now
 			opening._process(delta)
 			if passage.active:
+				wheel_travel += absf(angle_difference(wheel_rotation,cart.wheels[0].rotation.x))
+				wheel_rotation = cart.wheels[0].rotation.x
 				check(cart.global_position.z >= previous.z,"Native cart advances through fades")
 				previous = cart.global_position
 				if passage.age >= 13:
@@ -89,7 +98,7 @@ func run() -> void:
 					await capture("cart_%02d" % beat)
 			await process_frame
 			if now-start > 90000: check(false,"Cart passage timeout"); break
-	check(absf(cart.wheels[0].rotation.x-wheel_rotation)>1 or not passage.active,"Wheels rotate during journey")
+	check(wheel_travel>1.0,"Wheels rotate during journey")
 	if passage.active: opening._process(.2)
 	check(opening.state == "night","Cart fades into room")
 	check(cart.global_transform.is_equal_approx(saved_transform),"Borrowed cart restores gameplay placement")

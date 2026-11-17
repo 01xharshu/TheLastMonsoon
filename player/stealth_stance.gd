@@ -19,21 +19,41 @@ var cover_blend := 0.0
 var prone_blend := 0.0
 var aim_peek := 0.0
 var gait_phase := 0.0
+var gait_stride := 0.0
+var previous_gait_position := Vector3.ZERO
+var gait_initialized := false
 var prone_support_lift := 0.0
 var base_height := 1.5
 var crop_fields: Array[Node3D] = []
 var crop_cache_age := 0.0
 var fitted_garments := 0
 var low_waist: Array[Dictionary] = []
+var seated_cloth := preload("res://player/arjun_seated_cloth.gd").new()
+var eye_local:=Vector3.ZERO
+var has_eye_reference:=false
 
 func _ready() -> void:
 	var startup_task := Startup.begin("Player stances")
+	base_height = actor.get_node("CameraPivot").position.y
 	await Startup.wait_for(self, "Player appearance")
 	process_priority = 20
-	base_height = actor.get_node("CameraPivot").position.y
+	var eyes:MeshInstance3D=visual.model.find_child("Arjun_Eyes",true,false)
+	var head:int=visual.skeleton.find_bone("head")
+	if eyes!=null and head>=0:
+		var point:Vector3=visual.skeleton.global_transform.affine_inverse()*eyes.to_global(eyes.get_aabb().get_center())
+		eye_local=visual.skeleton.get_bone_global_rest(head).affine_inverse()*point
+		has_eye_reference=true
 	collider.shape = collider.shape.duplicate()
 	fitted_garments = GarmentFit.apply(visual.model)
 	low_waist = GarmentFit.prepare_low_waist(visual.model)
+	GarmentFit.use_low_waist(low_waist,false)
+	# Stance fitting can replace boot meshes after locomotion initialized.
+	var contacts: Node = visual.get_node_or_null("LocomotionFootContact")
+	if contacts != null:
+		contacts.sole_points = {"l":PackedVector3Array(),"r":PackedVector3Array()}
+		contacts._cache_soles()
+	seated_cloth.configure(visual.model, low_waist)
+	if visual.equipment.carry_motion!=null:visual.equipment.carry_motion.refresh_support()
 	# Carry the pouch after this final pose, then solve its cloth support.
 	var carry := actor.get_node("VisualRoot/EquipmentVisuals")
 	carry.process_priority = 21
@@ -47,10 +67,13 @@ func move_speed() -> float:
 	return 1.15 if stance == PRONE or prone_blend > .1 else 2.0
 
 func camera_height() -> float:
-	var crouched_height := lerpf(1.07,1.42,aim_peek)
-	return lerpf(lerpf(base_height,crouched_height,cover_blend),.52,prone_blend)+prone_support_lift
+	# These authored targets are measured above the soles; CameraPivot is
+	# relative to the capsule centre, 0.9 m above them.
+	var crouched_height := lerpf(1.07,1.42,aim_peek)-.9
+	return lerpf(lerpf(base_height,crouched_height,cover_blend),.52-.9,prone_blend)+prone_support_lift
 
 func can_change() -> bool:
+	if not preload("res://systems/action_permissions.gd").allowed(actor,&"stance"): return false
 	if actor.get_meta("detention_action", "") != "": return false
 	return actor.is_on_floor() and not actor.is_swimming and not actor.has_meta("mounted_vehicle") and not actor.get_meta("climbing",false) and actor.get_meta("river_action","") == "" and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("weapon_wheel_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("interaction_reach",false)
 
@@ -78,7 +101,11 @@ func sight_target() -> Vector3:
 	return actor.global_position-Vector3.UP*.9+Vector3.UP*_sight_height()
 
 func _sight_height() -> float:
-	return lerpf(lerpf(1.60,lerpf(1.02,1.42,aim_peek),cover_blend),.38,prone_blend)+prone_support_lift
+	if blend>.001 and has_eye_reference:
+		var head:int=visual.skeleton.find_bone("head")
+		var eyes:Vector3=visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(head)*eye_local)
+		return maxf(.15,eyes.y-(actor.global_position.y-.9))
+	return lerpf(lerpf(1.60,lerpf(1.02,1.42,aim_peek),cover_blend),.38,prone_blend)+prone_support_lift-actor.get_node("LongIdle").camera_drop()
 
 func visible_range(observer: Vector3, base_range: float) -> float:
 	var feet := actor.global_position-Vector3.UP*.9
@@ -119,16 +146,21 @@ func try_cover() -> bool:
 	var direction: Vector3 = -actor.get_node("CameraPivot").global_basis.z
 	direction.y = 0.0
 	direction = direction.normalized()
-	var origin := actor.global_position - Vector3.UP*.18
-	var query := PhysicsRayQueryParameters3D.create(origin,origin+direction*1.5)
-	query.exclude = [actor.get_rid()]
-	var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
-	if hit.is_empty() or not hit.collider is CollisionObject3D or absf(hit.normal.y) > .55: return false
-	cover_body = hit.collider
-	cover_point = hit.position
-	cover_local_point = cover_body.to_local(cover_point)
-	_set_stance(COVER)
-	return true
+	# Check the lower torso first, then chest height for raised cart boards.
+	# The exact hit geometry still determines whether any incoming shot stops.
+	var excluded: Array[RID] = preload("res://combat/ballistic_trace.gd").exclusions(get_tree(),[actor.get_rid()])
+	for height_offset in [-.18, .38]:
+		var origin: Vector3 = actor.global_position + Vector3.UP * height_offset
+		var query := PhysicsRayQueryParameters3D.create(origin,origin+direction*1.5)
+		query.exclude = excluded
+		var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or not hit.collider is CollisionObject3D or absf(hit.normal.y) > .55: continue
+		cover_body = hit.collider
+		cover_point = hit.position
+		cover_local_point = cover_body.to_local(cover_point)
+		_set_stance(COVER)
+		return true
+	return false
 
 func stand() -> bool:
 	if stance == STAND: return true
@@ -194,10 +226,15 @@ func _process(delta: float) -> void:
 	prone_blend = move_toward(prone_blend,1.0 if stance == PRONE else 0.0,delta*3.5)
 	blend = maxf(cover_blend,prone_blend)
 	GarmentFit.use_low_waist(low_waist,blend > .001)
+	seated_cloth.update(smoothstep(.04,.68,float(actor.get_meta("detention_seat_blend",0.0))))
 	prone_support_lift = 0.0
 	aim_peek = move_toward(aim_peek,1.0 if stance == COVER and Input.is_action_pressed("aim") else 0.0,delta*4.5)
 	var travel_speed := Vector2(actor.velocity.x,actor.velocity.z).length()
-	gait_phase = fmod(gait_phase+delta*travel_speed*(5.0 if stance == PRONE else 4.2),TAU)
+	var travelled := Vector2(actor.global_position.x-previous_gait_position.x,actor.global_position.z-previous_gait_position.z).length()
+	if not gait_initialized or travelled>1.5:travelled=0.0
+	previous_gait_position=actor.global_position;gait_initialized=true
+	gait_phase = fmod(gait_phase+travelled*(5.0 if stance == PRONE else 7.5),TAU)
+	gait_stride=move_toward(gait_stride,clampf(travel_speed/2.0,0.0,1.0),minf(delta,.1)*5.0)
 	if blend <= .001: return
 	if cover_blend > .001: _pose_cover(cover_blend)
 	if prone_blend > .001: _pose_prone(prone_blend,delta)
@@ -208,18 +245,21 @@ func _process(delta: float) -> void:
 		visual.equipment.apply_rifle_grip()
 
 func _pose_cover(weight: float) -> void:
-	var stride := clampf(Vector2(actor.velocity.x,actor.velocity.z).length()/2.0,0.0,1.0)
+	var stride := gait_stride
 	var swing := sin(gait_phase)*.23*stride
 	visual.model.position.y = lerpf(visual.model.position.y,lerpf(-1.19,-1.03,aim_peek),weight)
 	visual.pose("pelvis",Vector3(lerpf(.35,.19,aim_peek),swing*.12,0),weight)
 	visual.pose("spine_01",Vector3(.25,0,0),weight)
 	visual.pose("spine_02",Vector3(.12,0,0),weight)
-	visual.pose("thigh_l",Vector3(lerpf(.95,.64,aim_peek)+swing,0,-.12),weight)
-	visual.pose("calf_l",Vector3(lerpf(-1.35,-.92,aim_peek)-maxf(0.0,swing)*.7,0,0),weight)
-	visual.pose("thigh_r",Vector3(lerpf(.90,.62,aim_peek)-swing,0,.12),weight)
-	visual.pose("calf_r",Vector3(lerpf(-1.3,-.9,aim_peek)-maxf(0.0,-swing)*.7,0,0),weight)
+	visual.pose("neck",Vector3(-.18,0,0),weight)
+	visual.pose("head",Vector3(-.32,0,0),weight)
+	visual.pose("thigh_l",Vector3(-lerpf(.95,.64,aim_peek)+swing,0,-.12),weight)
+	visual.pose("calf_l",Vector3(lerpf(1.35,.92,aim_peek)+maxf(0.0,-swing)*.7,0,0),weight)
+	visual.pose("thigh_r",Vector3(-lerpf(.90,.62,aim_peek)-swing,0,.12),weight)
+	visual.pose("calf_r",Vector3(lerpf(1.3,.9,aim_peek)+maxf(0.0,swing)*.7,0,0),weight)
 	visual.pose("upperarm_l",Vector3(lerpf(-.42,-.65,aim_peek)-swing*.4,0,-.35),weight*.65)
 	visual.pose("upperarm_r",Vector3(lerpf(-.46,-.85,aim_peek)+swing*.4,0,.35),weight*.65)
+	for side in ["l","r"]:_flatten_boot(side,weight)
 	# Lower the posed rig until its lowest boot reaches the support plane.
 	# Collision travel remains on the CharacterBody; this corrects visual height.
 	var lowest := INF
@@ -231,6 +271,20 @@ func _pose_cover(weight: float) -> void:
 	if lowest < INF:
 		var support := actor.global_position.y-.9+.10
 		visual.model.position.y += clampf(support-lowest,-.4,.2)*weight
+
+
+func _flatten_boot(side:String,weight:float)->void:
+	# Bend the knees forward while retaining the source sole orientation.
+	# Without ankle compensation a real squat would point both toes downward.
+	var rig:Skeleton3D=visual.skeleton
+	var index:int=rig.find_bone("foot_"+side)
+	var current:=rig.get_bone_global_pose(index).basis.orthonormalized().get_rotation_quaternion()
+	var desired:=rig.get_bone_global_rest(index).basis.orthonormalized().get_rotation_quaternion()
+	var delta:=desired*current.inverse()
+	var local_delta:=current.inverse()*delta*current
+	var old:=rig.get_bone_pose_rotation(index)
+	rig.set_bone_pose_rotation(index,old.slerp(old*local_delta,weight))
+	rig.force_update_all_bone_transforms()
 
 
 func _pose_prone(weight: float,_delta: float) -> void:

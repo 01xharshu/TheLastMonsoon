@@ -21,3 +21,22 @@ Revalidated on 2026-10-01 against the shared checkout after the pistol reload-ca
 ## Remaining work
 
 Owner motion review and detailed finger/wrist/clothing contact remain. Officer restraint/escort, seated waiting and local crime triggers are now implemented in the linked sequence candidate. Earlier full-world runs reported FortCook/FortSteward missing skeletons; the 2026-10-01 headless detention run has no script errors. Two small original runtime clips and the existing rig add no imported texture/character assets; physical 8 GB hardware performance remains unverified.
+
+## Seated movement refinement
+
+The cell bench uses the existing sit and stand clips with a forward weight shift through the middle of each transition. The legs establish boot support as the hips move toward the bench. The hands reach forward during the transfer, settle onto the thighs, and lift clear again as the body straightens. The seated hold adds quiet breathing and occasional side glances.
+
+An unarmed cart passenger looks toward each verge and returns to a forward gaze. The head turn blends with a small upper-body shift before the seat, boot and hand contacts are solved. The glance fades out when weapons or concealment take over the pose.
+
+The detention fixture now exercises actual bench entry, seated hip and boot alignment, and release back to movement. The public cart fixture checks the seated head turn through the normal boarding path. Both use private settings and temporary review output.
+
+```sh
+python3 tools/world/run_tutorial_guard_check.py --checks validate_arjun_detention validate_public_passenger_cart
+python3 tools/world/run_tutorial_guard_check.py --native --review --checks validate_arjun_detention
+```
+
+## Seated garment finish
+
+The bench transition blends two small corrections over the original skinned outfit. The upper boot openings give the gathered trousers more room, while the lower sash panels and trim fall toward the outside of the right thigh. The sash knot stays pinned at the waist. The right hand sweeps around the outside of the hanging sash before resting on the thigh and reverses that path on the rise. The seated meshes return to their original references when the blend ends.
+
+The station fixture checks that both boot and sash corrections engage at the bench, that the hips and soles stay aligned, and that the original meshes return on standing. Its native review renders the same seated pose with the corrections off and on. The controlled 60 Hz walk and sprint comparisons produced identical baseline and current results. Unpaced walking samples varied with frame timing.

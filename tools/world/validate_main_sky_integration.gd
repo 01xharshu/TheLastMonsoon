@@ -37,8 +37,9 @@ func run() -> void:
 		assert(is_equal_approx(float(sun.sky_material.get_shader_parameter("night_visibility")),1.0-smoothstep(-0.3,0.02,elevation)))
 		print("MAIN SKY INTEGRATION PASS | ","New Journey" if slot == 0 else "Continue existing save"," | birds + world clock + moon/star shader")
 		preload("res://tools/test_audio_cleanup.gd").stop(root)
-		world.queue_free()
+		# Match the game's scene retirement path so rendering resources outlive
+		# their instances while the next title screen is prepared.
+		await preload("res://systems/scene_retirement.gd").retire_current(self)
 		current_scene = null
-		await process_frame
 	if existing_slot == 0: print("Continue runtime not exercised: no existing save; shared WORLD destination verified")
 	preload("res://tools/test_audio_cleanup.gd").finish(self)

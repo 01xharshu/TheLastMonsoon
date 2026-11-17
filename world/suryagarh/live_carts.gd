@@ -11,6 +11,8 @@ func _ready() -> void:
 	await Startup.checkpoint(self, "Preparing Suryagarh’s travellers…", true)
 	_place("VillagePassengerEkka", VillageCart.new(), Vector2(-243.0, 207.0), PI)
 	await Startup.checkpoint(self, "Preparing Suryagarh’s carriages…")
+	_place("VillageStationCoach", FamilyCart.new(), Vector2(-247.0, 184.0), PI)
+	await Startup.checkpoint(self, "Preparing Suryagarh’s carriages…")
 	var goods: Node3D = VillageCart.new()
 	goods.variant = 1
 	_place("VillageGoodsCart", goods, Vector2(-273.0, 183.0), PI)

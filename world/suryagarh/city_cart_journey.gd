@@ -14,6 +14,7 @@ var passing_target := Vector2.INF
 var stalled_age := 0.0
 var passing_retry := 0.0
 var retreat_remaining := 0.0
+var crossing_yield := false
 
 func _ready() -> void:
  var ground=preload("res://world/suryagarh/tree_trunk_collision.gd")
@@ -55,6 +56,29 @@ func _physics_process(delta: float) -> void:
  if traffic_age<=0:
   traffic_age=.5
   traffic.assign(get_tree().get_nodes_in_group("city_route_carts"))
+  for candidate in get_tree().get_nodes_in_group("live_travel_carts"):
+   if candidate is Node3D and candidate not in traffic:traffic.append(candidate)
+ crossing_yield=false
+ var here:=Vector2(cart.global_position.x,cart.global_position.z)
+ var intent:Vector2=(route[direction]-here).normalized()
+ for other:Node3D in traffic:
+  if not is_instance_valid(other) or other==cart:continue
+  var other_at:=Vector2(other.global_position.x,other.global_position.z)
+  if here.distance_squared_to(other_at)>1600:continue
+  var boarding:Node=other.get_node_or_null("CartRider")
+  if boarding==null:boarding=other.get("boarding")
+  var controlled:bool=boarding!=null and boarding.get("rider")!=null
+  var other_journey:Node=other.get_node_or_null("CityRoadJourney")
+  if other_journey==null and not controlled:continue
+  # A parked cart does not reserve an approaching crossing forever.
+  if not controlled and other_journey.wait>0:continue
+  var other_intent:=Vector2(-other.global_basis.z.x,-other.global_basis.z.z).normalized()
+  if not controlled:other_intent=(other_journey.route[other_journey.direction]-other_at).normalized()
+  if preload("res://world/suryagarh/cart_crossing.gd").must_yield(here,intent,other_at,other_intent,cart.get_instance_id(),other.get_instance_id(),controlled):
+   crossing_yield=true;blocked_reason="yielding at crossing: "+str(other.name)
+   cart.boarding.speed=0;cart.set_forward_motion(0,delta)
+   # Waiting for right of way must not trigger overtaking/reverse replans.
+   stalled_age=0;return
  # Real cart bounds still govern movement; this look-ahead prevents rear shunts.
  for other:Node3D in traffic:
   if not is_instance_valid(other) or other==cart:continue
@@ -190,4 +214,18 @@ func clearance_reason() -> String:
  var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*2,next-Vector3.UP*3,ground_collision_mask,cart.boarding._vehicle_exclusions())
  var support:=cart.get_world_3d().direct_space_state.intersect_ray(ray)
  var offset:Vector2=route[direction]-Vector2(cart.global_position.x,cart.global_position.z)
+ if OS.get_environment("TLM_CART_TURN_DIAGNOSTICS")=="1":
+  var old_yaw:float=cart.rotation.y
+  cart.rotation.y=rotate_toward(old_yaw,atan2(-offset.x,-offset.y),.04)
+  var blocked_by:=""
+  for collision:CollisionShape3D in cart.boarding.clearance_shapes:
+   var turn_query:=PhysicsShapeQueryParameters3D.new()
+   turn_query.shape=collision.shape;turn_query.transform=Transform3D(cart.global_basis,cart.global_position+cart.global_basis*collision.position)
+   var exclusions:Array[RID]=cart.boarding._vehicle_exclusions()
+   if collision.get_meta("wheel_contact",false):exclusions.append_array(cart.boarding.wheel_terrain_cache.get("rids",[]))
+   turn_query.exclude=exclusions;turn_query.collision_mask=1
+   var hits:=cart.get_world_3d().direct_space_state.intersect_shape(turn_query,1)
+   if not hits.is_empty():blocked_by=str(hits[0].collider.get_path());break
+  cart.rotation.y=old_yaw
+  if not blocked_by.is_empty():return "turn blocked: "+blocked_by
  return "support="+str(support.get("position","missing"))+" heading_error="+str(angle_difference(cart.rotation.y,atan2(-offset.x,-offset.y)))

@@ -11,20 +11,24 @@ func _check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func _run() -> void:
-	var menu: Control = load(ProjectSettings.get_setting("application/run/main_scene")).instantiate()
-	root.add_child(menu)
-	current_scene = menu
+	change_scene_to_file(ProjectSettings.get_setting("application/run/main_scene"))
+	await scene_changed
+	_check(current_scene.get_script().resource_path == "res://ui/studio_intro.gd", "Configured startup must reach studio intro")
+	current_scene._finish()
+	await scene_changed
+	var menu: Control = current_scene
+	_check(menu.get_script().resource_path == "res://ui/main_menu.gd", "Studio intro did not reach implemented Story menu")
 	for i in 3: await process_frame
 	_check(menu.page == "main", "Title did not open on main page")
 	_check(menu.main_panel.visible and not menu.column.visible, "Title layout is not active")
 	var labels: Array[String] = []
 	for button in menu.main_panel.find_children("*", "Button", true, false):
-		labels.append(button.text)
-	_check(labels == ["Play Game", "Continue", "Load Game", "Settings", "Quit"], "Title actions differ from expected order")
+		labels.append(button.accessibility_name)
+	_check(labels == ["Save Game", "Load Game", "New Game", "Exit Game"], "Title actions differ from expected order")
 	menu.show_settings()
 	_check(menu.page == "settings" and menu.column.visible and not menu.main_panel.visible, "Settings page not visible")
 	menu.show_main()
-	menu.show_slots()
+	menu.continuation.pressed.emit()
 	_check(menu.page == "slots" and menu.column.visible and not menu.main_panel.visible, "Load page not visible")
 	menu.show_main()
 	_check(menu.main_panel.visible and not menu.page_shade.visible, "Returning to title failed")
@@ -43,10 +47,14 @@ func _run() -> void:
 	var fixture := FileAccess.open(saves.slot_path(1), FileAccess.WRITE)
 	fixture.store_string(JSON.stringify({"version": saves.VERSION, "position": [0,0,0], "saved_at": 1}))
 	fixture.close()
-	menu._request_new_game()
+	menu.play_button.pressed.emit()
+	_check(menu.alert_plate.texture != null, "Reference alert artwork missing")
+	_check(menu.tiles[0].disabled, "Save must be locked outside gameplay")
+	_check(menu.tiles[2].size == Vector2(572,312), "New Game reference geometry changed")
 	_check(menu.page == "new_game" and menu.column.visible, "Existing save did not show new journey confirmation")
 	menu._input(cancel)
 	_check(menu.page == "main", "Cancel new journey did not return to title")
+	_check(not saves.read_slot(1).is_empty(), "Cancelling New Game changed the existing save")
 	DirAccess.remove_absolute(saves.slot_path(1))
 	DirAccess.remove_absolute(saves.save_root)
 	saves.save_root = original_root

@@ -2,6 +2,10 @@ extends "res://characters/npcs/indian/indian_npc_candidate.gd"
 ## Reuses the adult MPFB rig. Action/blocking study, not approved cloth/contact.
 const Contact = preload("res://characters/npcs/indian/river_contact_solver.gd")
 var river_cloth_meshes: Array[MeshInstance3D] = []
+var secondary_motion := preload("res://characters/npcs/adult_secondary_motion.gd").new()
+var secondary_meshes: Array[Dictionary] = []
+var applied_adult_profile := -1
+var adult_profile_override: int=["smaller","original","fuller"].find(OS.get_environment("TLM_RIVER_PROFILE"))
 var previous_cloth_keys: Dictionary = {}
 var river_key_indices: Dictionary = {}
 var river_mesh_key_indices: Dictionary = {}
@@ -12,6 +16,8 @@ const WALK_SAMPLES := 48
 const WALK_STRIDE := .60
 var foot_rest: Dictionary = {}
 var hand_errors: Dictionary = {}
+var hand_diagnostics: Dictionary = {}
+var contact_diagnostics := OS.get_environment("TLM_RIVER_CONTACT_DIAGNOSTICS")=="1"
 var foot_errors: Dictionary = {}
 var mouth_height := 0.0
 var skeleton: Skeleton3D
@@ -22,6 +28,30 @@ var member_index := 0
 var water_full := false
 var delivered := false
 var action := "home"
+var riverside_role := "laundry"
+var river_face := preload("res://characters/npcs/river_face.gd").new()
+var _cloth_elapsed := 0.0
+var refined_work_motion := OS.get_environment("TLM_RIVER_ACTIVITY_MOTION")=="1"
+# Authoring controls for a wide, supported river squat; production remains gated.
+var work_drop := -.62
+var work_hip_forward := .04
+var work_spine1 := .40
+var work_spine2 := .25
+var work_knee_height: float=.10
+var work_knee_forward: float=0.0
+var work_knee_spread: float=.40
+var seated_knee_spread: float=.20
+var work_foot_spread: float=.17
+var seated_foot_spread: float=-.04
+var seated_foot_forward: float=.32
+
+var fear_amount := 0.0
+var alarm_blend_age := -1.0
+var alarm_bones: Array[Transform3D] = []
+var alarm_figure := Transform3D.IDENTITY
+var alarm_pot := Transform3D.IDENTITY
+var alarm_heading := 0.0
+var alarm_morphs: Array[Dictionary] = []
 var travel_speed := .4
 var travel_gait_time := 0.0
 var travel_override := false
@@ -38,11 +68,17 @@ func _ready() -> void:
 	candidate_slug = "village_woman"
 	_load_river_motion()
 	_personal_appearance()
+	river_face.configure(self)
+	apply_face_identity()
+	set_meta("adult_character",true)
 	skeleton = find_child("*", true, false) as Skeleton3D
 	for node in find_children("*", "Skeleton3D", true, false):
 		skeleton = node as Skeleton3D
 		break
 	for mesh in find_children("*", "MeshInstance3D", true, false):
+		var smaller: int=mesh.find_blend_shape_by_name("Adult MPFB smaller")
+		var fuller: int=mesh.find_blend_shape_by_name("Adult MPFB fuller")
+		if smaller>=0 and fuller>=0:secondary_meshes.append({"mesh":mesh,"smaller":smaller,"fuller":fuller})
 		if str(mesh.name) in ["Fitted cotton upper base","Wrapped sari lower drape","Sari lower border","Woven sari pallu over blouse","Opaque fitted bra and thong foundation"]:
 			river_cloth_meshes.append(mesh)
 			var mesh_keys := {}
@@ -55,7 +91,9 @@ func _ready() -> void:
 	figure.rotation.y = PI
 	for side in ["l", "r"]:
 		foot_rest[side] = global_transform.affine_inverse() * skeleton.global_transform * skeleton.get_bone_global_rest(skeleton.find_bone("foot_" + side))
-	sari_drape=preload("res://characters/npcs/indian/river_sari_drape.gd").new(self,skeleton)
+	apply_adult_body_profile()
+	secondary_motion.configure(self,skeleton,[.85,1.0,1.15][applied_adult_profile],.72)
+	sari_drape=preload("res://characters/npcs/indian/river_sari_drape.gd").new(self,skeleton,.045 if OS.get_environment("TLM_RIVER_ACTIVITY_CLOTH")=="1" or OS.get_environment("TLM_RIVER_SECONDARY")=="1" else 0.0)
 	pot = MeshInstance3D.new()
 	pot.name = "EarthenWaterPot"
 	var material := StandardMaterial3D.new()
@@ -78,7 +116,7 @@ func _ready() -> void:
 	cloth = MeshInstance3D.new()
 	cloth.name = "LaundryStudyCloth"
 	var cloth_mesh := PlaneMesh.new()
-	cloth_mesh.size = Vector2(.45, .35)
+	cloth_mesh.size = Vector2(.60 if refined_work_motion else .45, .35)
 	cloth.mesh = cloth_mesh
 	var cotton := StandardMaterial3D.new()
 	cotton.albedo_color = Color(.66, .58, .44)
@@ -107,10 +145,14 @@ func _personal_appearance()->void:
 			else:material.albedo_color=saris[identity]
 			if garment:
 				var woven:=ShaderMaterial.new()
-				woven.shader=preload("res://characters/npcs/indian/river_upper_cotton.gdshader") if label=="Fitted cotton upper base" else preload("res://characters/npcs/households/household_cloth.gdshader")
+				woven.shader=preload("res://characters/npcs/indian/river_upper_cotton.gdshader") if label=="Fitted cotton upper base" or (label=="Wrapped sari lower drape" and mesh.find_blend_shape_by_name("River fine walk 4 00")>=0) else preload("res://characters/npcs/households/household_cloth.gdshader")
 				if label=="Fitted cotton upper base":
 					woven.set_shader_parameter("blouse_color",blouses[identity])
 					woven.set_shader_parameter("pallu_color",saris[identity])
+				if label=="Wrapped sari lower drape" and mesh.find_blend_shape_by_name("River fine walk 4 00")>=0:
+					woven.set_shader_parameter("lower_wrap",true)
+					woven.set_shader_parameter("border_color",saris[identity].lightened(.18))
+					set_meta("integral_sari_border",find_child("Sari lower border",true,false)==null)
 				woven.set_shader_parameter("cloth_color",material.albedo_color)
 				woven.set_shader_parameter("garment_kind",0)
 				woven.set_shader_parameter("fabric_sway",Vector2.ZERO)
@@ -137,7 +179,12 @@ func tick_routine(delta: float) -> void:
 	_evaluate(delta)
 
 func _evaluate(delta: float) -> void:
+	apply_adult_body_profile()
 	var time := elapsed
+	# A third companion starts seated conversation while the other two work.
+	# Reuse the authored seated transition and its matching cloth samples.
+	if riverside_role=="conversation" and time>=23.0 and time<48.0:time=35.0+(time-23.0)*13.0/25.0
+	_cloth_elapsed=time
 	var stage := STAGES.size() - 1
 	for index in DURATIONS.size():
 		if time < DURATIONS[index]:
@@ -152,7 +199,7 @@ func _evaluate(delta: float) -> void:
 	walking = action in ["depart", "return"] and (not travel_override or travel_speed>0.0)
 	if is_zero_approx(delta): locomotion_blend=1.0 if walking else 0.0
 	playback_rate = travel_speed*1.2*.6/WALK_STRIDE if travel_override and walking else .9
-	animation_tree.set("parameters/idle_seek/seek_request",fposmod(elapsed,animation_player.get_animation("idle").length))
+	animation_tree.set("parameters/idle_seek/seek_request",fposmod(_cloth_elapsed,animation_player.get_animation("idle").length))
 	if walking and not travel_override:
 		animation_tree.set("parameters/walk_seek/seek_request",fposmod(elapsed/1.2,1.0)*animation_player.get_animation("walk").length)
 	if travel_override and walking:
@@ -196,19 +243,30 @@ func _evaluate(delta: float) -> void:
 			var height: float=ground_height.call(probe.x,probe.z)
 			high_ground=maxf(high_ground,height);low_ground=minf(low_ground,height)
 		walking_drop+=maxf(high_ground-global_position.y,global_position.y-low_ground)
-	figure.position.y = -.64 * crouch - .695 * seated - walking_drop*locomotion_blend+gait_bob*locomotion_blend
+	figure.position.y = (work_drop if refined_work_motion else -.64) * crouch - (.679 if refined_work_motion else .695) * seated - walking_drop*locomotion_blend+gait_bob*locomotion_blend
+	if refined_work_motion and action=="stand_up":figure.position.y+=.025*sin(PI*seated)
 	figure.position.x=gait_sway*locomotion_blend
-	figure.position.z = -.18*crouch
+	figure.position.z = (work_hip_forward if refined_work_motion else -.18)*crouch
 	var facing := home-bank if action in ["return", "deliver", "home"] else bank-home
 	if walking and travel_override: facing = travel_direction
 	var desired_heading := atan2(-facing.x, -facing.z)
 	if not walking and action not in ["deliver","home"]: desired_heading=-PI/2.0 if travel_override else desired_heading
 	rotation.y = lerp_angle(rotation.y,desired_heading,1.0-exp(-delta*6.0)) if walking and delta>0.0 else desired_heading
-	if action == "pickup_pot": rotation.y += PI*smoothstep(0.0, 1.0, maxf((blend-.75)*4.0, 0.0))
-	if seated > 0.0: rotation.y += (.35 if member_index == 0 else -.35) * seated
-	_rotate_bone("spine_01", Vector3.RIGHT, .40*crouch + .05*seated)
-	_rotate_bone("spine_02", Vector3.RIGHT, .25*crouch)
-	_rotate_bone("neck_01", Vector3.RIGHT, -.20*crouch)
+	var reach_yaw:float=-atan2(.22,.28) if refined_work_motion else 0.0
+	if action=="wash" and refined_work_motion:
+		rotation.y+=reach_yaw*smoothstep(0.0,.45,time)*(1.0-smoothstep(1.5,1.95,time))
+	if action=="pickup_pot":
+		var turn:=smoothstep(0.0,1.0,maxf((blend-.75)*4.0,0.0))
+		rotation.y+=PI*turn+reach_yaw*smoothstep(0.0,.12,blend)*(1.0-turn)
+	if seated > 0.0: rotation.y += (PI*.5 if refined_work_motion else (.35 if member_index == 0 else -.35)) * seated
+	var dip_bend:=crouch if refined_work_motion and action in ["lower_pot","fill","lift_pot"] else 0.0
+	var rinse_bend:=0.0
+	if refined_work_motion and action=="wash":
+		var phase:=fposmod(time,6.0)
+		if phase>=2.0 and phase<4.0:rinse_bend=sin(PI*(phase-2.0)/2.0)
+	_rotate_bone("spine_01", Vector3.RIGHT, (work_spine1 if refined_work_motion else .40)*crouch + .05*seated+.30*rinse_bend+.10*dip_bend)
+	_rotate_bone("spine_02", Vector3.RIGHT, (work_spine2 if refined_work_motion else .25)*crouch+.15*rinse_bend)
+	_rotate_bone("neck_01", Vector3.RIGHT, (.05 if refined_work_motion else -.20)*crouch)
 	if walking and travel_override:
 		_rotate_bone("neck_01",Vector3.UP,.07*sin(elapsed*.12+member_index*2.0))
 	# Plant ankle targets while lowering/raising the pelvis; knees bend forward.
@@ -225,10 +283,10 @@ func _evaluate(delta: float) -> void:
 			if travel_override and travel_speed<=0.0: stride=0.0
 			var z := lerpf(-stride*.5, stride*.5, phase/.6) if phase < .6 else lerpf(stride*.5, -stride*.5, smoothstep(0.0, 1.0, (phase-.6)/.4))
 			var lift := 0.0 if phase < .6 else (.055 if stride>0.0 else 0.0)*sin(PI*(phase-.6)/.4)
-			target += global_basis * Vector3(0, lift, z)
-		target += global_basis * Vector3((-1.0 if side=="l" else 1.0)*(.06*crouch+.08*seated), 0, -.10*crouch-.36*seated)
+			target += global_basis * Vector3(0, lift, z)*(locomotion_blend if refined_work_motion else 1.0)
+		target += global_basis * Vector3((-1.0 if side=="l" else 1.0)*((work_foot_spread if refined_work_motion else .06)*crouch+(seated_foot_spread if refined_work_motion else .08)*seated), 0, -.10*crouch-(seated_foot_forward if refined_work_motion else .36)*seated)
 		if ground_height.is_valid(): target.y += float(ground_height.call(target.x,target.z))-global_position.y
-		var pole := global_position + global_basis * Vector3(rest.origin.x+(-1.0 if side=="l" else 1.0)*.12*(crouch+seated), .35, -1.0)
+		var pole := global_position + global_basis * Vector3(rest.origin.x+(-1.0 if side=="l" else 1.0)*((work_knee_spread if refined_work_motion else .12)*crouch+(seated_knee_spread if refined_work_motion else .12)*seated), (work_knee_height+.35*sin(PI*seated) if action=="stand_up" else work_knee_height) if refined_work_motion else .35, work_knee_forward if refined_work_motion and (crouch>0 or seated>0) else -1.0)
 		foot_errors[side] = Contact.reach(skeleton, "thigh_"+side, "calf_"+side, "foot_"+side, target, pole)
 		var foot_basis := global_basis*rest.basis
 		if ground_height.is_valid():
@@ -238,7 +296,7 @@ func _evaluate(delta: float) -> void:
 		Contact.orient(skeleton, "foot_"+side, foot_basis)
 	# Pot follows a continuous, externally defined path; hands reach its handles.
 	var carry := Vector3(gait_sway*.35*locomotion_blend, .88+gait_bob*.7*locomotion_blend, -.30)
-	var dip := Vector3(0, .09+water_level-.01-bank.y, -.52)
+	var dip := Vector3(0, .09+water_level-.01-bank.y, -.24 if refined_work_motion else -.52)
 	var pot_local := carry
 	var tilt := 0.0
 	if action == "lower_pot":
@@ -250,17 +308,21 @@ func _evaluate(delta: float) -> void:
 	if action == "lift_pot":
 		pot_local = dip.lerp(carry, smoothstep(0.0, 1.0, blend))
 		tilt = deg_to_rad(115.0)*(1.0-smoothstep(0.0, 1.0, blend))
-	if action in ["sit_down", "talk", "stand_up"]: pot_local = Vector3(.22, .17, -.32)
-	if action == "wash": pot_local = carry.lerp(Vector3(.22, .17, -.32), smoothstep(0.0, 1.0, minf(time/1.5, 1.0)))
-	if action == "deliver": pot_local = carry.lerp(Vector3(0, .17, -.32), smoothstep(0.0, 1.0, minf(blend*2.0, 1.0)))
-	if action == "home": pot_local = Vector3(0, .17, -.32)
+	if action in ["sit_down", "talk", "stand_up"]: pot_local = Vector3(.22, .17, -.28 if refined_work_motion else -.32)
+	if action == "wash": pot_local = carry.lerp(Vector3(.22, .17, -.28 if refined_work_motion else -.32), smoothstep(0.0, 1.0, minf(time/1.5, 1.0)))
+	if action == "deliver": pot_local = carry.lerp(Vector3(0, .17, -.28 if refined_work_motion else -.32), smoothstep(0.0, 1.0, minf(blend*2.0, 1.0)))
+	if action == "home": pot_local = Vector3(0, .17, -.28 if refined_work_motion else -.32)
 	pot.visible = true
 	var bank_rotation := -PI/2.0 if travel_override else atan2(-(bank-home).x, -(bank-home).z)
-	var parked := Transform3D(Basis(Vector3.UP, bank_rotation), bank) * Transform3D(Basis.IDENTITY, Vector3(.22, .17, -.32))
+	var parked_origin:Vector3=Transform3D(Basis(Vector3.UP,bank_rotation),bank)*Vector3(.22,.17,-.28 if refined_work_motion else -.32)
+	var parked:=Transform3D(Basis(Vector3.UP,bank_rotation+reach_yaw),parked_origin)
 	pot.global_transform = global_transform * Transform3D(Basis(Vector3.RIGHT, -tilt), pot_local)
 	if action in ["sit_down", "talk", "stand_up"]: pot.global_transform = parked
-	if action == "pickup_pot":
-		pot.global_position = parked.origin.lerp(global_transform*carry, smoothstep(0.0, 1.0, maxf((pickup_progress-.5)*2.0, 0.0)))
+	if action=="wash" and refined_work_motion:
+		pot.global_transform=(global_transform*Transform3D(Basis.IDENTITY,carry)).interpolate_with(parked,smoothstep(0.0,1.0,minf(time/1.5,1.0)))
+	if action=="pickup_pot":
+		pot.global_transform=parked.interpolate_with(global_transform*Transform3D(Basis.IDENTITY,carry),smoothstep(0.0,1.0,maxf((pickup_progress-.5)*2.0,0.0)))
+	if refined_work_motion:pot.global_basis=pot.global_basis.orthonormalized()
 	mouth_height = (pot.global_transform * Vector3(0, .20, 0)).y
 	hand_errors.clear()
 	var holding := action in ["depart", "arrive", "lower_pot", "fill", "lift_pot", "return", "deliver"]
@@ -271,9 +333,12 @@ func _evaluate(delta: float) -> void:
 		for side in ["l", "r"]:
 			var sign_side := -1.0 if side == "l" else 1.0
 			var grip := pot.global_transform * Vector3(sign_side*.185, 0, 0)
-			if action == "pickup_pot" and pickup_progress < .45:
+			if action == "pickup_pot" and pickup_progress < (.50 if refined_work_motion else .45):
 				var neutral := skeleton.global_transform*Contact.point(skeleton, "hand_"+side)
-				grip = neutral.lerp(grip, smoothstep(0.0, 1.0, pickup_progress/.45))
+				if refined_work_motion:
+					var shoulder_anchor:=skeleton.to_global(Contact.point(skeleton,"upperarm_"+side))
+					neutral=shoulder_anchor+global_basis*Vector3(-.14 if side=="l" else .14,-.23,-.28)
+				grip = neutral.lerp(grip, smoothstep(.20,.50,pickup_progress) if refined_work_motion else smoothstep(0.0,1.0,pickup_progress/.45))
 				# Before grasp, approach within the unstretched arm envelope.
 				var shoulder := skeleton.global_transform*Contact.point(skeleton, "upperarm_"+side)
 				var elbow := skeleton.global_transform*Contact.point(skeleton, "lowerarm_"+side)
@@ -283,36 +348,111 @@ func _evaluate(delta: float) -> void:
 			_reach_hand(side, grip)
 			_orient_grip(side, Vector3.DOWN)
 			_curl_fingers(side, .45)
+	if refined_work_motion and not holding and action in ["deliver","home"]:
+		for side in ["l","r"]:
+			var shoulder_anchor:=skeleton.to_global(Contact.point(skeleton,"upperarm_"+side))
+			var rest_hand:=shoulder_anchor+global_basis*Vector3(-.12 if side=="l" else .12,-.38,-.04)
+			if action=="deliver":
+				var last_grip:=pot.global_transform*Vector3(-.185 if side=="l" else .185,0,0)
+				rest_hand=last_grip.lerp(rest_hand,smoothstep(0,.4,(blend-.5)*float(DURATIONS[stage])))
+			_reach_hand(side,rest_hand);_curl_fingers(side,.08)
 	# Wash has readable rub, rinse and wring phases and shares exact cloth targets.
 	cloth.visible = action == "wash" and time >= 1.5
 	if action == "wash" and time >= 1.5:
 		var wash_phase := fposmod(time, 6.0)
-		var local := Vector3(0, .16, -.46)
+		var local := Vector3(0, .16, -.30 if refined_work_motion else -.46)
 		var wring := 0.0
 		if wash_phase < 2.0: local.z += .04*sin(time*TAU)
 		elif wash_phase < 4.0:
-			local = local.lerp(Vector3(0, .09, -.52), sin(PI*(wash_phase-2.0)/2.0))
+			local = local.lerp(Vector3(0,water_level-bank.y+.005 if refined_work_motion else .09,-.30 if refined_work_motion else -.52), sin(PI*(wash_phase-2.0)/2.0))
 		else:
 			wring = sin(PI*(wash_phase-4.0)/2.0)
-			local = local.lerp(Vector3(0, .44, -.38), wring)
+			local = local.lerp(Vector3(0, .41 if refined_work_motion else .44, -.34 if refined_work_motion else -.38), wring)
 		cloth.global_transform = global_transform * Transform3D(Basis.IDENTITY, local)
 		_shape_laundry(wring, time)
 		for side in ["l", "r"]:
-			var grip := cloth.global_transform * Vector3(-.18 if side == "l" else .18, .015, 0)
+			var grip := cloth.global_transform * Vector3((-.30 if side=="l" else .30) if refined_work_motion else (-.18 if side=="l" else .18),.015,0)
 			_reach_hand(side, grip)
 			_orient_grip(side, global_basis*Vector3(1 if side == "l" else -1, 0, 0))
 			_curl_fingers(side, .32)
-	if seated > 0.0:
+		if riverside_role=="bathing":
+			cloth.visible=false
+			# Clothed river bathing: scoop water, rub/rinse the forearms, then
+			# bring a cupped hand up to the cheek. Foundation and outer wrap stay.
+			var phase:=fposmod(time,6.0)
+			if phase>=4.0:
+				var head:=skeleton.to_global(Contact.point(skeleton,"head"))
+				var reach:=global_transform*Vector3(.30,.175,-.30)
+				var outside:=global_transform*Vector3(.32,.35,-.28)
+				var cheek:=head+global_basis*Vector3(.055,-.025,-.08)
+				var amount:=sin((phase-4.0)*PI/2.0)
+				# Lift the cupped hand around the chest, then to the cheek.
+				# A direct low-centre reach trapped the blouse beneath the arm.
+				_reach_hand("r",reach*pow(1.0-amount,2)+outside*2.0*(1.0-amount)*amount+cheek*amount*amount)
+				_curl_fingers("r",.08)
+	if seated > 0.0 or (refined_work_motion and action=="sit_down"):
 		_rotate_bone("neck_01", Vector3.UP, .12*sin(time*.7+member_index))
-		var speaking := action == "talk" and int(time/2.5)%3 == 0
+		var speaking := action == "talk" and int(time/2.5)%3 == member_index%3
 		for side in ["l", "r"]:
-			var gesture := .10*sin(time*2.2) if speaking else 0.0
-			var target := global_transform * Vector3(-.23 if side == "l" else .23, .38-.08*seated+.55*(1.0-seated-crouch)+gesture, -.34)
+			var gesture := (.04*(1.0+sin(time*2.2)) if refined_work_motion else .10*sin(time*2.2)) if speaking else 0.0
+			var spread:=.32 if refined_work_motion else .23
+			var target := global_transform * Vector3(-spread if side == "l" else spread, .38-(.04 if refined_work_motion else .08)*seated+.55*(1.0-seated-crouch)+gesture, -.28 if refined_work_motion else -.34)
+			if refined_work_motion and action=="sit_down":
+				var last_wash:=global_transform*Vector3(-.18 if side=="l" else .18,.175,-.30)
+				target=last_wash.lerp(target,smoothstep(0,.4,time))
 			_reach_hand(side, target)
 	if sari_drape!=null:sari_drape.update()
 	_apply_river_cloth()
+	var talking: bool=action=="talk" and int(time/2.5)%3==member_index%3
+	river_face.update(elapsed+member_index*.73,talking and fear_amount<=0,fear_amount)
+	blend_alarm_transition(delta)
+	secondary_motion.update(delta)
+	set_meta("secondary_displacement_m",secondary_motion.peak_displacement_m)
 	pot.set_meta("contains_water", water_full)
-	set_meta("river_action", action)
+	set_meta("river_action", "bathe" if action=="wash" and riverside_role=="bathing" else action)
+
+func apply_adult_body_profile() -> void:
+	var profile:=posmod(member_index,3)
+	if adult_profile_override>=0:profile=adult_profile_override
+	if profile==applied_adult_profile:return
+	applied_adult_profile=profile
+	for entry in secondary_meshes:
+		entry.mesh.set_blend_shape_value(entry.smaller,1.0 if profile==0 else 0.0)
+		entry.mesh.set_blend_shape_value(entry.fuller,1.0 if profile==2 else 0.0)
+	secondary_motion.mass_scale=[.85,1.0,1.15][profile]
+	secondary_motion.reset()
+	set_meta("adult_body_profile",["smaller","original","fuller"][profile])
+
+func begin_alarm_transition() -> void:
+	alarm_blend_age=0.0;alarm_bones.clear();alarm_morphs.clear()
+	for bone in skeleton.get_bone_count():alarm_bones.append(skeleton.get_bone_pose(bone))
+	var figure:=animation_player.get_node(animation_player.root_node) as Node3D
+	alarm_figure=figure.transform;alarm_pot=pot.global_transform;alarm_heading=rotation.y
+	for mesh in river_cloth_meshes:
+		var weights: Dictionary={}
+		for key in mesh.mesh.get_blend_shape_count():
+			var value:=mesh.get_blend_shape_value(key)
+			if absf(value)>.00001:weights[key]=value
+		alarm_morphs.append({"mesh":mesh,"weights":weights})
+
+func blend_alarm_transition(delta: float) -> void:
+	if alarm_blend_age<0:return
+	alarm_blend_age+=maxf(delta,0)
+	var blend:=smoothstep(0,.45,alarm_blend_age)
+	for bone in alarm_bones.size():skeleton.set_bone_pose(bone,alarm_bones[bone].interpolate_with(skeleton.get_bone_pose(bone),blend))
+	var figure:=animation_player.get_node(animation_player.root_node) as Node3D
+	figure.transform=alarm_figure.interpolate_with(figure.transform,blend)
+	rotation.y=lerp_angle(alarm_heading,rotation.y,blend)
+	pot.global_transform=alarm_pot.interpolate_with(pot.global_transform,blend)
+	if sari_drape!=null:sari_drape.update()
+	for entry in alarm_morphs:
+		var mesh: MeshInstance3D=entry.mesh
+		var keys: Dictionary=entry.weights.duplicate()
+		for name in previous_cloth_keys:
+			var index:=mesh.find_blend_shape_by_name(name)
+			if index>=0:keys[index]=entry.weights.get(index,0.0)
+		for index: int in keys:mesh.set_blend_shape_value(index,lerpf(keys[index],mesh.get_blend_shape_value(index),blend))
+	if alarm_blend_age>=.45:alarm_blend_age=-1;alarm_bones.clear();alarm_morphs.clear()
 
 func _shape_laundry(wring: float, time: float) -> void:
 	var surface := SurfaceTool.new()
@@ -322,7 +462,8 @@ func _shape_laundry(wring: float, time: float) -> void:
 			for offset in [Vector2i(0,0), Vector2i(1,0), Vector2i(0,1), Vector2i(0,1), Vector2i(1,0), Vector2i(1,1)]:
 				var u := float(i+offset.x)/10.0
 				var v := float(j+offset.y)/4.0
-				var x := lerpf(-.18, .18, u)
+				var extent:=.30 if refined_work_motion else .18
+				var x := lerpf(-extent,extent,u)
 				var z := lerpf(-.11, .11, v)*(1.0-.55*wring)
 				var angle := wring*sin(time*3.0)*(u*2.0-1.0)*1.4
 				var sag := -.04*sin(PI*u)
@@ -333,7 +474,11 @@ func _shape_laundry(wring: float, time: float) -> void:
 
 func _reach_hand(side: String, target: Vector3) -> void:
 	var shoulder := skeleton.global_transform * Contact.point(skeleton, "upperarm_"+side)
-	var pole := shoulder + global_basis*Vector3(-.3 if side == "l" else .3, -.18, .08)
+	if contact_diagnostics:
+		var elbow:=skeleton.to_global(Contact.point(skeleton,"lowerarm_"+side))
+		var wrist:=skeleton.to_global(Contact.point(skeleton,"hand_"+side))
+		hand_diagnostics[side]={"shoulder":to_local(shoulder),"target":to_local(target),"span":shoulder.distance_to(elbow)+elbow.distance_to(wrist),"distance":shoulder.distance_to(target)}
+	var pole := shoulder + global_basis*Vector3((-.45 if side=="l" else .45) if refined_work_motion else (-.3 if side=="l" else .3), -.18, -.15 if refined_work_motion else .08)
 	hand_errors[side] = Contact.reach(skeleton, "upperarm_"+side, "lowerarm_"+side, "hand_"+side, target, pole)
 
 func _orient_grip(side: String, direction: Vector3) -> void:
@@ -355,7 +500,11 @@ func _rotate_bone(label: String, axis: Vector3, angle: float) -> void:
 	skeleton.set_bone_pose_rotation(index, skeleton.get_bone_pose_rotation(index) * Quaternion(local_axis.normalized(), angle))
 
 func _load_river_motion() -> void:
-	var path := "res://characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb"
+	# Replacement construction remains an explicit candidate until the complete
+	# body/layer sweep passes. Do not silently promote a failed garment fit.
+	var path := "res://characters/npcs/activity_people/river_activity.glb" if OS.get_environment("TLM_RIVER_ACTIVITY_CLOTH")=="1" else "res://characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb"
+	if OS.get_environment("TLM_RIVER_SECONDARY")=="1":
+		path="res://characters/npcs/activity_people/river_activity_secondary_relaxed.glb" if OS.get_environment("TLM_RIVER_RELAXED")=="1" else "res://characters/npcs/activity_people/river_activity_secondary.glb";refined_work_motion=true
 	var figure := preload("res://characters/human_scene.gd").instantiate(path)
 	if figure == null:
 		push_error("Cannot load Indian motion candidate: " + path)
@@ -403,21 +552,25 @@ func _walk_phase() -> float:
 func _apply_river_cloth() -> void:
 	if river_cloth_meshes.is_empty(): return
 	var weights: Dictionary = {}
-	if walking and travel_override and river_key_indices.has("River walk 1 00"):
+	var fine_walk:=river_key_indices.has("River fine walk 4 00")
+	if (walking or (fine_walk and locomotion_blend>0.0)) and travel_override and (river_key_indices.has("River fine walk 4 00") or river_key_indices.has("River walk 1 00")):
 		var phase := _walk_phase()*WALK_SAMPLES
 		var lower := int(floorf(phase))%WALK_SAMPLES
 		var upper := (lower+1)%WALK_SAMPLES
-		var slope := clampf(travel_slope/.225+2.0,0.0,4.0)
+		var slope := clampf(travel_slope/(.1125 if fine_walk else .225)+(4.0 if fine_walk else 2.0),0.0,8.0 if fine_walk else 4.0)
 		var slope_lower := int(floorf(slope))
-		var slope_upper := mini(slope_lower+1,4)
+		var slope_upper := mini(slope_lower+1,8 if fine_walk else 4)
 		for bank in [slope_lower,slope_upper]:
 			var slope_weight := 1.0 if slope_lower==slope_upper else 1.0-slope+slope_lower if bank==slope_lower else slope-slope_lower
 			for frame in [lower,upper]:
 				var frame_weight := 1.0-phase+lower if frame==lower else phase-lower
-				var key_name := "River walk %d %02d"%[bank,frame]
-				weights[key_name]=slope_weight*frame_weight
+				var key_name := ("River fine walk %d %02d" if fine_walk else "River walk %d %02d")%[bank,frame]
+				weights[key_name]=slope_weight*frame_weight*(locomotion_blend if fine_walk else 1.0)
+		if fine_walk and locomotion_blend<1.0:
+			var idle_index:=CLOTH_TIMES.find(10.0)
+			weights["River cloth %03d"%idle_index]=1.0-locomotion_blend
 	else:
-		var cloth_time := elapsed
+		var cloth_time := _cloth_elapsed
 		if travel_override and travel_speed<=0.0 and action in ["depart","return"]:
 			# Waiting companions carry their pots with neutral feet, not a walk pose.
 			cloth_time=minf(12.0,10.0+fposmod(elapsed-10.0,animation_player.get_animation("idle").length))
@@ -431,7 +584,7 @@ func _apply_river_cloth() -> void:
 		var upper := mini(lower+1,CLOTH_TIMES.size()-1)
 		var fraction: float=0.0 if lower==upper else clampf((cloth_time-CLOTH_TIMES[lower])/(CLOTH_TIMES[upper]-CLOTH_TIMES[lower]),0.0,1.0)
 		for frame in [lower,upper]:
-			var key_name := "River cloth %03d"%frame
+			var key_name := ("River bath %03d" if riverside_role=="bathing" and action=="wash" and river_key_indices.has("River bath %03d"%frame) else "River cloth %03d")%frame
 			weights[key_name]=1.0 if lower==upper else 1.0-fraction if frame==lower else fraction
 
 	for mesh in river_cloth_meshes:

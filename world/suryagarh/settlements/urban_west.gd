@@ -214,6 +214,8 @@ func campus() -> void:
 	var sign:=Label3D.new();sign.text="COLLEGE · READING & LECTURES";sign.position=Vector3(0,3.3,0);sign.font_size=48;sign.pixel_size=.007;gateway.add_child(sign)
 
 func lane(label:String,points:Array,width:float) -> void:
+	# The baked terrain carries the market’s dirt and ruts. This ribbon is visual only.
+	if label=="city_market_street":return
 	var st:=SurfaceTool.new();st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in points.size()-1:
 		var a:Vector2=points[i];var end:Vector2=points[i+1];var span:=a.distance_to(end);var steps:=maxi(1,ceili(span/2))

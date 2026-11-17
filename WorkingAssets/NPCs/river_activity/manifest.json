@@ -1,0 +1,20 @@
+{
+  "source": "WorkingAssets/NPCs/river_activity/river_activity.blend",
+  "runtime": "characters/npcs/activity_people/river_activity.glb",
+  "donor": "characters/npcs/motion/river_woman/river_woman_rigged_candidate.glb",
+  "donor_sha256": "7adcfbeac27cb045e516cfa3c0ecf4ea729a76e6a6d9b8caf992a4a447381394",
+  "original_mpfb_source": "WorkingAssets/NPCs/river_woman/river_woman_motion.blend",
+  "complete_body_vertices": 14517,
+  "body_rest_coordinates_unchanged": true,
+  "waist_skinning_vertices_repaired": 181,
+  "foundation_vertices": 662,
+  "visual_approved": false,
+  "corrective_samples": 963,
+  "pose_source": "WorkingAssets/NPCs/river_activity/poses.json",
+  "pose_sha256": "1312b46109029780c01d893387d95fae0d7191cae0eef2743811473af7c1d1e6",
+  "requires_refined_work_motion": true,
+  "source_sha256": "52818f49aabb9b146bd9daf5ba6c62b5a1ad77192e5aebaf60b234681c4fd79b",
+  "runtime_sha256": "19068bdcd0fd0c53d4ef4a60ac9149870e5dec4f4aac067529fb62912f66f759",
+  "fabric_uvs": true,
+  "walking_foundation_waist_clearance_m": 0.007
+}

@@ -1,6 +1,6 @@
 # Arjun combat motion and flag break — 2026-09-24
 
-The mouse left button now waits 0.26 seconds to distinguish a single click from a double click. A single click dispatches the selected sword, rifle, bow, pistol or knife; with weapons stowed it punches. A double click kicks and cancels the pending single attack. Controller attack presses dispatch immediately. Punch and kick use short forward damage rays and procedural upper-body/leg poses.
+Historical 2026-09-24 behavior, superseded 2026-10-28: the mouse left button waited 0.26 seconds to distinguish a single click from a double click. A single click dispatches the selected sword, rifle, bow, pistol or knife; with weapons stowed it punches. A double click kicks and cancels the pending single attack. Controller attack presses dispatch immediately. Punch and kick use short forward damage rays and procedural upper-body/leg poses.
 
 The sword rest IK no longer overwrites the right-arm slash pose. The hand grip stays attached to the existing talwar socket. A cut EIC flag leaves a timber stump and releases an upper pole, cloth, rope and finial together as a colliding rigid body. The cut remains one-time for fame.
 
@@ -17,3 +17,6 @@ Power-stroke follow-up: propulsion is now gated by the submerged blade, with dra
 Native-runtime follow-up: `tools/world/capture_boat_runtime_motion.gd` records the live world without manual rig or mount updates. Forward input, release, reverse, steering and final idle run for 300 frames in Metal. `docs/world/boat_runtime_motion.json` reports PASS, maximum palm/socket separation 0.034 mm and 95th percentile 0.017 mm. Sampled reverse, steering and idle frames were inspected: hands meet the shaft and the interior remains dry. The normal-speed 30 fps preview is `docs/world/captures/boat_runtime_motion.mp4`; its presentation timestamps are normalized to the recorded frame rate. This contact telemetry and sampled render review do not constitute continuous-motion, finger/cloth, player-feel or replacement-body approval. The recording exits successfully with an object/resource cleanup warning.
 
 Direction-transition follow-up: rowing drive now ramps through zero before reversing, rather than immediately flipping paddle phase and thrust on an opposite input. Phase speed and submerged propulsion follow that same signed drive; releasing input eases the stroke to rest, and dismount clears it. Full-cycle headless checks PASS, including delayed reversal, eventual reverse travel, idle and dry-deck clearance. River/boat/climb regression PASS. A fresh native Metal recording also PASS (maximum palm separation 0.034 mm); reverse and idle samples were inspected and the preview above was replaced. Continuous skin/cloth motion and player feel still need review.
+
+
+2026-10-28: The historical double-click kick behavior described above has been replaced: click attacks immediately; the rebindable Kick action defaults to K.

@@ -1,24 +1,30 @@
 """Reusable river checks; disposable media is always cleaned, including on failure."""
-import argparse, json, os, subprocess, tempfile
+import argparse, json, os, subprocess, tempfile, time
 from pathlib import Path
+from private_godot_project import private_project
 ROOT=Path(__file__).resolve().parents[2]
 ENGINE='/Applications/Godot.app/Contents/MacOS/Godot'
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--detail',action='store_true',help='Follow the adult river actor closely for fit review')
     parser.add_argument('--render',action='store_true',help='Check focused Metal capture without retaining images')
     parser.add_argument("--budget",action="store_true",help="Measure native focused near/remote frame budgets")
     parser.add_argument('--buffers',action='store_true',help='Verify actual uploaded sari vertices and normals with Metal readback')
+    parser.add_argument('--playback',action='store_true',help='Check native ordinary-time full river work cycle')
+    parser.add_argument('--review-seconds',type=int,default=0,help='Keep disposable native frames briefly available for inspection')
     args=parser.parse_args()
-    with tempfile.TemporaryDirectory(prefix='tlm_river_check_') as folder:
+    with tempfile.TemporaryDirectory(prefix='tlm_river_check_') as folder, private_project(ROOT,Path(folder)) as project:
         env=os.environ.copy();env['TLM_RIVER_TEST_OUTPUT']=folder
         scripts=['tools/characters/validate_river_routine.gd','tools/world/validate_women_river.gd']
         if args.buffers:scripts.append('tools/characters/validate_river_drape_buffers.gd')
-        if args.render or args.budget:scripts.append('tools/world/capture_women_river.gd')
+        if args.render or args.budget or args.playback:scripts.append('tools/world/capture_women_river.gd')
         for script in scripts:
-            command=[ENGINE,'--path',str(ROOT),'--log-file',str(Path(folder)/(Path(script).stem+'.log')),'--script','res://'+script]
+            command=[ENGINE,'--path',str(project),'--log-file',str(Path(folder)/(Path(script).stem+'.log')),'--script','res://'+script]
             if 'capture_' in script:command+=['--','--focused']
+            if 'capture_' in script and args.detail:command+=['--detail','--extremes']
             if 'capture_' in script and args.budget:command+=['--budget']
+            if 'capture_' in script and args.playback:command+=['--playback']
             native='capture_' in script or 'drape_buffers' in script
             if not native:command.insert(1,'--headless')
             else:command[1:1]=['--rendering-driver','metal','--resolution','1280x720']
@@ -31,9 +37,12 @@ def main():
                         'issues=',data['issues'], 'ankle_m=',data.get('max_ankle_m'), 'wrist_m=',data.get('max_hand_m'), 'planted_drift_m=',data.get('planted_drift_m'), 'walk_cycle_seconds=',data.get('walk_cycle_seconds'))
                     failed=failed or not data['passed']
             for line in output.splitlines():
-                if line.startswith(('RIVER_NATIVE_BUDGET ','RIVER_DRAPE_BUFFERS ','RIVER_DRAPE_BUFFER_FORMAT ')):print(line,flush=True)
+                if line.startswith(('RIVER_NATIVE_BUDGET ','RIVER_DRAPE_BUFFERS ','RIVER_DRAPE_BUFFER_FORMAT ','RIVER_PLAYBACK ')):print(line,flush=True)
+            if 'capture_' in script and args.review_seconds:
+                print('TEMP REVIEW '+folder,flush=True);time.sleep(min(60,args.review_seconds))
             if failed:
                 print('\n'.join(output.splitlines()[-12:]));return 1
-            if 'capture_' in script:print('Focused Metal rendering completed; temporary images discarded.')
+            if 'capture_' in script:
+                print('Focused Metal rendering completed; temporary images discarded.')
     return 0
 if __name__=='__main__':raise SystemExit(main())

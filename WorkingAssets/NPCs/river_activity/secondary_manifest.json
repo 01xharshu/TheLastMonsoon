@@ -1,0 +1,49 @@
+{
+  "integral_border": {
+    "style": "integral woven UV band",
+    "width_fraction": 0.035,
+    "editable_guide_retained": true,
+    "outward_winding": true,
+    "winding_corrected": true
+  },
+  "cotton_edge_finish": {
+    "boundary_vertices": 178,
+    "maximum_basis_shift_m": 0.006000027731950044,
+    "body_changed": false
+  },
+  "source": "WorkingAssets/NPCs/river_activity/river_activity_secondary.blend",
+  "source_sha256": "97a43d96258b5e809fc4be21bf04aab2a06481efe7960ceab7673e84252d13de",
+  "runtime": "characters/npcs/activity_people/river_activity_secondary.glb",
+  "runtime_sha256": "32943f2afbe3187807a5c7570cea1f755cd12547d9ec4937bc30e8b3b23c11d5",
+  "base_pose_fit": "WorkingAssets/NPCs/river_activity/river_activity_draped.blend",
+  "base_pose_fit_sha256": "bcdb59accba8edfee4025cfade237ee310327fba9b6bfc8dfef0c47a7e12d188",
+  "mpfb_profile_inputs": "WorkingAssets/NPCs/river_activity/mpfb_adult_breast_profiles.json",
+  "profiles": [
+    {
+      "id": "smaller",
+      "cupsize": 0.32999998807907105,
+      "mass_scale": 0.85
+    },
+    {
+      "id": "original",
+      "cupsize": 0.44999998807907104,
+      "mass_scale": 1.0
+    },
+    {
+      "id": "fuller",
+      "cupsize": 0.569999988079071,
+      "mass_scale": 1.15
+    }
+  ],
+  "mapped_body_vertices": 716,
+  "complete_body_vertices": 14517,
+  "base_rest_coordinates_unchanged": true,
+  "same_weights_body_foundation_outerwear": true,
+  "zero_motion_max_delta_m": 1.6875194986024685e-07,
+  "secondary_bones": [
+    "breast_l",
+    "breast_r"
+  ],
+  "clothing_support": 0.72,
+  "visual_approved": false
+}

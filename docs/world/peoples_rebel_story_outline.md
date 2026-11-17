@@ -189,3 +189,64 @@ Reusable auto-cleaning runner: python3 tools/world/run_community_story.py (focus
 Play from the current story: finish Mangal's active missions → take his village-help message to Chacha → ask about the missing witness → meet the village protectors outside the gate → confront the enforcer where they can see the attack → free the witness → walk with him into the courtyard → confirm safety. Remaining serious stories and factory construction stay assigned scope, not completed features. Final farmer-donor native contact/shelter pixels were inspected and deleted; clothes and face detail remain visibly simplified.
 
 Continue integration repair: the real temporary-slot load rebuilt completed witness/protector state and kept reputation unchanged. It exposed4 stale deferred `ConsignmentStory.register_witness` calls carrying freed actors during world replacement. Entry now accepts Variant and retains its existing live-Node3D guard, so rejection happens before Godot's typed Node argument conversion. This is a narrow lifecycle dependency fix; consignment route/order/payment code is preserved. The witness actors now enter the tree hidden/non-colliding at their real grounded coordinates; cached ankle heights shift with navigation/save relocation. First-frame hidden-state/ankle checks and fresh Metal samples PASS; final actual-world temporary-slot Continue regression PASS after the callback repair: new world rebuilt completed mission, defeated enforcer, three trusted protectors and unchanged reputation, with no reported script/resource/shutdown errors.
+
+## 14. Behind the Uniform — playable protection and confrontation, 15 October 2026
+
+Implemented in `story/community_uniform_mission.gd`, installed by CommunityStory,
+with shared interaction permissions, proximity checks, objectives/waypoint and the
+existing SaveManager community payload (version 3).
+
+Playable sequence after A Witness Taken is confirmed:
+
+1. Ask Chacha to read a private request. The content notice explicitly identifies
+   sexual violence against an adult; nothing is shown.
+2. Choose the brief non-graphic letter or skip directly to protection. Both paths
+   preserve the same mission, evidence and outcomes. The woman speaks through
+   private correspondence; there is no survivor model or acted assault.
+3. Speak at the sheltered witness's courtyard contact. He distinguishes threats
+   he witnessed from the assault he did not witness and permits a private record.
+4. Meet the existing protectors near the gate and agree a watch. This requires an
+   available living group member nearby. The existing trusted local group remains
+   the physical presence; there is no generalized distant crime-response system.
+5. Return to Chacha. Keep the record private or offer an intermediary selected by
+   the survivor. The offer is saved separately and never authorizes sending a
+   complaint. No external message or repeat reputation payout occurs.
+6. Challenge a separate soldier outside the gate after protection is agreed. He
+   threatens to take the sheltered witness. His actor uses the existing complete
+   MPFB private, AnimationTree, Vitality, real contact/swept movement and queued
+   navigation. The existing group can respond to his witnessed attack, with the
+   same trust, sight, occlusion and three-member cap as the original rescue.
+7. Defeat or incapacitate him, then return to Chacha for the safety aftermath.
+   Save/Continue retains his distinct health/death/knockout outcome, the sealed
+   account, watch agreement, intermediary offer and survivor consent boundary.
+   No second soldier is created on restore or repeated interaction.
+
+Only one additional soldier is spawned, deferred until confrontation. Existing
+world-scoped ground exclusions and simulation-budget intervals are reused.
+There is no new full-world scan or new human source. Distant quest/save state
+and collision remain; pre-encounter restore hides and disables only this
+mission-owned actor, independently of distance. Grounded setup precedes actor
+readiness, preserving the existing foot solver contract.
+
+Still required for the larger arc: survivor's later reply and chosen intermediary,
+independent corroboration beyond the threatening patrol, official suppression,
+and continuing household recovery. The watch agreement is saved narrative state;
+a household-specific autonomous protection routine is not implemented. This
+fictional episode adds no fresh historical assertions. The death inquiry, empty
+house, forced refusal, protected official and broader factory rescue candidates
+remain proposed until separately implemented and checked.
+
+Verification on 15 October: final `python3 tools/world/run_community_story.py
+--world` passed original rescue/physical escort, both letter branches, proximity,
+ordering, witnessed second-threat recruitment, distinct soldier knockout, safety
+report, no duplicate reward, disk save and fresh Continue (including soldier
+outcome/intermediary offer). Zero diagnostics in the final run. Focused native
+Metal passed and temporary notice/settled knockout pixels were inspected; the
+native run preceded the final logic-only player-body ray exclusion, covered by
+the later actual-world repeat. The inspection waits two seconds for the down
+animation before reading the outcome frame. Initial failures exposed the victim's
+body occluding the attacker ray; the ray now excludes that already-visible victim
+while preserving scene occlusion, trust and range checks. Actual combat inputs
+are staged through Vitality/mission contacts in this validator; it does not certify
+uninterrupted player-controlled combat, final clothing/contact art or world FPS.
+All owned temporary logs, saves and images were deleted after the runners exited.

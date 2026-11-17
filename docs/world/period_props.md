@@ -33,3 +33,11 @@ The code deliberately blocks walk-step over these small props after contact with
 ## Shared asset scenes — 2026-09-30
 
 The seven placements now instantiate reusable floor-normalized scenes in `objects/household/storage/`; source packages and world coordinates remain unchanged. The crate collider was corrected from a wide X-axis box to match its long Z-axis body. Fresh native-render and contact review, pending actions and limitations: [asset batch 03](../assets/household_batch_03.md).
+
+### Bhairavpur trade and mountain refuge
+
+The Bhairavpur market has two pottery counters with earthen matkas and shallow dishes, a brassware counter with lotas, and a merchant counter with a beam balance, suspended pans and loose weights. The northern mountain refuge has a water jar on the timber floor and a lota and serving dish on its bench. Vessels use original reusable profiles with a visible rim and interior. The balance and dishes are static scenery. The existing counter and refuge footprints keep the objects out of the travelled lanes.
+
+The models are original interpretations of everyday forms. The lota uses the rounded body, narrowed neck and open lip documented by [LACMA's 19th-century Indian lota](https://collections.lacma.org/object/134719). The suspended pans and pin fulcrum are informed by the [Science Museum Group's 19th-century Madras balance](https://collection.sciencemuseumgroup.org.uk/objects/co57858/equal-arm-balances). These references support the forms. Placement and shop arrangements are designed for the fictional settlement.
+
+Review with `TLM_PERIOD_REVIEW=1 python3 tools/world/run_tutorial_guard_check.py --native --review --checks validate_remote_mountains validate_remote_mountain_world`. The focused check captures the refuge vessels and exercises the walking approach. The full world captures the market after the normal opening handoff. Review output is disposable.

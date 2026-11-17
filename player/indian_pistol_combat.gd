@@ -1,0 +1,127 @@
+extends Node
+## Single-shot Indian percussion sidearm: its own chamber and reload state.
+const CAPACITY := 1
+const weapon_selection := 6
+const SHOT = preload("res://audio/weapons/adams_shot.wav")
+const RELOAD_CLICK = preload("res://audio/weapons/aim_click.wav")
+var shot_sound: AudioStreamPlayer3D
+var reload_sound: AudioStreamPlayer3D
+const LoadingSequence = preload("res://player/pistol_loading_sequence.gd")
+const RELOAD_SECONDS := 4.0
+const MUZZLE := Vector3(.181,.026,0)
+var rounds := CAPACITY
+var reload_remaining := 0.0
+var aiming := false
+var shots_fired := 0
+var recoil := 0.0
+var reload_clicks := 0
+var reload_charges := 1
+var reload_duration := RELOAD_SECONDS
+@onready var actor: CharacterBody3D = get_parent()
+@onready var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
+@onready var camera: Camera3D = actor.get_node("CameraPivot/SpringArm3D/Camera3D")
+
+func _ready() -> void:
+	shot_sound = AudioStreamPlayer3D.new()
+	shot_sound.stream = SHOT
+	shot_sound.max_distance = 120
+	shot_sound.volume_db = -12
+	actor.add_child.call_deferred(shot_sound)
+	reload_sound = AudioStreamPlayer3D.new()
+	reload_sound.stream = RELOAD_CLICK
+	reload_sound.volume_db = -15.0
+	actor.add_child.call_deferred(reload_sound)
+
+func available() -> bool:
+	if not preload("res://systems/action_permissions.gd").allowed(actor,&"attack"): return false
+	if actor.get_meta("tutorial_reading",false): return false
+	if actor.get_meta("telescope_open", false): return false
+	if actor.get_meta("detention_action", "") != "": return false
+	var equipment: Node3D = visual.equipment
+	var mounted: bool = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)!=null and not preload("res://story/rear_passenger_combat.gd").fire_ready(actor)
+	return equipment != null and actor.is_physics_processing() and not actor.is_swimming and not mounted and not actor.get_meta("climbing",false) and not actor.inventory_ui.is_open() and not actor.get_meta("map_open",false) and not actor.get_meta("scroll_open",false) and not actor.get_meta("weapon_wheel_open",false) and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or DisplayServer.get_name() == "headless") and not equipment.stowed and equipment.selected == weapon_selection
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not available(): return
+	if event.is_action_pressed("reload"):
+		start_reload()
+		get_viewport().set_input_as_handled()
+
+func _process(delta: float) -> void:
+	if reload_remaining > 0.0 and (visual.equipment.stowed or visual.equipment.selected != weapon_selection):
+		cancel_reload()
+	if actor.get_meta("detention_action", "") != "":
+		aiming = false
+		return
+	recoil = move_toward(recoil, 0.0, delta * 0.38)
+	if reload_remaining > 0.0:
+		var previous_step: int = LoadingSequence.state(1.0-reload_remaining/reload_duration,reload_charges).inserted
+		reload_remaining = maxf(0.0,reload_remaining-delta)
+		var current_step: int = LoadingSequence.state(1.0-reload_remaining/reload_duration,reload_charges).inserted
+		if current_step > previous_step:
+			reload_clicks += current_step-previous_step
+			reload_sound.play()
+		if reload_remaining == 0.0: _finish_reload()
+	aiming = available() and reload_remaining == 0.0 and Input.is_action_pressed("aim")
+	if not available(): return
+	visual.equipment.aiming = aiming
+	visual.equipment.recoil = recoil
+	visual.equipment.aim_direction = -camera.global_basis.z
+	if aiming:
+		var barrel := (-camera.global_basis.z).normalized()
+		var local_direction: Vector3 = actor.global_basis.inverse()*barrel
+		actor.get_node("VisualRoot").rotation.y = atan2(local_direction.x,local_direction.z)
+
+func fire() -> bool:
+	if not available() or not aiming or reload_remaining > 0.0: return false
+	if rounds <= 0:
+		actor.inventory.message_requested.emit("Pistol empty")
+		return false
+	rounds -= 1
+	shots_fired += 1
+	recoil = 0.075
+	visual.equipment.recoil = recoil
+	ControllerFeedback.pulse("shot")
+	var origin: Vector3 = visual.equipment.indian_pistol_hand.to_global(MUZZLE)
+	var target := camera.global_position-camera.global_basis.z*90.0
+	var camera_query := PhysicsRayQueryParameters3D.create(camera.global_position,target)
+	camera_query.exclude = [actor.get_rid()]
+	var camera_hit := preload("res://combat/ballistic_trace.gd").sight(actor.get_world_3d().direct_space_state,get_tree(),camera_query.from,camera_query.to,preload("res://story/rear_passenger_combat.gd").camera_exclusions(actor))
+	if not camera_hit.is_empty(): target = camera_hit.position
+	var shot_query := PhysicsRayQueryParameters3D.create(origin,target+(target-origin).normalized()*.05)
+	shot_query.exclude = [actor.get_rid()]
+	var hit := preload("res://combat/ballistic_trace.gd").shoot(actor.get_world_3d().direct_space_state,get_tree(),shot_query.from,shot_query.to,38.0,[actor.get_rid()])
+	if not hit.is_empty():
+		actor.get_node("RifleCombat").add_impact(hit)
+	actor.get_node("RifleCombat").muzzle_effect(origin)
+	shot_sound.global_position = origin
+	shot_sound.play()
+	return true
+
+func cancel_reload() -> void:
+	if reload_remaining <= 0.0: return
+	# Balls are consumed only at completion, so there is no reservation to refund.
+	reload_remaining = 0.0
+	aiming = false
+	visual.equipment.pistol_charge.hide()
+	if reload_sound: reload_sound.stop()
+
+func start_reload() -> bool:
+	if actor.get_meta("item_use", "") != "": return false
+	if not available() or reload_remaining > 0.0 or rounds >= CAPACITY or actor.inventory.get_item_count("pistol_ball") <= 0: return false
+	reload_charges = mini(CAPACITY-rounds,actor.inventory.get_item_count("pistol_ball"))
+	reload_duration = LoadingSequence.duration(reload_charges)
+	reload_remaining = reload_duration
+	recoil = 0.0
+	reload_clicks = 0
+	reload_sound.play()
+	return true
+
+func _finish_reload() -> void:
+	var amount := mini(reload_charges,mini(CAPACITY-rounds,actor.inventory.get_item_count("pistol_ball")))
+	if amount > 0 and actor.inventory.remove_item("pistol_ball",amount): rounds += amount
+
+func get_hud_text() -> String:
+	if not available(): return visual.equipment.held_name()
+	if reload_remaining > 0: return "INDIAN PISTOL · RELOADING %.1fs" % reload_remaining
+	return "INDIAN PISTOL · %d / %d" % [rounds,actor.inventory.get_item_count("pistol_ball")]

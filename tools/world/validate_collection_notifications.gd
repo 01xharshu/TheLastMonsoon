@@ -77,6 +77,7 @@ func _run() -> void:
 		pickup.global_position = actor.global_position
 		assert(pickup.interaction_icon == Catalog.icon(item))
 		pickup.interact(actor)
+		actor.get_node("UI").get_children().back().confirm(true)
 		expect(item, 1)
 		var bundles := {"enfield": ["paper_cartridges",24], "bow": ["arrow",24], "pistol": ["pistol_ball",30], "double_gun": ["shot_charge",16]}
 		assert(overlay.rewards.size() == (2 if bundles.has(item) else 1))

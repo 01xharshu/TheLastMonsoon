@@ -4,6 +4,7 @@ var map: Control
 var elapsed := 0.0
 var heading := 0.0
 var radar_material: ShaderMaterial
+var contact_points: Array[Dictionary]=[]
 const RANGE := 120.0 # 60 m around the player; local street navigation.
 const GOLD := Color(1.0,0.76,0.12)
 const CENTRE := Vector2(90,90)
@@ -42,6 +43,7 @@ func _refresh() -> void:
 	radar_material.set_shader_parameter("world_center",(actor+Vector2.ONE*map.Layout.HALF)/map.Layout.SIZE)
 	radar_material.set_shader_parameter("world_span",RANGE/map.Layout.SIZE)
 	radar_material.set_shader_parameter("heading",heading)
+	contact_points=map.contacts.sample(map.player)
 	queue_redraw()
 func point(world: Vector2, actor: Vector2) -> Vector2:
 	return CENTRE+((world-actor)/RANGE*RADIUS*2.0).rotated(heading)
@@ -59,10 +61,19 @@ func _draw() -> void:
 	for z in range(int(actor.y-RANGE),int(actor.y+RANGE),8):
 		_road_line(point(Vector2(map.layout.road_x(z),z),actor),point(Vector2(map.layout.road_x(z+8),z+8),actor))
 	for site in map.sites:
-		var at := point(map.sites[site],actor)
-		if at.distance_to(CENTRE)<RADIUS-10: draw_texture_rect(map.icons[map.site_kind(site)],Rect2(at-Vector2(6,6),Vector2(12,12)),false,Color(.3,.2,.1))
+		if site not in map.shop_sites:
+			_draw_site(site, actor, 12)
+	for shop in map.shop_sites:
+		_draw_site(shop, actor, 14)
+	for contact in contact_points:
+		var at:=point(contact.position,actor)
+		var radius:=at.distance_to(CENTRE)
+		if radius>RADIUS-3:continue
+		var color: Color=contact.color
+		color.a*=1.0-smoothstep(RADIUS*.85,RADIUS,radius)
+		draw_circle(at,2.8,color)
 	draw_colored_polygon(PackedVector2Array([CENTRE+Vector2(0,-8),CENTRE+Vector2(5,5),CENTRE+Vector2(0,2),CENTRE+Vector2(-5,5)]),Color(.97,.94,.83))
-	if map.waypoint.is_finite():
+	if map.waypoint.is_finite() and not map.player.get_meta("suppress_destination_marker",false):
 		var at := point(map.waypoint,actor)
 		var offset := at-CENTRE
 		if offset.length() > RADIUS-10:
@@ -73,8 +84,7 @@ func _draw() -> void:
 		else:
 			draw_colored_polygon(PackedVector2Array([at+Vector2(0,-6),at+Vector2(6,0),at+Vector2(0,6),at+Vector2(-6,0)]),GOLD)
 			draw_circle(at,2,Color(.15,.12,.05))
-	draw_arc(CENTRE,RADIUS+2,0,TAU,96,Color(.04,.05,.04,.9),4,true)
-	draw_arc(CENTRE,RADIUS+3,0,TAU,96,Color(.82,.66,.38),1,true)
+	# Terrain feather replaces the former solid circular frame.
 	var north := CENTRE+Vector2(0,-RADIUS+13).rotated(heading)
 	draw_string(map.FONT,north+Vector2(-5,5),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(.95,.9,.75))
 
@@ -89,4 +99,18 @@ func _road_line(start: Vector2, end: Vector2) -> void:
 	if discriminant < 0: return
 	var low := maxf(0.0,(-b-sqrt(discriminant))/(2.0*a))
 	var high := minf(1.0,(-b+sqrt(discriminant))/(2.0*a))
-	if low <= high: draw_line(start+delta*low,start+delta*high,Color(.42,.29,.14),2,true)
+	if low <= high:
+		var from:=start+delta*low
+		var to:=start+delta*high
+		var steps:=maxi(1,int(ceil(from.distance_to(to)/3.0)))
+		for index in steps:
+			var a_point:=from.lerp(to,float(index)/steps)
+			var b_point:=from.lerp(to,float(index+1)/steps)
+			var alpha:=1.0-smoothstep(RADIUS*.70,RADIUS,((a_point+b_point)*.5).distance_to(CENTRE))
+			draw_line(a_point,b_point,Color(.42,.29,.14,alpha),2,true)
+
+func _draw_site(site: String, actor: Vector2, diameter: float) -> void:
+	var at := point(map.sites[site], actor)
+	if at.distance_to(CENTRE) < RADIUS - 10:
+		var dimensions := Vector2.ONE * diameter
+		draw_texture_rect(map.icons[map.site_kind(site)], Rect2(at-dimensions*.5,dimensions),false,Color(.3,.2,.1))

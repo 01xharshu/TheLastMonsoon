@@ -20,7 +20,7 @@ func run() -> void:
 	current_scene._finish()
 	await create_timer(0.75).timeout
 	check(current_scene.get_script().resource_path == "res://ui/main_menu.gd", "Startup uses wrong menu script")
-	check(current_scene.main_panel.get_child(0).text == "THE LAST\nMONSOON", "Startup does not use revised title")
+	check(current_scene.play_button.accessibility_name == "New Game", "Startup does not use revised title")
 	current_scene.show_settings()
 	check(current_scene.page == "settings", "Settings unavailable")
 	var title_settings: Node=current_scene.column.find_child("SettingsPanel",true,false)
@@ -32,7 +32,7 @@ func run() -> void:
 	current_scene.play_button.pressed.emit()
 	if current_scene != null and current_scene.page == "new_game":
 		for button in current_scene.column.get_children():
-			if button is Button and button.text == "Begin New Journey":button.pressed.emit();break
+			if button is Button and button.text == "Confirm":button.pressed.emit();break
 	await scene_changed
 	while preload("res://systems/world_startup.gd").current != null:await process_frame
 	for frame in 4:await process_frame
@@ -106,7 +106,7 @@ func run() -> void:
 	for i in 5: await process_frame
 	check(current_scene != world and current_scene.get_script().resource_path == "res://ui/main_menu.gd", "Return action did not load live menu")
 	check(not paused and current_scene.page == "main", "Return left menu paused or hidden")
-	check(current_scene.main_panel.get_child(0).text == "THE LAST\nMONSOON", "Return uses stale title")
+	check(current_scene.play_button.accessibility_name == "New Game", "Return uses stale title")
 	await create_timer(0.9).timeout
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw

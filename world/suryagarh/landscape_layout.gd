@@ -135,6 +135,21 @@ func river_width(z: float) -> float:
 	# purely scenic sea. Keep the same coast for terrain, swimming and water mesh.
 	return 55.0 + 8.0 * sin(z * 0.008 + 1.0) + 340.0 * smoothstep(500.0,850.0,z) + 5600.0 * smoothstep(850.0,1600.0,z)
 
+# Two gently graded low-lying reaches along the western riverbank.  Distance
+# is measured from the same channel used by water, boats and swimming.
+const LOW_BANK_CENTRES: Array[float] = [-48.0, 312.0]
+func low_bank_weight(x: float, z: float) -> float:
+	var longitudinal := 0.0
+	for center in LOW_BANK_CENTRES:
+		longitudinal=maxf(longitudinal,1.0-smoothstep(30.0,46.0,absf(z-center)))
+	if longitudinal<=0.0:return 0.0
+	var inland:float=river_x(z)-river_width(z)-x
+	return longitudinal*smoothstep(-10.0,-2.0,inland)*(1.0-smoothstep(24.0,42.0,inland))
+
+func low_bank_height(x: float, z: float) -> float:
+	var inland:float=river_x(z)-river_width(z)-x
+	return lerpf(-1.5,WATER_LEVEL+.05,smoothstep(-6.0,3.0,inland))+.015*maxf(0.0,inland-3.0)
+
 func road_x(z: float) -> float:
 	return -210.0 + 42.0 * sin(z * 0.005)
 
@@ -283,6 +298,8 @@ func base_height(x: float, z: float) -> float:
 			total_weight += weight
 		if total_weight > 0.0001:
 			h = lerpf(h,weighted_height/total_weight,1.0-smoothstep(4.0,21.0,nearest_road))
+	var low_weight:=low_bank_weight(x,z)
+	if low_weight>0.0:h=lerpf(h,low_bank_height(x,z),low_weight)
 	return h
 
 func normal(x: float, z: float) -> Vector3:

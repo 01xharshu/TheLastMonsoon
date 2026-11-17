@@ -36,7 +36,35 @@ func run() -> void:
  check(story.active and story.kind=="inquiry","main gate starts cinematic")
  if not story.active:world.queue_free();await process_frame;quit(1);return
  check(not player.is_physics_processing() and player.get_meta("story_cinematic",false),"cinematic contains gameplay")
+ var laughter_beats: Array = story.beats.filter(func(beat: Dictionary) -> bool: return beat.get("laughter",false))
+ check(laughter_beats.size()==1 and story.mocking_laughter.stream!=null,"station includes one recorded laughter reaction")
+ if laughter_beats.size()==1 and story.mocking_laughter.stream!=null:
+  check(float(laughter_beats[0].seconds)>=story.mocking_laughter.stream.get_length(),"laughter finishes before next dialogue")
  check(not root.get_node("SaveManager").save_game(world,1),"cinematic saving blocked")
+ var attendant: Node3D=inquiry.police_prompt.get_meta("attendant")
+ var attendant_post: Transform3D=story.reception_post
+ check(attendant.get_meta("inquiry_at_desk",false),"desk officer is already seated as Arjun enters")
+ # Skip both an early and a mid-inquiry frame; neither may leave Arjun at the skip point.
+ for checkpoint in [0,12]:
+  while story.beat_index<checkpoint:
+   story.age=float(story.beats[story.beat_index].seconds);story.update_acting(0.0,1.0)
+   story.beat_index+=1;story.enter_beat()
+   if story.beats[story.beat_index].get("laughter",false):check(story.mocking_laughter.playing,"mocking reaction plays recorded laughter")
+  if checkpoint==12:
+   check(story.dialogue_voice.playing and story.dialogue_voice.stream!=null,"district officer voice starts on its actual dialogue beat")
+  story.skip_cinematic()
+  check(not story.dialogue_voice.playing and not story.mocking_laughter.playing,"skip stops the active voice and laughter")
+  check(attendant.global_transform.is_equal_approx(attendant_post) and not attendant.has_meta("inquiry_at_desk"),"desk officer returns to standing post after consecutive dialogue beats")
+  var expected: Vector3=world.get_node("ChachaHouse").to_global(Vector3(-3,1.1,1.5))
+  check(player.global_position.distance_to(expected)<.01 and story.state=="farm" and inquiry.stage=="released","skip inquiry reaches recovered house endpoint from checkpoint "+str(checkpoint))
+  check(player.health==player.MAX_HEALTH and not player.get_meta("story_cinematic",false),"skip inquiry restores health/control ownership")
+  if checkpoint==0:
+   var before_lesson: Dictionary=story.export_state()
+   story.chacha.global_position+=Vector3(20,0,0)
+   story.restore_state(before_lesson)
+   check(story.chacha.global_position.distance_to(story.community.farm.to_global(Vector3(-5,0,2)))<.1,"farm-stage save restores Chacha before lesson starts")
+  story.state="awaiting_inquiry";inquiry.stage="police"
+  check(story.start_inquiry("police"),"inquiry can restart in reusable skip fixture")
  # Verify the day ratio through the production clock, including the pause gate.
  var before: float=clock.total_game_minutes
  clock._process(600.0)
@@ -48,6 +76,10 @@ func run() -> void:
   await review_acting(story,inquiry,player,temporary)
   story.finish()
   print("STORY ACTING: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
+  if DisplayServer.get_name()!="headless" and OS.get_environment("TLM_GLOW_REVIEW")!="":
+   print("STORY ACTING REVIEW READY")
+   var deadline:=Time.get_ticks_msec()+90000
+   while Time.get_ticks_msec()<deadline and not FileAccess.file_exists(temporary.path_join("acting_done")):await process_frame
   world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1);return
  story.set_process(false)
  var cues: Array[String]=[]
@@ -59,6 +91,32 @@ func run() -> void:
  check("collar" in cues and "beating" in cues and "collapse" in cues and "drink" in cues,"collar beating unconscious recovery story")
  check(story.state=="farm" and player.health==100 and player.is_physics_processing(),"recovery heals and returns control")
  check(inquiry.stage=="released","cinematic replaces old automatic custody")
+ await check_office_drawer(story,inquiry,player,temporary)
+ if OS.get_environment("TLM_CINEMATIC_ENDPOINTS")=="1":
+  story.first_chacha_seen=false
+  player.global_position=story.chacha.global_position+Vector3(0,.9,1.5)
+  check(story.begin_optional(),"optional conversation starts")
+  story._process(.01)
+  if DisplayServer.get_name()!="headless" and OS.get_environment("TLM_GLOW_REVIEW")!="":
+   var light:=DirectionalLight3D.new();world.add_child(light);light.rotation_degrees=Vector3(-45,-30,0);light.light_energy=1.5
+   await RenderingServer.frame_post_draw
+   root.get_texture().get_image().save_png(temporary.path_join("conversation_facing.png"))
+  var toward: Vector3=story.chacha.global_position-player.global_position;toward.y=0
+  check(player.visual_root.global_basis.z.dot(toward.normalized())>.99,"player faces Chacha during conversation")
+  check(story.chacha.global_basis.z.dot(-toward.normalized())>.99,"Chacha faces player during conversation")
+  for eye in [player.global_position+Vector3.UP*.55,story.chacha.global_position+Vector3.UP*1.35]:
+   var sight:=PhysicsRayQueryParameters3D.create(eye,story.camera.global_position,1,story.camera_exclusions)
+   check(world.get_world_3d().direct_space_state.intersect_ray(sight).is_empty(),"conversation camera has clear sight to both people")
+  story.skip_cinematic()
+  check(story.first_chacha_seen and not story.active,"optional skip commits dialogue flag and releases control")
+  check(not player.get_node("ConversationFacing").is_processing(),"conversation releases late facing owner immediately")
+  print("CINEMATIC ENDPOINTS ","PASS" if failures.is_empty() else "FAIL",failures)
+  if DisplayServer.get_name()!="headless" and OS.get_environment("TLM_GLOW_REVIEW")!="":
+   print("FACING REVIEW READY")
+   var deadline:=Time.get_ticks_msec()+90000
+   while Time.get_ticks_msec()<deadline and not FileAccess.file_exists(temporary.path_join("facing_done")):await process_frame
+  await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
+  return
  story.set_process(true)
  player.global_position=story.community.farm.to_global(Vector3(0,.9,3));player.velocity=Vector3.ZERO
  for frame in 20:await physics_frame
@@ -99,6 +157,10 @@ func run() -> void:
  print("SWORD PRACTICE ",story.lesson," hit ",partner.get_meta("training_hit",""))
  check(story.lesson==2,"animated blade contact advances sword lesson")
  if story.active:story.finish()
+ # Jump from clear ground rather than directly into the demonstration partner.
+ player.global_position=partner.global_position+Vector3(0,.9,-3);player.velocity=Vector3.ZERO
+ player.visual_root.global_rotation.y=0
+ for settle in 20:await physics_frame
  Input.action_press("jump")
  for frame in 3:await physics_frame
  Input.action_release("jump")
@@ -119,6 +181,10 @@ func run() -> void:
  print("SPEAR PRACTICE ",story.lesson," hit ",partner.get_meta("training_hit",""))
  check(story.lesson==5,"physical spear contact advances lesson")
  if story.active:story.finish()
+ # Jump from clear ground rather than directly into the demonstration partner.
+ player.global_position=partner.global_position+Vector3(0,.9,-3);player.velocity=Vector3.ZERO
+ player.visual_root.global_rotation.y=0
+ for settle in 20:await physics_frame
  Input.action_press("jump")
  for frame in 3:await physics_frame
  Input.action_release("jump")
@@ -154,6 +220,68 @@ func run() -> void:
  print("DEV STORY: "+("PASS" if failures.is_empty() else "FAIL "+str(failures)))
  world.queue_free();await process_frame;call_deferred("finish",0 if failures.is_empty() else 1)
 func finish(code: int) -> void:preload("res://tools/test_audio_cleanup.gd").finish(self,code)
+
+func review_confrontation(story: Node,inquiry: Node,player: Node3D,temporary: String) -> void:
+ var station: Node3D=inquiry.station
+ var official: Node3D=inquiry.officials[0]
+ for index in story.beats.size():
+  if story.beats[index].cue=="collar":
+   story.beat_index=index
+   break
+ story.release_reception_seat()
+ player.global_position=station.to_global(story.CHAMBER_VISITOR)
+ var seat := official.global_position
+ story.enter_beat()
+ check(not story.hero_path.is_empty(),"Arjun has a capsule-width route around the desk")
+ var exclusions: Array[RID] = inquiry.coordinator.exclusions.duplicate()
+ if not inquiry.coordinator.exclusions.has(player.get_rid()):
+  inquiry.coordinator.exclusions.append(player.get_rid())
+ inquiry.coordinator.debug_contacts=true
+ var captured: Dictionary={}
+ var deadline := Time.get_ticks_msec()+25000
+ var handoff := Vector3.INF
+ var grab_seen := false
+ while story.cue!="beating" and Time.get_ticks_msec()<deadline:
+  await process_frame
+  if story.cue=="collar" and story.age<3.6:
+   check(official.seated and official.global_position.distance_to(seat)<.01,"superior remains at chair through Arjun's approach")
+   var at: Vector3=player.global_position-station.global_basis.y*.9
+   if not inquiry.coordinator.clear_at(at,.4) and not failures.has("Arjun's moving capsule clears the desk and furniture"):
+    print("STORY CONTACT CHAMBER BLOCK ",inquiry.coordinator.last_clear_failure)
+    check(false,"Arjun's moving capsule clears the desk and furniture")
+  if story.cue=="collar" and story.age>5.2:
+   grab_seen=true
+   handoff=player.global_position
+   check(story.collar_contact_error<.08,"moving approach lands both palms at the collar")
+  if story.cue=="guards" and story.age>7.6:
+   for index in inquiry.guards.size():
+    var guard: Node3D=inquiry.guards[index]
+    var post: Vector3=station.to_global(story.CHAMBER_GUARD_POSTS[index])
+    if guard.global_position.distance_to(post)>=.28 and not failures.has("guard reaches chair-side restraint post "+str(index)):
+     print("STORY CONTACT CHAMBER GUARD ",index," at ",station.to_local(guard.global_position)," goal ",station.to_local(post)," remaining ",story.entrance_paths[index].size())
+     check(false,"guard reaches chair-side restraint post "+str(index))
+  var label := ""
+  if story.cue=="collar" and story.age>1.4 and story.age<3.6:label="approach"
+  if story.cue=="collar" and story.age>5.2:label="grab"
+  if story.cue=="guards" and story.age>7.6:label="guards_at_desk"
+  if not label.is_empty() and not captured.has(label) and DisplayServer.get_name()!="headless":
+   captured[label]=true
+   RenderingServer.force_draw(false)
+   root.get_texture().get_image().save_png(temporary.path_join(label+".png"))
+ inquiry.coordinator.exclusions.assign(exclusions)
+ inquiry.coordinator.debug_contacts=false
+ check(grab_seen and story.cue=="beating","chair-side confrontation advances naturally to beating")
+ check(player.global_position.distance_to(handoff)<.12,"guard handoff holds Arjun at the grab location")
+ var strike_errors := [INF,INF,INF,INF]
+ while story.cue=="beating" and story.age<5.0 and Time.get_ticks_msec()<deadline:
+  await process_frame
+  var strike: int = int(story.age/1.35)
+  var phase := fmod(float(story.age),1.35)/1.35
+  if strike<4 and phase>.46 and phase<.57:
+   strike_errors[strike]=minf(strike_errors[strike],story.strike_contact_error)
+ for index in strike_errors.size():
+  check(strike_errors[index]<.12,"live strike reaches after chair-side handoff "+str(index)+" error "+str(strike_errors[index]))
+ story.set_process(false)
 
 func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -> void:
  if DisplayServer.get_name()!="headless":
@@ -211,6 +339,9 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
      root.get_texture().get_image().save_png(temporary.path_join("natural_"+key+".png"))
   check(held_frames>0,"uninterrupted recovery reaches drinking")
   return
+ if OS.get_environment("TLM_STORY_POLICE_REVIEW")=="confrontation":
+  await review_confrontation(story,inquiry,player,temporary)
+  return
  if OS.get_environment("TLM_STORY_POLICE_NATURAL")=="1":
   var captured: Dictionary={}
   var contact_frames:=0
@@ -234,10 +365,12 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
  story.set_process(false);story.set_physics_process(false)
  if OS.get_environment("TLM_STORY_REVIEW_FAST")=="1":story.shade.hide()
  var cues: Array[String]=["entry","chamber","humiliation","collar","beating","collapse","discard","throw","rescue","support_walk","bed_arrival","bed_sit","tea_offer","drink"]
+ if OS.get_environment("TLM_STORY_POLICE_REVIEW")=="desk":cues=["entry","reception"]
  if OS.get_environment("TLM_STORY_POLICE_REVIEW")=="1":cues=["entry","reception","chamber","humiliation","objection","collar","guards"]
  for cue in cues:
   for i in story.beats.size():
-   if story.beats[i].cue==cue:story.beat_index=i;break
+   if story.beats[i].cue==cue and (cue!="reception" or story.beats[i].speaker=="Station officer"):
+    story.beat_index=i;break
   story.enter_beat()
   print("ACTING REVIEW ",cue)
   var times: Array[float]=[1.0]
@@ -259,6 +392,15 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
     # The rest controller also animates model placement outside the tree.
     story.visual._process(1.0)
    story.pose.tree.advance(0)
+   if cue=="reception":
+    var officer: Node3D=inquiry.police_prompt.get_meta("attendant")
+    officer.pose_inquiry_desk()
+    for side in ["l","r"]:
+     var across := .18 if side=="l" else -.18
+     var bone: int=officer._skeleton.find_bone("foot_"+side)
+     var ankle: Vector3=officer._skeleton.to_global(officer._skeleton.get_bone_global_pose(bone).origin)
+     check(ankle.distance_to(officer.to_global(Vector3(across,.53,.43)))<.04,"desk officer plants "+side+" ankle by chair")
+     check(officer.palm_world(side).distance_to(officer.to_global(Vector3(across,1.36,.60)))<.07,"desk officer reaches "+side+" desktop")
    # Let graph/locomotion evaluate, then apply director-owned contacts last.
    await process_frame
    story.update_acting(0,t)
@@ -293,7 +435,11 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
     if cue in ["collar","guards","discard","rescue","support_walk","bed_sit","tea_offer","drink"]:
      story.set_process(true)
      await process_frame
-    await RenderingServer.frame_post_draw
+    if cue in ["entry","reception"]:
+     await process_frame
+     RenderingServer.force_draw(false)
+    else:
+     await RenderingServer.frame_post_draw
     story.set_process(false)
     if cue=="collar" and sample>=5:
      var after_draw:=0.0
@@ -314,3 +460,57 @@ func review_acting(story: Node,inquiry: Node,player: Node3D,temporary: String) -
      print("STORY RENDERED CARRY error=",after_draw)
      check(after_draw<.06,"carry posture and palms survive rendered-frame evaluation")
     root.get_texture().get_image().save_png(temporary.path_join(cue+"_"+str(sample)+".png"))
+
+
+func check_office_drawer(story: Node,inquiry: Node,player: Node3D,temporary: String) -> void:
+ var home:=player.global_transform
+ var physics_enabled:=player.is_physics_processing()
+ var mouse_mode:=Input.mouse_mode
+ Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+ var original_state: Dictionary=inquiry.export_state()
+ inquiry.update_office_assignment()
+ story.state="awaiting_inquiry"
+ check(not inquiry.can_request("office_drawer"),"office drawer unavailable outside farm lead")
+ story.state="farm"
+ player.global_position=inquiry.drawer_prompt.global_position+Vector3(0,.48,-.52)
+ player.velocity=Vector3.ZERO
+ var guard: Node3D=inquiry.guards[0]
+ var guard_home:=guard.global_transform
+ guard.global_position=inquiry.station.to_global(Vector3(-11,0,-7))
+ check(not inquiry.can_request("office_drawer"),"occupied office blocks drawer")
+ guard.global_transform=guard_home
+ check(inquiry.request("office_drawer",player),"vacant mission office allows drawer to open")
+ player.set_physics_process(false)
+ await create_timer(.4).timeout
+ check(inquiry.office_drawer.position.z<-.73,"drawer slides out")
+ var review:=DisplayServer.get_name()!="headless" and OS.get_environment("TLM_TUTORIAL_OUTPUT")!=""
+ if review:
+  var camera:=Camera3D.new()
+  inquiry.station.add_child(camera)
+  camera.position=Vector3(-7.7,1.66,-8.9)
+  player.hide()
+  camera.look_at(inquiry.station.to_global(Vector3(-9.5,.55,-7.45)))
+  camera.make_current()
+  await RenderingServer.frame_post_draw
+  root.get_texture().get_image().save_png(temporary.path_join("official_drawer.png"))
+  camera.queue_free()
+  player.show()
+  story.gameplay_camera.make_current()
+ player.set_physics_process(physics_enabled)
+ Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+ var prior_count: int=player.inventory.get_item_count("pistol")
+ check(inquiry.request("office_drawer",player),"second interaction takes exposed revolver")
+ check(player.inventory.get_item_count("pistol")==prior_count+1,"drawer awards playable Adams inventory item")
+ inquiry.restore_state(inquiry.export_state())
+ check(not inquiry.can_request("office_drawer") and not inquiry.drawer_pistol.visible,"claimed drawer remains empty after restore")
+ if player.inventory.get_item_count("pistol")>prior_count:player.inventory.remove_item("pistol",1)
+ inquiry.restore_state(original_state)
+ player.global_transform=home
+ player.velocity=Vector3.ZERO
+ if review:
+  print("OFFICE DRAWER REVIEW READY")
+  var deadline:=Time.get_ticks_msec()+45000
+  while Time.get_ticks_msec()<deadline and not FileAccess.file_exists(temporary.path_join("office_done")):await process_frame
+ player.global_transform=home
+ player.set_physics_process(physics_enabled)
+ Input.mouse_mode=mouse_mode

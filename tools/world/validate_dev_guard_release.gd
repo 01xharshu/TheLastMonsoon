@@ -8,8 +8,20 @@ func _initialize()->void:run.call_deferred()
 func run()->void:
 	var world:Node3D=load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world);current_scene=world
-	for frame in 30:await physics_frame
-	var story:Node=world.get_node("DevStory")
+	var deadline := Time.get_ticks_msec()+90000
+	while (world.get_node_or_null("DevStory")==null or not world.get_node("DevStory").configured) and Time.get_ticks_msec()<deadline:
+		await process_frame
+	var story:Node=world.get_node_or_null("DevStory")
+	if story==null:
+		push_error("Station setup did not complete")
+		quit(1)
+		return
+	var opening: Node=world.get_node_or_null("OpeningSequence")
+	if opening!=null:
+		opening.skip_cinematic()
+	story.player.set_meta("document_busy",false)
+	story.player.set_meta("opening_active",false)
+	story.player.get_node("UI/HUDRoot/MorningTutorial").restore_step(11)
 	story.set_process(false)
 	check(story.start_inquiry(),"actual inquiry staging starts")
 	var worst_contact:=0.0
@@ -19,7 +31,7 @@ func run()->void:
 		for index in story.beats.size():
 			if story.beats[index].cue==cue:story.beat_index=index;break
 		if cue=="collapse":
-			story.player.global_position=story.inquiry.station.to_global(Vector3(-7.8,.9,-4.82))
+			story.player.global_position=story.inquiry.station.to_global(story.CHAMBER_GRAB)
 			story.stage_action("beating")
 		story.enter_beat()
 		var cue_spacing:=INF
@@ -36,8 +48,8 @@ func run()->void:
 				worst_ground=maxf(worst_ground,absf(on_floor.y-guards[index].global_position.y))
 			if cue=="discard" and frame>2:worst_contact=maxf(worst_contact,story.carry_contact_error)
 		print("DEV GUARD RELEASE SAMPLE ",cue," spacing=",cue_spacing)
-		if DisplayServer.get_name()!="headless":
-			await RenderingServer.frame_post_draw
+		if DisplayServer.get_name()!="headless" and not OS.get_environment("TLM_GLOW_REVIEW").is_empty():
+			RenderingServer.force_draw(false)
 			var temporary:=OS.get_environment("TLM_STORY_TEST_DIR")
 			root.get_texture().get_image().save_png(temporary.path_join("guard_"+cue+".png"))
 	check(worst_ground<.015,"carriers remain on actual physical floor")
@@ -47,4 +59,10 @@ func run()->void:
 		var guard:Node3D=story.inquiry.guards[index]
 		check(not guard.cinematic_carry and guard.cinematic_palms.is_empty(),"released guard has no stale carry pose")
 	print("DEV GUARD RELEASE: ","PASS" if failures.is_empty() else "FAIL"," ground=",worst_ground," spacing=",smallest_spacing," contact=",worst_contact)
+	var review := OS.get_environment("TLM_GLOW_REVIEW")
+	if DisplayServer.get_name()!="headless" and not review.is_empty():
+		print("DEV GUARD RELEASE REVIEW READY")
+		var review_deadline := Time.get_ticks_msec()+60000
+		while Time.get_ticks_msec()<review_deadline and not FileAccess.file_exists(review.path_join("guard_release_done")):
+			await process_frame
 	root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

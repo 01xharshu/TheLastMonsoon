@@ -82,9 +82,7 @@ func room(id: String, at: Vector3, size: Vector2, title: String) -> Node3D:
 			for offset in [-0.5,0.0,0.5]: b.piece(node,"WindowBar",Vector3(mid+offset,2.1,-size.y/2),Vector3(0.035,1.35,0.035),b.iron,false)
 	return node
 func desk(parent: Node3D, at: Vector3) -> void:
-	b.piece(parent,"WritingDesk",at+Vector3(0,0.78,0),Vector3(2.2,0.12,1.0),b.wood)
-	for x in [-0.9,0.9]:
-		for z in [-0.35,0.35]: b.piece(parent,"DeskLeg",at+Vector3(x,0.36,z),Vector3(0.1,0.72,0.1),b.wood)
+	preload("res://world/suryagarh/settlements/official_desk.gd").build(b,parent,at,0.0,false,.84)
 	b.piece(parent,"Ledger",at+Vector3(-0.45,0.865,0),Vector3(0.4,0.05,0.3),b.ochre,false)
 	b.piece(parent,"WritingSheet",at+Vector3(0.45,0.842,0),Vector3(0.35,0.004,0.25),b.plaster,false)
 func bench(parent: Node3D, at: Vector3) -> void:

@@ -2,14 +2,20 @@ extends Interactable
 ## Family-owned stock stays visible and usable after collection.
 var item_id := "talwar"
 var display_name := "talwar"
+var weapon_id: String:
+	get:return item_id
 func _ready() -> void:
 	add_to_group("family_weapon_racks")
-	interaction_text = "Collect / equip " + display_name
+	interaction_text = ("Inspect " if item_id!="smoke_bomb" else "Collect ") + display_name
 	interaction_icon = "weapon"
-	hold_duration = .6
+	hold_duration = .6 if item_id=="smoke_bomb" else 0.0
 	marker_height = 0
 	interaction_max_distance = 2.6
 func interact(actor: CharacterBody3D) -> void:
+	if item_id!="smoke_bomb":preload("res://interaction/weapon_inspection.gd").open_for(self,actor)
+	else:collect(actor,false)
+
+func collect(actor: CharacterBody3D, equip:=true) -> void:
 	if actor.global_position.distance_to(global_position)>2.6: return
 	if actor.get_meta("climbing",false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle")!=null): return
 	var kit: Node = actor.get_node_or_null("ChachaKit")
@@ -20,5 +26,5 @@ func interact(actor: CharacterBody3D) -> void:
 		actor.inventory.message_requested.emit("Smoke pouches replenished · B to throw")
 		return
 	if not actor.inventory.has_item(item_id): actor.inventory.add_item(item_id,1)
-	kit.equip(item_id)
-	actor.inventory.message_requested.emit("Equipped " + display_name)
+	if equip:kit.equip(item_id)
+	actor.inventory.message_requested.emit(("Equipped " if equip else "Kept ") + display_name)

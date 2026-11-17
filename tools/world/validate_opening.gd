@@ -61,11 +61,37 @@ func run() -> void:
 	check(world.get_node("WorldEnvironment").environment.ambient_light_energy >= .3,"World morning remains dark")
 	check(not root.get_node("WorldAudio").is_opening_quiet(),"Morning world audio stayed muted")
 	print("OPENING WORLD: morning reached")
+	opening.set_process(false)
+	opening._update_morning(4.8)
+	check(not opening.visual.visible and opening.camera.fov >= 65,"Wake-up did not use first-person camera")
+	check(opening.waking_chacha != null and opening.waking_chacha.global_position.distance_to(opening.home.to_global(Vector3(-1.25,0.24,-0.25))) < .1,"Chacha is not beside the cot")
+	if DisplayServer.get_name() != "headless" and OS.get_environment("TLM_OPENING_TEST_OUTPUT") != "":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(OS.get_environment("TLM_OPENING_TEST_OUTPUT")+"/waking_pov.png")
+	opening.set_process(true)
 	check(opening.expression.entries.is_empty(),"Face mesh did not restore after cinematic")
 	check(not opening.murmur.playing,"Voice continued into morning")
 	check(opening.clock.current_hour == 6 and opening.clock.current_day == 2,"Wrong morning clock")
-	while opening.state != "done": await process_frame
+	var morning_frames: Dictionary = {}
+	while opening.state != "done":
+		await process_frame
+		var beat := int(opening.morning_elapsed)
+		var output := OS.get_environment("TLM_OPENING_TEST_OUTPUT")
+		if output != "" and DisplayServer.get_name() != "headless" and beat in [6,7,9,13] and not morning_frames.has(beat):
+			morning_frames[beat] = true
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png(output+"/morning_%02d.png" % beat)
 	check(opening.state == "done","Rise failed to release")
+	var uncle: Node3D = world.get_node("ChachaHouse/Chacha")
+	var farm: Node3D = world.get_node("StoryCommunity").farm
+	var uncle_talk: Node3D = world.get_node("ChachaHouse/ChachaAdvice")
+	check(uncle.global_position.distance_to(farm.to_global(Vector3(-5,0,2))) < .1,"Chacha did not return to farm")
+	check(uncle_talk.global_position.distance_to(uncle.global_position+Vector3.UP) < .1,"Chacha interaction did not follow him")
+	var director = world.get_node("DevStory")
+	var saved: Dictionary = director.export_state()
+	uncle.global_position = director.chacha_home.origin + Vector3(25,0,0)
+	director.restore_state(saved)
+	check(uncle.global_position.distance_to(farm.to_global(Vector3(-5,0,2))) < .1,"Saved farm placement did not restore")
 	check(world.player.is_physics_processing(),"Movement was not restored")
 	check(not world.player.has_meta("opening_active"),"Opening lock leaked")
 	check(world.player.get_meta("rest_action","") == "","Rest lock leaked")

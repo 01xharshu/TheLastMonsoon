@@ -4,8 +4,8 @@ static func resolve(actor: Node3D, include_manual := true) -> Dictionary:
 	if actor.get_meta("opening_active",false) or actor.get_meta("story_cinematic",false): return {}
 	if actor.get_meta("morning_tutorial_active",false):
 		var tutorial:=actor.get_node_or_null("UI/HUDRoot/MorningTutorial")
-		if tutorial!=null and tutorial.step==10 and is_instance_valid(tutorial.horse):
-			return {"position":tutorial.horse.global_position+Vector3.UP*1.2,"label":"Arjun’s horse","endpoint":"","objective":"","owner":"tutorial"}
+		if tutorial!=null and tutorial.step==10 and is_instance_valid(tutorial.coach):
+			return {"position":tutorial.coach.global_position+Vector3.UP*1.2,"label":"Station coach","endpoint":"","objective":"","owner":"tutorial"}
 		return {}
 	var world:=actor.get_parent()
 	var map:=actor.get_node_or_null("UI/WorldMap")

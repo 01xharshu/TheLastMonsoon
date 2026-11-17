@@ -7,6 +7,8 @@ var institution:Node3D
 var viewer:Node3D
 var clock:Node
 var work_kind:="hospital"
+# Opt-in local sack delivery; existing institutional crate routes keep their full cycle.
+var sack_delivery:=false
 var cart:Node3D
 var goods:Array[Node3D]=[]
 var waypoints:Array[Vector3]=[]
@@ -35,6 +37,7 @@ var freight_phase:="parked"
 var freight_distance:=0.0
 var supplier_leg:=0.0
 var supplier_turn_clearance:=0.0
+var overlap_separations:=0
 var cart_origin:=Vector3(5,0,11)
 var freight_leg:=0
 var freight_blocked:=0.0
@@ -73,25 +76,28 @@ func prepare()->void:
 	var builder:=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
 	var wood:=builder.material(Color(.28,.19,.11))
 	var shelf_name:String="LinenShelf" if linen else "StoresReceivingShelf"
-	builder.piece(institution,shelf_name,Vector3(store_base.x+.32,store_base.y-.05,store_base.z+.55),Vector3(.85,.10,2.2),wood)
-	for z in [.6,2.5]:builder.piece(institution,shelf_name+"Leg",Vector3(store_base.x+.42,.68,z),Vector3(.1,.88,.1),wood)
-	supply_bench=builder.piece(institution,"SupplierLoadingBench",Vector3(cart_origin.x+supplier_leg+source_side*3.3,.85,cart_origin.z+10),Vector3(2,.1,.35),wood)
-	for x in [-.85,.85]:builder.piece(supply_bench,"LoadingBenchLeg",Vector3(x,-.45,0),Vector3(.12,.80,.15),wood)
-	for index in 8:
-		var step:=builder.piece(institution,"SupplierLoadingStep",Vector3(cart_origin.x,0,cart_origin.z+10.15+index*.28),Vector3(2,.05,.28),wood)
-		step.visible=false
-		step.get_child(1).collision_layer=0
-		loading_steps.append(step)
-	builder.piece(institution,"ResidentIssueTable",Vector3(stand_base.x-.63,1.26,stand_base.z+.55),Vector3(.5,.08,2.1),wood)
-	for z in [stand_base.z-.3,stand_base.z+1.4]:builder.piece(institution,"ResidentIssueTableLeg",Vector3(stand_base.x-.63,.62,z),Vector3(.10,1.28,.10),wood)
+	if not sack_delivery:
+		builder.piece(institution,shelf_name,Vector3(store_base.x+.32,store_base.y-.05,store_base.z+.55),Vector3(.85,.10,2.2),wood)
+		for z in [.6,2.5]:builder.piece(institution,shelf_name+"Leg",Vector3(store_base.x+.42,.68,z),Vector3(.1,.88,.1),wood)
+	if not sack_delivery:
+		supply_bench=builder.piece(institution,"SupplierLoadingBench",Vector3(cart_origin.x+supplier_leg+source_side*3.3,.85,cart_origin.z+10),Vector3(2,.1,.35),wood)
+		for x in [-.85,.85]:builder.piece(supply_bench,"LoadingBenchLeg",Vector3(x,-.45,0),Vector3(.12,.80,.15),wood)
+		for index in 8:
+			var step:=builder.piece(institution,"SupplierLoadingStep",Vector3(cart_origin.x,0,cart_origin.z+10.15+index*.28),Vector3(2,.05,.28),wood)
+			step.visible=false
+			step.get_child(1).collision_layer=0
+			loading_steps.append(step)
+		builder.piece(institution,"ResidentIssueTable",Vector3(stand_base.x-.63,1.26,stand_base.z+.55),Vector3(.5,.08,2.1),wood)
+		for z in [stand_base.z-.3,stand_base.z+1.4]:builder.piece(institution,"ResidentIssueTableLeg",Vector3(stand_base.x-.63,.62,z),Vector3(.10,1.28,.10),wood)
 	builder.free()
 	await get_tree().physics_frame
-	var bench_at:=institution.to_global(Vector3(cart_origin.x+supplier_leg+source_side*3.3,0,cart_origin.z+10))
-	var bench_excluded:Array[RID]=[]
-	for collider in supply_bench.find_children("*","CollisionObject3D",true,false):bench_excluded.append(collider.get_rid())
-	var bench_ray:=PhysicsRayQueryParameters3D.create(bench_at+Vector3.UP*3,bench_at-Vector3.UP*5,1,bench_excluded)
-	var bench_ground:=actor.get_world_3d().direct_space_state.intersect_ray(bench_ray)
-	if not bench_ground.is_empty():supply_bench.global_position.y=bench_ground.position.y+.85
+	if not sack_delivery:
+		var bench_at:=institution.to_global(Vector3(cart_origin.x+supplier_leg+source_side*3.3,0,cart_origin.z+10))
+		var bench_excluded:Array[RID]=[]
+		for collider in supply_bench.find_children("*","CollisionObject3D",true,false):bench_excluded.append(collider.get_rid())
+		var bench_ray:=PhysicsRayQueryParameters3D.create(bench_at+Vector3.UP*3,bench_at-Vector3.UP*5,1,bench_excluded)
+		var bench_ground:=actor.get_world_3d().direct_space_state.intersect_ray(bench_ray)
+		if not bench_ground.is_empty():supply_bench.global_position.y=bench_ground.position.y+.85
 	for child in cart.visual_root.get_children():
 		if str(child.name).begins_with("ProduceBundle") or str(child.name)=="LoadTie":child.queue_free()
 		elif str(child.name).begins_with("EndBoard") and child.position.z>3:
@@ -101,18 +107,25 @@ func prepare()->void:
 	for handle in get_tree().get_nodes_in_group("cart_boarding_handles"):
 		if cart.is_ancestor_of(handle) and handle is CollisionObject3D:collision_excluded.append(handle.get_rid())
 	for i in 3:
-		var load_:Node3D=load("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf").instantiate()
-		load_.name=("LinenConsignment%d" if linen else "StoresConsignment%d")%i;load_.scale=Vector3.ONE*.38;cart.add_child(load_);load_.position=Vector3(-.5+i*.5,1.185,3.75)
+		var load_:Node3D
+		if sack_delivery:
+			load_=Node3D.new()
+			var sack:StaticBody3D=load("res://objects/household/grain_sack.tscn").instantiate()
+			sack.collision_layer=0;sack.collision_mask=0;sack.scale=Vector3.ONE*.72;load_.add_child(sack)
+		else:
+			load_=load("res://assets/props/polyhaven/wooden_crate_02/wooden_crate_02_1k.gltf").instantiate()
+			load_.scale=Vector3.ONE*.38
+		load_.name=("GrainSackConsignment%d" if sack_delivery else ("LinenConsignment%d" if linen else "StoresConsignment%d"))%i;cart.add_child(load_);load_.position=Vector3(-.5+i*.5,1.185,3.75)
 		load_.set_meta("contents",{"hospital":"hospital linen","depot":"commissariat stores","port":"customs freight","market":"market merchandise","household":"household provisions"}.get(work_kind,"provisions"))
 		var body:=StaticBody3D.new();body.name="ConsignmentBody";body.collision_layer=1;body.collision_mask=0;load_.add_child(body)
-		var collision:=CollisionShape3D.new();var box:=BoxShape3D.new();box.size=Vector3(1.1,1.25,1.2);collision.shape=box;collision.position.y=.625;body.add_child(collision)
+		var collision:=CollisionShape3D.new();var box:=BoxShape3D.new();box.size=Vector3(.33,.41,.29) if sack_delivery else Vector3(1.1,1.25,1.2);collision.shape=box;collision.position.y=.205 if sack_delivery else .625;body.add_child(collision)
 		# The carrier owns manipulation clearance; other people retain goods collision.
 		collision_excluded.append(body.get_rid())
 		for mesh:GeometryInstance3D in load_.find_children("*","GeometryInstance3D",true,false):mesh.visibility_range_end=150
 		goods.append(load_)
 		var parcel:Node3D=load("res://objects/household/supplies/supply_parcel.tscn").instantiate()
-		parcel.name="SupplyParcel%d"%i;load_.add_child(parcel);parcel.position=Vector3(0,.95,0);parcel.scale=Vector3.ONE*2.6
-		var parcel_body:=StaticBody3D.new();parcel_body.name="ConsignmentBody";parcel_body.collision_layer=1;parcel_body.collision_mask=0;parcel.add_child(parcel_body)
+		parcel.name="SupplyParcel%d"%i;load_.add_child(parcel);parcel.position=Vector3(0,.95,0);parcel.scale=Vector3.ONE*2.6;parcel.visible=not sack_delivery
+		var parcel_body:=StaticBody3D.new();parcel_body.name="ConsignmentBody";parcel_body.collision_layer=0 if sack_delivery else 1;parcel_body.collision_mask=0;parcel.add_child(parcel_body)
 		var parcel_collision:=CollisionShape3D.new();var parcel_box:=BoxShape3D.new();parcel_box.size=Vector3(.27,.085,.18);parcel_collision.shape=parcel_box;parcel_collision.position.y=.043;parcel_body.add_child(parcel_collision)
 		collision_excluded.append(parcel_body.get_rid());parcels.append(parcel)
 		refresh_cargo_exclusions()
@@ -143,12 +156,15 @@ func _physics_process(delta:float)->void:
 
 func tick(delta:float)->void:
 	if waypoints.size()<5:return
+	if sack_delivery and delivered==0 and phase=="collect" and is_instance_valid(viewer) and actor.global_position.distance_squared_to(viewer.global_position)>2500.0:return
 	if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("grappled",false):return
 	elapsed+=delta
 	if clock!=null and (clock.current_hour<7 or clock.current_hour>=18):
 		if cart.boarding.rider==null:cart.boarding.speed=0;cart.set_forward_motion(0,delta)
 		actor.travel_speed=0;set_worker_motion(&"idle",delta);contact();return
 	if phase=="rest":
+		if sack_delivery:
+			actor.travel_speed=0;set_worker_motion(&"idle",delta);return
 		if delivered>=3 and issued<3:
 			issue_supply(delta);return
 		if issue_stage==4:
@@ -191,7 +207,7 @@ func tick(delta:float)->void:
 					else:phase="lift";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI
 				"inside":
 					if waypoint<waypoints.size()-1:waypoint+=1
-					else:phase="lower";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI/2
+					else:phase="lower";progress=0;actor.global_rotation.y=institution.global_rotation.y+(-PI/2 if sack_delivery else PI/2)
 				"return":
 					if waypoint>0:waypoint-=1
 					else:phase="rest" if delivered>=3 else "lift";progress=0;actor.global_rotation.y=institution.global_rotation.y+PI
@@ -507,6 +523,7 @@ func walk(goal:Vector3,delta:float)->bool:
 	query.transform.origin+=motion;query.motion=Vector3.ZERO
 	var overlaps:=space.intersect_shape(query,1)
 	if support_blocked or fraction<.99 or not overlaps.is_empty():
+		if separate_people(delta,goal):return true
 		actor.travel_speed=0;blocked+=1
 		blocked_age+=delta
 		if blocked_age>=4 and retry_age<=0:
@@ -522,6 +539,47 @@ func walk(goal:Vector3,delta:float)->bool:
 	if is_finite(floor_y):actor.global_position.y=maxf(floor_y,next_floor) if rise>0 else floor_y
 	actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.5)
 	actor.travel_speed=.95;collider.force_update_transform();return true
+
+func separate_people(delta:float,goal:Vector3=Vector3.INF)->bool:
+	# A restored or passing actor can already overlap this capsule. Only move
+	# outwards from every initial human contact; never pass through one toward
+	# the goal, disable a body, or ignore the surrounding furniture/walls.
+	var shape:CollisionShape3D=actor.body_collider.get_node("BodyShape")
+	var query:=PhysicsShapeQueryParameters3D.new();query.shape=shape.shape;query.transform=shape.global_transform
+	query.transform.origin+=Vector3.UP*.15;query.collision_mask=1;query.exclude=collision_excluded;query.margin=.02
+	var space:=actor.get_world_3d().direct_space_state
+	var people:Array[Node3D]=[];var excluded:Array[RID]=collision_excluded.duplicate();var away:=Vector3.ZERO
+	for hit in space.intersect_shape(query,8):
+		var body:Node=hit.collider
+		if body.name!="BodyCollider" or not body.get_parent().is_in_group("combat_actors"):continue
+		var person:Node3D=body.get_parent();people.append(person);excluded.append(body.get_rid())
+		var offset:Vector3=actor.global_position-person.global_position;offset.y=0
+		away+=offset/maxf(offset.length_squared(),.001)
+	if people.is_empty():return false
+	if away.length_squared()<.000001:away=Vector3.RIGHT
+	away=away.normalized()
+	for angle in [0.0,PI/4,-PI/4,PI/2,-PI/2]:
+		var motion:Vector3=away.rotated(Vector3.UP,angle)*minf(.95*delta,.095)
+		var next:Vector3=actor.global_position+motion;var outward:=true
+		for person in people:
+			var old_gap:=Vector2(actor.global_position.x-person.global_position.x,actor.global_position.z-person.global_position.z)
+			var new_gap:=Vector2(next.x-person.global_position.x,next.z-person.global_position.z)
+			if new_gap.length_squared()<=old_gap.length_squared()+.00001:outward=false;break
+		if not outward:continue
+		var floor_y:=destination_floor(next)
+		if not is_finite(floor_y) or absf(floor_y-actor.global_position.y)>.30:continue
+		motion.y=floor_y-actor.global_position.y
+		query.transform=shape.global_transform;query.transform.origin+=Vector3.UP*.15;query.exclude=excluded;query.motion=motion
+		if space.cast_motion(query)[0]<.99:continue
+		query.transform.origin+=motion;query.motion=Vector3.ZERO
+		if not space.intersect_shape(query,1).is_empty():continue
+		actor.global_position+=motion;actor.body_collider.force_update_transform()
+		actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(motion.x,motion.z),delta*2.5)
+		actor.travel_speed=.95;blocked_age=4;detour.clear();overlap_separations+=1
+		if goal.is_finite() and not navigation_pending and retry_age<=0:
+			retry_age=4;request_detour.call_deferred(goal)
+		return true
+	return false
 
 func request_detour(goal:Vector3)->void:
 	if navigation_pending or not is_instance_valid(actor) or not actor.is_inside_tree():return
@@ -544,7 +602,9 @@ func contact()->void:
 	var item:Node3D=goods[freight_loaded if loading else delivered]
 	hand_error=0
 	for side in ["l","r"]:
-		var target:=item.global_position+Vector3.UP*.14+actor.global_basis.x*((.17 if side=="l" else -.17) if loading else (.18 if side=="l" else -.18))
+		var half_grip:float=.13 if sack_delivery else ((.17 if side=="l" else -.17) if loading else (.18 if side=="l" else -.18))
+		if sack_delivery and side=="r":half_grip=-half_grip
+		var target:=item.global_position+Vector3.UP*(.10 if sack_delivery else .14)+actor.global_basis.x*half_grip
 		if phase=="lift" and progress<.2:target=actor.palm_world(side).lerp(target,smoothstep(0,.2,progress))
 		actor.solve_hand_contact(side,target)
 		if actor.palm_world(side).distance_to(target)>.015:actor.solve_hand_contact(side,target)
@@ -626,4 +686,9 @@ func restore_state(data:Dictionary)->void:
 		else:
 			place(parcels[i],goods[i],Vector3(0,.95,0));parcels[i].scale=Vector3.ONE*2.6
 
+	if sack_delivery:
+		for parcel:Node3D in parcels:
+			parcel.visible=false
+			parcel.get_node("ConsignmentBody").collision_layer=0
+		refresh_cargo_exclusions()
 	if is_instance_valid(supply_service):update_issued_stock(work_kind,int(supply_service.stock.get("dressings" if work_kind=="hospital" else "ration",0)))

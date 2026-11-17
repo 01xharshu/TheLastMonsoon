@@ -41,3 +41,9 @@
 ## Expansion performance rule
 
 - Reuse terrain/forest visibility and LOD and `systems/simulation_budget.gd` for new autonomous content. Keep nearby interactions/combat at full rate; accumulate elapsed time for remote updates, retain schedules/identity/save state and swept obstacle checks, and restore immediately on approach. Cache world references during setup, scope caches to the world, amortise spawning, and keep expensive work out of frame loops. Activate optional effects by region; never suspend a quest/save owner or remove collision merely because it is distant. Measure native frame times at the actual 3D budget before accepting batching or pooling.
+
+## Period world design and travelled paths
+
+- World elements must fit the established1856–1859 Indian setting. Author structures, props, roads, materials and construction details for their region and purpose; do not introduce modern-looking concrete slabs, asphalt, road markings, street furniture, fixtures or other modern elements.
+- Remote mountain shelters use period-plausible local stone, earth and timber construction. Review the rendered result; a period material label alone does not make a modern silhouette appropriate.
+- Travelled footpaths must read as worn earth/stone with irregular edges and clearance from tall grass. Retain natural long grass on mountain verges and uncultivated ground. Keep existing collision, terrain support, route continuity, forest/grass LOD and performance contracts.

@@ -4,26 +4,30 @@ extends Node3D
 
 const ROLES := [
 	{"id":"daroga", "position":Vector3(9.0, 0, 6.8), "facing":-1.9},
-	{"id":"mohurrir", "position":Vector3(9.5, 0, -5.7), "facing":2.5},
+	{"id":"mohurrir", "position":Vector3(-9.5, 0, 4.82), "facing":PI},
 	{"id":"burkundaz", "position":Vector3(-5.5, 0, 7.5), "facing":.8},
+	{"id":"upper_sentry", "model":"burkundaz", "name":"UpperSentry", "position":Vector3(-3,5.4,-7.8), "facing":0.0},
 ]
 
 func _ready() -> void:
 	for record in ROLES:
 		var role: String = record["id"]
-		var scene := load("res://characters/npcs/thana/%s_motion.glb" % role) as PackedScene
+		var scene := load("res://characters/npcs/thana/%s_motion.glb" % record.get("model",role)) as PackedScene
 		if scene == null:
 			push_error("Missing thana staff: " + role)
 			continue
 		var actor := Node3D.new()
 		actor.set_script(preload("res://characters/npcs/thana/thana_officer.gd"))
-		actor.name = role.capitalize()
+		actor.name = record.get("name",role.capitalize())
 		actor.position = record["position"]
 		actor.rotation.y = record["facing"]
 		actor.set_meta("thana_role", role)
+		if role=="mohurrir":
+			actor.set_meta("station_records_duty",true)
+			actor.set_meta("station_records_post",record["position"])
 		actor.set_meta("station_bound", true)
 		actor.set_meta("combat_faction", "police")
-		actor.set_meta("cultural_identity", "Sikh" if role=="burkundaz" else "unspecified")
+		actor.set_meta("cultural_identity", "Sikh" if record.get("model",role)=="burkundaz" else "unspecified")
 		actor.set_meta("uniform_status", "1857_fictional_pattern_review_open")
 		actor.set_meta("visual_status", "candidate_unapproved")
 		actor.add_child(scene.instantiate())
@@ -31,3 +35,6 @@ func _ready() -> void:
 	var coordinator := preload("res://world/suryagarh/settlements/police_arrest.gd").new()
 	coordinator.name = "ArrestCoordinator"
 	add_child(coordinator)
+	var security:=preload("res://world/suryagarh/settlements/station_security.gd").new()
+	security.name="StationSecurity"
+	add_child(security)

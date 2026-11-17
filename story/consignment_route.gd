@@ -9,7 +9,7 @@ static func planar_path(waypoints:Array,public_count:int) -> Dictionary:
  var shared_end:=-1
  for i in range(1,waypoints.size()-1):
   var corner:Vector2=waypoints[i]
-  if i<public_count or corner==Data.HOLDING_ANCHOR:
+  if i==public_count-1 or corner==Data.HOLDING_ANCHOR:
    path.append(corner)
    if i==public_count-1:shared_end=path.size()-1
    continue
@@ -102,7 +102,9 @@ static func build(parent: Node3D, route: PackedVector3Array) -> Array[CollisionO
  var supports: Array[CollisionObject3D]=[]
  var shared_end:=surface_start_index(route)
  assert(shared_end>=0,"canonical public road endpoint missing")
- var material:=StandardMaterial3D.new();material.albedo_color=Color(.34,.26,.18);material.roughness=1;material.cull_mode=BaseMaterial3D.CULL_DISABLED
+ var material:=ShaderMaterial.new();material.shader=preload("res://world/suryagarh/shaders/cart_earth_road.gdshader")
+ material.set_shader_parameter("earth_texture",preload("res://assets/nature/materials/brown_mud_dry_diff_1k.jpg"))
+ material.set_shader_parameter("earth_normal",preload("res://assets/nature/materials/brown_mud_dry_nor_gl_1k.jpg"))
  for first in range(0,route.size()-1,32):
   var origin:=route[first]
   var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -112,7 +114,10 @@ static func build(parent: Node3D, route: PackedVector3Array) -> Array[CollisionO
    var a:=route[i];var b:=route[i+1];var along: Vector3=(b-a).normalized();var side: Vector3=along.cross(Vector3.UP).normalized()*7
    if i==0:a-=along*4
    if i==route.size()-2:b+=along*4
-   for point in [a-side,b+side,b-side,a-side,a+side,b+side]:
+   var corners:Array[Vector3]=[a-side,b+side,b-side,a-side,a+side,b+side]
+   for corner in corners.size():
+    var point:Vector3=corners[corner]
+    surface.set_uv(Vector2(0.0 if corner in [0,2,3] else 1.0,0.0 if corner in [0,3,4] else 1.0))
     faces.append(point-origin);surface.add_vertex(point-origin)
   if faces.is_empty():continue
   surface.generate_normals();var mesh:=surface.commit()

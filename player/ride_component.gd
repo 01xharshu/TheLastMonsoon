@@ -34,6 +34,9 @@ func _process(_delta: float) -> void:
 		return
 	var mounted: Node = (actor.get_meta("mounted_vehicle") if actor.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mounted):
+		if "cart" in mounted and is_instance_valid(mounted.cart) and mounted.cart.get_meta("consignment_locked",false):
+			actor.interaction_overlay.set_ride_prompt("")
+			return
 		var mount_name := "horse" if mounted.is_in_group("horses") else ("cart" if actor.get_meta("cart_role", "") != "" else "boat")
 		actor.interaction_overlay.set_ride_prompt("Dismount " + mount_name)
 	else:

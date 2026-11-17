@@ -49,6 +49,7 @@ func _spawn(record:Dictionary) -> void:
 	var actor:=Actor.new();actor.name="Village_%s_%02d"%[record.job,residents.size()]
 	actor.movement_enabled=false;actor.cycle_offset=residents.size()*.47;actor.ground_height=layout.height
 	actor.movement_profile=&"female" if record.sex=="female" else &"male"
+	actor.set_meta("adult_character",true)
 	actor.household_job=record.job
 	var role: String=record.get("role",{"hoe":"tenant_farmer","sow":"tenant_farmer","well":"household_worker","carry":"porter","groom":"groom","social":"villager"}.get(record.job,"villager"))
 	actor.set_meta("social_role",role);actor.set_meta("assigned_workplace",record.at)

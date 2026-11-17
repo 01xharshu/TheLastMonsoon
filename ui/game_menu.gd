@@ -75,7 +75,7 @@ func open() -> void:
 	if overlay.visible:
 		return
 	var player: CharacterBody3D = world.get_node("Player")
-	if player.get_meta("weapon_wheel_open", false):
+	if player.get_meta("weapon_wheel_open", false) or player.get_meta("provision_shop_open", false):
 		return
 	if player.inventory_ui.is_open():
 		player.inventory_ui.close_inventory()
@@ -125,7 +125,9 @@ func _hide_gameplay_ui(node: Node) -> void:
 
 # ── Input ────────────────────────────────────────────────────
 func _input(event: InputEvent) -> void:
-	if world.get_node("Player").health <= 0.0: return
+	var inspection_actor:=world.get_node_or_null("Player")
+	if inspection_actor!=null and (inspection_actor.get_meta("weapon_inspection_open",false) or inspection_actor.get_meta("rifle_lesson",false)):return
+	if world.get_node("Player").health <= 0.0 or world.get_node("Player").get_meta("provision_shop_open", false): return
 	if overlay.visible and page=="settings" and (event.is_action_pressed("pause") or (event is InputEventJoypadButton and event.pressed and event.button_index==JOY_BUTTON_B)):
 		var settings:=column.find_child("SettingsPanel",true,false)
 		if settings!=null and settings.handle_back():
@@ -175,7 +177,9 @@ func show_main() -> void:
 	column.add_child(Style.button("Load Game", func(): show_slots(false)))
 	var latest := Style.button("Load last save", func():
 		close()
-		SaveManager.start_loaded_game(SaveManager.newest_slot())
+		if not SaveManager.start_loaded_game(SaveManager.newest_slot()):
+			open()
+			show_slots(false, SaveManager.last_error)
 	)
 	latest.disabled = SaveManager.newest_slot() == 0
 	column.add_child(latest)
@@ -235,7 +239,9 @@ func show_slots(save_mode: bool, notice: String = "") -> void:
 				SaveManager.slot_label(selected),
 				func():
 					close()
-					SaveManager.start_loaded_game(selected)
+					if not SaveManager.start_loaded_game(selected):
+						open()
+						show_slots(false, SaveManager.last_error)
 			)
 			btn.disabled = SaveManager.read_slot(selected).is_empty()
 		column.add_child(btn)

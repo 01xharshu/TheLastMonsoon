@@ -1,10 +1,14 @@
 extends RefCounted
+const VOICE_ENVELOPE = preload("res://assets/audio/dialogue/opening_arjun_envelope.json")
 ## Temporary additive acting shapes on duplicated meshes; source GLB stays intact.
 var entries: Array[Dictionary] = []
 var speech_envelope: Array = []
+var speech_duration := 0.0
 
 func configure(model: Node3D) -> void:
-	speech_envelope = JSON.parse_string(FileAccess.get_file_as_string("res://assets/audio/opening/arjun_murmur_envelope.json")).amplitudes
+	var voice_data: Dictionary = VOICE_ENVELOPE.data
+	speech_envelope = voice_data.amplitudes
+	speech_duration = float(voice_data.duration_seconds)
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		if str(node.name) not in ["Arjun_MakeHuman_Body", "Arjun_Eyebrows", "Moustache strand"]: continue
 		var original: ArrayMesh = node.mesh as ArrayMesh
@@ -60,7 +64,7 @@ func configure(model: Node3D) -> void:
 
 func update(t: float) -> void:
 	var sad := smoothstep(13.0,14.5,t)*(1.0-smoothstep(20.0,22.0,t))
-	var speech := smoothstep(15.0,15.2,t)*(1.0-smoothstep(16.35,16.61,t))
+	var speech := smoothstep(15.0,15.16,t)*(1.0-smoothstep(15.0+speech_duration-.2,15.0+speech_duration,t))
 	var sample := clampf((t-15.0)/.02,0,maxf(0,speech_envelope.size()-1))
 	var lower := int(sample)
 	var amplitude: float = lerpf(speech_envelope[lower],speech_envelope[mini(lower+1,speech_envelope.size()-1)],sample-lower) if not speech_envelope.is_empty() else 0.0

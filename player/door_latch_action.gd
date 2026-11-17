@@ -35,7 +35,7 @@ func begin(target: Node3D) -> bool:
 
 func _physics_process(delta: float) -> void:
 	if phase == "": return
-	if not is_instance_valid(door) or not is_instance_valid(pull) or actor.get_meta("detention_action","") != "":
+	if not is_instance_valid(door) or not is_instance_valid(pull) or actor.health <= 0.0 or actor.get_meta("detention_action","") != "":
 		finish()
 		return
 	actor.velocity=Vector3.ZERO

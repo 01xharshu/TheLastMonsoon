@@ -88,3 +88,15 @@ Final reference-detail refinements: widened the lower coat panel to enclose the 
 Final side-view review caught the waist sampling hitting a sleeve at the outer ray origin. Belt rays now start 30 cm from the torso centre, inside the sleeve envelope, so the band samples the waist rather than sleeve cloth. Latest front/side review images replace prior isolated captures; the final belt correction changes fitting geometry only.
 
 Side-view waist refinement: the source upper tunic and lower coat panel had different rear depths. The panel now tapers/centres into the waist at its top before widening toward the hem. Belt fitting samples this revised surface. Latest isolated front/side Metal views and rig checks are current; full-world Metal capture and normal-speed close garment contact remain open.
+
+
+## Records duty, 2026-11-05
+
+The existing mohurrir works at the west report desk, using the retained chair and ledger. His right hand makes small writing strokes with a reed while his feet stay on the floor. The body root stays at its original ground height. The seated collision volume restores to its standing height when local self-defence takes over, and the work resumes after he returns. Patrol dispatch leaves this clerk at his records duty.
+
+The staff fixture exercises the actual station, work movement and contact, defence interruption and restoration, and both ambient carriage directions. Ambient police-to-compound carts keep their original identities and route, with turning points moved twenty metres farther along the road from the station end to clear the opening passenger coach.
+
+
+## Upper corridor sentry, 2026-11-05
+
+A separate UpperSentry reuses the existing burkundaz MPFB export on the upper corridor. He participates in actual witnessed restricted access and ordinary encounter pursuit. The station stair itinerary supports return between upper offices, the ground hall and lower detention. Ground-floor station arrests choose an officer on the suspect's floor, and encounter arrests retain the existing cinematic custody transfer.

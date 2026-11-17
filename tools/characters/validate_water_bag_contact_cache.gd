@@ -110,7 +110,55 @@ func rendered_parity(stage: Node3D, bag: Node3D, actor: CharacterBody3D) -> void
 		var after := viewport.get_texture().get_image().get_data()
 		check(control==after,"Native pouch contact pixels changed at %s litres" % liters)
 	print("WATER BAG NATIVE PIXEL PARITY: ","PASS" if failures.is_empty() else "FAIL"," | empty/half/full at 640 x 640; images compared in memory")
+func conservative_bounds_check() -> void:
+	var probe: Node3D=load("res://player/water_bag_visual.gd").new()
+	var random:=RandomNumberGenerator.new();random.seed=33129
+	for sample in 128:
+		probe.contact_points.append(Vector3(random.randf_range(-.5,.5),random.randf_range(-.3,.7),random.randf_range(-.3,.3)))
+		var first:=random.randf_range(.01,.99)
+		var total:=random.randf_range(.6,1.4)
+		for index in 2:
+			probe.contact_indices.append(index)
+			probe.contact_weights.append(total*(first if index==0 else 1.0-first))
+		probe.contact_offsets.append(probe.contact_indices.size())
+	probe._prepare_contact_groups(Transform3D.IDENTITY)
+	var rejected:=0
+	for trial in 64:
+		var palette: Array[Transform3D]=[]
+		for index in 2:
+			var basis:=Basis.from_euler(Vector3(random.randf_range(-1,1),random.randf_range(-1,1),random.randf_range(-1,1)))
+			basis=basis.scaled(Vector3(random.randf_range(.5,1.5)*(-1 if trial%3==0 else 1),random.randf_range(.5,1.5),random.randf_range(.5,1.5)))
+			palette.append(Transform3D(basis,Vector3(random.randf_range(-.4,.4),random.randf_range(-.4,.4),random.randf_range(-.4,.4))))
+		var inverse:=Transform3D(Basis.from_euler(Vector3(.2,trial*.13,-.1)),Vector3(.1,.05,-.08))
+		for group in probe.contact_groups:
+			if not probe._contact_group_rejected(group,palette,inverse):continue
+			for sample in group.samples:
+				var vertex:=Vector3.ZERO
+				for slot in range(probe.contact_offsets[sample],probe.contact_offsets[sample+1]):
+					vertex+=(palette[probe.contact_indices[slot]]*probe.contact_points[sample])*probe.contact_weights[slot]
+				var point:=inverse*vertex
+				check(point.y<.005 or point.y>.285 or absf(point.x)>probe.contact_width_limit,"Bounds rejected an eligible sample under varied weights/transforms")
+				rejected+=1
+	# Independently check support pruning, including nonunit retained weights.
+	var support_rejections:=0
+	var palette: Array[Transform3D]=[Transform3D.IDENTITY,Transform3D(Basis.from_euler(Vector3(.2,.4,-.1)),Vector3(.05,-.03,.04))]
+	for threshold in [0.0,.03,.1,.3,1.0]:
+		for group in probe.contact_groups:
+			if not probe._contact_group_rejected(group,palette,Transform3D.IDENTITY,threshold):continue
+			for sample in group.samples:
+				var point:=Vector3.ZERO
+				for slot in range(probe.contact_offsets[sample],probe.contact_offsets[sample+1]):
+					point+=(palette[probe.contact_indices[slot]]*probe.contact_points[sample])*probe.contact_weights[slot]
+				if point.y<.005 or point.y>.285 or absf(point.x)>probe.contact_width_limit:continue
+				var blend:=maxf(smoothstep(0.0,1.0,clampf((.41-point.y)/.29,0.0,1.0)),.1)
+				check((point.z+.018)/blend-probe.HIP_SUPPORT<=threshold,"Support bound discarded a larger maximum")
+				support_rejections+=1
+	probe.free()
+	check(support_rejections>10,"Support bound pruning was not exercised")
+	check(rejected>1000,"Conservative bounds fixture did not exercise rejection")
+	print("CONTACT CONSERVATIVE BOUNDS ",JSON.stringify({"rejected_samples_checked":rejected,"trials":64,"support_rejections":support_rejections,"status":"PASS" if failures.is_empty() else "FAIL"}))
 func _run() -> void:
+	conservative_bounds_check()
 	var stage := Node3D.new()
 	root.add_child(stage)
 	current_scene = stage
@@ -139,6 +187,9 @@ func _run() -> void:
 	check(reference_samples.size()==bag.contact_offsets.size()-1,"Contact sample selection changed")
 	var maximum_error := 0.0
 	var poses_checked := 0
+	var scanned: Array[int]=[]
+	var maximum_required:=0.0
+	var maximum_pin_error:=0.0
 	for spec in [[0.0,false],[1.0,false],[1.7,false],[1.0,true]]:
 		for frame in 60:
 			visual.motion_tree.update_motion(1.0/60.0,spec[0],spec[0],spec[1],not spec[1],0.0)
@@ -149,13 +200,24 @@ func _run() -> void:
 			var expected := reference(bag)
 			var original: float = bag._cloth_contact_required(true)
 			var actual: float = bag._cloth_contact_required()
+			scanned.append(bag.contact_samples_scanned)
+			maximum_required=maxf(maximum_required,actual)
+			bag.use_contact_groups=false
+			var ungrouped:float=bag._cloth_contact_required()
+			bag.use_contact_groups=true
+			check(ungrouped==actual,"Grouped bounds changed exact support at pose %d" % poses_checked)
 			check(original==actual,"Width rejection changed exact cached contact at pose %d" % poses_checked)
 			maximum_error = maxf(maximum_error,absf(expected-actual))
 			check(absf(expected-actual)<.00002,"Cached coat contact changed at pose %d" % poses_checked)
 			bag.cloth_support = 0.0
 			bag._update_cloth_contact(1.0/60.0)
 			check(absf(bag.cloth_support-clampf(expected,0,.30))<.00002,"Immediate coat support changed")
-			check(bag.belt_pin_world().distance_to(bag.global_position)<.00001,"Sash carry loop detached")
+			var pin_error:float=bag.belt_pin_world().distance_to(bag.global_position)
+			maximum_pin_error=maxf(maximum_pin_error,pin_error)
+			# World x=640 uses float32 coordinates (~61 micrometre ULP).
+			# Check the attachment itself in local space as well as world rounding.
+			check((bag.pouch.transform*bag.BELT_PIN).length()<.000001,"Local sash carry loop detached")
+			check(pin_error<.0001,"World sash pin exceeds float32 rounding: %s" % pin_error)
 			poses_checked += 1
 	var old_times: Array[int] = []
 	var new_times: Array[int] = []
@@ -178,6 +240,17 @@ func _run() -> void:
 	full_times.sort()
 	bound_times.sort()
 	print("CONTACT INIT WIDTH COST ",JSON.stringify({"full_30_calls_us":full_times[4],"bounded_30_calls_us":bound_times[4],"width_m":bag.contact_width_limit,"exact_parity":failures.is_empty()}))
+	var grouped_times: Array[int]=[]
+	var ungrouped_times: Array[int]=[]
+	for round_index in 9:
+		for grouped in ([true,false] if round_index%2==0 else [false,true]):
+			bag.use_contact_groups=grouped
+			var started:=Time.get_ticks_usec()
+			for repeat in 30:bag._cloth_contact_required()
+			(grouped_times if grouped else ungrouped_times).append(Time.get_ticks_usec()-started)
+	bag.use_contact_groups=true
+	grouped_times.sort();ungrouped_times.sort();scanned.sort()
+	print("CONTACT GROUP COST ",JSON.stringify({"original_30_calls_us":ungrouped_times[4],"grouped_30_calls_us":grouped_times[4],"groups":bag.contact_groups.size(),"samples":bag.contact_points.size(),"scanned_min_median_max":[scanned[0],scanned[120],scanned[-1]],"maximum_required":maximum_required,"maximum_world_pin_error_m":maximum_pin_error,"exact_parity":failures.is_empty()}))
 	bag.held = true
 	bag.cloth_support = .1
 	bag._update_cloth_contact(.2)

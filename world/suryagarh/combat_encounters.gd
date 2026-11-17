@@ -11,10 +11,13 @@ var encounter_age := 0.0
 var strike_age := 0.0
 var strike_hit := false
 var awareness_timer := 0.0
+var response_pending := false
+var traffic_carts: Array[Node3D]=[]
 var wanted := false
 var wanted_level := 0
 var crime_score := 0
 var evidence: Array[Dictionary] = []
+var unidentified_scenes: Array[Dictionary] = []
 var last_known := Vector3.ZERO
 var unseen_age := 0.0
 var patrols: Array[Dictionary] = []
@@ -90,6 +93,15 @@ func ground(point: Vector3, terrain_only: bool = false) -> Vector3:
 	var hit:=get_world_3d().direct_space_state.intersect_ray(query)
 	return hit.position if not hit.is_empty() else Vector3(point.x,layout.height(point.x,point.z),point.z)
 
+# Keep the shared ground override contract while excluding the moving patrol's
+# capsule only for this synchronous ray. Never remove a pre-existing exclusion.
+func patrol_ground(point: Vector3, terrain_only: bool, body: RID) -> Vector3:
+	var added:=body.is_valid() and not ground_exclusions.has(body)
+	if added:ground_exclusions.append(body)
+	var result:=ground(point,terrain_only)
+	if added:ground_exclusions.erase(body)
+	return result
+
 func report_assault(victim: Node3D, attacker: Node = null) -> void:
 	if not is_instance_valid(victim): return
 	var mission=get_parent().get_node_or_null("ConsignmentStory")
@@ -98,8 +110,43 @@ func report_assault(victim: Node3D, attacker: Node = null) -> void:
 	if attacker!=player or victim.get_meta("combat_faction","indian") not in ["british","police"]: return
 	var kind: String = victim.get_meta("last_hit_kind","weapon")
 	var severity := 10 if kind=="murder" and victim.get_meta("combat_faction","")=="police" else 5 if kind not in ["punch","kick","takedown"] else 2
-	record_incident(kind,victim.global_position,incident_witnesses(victim.global_position,victim),severity)
+	var witnesses := incident_witnesses(victim.global_position,victim,kind!="murder")
+	if kind=="murder":
+		witnesses.erase(str(victim.get_path()))
+		# Identification requires sight of both the attacker and the scene.
+		witnesses=witnesses.filter(func(identity: String) -> bool:
+			var observer:=get_node_or_null(NodePath(identity)) as Node3D
+			return is_instance_valid(observer) and incident_alert(observer,victim.global_position,30.0))
+	var identified := record_incident(kind,victim.global_position,witnesses,severity)
+	if kind=="murder" and not victim.has_meta("crime_scene_queued"):
+		victim.set_meta("crime_scene_queued",true)
+		queue_body_scene(victim.global_position,victim,not identified)
+	if identified and kind=="murder" and is_instance_valid(station):
+		var local := station.to_local(victim.global_position)
+		if absf(local.x)<20.0 and local.z>-19.0 and local.z<24.0:
+			for identity: String in witnesses:
+				var witness := get_node_or_null(NodePath(identity)) as Node3D
+				if not is_instance_valid(witness) or not law_responder(witness):continue
+				var alarm := station.get_node_or_null("ThanaAlarmBell")
+				if alarm!=null:alarm.ring()
+				witness.set_meta("station_alarm_target",victim.global_position)
+				witness.set_meta("station_alarm_gesture_until",Time.get_ticks_msec()+1450)
+				var director := get_parent().get_node_or_null("DevStory")
+				if director!=null:director.show_station_witness_alert()
+				break
 	if victim==aggressor and encounter_state in ["beating","waiting","fallen"]:rescue()
+
+func queue_body_scene(location: Vector3, body: Node3D = null, anonymous := false) -> void:
+	var record := {"location":[location.x,location.y,location.z],"inspected":false,"anonymous":anonymous}
+	unidentified_scenes.append(record)
+	if unidentified_scenes.size()>32:
+		var retired: Dictionary=unidentified_scenes.pop_front();retired.retired=true
+	start_body_investigation(record,body)
+
+func start_body_investigation(record: Dictionary, body: Node3D = null) -> void:
+	var investigation := preload("res://combat/body_investigation.gd").new()
+	investigation.victim=body;investigation.encounters=self;investigation.record=record
+	add_child(investigation)
 
 func police_case_started(actor: Node) -> void:
 	if actor==player and not wanted:
@@ -127,23 +174,79 @@ func complete_custody(actor: Node) -> void:
 		patrol.hit = false
 		patrol.marker.visible = false
 
+func sense_defenders() -> void:
+	if player.get_meta("story_cinematic",false) or player.get_meta("opening_active",false):return
+	var visual: Node=player.get_node_or_null("VisualRoot/CharacterVisual")
+	var combat: Node=player.get_node_or_null("CombatInput")
+	if visual==null or combat==null:return
+	var threat: bool=not visual.equipment.stowed or combat.punch_time>=0 or combat.kick_time>=0
+	var spear: Node=player.get_node_or_null("ChachaKit")
+	threat=threat or (spear!=null and spear.active)
+	if not threat:return
+	for candidate in get_tree().get_nodes_in_group("combat_actors"):
+		if not candidate is Node3D or candidate.global_position.distance_squared_to(player.global_position)>36.0:continue
+		var defence: Node=candidate.get_node_or_null("SelfDefence")
+		if defence!=null and not defence.active and visible_to(candidate):defence.alert(player,false)
+
+func law_responder(actor: Node3D) -> bool:
+	var military: bool=actor.get_meta("combat_faction","")=="british" and actor.get_meta("concept_rank_or_post","") in ["private","corporal","sergeant","lieutenant","captain","major","colonel"]
+	return military or actor.get_meta("combat_faction","")=="police" or actor.get_meta("story_guard",false) or actor.is_in_group("fort_guards") or actor.get_meta("law_enforcement",false) or actor.get_meta("social_role","")=="guard"
+
+func incident_alert(actor: Node3D, location: Vector3, maximum_range := 18.0) -> bool:
+	# Hearing draws attention, but walls/smoke still prevent identification.
+	if actor.global_position.distance_to(location)>maximum_range: return false
+	var from := actor.global_position+Vector3.UP*1.4
+	var target := location+Vector3.UP*.8
+	if preload("res://combat/escape_smoke.gd").obscures(get_tree(),from,target): return false
+	var query := PhysicsRayQueryParameters3D.create(from,target,1)
+	var excluded: Array[RID]=[player.get_rid()]
+	for candidate in get_tree().get_nodes_in_group("combat_actors"):
+		var body: CollisionObject3D=candidate.get("body_collider")
+		if is_instance_valid(body): excluded.append(body.get_rid())
+	query.exclude=excluded
+	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
 func recruit_visible_police() -> void:
 	if not wanted: return
+	var recruited := {}
+	for patrol in patrols: recruited[patrol.actor]=true
 	for actor in get_tree().get_nodes_in_group("combat_actors"):
-		if not actor is Node3D or actor.get_meta("combat_faction","")!="police": continue
+		if not actor is Node3D or not law_responder(actor): continue
 		if actor.get_meta("mission_police_owner","")!="":continue
-		var already := false
-		for patrol in patrols:
-			if patrol.actor==actor: already=true;break
-		if already or actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("city_custody",false): continue
+		if actor.get_meta("station_records_duty",false):continue
+		if recruited.has(actor) or actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("city_custody",false): continue
 		var coordinator: Node=station.get_node("ThanaStaff/ArrestCoordinator")
 		if coordinator.phase!="idle" and coordinator.get("officer")==actor: continue
-		if not visible_to(actor): continue
+		var alerted: bool=float(actor.get_meta("crime_alert_until",0.0))>Time.get_ticks_msec()/1000.0
+		var visible: bool=visible_to(actor)
+		# Police are dispatched to the report even when they cannot see the
+		# suspect. Mission, grapple and another motion owner remain in charge.
+		var dispatched_police: bool=(actor.get_meta("combat_faction","")=="police" or actor.get_meta("law_enforcement",false)) and not actor.get_meta("mission_active",false) and not actor.get_meta("grappled",false) and not actor.get_meta("story_cinematic",false) and not actor.get_meta("story_guard",false) and not actor.get_meta("external_combat_motion",false)
+		if not visible and not alerted and not dispatched_police: continue
 		var marker := Label3D.new();marker.text="!";marker.position.y=2.05;marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED
 		actor.add_child(marker)
 		var home: Vector3=actor.global_position
-		patrols.append({"actor":actor,"points":PackedVector3Array([home,home]),"index":0,"step":1,"state":"pursue","sense":0.0,"attack_age":0.0,"hit":false,"marker":marker,"seen":true,"last_seen":player.global_position,"mount":null,"horse":null,"temporary":true,"movement":actor.movement_enabled,"external":actor.get_meta("external_combat_motion",false),"home":actor._home})
+		patrols.append({"actor":actor,"points":PackedVector3Array([home,home]),"index":0,"step":1,"state":"pursue","sense":0.0,"attack_age":0.0,"hit":false,"marker":marker,"seen":visible,"last_seen":last_known,"mount":null,"horse":null,"temporary":true,"movement":actor.get_meta("body_inspection_previous",{}).get("movement",actor.get_meta("defence_previous_movement",actor.movement_enabled)),"external":actor.get_meta("body_inspection_previous",{}).get("external",actor.get_meta("external_combat_motion",false)),"home":actor._home})
 		actor.movement_enabled=false;actor.set_meta("external_combat_motion",true)
+		var defence: Node=actor.get_node_or_null("SelfDefence")
+		if defence!=null and (visible or alerted):defence.alert(player)
+		actor.set_meta("police_engaged",true)
+		if actor.body_collider.get_rid() not in ground_exclusions:
+			ground_exclusions.append(actor.body_collider.get_rid())
+
+func dispatch_reported_crime() -> void:
+	# Send existing patrols to evidence, never to an unseen player's live position.
+	# Every available existing patrol responds; unseen actors search the report.
+	var available: Array[Dictionary] = []
+	for patrol in patrols:
+		if patrol.get("temporary",false) or not is_instance_valid(patrol.actor):continue
+		var actor: Node3D=patrol.actor
+		if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("city_custody",false) or actor.get_meta("grappled",false) or actor.get_meta("mission_active",false) or actor.get_meta("mission_police_owner","")!="":continue
+		available.append(patrol)
+	for patrol: Dictionary in available:
+		# A fresh report must not replace a responder's current visual contact.
+		if patrol.get("seen",false):continue
+		patrol.state="pursue";patrol["last_seen"]=last_known;patrol.sense=0.0
 
 func return_recruited_police() -> void:
 	for index in range(patrols.size()-1,-1,-1):
@@ -157,6 +260,8 @@ func return_recruited_police() -> void:
 
 func restore_recruited_duty(patrol: Dictionary) -> void:
 	if is_instance_valid(patrol.actor):
+		clear_pursuit_fight(patrol.actor)
+		patrol.actor.set_meta("police_engaged",false)
 		patrol.actor.travel_speed=0.0
 		patrol.actor.movement_enabled=patrol.movement
 		patrol.actor.set_meta("external_combat_motion",patrol.external)
@@ -164,18 +269,30 @@ func restore_recruited_duty(patrol: Dictionary) -> void:
 	if is_instance_valid(patrol.marker):patrol.marker.queue_free()
 	if is_instance_valid(patrol.get("navigation")):patrol.navigation.queue_free()
 
+func clear_pursuit_fight(actor: Node3D) -> void:
+	if not actor.has_meta("pursuit_fight_restore"): return
+	var prior: Dictionary=actor.get_meta("pursuit_fight_restore")
+	actor.duty_state=prior.duty;actor.detainee=prior.detainee;actor.strike_progress=-1.0
+	actor.remove_meta("pursuit_fight_restore")
+
+func private_fort(at: Vector3) -> bool:
+	return Vector2(at.x,at.z).distance_squared_to(Layout.FORT_CENTER) < 88.0*88.0
+
 func navigate_patrol(patrol: Dictionary, goal: Vector3, speed: float, delta: float) -> bool:
+	if private_fort(goal):
+		patrol.actor.travel_speed=0
+		return false
 	if not is_instance_valid(patrol.get("navigation")):
 		var navigation:=preload("res://combat/police_search_navigation.gd").new()
 		patrol.actor.add_child(navigation);patrol["navigation"]=navigation
 	return patrol.navigation.move(self,patrol.actor,goal,speed,delta)
 
-func incident_witnesses(location: Vector3, victim: Node3D = null) -> Array[String]:
+func incident_witnesses(location: Vector3, victim: Node3D = null, violent := false) -> Array[String]:
 	var result: Array[String] = []
 	for observer in get_tree().get_nodes_in_group("combat_actors"):
 		if not observer is Node3D or observer.get_meta("dead",false) or observer.get_meta("knocked_out",false): continue
 		if observer.global_position.distance_to(location)>30.0: continue
-		if visible_to(observer): result.append(str(observer.get_path()))
+		if visible_to(observer) or (violent and law_responder(observer) and incident_alert(observer,location)): result.append(str(observer.get_path()))
 	var recognized_police := false
 	for patrol in patrols:
 		if patrol.actor==victim and patrol.state=="pursue": recognized_police=true;break
@@ -189,11 +306,18 @@ func record_incident(kind: String, location: Vector3, witnesses: Array[String], 
 	if witnesses.is_empty(): return false
 	crime_score=mini(25,crime_score+severity)
 	wanted_level=clampi(ceili(float(crime_score)/5.0),1,5)
-	wanted=true;unseen_age=0.0
+	wanted=true;unseen_age=0.0;response_pending=true
 	# Reports identify a location, but never give police the suspect's hidden live position.
 	last_known=location
 	evidence.append({"kind":kind,"location":location,"witnesses":witnesses,"time":Time.get_ticks_msec()})
 	if evidence.size()>32: evidence.pop_front()
+	for actor in get_tree().get_nodes_in_group("combat_actors"):
+		if actor is Node3D and law_responder(actor) and not actor.get_meta("dead",false) and not actor.get_meta("knocked_out",false) and str(actor.get_path()) in witnesses:
+			actor.set_meta("crime_alert_until",Time.get_ticks_msec()/1000.0+2.0)
+	for patrol in patrols:
+		if is_instance_valid(patrol.actor) and str(patrol.actor.get_path()) in witnesses and not patrol.actor.get_meta("dead",false) and not patrol.actor.get_meta("knocked_out",false):
+			patrol.state="pursue";patrol["last_seen"]=location;patrol.sense=0.0
+	awareness_timer=0.0
 	return true
 
 func report_vehicle_theft(actor: CharacterBody3D, vehicle: Node3D, kind: String) -> void:
@@ -222,6 +346,7 @@ func rescue() -> void:
 	player.inventory.message_requested.emit("Peasant protected · Police alerted")
 
 func visible_to(actor: Node3D) -> bool:
+	if private_fort(player.global_position) and law_responder(actor):return false
 	sense_ray_count+=1
 	return preload("res://systems/visual_perception.gd").sees(actor,player)
 
@@ -229,7 +354,8 @@ func move_actor(actor: Node3D, goal: Vector3, speed: float, delta: float) -> boo
 	var offset:=goal-actor.global_position;offset.y=0
 	actor.set_meta("patrol_turning",false)
 	if offset.length()<.13:
-		actor.travel_speed=0;actor.set_meta("patrol_speed",0.0);return true
+		actor.travel_speed=0;actor.set_meta("patrol_speed",0.0)
+		return absf(goal.y-actor.global_position.y)<1.2
 	var desired:float=atan2(offset.x,offset.z)
 	var turn:float=absf(angle_difference(actor.global_rotation.y,desired))
 	actor.global_rotation.y=rotate_toward(actor.global_rotation.y,desired,delta*3.2)
@@ -239,7 +365,19 @@ func move_actor(actor: Node3D, goal: Vector3, speed: float, delta: float) -> boo
 	var pace:float=move_toward(float(actor.get_meta("patrol_speed",0.0)),minf(speed,sqrt(offset.length()*2.0)),delta*1.8)
 	actor.set_meta("patrol_speed",pace)
 	var change:=offset.normalized()*minf(delta*pace,offset.length())
-	var next:=ground(actor.global_position+change,actor.has_meta("population_route"))
+	var next: Vector3
+	var station_routes=preload("res://world/suryagarh/settlements/station_floor_route.gd")
+	var station_floor: bool=is_instance_valid(station) and station.has_method("entrance_point") and station_routes.contains(station,actor.global_position)
+	if station_floor:
+		var proposed:=actor.global_position+change
+		var height:=station_routes.support(actor,proposed)
+		if not is_finite(height):actor.travel_speed=0;return false
+		next=Vector3(proposed.x,height,proposed.z)
+	else:
+		next=patrol_ground(actor.global_position+change,actor.has_meta("population_route"),actor.body_collider.get_rid())
+	if private_fort(next) and not private_fort(actor.global_position) and law_responder(actor):
+		actor.travel_speed=0
+		return false
 	if absf(next.y-actor.global_position.y)>.3:actor.travel_speed=0;return false
 	var query:=PhysicsShapeQueryParameters3D.new()
 	query.margin=.002
@@ -248,17 +386,32 @@ func move_actor(actor: Node3D, goal: Vector3, speed: float, delta: float) -> boo
 	query.transform.origin=next+Vector3.UP*(actor.body_collider.get_node("BodyShape").position.y+.025)
 	query.exclude=[actor.body_collider.get_rid()]
 	query.collision_mask=1
-	if not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():
+	var occupied:=not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
+	if occupied and station_floor and next.y<actor.global_position.y:
+		# Keep capsule clearance over the old tread until its rear clears the edge.
+		query.transform.origin.y+=actor.global_position.y-next.y
+		if get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():
+			next.y=actor.global_position.y
+			occupied=false
+	if occupied:
 		# Survey a small curb before lifting; tall walls and occupants still block.
-		var support:=ground(actor.global_position+change+offset.normalized()*.24,actor.has_meta("population_route"))
+		var support_at:=actor.global_position+change+offset.normalized()*.24
+		var support: Vector3
+		if station_floor:
+			var height:=station_routes.support(actor,support_at)
+			if not is_finite(height):actor.travel_speed=0;return false
+			support=Vector3(support_at.x,height,support_at.z)
+		else:
+			support=patrol_ground(support_at,actor.has_meta("population_route"),actor.body_collider.get_rid())
 		if support.y<next.y or support.y-next.y>.16:actor.travel_speed=0;return false
 		query.transform.origin.y+=.16
 		if not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty():actor.travel_speed=0;return false
 		next.y=support.y
 
 	# Remote cadence still sweeps the whole capsule across thin obstacles.
-	query.exclude=[actor.body_collider.get_rid()]
-	query.exclude.append_array(patrol_terrain.get("rids",[]))
+	var sweep_exclusions: Array[RID]=[actor.body_collider.get_rid()]
+	sweep_exclusions.append_array(patrol_terrain.get("rids",[]))
+	query.exclude=sweep_exclusions
 	query.transform=actor.body_collider.get_node("BodyShape").global_transform
 	query.transform.origin+=Vector3.UP*.025;query.motion=next-actor.global_position
 	if actor.get_world_3d().direct_space_state.cast_motion(query)[0]<.99:
@@ -313,7 +466,11 @@ func _tick(delta: float) -> void:
 	if not escort.is_empty():update_capture(delta)
 	awareness_timer-=delta
 	if awareness_timer<=0.0:
-		awareness_timer=.25;recruit_visible_police()
+		awareness_timer=.25;recruit_visible_police();sense_defenders()
+		traffic_carts.assign(get_tree().get_nodes_in_group("city_route_carts"))
+		if response_pending:
+			response_pending=false
+			if wanted:dispatch_reported_crime()
 	var seen:=false
 	var coordinator: Node=station.get_node("ThanaStaff/ArrestCoordinator")
 	if coordinator.phase in ["approach","fight"] and coordinator.has_method("officer_has_sight"):
@@ -323,6 +480,9 @@ func _tick(delta: float) -> void:
 		var actor: Node3D=patrol.actor
 		if not is_instance_valid(actor): continue
 		actor.set_meta("police_engaged",wanted and patrol.state=="pursue")
+		if actor.get_meta("inspecting_body",false) and not wanted:continue
+		if actor.has_meta("pursuit_fight_restore") and (not wanted or patrol.state!="pursue" or not patrol.seen or actor.global_position.distance_to(player.global_position)>1.4 or actor.get_meta("combat_action","")=="hit" or actor.get_meta("dead",false) or actor.get_meta("knocked_out",false)):
+			clear_pursuit_fight(actor)
 		var mount: Node3D=patrol.get("mount")
 		if is_instance_valid(mount):
 			if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):mount.commanded_speed=0
@@ -333,8 +493,9 @@ func _tick(delta: float) -> void:
 			if is_instance_valid(mount):mount.commanded_speed=0
 			actor.travel_speed=0;continue
 		var firearm := actor.get_node_or_null("ClimbingFirearm")
-		if firearm != null: firearm.hostile = wanted and patrol.state == "pursue"
+		if firearm != null: firearm.hostile = wanted and patrol.state == "pursue" and not private_fort(player.global_position)
 		if player.get_meta("detention_action","")!="" and (escort.is_empty() or escort.actor!=actor):
+			clear_pursuit_fight(actor)
 			if is_instance_valid(mount):mount.commanded_speed=0
 			actor.travel_speed=0
 			patrol.marker.visible=false
@@ -368,9 +529,13 @@ func _tick(delta: float) -> void:
 			if patrol.seen:patrol.state="pursue";unseen_age=0;last_known=player.global_position;patrol["last_seen"]=player.global_position
 		seen=seen or patrol.seen
 		patrol.marker.visible=patrol.state=="pursue"
+		if patrol.state=="patrol" and yield_patrol_to_traffic(patrol,patrol_delta):continue
 		if is_instance_valid(mount):
 			mount.goal=patrol.points[patrol.index] if patrol.state=="patrol" else patrol.get("last_seen",last_known)
-			mount.commanded_speed=2.0 if patrol.state=="patrol" else 6.0+float(wanted_level)
+			var a:=Vector2(mount.global_position.x,mount.global_position.z)
+			var b:=Vector2(mount.goal.x,mount.goal.z)
+			var crosses_fort:=Geometry2D.get_closest_point_to_segment(Layout.FORT_CENTER,a,b).distance_squared_to(Layout.FORT_CENTER)<88.0*88.0
+			mount.commanded_speed=0.0 if crosses_fort else (2.0 if patrol.state=="patrol" else 6.0+float(wanted_level))
 			if patrol.state=="patrol" and mount.global_position.distance_to(mount.goal)<1.0:
 				if patrol.index==patrol.points.size()-1:patrol.step=-1
 				elif patrol.index==0:patrol.step=1
@@ -398,21 +563,120 @@ func _tick(delta: float) -> void:
 			if not patrol.seen:
 				navigate_patrol(patrol,patrol.get("last_seen",last_known),2.8,patrol_delta)
 				continue
-			if offset.length()>1.15:navigate_patrol(patrol,player.global_position,2.8,patrol_delta)
+			if offset.length()>.85 or absf(player.global_position.y-.9-actor.global_position.y)>.6:
+				clear_pursuit_fight(actor)
+				navigate_patrol(patrol,player.global_position,2.8,patrol_delta)
 			else:
 				actor.travel_speed=0
+				actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),patrol_delta*4.8)
 				var rear: Vector3=actor.global_position-player.global_position;rear.y=0
-				if escort.is_empty() and station.get_node("ThanaStaff/ArrestCoordinator").phase=="idle" and (rear.normalized().dot(player.get_node("VisualRoot").global_basis.z)<-.55 or player.health<=10) and player.get_meta("detention_action","")=="" and player.get_node("DetentionComponent").begin_detention():
+				if actor.get_meta("combat_faction","")=="police" and escort.is_empty() and station.get_node("ThanaStaff/ArrestCoordinator").phase=="idle" and (rear.normalized().dot(player.get_node("VisualRoot").global_basis.z)<-.55 or player.health<=10) and player.get_meta("detention_action","")=="" and player.get_node("DetentionComponent").begin_detention():
+					clear_pursuit_fight(actor)
 					escort={"actor":actor,"state":"capture","age":0.0,"route":PackedVector3Array(),"index":0};escape_press=0
 					actor.combat_react("held")
 					player.inventory.message_requested.emit("Caught · Press Space four times to escape")
 				else:
 					patrol.attack_age+=patrol_delta
+					if actor.has_method("apply_fight_pose"):
+						if not actor.has_meta("pursuit_fight_restore"):
+							actor.set_meta("pursuit_fight_restore",{"duty":actor.duty_state,"detainee":actor.detainee})
+						actor.duty_state="fight";actor.detainee=player
+						actor.strike_progress=clampf(float(patrol.attack_age)/.9,0,1)
+						actor.apply_fight_pose()
 					if patrol.attack_age>=1.2:patrol.attack_age=0;patrol.hit=false;actor.combat_react("strike")
 					if patrol.attack_age>=.28 and patrol.attack_age<=.60 and not patrol.hit and strike_hits_player(actor):
 						patrol.hit=true;player.receive_combat_hit(minf(8,maxf(0,player.health-1)),actor)
 			if not wanted:patrol.state="patrol"
 	advance_wanted(delta,seen)
+
+func yield_patrol_to_traffic(patrol: Dictionary, delta: float) -> bool:
+	var actor: Node3D=patrol.actor
+	var vehicle: Node3D=null
+	var target: Vector3=patrol.get("traffic_yield_target",Vector3.INF)
+	var reference: WeakRef=patrol.get("traffic_yield_cart")
+	if reference!=null:vehicle=reference.get_ref()
+	if is_instance_valid(vehicle):
+		var local:Vector3=vehicle.to_local(actor.global_position)
+		if local.z>10.0 or actor.global_position.distance_squared_to(vehicle.global_position)>625:
+			vehicle=null;patrol.erase("traffic_yield_cart");patrol.erase("traffic_yield_target")
+	if not is_instance_valid(vehicle):
+		for cart in traffic_carts:
+			if not is_instance_valid(cart):continue
+			if actor.global_position.distance_squared_to(cart.global_position)>324:continue
+			var local:Vector3=cart.to_local(actor.global_position)
+			if local.z>=7.0 or local.z< -15.0 or absf(local.x)>2.8:continue
+			vehicle=cart
+			var side:float=1.0 if local.x>=0 else -1.0
+			var chosen:=Vector3.INF
+			# Prefer the nearest shoulder with continuous walkable support.
+			for candidate_side in [side,-side]:
+				for clearance in [4.2,3.4,2.8]:
+					var shift:float=candidate_side*clearance-local.x
+					var start:=actor.global_position
+					var steps:=maxi(1,ceili(absf(shift)/.5))
+					var last_y:=start.y
+					var continuous:=true
+					var candidate:=start
+					for step in range(1,steps+1):
+						candidate=ground(start+cart.global_basis.x*shift*float(step)/float(steps),actor.has_meta("population_route"))
+						if absf(candidate.y-last_y)>.25:continuous=false;break
+						last_y=candidate.y
+					if continuous and absf(candidate.y-start.y)<=.25:
+						chosen=candidate;break
+				if chosen.is_finite():break
+			if not chosen.is_finite():vehicle=null;continue
+			target=chosen
+			patrol["traffic_yield_cart"]=weakref(cart);patrol["traffic_yield_target"]=target
+			break
+	if not is_instance_valid(vehicle):return false
+	var mount:Node3D=patrol.get("mount")
+	if is_instance_valid(mount):
+		mount.goal=target;mount.commanded_speed=1.8 if mount.global_position.distance_to(target)>.4 else 0.0
+	else:
+		var before:=actor.global_position
+		navigate_patrol(patrol,target,1.5,delta)
+		if actor.global_position.distance_squared_to(before)<.000001:
+			# Preserve remote elapsed time with bounded, individually swept steps.
+			var remaining:=delta
+			while remaining>.0001:
+				var step:=minf(remaining,.0625)
+				if not separate_patrol_from_cart(actor,vehicle,target,step):break
+				remaining-=step
+	return true
+
+func separate_patrol_from_cart(actor:Node3D, vehicle:Node3D, target:Vector3, delta:float) -> bool:
+	# Only resolve an existing overlap, and only move farther toward the same
+	# side of this cart. Every other solid body and the ground remain checked.
+	var body:CollisionObject3D=actor.get("body_collider")
+	var cart_body:CollisionObject3D=vehicle.get_node_or_null("CartBodyCollision")
+	if not is_instance_valid(body) or not is_instance_valid(cart_body):return false
+	var shape:CollisionShape3D=body.get_node_or_null("BodyShape")
+	if shape==null:return false
+	var here:Vector3=vehicle.to_local(actor.global_position)
+	var destination:Vector3=vehicle.to_local(target)
+	if absf(destination.x)<=absf(here.x)+.01 or here.x*destination.x<0:return false
+	var query:=PhysicsShapeQueryParameters3D.new()
+	query.shape=shape.shape;query.transform=shape.global_transform;query.transform.origin+=Vector3.UP*.025
+	query.margin=.002;query.collision_mask=1;query.exclude=[body.get_rid()]
+	var space:=actor.get_world_3d().direct_space_state
+	var touching:=false
+	for hit in space.intersect_shape(query,16):
+		if hit.collider==cart_body:touching=true;break
+	if not touching:return false
+	var lateral:float=1.0 if destination.x>0 else -1.0
+	var amount:=minf(.8*delta,.05)
+	var next:=ground(actor.global_position+vehicle.global_basis.x*lateral*amount,actor.has_meta("population_route"))
+	if absf(next.y-actor.global_position.y)>.25:return false
+	var motion:=next-actor.global_position
+	var exclusions:Array[RID]=[body.get_rid(),cart_body.get_rid()]
+	exclusions.append_array(patrol_terrain.get("rids",[]))
+	query.exclude=exclusions;query.motion=motion
+	if space.cast_motion(query)[0]<.99:return false
+	query.transform.origin+=motion;query.motion=Vector3.ZERO
+	if not space.intersect_shape(query,1).is_empty():return false
+	actor.global_position=next;body.force_update_transform()
+	actor.travel_speed=motion.length()/maxf(delta,.001)
+	return true
 
 func dismount_patrol(patrol: Dictionary) -> bool:
 	var horse: Node3D=patrol.get("mount")
@@ -581,11 +845,20 @@ func export_crime_state() -> Dictionary:
 		var at: Vector3=record.location
 		record.location=[at.x,at.y,at.z]
 		records.append(record)
-	return {"score":crime_score,"unseen":unseen_age,"last_known":[last_known.x,last_known.y,last_known.z],"evidence":records}
+	return {"score":crime_score,"unseen":unseen_age,"last_known":[last_known.x,last_known.y,last_known.z],"evidence":records,"unidentified_scenes":unidentified_scenes.duplicate(true)}
 
 func restore_crime_state(data: Dictionary) -> void:
+	for child in get_children():
+		if child.get_script()==preload("res://combat/body_investigation.gd"):child.finish()
+	unidentified_scenes.clear()
+	for value in data.get("unidentified_scenes",[]):
+		if not value is Dictionary or not value.get("location") is Array or value.location.size()!=3:continue
+		var record: Dictionary=value.duplicate(true)
+		unidentified_scenes.append(record)
+		if not record.get("inspected",false):start_body_investigation(record)
+		if unidentified_scenes.size()>=32:break
 	crime_score=clampi(int(data.get("score",0)),0,25)
-	wanted_level=ceili(float(crime_score)/5.0);wanted=crime_score>0
+	wanted_level=ceili(float(crime_score)/5.0);wanted=crime_score>0;response_pending=wanted
 	unseen_age=clampf(float(data.get("unseen",0)),0,55)
 	var at: Array=data.get("last_known",[0,0,0])
 	if at.size()==3:last_known=Vector3(float(at[0]),float(at[1]),float(at[2]))

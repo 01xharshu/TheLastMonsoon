@@ -1,0 +1,17 @@
+{
+  "sex": "male",
+  "profile": 1,
+  "source": "WorkingAssets/NPCs/indian_street_variants/male_01/male_01.blend",
+  "body_vertices": 13380,
+  "garments": {
+    "Street opaque foundation": 749,
+    "Fitted cotton upper base": 1532,
+    "Bordered shoulder shawl": 48,
+    "Street dhoti waist fold": 192,
+    "Street folded dhoti l": 624,
+    "Street folded dhoti r": 624
+  },
+  "method": "MPFB body deltas; nearest complete body displacement transfer to clothing",
+  "visual_approved": false,
+  "runtime_integrated": false
+}

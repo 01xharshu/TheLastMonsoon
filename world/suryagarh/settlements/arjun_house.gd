@@ -89,10 +89,23 @@ func furnish(b, home: Node3D) -> void:
 	b.piece(home,"HearthSmokeStain",Vector3(3.65,1.20,-3.402),Vector3(1.15,1.7,0.016),surface(Color(0.40,0.32,0.24),4),false)
 	b.piece(home,"HearthAsh",Vector3(3.65,0.63,-2.65),Vector3(0.45,0.02,0.34),b.iron,false)
 	b.piece(home,"KitchenShelf",Vector3(4.32,1.45,-1.1),Vector3(0.5,0.10,1.5),b.wood,false)
-	for scene_path in ["res://assets/props/polyhaven/brass_pot_01/brass_pot_01_1k.gltf","res://assets/props/polyhaven/wicker_basket_01/wicker_basket_01_1k.gltf"]:
+	for scene_path in ["res://objects/household/storage/brass_pot.tscn","res://objects/household/storage/basket.tscn"]:
 		var prop: Node3D = load(scene_path).instantiate()
 		home.add_child(prop)
 		prop.position = Vector3(3.7,0.24,-0.8 if "pot" in scene_path else 0.0)
+	# Reuse shared household assets; keep the partition and cot approaches clear.
+	for item in [
+		["res://objects/household/grain_sack.tscn", "GrainSack", Vector3(4.12,0.24,2.55)],
+		["res://objects/household/storage/basket.tscn", "HouseholdBasket", Vector3(4.22,0.24,2.0)],
+		["res://objects/household/supplies/folded_letter.tscn", "FamilyLetter", Vector3(3.55,0.89,1.15)],
+		["res://objects/household/water_pot_visual.tscn", "ShelfWaterVessel", Vector3(4.32,1.50,-1.52), 0.45],
+		["res://objects/household/water_pouch_visual.tscn", "ShelfPouch", Vector3(4.32,1.50,-0.70), 0.65]
+	]:
+		var furnishing: Node3D = load(item[0]).instantiate()
+		furnishing.name = item[1]
+		furnishing.position = item[2]
+		if item.size() > 3: furnishing.scale = Vector3.ONE * float(item[3])
+		home.add_child(furnishing)
 	b.piece(home,"WallPegRail",Vector3(-3.0,1.65,-3.35),Vector3(1.2,0.12,0.08),b.wood,false)
 	for x in [-3.45,-3.0,-2.55]:
 		b.piece(home,"TimberPeg",Vector3(x,1.65,-3.22),Vector3(0.06,0.06,0.24),b.wood,false)

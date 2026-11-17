@@ -8,7 +8,7 @@ Updated 2026-10-10. Integrated gameplay roles for the existing four residents an
 | Wealthy merchant | Produce purchasing and counting-house business | Sell one mango for 2 rupees, up to three per day while storage has room. Public shipping/cloth jobs remain with the existing dispatch clerk. |
 | British official | This estate's accounts | Show an existing district revenue receipt; retain it, record acknowledgement and receive a one-time 2-rupee reimbursement. The NPC does not issue district clearances. |
 | British household host | Household provisioning | Deliver two roti for 4 rupees and the existing help reputation award once per day; food enters the British household pantry. |
-| Three cooks | Household meals | Buy stored roti for 2 rupees or supply roti using the secondary interaction. Pantry stock is shared with household deliveries; empty stock stops the cooking overlay until replenished. |
+| Three cooks | Household meals | Buy stored roti for 2 rupees when two or more remain, or 3 rupees when only one remains. Supply roti using the secondary interaction. Pantry stock is shared with household deliveries; empty stock stops the cooking overlay until replenished. |
 | Three water bearers | Household water supply | Fill a water bag in half-litre portions, bounded by bag capacity and two litres per household per day. Service points sit outside the kitchen walls. |
 | Three coachmen | Reserved family transport | Explain the home–office route and direct public travellers to public cart stands. Family coaches remain reserved. |
 
@@ -50,3 +50,5 @@ Reusable checks print results and retain no reports:
 - `Godot --headless --path . --script tools/world/validate_household_shawl_fit.gd`
 
 On this workstation, `Godot` is `/Applications/Godot.app/Contents/MacOS/Godot`. Test save data and captures use OS temporary directories with exit cleanup. No generated test screenshots, recordings, logs or reports are retained.
+
+Pantry scarcity uses the existing saved stock. The cook shows the current price before interaction, and replenishment restores the ordinary price. A populated-world fixture exercised the actual cook interaction, scarce-stock purchase and save/load restoration. The headless fixture passed without diagnostics after using the normal graceful shutdown path.

@@ -6,7 +6,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var stage := Node3D.new()
-	root.add_child(stage)
+	root.add_child(stage);current_scene=stage
 	var floor := StaticBody3D.new()
 	stage.add_child(floor)
 	var floor_collision := CollisionShape3D.new()
@@ -28,7 +28,7 @@ func _run() -> void:
 	if visual.skeleton == null or visual.motion_tree == null:
 		_fail("playable rig or AnimationTree missing")
 		return
-	if stance.low_waist.size() != 6:
+	if stance.low_waist.size() != 7:
 		_fail("stance garment assets are missing or stale; rebuild the retained body fit")
 		return
 	stance.enter_crouch()
@@ -71,13 +71,36 @@ func _run() -> void:
 		_fail("crawl-to-run transition did not recover")
 		return
 	for record in stance.low_waist:
-		if record.node.mesh != record.normal:
-			_fail("standing recovery retained a low-stance garment")
+		var expected:Mesh=record.low if "DrapedTrousers" in str(record.node.name) or record.node.name=="Arjun_Kurta_SplitHem" else record.normal
+		if record.node.mesh != expected:
+			_fail("standing recovery did not retain fitted trousers and restore normal footwear")
 			return
 	Input.action_release("move_forward")
 	Input.action_release("sprint")
 	actor.inventory.add_item("enfield",1)
 	visual.equipment.select_weapon(1)
+	# Cart interaction and wide clearance shapes are invisible to gunfire.
+	# They must neither become cover by themselves nor hide a real blocker.
+	var cart_proxies: Array[StaticBody3D] = []
+	for group in ["cart_clearance_bodies", "cart_boarding_handles"]:
+		var proxy := StaticBody3D.new()
+		proxy.name = "Test_" + group
+		proxy.collision_layer = 2
+		proxy.add_to_group(group)
+		stage.add_child(proxy)
+		proxy.position = Vector3(actor.position.x, 0, actor.position.z - .55)
+		var proxy_collision := CollisionShape3D.new()
+		var proxy_shape := BoxShape3D.new()
+		proxy_shape.size = Vector3(.8, 1.2, .08)
+		proxy_collision.shape = proxy_shape
+		proxy_collision.position.y = .6
+		proxy.add_child(proxy_collision)
+		cart_proxies.append(proxy)
+	actor.get_node("CameraPivot").global_rotation = Vector3.ZERO
+	for i in 3: await physics_frame
+	if stance.try_cover():
+		_fail("invisible cart proxy was accepted as bulletproof cover")
+		return
 	var crate := StaticBody3D.new()
 	stage.add_child(crate)
 	crate.position = Vector3(actor.position.x,0,actor.position.z-1.2)
@@ -92,6 +115,15 @@ func _run() -> void:
 	if not stance.try_cover():
 		_fail("solid crate cover was not acquired")
 		return
+	if stance.cover_body != crate:
+		_fail("cart proxy hid the real solid cover")
+		return
+	var origin := actor.global_position - Vector3.UP * .18
+	var blocker: Dictionary = preload("res://combat/ballistic_trace.gd").sight(actor.get_world_3d().direct_space_state, self, origin, origin + Vector3.FORWARD * 2.0, [actor.get_rid()])
+	if blocker.get("collider") != crate:
+		_fail("cover selection and ballistic obstruction disagree")
+		return
+	for proxy in cart_proxies: proxy.queue_free()
 	Input.action_press("aim")
 	for i in 30: await physics_frame
 	if not actor.get_node("RifleCombat").aiming or not actor.get_node("CombatInput").available():
@@ -138,9 +170,7 @@ func _run() -> void:
 		peak_usec = maxi(peak_usec,elapsed)
 	print("GROUND STANCE ISOLATED: PASS | crouch foot y=%.3f, prone crawl %.2f m/s, crawl-run, armed cover fire, moving/removed cover recovery" % [crouch_foot,crawl_speed])
 	print("STANCE SOLVE COST | armed layer mean %.3f ms, peak %.3f ms; palm errors %.4f / %.4f m" % [float(total_usec)/60000.0,float(peak_usec)/1000.0,grip.right_palm_m,grip.left_palm_m])
-	stage.queue_free()
-	for i in 4: await physics_frame
-	quit.call_deferred()
+	root.get_node("SaveManager").quit_game(0)
 
 func _lowest_foot(visual: Node3D) -> float:
 	var lowest := INF
@@ -152,4 +182,4 @@ func _lowest_foot(visual: Node3D) -> float:
 
 func _fail(reason: String) -> void:
 	push_error("GROUND STANCE ISOLATED: "+reason)
-	quit(1)
+	root.get_node("SaveManager").quit_game(1)

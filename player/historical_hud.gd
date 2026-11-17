@@ -153,9 +153,9 @@ func _update_gun_sight(delta: float) -> void:
 	var aiming_gun: bool = gear != null and not gear.stowed and ((gear.selected == 1 and player.get_node("RifleCombat").aiming) or (gear.selected == 3 and player.get_node("PistolCombat").aiming) or (gear.selected == 5 and player.get_node("DoubleGunCombat").aiming))
 	human_target = false
 	if aiming_gun:
-		var camera: Camera3D = player.get_node("CameraPivot/SpringArm3D/Camera3D")
+		var camera: Camera3D = preload("res://story/rear_passenger_combat.gd").aim_camera(player,player.get_node("CameraPivot/SpringArm3D/Camera3D"))
 		var from: Vector3 = camera.global_position
-		var query := PhysicsRayQueryParameters3D.create(from, from - camera.global_basis.z * 350.0)
+		var query := PhysicsRayQueryParameters3D.create(from, from + preload("res://story/rear_passenger_combat.gd").aim_direction(player,camera) * 350.0)
 		query.exclude = [player.get_rid()]
 		var hit: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty():
@@ -225,10 +225,10 @@ func _draw() -> void:
 	var pistol: Node = player.get_node_or_null("PistolCombat")
 	var double_gun: Node = player.get_node_or_null("DoubleGunCombat")
 	var gear: Node = player.get_node("VisualRoot/CharacterVisual").equipment
-	var gun_aim: bool = tutorial_reveal >= 9 and gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
+	var gun_aim: bool = (tutorial_reveal >= 9 or player.has_meta("consignment_fpv_camera")) and gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
 	if gun_aim:
 		var pistol_sight: bool = gear != null and gear.selected == 3
-		var center := size * .5
+		var center := size * Vector2(player.get_meta("consignment_aim_uv",Vector2(.5,.5)))
 		var radius := gun_sight_radius(pistol_sight)
 		var color := Color(0.85,0.57,0.32) if human_target else IVORY
 		for angle in [0.0, PI*.5, PI, PI*1.5]:

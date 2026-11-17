@@ -6,6 +6,7 @@ const Sight=preload("res://systems/visual_perception.gd")
 const Actions=preload("res://systems/action_permissions.gd")
 const Budget=preload("res://systems/simulation_budget.gd")
 const STAGES=["dormant","ambush","confront","escape","follow","briefing","inspect","load","shoot","raid_ready","infiltrate","collect","rope","return","complete"]
+const GATE_FOLLOW_ROUTE=[Vector2(11.5,81),Vector2(0,80),Vector2(0,73),Vector2(-43,73),Vector2(-43,82.5),Vector2(-56,83)]
 const HIDEOUT_FOLLOW_ROUTE=[Vector3(0,3.8,24),Vector3(0,3.8,18),Vector3(0,.2,7),Vector3(0,.2,2),Vector3(-3,.2,2)]
 var world: Node3D
 var player: CharacterBody3D
@@ -27,6 +28,9 @@ var startup_task=-1
 var stage="dormant"
 var active=false
 var cinematic=""
+var dialogue_voice: AudioStreamPlayer
+var voiced_caption := ""
+var voiced_slot := 0.0
 var age=0.0
 var suspicion=0.0
 var disguise=false
@@ -36,6 +40,8 @@ var captured_rifles=0
 var outfit=preload("res://story/rebellion_disguise.gd").new()
 var collected: Array[int]=[]
 var target_hits=0
+var range_transferred:=false
+var range_lease:=-1
 var reload_seen=false
 var starting_shots=0
 var officer_age=0.0
@@ -70,6 +76,7 @@ func configure() -> void:
  sites=Sites.new();sites.name="RebellionSites";add_child(sites);await sites.configure(self)
  sites.officer.get_node("Vitality").died.connect(officer_defeated)
  gameplay_camera=player.get_node("CameraPivot/SpringArm3D/Camera3D")
+ dialogue_voice=AudioStreamPlayer.new();dialogue_voice.name="DialogueVoice";add_child(dialogue_voice)
  camera=Camera3D.new();camera.name="RebellionCamera";camera.fov=52;add_child(camera)
  var layer=CanvasLayer.new();layer.layer=85;add_child(layer)
  shade=ColorRect.new();shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;layer.add_child(shade);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.color=Color(0,0,0,0)
@@ -97,9 +104,9 @@ func objective() -> String:
   "escape":return "Crime witnessed · Escape toward the ruined fort. Take the superior’s horse or fight your way out."
   "follow":return "Follow Mangal Pandey into the fort hideout."
   "briefing":return "Speak to Mangal Pandey in the hideout."
-  "inspect":return "Inspect the captured weapons."
-  "load":return "Select the Enfield (2), draw it (G), then load a paper cartridge (R)."
-  "shoot":return "Aim at the wooden target and fire. Reload and hit it twice."
+  "inspect":return "Mangal: Take an Enfield from the rifle rack."
+  "load":return equip_rifle_instruction()
+  "shoot":return rifle_instruction()
   "raid_ready":return "Speak to Mangal to begin the weapons raid with two companions."
   "infiltrate":return "Enter the magazine unseen. Use the left stairs to the second-floor weapons room. Q behind a sentry; E to take his uniform."
   "collect":return "Collect all four rifle bundles · %d/4. Stay out of the patrols’ sight."%collected.size()
@@ -116,7 +123,8 @@ func destination() -> Dictionary:
   "follow":at=sites.mangal.global_position
   "briefing","raid_ready":at=sites.prompts.briefing.global_position
   "inspect":at=sites.prompts.weapons.global_position
-  "load","shoot":at=sites.target.global_position
+  "load":at=sites.prompts.weapons.global_position
+  "shoot":at=sites.firing_line.global_position
   "infiltrate":at=sites.raid.to_global(Vector3(-5,3.7,-3))
   "collect":
    for i in sites.bundles.size():
@@ -126,8 +134,10 @@ func destination() -> Dictionary:
   "complete":return {}
  return {"position":at+Vector3.UP,"label":objective(),"endpoint":""}
 func set_stage(next: String) -> void:
+ if next!="shoot" and range_lease>=0:release_range()
  stage=next;age=0
- clock.set_mission_daylight_locked(&"mangal_weapon_training",stage in ["inspect","load","shoot"])
+ if is_instance_valid(sites.rack_rifle):sites.rack_rifle.visible=stage in ["dormant","ambush","confront","escape","follow","briefing","inspect"]
+ clock.set_mission_daylight_locked(&"mangal_weapon_training",stage not in ["dormant","raid_ready","complete"])
  if stage=="complete":
   inquiry.destination.set_meta("parking_label","")
   if story_map.waypoint.is_equal_approx(map_waypoint):story_map.waypoint=Vector2.INF;story_map.selected_site=""
@@ -163,11 +173,16 @@ func _process(delta: float) -> void:
     elif mount==null:player.inventory.message_requested.emit("Mangal: Take the horse. I will draw alongside you.")
   "follow":advance_follow(delta)
   "load":
-   var gun: Node=rifle
-   if gun.reload_remaining>0:reload_seen=true
-   if reload_seen and gun.reload_remaining==0 and gun.rounds>0:set_stage("shoot");starting_shots=gun.shots_fired
+   if hero.equipment.selected==1 and not hero.equipment.stowed and not player.inventory_ui.is_open() and not player.get_meta("weapon_wheel_open",false) and not player.get_meta("map_open",false):
+    begin_cinematic("range_entry")
   "shoot":
-   if target_hits>=2:set_stage("raid_ready")
+   if target_hits>=1:
+    set_stage("raid_ready")
+   else:
+    caption.text=rifle_instruction()
+    if rifle.rounds==0 and rifle.reload_remaining<=0:
+     if player.inventory.get_item_count("paper_cartridges")==0:player.inventory.add_item("paper_cartridges",1)
+     rifle.start_reload()
   "infiltrate","collect":
    update_raid(delta)
    if stage=="infiltrate" and near(sites.raid.to_global(Vector3(-2,4.6,-4)),6) and player.global_position.y>sites.raid.global_position.y+3:set_stage("collect")
@@ -177,6 +192,70 @@ func _process(delta: float) -> void:
    var local: Vector3=sites.return_bay.to_local(sites.goods.global_position)
    if sites.goods.rider==player and cart_in_delivery_bay() and absf(sites.goods.boarding.speed)<.35:
     begin_cinematic("delivery")
+func input_label(action:String,fallback:String) -> String:
+ for event in InputMap.action_get_events(action):
+  if event is InputEventMouseButton:
+   if event.button_index==MOUSE_BUTTON_RIGHT:return "Right click"
+   if event.button_index==MOUSE_BUTTON_LEFT:return "Left click"
+  if event is InputEventJoypadMotion:
+   if event.axis==JOY_AXIS_TRIGGER_LEFT:return "Left trigger"
+   if event.axis==JOY_AXIS_TRIGGER_RIGHT:return "Right trigger"
+  if event is InputEventKey:return OS.get_keycode_string(event.physical_keycode if event.physical_keycode!=0 else event.keycode)
+  if event is InputEventJoypadButton:
+   match event.button_index:
+    JOY_BUTTON_RIGHT_SHOULDER:return "Right bumper"
+    JOY_BUTTON_DPAD_UP:return "D-pad up"
+    _:return event.as_text().get_slice(" (",0)
+ return fallback
+
+func equip_rifle_instruction() -> String:
+ if SaveManager.active_input_device=="controller":
+  if hero.equipment.selected==1:return input_label("stow_weapon","D-pad up")+" · Draw the Enfield"
+  return input_label("next_weapon","Right bumper")+" · Equip the Enfield"
+ return "Press 2 to equip the Enfield"
+
+func rifle_instruction() -> String:
+ if rifle.reload_remaining>0 or rifle.rounds==0:return "Preparing another cartridge…"
+ var aim_label:=input_label("aim","Right click")
+ var fire_label:=input_label("attack","Left click")
+ return "Keep aiming · "+fire_label+" to fire at the circle" if rifle.aiming else "Hold "+aim_label+" to aim · "+fire_label+" to fire"
+
+func place_at_firing_line() -> void:
+ player.global_position=sites.firing_line.global_position+Vector3.UP*.96
+ player.velocity=Vector3.ZERO
+ var toward:Vector3=sites.target.global_position-player.global_position
+ var eye_height:float=player.get_node("StealthStance").camera_height()
+ player.camera_pitch=atan2(toward.y-eye_height,Vector2(toward.x,toward.z).length())
+ player.camera_pivot.global_rotation=Vector3(player.camera_pitch,atan2(-toward.x,-toward.z),0)
+ gameplay_camera.rotation=Vector3.ZERO
+ player.visual_root.global_rotation.y=atan2(toward.x,toward.z)
+
+func enter_range() -> void:
+ if range_lease<0:
+  var domains:Array[StringName]=[&"move",&"interact",&"board"]
+  range_lease=action_service.acquire(self,domains)
+ if range_lease<0:
+  set_stage("load")
+  return
+ player.set_meta("rifle_lesson",true)
+ hero.equipment.select_weapon(1)
+ rifle.cancel_reload()
+ rifle.rounds=1
+ rifle.loaded=true
+ starting_shots=rifle.shots_fired
+ for impact in rifle.impacts:
+  if is_instance_valid(impact):impact.set_meta("lesson_counted",true)
+ target_hits=0
+ set_stage("shoot")
+ caption.text=rifle_instruction()
+ caption.show()
+
+func release_range() -> void:
+ action_service.release(range_lease)
+ range_lease=-1
+ if is_instance_valid(player):player.remove_meta("rifle_lesson")
+ if is_instance_valid(caption):caption.hide()
+
 func update_target_hits() -> void:
  if stage!="shoot":return
  var gun: Node=rifle
@@ -190,20 +269,34 @@ func reset_grounding(actor: Node3D) -> void:
  for side in ["l","r"]:
   var foot: int=actor._bones["foot_"+side]
   actor.foot_plant.ankle_height[side]=actor._skeleton.to_global(actor._skeleton.get_bone_global_rest(foot).origin).y
-func move_actor(actor: Node3D,goal: Vector3,delta: float,speed: float) -> bool:
+func move_actor(actor: Node3D,goal: Vector3,delta: float,speed: float,ground_step:=false) -> bool:
  var offset=goal-actor.global_position
+ if ground_step:offset.y=0
  if offset.length()<.2:actor.travel_speed=0;return true
  var step=offset.normalized()*minf(speed*delta,offset.length())
+ if ground_step:step=ground(actor.global_position+step)-actor.global_position
  var query=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*.9,actor.global_position+step+Vector3.UP*.9,1);query.exclude=[actor.body_collider.get_rid(),actor.get_node("Vitality").hit_body.get_rid()]
  if not actor.get_world_3d().direct_space_state.intersect_ray(query).is_empty():actor.travel_speed=0;return false
  actor.global_position+=step;actor.rotation.y=atan2(offset.x,offset.z);actor.travel_speed=speed;return false
+func uses_fort_gate() -> bool:
+ return sites.fort.get("embedded_in_world")==true
+
+func follow_route_size() -> int:
+ return HIDEOUT_FOLLOW_ROUTE.size()+(GATE_FOLLOW_ROUTE.size() if uses_fort_gate() else 0)
+
+func follow_destination(index:int) -> Vector3:
+ if uses_fort_gate():
+  if index<GATE_FOLLOW_ROUTE.size():
+   var point:Vector2=GATE_FOLLOW_ROUTE[index]
+   return ground(sites.fort.to_global(Vector3(point.x,0,point.y)))
+  index-=GATE_FOLLOW_ROUTE.size()
+ return sites.cellar.to_global(HIDEOUT_FOLLOW_ROUTE[index])
+
 func advance_follow(delta: float) -> void:
- # Stay in the central aisle until past the companions at either side of entry.
- # The former diagonal crossed RaidCompanion0's physical capsule and stalled.
  if not near(sites.mangal.global_position,9):sites.mangal.travel_speed=0;return
- if move_actor(sites.mangal,sites.cellar.to_global(HIDEOUT_FOLLOW_ROUTE[follow_index]),delta,1.4):
+ if move_actor(sites.mangal,follow_destination(follow_index),delta,1.4,uses_fort_gate() and follow_index<GATE_FOLLOW_ROUTE.size()):
   follow_index+=1
-  if follow_index==HIDEOUT_FOLLOW_ROUTE.size():set_stage("briefing")
+  if follow_index==follow_route_size():set_stage("briefing")
 func officer_defeated() -> void:
  if stage not in ["ambush","confront"]:return
  var police: Node=encounters
@@ -235,7 +328,10 @@ func request(id: String,actor: CharacterBody3D) -> bool:
  if id=="briefing":return begin_cinematic("briefing")
  elif id=="weapons":
   if not player.inventory.has_item("enfield"):player.inventory.add_item("enfield",1)
-  player.inventory.add_item("paper_cartridges",12);rifle.rounds=0;rifle.loaded=false;reload_seen=false;set_stage("load")
+  player.inventory.add_item("paper_cartridges",12)
+  if hero.equipment.selected==1 and not hero.equipment.stowed:hero.equipment.toggle_stowed()
+  target_hits=0
+  set_stage("load")
  elif id=="raid":return begin_cinematic("raid")
  elif id=="rope":return begin_cinematic("rope")
  elif id.begins_with("bundle"):
@@ -283,7 +379,8 @@ func begin_cinematic(id: String) -> bool:
  var domains: Array[StringName]=[&"move",&"attack",&"interact",&"board"]
  cinematic_lease=action_service.acquire(self,domains)
  if cinematic_lease<0:return false
- active=true;cinematic=id;age=0;prior_physics=player.is_physics_processing();prior_busy=player.get_meta("document_busy",false)
+ range_transferred=false
+ active=true;cinematic=id;age=0;voiced_caption="";voiced_slot=0.0;dialogue_voice.stop();prior_physics=player.is_physics_processing();prior_busy=player.get_meta("document_busy",false)
  player.set_meta("story_cinematic",true);player.set_meta("document_busy",true);player.set_physics_process(false);player.velocity=Vector3.ZERO
  hidden_ui.clear();prior_visibility.clear()
  for path in ["HUD","LandscapeUI","Player/UI","Player/InteractionUI"]:
@@ -308,7 +405,20 @@ func begin_cinematic(id: String) -> bool:
   rope_origin=player.global_position;sites.goods.global_position=ground(sites.raid.to_global(Vector3(0,0,-33)));sites.cargo.show()
  return true
 func update_cinematic(delta: float) -> void:
+ if cinematic=="range_entry":
+  age+=delta
+  gameplay_camera.make_current()
+  for bar in bars:bar.hide()
+  caption.hide()
+  shade.color.a=1.0-smoothstep(.55,1.18,age) if age>=.55 else smoothstep(0.0,.48,age)
+  if age>=.55 and not range_transferred:
+   place_at_firing_line()
+   range_transferred=true
+  if age>=1.18:finish_cinematic()
+  return
  camera.make_current()
+ if dialogue_voice.playing and voiced_slot>0.0:
+  delta*=minf(1.0,voiced_slot/(dialogue_voice.stream.get_length()+.2))
  age+=delta
  var duration=6.0
  var focus=player.global_position
@@ -335,11 +445,15 @@ func update_cinematic(delta: float) -> void:
    sites.coach.set_forward_motion(2,delta)
    focus=sites.coach.global_position+Vector3.UP*1.6
   "arrival":
-   duration=7;text="The ruined fort · Mangal Pandey’s hideout";focus=sites.coach.global_position+Vector3.UP
-   move_cinematic_cart(sites.coach,1.4,delta);sites.coach.set_forward_motion(1.4,delta)
+   duration=7;text="The old fort · Follow Mangal through the gate";focus=sites.coach.global_position+Vector3.UP
+   if uses_fort_gate():
+    focus=sites.fort.to_global(Vector3(11.5,4,86))
+   else:
+    move_cinematic_cart(sites.coach,1.4,delta);sites.coach.set_forward_motion(1.4,delta)
   "briefing":
    duration=19;focus=sites.mangal.global_position+Vector3.UP
-   text="Mangal Pandey: Anger alone will not win this war. Bare hands cannot answer their guns." if age<7 else "Mangal Pandey: We gather weapons, train together, and choose our moment. Learn to load and shoot before you risk another life." if age<14 else "Mangal Pandey: These rifles were taken from Company stores. You will help us bring the next shipment home."
+   preload("res://story/conversation_facing.gd").pair(player,sites.mangal)
+   text="Mangal Pandey: Anger alone will not win this war. Bare hands cannot answer their guns." if age<7 else "Mangal Pandey: We gather weapons, train together, and choose our moment. Learn to load and shoot before you risk another life." if age<14 else "Mangal Pandey: Take one of the Enfields from the rack. Equip it, then I will show you how to aim and fire."
   "raid":
    duration=6;text="Cantonment · The weapons magazine";focus=sites.raid.global_position+Vector3.UP*3
    if age>2:
@@ -377,6 +491,18 @@ func update_cinematic(delta: float) -> void:
    duration=7;text="Mangal Pandey’s hideout · The captured rifles have arrived.";focus=sites.goods.global_position+Vector3.UP
    sites.parking_material.albedo_color.a=maxf(0,1-age/1.5)
  caption.text=text
+ if delta>0.0 and text!=voiced_caption:
+  dialogue_voice.stop();voiced_caption=text;voiced_slot=0.0
+  if text.begins_with("Mangal Pandey: "):
+   var spoken: String=text.trim_prefix("Mangal Pandey: ")
+   var key: String=("Mangal Pandey\n"+spoken).sha256_text()
+   var path: String="res://assets/audio/dialogue/"+key+".wav"
+   if ResourceLoader.exists(path):
+    var stream:=load(path) as AudioStream
+    if stream!=null:
+     dialogue_voice.stream=stream
+     voiced_slot=5.0 if cinematic=="briefing" and age>=14.0 else 7.0
+     dialogue_voice.play()
  shade.color.a=1.0 if cinematic=="days" else maxf(1-smoothstep(0,1,age),smoothstep(duration-1,duration,age))
  title_card.text="A few days later" if cinematic=="days" else "Mangal Pandey’s hideout" if cinematic in ["arrival","delivery"] else "Cantonment · Weapons magazine" if cinematic=="raid" else ""
  title_card.visible=not title_card.text.is_empty() and (cinematic=="days" or shade.color.a>.65)
@@ -424,6 +550,9 @@ func release_mount(mount: Node) -> void:
   player.collision_layer=mount.boarding.saved_layer;player.collision_mask=mount.boarding.saved_mask;mount.boarding.rider=null;mount.boarding.transition="";mount.boarding.speed=0
  player.set_meta("mounted_vehicle",null);player.set_meta("horse_transition","")
 func finish_cinematic() -> void:
+ dialogue_voice.stop()
+ preload("res://story/conversation_facing.gd").release(player)
+ preload("res://story/conversation_facing.gd").release(sites.mangal)
  action_service.release(cinematic_lease);cinematic_lease=-1
  var was=cinematic;active=false;cinematic="";caption.hide();title_card.hide();shade.color.a=0;gameplay_camera.make_current()
  for bar in bars:bar.hide()
@@ -435,16 +564,19 @@ func finish_cinematic() -> void:
   "days":set_stage("ambush")
   "rescue":
    release_mount(sites.coach);sites.horse.set_physics_process(true);sites.horse.set_process(true)
-   sites.coach.global_position=ground(sites.fort.to_global(Vector3(0,0,65)))
+   sites.coach.global_position=ground(sites.fort.to_global(Sites.GATE_COACH_PARK if uses_fort_gate() else Vector3(0,0,65)))
    player.global_position=sites.coach.global_position+Vector3(3,.9,0)
    encounters.complete_custody(player)
    follow_index=0;begin_cinematic("arrival")
   "arrival":
    sites.mangal.riding_socket=null;sites.mangal.riding_cart=null;sites.mangal.driving=false
-   sites.mangal.global_position=ground(sites.cellar.to_global(Vector3(0,0,34)));player.global_position=sites.mangal.global_position+Vector3(2,.9,2)
+   var start:Vector3=sites.fort.to_global(Vector3(11.5,0,91)) if uses_fort_gate() else sites.cellar.to_global(Vector3(0,0,34))
+   sites.mangal.global_position=ground(start)
+   player.global_position=ground(start+Vector3(2,0,2))+Vector3.UP*.9 if uses_fort_gate() else sites.mangal.global_position+Vector3(2,.9,2)
    predecessor.reset_actor_grounding(sites.mangal) if predecessor.has_method("reset_actor_grounding") else sites.mangal.foot_plant.clear()
    set_stage("follow")
   "briefing":set_stage("inspect")
+  "range_entry":enter_range()
   "raid":set_stage("infiltrate")
   "rope":
    sites.cargo.show()
@@ -463,18 +595,22 @@ func export_state() -> Dictionary:
  for actor in [sites.officer,sites.mangal]+sites.guards+sites.companions:
   var at: Vector3=actor.global_position
   actors.append({"position":[at.x,at.y,at.z],"heading":actor.rotation.y,"health":actor.get_node("Vitality").health,"dead":actor.get_meta("dead",false),"knocked_out":actor.get_meta("knocked_out",false)})
- return {"actors":actors,"stage":stage,"collected":collected.duplicate(),"disguise":disguise,"disguise_guard":disguise_guard,"stripped_guards":stripped_guards.duplicate(),"captured_rifles":captured_rifles,"target_hits":target_hits,"reload_seen":reload_seen,"officer_age":officer_age,"follow_index":follow_index}
+ return {"hideout_daily":sites.cellar.get_node("HideoutDailyLife").export_state(),"actors":actors,"stage":stage,"collected":collected.duplicate(),"disguise":disguise,"disguise_guard":disguise_guard,"stripped_guards":stripped_guards.duplicate(),"captured_rifles":captured_rifles,"target_hits":target_hits,"reload_seen":reload_seen,"officer_age":officer_age,"follow_index":follow_index,"fort_gate_route":uses_fort_gate()}
 func restore_state(data: Dictionary) -> void:
  if not configured:
   pending_restore=data.duplicate(true);restore_waiting=true;return
  stage=str(data.get("stage","dormant"));if stage not in STAGES:stage="dormant"
+ var daily:Node=sites.cellar.get_node_or_null("HideoutDailyLife")
+ if daily!=null:daily.restore_state(data.get("hideout_daily",{}) if data.get("hideout_daily",{}) is Dictionary else {})
  collected.clear()
  for value in data.get("collected",[]):
   if typeof(value) not in [TYPE_INT,TYPE_FLOAT]:continue
   var index=int(value)
   if index>=0 and index<4 and index not in collected:collected.append(index)
  disguise_guard=clampi(int(data.get("disguise_guard",0)),0,3)
- disguise=bool(data.get("disguise",false));target_hits=clampi(int(data.get("target_hits",0)),0,2);reload_seen=bool(data.get("reload_seen",false));officer_age=maxf(0,float(data.get("officer_age",0)));follow_index=clampi(int(data.get("follow_index",0)),0,HIDEOUT_FOLLOW_ROUTE.size()-1)
+ disguise=bool(data.get("disguise",false));target_hits=clampi(int(data.get("target_hits",0)),0,2);reload_seen=bool(data.get("reload_seen",false));officer_age=maxf(0,float(data.get("officer_age",0)));follow_index=int(data.get("follow_index",0))
+ if stage=="follow" and uses_fort_gate() and not data.get("fort_gate_route",false):follow_index+=GATE_FOLLOW_ROUTE.size()
+ follow_index=clampi(follow_index,0,follow_route_size()-1)
  stripped_guards.clear()
  for value in data.get("stripped_guards",[]):
   if typeof(value) not in [TYPE_INT,TYPE_FLOAT]:continue
@@ -504,9 +640,16 @@ func restore_state(data: Dictionary) -> void:
  for i in sites.bundles.size():sites.bundles[i].visible=i not in collected
  if stage in ["escape","follow","briefing","inspect","load","shoot","raid_ready","infiltrate","collect","rope","return","complete"]:
   sites.officer.get_node("Vitality").dead=true;sites.officer.set_meta("dead",true);sites.officer.hide()
- set_stage(stage)
+ if stage=="shoot" and target_hits>=1:
+  set_stage("raid_ready")
+ elif stage=="shoot":
+  place_at_firing_line()
+  enter_range()
+ else:set_stage(stage)
 func _exit_tree() -> void:
- if is_instance_valid(action_service):action_service.release(cinematic_lease)
+ if is_instance_valid(action_service):
+  action_service.release(cinematic_lease)
+  if range_lease>=0:release_range()
  outfit.remove()
  if is_instance_valid(clock):clock.set_mission_daylight_locked(&"mangal_weapon_training",false)
  if is_instance_valid(player) and active:
@@ -531,6 +674,25 @@ func rear_target() -> Node3D:
   if offset.length()<.48 or offset.length()>1.05 or offset.normalized().dot(guard.global_basis.z)>-.6:continue
   return guard
  return null
+func skip_cinematic() -> void:
+ if not active or cinematic=="range_entry":return
+ dialogue_voice.stop()
+ player.set_meta("cinematic_jump_block_until_released",true)
+ # Resolve connected travel shots through their normal endpoints, stopping at gameplay.
+ for transition in 3:
+  if not active:return
+  var durations={"days":4.0,"rescue":16.0,"arrival":7.0,"briefing":19.0,"raid":6.0,"rope":18.0,"delivery":7.0}
+  age=float(durations.get(cinematic,6.0))
+  update_cinematic(0.0)
+
+func _input(event: InputEvent) -> void:
+ if range_lease>=0:
+  if event.is_action("aim") or event.is_action("attack") or event is InputEventMouseMotion or event is InputEventJoypadMotion:return
+  if event.is_pressed():get_viewport().set_input_as_handled()
+  return
+ if active and event.is_action_pressed("jump") and not event.is_echo():
+  skip_cinematic();get_viewport().set_input_as_handled()
+
 func _unhandled_key_input(event: InputEvent) -> void:
  if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode==KEY_Q and rear_target()!=null:
   if grapple.begin():get_viewport().set_input_as_handled()

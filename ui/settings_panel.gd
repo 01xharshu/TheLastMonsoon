@@ -9,7 +9,7 @@ var waiting_button: Button
 var input_selector: OptionButton
 
 var category := ""
-const CATEGORIES := ["Audio", "Camera", "Controller", "Display", "Graphics", "Keyboard controls"]
+const CATEGORIES := ["Audio", "Camera", "Controller", "Display", "Graphics", "Developer", "Keyboard controls"]
 
 func _ready() -> void:
 	name="SettingsPanel"
@@ -50,11 +50,16 @@ func show_category(title: String) -> void:
 		quality.selected=int(SaveManager.options.graphics_quality)
 		quality.item_selected.connect(func(index: int):SaveManager.set_option("graphics_quality",index))
 		add_child(quality)
+	elif title=="Developer":
+		add_toggle("Advanced performance display", "developer_performance")
+		var note := Style.label("Shows frame rate, frame time and engine workload while playing.", 15)
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		add_child(note)
 	elif title=="Keyboard controls":
 		add_child(Style.button("Movement",show_category.bind("Movement")))
 		add_child(Style.button("Actions",show_category.bind("Actions")))
 	elif title in ["Movement","Actions"]:
-		var actions: Array=["move_forward","move_backward","move_left","move_right","jump","toggle_view"] if title=="Movement" else ["interact","toggle_inventory","reload","stow_weapon","identity_scroll"]
+		var actions: Array=["move_forward","move_backward","move_left","move_right","jump","toggle_view"] if title=="Movement" else ["interact","toggle_inventory","kick","reload","stow_weapon","identity_scroll"]
 		for action in actions:
 			if not InputMap.has_action(action):continue
 			var button:=Style.button(binding_label(action),begin_binding.bind(action))

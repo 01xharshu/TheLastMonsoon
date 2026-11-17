@@ -115,6 +115,11 @@ static func profile(mesh: Mesh) -> Array[Dictionary]:
 				points.append(point)
 				low = low.min(point)
 				high = high.max(point)
+		if points.is_empty():
+			# A reduced trunk can cross a band without a vertex inside it.
+			# Measure its actual triangle edges instead of leaving a collision gap.
+			points = wood_cross_section(mesh,(bottom+top)*.5)
+			for point in points: low=low.min(point); high=high.max(point)
 		if points.is_empty(): continue
 		var centre := (low+high)*.5
 		centre.y = (bottom+top)*.5
@@ -122,6 +127,23 @@ static func profile(mesh: Mesh) -> Array[Dictionary]:
 		for point in points: radius = maxf(radius,Vector2(point.x-centre.x,point.z-centre.z).length())
 		result.append({"centre":centre,"radius":radius,"height":top-bottom})
 	return result
+
+static func wood_cross_section(mesh:Mesh,height:float) -> Array[Vector3]:
+	var points:Array[Vector3]=[]
+	for surface in mesh.get_surface_count():
+		var material:=mesh.surface_get_material(surface)
+		var label:=material.resource_name.to_lower() if material else ""
+		if "leav" in label or "branch" in label:continue
+		var arrays:=mesh.surface_get_arrays(surface);var vertices:PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+		var indices:PackedInt32Array=arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()
+		var count:int=indices.size() if not indices.is_empty() else vertices.size()
+		for index in range(0,count,3):
+			for side in 3:
+				var a:Vector3=vertices[indices[index+side] if not indices.is_empty() else index+side]
+				var b:Vector3=vertices[indices[index+(side+1)%3] if not indices.is_empty() else index+(side+1)%3]
+				if absf(b.y-a.y)<.00001 or height<minf(a.y,b.y) or height>maxf(a.y,b.y):continue
+				points.append(a.lerp(b,(height-a.y)/(b.y-a.y)))
+	return points
 
 static func add_batch(parent: Node3D, transforms: Array[Transform3D], segments: Array[Dictionary], label: String = "SolidTreeTrunks") -> StaticBody3D:
 	var body := StaticBody3D.new()

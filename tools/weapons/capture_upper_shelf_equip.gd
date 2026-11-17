@@ -26,27 +26,26 @@ func _run() -> void:
 	actor.camera_pitch = actor.camera_pivot.rotation.x
 	for i in 3: await physics_frame
 	assert(actor._find_interactable() == pickup, "Bow cannot be focused from aisle")
-	await _capture("/tmp/tlm_upper_shelf_bow_prompt.png")
+	await _capture("prompt.png")
 	Input.action_press("interact")
 	var key := InputEventKey.new()
 	key.physical_keycode = KEY_E
 	key.pressed = true
 	actor._unhandled_input(key)
-	assert(actor.hold_target == pickup, "E did not start bow hold")
-	for i in 90:
-		if actor.hold_elapsed >= 0.35: break
-		await physics_frame
-	assert(actor.hold_target == pickup and actor.hold_elapsed >= 0.35, "Bow hold lost its target")
-	await _capture("/tmp/tlm_upper_shelf_bow_hold.png")
-	for i in 120:
-		if actor.inventory.has_item("bow"): break
-		await physics_frame
+	assert(actor.get_meta("weapon_inspection_open",false),"E did not open bow inspection")
+	assert(not actor.inventory.has_item("bow"),"Inspection acquired bow before confirmation")
+	await _capture("inspection.png")
+	actor.get_node("UI").get_children().back().confirm(true)
+	await process_frame
 	Input.action_release("interact")
 	assert(actor.inventory.has_item("bow") and gear.selected == 2 and not gear.stowed, "Bow was not equipped")
-	await _capture("/tmp/tlm_upper_shelf_bow_equipped.png")
+	await _capture("equipped.png")
 	print("UPPER SHELF LIVE E EQUIP: PASS")
 	quit()
 
-func _capture(path: String) -> void:
+func _capture(filename: String) -> void:
+	var output:=OS.get_environment("TLM_WEAPON_REVIEW_DIR")
+	if output.is_empty():return
+	var path:=output.path_join(filename)
 	await RenderingServer.frame_post_draw
 	assert(root.get_texture().get_image().save_png(path) == OK, path)

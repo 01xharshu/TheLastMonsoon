@@ -47,6 +47,8 @@
 
 [ext_resource type="Script" path="res://ui/mobile/touch_controls.gd" id="mobile_touch"]
 
+[ext_resource type="Script" path="res://player/long_idle.gd" id="long_idle"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_6xif0"]
 radius = 0.4
 height = 1.8
@@ -468,3 +470,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("mobile_touch")
+
+[node name="LongIdle" type="Node" parent="."]
+script = ExtResource("long_idle")

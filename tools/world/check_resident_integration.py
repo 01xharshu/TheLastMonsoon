@@ -3,6 +3,7 @@ import os
 import subprocess
 import tempfile
 import sys
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,9 @@ def main():
         )
         output = result.stdout + result.stderr
         failed = result.returncode != 0 or "SCRIPT ERROR:" in output or "\nERROR:" in output
+        results = [json.loads(line.removeprefix("RESIDENT_WORLD_RESULT "))
+                   for line in output.splitlines() if line.startswith("RESIDENT_WORLD_RESULT ")]
+        failed = failed or not results or results[-1].get("passed") is not True
         for line in output.splitlines():
             if line.startswith(("RESIDENT_WORLD_RESULT", "DELIVERY_", "GOODS_BLOCKER", "RECEIVING_WORK", "RECEIVING_STALLED", "RECEIVING_OVERLAP")):
                 print(line)

@@ -54,7 +54,10 @@ func run() -> void:
 	for id in ["talwar","utility_knife","spear","smoke_bomb"]:
 		var rack: Node3D=house.get_node(id.capitalize()+"Rack")
 		player.global_position=rack.global_position+Vector3(0,0,1)
-		rack.interact(player);rack.interact(player)
+		for repeat in 2:
+			rack.interact(player)
+			if id!="smoke_bomb":player.get_node("UI").get_children().back().confirm(true)
+			await process_frame
 		check(player.inventory.has_item(id),id+" collected")
 		check(int(player.inventory.items[id])==(3 if id=="smoke_bomb" else 1),id+" duplicate-free repeat")
 		check(is_instance_valid(rack),id+" remains available")

@@ -1,6 +1,6 @@
 extends RefCounted
 const Uplands=preload("res://world/suryagarh/port_village_uplands.gd")
-const VERSION=3
+const VERSION=4
 # Retained for migrating waypoint indices in existing mission saves.
 const LEGACY_WAYPOINTS=[Vector2(-194,620),Vector2(-240,570),Vector2(-430,520),Vector2(-640,440),Vector2(-720,250),Vector2(-680,40),Vector2(-590,-150),Vector2(-485,-280),Vector2(-520,-400),Vector2(-680,-530),Vector2(-780,-620),Vector2(-650,-730),Vector2(-380,-750),Vector2(-120,-710),Vector2(160,-650),Vector2(420,-630),Vector2(660,-600),Vector2(770,-490),Vector2(750,-310),Vector2(660,-130),Vector2(580,-180),Vector2(610,-230),Vector2(600,-280),Vector2(555,-285)]
 # Reuse the surveyed port departure, winding hill road and existing bridge.

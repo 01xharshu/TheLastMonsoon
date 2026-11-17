@@ -39,6 +39,14 @@ var objective: Label
 var objective_marker: Label
 var destination: Node3D
 var police_prompt: Node3D
+var drawer_prompt: Node3D
+var office_drawer: Node3D
+var drawer_pistol: Node3D
+var drawer_slide: Tween
+var drawer_open := false
+var drawer_looted := false
+var officials_reassigned := false
+
 var office_prompt: Node3D
 var coordinator: Node
 var configured := false
@@ -54,10 +62,12 @@ func configure() -> void:
 		var actor=Official.new();actor.name=record[0];actor.position=record[1]
 		actor.rotation.y=0 if officials.is_empty() else PI
 		actor.set_meta("inquiry_seat",actor.transform)
-		# Separate benches leave the chamber's central approach clear.
 		var center: Vector3=record[1]+Vector3(0,.48,0)
-		station.piece(station,"InquiryBenchSeat",center+Vector3(0,.46,0),Vector3(.72,.08,.55),station.wood)
-		for side in [-1,1]:station.piece(station,"InquiryBenchLeg",center+Vector3(side*.27,.22,0),Vector3(.065,.44,.45),station.wood,false)
+		if officials.is_empty():
+			preload("res://world/suryagarh/settlements/police_refinement.gd").chair(station,center,PI,true)
+		else:
+			station.piece(station,"InquiryBenchSeat",center+Vector3(0,.46,0),Vector3(.72,.08,.55),station.wood)
+			for side in [-1,1]:station.piece(station,"InquiryBenchLeg",center+Vector3(side*.27,.22,0),Vector3(.065,.44,.45),station.wood,false)
 		actor.add_child(preload("res://characters/npcs/british/official_man.glb").instantiate())
 		roster.add_child(actor);officials.append(actor)
 		var expression=FaceExpression.new();expression.configure(actor);expressions.append(expression)
@@ -70,8 +80,32 @@ func configure() -> void:
 		actor.set_meta("combat_faction","british");actor.set_meta("story_guard",true)
 		actor.add_child(preload("res://characters/npcs/british/private_man.glb").instantiate())
 		roster.add_child(actor);guards.append(actor)
+		var duty:=preload("res://world/suryagarh/military_duty.gd").new()
+		duty.name="StationGuardDuty";duty.inquiry=self
+		duty.duty="station_sentry" if i<2 else "station_interior_round"
+		var start:Vector3=actor.position
+		duty.points=PackedVector3Array([station.to_global(start),station.to_global(start+Vector3(0,0,4 if i<2 else 3))])
+		duty.wait=float(i)*2.0
+		actor.add_child(duty)
 	police_prompt=make_prompt("police","Ask about Dev",Vector3(8.3,.9,8),station.get_node("ThanaStaff/Daroga"))
 	office_prompt=make_prompt("superior","Speak to the district officer",Vector3(-9.5,.9,-5.2),officials[0])
+	var senior_desk: Node3D = station.get_meta("senior_office_desk",null)
+	if is_instance_valid(senior_desk):
+		office_drawer = senior_desk.get_node("MissionDrawer")
+		drawer_prompt = make_prompt("office_drawer","Open the officer's drawer",Vector3(-8.72,.48,-7.84),officials[0])
+		drawer_prompt.interaction_max_distance = 1.35
+		drawer_pistol = preload("res://environment/weapons/adams_1851/adams_1851.glb").instantiate()
+		office_drawer.add_child(drawer_pistol)
+		# The revolver's barrel follows local X. Lay the complete mesh flat.
+		drawer_pistol.rotation.x = PI/2
+		var bounds := AABB()
+		var first_mesh := true
+		for mesh: MeshInstance3D in drawer_pistol.find_children("*","MeshInstance3D",true,false):
+			var local_bounds := office_drawer.global_transform.affine_inverse() * mesh.global_transform * mesh.get_aabb()
+			bounds = local_bounds if first_mesh else bounds.merge(local_bounds)
+			first_mesh = false
+		drawer_pistol.position = Vector3(-bounds.get_center().x,.036-bounds.position.y,.15-bounds.get_center().z)
+		drawer_pistol.visible = not drawer_looted
 	destination=Node3D.new();destination.name="DevInquiryDestination";world.add_child(destination)
 	var layer=CanvasLayer.new();layer.layer=35;add_child(layer)
 	subtitle=Label.new();layer.add_child(subtitle)
@@ -92,11 +126,13 @@ func begin() -> void:
 	stage="police";refresh_objective()
 func can_request(id: String) -> bool:
 	if not configured or not dialogue.is_empty() or player.health<=0:return false
+	if id=="office_drawer":return drawer_available()
 	if (id=="police" and stage!="police") or (id=="superior" and stage!="superior"):return false
 	var attendant: Node3D=police_prompt.get_meta("attendant") if id=="police" else officials[0]
 	return not attendant.get_meta("dead",false) and not attendant.get_meta("knocked_out",false)
 func request(id: String,actor: CharacterBody3D) -> bool:
 	if actor!=player or not can_request(id) or not player.get_node("CombatInput").available():return false
+	if id=="office_drawer":return use_office_drawer()
 	var director: Node=world.get_node_or_null("DevStory")
 	if director!=null:return director.start_inquiry(id)
 	if get_tree().root.get_node("SaveManager").police_case_active(player):return false
@@ -107,6 +143,62 @@ func request(id: String,actor: CharacterBody3D) -> bool:
 	dialogue=id;lines=POLICE_LINES if id=="police" else OFFICE_LINES;line_index=0;line_age=0
 	player_expression=FaceExpression.new();player_expression.configure(player.get_node("VisualRoot/CharacterVisual"))
 	subtitle.show();show_line();return true
+func drawer_available() -> bool:
+	if not is_instance_valid(office_drawer) or drawer_looted or stage!="released":
+		return false
+	var director := world.get_node_or_null("DevStory")
+	if director==null or director.state!="farm" or director.active:
+		return false
+	if player.get_meta("story_cinematic",false) or player.get_meta("document_busy",false):
+		return false
+	for person in get_tree().get_nodes_in_group("combat_actors")+officials:
+		if person==player or not person is Node3D or not person.is_visible_in_tree():
+			continue
+		if person.get_meta("dead",false) or person.get_meta("knocked_out",false):
+			continue
+		var local := station.to_local(person.global_position)
+		if local.x < -6.0 and local.x > -13.0 and local.z > -12.0 and local.z < -2.0 and absf(local.y)<2.0:
+			return false
+	return true
+
+func use_office_drawer() -> bool:
+	if player.global_position.distance_to(drawer_prompt.global_position)>drawer_prompt.interaction_max_distance:
+		return false
+	if not drawer_open:
+		drawer_open = true
+		drawer_slide = create_tween()
+		drawer_slide.tween_property(office_drawer,"position:z",-.74,.35).set_trans(Tween.TRANS_SINE)
+		drawer_prompt.interaction_text = "Take the Adams revolver"
+		return true
+	if office_drawer.position.z > -.73:
+		return false
+	if not player.inventory.add_item("pistol"):
+		return false
+	drawer_looted = true
+	drawer_pistol.hide()
+	return true
+
+func update_office_assignment() -> void:
+	if stage=="released" and not officials_reassigned:
+		officials_reassigned = true
+		for i in officials.size():
+			var official: Node3D = officials[i]
+			if official.get_meta("dead",false) or official.get_meta("knocked_out",false):
+				continue
+			official.position = Vector3(-11.6+float(i)*1.4,station.floor_y,-9.6)
+			official.seated = false
+			official.seat_weight = 0.0
+			official.foot_plant.clear()
+	elif stage!="released" and officials_reassigned:
+		officials_reassigned = false
+		for official in officials:
+			if official.get_meta("dead",false) or official.get_meta("knocked_out",false):
+				continue
+			official.transform = official.get_meta("inquiry_seat")
+			official.seated = true
+			official.seat_weight = 1.0
+			official.foot_plant.clear()
+
 func show_line() -> void:
 	var speaker: String=lines[line_index][0]
 	subtitle.text=speaker+": "+str(lines[line_index][1])
@@ -119,8 +211,13 @@ func show_line() -> void:
 		player_expression.apply(.0 if angry else (.85 if speaker=="Arjun" else .4),0,.8 if angry else .0)
 func _process(delta: float) -> void:
 	if not configured:return
+	update_office_assignment()
 	if not dialogue.is_empty():
 		if player.health<=0 or any_official_unavailable():cancel_dialogue();return
+		var attendant: Node3D=police_prompt.get_meta("attendant") if dialogue=="police" else officials[0]
+		preload("res://story/conversation_facing.gd").pair(player,attendant)
+		if dialogue=="superior":
+			for official in officials:preload("res://story/conversation_facing.gd").toward(official,player.global_position)
 		line_age+=delta
 		while not dialogue.is_empty() and line_age>=float(lines[line_index][2]):
 			line_age-=float(lines[line_index][2]);line_index+=1
@@ -226,8 +323,15 @@ func refresh_objective() -> void:
 		"released":objective.text="Find Dev · The officials refused to help. Explore for another lead."
 		_:objective.text=""
 func export_state() -> Dictionary:
-	return {"stage":stage}
+	return {"stage":stage,"office_drawer_looted":drawer_looted}
 func restore_state(data: Dictionary) -> void:
+	drawer_looted = bool(data.get("office_drawer_looted",false))
+	drawer_open = false
+	if is_instance_valid(drawer_slide):drawer_slide.kill()
+	if is_instance_valid(office_drawer):
+		office_drawer.position.z = -.43
+		drawer_pistol.visible = not drawer_looted
+		drawer_prompt.interaction_text = "Open the officer's drawer"
 	var saved: String=str(data.get("stage","dormant"))
 	stage=saved if saved in ["dormant","police","superior","released"] else "superior"
 	return_started=false;second_return_path.clear()

@@ -42,6 +42,7 @@ func run() -> void:
 			var pickup=store.get_node("CivicWeapon%d" % i)
 			var id: String=pickup.persistence_id()
 			pickup.interact(actor)
+			actor.get_node("UI").get_children().back().confirm(true)
 			if not actor.inventory.has_item(pickup.weapon_id): failures.append(label+" acquisition")
 			if i!=1 and not pickup.taken and label=="TownHall": failures.append(label+" first acquisition")
 			await process_frame

@@ -54,6 +54,7 @@ func prepare()->void:
 	for job in [
 		["CustomsWarehouse","CustomsReceivingPorter","port",Vector3(10,0,5),PI/2,"res://characters/npcs/street_residents/workman_01.glb"],
 		["CityTradingMarket","MarketStockWorker","market",Vector3(-24,0,-12),0.0,"res://characters/npcs/street_residents/workman_03.glb"],
+		["BhairavpurGrainStore","GrainStorePorter","grain",Vector3.ZERO,0.0,"res://characters/npcs/street_residents/workman_03.glb"],
 		["MerchantHousehold","HouseholdSupplyServant","household",Vector3(23,0,-24),0.0,"res://characters/npcs/street_residents/female_02.glb"]
 	]:
 		var workplace:=get_tree().root.find_child(job[0],true,false) as Node3D
@@ -66,14 +67,26 @@ func prepare()->void:
 		worker.set_meta("social_role",str(job[2])+"_laborer");worker.set_meta("assigned_workplace",str(workplace.get_path()));worker.set_meta("human_source",job[5]);worker.add_to_group("institution_post_residents")
 		var work:=preload("res://world/suryagarh/settlements/resident_goods_run.gd").new()
 		work.name="SupplyDelivery";work.work_kind=job[2];work.actor=worker;work.institution=station;work.viewer=viewer;work.clock=clock
-		work.supplier_leg={"port":24.0,"market":-24.0,"household":24.0}[str(job[2])]
+		work.supplier_leg={"port":24.0,"market":24.0,"household":24.0,"grain":0.0}[str(job[2])]
 		if job[2]=="port":
 			work.store_base=Vector3(.53,1.15,-2);work.stand_base=Vector3(.1,0,-2)
 			# Pass beyond the open cargo-door leaf before turning to the interior shelf.
 			work.route_points=[Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(3,0,7),Vector3(4.5,0,4),Vector3(4.5,0,-3.5),Vector3(-.85,0,-3.5),Vector3(.1,0,-3.5),Vector3(0,0,-2)]
 		elif job[2]=="market":
 			work.store_base=Vector3(2.9,1.15,1);work.stand_base=Vector3(2.47,0,1)
-			work.route_points=[Vector3(4.5,0,15.28),Vector3(7,0,15.4),Vector3(7,0,7),Vector3(7,0,-1),Vector3(2.47,0,-1),Vector3(0,0,1)]
+			# Keep the whole parked/turning team in the north receiving yard,
+			# outside the public market street and its pedestrian passing lanes.
+			work.cart_origin=Vector3(5,0,24)
+			worker.global_position=station.to_global(Vector3(7,0,28.4))
+			worker.global_position.y=layout.height(worker.global_position.x,worker.global_position.z)
+			work.route_points=[Vector3(4.5,0,28.28),Vector3(7,0,28.4),Vector3(7,0,7),Vector3(7,0,-1),Vector3(2.47,0,-1),Vector3(0,0,1)]
+		elif job[2]=="grain":
+			work.sack_delivery=true
+			work.cart_origin=Vector3(0,0,-10)
+			work.store_base=Vector3(-1.05,1.0,-.85);work.stand_base=Vector3(-.55,0,-.85)
+			work.route_points.assign([Vector3(-.5,0,-5.72),Vector3(0,0,-5),Vector3(0,0,-4),Vector3(0,0,-2.1),Vector3(-.55,0,-.85)])
+			worker.global_position=station.to_global(Vector3(0,0,-5))
+			worker.global_position.y=layout.height(worker.global_position.x,worker.global_position.z)
 		elif job[2]=="household":
 			work.source_side=1.0
 			# Covered rear service bay: goods and the supplier cart stay off the family drive.
@@ -91,7 +104,7 @@ func _process(delta:float)->void:
 	elapsed+=delta
 	for post in posts:
 		var actor:Node3D=post.actor
-		if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):continue
+		if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false) or actor.get_meta("police_engaged",false) or actor.get_meta("defending",false):continue
 		if post.role in ["hospital_attendant","depot_laborer"]:continue # Its persistent work controller owns motion/contact.
 		var accumulated:float=float(post.get("age",0.0))+delta
 		if accumulated<Budget.interval(actor,viewer):post.age=accumulated;continue

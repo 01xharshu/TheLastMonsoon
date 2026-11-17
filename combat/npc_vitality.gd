@@ -13,6 +13,7 @@ var head_shape: CollisionShape3D
 var hit_body: AnimatableBody3D
 func _ready() -> void:
 	actor = get_parent()
+	call_deferred("_install_defence")
 	skeleton=actor.get("_skeleton")
 	spine_bone=skeleton.find_bone("spine_02");pelvis_bone=skeleton.find_bone("pelvis")
 	neck_bone=skeleton.find_bone("neck_01");head_bone=skeleton.find_bone("head")
@@ -43,10 +44,27 @@ func _ready() -> void:
 func take_damage(amount: float) -> void:
 	receive_hit(amount,get_tree().root.find_child("Player",true,false),"weapon")
 
+func _install_defence() -> void:
+	# Do not allocate an unattached Node before a deferred call: a short-lived
+	# actor can be freed before that call runs, leaving the Node orphaned.
+	if not is_instance_valid(actor) or not actor.is_inside_tree() or actor.is_queued_for_deletion() or actor.has_node("SelfDefence"):return
+	var defence: Node=load("res://combat/npc_defence.gd").new()
+	defence.name="SelfDefence"
+	actor.add_child(defence)
+
 func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool:
 	if dead or not is_finite(amount) or amount <= 0.0: return false
 	if actor.get_meta("knocked_out",false) and kind in ["punch","kick","takedown","silent_takedown","abuse"]:return false
-	if attacker != null and attacker.name == "Player" and actor.get_meta("combat_faction","indian") == "indian": return false
+	if preload("res://combat/damage_policy.gd").player_protected(actor, attacker, "indian"): return false
+	if actor.has_meta("pending_impact_context"):
+		actor.set_meta("impact_context",actor.get_meta("pending_impact_context"))
+		actor.remove_meta("pending_impact_context")
+	elif actor.has_meta("impact_context"):
+		actor.remove_meta("impact_context")
+	var defence: Node=actor.get_node_or_null("SelfDefence")
+	if defence!=null:
+		if defence.blocks(attacker,kind):amount*=.3
+		defence.alert(attacker)
 	actor.set_meta("last_attacker",attacker)
 	var reported_kind := "murder" if amount>=health and kind not in ["punch","kick","takedown","silent_takedown","abuse"] else kind
 	actor.set_meta("last_hit_kind",reported_kind)
@@ -67,6 +85,10 @@ func receive_hit(amount: float, attacker: Node, kind: String = "weapon") -> bool
 	dead = true
 	actor.set_meta("knocked_out",false)
 	actor.set_meta("dead",true)
+	actor.set_meta("fear",0.0);actor.set_meta("speaking",false);actor.set_meta("social_warmth",0.0)
+	var world:=preload("res://systems/world_context.gd").find_world(actor)
+	var awareness:=world.get_node_or_null("CivilianAwareness") if world!=null else null
+	if awareness!=null:awareness.settle_face(actor)
 	actor.set("movement_enabled",false)
 	actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",true)
 	died.emit()

@@ -1,3 +1,15 @@
+# Title menu — exact supplied Story reference
+
+2026-11-05: current `ui/main_menu.gd` replaces the prior Monsoon Arrival title presentation with the user-supplied Story reference. `assets/ui/story_reference/story.png` is the retained source atlas for the original header, rules, four illustrated tiles and embedded labels. `alert.png` supplies the exact alert artwork and warning text. These are screenshot-derived raster assets, not newly authored Indian game scenes or editable font text. Prior design history follows below.
+
+The 2048×1118 reference canvas scales uniformly and centres with black margins on other aspect ratios. Live mouse/keyboard/controller focus draws a red tile border. Save is locked outside gameplay; Load opens existing saved slots, New Game always opens the alert, Exit uses the existing clean shutdown. Confirm retains the existing journey loader; Back/Escape returns without loading or deleting saves. Compact live Confirm/Back actions and keyboard prompts are deliberate additions to the reference artwork. F1 opens existing Settings. Startup still passes through the existing studio intro. The former separate Continue action is consolidated into Load Game.
+
+Verification: focused `--headless --path . --script tools/world/validate_title_menu.gd` PASS; `validate_journey_loading.gd` PASS for new/saved fixture routes and failure recovery. Native Metal main and alert pixels reviewed; corrected atlas plate minimum-size scaling. Disposable captures/logs removed. Full populated-world launch was not rerun in this UI batch. Editor import reported existing unrelated mixed indentation in `player/arjun_carry_motion.gd:140`; focused menu/native/loading fixtures had no diagnostics. Existing exported applications were not rebuilt.
+
+Review: F5, finish studio intro, select tiles with arrows/Enter or mouse. Choose New Game, cancel with Escape, open Load Game and return, open Settings with F1. On alert use Confirm to begin through the existing loader. Normal disk saves retained.
+
+---
+
 # Title menu — Monsoon Arrival
 
 The selected first direction uses `assets/ui/backgrounds/monsoon_arrival.png`: the stormy 1857 riverside, traveler, boats and distant fort. The plate has no baked-in lettering. `ui/main_menu.gd` supplies live MFB Oldstyle title text, five actions, Load and Settings pages. `project.godot` starts `ui/main_menu.tscn`; the in-game Game page returns to that same scene.

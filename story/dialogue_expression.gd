@@ -15,12 +15,12 @@ func configure(model: Node3D) -> void:
         var source:=node.mesh as ArrayMesh
         if source==null or source.get_blend_shape_count()>0:continue
         var mesh:=ArrayMesh.new();mesh.blend_shape_mode=Mesh.BLEND_SHAPE_MODE_NORMALIZED
-        mesh.add_blend_shape("dialogue_concern");mesh.add_blend_shape("dialogue_disdain");mesh.add_blend_shape("dialogue_anger");mesh.add_blend_shape("dialogue_speech");mesh.add_blend_shape("dialogue_blink")
+        mesh.add_blend_shape("dialogue_concern");mesh.add_blend_shape("dialogue_disdain");mesh.add_blend_shape("dialogue_anger");mesh.add_blend_shape("dialogue_speech");mesh.add_blend_shape("dialogue_blink");mesh.add_blend_shape("dialogue_smile")
         for surface in source.get_surface_count():
             var base: Array=source.surface_get_arrays(surface)
             var points: PackedVector3Array=base[Mesh.ARRAY_VERTEX]
             var shapes: Array[Array]=[]
-            for emotion in ["concern","disdain","anger","speech","blink"]:
+            for emotion in ["concern","disdain","anger","speech","blink","smile"]:
                 var shape: Array=[];shape.resize(Mesh.ARRAY_MAX)
                 var offsets:=PackedVector3Array();offsets.resize(points.size())
                 for i in points.size():
@@ -31,6 +31,11 @@ func configure(model: Node3D) -> void:
                     if emotion=="concern":offsets[i].y=brow*.003*(1.0-smoothstep(.01,.05,absf(p.x)))-mouth*.0015*smoothstep(.01,.03,absf(p.x))
                     elif emotion=="disdain":offsets[i].y=-brow*.0015+mouth*.002*smoothstep(0,.03,p.x)
                     elif emotion=="anger":offsets[i].y=-brow*.003*(1.0-smoothstep(.015,.055,absf(p.x)))
+                    elif emotion=="smile":
+                        var smile_mouth:float=exp(-pow((p.y-(eye_height-.105))/.018,2))*exp(-pow(p.x/.055,4))
+                        var cheek:float=exp(-pow((absf(p.x)-.04)/.025,2))*exp(-pow((p.y-(eye_height-.055))/.025,2))
+                        offsets[i].y=smile_mouth*.007*smoothstep(.008,.035,absf(p.x))+cheek*.002
+                        offsets[i].x=smile_mouth*.003*signf(p.x)
                     elif emotion=="speech":
                         offsets[i].y=-mouth*.004*(1.0-smoothstep(eye_height-.108,eye_height-.095,p.y))
                         offsets[i].z=mouth*.0008
@@ -49,8 +54,8 @@ func configure(model: Node3D) -> void:
             mesh.add_surface_from_arrays(source.surface_get_primitive_type(surface),base,shapes,{},source.surface_get_format(surface)&Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS)
             mesh.surface_set_material(surface,source.surface_get_material(surface))
         node.mesh=mesh;entries.append({"node":node,"source":source})
-func apply(concern: float, disdain: float, anger: float=0.0, speech: float=0.0, blink: float=0.0) -> void:
-    var weights: Array[float]=[clampf(concern,0,1),clampf(disdain,0,1),clampf(anger,0,1),clampf(speech,0,1),clampf(blink,0,1)]
+func apply(concern: float, disdain: float, anger: float=0.0, speech: float=0.0, blink: float=0.0, warmth: float=0.0) -> void:
+    var weights: Array[float]=[clampf(concern,0,1),clampf(disdain,0,1),clampf(anger,0,1),clampf(speech,0,1),clampf(blink,0,1),clampf(warmth,0,1)]
     var total:=0.0
     for value in weights:total+=value
     for entry in entries:

@@ -25,6 +25,7 @@ var seat_sockets: Dictionary = {}
 var boarding: Node
 var hoof_players: Array[AudioStreamPlayer3D] = []
 var sound_cycle := 0.0
+var draft_gait := preload("res://vehicles/draft_gait_speed.gd").new()
 var hoof_events := 0
 var rider: CharacterBody3D:
 	get:
@@ -35,6 +36,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint(): return
 	add_to_group("cart_parking_vehicles")
 	_build_audio()
+	var rolling:=preload("res://vehicles/cart_wheel_motion.gd").new();rolling.name="WheelMotion";add_child(rolling)
 	boarding = preload("res://vehicles/cart_rider.gd").new()
 	boarding.configure(self)
 	add_child(boarding)
@@ -89,6 +91,7 @@ func can_move() -> bool:
 
 func set_forward_motion(speed: float, delta: float) -> void:
 	if not can_move(): speed = 0.0
+	speed = draft_gait.sample(self,speed,delta)
 	_animate_motion(speed, delta)
 
 func _mat(color: Color, metal := 0.0) -> StandardMaterial3D:
@@ -101,6 +104,7 @@ func _mat(color: Color, metal := 0.0) -> StandardMaterial3D:
 func _box(label: String, pos: Vector3, size: Vector3, material: Material) -> Node3D:
 	var node := MeshInstance3D.new()
 	node.name = label
+	node.set_meta("part_label",label)
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	node.mesh = mesh
@@ -112,7 +116,6 @@ func _box(label: String, pos: Vector3, size: Vector3, material: Material) -> Nod
 func _beam(label: String, start: Vector3, finish: Vector3, width: float, material: Material) -> void:
 	var middle := (start + finish) * .5
 	var part := _box(label,middle,Vector3(width,start.distance_to(finish),width),material)
-	part.set_meta("part_label",label)
 	part.quaternion = Quaternion(Vector3.UP,(finish-start).normalized())
 
 func _wheel(side: float, center_z: float, radius: float, wood: Material, iron: Material) -> void:
@@ -244,14 +247,11 @@ func _seat(label: String, at: Vector3) -> void:
 	seat_sockets[label] = socket
 
 func _animate_motion(speed: float, delta: float) -> void:
-	var radius := .62 if variant == 0 else .68
-	for wheel in wheels:
-		wheel.rotation.x += speed * delta / radius
 	if horse_animation != null and (combat == null or not combat.animation_dead(horse_animation)):
 		var clip := "AnimalArmature|Gallop" if absf(speed) > 6.0 else ("AnimalArmature|Walk" if absf(speed) > .25 else "AnimalArmature|Idle")
 		if horse_animation.current_animation != clip:
 			horse_animation.play(clip,.15)
-		horse_animation.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.65,1.7) if clip != "AnimalArmature|Idle" else 1.0
+		horse_animation.speed_scale = clampf(absf(speed)/(9.0 if clip.ends_with("Gallop") else 4.2),.18,1.7) if clip != "AnimalArmature|Idle" else 1.0
 		if clip != "AnimalArmature|Idle" and not hoof_players.is_empty():
 			var length: float = horse_animation.get_animation(clip).length
 			if length > 0.0:

@@ -31,7 +31,17 @@ func run()->void:
 	if work==null:print("RESIDENT_GOODS_RESULT FAIL ",failures);quit(1);return
 	work.set_physics_process(false)
 	check(work.cart.boarding._clearance_at(work.cart.global_position),"stowed solid cargo does not block its own cart")
+	if site=="market":
+		var moved_state:Dictionary=work.export_state()
+		var legacy:Dictionary=moved_state.duplicate(true)
+		legacy.cart_origin=[5.0,0.0,11.0]
+		legacy.cart_position=[work.cart.position.x,work.cart.position.y,work.cart.position.z-13.0]
+		var assigned_bay:Vector3=work.cart.global_position
+		work.restore_state(legacy)
+		check(work.cart.global_position.distance_to(assigned_bay)<.001,"legacy market cart save migrates to the clear receiving yard")
+		work.restore_state(moved_state)
 	await freight_sweep(work,world)
+	if site.is_empty():await people_separation(work,posts)
 	if "--pose-budget" in OS.get_cmdline_user_args():await pose_budget(work)
 	if "--pose-only" in OS.get_cmdline_user_args():
 		print("RESIDENT_GOODS_RESULT ","PASS" if failures.is_empty() else "FAIL"," pose_only=true failures=",failures)
@@ -44,6 +54,13 @@ func run()->void:
 		var sun:=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-50,-30,0);world.add_child(sun)
 		var environment:=WorldEnvironment.new();environment.environment=Environment.new();environment.environment.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;environment.environment.ambient_light_color=Color.WHITE;environment.environment.ambient_light_energy=.65;world.add_child(environment)
 		camera=Camera3D.new();world.add_child(camera);camera.current=true;camera.fov=44
+		if "--yard-review" in OS.get_cmdline_user_args():
+			for frame in 60:await process_frame
+			await photograph(work,"receiving_yard")
+			print("RESIDENT_YARD_REVIEW cart=",work.cart.global_position," worker=",work.actor.global_position," failures=",failures)
+			world.queue_free();await process_frame;root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1);return
+		if "--contact-review" in OS.get_cmdline_user_args():
+			await contact_review(work,world,posts);return
 		if "--normal-review" in OS.get_cmdline_user_args():
 			await normal_review(work,world);return
 		await photograph(work,"stock")
@@ -73,7 +90,7 @@ func run()->void:
 		for i in 3:work.place(work.goods[i],work.institution,Vector3(.53,1.15,1+i*.55))
 		work.actor.global_position=work.institution.to_global(Vector3(8,0,15.4));work.actor.body_collider.force_update_transform()
 		await physics_frame
-	for frame in (0 if freight_only else (6000 if site=="port" else 3600)):
+	for frame in (0 if freight_only else (7200 if site=="market" else (6000 if site=="port" else 3600))):
 		work.tick(.05);await physics_frame
 		if not output.is_empty() and not pictures.has(work.phase) and work.phase in ["lift","inside","lower","return"] and (work.phase not in ["lift","lower"] or work.progress>.6):
 			pictures[work.phase]=true;await photograph(work,work.phase)
@@ -126,7 +143,7 @@ func run()->void:
 		work.restore_state(supply_state)
 		check(work.cart.global_position.distance_to(arrival)<.001 and work.freight_phase.begins_with("loading_"),"supplier save retains cart and shipment")
 		var load_saved:=false;var incoming_saved:=false;var loading_hand:=0.0
-		for frame in 2400:
+		for frame in (3600 if site=="market" else 2400):
 			work.tick(.1);await physics_frame
 			if not output.is_empty() and not pictures.has(work.freight_phase) and ((work.freight_phase in ["loading_lift","loading_lower"] and work.progress>.6) or work.freight_phase=="arriving"):
 				pictures[work.freight_phase]=true;await photograph(work,"freight_arriving" if work.freight_phase=="arriving" else work.freight_phase)
@@ -155,7 +172,12 @@ func run()->void:
 
 func photograph(work:Node,label:String)->void:
 	var focus:Vector3=work.institution.to_global(Vector3(.53,1.15,1.55)) if label=="stored" else work.actor.global_position+Vector3(0,.9,0)
-	if label=="freight_arriving":
+	if label=="receiving_yard":
+		focus=work.cart.global_position+Vector3(0,0,-6)
+		camera.global_position=focus+Vector3(-12,10,15)
+	elif label.begins_with("contact_"):
+		camera.global_position=focus+Vector3(-3,1.2,4)
+	elif label=="freight_arriving":
 		focus=work.cart.global_position+Vector3(0,1.1,2)
 		camera.global_position=focus+Vector3(3,1.6,7)
 	elif label in ["loading_lift","loading_lower","lift","lift_early"] or (label=="inside" and work.actor.global_position.distance_to(work.cart.global_position)<5):
@@ -166,6 +188,28 @@ func photograph(work:Node,label:String)->void:
 	camera.look_at(focus)
 	await process_frame;RenderingServer.force_draw(false)
 	root.get_texture().get_image().save_png(output+"/worker_"+label+".png")
+
+func contact_review(work:Node,world:Node3D,posts:Node)->void:
+	var guard:Node3D=posts.get_node("HospitalGateGuard")
+	guard.global_position=work.actor.global_position+Vector3(.35,0,0)
+	guard.body_collider.force_update_transform();await physics_frame
+	await photograph(work,"contact_start")
+	var initial:int=work.overlap_separations
+	var started:int=Time.get_ticks_usec();var previous:int=started
+	var max_step:=0.0
+	while Time.get_ticks_usec()-started<4000000:
+		await process_frame
+		var now:int=Time.get_ticks_usec();var delta:float=minf(float(now-previous)/1000000,.05);previous=now
+		var before:Vector3=work.actor.global_position
+		work.tick(delta)
+		max_step=maxf(max_step,work.actor.global_position.distance_to(before))
+	await photograph(work,"contact_clear")
+	check(work.overlap_separations>initial,"ordinary-time contact recovery exercised")
+	check(work.actor.global_position.distance_to(guard.global_position)>.60,"ordinary-time contact separates actual NPCs")
+	check(max_step<.06,"ordinary-time contact has bounded walking displacement")
+	check(work.actor.body_collider.collision_layer==1 and guard.body_collider.collision_layer==1,"ordinary-time NPC bodies remain solid")
+	print("RESIDENT_CONTACT_REVIEW recoveries=",work.overlap_separations-initial," max_step=",max_step," failures=",failures)
+	world.queue_free();await process_frame;root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)
 
 func normal_review(work:Node,world:Node3D)->void:
 	work.set_physics_process(true)
@@ -242,3 +286,22 @@ func freight_sweep(work:Node,world:Node3D)->void:
 	check(not work.freight_clear(endpoint),"whole freight cart sweep detects a thin intervening barrier")
 	work.cart.global_transform=before;barrier.queue_free();await physics_frame
 	work.freight_obstacle=""
+
+func people_separation(work:Node,posts:Node)->void:
+	var guard:Node3D=posts.get_node("HospitalGateGuard")
+	var guard_at:Transform3D=guard.global_transform
+	var state:Dictionary=work.export_state();var before:Vector3=work.actor.global_position
+	guard.global_position=before+Vector3(.35,0,0);guard.body_collider.force_update_transform()
+	await physics_frame
+	var old_gap:float=work.actor.global_position.distance_to(guard.global_position)
+	for frame in 12:
+		var previous:Vector3=work.actor.global_position
+		work.separate_people(.05);await physics_frame
+		var gap:float=work.actor.global_position.distance_to(guard.global_position)
+		check(gap>=old_gap-.00001,"contact recovery always increases separation")
+		check(work.actor.global_position.distance_to(previous)<.06,"contact recovery uses a walking step, not a jump")
+		old_gap=gap
+	check(old_gap>.60 and work.overlap_separations>0,"existing NPC overlap is cleared")
+	check(work.actor.body_collider.collision_layer==1 and guard.body_collider.collision_layer==1,"both NPC bodies remain solid during recovery")
+	guard.global_transform=guard_at;guard.body_collider.force_update_transform()
+	work.restore_state(state);work.actor.body_collider.force_update_transform();await physics_frame

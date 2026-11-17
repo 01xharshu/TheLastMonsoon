@@ -115,6 +115,7 @@ func _prop(parent: Node3D,path: String,at: Vector3,yaw := 0.0) -> void:
 
 func _dress_settlement() -> void:
 	var settlement := get_parent().get_node("Settlement")
+	var vessels := preload("res://world/suryagarh/settlements/period_vessels.gd").new()
 	for i in 8:
 		var stall: Node3D = settlement.get_node("BhairavpurMarketStall%d"%i)
 		_apron(stall,Vector2(5.5,3.5),Vector2.ZERO)
@@ -122,6 +123,18 @@ func _dress_settlement() -> void:
 		_prop(stall,"grain_sack",Vector3(1.55,0,-.85),.2+i*.31)
 		_prop(stall,"storage/basket",Vector3(-1.4,.94,0),i*.47)
 		if i%2==0:_prop(stall,"storage/stool",Vector3(.6,0,-.85),.25)
+		match i:
+			0:
+				vessels.place_balance(stall, Vector3(.7,.93,.12))
+			1, 5:
+				vessels.place(stall, "matka", Vector3(-.45,.93,.1), 1.25, true)
+				vessels.place(stall, "matka", Vector3(.25,.93,-.16), .9, true)
+				vessels.place(stall, "dish", Vector3(.8,.93,.2), 1.0, true)
+			3:
+				for piece in 3:
+					vessels.place(stall, "lota", Vector3(-.45+piece*.38,.93,-.14), .85+piece*.17)
+				vessels.place(stall, "dish", Vector3(.93,.93,.22), 1.2)
+
 	for i in [2,5,9,16,23,28]:
 		var house: Node3D = settlement.get_node("BhairavpurHouse%d"%i)
 		# Side of the house, away from the centre doorway and street approaches.

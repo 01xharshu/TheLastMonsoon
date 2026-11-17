@@ -1,0 +1,49 @@
+{
+  "donor": "WorkingAssets/NPCs/street_residents/merchant/merchant.blend",
+  "donor_sha256": "12e764be66fdeff4df17fd3605757be95114eda63d64310f1f652c157f975ee1",
+  "body": "village_farmer_MakeHuman_body",
+  "vertices": 13380,
+  "adult_age": 0.6700000166893005,
+  "method": "MPFB TargetService.reapply_macro_details, relative to normalized donor macro",
+  "donor_normalization_max_m": 0.07481086254119873,
+  "profiles": [
+    {
+      "id": "male_01",
+      "macro": {
+        "weight": 0.3,
+        "muscle": 0.3,
+        "proportions": 0.43
+      },
+      "max_delta_m": 0.015426351688802242
+    },
+    {
+      "id": "male_02",
+      "macro": {
+        "weight": 0.42,
+        "muscle": 0.57,
+        "proportions": 0.55
+      },
+      "max_delta_m": 0.00769080501049757
+    },
+    {
+      "id": "male_03",
+      "macro": {
+        "weight": 0.55,
+        "muscle": 0.42,
+        "proportions": 0.45
+      },
+      "max_delta_m": 0.004057667218148708
+    },
+    {
+      "id": "male_04",
+      "macro": {
+        "weight": 0.66,
+        "muscle": 0.31,
+        "proportions": 0.57
+      },
+      "max_delta_m": 0.02153194136917591
+    }
+  ],
+  "output": "WorkingAssets/NPCs/indian_body_profiles/male_mpfb_deltas.npz",
+  "status": "authoring inputs only; rig, clothing and runtime unverified"
+}

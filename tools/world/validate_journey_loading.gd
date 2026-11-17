@@ -22,6 +22,35 @@ func _run() -> void:
 	var file := FileAccess.open(saves.slot_path(1), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"version": saves.VERSION, "position": [0,0,0], "saved_at": 1}))
 	file.close()
+	var bad_saves: Array = [
+		{"version":saves.VERSION,"position":[0,{},0]},
+		{"version":saves.VERSION,"position":[0,0,0],"items":[]},
+		{"version":saves.VERSION,"position":[0,0,0],"weapon":{"selected":[]}},
+		{"version":saves.VERSION,"position":[0,0,0],"remaining_weapon_ids":{}},
+		{"version":saves.VERSION,"position":[0,0,0],"waypoint":[1,{}]},
+		{"version":saves.VERSION,"position":[0,0,0],"npc_activities":{"npc":[]}},
+		{"version":saves.VERSION,"position":[0,0,0],"administrative_services":{"office":1}}
+	]
+	for invalid in bad_saves:
+		var bad_file := FileAccess.open(saves.slot_path(2),FileAccess.WRITE)
+		bad_file.store_string(JSON.stringify(invalid));bad_file.close()
+		var before_text := FileAccess.get_file_as_string(saves.slot_path(2))
+		check(saves.read_slot(2).is_empty(),"Malformed save accepted")
+		check(saves.slot_label(2).contains("Unavailable"),"Damaged save shown as empty")
+		check(not saves.start_loaded_game(2),"Malformed save started a scene")
+		check(FileAccess.get_file_as_string(saves.slot_path(2))==before_text,"Damaged save was modified")
+	DirAccess.remove_absolute(saves.slot_path(2))
+	check(not saves.read_slot(1).is_empty(),"Older minimal save rejected")
+	var legacy_file := FileAccess.open(saves.slot_path(1), FileAccess.WRITE)
+	legacy_file.store_string(JSON.stringify({"version":saves.VERSION,"position":[0,0,0]}));legacy_file.close()
+	check(saves.newest_slot() == 1, "Older save without timestamp should remain selectable")
+	var incomplete := Node3D.new()
+	root.add_child(incomplete)
+	var before_save := FileAccess.get_file_as_string(saves.slot_path(1))
+	check(not saves.save_game(incomplete, 1), "Incomplete world should refuse to save")
+	check(saves.last_error.contains("player"), "Incomplete world should explain the save failure")
+	check(FileAccess.get_file_as_string(saves.slot_path(1)) == before_save, "Incomplete world overwrote save")
+	incomplete.free()
 	var fixture := Node3D.new()
 	fixture.name = "LoadingFixture"
 	var source := GDScript.new()
@@ -77,11 +106,13 @@ func finish():
 	root.add_child(rejected)
 	var before := current_scene
 	check(not await rejected.begin(3), "Missing save must fail")
+	check(not saves.last_error.is_empty(), "Missing save should explain failure")
 	check(current_scene == before, "Missing save replaced current scene")
 	var broken = load("res://ui/journey_loading.gd").new()
 	broken.world_path = fixture_path + ".missing"
 	root.add_child(broken)
 	check(not await broken.begin(0), "Missing world must fail")
+	check(saves.last_error.contains("world"), "Missing world should explain failure")
 	check(current_scene == before, "Failed load replaced current scene")
 	DirAccess.remove_absolute(saves.slot_path(1))
 	DirAccess.remove_absolute(save_path)

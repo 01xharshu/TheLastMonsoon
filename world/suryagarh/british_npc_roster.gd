@@ -63,3 +63,12 @@ func _spawn(rank: String, kind: String, origin: Vector3, offset: float, distance
 	var model := scene.instantiate() as Node3D
 	actor.add_child(model)
 	add_child(actor)
+
+	if kind=="man" and rank!="official":
+		var duty:=preload("res://world/suryagarh/military_duty.gd").new()
+		duty.name="MilitaryDuty"
+		duty.duty="store_inspection" if rank in ["sergeant","major"] else "compound_round" if rank in ["lieutenant","captain","colonel"] else "sentry_round"
+		var length:=12.0 if rank in ["private","corporal"] else 18.0
+		duty.points=PackedVector3Array([origin,origin+Vector3(0,0,length)])
+		duty.wait=offset
+		actor.add_child(duty)

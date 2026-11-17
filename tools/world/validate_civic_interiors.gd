@@ -42,6 +42,7 @@ func run() -> void:
 			if not pickup.is_in_group("period_supplies"): continue
 			player.global_position = pickup.global_position+Vector3(1,0,0)
 			pickup.interact(player)
+			if pickup.has_method("is_weapon") and pickup.is_weapon():player.get_node("UI").get_children().back().confirm(true)
 			acquired += 1
 		check(acquired>=3,"Upper-floor sidearm, knife or lead ammunition absent")
 		# Enter through the open portal, with realistic capsule width and height.

@@ -10,6 +10,7 @@ const DOUBLE_GUN = preload("res://environment/weapons/double_percussion_gun/doub
 const LoadingSequence = preload("res://player/enfield_loading_sequence.gd")
 const EnfieldCartridgeVisual = preload("res://player/enfield_cartridge_visual.gd")
 enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE, DOUBLE_GUN }
+var carry_motion: Node3D
 var selected: Selection = Selection.TALWAR
 var stowed := true
 var inventory: InventoryComponent
@@ -19,6 +20,7 @@ var talwar_hand: Node3D
 var talwar_waist: Node3D
 var enfield_hand: Node3D
 var enfield_back: Node3D
+var bow_rest_transform := Transform3D.IDENTITY
 var bow_hand: Node3D
 var bow_back: Node3D
 var quiver_back: Node3D
@@ -98,11 +100,13 @@ func setup(rig: Skeleton3D) -> void:
 	talwar_hand = attach_at_rest("hand_r", TALWAR, hand_placement, "TalwarHeld")
 	var blade_axis := Vector3(0, -0.96, -0.28).normalized()
 	var waist_basis := Basis(blade_axis, Vector3.RIGHT, blade_axis.cross(Vector3.RIGHT))
-	talwar_waist = attach_at_rest("pelvis", TALWAR, Transform3D(waist_basis, Vector3(0.27, 0.94, -0.05)), "TalwarStowed")
+	var sword_axis := Vector3(.35,-.936,0).normalized()
+	var sword_basis := Basis(sword_axis, Vector3.FORWARD, sword_axis.cross(Vector3.FORWARD))
+	talwar_waist = attach_at_rest("spine_03", TALWAR, Transform3D(sword_basis, Vector3(-.34,1.46,-.18)), "TalwarStowed")
 	var barrel := Vector3(-0.25, 0.968, 0).normalized()
 	var back_up := Vector3(0, 0, 1)
 	var back_basis := Basis(barrel, back_up, barrel.cross(back_up))
-	enfield_back = attach_at_rest("spine_03", ENFIELD, Transform3D(back_basis, Vector3(0.09, 0.86, -0.19)), "EnfieldStowed")
+	enfield_back = attach_at_rest("spine_03", ENFIELD, Transform3D(back_basis, Vector3(-.20, 0.96, -0.18)), "EnfieldStowed")
 	enfield_back.scale = Vector3.ONE * ENFIELD_SCALE
 	# Low ready, both hands supporting the existing stock. Not a firing implementation.
 	barrel = Vector3(0.5, -0.12, 0.858).normalized()
@@ -118,12 +122,13 @@ func setup(rig: Skeleton3D) -> void:
 	double_hand = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(gun_basis, grip_position - gun_basis * (rifle_grip * DOUBLE_GUN_SCALE)), "DoubleGunHeld")
 	double_hand.scale = Vector3.ONE * DOUBLE_GUN_SCALE
 	double_rest_transform = double_hand.transform
-	double_back = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(back_basis, Vector3(-.10,.85,-.21)), "DoubleGunStowed")
+	double_back = attach_at_rest("spine_03", DOUBLE_GUN, Transform3D(back_basis, Vector3(-.20,.96,-.19)), "DoubleGunStowed")
 	double_back.scale = Vector3.ONE * DOUBLE_GUN_SCALE
 	# Keep the bow independent of the left hand so both arms can meet real contact points.
 	var bow_axis := Vector3(.75,0,.66).normalized()
 	var bow_basis := Basis(bow_axis,Vector3.UP,bow_axis.cross(Vector3.UP))
 	bow_hand = attach_at_rest("spine_03", BOW, Transform3D(bow_basis,Vector3(.22,1.35,.48)), "BowHeld")
+	bow_rest_transform=bow_hand.transform
 	bow_back = attach_at_rest("spine_03", BOW, Transform3D(Basis(Vector3.UP, -0.22),Vector3(-0.30,1.08,-0.24)), "BowStowed")
 	quiver_back = attach_at_rest("spine_03", QUIVER, Transform3D(Basis.IDENTITY,Vector3(0.27,0.99,-0.25)), "QuiverBack")
 	var right_palm: Vector3 = skeleton.get_bone_global_rest(skeleton.find_bone("hand_r")) * palm_offsets["r"]
@@ -152,6 +157,10 @@ func setup(rig: Skeleton3D) -> void:
 	pistol_charge.hide()
 	knife_hand = attach_at_rest("hand_r", KNIFE, Transform3D(blade_basis,right_palm-blade_basis*Vector3(-.045,0,0)), "KnifeHeld")
 	knife_hip = attach_at_rest("pelvis", KNIFE, Transform3D(waist_basis,Vector3(-.26,.86,-.03)), "KnifeSheathed")
+	carry_motion = preload("res://player/arjun_carry_motion.gd").new()
+	carry_motion.name = "CarryMotion"
+	add_child(carry_motion)
+	carry_motion.setup(self)
 	_refresh()
 
 func select_weapon(value: Selection) -> void:
@@ -197,6 +206,8 @@ func _refresh() -> void:
 	# Inventory ownership stays independent of what the selector has equipped.
 	for carried in [talwar_waist, enfield_back, bow_back, quiver_back, pistol_hip, knife_hip, double_back]:
 		carried.hide()
+	if stowed and not swimming and owns(selected):
+		[talwar_waist,enfield_back,bow_back,pistol_hip,knife_hip,double_back][int(selected)].show()
 
 func held_name() -> String:
 	if inventory != null:
@@ -286,7 +297,24 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		return
 	var longgun: Node3D = double_hand if selected == Selection.DOUBLE_GUN else enfield_hand
 	var gun_scale := DOUBLE_GUN_SCALE if selected == Selection.DOUBLE_GUN else ENFIELD_SCALE
-	if reload_progress >= 0.0:
+	var fpv=inventory.get_parent().get_meta("consignment_fpv_camera") if is_instance_valid(inventory) and inventory.get_parent().has_meta("consignment_fpv_camera") else null
+	if is_instance_valid(fpv):
+		var barrel:Vector3=aim_direction.normalized()
+		if reload_progress>=0:barrel=barrel.lerp(Vector3.UP,.85).normalized()
+		var side_axis:=barrel.cross(Vector3.UP).normalized()
+		var gun_basis:=Basis(barrel,side_axis.cross(barrel),side_axis)
+		var grip:Vector3=fpv.to_global(Vector3(.12,-.34,.33))-barrel*recoil
+		var contact:=Vector3(.55,-.03,0) if reload_progress>=0 else rifle_grip
+		var rider: CharacterBody3D=inventory.get_parent()
+		var mount: Node=rider.get_meta("mounted_vehicle") if rider.has_meta("mounted_vehicle") else null
+		var swivel: Node3D=mount.cart.get_node_or_null("ChaseGunPivot") if is_instance_valid(mount) and "cart" in mount else null
+		if selected==Selection.ENFIELD and is_instance_valid(swivel):
+			# Rotate about the cart's forward stock support. Hands and the
+			# ballistic muzzle use this same weapon transform.
+			grip=swivel.global_position-barrel*minf(recoil,.018)
+			contact=rifle_support
+		longgun.global_transform=Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(contact*gun_scale))
+	elif reload_progress >= 0.0:
 		# Bring the muzzle up for loading while the right hand keeps the stock grip.
 		var barrel := Vector3(0.0,0.995,0.10).normalized() if selected == Selection.ENFIELD else Vector3(0.18,0.94,0.28).normalized()
 		var side_axis := barrel.cross(Vector3.UP).normalized()
@@ -303,6 +331,11 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		# palms solve to the scaled receiver and forward support.
 		var grip := Vector3(-0.16, 1.43, 0.17 if selected == Selection.DOUBLE_GUN else 0.13) - barrel * recoil
 		longgun.global_transform = skeleton.global_transform*Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),grip-gun_basis*(rifle_grip*gun_scale))
+	elif is_instance_valid(inventory) and inventory.get_parent().get_meta("consignment_rear_combat",false):
+		var barrel:=Vector3(.15,.12,.98).normalized()
+		var side_axis:=barrel.cross(Vector3.UP).normalized()
+		var gun_basis:=Basis(barrel,side_axis.cross(barrel),side_axis)
+		longgun.global_transform=skeleton.global_transform*Transform3D(gun_basis.scaled(Vector3.ONE*gun_scale),Vector3(-.16,1.34,.16)-gun_basis*(rifle_grip*gun_scale))
 	else:
 		longgun.transform = double_rest_transform if selected == Selection.DOUBLE_GUN else rifle_rest_transform
 	# Compute contacts from the weapon transform, so both hands follow torso motion.
@@ -523,6 +556,15 @@ func apply_bow_grip() -> void:
 	# Both palms follow the bow geometry; the right hand follows the moving nock.
 	skeleton.force_update_all_bone_transforms()
 	var draw: float = bow_hand.draw_fraction
+	var bow_combat: Node=get_parent().get_parent().get_parent().get_node_or_null("BowCombat")
+	if bow_combat!=null:
+		var grip_world := skeleton.to_global(Vector3(.08,1.48,.62))
+		var target: Vector3=preload("res://combat/attack_aim.gd").point(bow_combat.actor,bow_combat.camera)
+		var forward: Vector3=preload("res://combat/attack_aim.gd").launch_direction(grip_world,target,52.0,9.8)
+		var side := forward.cross(Vector3.UP).normalized()
+		if side.length_squared()>.01:
+			var rest_world: Transform3D=bow_hand.get_parent().global_transform*bow_rest_transform
+			bow_hand.global_transform=rest_world.interpolate_with(Transform3D(Basis(forward,side.cross(forward).normalized(),side),grip_world),smoothstep(0,.5,draw))
 	var bow_transform := skeleton.global_transform.affine_inverse() * bow_hand.global_transform
 	var grip: Vector3 = bow_transform.origin
 	var nock: Vector3 = bow_transform * Vector3(-0.12-0.30*draw,0,0)

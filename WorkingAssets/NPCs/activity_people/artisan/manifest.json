@@ -1,0 +1,35 @@
+{
+  "role": "artisan",
+  "adult": true,
+  "provenance": "Reused Blender MakeHuman/MPFB donor",
+  "donor": "WorkingAssets/NPCs/indian_street_variants/workman_01/workman_01.blend",
+  "donor_sha256": "45ad13f24671479555b509d43f5fc24277c0d010060512474767e8855dab8c6a",
+  "runtime": "characters/npcs/activity_people/artisan.glb",
+  "complete_body_vertices": 14517,
+  "source_body_vertices": 14517,
+  "facial_vertices": {
+    "speech": 1041,
+    "fear": 3134,
+    "blink": 1436
+  },
+  "exported_meshes": [
+    "Activity cotton shirt",
+    "Activity cotton trousers",
+    "artisan_complete_MakeHuman_body",
+    "Farmer_eyes",
+    "Farmer_hair",
+    "Icosphere",
+    "Street leather shoe l",
+    "Street leather shoe r",
+    "Street opaque foundation",
+    "Tailored moustache -1",
+    "Tailored moustache 1"
+  ],
+  "complete_body": true,
+  "clothing_masks": false,
+  "visual_approved": false,
+  "runtime_donor": "characters/npcs/street_residents/workman_01.glb",
+  "runtime_donor_sha256": "13e4e136c76aacc25f67fdc1644a1a7f76778c83c4b3e4d4b09e89a497344678",
+  "editable_source": "WorkingAssets/NPCs/activity_people/artisan/artisan.blend",
+  "foundation_retained": true
+}

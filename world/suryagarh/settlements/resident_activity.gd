@@ -8,6 +8,7 @@ var layout := preload("res://world/suryagarh/landscape_layout.gd").new()
 var clock: Node
 var viewer: Node3D
 var elapsed := 0.0
+var attention_age := 0.0
 var age := 0.0
 var age_step:=0.0
 var prop: Node3D
@@ -101,6 +102,33 @@ func _prop() -> void:
 	prop.name="ActivityProp";actor.add_child(prop)
 
 func _physics_process(delta:float) -> void:
+	if actor.get_meta("civilian_reacting",false):return
+	if actor.get_meta("player_conversation",false) and is_instance_valid(viewer):
+		actor.travel_speed=0.0
+		actor.animation_tree.set("parameters/daily_work/blend_amount",0.0)
+		var offset:Vector3=viewer.global_position-actor.global_position
+		if Vector2(offset.x,offset.z).length_squared()>.01:
+			actor.global_rotation.y=rotate_toward(actor.global_rotation.y,atan2(offset.x,offset.z),delta*2.5)
+		actor._set_animation(&"idle",delta)
+		attention_age+=delta
+		if actor._skeleton!=null:
+			var talking:bool=actor.get_meta("speaking",false)
+			var gesture:float=sin(attention_age*2.1)*.035 if talking else 0.0
+			if prop!=null:
+				# Keep the occupied hands on their work tool while the head moves.
+				for side in ["l","r"]:
+					if job=="groom" and side=="l":continue
+					var grip:=Vector3(.20 if side=="l" else -.20,.12,0)
+					if job=="hoe":grip=Vector3(0,.34 if side=="l" else .18,0)
+					if job=="well":grip=Vector3(.12 if side=="l" else -.12,.25,0)
+					actor.solve_hand_contact(side,prop.to_global(grip));actor.set_grip(side,.5)
+			else:
+				actor.solve_hand_contact("r",actor.to_global(Vector3(-.20,1.02+gesture,.29)) if talking else actor.to_global(Vector3(-.30,.81,.07)))
+				actor.set_grip("r",.12 if talking else 0.0)
+			var head:int=actor._bones.get("head",-1)
+			if head>=0:actor._skeleton.set_bone_pose_rotation(head,actor._base_rotations["head"]*Quaternion(actor._pitch_axes["head"],.02*sin(attention_age*2.5)))
+		return
+	attention_age=0.0
 	age+=delta;elapsed+=delta
 	var distance: float=actor.global_position.distance_squared_to(viewer.global_position) if is_instance_valid(viewer) else 0.0
 	var cadence:=Budget.interval(actor,viewer)

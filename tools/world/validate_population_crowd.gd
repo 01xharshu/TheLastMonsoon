@@ -1,7 +1,6 @@
 extends SceneTree
 ## Production MPFB rigs, real capsule physics, mutual talk and obstacle/yield recovery.
 const Actor=preload("res://characters/npcs/indian/indian_street_actor.gd")
-const Journey=preload("res://world/suryagarh/city_street_journey.gd")
 const Crowd=preload("res://world/suryagarh/population_social.gd")
 class Clock extends Node:
  var current_hour:=10
@@ -20,7 +19,7 @@ func person(label:String,at:Vector3,points:Array[Vector2],identity:int) -> Node:
  var actor:=Actor.new();actor.name=label;actor.movement_enabled=false;actor.position=at
  actor.set_meta("street_identity",identity);actor.set_meta("population_index",identity)
  actor.add_child(preload("res://characters/human_scene.gd").instantiate("res://characters/npcs/street_residents/male_01.glb",false));world.add_child(actor)
- var journey:=Journey.new();journey.name="CityStreetJourney";journey.configure(actor,points,0);journey.layout=FlatLayout.new();journey.viewer=viewer;journey.crowd=crowd;journey.speed=1.1;actor.add_child(journey)
+ var journey:Node=load("res://world/suryagarh/city_street_journey.gd").new();journey.name="CityStreetJourney";journey.configure(actor,points,0);journey.layout=FlatLayout.new();journey.viewer=viewer;journey.crowd=crowd;journey.speed=1.1;actor.add_child(journey)
  journeys.append(journey);return journey
 func wall(at:Vector3,size:Vector3) -> StaticBody3D:
  var body:=StaticBody3D.new();body.position=at;world.add_child(body)
@@ -57,12 +56,16 @@ func run() -> void:
  var walker:=person("ObstacleWalker",Vector3(-3,0,12),[Vector2(-3,12),Vector2(6,12)],2)
  walker.social_enabled=false
  await create_timer(20).timeout
+ # The turn and checked passing manoeuvre can take longer on the full rig.
+ var deadline:=Time.get_ticks_msec()+10000
+ while walker.actor.global_position.x<=1 and Time.get_ticks_msec()<deadline:
+  await create_timer(.25).timeout
  check(walker.detours>0 and walker.actor.global_position.x>1,"Walker did not pass a thin wall with a swept detour")
  # A cached cart ahead requires yielding; removal releases the destination.
  var cart:=Node3D.new();world.add_child(cart);cart.position=Vector3(20,0,4);cart.add_to_group("live_travel_carts")
  var yielding:=person("TrafficWalker",Vector3(20,0,0),[Vector2(20,0),Vector2(20,10)],3)
  yielding.social_enabled=false
- await create_timer(.8).timeout
+ await create_timer(1.5).timeout # Coordinator refreshes the cart registry once per second.
  check(yielding.actor.get_meta("street_action","")=="yielding_to_traffic","Cart look-ahead did not yield")
  cart.queue_free();await create_timer(4).timeout
  check(yielding.distance_walked>1,"Walker failed to resume after cart cleared")
@@ -81,8 +84,27 @@ func run() -> void:
  # discovery registry must exclude that already-doubled city cohort.
  var city_officer:=person("AlreadyDoubledOfficer",Vector3(30,0,-15),[Vector2(30,-15),Vector2(35,-15)],7)
  city_officer.actor.add_to_group("city_route_patrols")
- var expansion:=preload("res://world/suryagarh/population_expansion.gd").new()
+ var expansion:Node=load("res://world/suryagarh/population_expansion.gd").new()
  world.add_child(expansion);expansion.set_process(false)
+ var choices:Dictionary={}
+ for identity in 100:
+  var chosen:String=expansion.distributed_route(Vector2(-350,232),identity)
+  check(chosen==expansion.distributed_route(Vector2(-350,232),identity),"Route assignment changed for the same identity")
+  choices[chosen]=int(choices.get(chosen,0))+1
+ check(choices.size()>1,"Nearby colleagues all chose the same road")
+ for identity in 30:
+  var authority:String=expansion.distributed_route(Vector2(-350,232),identity,true)
+  check(preload("res://world/suryagarh/settlement_police_routes.gd").allows_route(authority) and not expansion.route_near_hideout(expansion.Layout.ROUTES[authority]),"Authority selected a forbidden route")
+ var chosen:String=expansion.distributed_route(Vector2(-350,232),42)
+ var old_route:String="village_spine" if chosen!="village_spine" else "village_market_lane"
+ var migrated:Dictionary={"route":chosen,"index":42,"phase":{"point":Vector2(10,20),"goal":1}}
+ var states:Dictionary={"%s:42"%old_route:{"point":[-350,232],"goal":2,"health":13,"dead":true,"distance":50}}
+ expansion.migrate_route_state(states,migrated)
+ var new_key:String="%s:42"%chosen
+ check(states.has(new_key) and not states.has("%s:42"%old_route),"Legacy route key was not migrated")
+ print("CROWD MIGRATION ",states[new_key])
+ check(states[new_key].health==13 and states[new_key].dead and states[new_key].distance==50 and is_equal_approx(float(states[new_key].point[0]),10.0) and is_equal_approx(float(states[new_key].point[1]),20.0),"Migration lost resident state or retained old road position")
+
  await process_frame
  for skeleton:Node in city_officer.actor.find_children("*","Skeleton3D",true,false):expansion.discover(skeleton)
  check(not expansion.originals.has(str(world.get_path_to(city_officer.actor))),"City officer was doubled again by regional discovery")

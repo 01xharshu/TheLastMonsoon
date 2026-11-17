@@ -14,7 +14,14 @@ func run() -> void:
  var expansion:Node=world.get_node("PopulationExpansion")
  var exhaustive:bool="--exhaustive" in OS.get_cmdline_user_args()
  city.eager_population=exhaustive;expansion.eager_population=exhaustive
- var opening:Node=world.get_node("OpeningSequence")
+ var opening:Node=world.get_node_or_null("OpeningSequence")
+ var opening_deadline:=Time.get_ticks_msec()+120000
+ while opening==null and Time.get_ticks_msec()<opening_deadline:
+  await process_frame
+  opening=world.get_node_or_null("OpeningSequence")
+ if opening==null:
+  push_error("New Journey did not create the opening sequence")
+  saver.quit_game(1);return
  opening.morning();opening._release()
  paused=false
  var player:Node3D=world.get_node("Player");player.set_physics_process(false)
@@ -50,6 +57,20 @@ func run() -> void:
   saver.quit_game(1);return
  var original_state:Dictionary=expansion.export_route_state()
  check(original_state.size()>=expansion.discovered_count,"Save omitted expanded identities")
+ # Exercise an old route-keyed save against an already materialised resident.
+ # The counterpart must retain health and travel without inheriting old-road coordinates.
+ if not expansion.pedestrians.is_empty():
+  var resident:Node3D=expansion.pedestrians[0]
+  var resident_index:int=int(resident.get_meta("population_index"))
+  var resident_route:String=str(resident.get_meta("population_route"))
+  var legacy_route:String="village_spine" if resident_route!="village_spine" else "village_market_lane"
+  var before_migration:=resident.global_position
+  var legacy:Dictionary={"%s:%d"%[legacy_route,resident_index]:{"point":[9999,9999],"goal":1,"health":13.0,"distance":42.0,"visits":3}}
+  expansion.restore_route_state(legacy)
+  var moved_journey:Node=resident.get_node("CityStreetJourney")
+  check(resident.global_position.distance_to(before_migration)<.2 and is_equal_approx(float(resident.get_node("Vitality").health),13.0) and is_equal_approx(moved_journey.distance_walked,42.0) and moved_journey.visits==3,"Materialised legacy route migration lost state or teleported to old road")
+  expansion.restore_route_state(original_state)
+
  expansion.advance_remote(1);expansion.restore_route_state(original_state)
  var restored_state:Dictionary=expansion.export_route_state()
  var changes:Array[String]=[]

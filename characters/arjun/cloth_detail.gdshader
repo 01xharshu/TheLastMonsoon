@@ -1,5 +1,6 @@
 shader_type spatial;
-render_mode diffuse_burley, specular_schlick_ggx;
+// An opaque fabric fold has an inner face as well as an outer face.
+render_mode diffuse_burley, specular_schlick_ggx, cull_disabled;
 uniform sampler2D base_atlas : source_color, filter_linear_mipmap, repeat_disable;
 uniform bool has_atlas = false;
 uniform vec4 cloth_color : source_color = vec4(0.035, 0.04, 0.05, 1.0);
@@ -44,4 +45,5 @@ void fragment() {
  float determinant = dot(dpdx, rx);
  vec3 gradient = (dFdx(height) * rx + dFdy(height) * ry) / max(abs(determinant), 0.000001) * sign(determinant);
  NORMAL = normalize(NORMAL - gradient);
+ if (!FRONT_FACING) NORMAL = -NORMAL;
 }

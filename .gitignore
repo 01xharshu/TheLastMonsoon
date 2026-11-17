@@ -8,8 +8,9 @@
 /android/
 
 # ── Blender backup / autosave ─────────────────────────────────
-*.blend1
-*.blend2
+# Blender numbered autosaves are disposable; editable .blend sources remain tracked.
+*.blend[0-9]
+*.blend[0-9][0-9]*
 
 # ── Operating system ──────────────────────────────────────────
 .DS_Store

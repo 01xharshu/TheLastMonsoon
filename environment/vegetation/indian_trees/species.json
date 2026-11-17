@@ -1,0 +1,42 @@
+{
+  "peepal": {
+    "botanical_name": "Ficus religiosa",
+    "prop_roots": [],
+    "height": 10
+  },
+  "banyan": {
+    "botanical_name": "Ficus benghalensis",
+    "prop_roots": [
+      {
+        "x": 4.152120113372803,
+        "y": 0.0,
+        "top": 4.732622146606445,
+        "radius": 0.16
+      },
+      {
+        "x": 0.3546312153339386,
+        "y": -3.374837636947632,
+        "top": 5.82011604309082,
+        "radius": 0.16
+      },
+      {
+        "x": 3.119673728942871,
+        "y": -1.9638621807098389,
+        "top": 5.335588455200195,
+        "radius": 0.16
+      },
+      {
+        "x": -1.7003047466278076,
+        "y": -3.3436737060546875,
+        "top": 5.395506858825684,
+        "radius": 0.16
+      }
+    ],
+    "height": 9
+  },
+  "palm": {
+    "botanical_name": "Borassus flabellifer",
+    "prop_roots": [],
+    "height": 13
+  }
+}

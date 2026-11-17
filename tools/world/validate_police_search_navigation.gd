@@ -46,6 +46,21 @@ func run() -> void:
 		if crime.patrols.is_empty():break
 	check(crime.patrols.is_empty() and actor.position.distance_to(Vector3(0,0,-4))<.2,"return route physically reaches original duty position")
 	check(actor.movement_enabled and not actor.get_meta("external_combat_motion",true),"arrival restores original movement owner")
+	# A supported endpoint must remain reachable from slight ground penetration.
+	# Terrain RID exclusions must survive assignment; solid walls remain swept.
+	actor.position=Vector3(10,-.06,0);actor.rotation.y=0
+	actor.body_collider.force_update_transform()
+	crime.patrol_terrain={"rids":[floor_body.get_rid()]}
+	await sync()
+	for frame in 120:
+		crime.move_actor(actor,Vector3(10,0,3),2.8,1.0/60.0)
+		await physics_frame
+	check(actor.position.z>1.0 and absf(actor.position.y)<.001,"support sweep excludes terrain while correcting shallow ground penetration")
+	actor.position=Vector3(0,0,-1);actor.rotation.y=0
+	actor.set_meta("patrol_speed",2.8);actor.body_collider.force_update_transform()
+	await sync()
+	crime.move_actor(actor,Vector3(0,0,4),2.8,1.0)
+	check(actor.position.z<-.5,"large-step capsule sweep still blocks solid wall with terrain excluded")
 	world.queue_free();current_scene=null
 	for frame in 3:await process_frame
 	print("POLICE SEARCH NAVIGATION ",JSON.stringify({"checks":count,"status":"PASS" if failures.is_empty() else "FAIL","failures":failures}))

@@ -2,6 +2,7 @@ extends "res://world/suryagarh/settlements/settlement_builder.gd"
 ## Fictional household prototypes on existing surveyed flat plots.
 const Actor = preload("res://characters/npcs/households/household_npc_actor.gd")
 const Coach = preload("res://vehicles/family_carriage_candidate.gd")
+const MarketCart = preload("res://vehicles/household_market_cart.gd")
 const Travel = preload("res://world/suryagarh/settlements/household_coach_travel.gd")
 var homes: Dictionary = {}
 var roles:Node
@@ -96,7 +97,7 @@ func _build_households() -> void:
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
 	_coach(british,couple,[Vector3(-475,8.56,-173),Vector3(-475,8.56,-124)])
 	await Startup.checkpoint(self, "Preparing Suryagarh’s households…")
-	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 3 household coaches")
+	print("WEALTHY HOUSEHOLDS READY | 3 homes, 9 staff, 4 residents, 2 household coaches, 1 private market cart")
 	Startup.finish(startup_task)
 
 func _house(home:Node3D,british:bool) -> void:
@@ -211,9 +212,11 @@ func _staff(home:Node3D,job:String,at:Vector3,slug:String,axis:Vector3) -> Node3
 	return actor
 
 func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
-	var coach:=Coach.new();coach.name=home.name+"Coach"
-	coach.position=route[0];add_child(coach)
+	var coach := MarketCart.new() if home.name=="MerchantHousehold" else Coach.new()
+	coach.name=home.name+"Coach"
+	coach.position=route[0]
 	coach.add_to_group("household_coach")
+	add_child(coach)
 	coach.set_meta("household",str(home.name))
 	coach.set_meta("booking_status", "british_reserved" if home.name == "BritishHousehold" else "household_reserved")
 	coach.add_to_group("cart_parking_vehicles")
@@ -225,12 +228,19 @@ func _coach(home:Node3D,people:Array[Node3D],route:Array[Vector3]) -> void:
 	for child in coach.get_children():
 		if child.name.ends_with("Boarding"):child.queue_free()
 	var driver:=_staff(home,"Coachman",home.to_local(route[0]),"village_farmer",Vector3.FORWARD)
+	if coach is MarketCart: coach.driver=driver
 	var travel:=Travel.new();travel.name="HouseholdTravel";travel.configure(coach,people,route,driver)
 	bay.standing_heading = coach.global_rotation.y
 	bay.global_rotation.y = coach.global_rotation.y
 	coach.add_child(travel)
 	var office_center:=route[-1]+Vector3(12,-.04,-18 if home.name=="MerchantHousehold" else 0)
 	var office:=_workplace(home,office_center)
+	if home.name=="MerchantHousehold":
+		var counter := preload("res://world/suryagarh/settlements/household_cloth_counter.gd").new()
+		counter.name = "ClothCounter"
+		counter.service = people[0].get_node("HouseholdConversation")
+		counter.position = Vector3(.2,1.05,.45)
+		office.add_child(counter)
 	var home_path:Array[Vector3]=[]
 	if str(home.name)=="LandownerHousehold":
 		home_path=[home.to_global(Vector3(-8,.24,1)),home.to_global(Vector3(0,.24,1))]
@@ -267,6 +277,10 @@ func _workplace(home:Node3D,at:Vector3) -> Node3D:
 		piece(office,"ChairBack",Vector3(side*1.6,1.1,.6),Vector3(.6,.8,.1),wood)
 		for dx in [-.23,.23]:
 			for z in [.12,.57]:piece(office,"ChairLeg",Vector3(side*1.6+dx,.46,z),Vector3(.07,.46,.07),wood)
+	if home.name=="MerchantHousehold":
+		piece(office,"ClothCounterTop",Vector3(.2,.89,.45),Vector3(1.0,.10,.65),wood,false)
+		for x in [-.2,.6]:
+			for z in [.20,.70]:piece(office,"ClothCounterLeg",Vector3(x,.55,z),Vector3(.08,.68,.08),wood,false)
 	piece(office,"DoorLintel",Vector3(0,3,3),Vector3(2.6,.8,.3),plaster)
 	piece(office,"Roof",Vector3(0,3.48,0),Vector3(8.6,.2,6.6),tile)
 	piece(office,"EntranceRamp",Vector3(0,.06,3.75),Vector3(2.6,.12,1.5),stone)

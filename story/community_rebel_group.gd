@@ -25,12 +25,14 @@ func configure(owner_node: Node) -> void:
   navigation.append(motion)
   await get_tree().process_frame
 func witness_attack(attacker: Node3D) -> void:
- if not trusted or attacker != mission.enforcer or mission.defeated(attacker): return
+ if not trusted or attacker != mission.protection_target() or mission.defeated(attacker): return
  for i in members.size():
   if i in responders or mission.defeated(members[i]): continue
   if not Sight.sees(members[i],mission.player,28): continue
   var ray := PhysicsRayQueryParameters3D.create(members[i].global_position+Vector3.UP*1.4,attacker.global_position+Vector3.UP*1.2,1)
-  ray.exclude = [members[i].body_collider.get_rid(),attacker.body_collider.get_rid()]
+  # Seeing the threatened player is already required above. Their body may
+  # stand between the protector and the attacker; it is not an opaque wall.
+  ray.exclude = [members[i].body_collider.get_rid(),attacker.body_collider.get_rid(),mission.player.get_rid()]
   if members[i].get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): responders.append(i)
 func tick(delta: float) -> void:
  for i in members.size():
@@ -39,10 +41,10 @@ func tick(delta: float) -> void:
    navigation[i].cancel()
    continue
   if i not in responders: continue
-  if mission.stage != "rescue" or mission.defeated(mission.enforcer):
+  var target: Node3D = mission.protection_target()
+  if not is_instance_valid(target) or mission.defeated(target):
    if navigation[i].advance(homes[i],1.1,delta): responders.erase(i)
    continue
-  var target: Node3D = mission.enforcer
   var toward := target.global_position-member.global_position
   if toward.length()>.9:
    navigation[i].advance(target.global_position-toward.normalized()*.65,1.65,delta,.10)

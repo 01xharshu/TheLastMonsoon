@@ -7,6 +7,7 @@ const Budget = preload("res://systems/simulation_budget.gd")
 const Sight = preload("res://systems/visual_perception.gd")
 const Route = preload("res://world/suryagarh/settlements/resident_walk_route.gd")
 const STAGES = ["locked", "available", "rescue", "escort", "report", "complete", "failed"]
+var daylight_clock: Node
 var director: Node
 var player: CharacterBody3D
 var encounters: Node
@@ -30,6 +31,7 @@ var registered_ground: Array[RID] = []
 var helpers: Node
 func configure(owner_node: Node) -> void:
  director = owner_node
+ daylight_clock=director.get_parent().get_node_or_null("GameTimeSystem")
  player = director.player
  house = director.get_parent().get_node("ChachaHouse")
  encounters = director.get_parent().get_node("CombatEncounters")
@@ -104,6 +106,7 @@ func request(id: String) -> bool:
   return true
  if id == "witness_start" and can_request(id):
   stage = "rescue"
+  sync_clock()
   engaged = false
   saved_people.clear()
   if built:
@@ -113,6 +116,7 @@ func request(id: String) -> bool:
   return true
  if id == "witness_report" and can_request(id):
   stage = "complete"
+  sync_clock()
   if not help_awarded:
    help_awarded = true
    var fame := player.get_node_or_null("FameComponent")
@@ -120,6 +124,8 @@ func request(id: String) -> bool:
   director.say("Witness: I am safe here. I will speak about what happened when I am ready. Chacha: We will keep watch. Thank you, Arjun.")
   return true
  return false
+func sync_clock() -> void:
+ if is_instance_valid(daylight_clock):daylight_clock.set_mission_daylight_locked(&"community_witness",stage in ["rescue","escort","report"])
 func defeated(actor: Node3D) -> bool:
  return actor.get_meta("dead", false) or actor.get_meta("knocked_out", false)
 func _physics_process(delta: float) -> void:
@@ -139,6 +145,7 @@ func _physics_process(delta: float) -> void:
  helpers.tick(delta)
  if defeated(witness):
   stage = "failed"
+  sync_clock()
   witness_nav.cancel()
   enforcer_nav.cancel()
   return
@@ -229,6 +236,7 @@ func restore_state(data: Dictionary) -> void:
   return
  var candidate := str(data.get("stage","locked"))
  stage = candidate if candidate in STAGES else "locked"
+ sync_clock()
  engaged = bool(data.get("engaged",false))
  help_awarded = bool(data.get("help_awarded",stage == "complete"))
  saved_people = data.duplicate(true)
@@ -302,5 +310,12 @@ func reset_people() -> void:
  enforcer_nav.cancel()
 
 func _exit_tree() -> void:
+ if is_instance_valid(daylight_clock):daylight_clock.set_mission_daylight_locked(&"community_witness",false)
  if is_instance_valid(encounters):
   for rid in registered_ground: encounters.ground_exclusions.erase(rid)
+
+func protection_target() -> Node3D:
+ if stage == "rescue": return enforcer
+ var chapter: Node = director.uniform_mission
+ if chapter != null and chapter.stage == "confront" and is_instance_valid(chapter.guard): return chapter.guard
+ return null

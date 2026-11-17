@@ -108,6 +108,15 @@ func _office_walk(journey:Node,returning:bool) -> Array[Vector3]:
 
 func _phase(next:String) -> void:
 	phase=next;dwell=0;actions[phase]=true
+	if coach.has_method("set_cargo_loaded") and next=="working":
+		var service: Node = residents[0].get_node("HouseholdConversation")
+		var ledger: Node = service.ledger
+		var record: Dictionary = ledger._record(service.role_id)
+		var today: int = ledger.day()
+		if int(record.get("cloth_delivery_day",-1)) != today:
+			record["cloth_delivery_day"] = today
+			record["cloth_delivered"] = int(record.get("cloth_delivered",0)) + 2
+		coach.set_cargo_loaded(false)
 
 func _estate_gate_ready() -> bool:
 	if coach.name!="LandownerHouseholdCoach" or phase not in ["departing","returning","turning"]:return true
@@ -132,6 +141,10 @@ func step(delta:float) -> void:
 		return
 	for journey in journeys:journey.tick(delta)
 	if phase=="home":
+		if coach.has_method("set_cargo_loaded"):
+			var service: Node = residents[0].get_node("HouseholdConversation")
+			var record: Dictionary = service.ledger._record(service.role_id)
+			coach.set_cargo_loaded(int(record.get("cloth_delivery_day",-1)) != service.ledger.day())
 		dwell+=delta
 		if dwell>=12 and (not is_instance_valid(household_clock) or household_clock.current_hour>=8 and household_clock.current_hour<18):
 			_phase("leaving_home")

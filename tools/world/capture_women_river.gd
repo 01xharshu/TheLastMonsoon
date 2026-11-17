@@ -83,8 +83,46 @@ func run() -> void:
 			await process_frame;RenderingServer.force_draw(false)
 			viewport.get_texture().get_image().save_png(output_dir+"/river_face_%d.png"%i)
 			print("WORLD_RIVER_IDENTITY ",i)
+	if "--playback" in OS.get_cmdline_user_args(): await play_work_cycle(viewport,routine,camera)
 	if "--budget" in OS.get_cmdline_user_args(): await measure_budget(viewport,routine,world.get_node("GameTimeSystem"))
 	world.queue_free();await process_frame;quit()
+
+func play_work_cycle(viewport: SubViewport, routine: Node, camera: Camera3D) -> void:
+	# Advance the production owner at ordinary wall-clock speed through lowering,
+	# fill, laundry/bathing, seated discussion, rise and pickup.
+	routine.mode="visit";routine.visit_seconds=10.0;routine.alarm_seconds=0.0;routine.escape_age=-1.0
+	# Static walking shots above use a separate staging position. Restore the
+	# real arrival contract before ordinary-time playback: every journey has
+	# reached its own bank, including companions with staggered animation time.
+	for index in routine.women.size():
+		var woman:Node3D=routine.women[index]
+		var journey:Dictionary=routine.journeys[index]
+		journey.position=woman.bank;journey.goal=journey.path.size()-1;journey.arrived=true
+		woman.travel_position=woman.bank;woman.travel_speed=routine.SPEED
+		woman.travel_direction=Vector3(journey.path[-1])-Vector3(journey.path[-2])
+		woman.sample(10.0-index*.7)
+	camera.position=routine.shore+Vector3(4.2,2.6,5.8);camera.look_at(routine.shore+Vector3(0,.6,0));camera.fov=44
+	var began:=Time.get_ticks_usec();var prior:=began;var frames:=0;var hand:=0.0;var ankle:=0.0;var captured: Dictionary={};var worst_ankle:Dictionary={}
+	while float(Time.get_ticks_usec()-began)/1000000.0<48.0:
+		await process_frame
+		var now:=Time.get_ticks_usec();var delta:=float(now-prior)/1000000.0;prior=now
+		routine.tick(delta);frames+=1
+		if detail:
+			var focus:Node3D=routine.women[0]
+			camera.global_position=focus.global_transform*Vector3(1.4,1.25,-2.2)
+			camera.look_at(focus.global_position+Vector3(0,.65,0))
+		for woman in routine.women:
+			for error in woman.hand_errors.values():hand=maxf(hand,float(error))
+			for side in woman.foot_errors:
+				var error:=float(woman.foot_errors[side])
+				if error>ankle:
+					ankle=error;worst_ankle={"time":routine.visit_seconds,"member":woman.member_index,"role":woman.riverside_role,"side":side,"action":woman.action}
+		for at in [17,29,43,52]:
+			if routine.visit_seconds>=at and not captured.has(at):
+				RenderingServer.force_draw(false);viewport.get_texture().get_image().save_png(output_dir+"/river_playback_%d.png"%at);captured[at]=true
+	var passed:bool=hand<.015 and ankle<.015 and absf(routine.visit_seconds-56.4)<.5 and routine.mode=="return" and routine.women[0].global_position.distance_to(routine.women[0].bank)>1.0
+	print("RIVER_PLAYBACK ",JSON.stringify({"passed":passed,"wall_seconds":float(prior-began)/1000000.0,"frames":frames,"hand_m":hand,"ankle_m":ankle,"mode":routine.mode,"return_distance_m":routine.women[0].global_position.distance_to(routine.women[0].bank),"activity_seconds":routine.visit_seconds-10.0,"worst_ankle":worst_ankle}))
+	if not passed:push_error("Ordinary-time river work cycle contact/clock failed")
 
 class TimedFabric:
 	extends RefCounted

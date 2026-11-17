@@ -21,6 +21,9 @@ var home: Node3D
 var bed: Node3D
 var clock: GameTimeSystem
 var camera: Camera3D
+var wake_fill: OmniLight3D
+var waking_chacha: Node3D
+var waking_chacha_processing := false
 var shade: ColorRect
 var subtitle: Label
 var hint: Label
@@ -99,6 +102,12 @@ func start(target_world: Node3D) -> void:
 	camera.fov = 48
 	add_child(camera)
 	camera.make_current()
+	wake_fill = OmniLight3D.new()
+	wake_fill.light_color = Color(1.0,0.82,0.63)
+	wake_fill.light_energy = 0.38
+	wake_fill.omni_range = 4.0
+	wake_fill.visible = false
+	camera.add_child(wake_fill)
 	_build_lamp()
 	_build_overlay()
 	score = AudioStreamPlayer.new()
@@ -115,7 +124,7 @@ func start(target_world: Node3D) -> void:
 	add_child(sound)
 	sound.configure(actor,lamp)
 	murmur = AudioStreamPlayer3D.new()
-	murmur.stream = preload("res://systems/audio_edges.gd").prepare(load("res://assets/audio/opening/arjun_murmur_draft.wav"))
+	murmur.stream = preload("res://systems/audio_edges.gd").prepare(load("res://assets/audio/dialogue/fa76a32d4f899e11f5c99c251f8f9352976ad54b4681a2864da95545df7ac8df.wav"))
 	murmur.volume_db = -12.0
 	murmur.max_distance = 8.0
 	actor.add_child(murmur)
@@ -309,9 +318,9 @@ func _input(event: InputEvent) -> void:
 	if state == "done": return
 	get_viewport().set_input_as_handled()
 	if not event.is_pressed() or event.is_echo(): return
-	if state in ["prologue","cart_passage","night"] and event is InputEventKey and event.keycode in [KEY_SPACE,KEY_ESCAPE]:
+	if event is InputEventKey and event.keycode in [KEY_SPACE,KEY_ESCAPE]:
 		if skip_requested:
-			morning()
+			skip_cinematic()
 		else:
 			skip_requested = true
 			hint.text = "Press Esc or Space to Skip"
@@ -481,6 +490,13 @@ func morning() -> void:
 	actor.set_meta("rest_action","opening")
 	actor.set_meta("rest_progress",0.38)
 	actor.remove_meta("rest_waking")
+	waking_chacha = world.get_node_or_null("ChachaHouse/Chacha")
+	if waking_chacha != null:
+		waking_chacha_processing = waking_chacha.is_processing()
+		waking_chacha.set_process(false)
+		waking_chacha.global_position = home.to_global(Vector3(-1.25,0.24,-0.25))
+		var facing := actor.global_position-waking_chacha.global_position
+		waking_chacha.global_rotation.y = atan2(facing.x,facing.z)
 	titles.show()
 	titles.next_morning(0.0)
 	_shot(Vector3(-.9,2.0,0),Vector3(-2.35,1.10,-1.4))
@@ -498,7 +514,32 @@ func _update_morning(delta: float) -> void:
 		return
 	titles.hide()
 	shade.color.a = 1.0-smoothstep(4.0,5.2,t)
-	if t < 6.0: return
+	if t < 6.0:
+		# The camera occupies the pillow rather than showing Arjun from outside.
+		visual.visible = false
+		wake_fill.visible = true
+		_shot(Vector3(-2.35,1.18,-1.18),Vector3(-1.25,1.50,-0.25))
+		camera.fov = 68.0
+		return
+	visual.visible = true
+	wake_fill.visible = false
+	# Cut back to the cot before Chacha returns to his farm duties.
+	if t < 8.0: _shot(Vector3(-.45,2.05,.55),Vector3(-2.35,1.10,-1.4))
+	if waking_chacha != null:
+		var community := world.get_node_or_null("StoryCommunity")
+		if community != null and is_instance_valid(community.farm):
+			waking_chacha.global_position = community.farm.to_global(Vector3(-5,0,2))
+			waking_chacha.state = "training"
+			waking_chacha.set_process(waking_chacha_processing)
+			var director := world.get_node_or_null("DevStory")
+			if director != null:
+				director.chacha_home = waking_chacha.global_transform
+				director.opening_chacha_at_farm = true
+			var advice := world.get_node_or_null("ChachaHouse/ChachaAdvice") as Node3D
+			if advice != null: advice.global_position = waking_chacha.global_position + Vector3.UP
+		else:
+			waking_chacha.set_process(waking_chacha_processing)
+		waking_chacha = null
 	if t < 8.0:
 		if state != "rising":
 			state = "rising"
@@ -522,8 +563,8 @@ func _update_morning(delta: float) -> void:
 		if walk_time < total+duration:
 			_walk(path[i],path[i+1],(walk_time-total)/duration,delta)
 			var at: Vector3 = home.to_local(actor.global_position)
-			var shots := [Vector3(-1.1,2.0,.2),Vector3(2.8,2.1,2.2),Vector3(1.5,2.0,5.5),Vector3(2.2,2.0,6.0)]
-			_shot(shots[i],at+Vector3(0,.45,.2))
+			var shots := [Vector3(-.55,2.05,.65),Vector3(2.8,2.1,2.2),Vector3(1.5,2.0,5.5),Vector3(2.2,2.0,6.0)]
+			_shot(shots[i],at+Vector3(0,.85 if i==0 else .45,.2))
 			camera.fov = 58.0
 			return
 		total += duration
@@ -532,6 +573,7 @@ func _update_morning(delta: float) -> void:
 
 func _release() -> void:
 	state = "done"
+	visual.visible = true
 	if murmur != null: murmur.queue_free()
 	if sigh_audio != null: sigh_audio.queue_free()
 	actor.remove_meta("opening_active")
@@ -574,6 +616,16 @@ func _interior_window_shot(t: float) -> void:
 
 func _exit_tree() -> void:
 	cart_passage.finish()
+	if is_instance_valid(visual): visual.visible = true
+	if is_instance_valid(waking_chacha): waking_chacha.set_process(waking_chacha_processing)
 	var audio := get_tree().root.get_node_or_null("WorldAudio")
 	footwear.restore()
 	if audio != null and state in ["prologue","cart_passage","night"]: audio.set_opening_quiet(false)
+
+func skip_cinematic() -> void:
+	if state=="done":return
+	actor.set_meta("cinematic_jump_block_until_released",true)
+	if state in ["prologue","cart_passage","night"]:morning()
+	# Normal morning endpoint releases control, starts saved tutorial and positions at the courtyard.
+	morning_elapsed=100.0
+	_update_morning(0.0)

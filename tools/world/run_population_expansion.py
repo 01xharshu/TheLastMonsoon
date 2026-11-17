@@ -31,7 +31,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='tlm-population-expansion-') as folder:
         output = Path(folder); project = output/'project'
         shutil.copytree(ROOT, project, copy_function=checks.copy_stable_file,
-                        ignore=shutil.ignore_patterns('.git','WorkingAssets','__pycache__','node_modules','.next'))
+                        ignore=shutil.ignore_patterns('.git','.godot','WorkingAssets','__pycache__','node_modules','.next'))
         config = project/'project.godot'
         config.write_text(config.read_text().replace('[application]', '[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="'+output.name+'"'))
         binary = shutil.which('godot') or '/Applications/Godot.app/Contents/MacOS/Godot'

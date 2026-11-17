@@ -62,12 +62,8 @@ func refresh() -> void:
 
 func _draw() -> void:
 	var p:=marker_position
-	_symbol(p)
-	if at_edge:
-		var axis:=direction.normalized();var side:=axis.orthogonal()
-		var center:=p+axis*25
-		draw_polyline(PackedVector2Array([center-axis*4+side*6,center+axis*3,center-axis*4-side*6]),GOLD,2.0,true)
-	_text(p+Vector2(0,-25),distance_text,18,GOLD)
+	if not manager.player.get_meta("suppress_destination_marker",false):
+		_draw_destination(p)
 	if objective_text.is_empty():return
 	_symbol(Vector2(48,48),.8)
 	var words:=objective_text.split(" ")
@@ -80,6 +76,14 @@ func _draw() -> void:
 		var at:=Vector2(70,54+i*24)
 		draw_string(FONT,at+Vector2(1,1),lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,19,Color(.03,.03,.02,.8))
 		draw_string(FONT,at,lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,19,GOLD)
+
+func _draw_destination(p:Vector2) -> void:
+	_symbol(p)
+	if at_edge:
+		var axis:=direction.normalized();var side:=axis.orthogonal()
+		var center:=p+axis*25
+		draw_polyline(PackedVector2Array([center-axis*4+side*6,center+axis*3,center-axis*4-side*6]),GOLD,2.0,true)
+	_text(p+Vector2(0,-25),distance_text,18,GOLD)
 func _symbol(at: Vector2,scale_factor: float=1.0) -> void:
 	var shape:=PackedVector2Array([Vector2(0,-13),Vector2(4,-7),Vector2(4,-4),Vector2(7,-4),Vector2(13,0),Vector2(7,4),Vector2(4,4),Vector2(4,7),Vector2(0,13),Vector2(-4,7),Vector2(-4,4),Vector2(-7,4),Vector2(-13,0),Vector2(-7,-4),Vector2(-4,-4),Vector2(-4,-7),Vector2(0,-13)])
 	for i in shape.size():shape[i]=at+shape[i]*scale_factor

@@ -16,6 +16,15 @@ func _ready()->void:
  actor.body_collider.get_node("BodyShape").shape.height=1.1
  actor.body_collider.get_node("BodyShape").position.y=.55
  actor.add_to_group("city_cart_passengers")
+func foot_target_world(side:String) -> Vector3:
+ var public_cart:bool=cart.get_meta("public_passenger_service",false)
+ # The shorter rider needs the ankles closer to the bench to keep a bent knee.
+ var reach:=.46 if public_cart and actor.movement_profile==&"female" else .55
+ var at:Vector3=cart.to_local(socket.global_position)+Vector3(-.18 if side=="l" else .18,0,-reach)
+ at.y=1.369 if cart.has_method("show_coachman_blockout") else 1.13
+ if public_cart:at.y=1.185
+ return cart.to_global(at)
+
 func _physics_process(delta:float)->void:
  if actor.get_meta("dead",false) or actor.get_meta("knocked_out",false):return
  age+=delta
@@ -34,10 +43,7 @@ func _physics_process(delta:float)->void:
  var pelvis:Vector3=rig.to_global(rig.get_bone_global_pose(rig.find_bone("pelvis")).origin)
  actor.global_position+=socket.global_position+Vector3.UP*.11-pelvis
  for side in ["l","r"]:
-  var at:Vector3=cart.to_local(socket.global_position)+Vector3(-.18 if side=="l" else .18,0,-.55)
-  at.y=1.369 if cart.has_method("show_coachman_blockout") else 1.13
-  if cart.get_meta("public_passenger_service",false):at.y=1.185
-  actor.foot_plant._solve(actor.foot_plant.legs[side],rig.to_local(cart.to_global(at)))
+  actor.foot_plant._solve(actor.foot_plant.legs[side],rig.to_local(foot_target_world(side)))
   actor.solve_hand_contact(side,socket.to_global(Vector3(-.18 if side=="l" else .18,.15,-.25)))
  if actor.drape!=null:actor.drape.update()
  actor.body_collider.force_update_transform()

@@ -1,6 +1,10 @@
 extends "res://characters/npcs/households/household_npc_actor.gd"
 ## Reuses the existing Blender MPFB farmer; no primitive human geometry.
 const Startup = preload("res://systems/world_startup.gd")
+var pose_budget_enabled := true
+var pose_updates := 0
+var _pose_elapsed := 0.0
+var _pose_viewer: Node3D
 var coach: Node3D
 var driver_lean := .18
 var driver_turn := 0.0
@@ -13,6 +17,8 @@ func _ready() -> void:
  household_job = "Coachman"
  super._ready()
  if foot_plant.legs.is_empty(): foot_plant.configure(_skeleton)
+ var world := preload("res://systems/world_context.gd").find_world(self)
+ if world != null: _pose_viewer = world.get_node_or_null("Player")
  body_collider.collision_layer = 0
  body_collider.collision_mask = 0
  body_collider.get_node("BodyShape").set_deferred("disabled",true)
@@ -30,6 +36,18 @@ func _prepare_startup_clothing(task: int) -> void:
  Startup.finish(task)
 func _process(delta: float) -> void:
  if not visible or coach == null or _skeleton == null or foot_plant.legs.is_empty(): return
+ # The rig and its contact targets share the vehicle frame. Keeping the last
+ # remote pose therefore keeps the body attached while the cart moves normally.
+ # Legacy world-coordinate seating must still solve every frame.
+ _pose_elapsed += delta
+ var viewer: Node3D = _pose_viewer if is_instance_valid(_pose_viewer) else get_viewport().get_camera_3d()
+ var essential: bool = coach.boarding.rider != null or get_meta("combat_action","") != "" or get_meta("mission_active",false) or coach.get_meta("mission_active",false)
+ var interval := SimulationBudget.interval(coach,viewer,essential) if pose_budget_enabled and coach.get_meta("local_driver_pose",true) else 0.0
+ # Zero-delta setup/review calls must retain the exact startup garment cache.
+ if delta > 0.0 and _pose_elapsed < interval: return
+ delta = _pose_elapsed
+ _pose_elapsed = 0.0
+ pose_updates += 1
  super._process(delta)
  driving_phase += delta
  var blend := 1.0-exp(-5.0*delta)

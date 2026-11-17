@@ -4,6 +4,8 @@ var opening_quiet := false
 var ambience_gain := 1.0
 var morning_fade := false
 var streams: Dictionary = {}
+var dialogue_streams: Dictionary = {}
+var next_social_voice := 0
 var step_variants: Dictionary = {}
 var voices: Array[AudioStreamPlayer3D] = []
 var events := 0
@@ -44,6 +46,28 @@ func play_at(key: String, at: Vector3, db: float = -18.0, bus: String = "") -> b
   voice.stream=step_variants[key].pick_random() if step_variants.has(key) else streams[key];voice.global_position=at;voice.set_meta("base_db",db);voice.volume_db=db+linear_to_db(maxf(.0001,ambience_gain))
   voice.pitch_scale=randf_range(.94,1.06);voice.play();events+=1;event_counts[key]=int(event_counts.get(key,0))+1;return true
  return false
+func play_social_voice(actor: Node3D, viewer: Node3D, seed: int) -> bool:
+ if is_opening_quiet() or Time.get_ticks_msec()<next_social_voice:return false
+ if not is_instance_valid(viewer) or viewer.global_position.distance_squared_to(actor.global_position)>196.0:return false
+ var nationality: String="British" if actor.get_meta("combat_faction","")=="british" else "Indian"
+ var gender: String="female" if actor.get("movement_profile")==&"female" else "male"
+ var speaker:=nationality+" "+gender
+ var line: String=["Good morning.","How is your family?"][posmod(seed,2)]
+ var key: String=(speaker+"\n"+line).sha256_text()
+ if not dialogue_streams.has(key):
+  var path: String="res://assets/audio/dialogue/"+key+".wav"
+  if not ResourceLoader.exists(path):return false
+  dialogue_streams[key]=load(path)
+ for voice in voices:
+  if voice.playing:continue
+  voice.max_distance=14.0;voice.unit_size=4.0;voice.bus="Master"
+  voice.stream=dialogue_streams[key];voice.global_position=actor.global_position+Vector3.UP*1.4
+  voice.set_meta("base_db",-8.0)
+  voice.volume_db=-8.0+linear_to_db(maxf(.0001,ambience_gain));voice.pitch_scale=1.0;voice.play()
+  next_social_voice=Time.get_ticks_msec()+5000
+  return true
+ return false
+
 func interaction(target: Node3D) -> void:
  if not is_instance_valid(target):return
  var label := (str(target.name)+' '+str(target.get('interaction_text'))).to_lower()

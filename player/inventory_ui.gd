@@ -53,6 +53,7 @@ extends PanelContainer
 # STARTUP
 # =========================================================
 
+var salvage_label: Label
 var bandage_label: Label
 var bandage_button: Button
 
@@ -60,6 +61,8 @@ var mango_label: Label
 var eat_mango_button: Button
 
 func _ready() -> void:
+	salvage_label = Label.new()
+	$ContentMargin/Content.add_child(salvage_label)
 	var row := HBoxContainer.new()
 	mango_label = Label.new()
 	mango_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -213,6 +216,14 @@ func is_open() -> bool:
 # =========================================================
 
 func _refresh_inventory() -> void:
+	if salvage_label != null:
+		var salvage = preload("res://world/suryagarh/cart_salvage.gd")
+		var goods := PackedStringArray()
+		for item: String in salvage.GOODS:
+			var amount := inventory.get_item_count(item)
+			if amount > 0: goods.append("%s × %d" % [salvage.label(item), amount])
+		salvage_label.visible = not goods.is_empty()
+		salvage_label.text = "\n".join(goods)
 	if bandage_label:
 		var count := inventory.get_item_count("medkit") + inventory.get_item_count("bandage")
 		bandage_label.text = "Bandage    × " + str(count)

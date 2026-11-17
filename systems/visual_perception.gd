@@ -16,7 +16,8 @@ static func sees(observer: Node3D, subject: CharacterBody3D, range_m := 28.0) ->
 	if toward.length_squared()>limit*limit: return false
 	if preload("res://combat/escape_smoke.gd").obscures(observer.get_tree(),from,target): return false
 	var query := PhysicsRayQueryParameters3D.create(from,target,1)
-	query.exclude=[subject.get_rid()]
+	var excluded: Array[RID]=[subject.get_rid()]
 	var body: CollisionObject3D = observer.get("body_collider")
-	if is_instance_valid(body): query.exclude.append(body.get_rid())
+	if is_instance_valid(body): excluded.append(body.get_rid())
+	query.exclude=excluded
 	return observer.get_world_3d().direct_space_state.intersect_ray(query).is_empty()

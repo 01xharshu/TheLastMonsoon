@@ -76,6 +76,7 @@ func report_crime(player: CharacterBody3D, offence: String, location: Vector3) -
 	for candidate in get_parent().get_children():
 		if candidate==self or candidate.get_meta("grappled",false) or candidate.get_meta("thana_role","")=="mohurrir" or candidate.get_meta("dead",false) or candidate.get_meta("knocked_out",false): continue
 		if not candidate is Node3D: continue
+		if absf(candidate.global_position.y-(player.global_position.y-.9))>.6:continue
 		var distance: float = candidate.global_position.distance_to(location)
 		if distance>=best: continue
 		if not can_see(candidate,player): continue

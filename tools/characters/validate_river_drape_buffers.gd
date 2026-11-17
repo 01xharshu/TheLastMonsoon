@@ -6,6 +6,14 @@ func run() -> void:
 	var stage:=Node3D.new();root.add_child(stage);current_scene=stage
 	var woman=preload("res://characters/npcs/indian/river_woman_study.gd").new()
 	woman.home=Vector3.ZERO;woman.bank=Vector3(0,0,-4);stage.add_child(woman);woman.set_process(false)
+	if woman.sari_drape.pieces.is_empty():
+		var authored:=0
+		for label in ["Wrapped sari lower drape","Sari lower border"]:
+			var mesh:=woman.find_child(label,true,false) as MeshInstance3D
+			if mesh!=null and mesh.skin!=null and mesh.find_blend_shape_by_name("River fine walk 4 00")>=0:authored+=1
+		if authored!=2 and not (authored==1 and woman.get_meta("integral_sari_border",false)):push_error("Missing lower cloth owner");stage.free();quit(1);return
+		print("RIVER_DRAPE_BUFFERS ",JSON.stringify({"status":"not_applicable","scope":"Authored skin/morph path: no dynamic vertex upload. Imported contact audit and native playback required; no skinned GPU-position readback claimed.","authored_meshes":authored}))
+		stage.free();quit();return
 	var camera:=Camera3D.new();stage.add_child(camera);camera.position=Vector3(2,2,2);camera.look_at(Vector3(0,.8,0));camera.current=true
 	var gap:=0.0;var normal_gap:=0.0;var samples:=0
 	for time in [1.37,17.2,29.37,43.37,48.25,52.25,65.25]:
@@ -25,6 +33,6 @@ func run() -> void:
 				var up:Vector3=expected[maxi(0,row-1)*woman.sari_drape.segments+segment]-expected[mini(piece.rows,row+1)*woman.sari_drape.segments+segment]
 				normal_gap=maxf(normal_gap,up.cross(across).normalized().distance_to(normals[i]))
 			samples+=expected.size()
-	var passed:bool=gap<.000001 and normal_gap<.0002
+	var passed:bool=samples>0 and gap<.000001 and normal_gap<.0002
 	print("RIVER_DRAPE_BUFFERS ",JSON.stringify({"passed":passed,"poses":7,"vertices":samples,"max_vertex_gap_m":gap,"max_normal_gap":normal_gap}))
 	stage.free();quit(0 if passed else 1)

@@ -1,6 +1,6 @@
 extends RefCounted
 ## One shared gun-space path for the cartridge, ramrod and loading fingers.
-const RELOAD_SECONDS := 1.5
+const RELOAD_SECONDS := 1.2
 const MOUTH := Vector3(1.04, 0.057, 0)
 const ROD_CENTER := Vector3(0.56, -0.003, 0)
 const ROD_HALF := 0.48

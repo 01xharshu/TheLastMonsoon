@@ -7,13 +7,15 @@ var planted_side := ""
 var planted_world := Vector3.ZERO
 var active := false
 var reach_limited := false
+var knee_forward := Vector3.BACK
 var pelvis: int
 var pelvis_position: Vector3
 var pelvis_down: Vector3
 var hip_drop: float = 0.008
 
-func configure(rig: Skeleton3D) -> void:
+func configure(rig: Skeleton3D, forward_axis: Vector3 = Vector3.BACK) -> void:
 	skeleton = rig
+	knee_forward = forward_axis.normalized()
 	pelvis = rig.find_bone("pelvis")
 	pelvis_position = rig.get_bone_pose_position(pelvis)
 	var parent := rig.get_bone_parent(pelvis)
@@ -92,7 +94,7 @@ func _solve(bones: Array, target: Vector3) -> void:
 	var along := (upper_length*upper_length-lower_length*lower_length+reachable*reachable)/(2.0*reachable)
 	var height := sqrt(maxf(0.0,upper_length*upper_length-along*along))
 	# Model fronts are +Z; knee bends forward in the sagittal plane.
-	var pole := Vector3.BACK - direction * direction.dot(Vector3.BACK)
+	var pole := knee_forward - direction * direction.dot(knee_forward)
 	if pole.length_squared()<0.001:
 		pole = Vector3.RIGHT
 	var desired_knee := hip + direction*along + pole.normalized()*height

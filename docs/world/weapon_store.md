@@ -1,4 +1,6 @@
-# Company weapon store — 2026-09-27
+# Company weapon store
+
+Current interaction, 2026-10-26: E opens an isolated 3D inspection window. Drag/scroll rotates and zooms; Leave/Keep/Equip buttons confirm the outcome. Keep stores without selecting; Equip stores and draws. Existing inventory, ammunition, theft and remaining-pickup persistence remain in use. Earlier hold-to-equip notes below describe historical behavior, superseded by inspection. Reusable `tools/weapons/validate_equipping.gd` now confirms the new modal; optional capture output requires an OS-temporary `TLM_WEAPON_REVIEW_DIR` and caller cleanup. See [interaction details](interaction_glow.md).
 
 ## Upper shelf interaction — 2026-09-28
 

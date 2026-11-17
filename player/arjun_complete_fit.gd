@@ -66,6 +66,14 @@ func apply(visual: Node3D) -> void:
 		target.mesh = fitted
 		count += 1
 	model.set_meta("opening_clothing_fitted",count)
+	# Restore this fitted outfit after low stances, never the pre-opening mesh.
+	var stance: Node = visual.actor.get_node_or_null("StealthStance")
+	if stance != null:
+		for record in stance.low_waist: record.normal = record.node.mesh
+	var contacts: Node = visual.get_node_or_null("LocomotionFootContact")
+	if contacts != null:
+		contacts.sole_points = {"l":PackedVector3Array(),"r":PackedVector3Array()}
+		contacts._cache_soles()
 	donor.free()
 
 func _bind_name(skin: Skin, bind: int, rig: Skeleton3D) -> String:

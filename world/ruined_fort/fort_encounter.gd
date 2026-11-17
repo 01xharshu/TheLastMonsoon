@@ -28,7 +28,8 @@ func find_player() -> CharacterBody3D:
 	return get_tree().root.find_child("Player",true,false) as CharacterBody3D
 
 func activate() -> void:
-	if activated or completed: return
+	# In the main world this fort shelters Mangal’s secret hideout.
+	if fort.embedded_in_world or activated or completed: return
 	activated = true
 	for index in range(SITES.size()):
 		var state: Dictionary = saved_guards[index] if index < saved_guards.size() and saved_guards[index] is Dictionary else {}
@@ -57,7 +58,8 @@ func activate() -> void:
 		guards.append({"id":index,"actor":actor,"weapon":weapon,"aware":false,"last_seen":actor.global_position,"lost":0.0,"path":PackedVector3Array(),"waypoint":0,"repath":0.0,"strike":0.0,"strike_hit":false,"cover_marker":null,"cover_age":0.0})
 
 func is_cleared() -> bool:
-	if completed: return true
+	# The abandoned main-world fort has no garrison to defeat.
+	if fort.embedded_in_world or completed: return true
 	if not activated: return false
 	for guard in guards:
 		var actor: Node3D = guard.actor
@@ -65,6 +67,7 @@ func is_cleared() -> bool:
 	return true
 
 func _physics_process(delta: float) -> void:
+	if fort.embedded_in_world: return
 	if not is_instance_valid(player): player = find_player()
 	if player == null: return
 	var distance: float = player.global_position.distance_to(fort.global_position)

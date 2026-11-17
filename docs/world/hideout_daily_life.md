@@ -1,0 +1,11 @@
+# Hideout daily roles
+
+The existing rebellion mission continues to own Mangal, its trainees and the two raid companions. `story/hideout_daily_life.gd` adds stable MPFB rebel residents after the hideout is reached. Two watch the roof, one watches the entrance terrace, two sit and converse, one sits and relaxes, two sleep on interior bedrolls with subtle breathing, one walks while carrying supplies on the upper terrace, and one sits with Mangal when he is free after the first mission. The sleeping alcove has a partial screen. These are fixed roles rather than a full day/night schedule.
+
+The rifle trainees appear for the weapon lesson; the raid companions are restored for raid, rope and return stages. The manager releases its seat when story or player conversation owns Mangal. The carrier uses bounded swept collision checks and the shared distance budget; role health, death, knockout and carrier progress are recorded with the existing rebellion save state. Existing patrol secrecy and full human bodies remain unchanged.
+
+Reusable checks: `python3 tools/world/run_tutorial_guard_check.py --checks validate_rebellion_story review_rebellion_world` exercises mission and role transitions, saved role state and the real populated-world Mangal follow path. `python3 tools/world/run_tutorial_guard_check.py --native --review --checks validate_hideout_environment` produces disposable rendered views and a short real-time carrier movement/contact sample; create `hideout_done` in the printed temporary directory once inspected. Captures and logs are removed on exit.
+
+Native stills have been inspected, but long player-controlled observation, full clothing deformation/contact, interactions across all story stages, day/night behavior and user visual approval remain open.
+
+29 October 2026: the corrected carrier uses the matching left and right exterior crate grips and rebases the foot-plant heights after placement on the elevated terrace. A 3.6-second native populated-world sample travelled 2.36 m with a maximum reported palm-target error of 1.0 mm; sampled lower ankle origins were 67.6 mm above the terrace. These are bounded measurements, not a sole-contact or full clothing-deformation approval. Close temporary frames were inspected and removed. The complete rebellion/role/save fixture passed with the grip-side and terrace-height checks.

@@ -44,3 +44,5 @@ The first checks all new approaches with a moving physics capsule and checks roa
 ## In-game review
 
 From Bhairavpur's western lane at X −374, walk west along Z 155 into the new quarter at X −464. Walk the lane north to Z 342 and return by the connected original village lane. Enter houses from their ramps and confirm the central doorway stays clear. The four houses on the opposite edge are at Z 135. Continue west to the farm track at X −570; follow it past all three house/shed clusters and the fields. Its southern link at Z −284 returns east to the city gateway. Inspect the western tree belts and the belt beyond the far end of the new village lane, including LOD transitions during approach and retreat.
+
+2026-11-03 follow-up: [farm boundaries, four additional plots, connected wet tracks and settlement police](farms_roads_and_police.md) extends the original batch at runtime without rebaking this retained static asset.

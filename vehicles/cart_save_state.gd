@@ -3,6 +3,7 @@ extends RefCounted
 class PendingCityRestore extends Node:
 	var states: Array = []
 	var apply_record: Callable
+	var resolve_cart: Callable
 	var population: Node
 
 	var checked_records := 0
@@ -51,7 +52,7 @@ class PendingCityRestore extends Node:
 		var remaining: Array = []
 		for state: Dictionary in states:
 			checked_records += 1
-			var cart := preload("res://vehicles/cart_save_state.gd")._resolve_cart(world,state)
+			var cart := resolve_cart.call(world,state) as Node3D
 			if cart != null and not cart.is_queued_for_deletion() and cart.is_in_group("live_travel_carts"):
 				apply_record.call(state)
 			else:
@@ -117,6 +118,7 @@ static func restore(world: Node3D, states: Array) -> void:
 		restorer.states = pending
 		restorer.population = population
 		restorer.apply_record = _restore_record.bind(world)
+		restorer.resolve_cart = _resolve_cart
 		if occupied_priority_set:
 			restorer.occupied_path = occupied_path
 			restorer.hold_controls(world.get_node("Player"))

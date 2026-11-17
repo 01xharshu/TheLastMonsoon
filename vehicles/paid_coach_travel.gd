@@ -58,9 +58,7 @@ func show_menu() -> void:
  panel.add_theme_stylebox_override("panel",style)
  var list := VBoxContainer.new()
  panel.add_child(list)
- var destinations: Array = Routes.STOPS.keys()
- if boarding.cart.has_meta("parking_bay"): destinations.append(STANDING)
- for place in destinations:
+ for place in destinations():
   var button := Button.new()
   style_button(button)
   button.text = str(place)+" · 2 rupees"
@@ -74,6 +72,13 @@ func show_menu() -> void:
  list.add_child(cancel_button)
  previous_mouse = Input.mouse_mode
  Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+func destinations() -> Array:
+ if boarding.rider != null and boarding.rider.get_meta("morning_tutorial_active",false):
+  return ["Police Station"] if boarding.cart.name=="VillageStationCoach" else []
+ var stops: Array = Routes.STOPS.keys()
+ if boarding.cart.has_meta("parking_bay"): stops.append(STANDING)
+ return stops
+
 func close_menu() -> void:
  if menu == null: return
  menu.queue_free()
@@ -96,6 +101,13 @@ func _begin_trip(place: String, already_paid: bool) -> bool:
  if boarding.cart.is_in_group("household_coach"): return false
  var actor: CharacterBody3D = boarding.rider
  if not passenger_service() or actor == null or boarding.role != "passenger" or boarding.transition != "" or payer != null or not boarding.cart.can_move(): return false
+ if actor.get_meta("morning_tutorial_active",false):
+  if place not in destinations() or already_paid or actor.inventory.get_item_count("rupees")<FARE:return false
+  var director: Node = actor.get_parent().get_node_or_null("DevStory")
+  if director==null or not director.start_opening_coach(boarding):return false
+  actor.inventory.remove_item("rupees",FARE)
+  close_menu()
+  return true
  if graph == null: graph = Routes.build(preload("res://systems/world_context.gd").find_world(boarding.cart))
  var start := Vector2(boarding.cart.global_position.x,boarding.cart.global_position.z)
  var route := PackedVector2Array()

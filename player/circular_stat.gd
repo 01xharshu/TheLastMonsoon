@@ -29,7 +29,7 @@ func _draw() -> void:
 	var fraction: float = current_value/maximum_value
 	var color: Color = critical_color if fraction<=0.2 else (low_color if fraction<=0.4 else healthy_color)
 	var outline := PackedVector2Array([center+Vector2(0,-22),center+Vector2(22,0),center+Vector2(0,22),center+Vector2(-22,0),center+Vector2(0,-22)])
-	draw_colored_polygon(outline,Color(0.035,0.042,0.035,0.76))
+	draw_colored_polygon(outline.slice(0,4),Color(0.035,0.042,0.035,0.76))
 	draw_polyline(outline,Color(0.61,0.47,0.27,0.85),1,true)
 	draw_line(outline[3],outline[0],Color(icon_color,0.65),1,true)
 	draw_line(outline[0],outline[1],Color(icon_color,0.65),1,true)
@@ -44,7 +44,15 @@ func _draw() -> void:
 		if a.y >= fill_y: filled.append(a)
 		if (a.y >= fill_y) != (b.y >= fill_y):
 			filled.append(a.lerp(b,(fill_y-a.y)/(b.y-a.y)))
-	if fraction > 0.0 and filled.size() >= 3: draw_colored_polygon(filled,Color(color,0.38))
+	# Very small fills can collapse their intersections onto the bottom vertex.
+	# A zero-area polygon cannot be triangulated by the native canvas renderer.
+	var clean := PackedVector2Array()
+	for point in filled:
+		if clean.is_empty() or clean[clean.size()-1].distance_squared_to(point)>.0001:clean.append(point)
+	if clean.size()>1 and clean[0].distance_squared_to(clean[clean.size()-1])<=.0001:clean.remove_at(clean.size()-1)
+	var area:=0.0
+	for index in clean.size():area+=clean[index].cross(clean[(index+1)%clean.size()])
+	if clean.size() >= 3 and absf(area)>.01:draw_colored_polygon(clean,Color(color,0.38))
 	# Solid ivory symbols stay distinct from the muted interior level.
 	match icon_type:
 		0:

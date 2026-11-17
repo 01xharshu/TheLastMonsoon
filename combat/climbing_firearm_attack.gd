@@ -46,7 +46,7 @@ func _process(delta: float) -> void:
 		var toward := target.global_position-owner_actor.global_position
 		owner_actor.global_rotation.y = atan2(toward.x,toward.z)
 	var grip := owner_actor.to_global(Vector3(-.16,1.35,.13))
-	var forward: Vector3 = (target.global_position-grip).normalized() if aiming else owner_actor.global_basis.z
+	var forward: Vector3 = (target_point()-grip).normalized() if aiming else owner_actor.global_basis.z
 	var loading_progress := 1.0-cooldown/reload_seconds
 	var loading_pose: Dictionary = Loading.state(loading_progress)
 	loading_left = Vector3(.20,-.032,0)
@@ -77,7 +77,7 @@ func _process(delta: float) -> void:
 	if not Trace.sight(space,get_tree(),grip,muzzle,excluded).is_empty():
 		aim_age = 0.0
 		return
-	var sight := Trace.sight(space,get_tree(),muzzle,target.global_position,excluded)
+	var sight := Trace.sight(space,get_tree(),muzzle,target_point(),excluded)
 	if sight.is_empty() or sight.collider != target:
 		aim_age = 0.0
 		return
@@ -89,7 +89,7 @@ func _process(delta: float) -> void:
 		cooldown = reload_seconds
 		aim_age = 0.0
 		sound.play()
-		Trace.shoot(space,get_tree(),muzzle,target.global_position+forward*.5,shot_damage,excluded,owner_actor)
+		Trace.shoot(space,get_tree(),muzzle,target_point()+forward*.5,shot_damage,excluded,owner_actor)
 
 func can_engage() -> bool:
 	if not hostile or not is_instance_valid(target): return false
@@ -98,3 +98,6 @@ func can_engage() -> bool:
 
 func turn_owner_to_target() -> bool:
 	return true
+
+func target_point() -> Vector3:
+	return target.global_position

@@ -192,22 +192,59 @@ func _block(label: String, group: String, at: Vector3, size: Vector3, material: 
 		body.add_child(shape)
 	return body
 
-func _wall(x: float, z: float, length: float, tall: float, yaw: float = 0.0, damaged: bool = false) -> void:
+func _wall(x: float, z: float, length: float, tall: float, yaw: float = 0.0, damaged: bool = false, thickness:float=.82) -> void:
 	var count: int = maxi(2, ceili(length / 2.8))
 	var section: float = length / count
 	for i in range(count):
 		var offset: float = -length * 0.5 + (i + 0.5) * section
 		var site: Vector3 = Vector3(x,0,z) + Vector3(offset,0,0).rotated(Vector3.UP,yaw)
-		var ground: float = height_at(site.x,site.z)
+		var ground: float = entrance_ground(site.x,site.z) if embedded_in_world and site.z>50.0 else height_at(site.x,site.z)
 		var section_height: float = tall
 		if damaged:
-			section_height *= [0.91,0.58,0.76,0.98,0.67][i % 5]
+			section_height *= ([.95,.84,.92,1.0,.88] if embedded_in_world and z>=85.0 else [.91,.58,.76,.98,.67])[i%5]
+		if embedded_in_world and site.z>50.0:
+			ground-=.42
+			section_height+=.42
 		var width: float = section - (0.08 if damaged else 0.025)
-		var body := _block("DamagedWallStone" if damaged else "WallStone", "Architecture", Vector3(site.x,ground+section_height*0.5,site.z), Vector3(width,section_height,0.82),stone,yaw)
+		var body := _block("DamagedWallStone" if damaged else "WallStone", "Architecture", Vector3(site.x,ground+section_height*0.5,site.z), Vector3(width,section_height,thickness),stone,yaw)
 		body.get_child(0).hide()
-		_stone_section(site,ground,width,section_height,yaw)
+		if embedded_in_world and damaged and site.z>50.0:
+			# The authored fracture mesh owns both the visible wall and its collision.
+			body.get_child(1).disabled=true
+			_broken_wall_crown(site,ground,tall+.42,section,thickness,yaw)
+		elif embedded_in_world:
+			var wall_basis:=Basis(Vector3.UP,yaw).scaled_local(Vector3(section-.018,section_height,thickness))
+			masonry_transforms.append(Transform3D(wall_basis,body.position))
+		else:
+			_stone_section(site,ground,width,section_height,yaw)
 		if damaged and i % 3 == 1:
 			_block("FallenMasonry", "Props", Vector3(site.x+0.8,ground+0.18,site.z+1.1),Vector3(0.7,0.36,0.8),rubble_mat,yaw+0.33,false)
+
+func _broken_wall_crown(site:Vector3,base_y:float,tall:float,width:float,depth:float,yaw:float) -> void:
+	# Continuous world-space fracture profile meets across neighbouring sections.
+	var surface:=SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	surface.set_smooth_group(-1)
+	for piece in 4:
+		var points:=PackedVector3Array()
+		for z in [-depth*.5,depth*.5]:
+			for edge in [piece,piece+1]:
+				var x:float=-width*.5+width*float(edge)/4.0
+				var sample_at:Vector3=site+Vector3(x,0,0).rotated(Vector3.UP,yaw)
+				var top:float=tall*(.86+.09*sin(sample_at.x*.18+sample_at.z*.11)+.08*sin(sample_at.x*.81-sample_at.z*.63))
+				points.append(Vector3(x,-.12,z))
+				points.append(Vector3(x,top,z))
+		for face in [[0,2,3,1],[4,5,7,6],[1,3,7,5],[0,4,6,2],[0,1,5,4],[2,6,7,3]]:
+			for vertex in [0,1,2,0,2,3]:surface.add_vertex(points[face[vertex]])
+	surface.generate_normals()
+	var crown:=MeshInstance3D.new()
+	crown.name="FracturedWallCrown"
+	crown.mesh=surface.commit()
+	crown.material_override=ruin_material()
+	crown.position=Vector3(site.x,base_y,site.z)
+	crown.rotation.y=yaw
+	nodes.Architecture.add_child(crown)
+	crown.create_trimesh_collision()
 
 func _arch_block(root: Node3D, label: String, at: Vector3, size: Vector3, material: Material, tilt: float = 0.0) -> void:
 	var body := StaticBody3D.new()
@@ -252,12 +289,15 @@ func _stairs(x: float, z: float, count: int, direction: float = -1.0) -> void:
 
 func _build_architecture() -> void:
 	# Outer gate and fragmented eastern/western curtains leave broad silhouette openings.
-	# Fragmented front curtain gives the fort a readable south entrance.
+	if embedded_in_world:
+		_build_private_entry()
+		_build_entry_galleries()
+	# The older inner curtain survives behind the outer entry.
 	_arch(0,45,0,0)
 	for front in [[-20,45,22,3.2,0.05],[20,45,22,3.6,-0.08],[-42,41,13,2.8,0.12],[43,40,12,3.1,-0.16]]:
 		_wall(front[0],front[1],front[2],front[3],front[4],true)
 	_arch(0,30,0,1)
-	_arch(-7,4,0,0)
+	if not embedded_in_world:_arch(-7,4,0,0)
 	_arch(8,-21,0,1)
 	_arch(-13,-38,0,2)
 	_arch(2,-40,0,0)
@@ -269,7 +309,9 @@ func _build_architecture() -> void:
 		_wall(base.x+4,base.y-4,7,2.6,PI*0.5,true)
 	# Mid-field fragments interrupt long shots while keeping openings between zones.
 	for fragment in [[-10,28,7,2.7,0.4],[10,24,6,3.3,-0.6],[-7,14,5,2.4,-0.3],[7,8,8,3.4,0.4],[-15,-3,6,3.0,-0.5],[17,-8,7,2.7,0.3],[-6,-15,8,3.8,0.5],[13,-25,5,3.1,-0.4],[-9,-35,7,3.4,0.2]]:
+		if embedded_in_world and absf(fragment[0])<12 and absf(fragment[1])<21:continue
 		_wall(fragment[0],fragment[1],fragment[2],fragment[3],fragment[4],true)
+	if embedded_in_world:_build_rebel_courtyard()
 	# The left flank is longer and elevated, the right flank narrower and enclosed.
 	for z in [17,0,-17,-34]:
 		_wall(-45,z,12,2.8,PI*0.5,true)
@@ -293,6 +335,259 @@ func _build_architecture() -> void:
 		var top: float = keep_top-.25*(11-step)
 		_block("KeepAccessStep", "Architecture",Vector3(2,top-.15,zz),Vector3(3.4,.3,.5),pale)
 	_block("WatchtowerBase", "Architecture", Vector3(0,height_at(0,-47)+0.35,-47), Vector3(13,0.7,8), pale)
+
+func entrance_ground(x:float,z:float) -> float:
+	var at:=to_global(Vector3(x,0,z))
+	return landscape.height(at.x,at.z)-global_position.y
+
+func _build_private_entry() -> void:
+	# The outer opening follows the existing cut-and-fill road at this elevation.
+	var entry:=Node3D.new()
+	entry.name="OuterFortGate"
+	entry.position=Vector3(11.5,entrance_ground(11.5,86.0),86.0)
+	nodes.Architecture.add_child(entry)
+	_wall(-31.25,86.0,75.5,7.8,0,true,1.45)
+	_wall(35.5,86.0,38.0,8.0,0,true,1.45)
+	_wall(-69.0,69.0,34.0,6.5,PI*.5,true)
+	_wall(54.5,69.0,34.0,6.3,PI*.5,true)
+	# Thick, battered piers hold a deep semicircular barrel opening.
+	for side in [-1.0,1.0]:
+		var pier:=_block("GateTowerPier","Architecture",entry.position+Vector3(side*4.58,4.55,0),Vector3(2.45,10.1,4.35),stone)
+		pier.get_child(0).material_override=ruin_material()
+	var shell:=SurfaceTool.new()
+	shell.begin(Mesh.PRIMITIVE_TRIANGLES)
+	const SEGMENTS:=15
+	for i in SEGMENTS:
+		var a:=PI*float(i)/SEGMENTS
+		var b:=PI*float(i+1)/SEGMENTS
+		var wedge:=PackedVector3Array()
+		for z in [-2.15,2.15]:
+			for radius in [3.3,4.55]:
+				for angle in [a,b]:
+					wedge.append(Vector3(cos(angle)*radius,4.7+sin(angle)*radius,z))
+		for face in [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]:
+			for corner in [0,2,1,0,3,2]:shell.add_vertex(wedge[face[corner]])
+	shell.generate_normals()
+	var vault:=MeshInstance3D.new()
+	vault.name="DeepStoneGateVault"
+	vault.mesh=shell.commit()
+	vault.material_override=stone
+	entry.add_child(vault)
+	vault.create_trimesh_collision()
+	# Fill the arch shoulders and crown so the opening reads as a passage
+	# through an old gatehouse, with a broken upper parapet.
+	var crown:=SurfaceTool.new()
+	crown.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in SEGMENTS:
+		var points:=PackedVector3Array()
+		for z in [-2.15,2.15]:
+			for step in [i,i+1]:
+				var theta:=PI*float(step)/SEGMENTS
+				var x:=cos(theta)*4.55
+				points.append(Vector3(x,4.7+sin(theta)*4.55-.025,z))
+				points.append(Vector3(x,10.3+.36*sin(float(step)*1.4)+.2*cos(float(step)*2.8),z))
+		for face in [[0,2,3,1],[4,5,7,6],[1,3,7,5],[0,4,6,2]]:
+			for index in [0,2,1,0,3,2]:crown.add_vertex(points[face[index]])
+	crown.generate_normals()
+	var spandrel:=MeshInstance3D.new()
+	spandrel.name="BrokenGatehouseCrown"
+	spandrel.mesh=crown.commit()
+	spandrel.material_override=ruin_material()
+	entry.add_child(spandrel)
+	spandrel.create_trimesh_collision()
+
+	# Retained timber leaves lie open against the deep passage cheeks.
+	for side in [-1.0,1.0]:
+		for plank in 6:
+			_block("WeatheredGateLeaf","Architecture",entry.position+Vector3(side*3.22,1.65,-1.7+plank*.46),Vector3(.18,3.3,.45),wood,0,false)
+		for y in [.55,2.6]:
+			_block("GateLeafBrace","Architecture",entry.position+Vector3(side*3.1,y,-.55),Vector3(.11,.18,2.75),wood,0,false)
+	# The inner screen prevents a view through the entrance into occupied rooms.
+	# A wide western turn takes the player and vehicles around it.
+	_wall(11.5,75.0,14.0,7.1,0,true,1.8)
+	_wall(18.0,70.5,9.0,5.8,PI*.5,true,1.2)
+	# A lower return conceals the ramp while keeping its mouth accessible.
+	_wall(-59.1,75.5,13.0,5.0,PI*.5,true)
+	_wall(-52.9,75.5,13.0,5.0,PI*.5,true)
+
+func _build_entry_galleries() -> void:
+	var plaster:=ruin_material()
+	# Service route: repeated arches bridge the existing westward follow line.
+	# The north and south room walls keep the gallery from reading as loose piers.
+	for span in [Vector2(-36.85,5.3),Vector2(-26,7.6),Vector2(-14,7.6),Vector2(-3.15,5.3)]:
+		_wall(span.x,69.4,span.y,5.2,0,true,1.0)
+	for x in [-32.0,-20.0,-8.0]:
+		_gallery_arch(Vector2(x,69.4),0.0,plaster)
+	_wall(-20,77.6,39,4.9,0,true,1.0)
+	for x in [-5.0,-11.0,-17.0,-23.0,-29.0,-35.0]:
+		_gallery_arch(Vector2(x,73.0),PI*.5,plaster)
+	for x in [-32.0,-20.0,-8.0]:
+		_wall(x,64.7,8,4.4,0,true,1.0)
+		_wall(x-4.0,67.0,4.6,4.1,PI*.5,true,1.0)
+	# Surviving timber pockets and short beam ends explain the missing upper floor.
+	for room_x in [-32.0,-20.0,-8.0]:
+		for offset in [-2.5,-.6,1.6]:
+			var x:float=room_x+offset
+			var y:float=entrance_ground(x,64.7)+3.15
+			_block("OldJoistPocket","Props",Vector3(x,y,65.211),Vector3(.38,.34,.035),dark_stone,0,false)
+			if offset<0:
+				_block("BrokenJoistEnd","Props",Vector3(x,y-.035,65.42),Vector3(.24,.23,.56),wood,.035,false)
+	for point in [Vector2(-34.0,66.0),Vector2(-21.5,66.0)]:
+		var crate:Node3D=load("res://objects/household/storage/crate.tscn").instantiate()
+		crate.position=Vector3(point.x,entrance_ground(point.x,point.y),point.y)
+		crate.rotation.y=.23
+		nodes.Props.add_child(crate)
+	# A covered remnant and neighbouring roofless spans preserve the ruined silhouette.
+	for x in [-35.3,-28.8]:
+		for z in [69.4,77.6]:
+			var pier_y:=entrance_ground(x,z)
+			var prop:=_block("GalleryRoofPier","Architecture",Vector3(x,pier_y+2.46,z),Vector3(.71,4.96,.73),stone)
+			prop.get_child(0).material_override=plaster
+	for z in [69.4,77.6]:
+		_block("GalleryWallPlate","Architecture",Vector3(-32.05,entrance_ground(-32.05,73.0)+4.94,z),Vector3(7.1,.28,.33),wood)
+	for x in [-34.5,-33.6,-32.7,-31.8,-30.9,-30.0,-29.1]:
+		var roof_y:=entrance_ground(x,73.0)+5.05
+		_block("GalleryRoofRafter","Architecture",Vector3(x,roof_y,73.5),Vector3(.23,.24,8.4),wood)
+	for x in [-34.5,-33.9,-33.3,-32.7]:
+		var roof_y:=entrance_ground(x,73.0)+5.23
+		_block("BrokenGalleryRoof","Architecture",Vector3(x,roof_y,73.5),Vector3(.59,.14,7.9),wood)
+	# Inner ward: a second offset wall breaks the sightline from the forecourt.
+	# Its west end opens onto the inner gate; the east end leaves the delivery yard clear.
+	_wall(0,56.0,16.0,6.2,0,true,1.15)
+	_wall(8.1,52.4,7.2,5.2,PI*.5,true,1.05)
+	_gallery_arch(Vector2(-11.5,56.0),0.0,plaster)
+	_wall(-18.6,56.0,9.1,5.4,0,true,1.05)
+	_wall(-22.9,52.3,7.4,4.8,PI*.5,true,1.05)
+	# Just inside the older gate, a short return directs foot traffic past a room bay.
+	_wall(1.7,37.0,13.0,5.4,0,true,1.12)
+	_wall(8.0,33.9,6.2,4.6,PI*.5,true,1.0)
+	_gallery_arch(Vector2(-8.6,37.0),0.0,plaster)
+	_wall(-15.2,37.0,8.1,4.7,0,true,1.0)
+	_wall(-18.9,34.1,5.8,4.3,PI*.5,true,1.0)
+	for point in [Vector2(-25,66),Vector2(-13,66),Vector2(5.1,52),Vector2(4.9,34)]:
+		var debris:=Vector3(point.x,entrance_ground(point.x,point.y)+.16,point.y)
+		_block("FallenMasonry","Props",debris,Vector3(.95,.38,.75),rubble_mat,.31,false)
+
+	var gallery_path:Array[Vector2]=[Vector2(0,73),Vector2(-39,73)]
+	var ward_path:Array[Vector2]=[Vector2(0,66),Vector2(0,62.5),Vector2(-11.5,62.5),Vector2(-11.5,50),Vector2(0,50),Vector2(0,42),Vector2(-8.6,42),Vector2(-8.6,33)]
+	_worn_fort_path(gallery_path)
+	_worn_fort_path(ward_path)
+
+func _worn_fort_path(points:Array[Vector2]) -> void:
+	var surface:=SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for segment in range(points.size()-1):
+		var start:=points[segment]
+		var end:=points[segment+1]
+		var tangent:=(end-start).normalized()
+		var side:=Vector2(-tangent.y,tangent.x)
+		var steps:=ceili(start.distance_to(end))
+		for step in steps:
+			for corner in [Vector2i(0,0),Vector2i(1,0),Vector2i(0,1),Vector2i(1,0),Vector2i(1,1),Vector2i(0,1)]:
+				var t:=float(step+corner.y)/steps
+				var at:=start.lerp(end,t)+side*(float(corner.x)-.5)*3.1
+				surface.set_uv(Vector2(corner.x,t))
+				surface.add_vertex(Vector3(at.x,entrance_ground(at.x,at.y)+.055,at.y))
+	surface.generate_normals()
+	var path:=MeshInstance3D.new()
+	path.name="WornFortPassage"
+	path.mesh=surface.commit()
+	var finish:=ShaderMaterial.new()
+	finish.shader=preload("res://world/suryagarh/shaders/mountain_trail.gdshader")
+	finish.set_shader_parameter("grain",preload("res://environment/forest/assets/textures/rock_albedo.jpg"))
+	path.material_override=finish
+	path.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	nodes.Props.add_child(path)
+
+func _gallery_arch(point:Vector2,yaw:float,plaster:Material) -> void:
+	var frame:=Node3D.new()
+	frame.name="RuinedPointedPassage"
+	frame.position=Vector3(point.x,entrance_ground(point.x,point.y),point.y)
+	frame.rotation.y=yaw
+	nodes.Architecture.add_child(frame)
+	for side in [-1.0,1.0]:
+		# Individual bed courses retain the full opening but break the monolithic pier.
+		for course in 7:
+			var wear:float=.025*sin(point.x*.71+point.y*.33+course*2.1+side)
+			var local:=Vector3(side*(2.66+wear*.5),-.24+(course+.5)*.48,0)
+			var pier:=_block("GalleryPierCourse","Architecture",frame.position+local.rotated(Vector3.UP,yaw),Vector3(.95+wear,.465,1.3+wear),stone,yaw)
+			pier.get_child(0).material_override=plaster
+		var base:=Vector3(side*2.66,.14,0)
+		var plinth:=_block("GalleryPierFoot","Architecture",frame.position+base.rotated(Vector3.UP,yaw),Vector3(1.10,.42,1.45),stone,yaw)
+		plinth.get_child(0).material_override=plaster
+	var surface:=SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Segmented two-centre arch with a visible intrados and masonry depth.
+	const STEPS:=16
+	for i in STEPS:
+		var points:=PackedVector3Array()
+		for z in [-.65,.65]:
+			for row in [0,1]:
+				for j in [i,i+1]:
+					# A narrow recessed bed joint separates each wedge. Only the
+					# extrados is eroded, leaving the passage envelope unchanged.
+					var joint:float=.018 if j==i else -.018
+					var t:float=(float(j)+joint)/STEPS*2.0-1.0
+					var x:float=t*(2.22+.47*row)
+					var erosion:float=(.045*sin(float(j)*2.7+point.x)+.026*cos(float(j)*4.1+point.y))*row
+					var y:float=2.68+1.62*sqrt(maxf(0.0,1.0-absf(t)))+.43*row+erosion
+					points.append(Vector3(x,y,z))
+		for face in [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]:
+			for index in [0,1,2,0,2,3]:
+				surface.add_vertex(points[face[index]])
+	surface.generate_normals()
+	var vault:=MeshInstance3D.new()
+	vault.name="PointedStoneVault"
+	vault.mesh=surface.commit()
+	vault.material_override=stone
+	frame.add_child(vault)
+	vault.create_trimesh_collision()
+	# Continuous recessed masonry closes the bed joints behind the face stones.
+	# Its intrados sits inside the stone, preserving the original clear opening.
+	var bedding:=SurfaceTool.new()
+	bedding.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in STEPS:
+		var points:=PackedVector3Array()
+		for z in [-.60,.60]:
+			for row in [0,1]:
+				for j in [i,i+1]:
+					var t:float=float(j)/STEPS*2.0-1.0
+					var x:float=t*(2.22+.47*row)
+					var erosion:float=(.045*sin(float(j)*2.7+point.x)+.026*cos(float(j)*4.1+point.y))*row
+					var y:float=2.68+1.62*sqrt(maxf(0.0,1.0-absf(t)))+.43*row+erosion
+					points.append(Vector3(x,y+(.012 if row==0 else -.012),z))
+		for face in [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]]:
+			for index in [0,1,2,0,2,3]:bedding.add_vertex(points[face[index]])
+	bedding.generate_normals()
+	var mortar:=MeshInstance3D.new()
+	mortar.name="RecessedArchBedding"
+	mortar.mesh=bedding.commit()
+	mortar.material_override=dark_stone
+	frame.add_child(mortar)
+	mortar.create_trimesh_collision()
+
+func _build_rebel_courtyard() -> void:
+	# Leave a broad open range between the room fronts. The rear wall catches shots.
+	_wall(0,-17,24,5.8,0,true)
+	for side in [-1.0,1.0]:
+		var x:float=side*15.0
+		for z in [-10.0,0.0,10.0]:
+			_arch(x,z,PI*.5,0)
+		for z in [-15.0,-5.0,5.0,15.0]:
+			_wall(x,z,4.4,5.4,PI*.5,true)
+		_wall(side*24.0,0,27,5.7,PI*.5,true)
+		for z in [-15.0,-5.0,5.0]:
+			_wall(side*19.5,z,8.0,3.8,0,true)
+		# Roof fragments shelter the rear of each middle room, with open sky over the yard.
+		var floor_y:=height_at(side*20.0,0)
+		for z in [-2.8,-1.8,-.8,.3,1.5]:
+			_block("SurvivingRoomBeam","Architecture",Vector3(side*19.5,floor_y+2.9,z),Vector3(8.6,.19,.2),wood)
+		for z in [-2.8,-2.35,-1.9,-1.45]:
+			_block("BrokenRoofBoard","Architecture",Vector3(side*20.7,floor_y+3.03,z),Vector3(6.2,.1,.42),wood)
+		var cache:Node3D=load("res://objects/household/storage/crate.tscn").instantiate()
+		cache.position=Vector3(side*22.0,height_at(side*22.0,-2.0),-2.0)
+		nodes.Props.add_child(cache)
+	# The southern ends of both galleries are open to the existing flank routes.
 
 func _cover_piece(x: float, z: float, kind: String, yaw: float) -> void:
 	var h: float = height_at(x,z)
@@ -354,7 +649,10 @@ func _build_cover() -> void:
 		[-36,35,"full",-.4],[-38,27,"low",.15],[-34,18,"rock",.7],[-38,9,"crate",.2],[-36,-1,"low",-.4],[-38,-10,"rock",.3],[-35,-20,"low",-.4],[-37,-29,"low",.2],
 		[34,35,"low",.2],[36,26,"rock",-.5],[33,17,"crate",.25],[35,8,"low",-.3],[37,-1,"rock",.1],[33,-10,"low",-.3],[36,-19,"crate",.2],[36,-32,"low",.3]
 	]
-	for p in layout: _cover_piece(p[0],p[1],p[2],p[3])
+	for p in layout:
+		if embedded_in_world and absf(p[0])<15 and p[1]>=-17 and p[1]<=19:continue
+		var z:float=13.0 if embedded_in_world and p[0]==-38 and p[1]==9 else p[1]
+		_cover_piece(p[0],z,p[2],p[3])
 
 func _build_props() -> void:
 	for site in [Vector2(-28,35),Vector2(28,-18)]:
@@ -478,11 +776,17 @@ func _stone_section(site: Vector3, ground: float, width: float, tall: float, yaw
 			var basis := Basis(Vector3.UP,yaw+rng.randf_range(-.018,.018)).scaled(Vector3(brick*1.03,course*1.03,thickness*rng.randf_range(1.03,1.13)))
 			masonry_transforms.append(Transform3D(basis,center))
 
+func ruin_material() -> ShaderMaterial:
+	var result:=ShaderMaterial.new()
+	result.shader=preload("res://world/ruined_fort/fort_ruin_wall.gdshader")
+	result.set_shader_parameter("stone_grain",preload("res://assets/nature/materials/rock_boulder_dry_diff_1k.jpg"))
+	return result
+
 func _finish_masonry() -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.use_colors = true
-	batch.mesh = stone_mesh_shared
+	batch.mesh = BoxMesh.new() if embedded_in_world else stone_mesh_shared
 	batch.instance_count = masonry_transforms.size()
 	for i in range(masonry_transforms.size()):
 		batch.set_instance_transform(i,masonry_transforms[i])
@@ -494,6 +798,9 @@ func _finish_masonry() -> void:
 	var material := _weathered_stone(Color("d5c6a9"),.38)
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 1
-	visual.material_override = material
+	if embedded_in_world:
+		visual.material_override=ruin_material()
+	else:
+		visual.material_override=material
 	nodes.Architecture.add_child(visual)
 	masonry_transforms.clear()

@@ -1,4 +1,5 @@
 extends Control
+var contacts := preload("res://player/map_contacts.gd").new()
 ## North-up field map; surveyed routes and sites come from SuryagarhLayout.
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Bridge = preload("res://world/suryagarh/timber_bridge.gd")
@@ -6,7 +7,7 @@ const FONT = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
 const INK := Color(0.20,0.17,0.12)
 const Density = preload("res://world/suryagarh/settlements/countryside_density.gd")
 var density_routes := Density.lanes()
-var density_fields := Density.fields()
+var density_fields := Density.fields()+Density.additional_fields()
 var density_homes := Density.homes()
 const MAP_TEXTURE := "res://world/suryagarh/generated/field_map.res"
 var icons: Dictionary = {}
@@ -30,6 +31,7 @@ var hovered_site := ""
 @onready var player: CharacterBody3D = get_parent().get_parent()
 var layout := Layout.new()
 var sites: Dictionary = {}
+var shop_sites: Array[String] = []
 var selected_site := ""
 
 func refresh_sites() -> void:
@@ -38,6 +40,10 @@ func refresh_sites() -> void:
 	sites.erase("Old fort reserve")
 	sites.erase("Company compound")
 	sites.merge(preload("res://player/map_infrastructure.gd").collect(player.get_parent()),true)
+	shop_sites.clear()
+	for site: String in sites:
+		if site_kind(site) == "shop":
+			shop_sites.append(site)
 
 
 func _ready() -> void:
@@ -51,7 +57,7 @@ func _ready() -> void:
 	add_child(map_canvas)
 	resized.connect(func(): _update_map_area(); queue_redraw())
 	_update_map_area.call_deferred()
-	for kind in ["house", "port", "military", "trade", "nature", "water", "bridge", "parking", "clinic", "church", "stable", "jail", "civic", "treasury", "cemetery", "weapon"]:
+	for kind in ["house", "port", "military", "shop", "workshop", "trade", "nature", "water", "bridge", "parking", "clinic", "church", "stable", "jail", "civic", "treasury", "cemetery", "weapon"]:
 		icons[kind] = load("res://assets/ui/map_icons/%s.svg" % kind)
 	marker = preload("res://player/world_waypoint.gd").new()
 	marker.map = self
@@ -140,8 +146,12 @@ func _gui_input(event: InputEvent) -> void:
 				map_center -= event.relative/map_rect.size*view_span()
 				clamp_center()
 		hovered_site = ""
+		var nearest := 12.0
 		for site in sites:
-			if project(sites[site]).distance_to(event.position)<12.0: hovered_site = site
+			var distance := project(sites[site]).distance_to(event.position)
+			if distance < nearest:
+				nearest = distance
+				hovered_site = site
 		queue_redraw()
 
 func set_open(open: bool) -> void:
@@ -256,7 +266,7 @@ func _draw() -> void:
 	map_canvas.queue_redraw()
 	var legend_index := 0
 	for kind in icons:
-		var at := Vector2(20,108+legend_index*minf(36,(size.y-132)/15.0))
+		var at := Vector2(20,108+legend_index*minf(36,(size.y-132)/float(icons.size()-1)))
 		draw_texture_rect(icons[kind],Rect2(at,Vector2(22,22)),false)
 		draw_string(FONT,at+Vector2(28,17),str(kind).capitalize(),HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(0.92,0.87,0.72))
 		legend_index += 1
@@ -264,6 +274,13 @@ func _draw() -> void:
 func site_kind(label: String) -> String:
 	var name_lower := label.to_lower()
 	if "weapon seller" in name_lower:return "weapon"
+	if "refuge" in name_lower:return "house"
+	if "mountain" in name_lower or "summit" in name_lower or "ridge lookout" in name_lower:return "nature"
+	if "college" in name_lower or "university" in name_lower:return "civic"
+	if "factory" in name_lower:return "trade"
+	if "provision shop" in name_lower:return "shop"
+	if "workshop" in name_lower:return "workshop"
+	if "market" in name_lower or "grain store" in name_lower:return "trade"
 	for pair in [["hospital","clinic"],["church","church"],["cemetery","cemetery"],["stable","stable"],["jail","jail"],["treasury","treasury"],["court","civic"],["hall","civic"],["collectorate","civic"],["parking","parking"],["bridge","bridge"],["port","port"],["ship","port"],["landing","port"],["well","water"],["hospital","military"],["barrack","military"],["cantonment","military"],["police","military"],["armoury","military"],["fort","military"],["bazaar","trade"],["store","trade"],["warehouse","trade"],["shrine","nature"],["forest","nature"]]:
 		if pair[0] in name_lower: return pair[1]
 	return "house"
@@ -297,6 +314,7 @@ func draw_map_contents() -> void:
 	for x in range(-280,90,4): lane.append(Vector2(x,160+12*sin(x*0.017)))
 	draw_route(lane,Color(0.48,0.31,0.17),maxf(2.0,zoom))
 	for route in Layout.ROUTES.values(): draw_route(route,Color(0.48,0.31,0.17),maxf(2.0,zoom))
+	draw_route(preload("res://world/suryagarh/remote_mountain_route.gd").POINTS,Color(.45,.38,.27),maxf(1.5,zoom))
 	for center: Vector2 in density_fields:
 		var start := project(center-Density.FIELD_SIZE*.5)
 		var finish := project(center+Density.FIELD_SIZE*.5)
@@ -312,7 +330,12 @@ func draw_map_contents() -> void:
 	for route in density_routes:draw_route(route,Color(.48,.31,.17),maxf(1.0,zoom))
 	var drawn: Array[Vector2] = []
 	var clusters: Dictionary = {}
-	for site in sites:
+	# Lead each low-zoom cluster with its shop so the storefront stays discoverable.
+	var draw_order := sites.keys()
+	for shop in shop_sites:
+		draw_order.erase(shop)
+	draw_order = shop_sites + draw_order
+	for site in draw_order:
 		var p: Vector2 = sites[site]
 		if not on_map(p): continue
 		var screen := project(p)
@@ -342,11 +365,13 @@ func draw_map_contents() -> void:
 		left.x = clampf(left.x,map_rect.position.x,map_rect.end.x)
 		right.x = clampf(right.x,map_rect.position.x,map_rect.end.x)
 		map_canvas.draw_line(left,right,Color(0.30,0.15,0.08),maxf(4.0,zoom*2.0))
+	for contact in contacts.sample(player):
+		if on_map(contact.position):map_canvas.draw_circle(project(contact.position),2.7,contact.color)
 	var actor := Vector2(player.global_position.x,player.global_position.z)
 	if on_map(actor):
 		map_canvas.draw_circle(project(actor),7,Color(0.97,0.9,0.65))
 		map_canvas.draw_circle(project(actor),4,Color(0.65,0.19,0.10))
-	if is_finite(waypoint.x):
+	if is_finite(waypoint.x) and not player.get_meta("suppress_destination_marker",false):
 		var pin := project(waypoint)
 		pin.x = clampf(pin.x,map_rect.position.x+10,map_rect.end.x-10)
 		pin.y = clampf(pin.y,map_rect.position.y+10,map_rect.end.y-10)

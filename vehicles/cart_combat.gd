@@ -18,7 +18,7 @@ func _ready() -> void:
 		horses.append(health)
 		if anim != null: horse_animations[anim] = health
 	# Mesh-local boxes follow moving doors; panes have independent hit targets.
-	var solids := ["CabinFloor","RearSeatBack","FrontSeatBack","LowerDoorPanel","DoorWaistRail","FrontQuarter","RearQuarter","WindowPost","WindowLintel","WindowSill","CabinFrontLower","FrontWindowRail","FrontWindowPost","CabinRear","InteriorCeilingLiner"]
+	var solids := ["CabinFloor","RearSeatBack","FrontSeatBack","LowerDoorPanel","DoorWaistRail","FrontQuarter","RearQuarter","WindowPost","WindowLintel","WindowSill","CabinFrontLower","FrontWindowRail","FrontWindowPost","CabinRear","InteriorCeilingLiner","PlankedDeck","Backrest","LowSideRail","SlattedSide","EndBoard"]
 	for mesh in cart.visual_root.find_children("*","MeshInstance3D",true,false):
 		if not mesh.mesh is BoxMesh: continue
 		var label: String = str(mesh.get_meta("cart_part",mesh.get_meta("part_label",mesh.name)))
@@ -30,6 +30,7 @@ func _ready() -> void:
 		elif label in solids:
 			var body := AnimatableBody3D.new()
 			body.name = "ShotBlock"+label
+			body.set_meta("cart_solid_part",label)
 			body.collision_layer = 8
 			body.collision_mask = 0
 			body.sync_to_physics = false

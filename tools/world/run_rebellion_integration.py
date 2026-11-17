@@ -11,6 +11,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKS = {
+    "live": ("validate_consignment_live.gd", False),
     "budget": ("validate_expanded_world_budget.gd", False),
     "portrait": ("bake_wanted_portrait.gd", False),
     "continuous": ("validate_consignment_story.gd", True),
@@ -35,7 +36,7 @@ def main():
     parser.add_argument("--native", action="store_true")
     parser.add_argument("--review", action="store_true", help="Capture native scenes temporarily for inspection; delete on exit")
     parser.add_argument("--cached", action="store_true", help="Reuse source import cache in the disposable copy; still run incremental import")
-    parser.add_argument("--checks", nargs="+", choices=CHECKS, default=[key for key in CHECKS if key not in ("portrait","motion","motion_focused","budget")])
+    parser.add_argument("--checks", nargs="+", choices=CHECKS, default=[key for key in CHECKS if key not in ("portrait","motion","motion_focused","budget","live")])
     args = parser.parse_args()
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
@@ -85,6 +86,9 @@ def main():
                     ok=False
                 if script=="validate_expanded_world_budget.gd" and "CONSIGNMENT EXPANSION BUDGET: SAMPLED" not in (directory / (label.upper()+".log")).read_text():
                     print("BUDGET FAIL: process exited before sampling completed",flush=True)
+                    ok=False
+                if script=="validate_consignment_live.gd" and "CONSIGNMENT LIVE: PASS" not in (directory / (label.upper()+".log")).read_text():
+                    print("LIVE FAIL: sustained review did not complete",flush=True)
                     ok=False
                 passed = ok and passed
                 # Keep the failed snapshot's diagnostics concise; fix before broadening.

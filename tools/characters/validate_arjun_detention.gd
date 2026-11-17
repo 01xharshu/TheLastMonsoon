@@ -13,15 +13,18 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message)
 func frames(count: int) -> void:
 	for i in count: await physics_frame
-func shot(label: String, offset: Vector3) -> void:
+func shot(label: String, offset: Vector3, focus_height := .15) -> void:
 	if not capture: return
+	var freeze_seat := label.begins_with("bench_")
+	if freeze_seat: detention.set_process(false)
 	camera.global_position = actor.global_position+world.get_node("Settlement/DistrictPolice").global_basis*offset
-	camera.look_at(actor.global_position+Vector3.UP*0.15)
+	camera.look_at(actor.global_position+Vector3.UP*focus_height)
 	for i in 3: await process_frame
 	await RenderingServer.frame_post_draw
-	check(root.get_texture().get_image().save_png("res://docs/characters/arjun/detention_%s.png"%label)==OK,"Capture failed: "+label)
+	check(root.get_texture().get_image().save_png(OS.get_environment("TLM_TUTORIAL_OUTPUT")+"/detention_%s.png"%label)==OK,"Capture failed: "+label)
+	if freeze_seat: detention.set_process(true)
 func run() -> void:
-	capture = DisplayServer.get_name()!="headless"
+	capture = DisplayServer.get_name()!="headless" and OS.get_environment("TLM_TUTORIAL_OUTPUT")!=""
 	world = load("res://world/suryagarh/suryagarh_world.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
@@ -53,7 +56,6 @@ func run() -> void:
 	actor.get_node("PistolCombat").rounds = 2
 	actor.get_node("PistolCombat").reload_remaining = 1.0
 	actor.get_node("CombatInput").punch_time = 0.0
-	actor.get_node("CombatInput").pending_single = true
 	check(detention.begin_detention("arrest"),"Arrest entry rejected")
 	await frames(35)
 	await shot("entry",Vector3(1.65,0.6,-1.25))
@@ -66,7 +68,7 @@ func run() -> void:
 	check(actor.get_node("PistolCombat").reload_remaining == 0.0 and actor.get_node("PistolCombat").rounds == 2,"Pistol reload continued during arrest")
 	check(actor.inventory.get_item_count("pistol_ball") == 7,"Pistol reserve changed on arrest")
 	check(not actor.get_node("CombatInput").available(),"Melee allowed in detention")
-	check(actor.get_node("CombatInput").punch_time < 0 and not actor.get_node("CombatInput").pending_single,"Pending melee was not cancelled")
+	check(actor.get_node("CombatInput").punch_time < 0,"Pending melee was not cancelled")
 	check(not actor.get_node("StealthStance").can_change(),"Low stance allowed in detention")
 	check(not actor.get_node("RideComponent").try_toggle(),"Mount allowed in detention")
 	actor.inventory_ui.open_inventory()
@@ -110,7 +112,67 @@ func run() -> void:
 	detention.release_detention()
 	await frames(65)
 	check(actor.get_meta("detention_action", "")=="","Arrest release left lock")
-	var report := {"passed":failures.is_empty(),"failures":failures,"max_detained_drift_m":max_drift,"restrained_wrist_gap_m":wrist_gap,"renderer":RenderingServer.get_current_rendering_method(),"scope":"Actual station cell, timed arrest/wait/release, action guards and recovered locomotion; visual approval separate"}
-	FileAccess.open("res://docs/characters/arjun/detention_validation%s.json"%("_metal" if capture else ""),FileAccess.WRITE).store_string(JSON.stringify(report,"  ")+"\n")
+	# Use the same bench anchor and contacts as the station escort.
+	detention.seat_world = police.to_global(Vector3(7.2,.47,14.55))
+	detention.floor_world = police.to_global(Vector3(7.2,0,15.20))
+	actor.global_transform = Transform3D(police.global_basis, detention.floor_world + Vector3.UP*.9)
+	actor.get_node("VisualRoot").rotation.y = 0
+	detention.anchor = actor.global_transform
+	detention.mode = "seated"
+	actor.set_meta("detention_action","seated")
+	await frames(25)
+	await shot("bench_early",Vector3(-.82,.15,1.05),-.20)
+	await frames(19)
+	await shot("bench_entry",Vector3(1.65,.55,1.65))
+	await frames(50)
+	check(detention.seat_blend>.99,"Bench entry did not settle")
+	var skeleton: Skeleton3D = visual.skeleton
+	var pelvis := skeleton.find_bone("pelvis")
+	check(skeleton.to_global(skeleton.get_bone_global_pose(pelvis).origin).distance_to(detention.seat_world)<.015,"Pelvis lost bench anchor")
+	for side in ["l","r"]:
+		var foot := skeleton.find_bone("foot_"+side)
+		var sole_offset := skeleton.get_bone_global_rest(foot).basis.inverse()*Vector3(0,-.085,.06)
+		var sole := skeleton.to_global(skeleton.get_bone_global_pose(foot)*sole_offset)
+		var target: Vector3 = detention.floor_world+actor.global_basis*Vector3(.20 if side=="l" else -.20,.025,0)
+		check(sole.distance_to(target)<.04,"Seated boot lost floor contact: "+side)
+	var stance: Node = actor.get_node("StealthStance")
+	var finish: RefCounted = stance.seated_cloth
+	var boots := 0
+	var sash := 0
+	for garment in finish.garments:
+		if str(garment.node.name).begins_with("Arjun_Boot_"):
+			boots += 1
+		else:
+			sash += 1
+		check(garment.node.mesh == garment.mesh and garment.node.get_blend_shape_value(0) > .99,
+			"Bench corrective active: "+str(garment.node.name))
+	check(boots == 2 and sash >= 3,"Two boot rims and sash panels/trim are fitted")
+	await shot("bench_idle",Vector3(1.65,.55,1.65))
+	if capture:
+		stance.set_process(false)
+		visual.set_process(false)
+		finish.update(0.0)
+		await shot("bench_cloth_reference",Vector3(-.82,.15,1.05),-.33)
+		finish.update(1.0)
+		await shot("bench_cloth_fitted",Vector3(-.82,.15,1.05),-.33)
+		visual.set_process(true)
+		stance.set_process(true)
+	detention.release_detention()
+	await frames(40)
+	await shot("bench_rise",Vector3(1.65,.55,1.65))
+	var release_deadline := Time.get_ticks_msec()+12000
+	while not detention.mode.is_empty() and Time.get_ticks_msec()<release_deadline:
+		await process_frame
+	await frames(3)
+	check(detention.mode.is_empty(),"Bench rise did not release locomotion")
+	for garment in finish.garments:
+		check(garment.node.mesh == garment.source,
+			"Seated corrective must release on standing: "+str(garment.node.name))
+	var report := {"passed":failures.is_empty(),"failures":failures,"max_detained_drift_m":max_drift,"restrained_wrist_gap_m":wrist_gap,"renderer":RenderingServer.get_current_rendering_method(),"scope":"Actual station cell, timed arrest and bench sit/idle/rise, seat and boot contact, action guards and recovered locomotion"}
 	print("ARJUN DETENTION ","PASS" if failures.is_empty() else "FAIL"," ",JSON.stringify(report))
-	quit(0 if failures.is_empty() else 1)
+	if capture:
+		var review_done := OS.get_environment("TLM_TUTORIAL_OUTPUT")+"/detention_seen"
+		var deadline := Time.get_ticks_msec()+45000
+		while Time.get_ticks_msec()<deadline and not FileAccess.file_exists(review_done):
+			await process_frame
+	await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)

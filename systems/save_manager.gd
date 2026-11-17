@@ -13,6 +13,7 @@ const DEFAULTS := {
 	"fullscreen": false, "vsync": true, "input_device": "auto",
 	"night_brightness": 0.5, "graphics_quality": 2, "key_bindings": {},
 	"vibration": 0.65, "controller_light": true, "gyro_aim": false,
+	"developer_performance": false,
 }
 signal input_device_changed(device: String)
 var active_input_device := "keyboard_mouse"
@@ -87,7 +88,7 @@ func _set_active_input_device(device: String) -> void:
 var _input_map_applied := false
 
 func _add_combat_actions() -> void:
-	for action in ["attack", "aim", "reload", "weapon_wheel", "open_map", "stow_weapon", "context_modifier", "next_weapon", "identity_scroll"]:
+	for action in ["attack", "kick", "aim", "reload", "weapon_wheel", "open_map", "stow_weapon", "context_modifier", "next_weapon", "identity_scroll"]:
 		if not InputMap.has_action(action): InputMap.add_action(action)
 	var attack_mouse := InputEventMouseButton.new()
 	attack_mouse.button_index = MOUSE_BUTTON_LEFT
@@ -96,6 +97,7 @@ func _add_combat_actions() -> void:
 	attack_pad.axis = JOY_AXIS_TRIGGER_RIGHT
 	attack_pad.axis_value = 1.0
 	InputMap.action_add_event("attack",attack_pad)
+	_add_key_action("kick",KEY_K)
 	var aim_mouse := InputEventMouseButton.new()
 	aim_mouse.button_index = MOUSE_BUTTON_RIGHT
 	InputMap.action_add_event("aim",aim_mouse)
@@ -143,7 +145,39 @@ func read_slot(slot: int) -> Dictionary:
 	var data = JSON.parse_string(file.get_as_text())
 	if not data is Dictionary or data.get("version",-1)!=VERSION: return {}
 	if not data.get("position") is Array or data.position.size()!=3: return {}
+	for coordinate in data.position:
+		if not _valid_save_number(coordinate): return {}
+	for key in ["saved_at","rotation_y","camera_pitch","game_minutes","health","water_liters","morning_tutorial"]:
+		if data.has(key) and not _valid_save_number(data[key]): return {}
+	for key in ["items","survival","weapon","fame","dev_story","community_story","rebellion_story","weapon_seller","bank_account","consignment_story","dev_inquiry","population_expansion","city_route_population","household_roles","door_states","household_cattle","river_routines","npc_activities","draft_yards","village_activities","administrative_services","institution_operations"]:
+		if data.has(key) and not data[key] is Dictionary: return {}
+	for key in ["remaining_weapon_ids","remaining_ammunition_ids","remaining_medical_ids","remaining_household_ids","opened_treasure_chests","cart_states","horse_states","collected_forage_ids"]:
+		if data.has(key) and not data[key] is Array: return {}
+	for section in ["npc_activities", "administrative_services", "institution_operations"]:
+		for record in data.get(section,{}).values():
+			if not record is Dictionary: return {}
+	for count in data.get("items",{}).values():
+		if not _valid_save_number(count): return {}
+	var numeric_fields := {
+		"survival":["hydration","satiety","energy","warmth","stamina"],
+		"weapon":["selected","rifle_rounds","rifle_reload","rifle_pending","pistol_rounds","pistol_reload","pistol_reload_charges","double_gun_rounds","double_gun_reload","double_gun_pending"],
+		"fame":["points","witnessed_deeds"]
+	}
+	for section in numeric_fields:
+		var values: Dictionary = data.get(section,{})
+		for key in numeric_fields[section]:
+			if values.has(key) and not _valid_save_number(values[key]): return {}
+	var weapon: Dictionary = data.get("weapon",{})
+	for key in ["stowed","chacha_spear"]:
+		if weapon.has(key) and not weapon[key] is bool: return {}
+	if data.has("waypoint"):
+		if not data.waypoint is Array or data.waypoint.size()!=2: return {}
+		for coordinate in data.waypoint:
+			if not _valid_save_number(coordinate): return {}
 	return data
+
+func _valid_save_number(value: Variant) -> bool:
+	return (value is int or value is float) and is_finite(float(value))
 
 func newest_slot() -> int:
 	var slot := 0
@@ -152,12 +186,12 @@ func newest_slot() -> int:
 		var data := read_slot(candidate)
 		if not data.is_empty() and int(data.get("saved_at",0))>timestamp:
 			slot = candidate
-			timestamp = int(data.saved_at)
+			timestamp = int(data.get("saved_at",0))
 	return slot
 
 func slot_label(slot: int) -> String:
 	var data := read_slot(slot)
-	if data.is_empty(): return "Slot %d  ·  Empty" % slot
+	if data.is_empty(): return "Slot %d  ·  Unavailable" % slot if FileAccess.file_exists(slot_path(slot)) else "Slot %d  ·  Empty" % slot
 	var minutes := int(data.get("game_minutes",0))
 	return "Slot %d  ·  Day %d, %02d:%02d" % [slot,minutes/1440+1,(minutes%1440)/60,minutes%60]
 
@@ -170,8 +204,20 @@ func police_case_active(actor: Node) -> bool:
 func save_game(world: Node3D, slot: int) -> bool:
 	last_error = "Save failed"
 	if slot < 1 or slot > CHECKPOINT_SLOT: return false
-	var actor: CharacterBody3D = world.get_node("Player")
-	if not actor.is_inside_tree(): return false
+	if not is_instance_valid(world) or not world.is_inside_tree():
+		last_error = "Cannot save while the world is unavailable"
+		return false
+	var actor := world.get_node_or_null("Player") as CharacterBody3D
+	if actor == null or not actor.is_inside_tree():
+		last_error = "Cannot save while the player is unavailable"
+		return false
+	for path in ["InventoryComponent", "SurvivalComponent", "VisualRoot/CharacterVisual", "UI/HUDRoot/MorningTutorial", "RifleCombat", "PistolCombat", "DoubleGunCombat", "UI/WorldMap"]:
+		if actor.get_node_or_null(path) == null:
+			last_error = "Cannot save while player systems are loading"
+			return false
+	if world.get_node_or_null("GameTimeSystem") == null:
+		last_error = "Cannot save while world systems are loading"
+		return false
 	if actor.health <= 0.0:
 		last_error = "Cannot save after death"; return false
 	if float(actor.get_meta("river_escape_remaining",0.0)) > 0.0:
@@ -195,7 +241,9 @@ func save_game(world: Node3D, slot: int) -> bool:
 		var parent:=ancestor.get_base_dir()
 		if parent.is_empty() or parent==ancestor:break
 		ancestor=parent
-	if DirAccess.make_dir_recursive_absolute(save_directory)!=OK: return false
+	if DirAccess.make_dir_recursive_absolute(save_directory)!=OK:
+		last_error = "Could not create the save directory"
+		return false
 	var inventory: InventoryComponent = actor.get_node("InventoryComponent")
 	var survival: SurvivalComponent = actor.get_node("SurvivalComponent")
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
@@ -212,6 +260,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"community_story":world.get_node("CommunityStory").export_state() if world.has_node("CommunityStory") else {},
 		"rebellion_story":world.get_node("RebellionStory").export_state() if world.has_node("RebellionStory") else {},
 		"weapon_seller":world.get_node("CityWeaponSeller").export_state() if world.has_node("CityWeaponSeller") else {},
+		"bank_account":world.get_node("BankService").export_state() if world.has_node("BankService") else {},
 		"consignment_story":world.get_node("ConsignmentStory").export_state() if world.has_node("ConsignmentStory") else {},
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"population_expansion":world.get_node("PopulationExpansion").export_route_state() if world.has_node("PopulationExpansion") else {},
@@ -228,6 +277,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"rifle_reload":actor.get_node("RifleCombat").reload_remaining,
 			"rifle_pending":actor.get_node("RifleCombat").pending_rounds,
 			"pistol_reload":actor.get_node("PistolCombat").reload_remaining,
+			"pistol_reload_charges":actor.get_node("PistolCombat").reload_charges,
 			"double_gun_reload":actor.get_node("DoubleGunCombat").reload_remaining,
 			"double_gun_pending":actor.get_node("DoubleGunCombat").pending_rounds,
 			"pistol_rounds":actor.get_node("PistolCombat").rounds,
@@ -242,6 +292,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"horse_states": preload("res://horses/horse_save_state.gd").collect(world),
 		"household_cattle": _cattle_states(world),
 		"river_routines": preload("res://world/suryagarh/settlements/river_routine_save.gd").collect(world),
+		"npc_activities": preload("res://world/suryagarh/settlements/activity_save.gd").collect(world),
 		"draft_yards": world.get_node("DraftAnimalYards").export_state() if world.has_node("DraftAnimalYards") else {},
 		"village_activities": world.get_node("VillageDailyActivities").export_state() if world.has_node("VillageDailyActivities") else {},
 		"collected_forage_ids": _collected_forage_ids(world),
@@ -260,7 +311,9 @@ func save_game(world: Node3D, slot: int) -> bool:
 		data["waypoint_site"] = map.selected_site
 	var temp := slot_path(slot)+".tmp"
 	var file := FileAccess.open(temp,FileAccess.WRITE)
-	if file == null: return false
+	if file == null:
+		last_error = "Could not open the temporary save file"
+		return false
 	file.store_string(JSON.stringify(data,"\t")+"\n")
 	file.flush()
 	var write_error := file.get_error()
@@ -286,11 +339,21 @@ func start_new_game() -> void:
 	get_tree().change_scene_to_file(WORLD)
 
 func start_loaded_game(slot: int) -> bool:
-	if read_slot(slot).is_empty(): return false
+	if read_slot(slot).is_empty():
+		last_error = "This save is unavailable or damaged."
+		return false
+	var previous_slot := pending_slot
+	var was_paused := get_tree().paused
 	pending_slot = slot
 	get_tree().paused = false
 	preload("res://systems/scene_retirement.gd").hold_until_exit(get_tree(),get_tree().current_scene)
-	get_tree().change_scene_to_file(WORLD)
+	var error := get_tree().change_scene_to_file(WORLD)
+	if error != OK:
+		pending_slot = previous_slot
+		get_tree().paused = was_paused
+		last_error = "The saved journey could not be opened."
+		return false
+	last_error = ""
 	return true
 
 func apply_pending(world: Node3D) -> void:
@@ -339,6 +402,8 @@ func apply_pending(world: Node3D) -> void:
 		world.get_node("RebellionStory").restore_state(data.get("rebellion_story",{}))
 	if world.has_node("CommunityStory"):
 		world.get_node("CommunityStory").restore_state(data.get("community_story",{}))
+	if world.has_node("BankService"):
+		world.get_node("BankService").restore_state(data.get("bank_account",{}))
 	if world.has_node("CityWeaponSeller"):
 		world.get_node("CityWeaponSeller").restore_state(data.get("weapon_seller",{}))
 	if world.has_node("ConsignmentStory"):
@@ -383,7 +448,14 @@ func apply_pending(world: Node3D) -> void:
 		var firearm: Node = actor.get_node(entry[0])
 		firearm.reload_remaining = clampf(float(weapon.get(entry[1]+"_reload",0.0)),0.0,entry[2])
 		firearm.pending_rounds = clampi(int(weapon.get(entry[1]+"_pending",0)),0,entry[3]-firearm.rounds) if firearm.reload_remaining > 0.0 else 0
-	actor.get_node("PistolCombat").reload_remaining = clampf(float(weapon.get("pistol_reload",0.0)),0.0,3.8)
+	var pistol: Node = actor.get_node("PistolCombat")
+	var saved_reload := float(weapon.get("pistol_reload",0.0))
+	# Legacy saves did not record charge count. Recover the available amount
+	# conservatively; ammunition is still consumed only when loading completes.
+	var fallback_charges := clampi(mini(5-pistol.rounds,inventory.get_item_count("pistol_ball")),1,5)
+	pistol.reload_charges = clampi(int(weapon.get("pistol_reload_charges",fallback_charges)),1,5)
+	pistol.reload_duration = preload("res://player/pistol_loading_sequence.gd").duration(pistol.reload_charges)
+	pistol.reload_remaining = clampf(saved_reload,0.0,pistol.reload_duration)
 	if world.has_node("CityRoutePopulation") and data.get("city_route_population",{}) is Dictionary:
 		world.get_node("CityRoutePopulation").restore_route_state(data.get("city_route_population",{}))
 	if world.has_node("PopulationExpansion") and data.get("population_expansion",{}) is Dictionary:
@@ -418,6 +490,7 @@ func apply_pending(world: Node3D) -> void:
 		service.restore_state(data.get("administrative_services",{}).get(key,{}))
 	_restore_cattle_states(world,data.get("household_cattle",{}))
 	preload("res://world/suryagarh/settlements/river_routine_save.gd").restore(world,data.get("river_routines",{}))
+	preload("res://world/suryagarh/settlements/activity_save.gd").restore(world,data.get("npc_activities",{}))
 	if world.has_node("DraftAnimalYards"):world.get_node("DraftAnimalYards").restore_state(data.get("draft_yards",{}))
 	if world.has_node("VillageDailyActivities"):world.get_node("VillageDailyActivities").restore_state(data.get("village_activities",{}))
 	for operations in world.get_tree().get_nodes_in_group("institution_operations"):

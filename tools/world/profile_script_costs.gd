@@ -31,6 +31,10 @@ func _run() -> void:
 	var location := Vector2(-310,245) if "--village" in OS.get_cmdline_user_args() else Vector2(640,235)
 	actor.global_position = Vector3(location.x,world.layout.height(location.x,location.y)+1.1,location.y)
 	collect(world)
+	if "--walk-reference" in OS.get_cmdline_user_args():
+		for node in ticks:
+			if node.get_script().resource_path in ["res://characters/npcs/british/british_npc_actor.gd","res://characters/npcs/households/household_npc_actor.gd","res://characters/npcs/indian/indian_street_actor.gd"]:
+				node.resident_walk_pose_budget_enabled=false
 	ticks.sort_custom(func(a,b): return a.process_physics_priority < b.process_physics_priority if physics else a.process_priority < b.process_priority)
 	for frame in 120:
 		for node in ticks:
@@ -58,5 +62,5 @@ func _run() -> void:
 			var cloth := visual.model.find_child("Arjun_Kurta_SplitHem",true,false) as MeshInstance3D
 			var arrays := cloth.mesh.surface_get_arrays(0)
 			print("CONTACT INIT LIVE MESH ",JSON.stringify({"vertices":arrays[Mesh.ARRAY_VERTEX].size(),"vertex_hash":hash(arrays[Mesh.ARRAY_VERTEX]),"weight_hash":hash(arrays[Mesh.ARRAY_WEIGHTS]),"motion_ready":visual.motion_tree!=null,"riding_source":cloth.get_meta("riding_cloth_source","")}))
-		print("SCRIPT COST CONTACT CONTEXT ",JSON.stringify({"samples":bag.contact_offsets.size()-1,"bones":bag.contact_bones.size(),"contact_us":bag.contact_usec,"mesh_rebuilds":bag.mesh_rebuilds,"fullness":bag.fullness,"target_fullness":bag.target_fullness,"contact_ready":bag.contact_ready}))
+		print("SCRIPT COST CONTACT CONTEXT ",JSON.stringify({"samples":bag.contact_offsets.size()-1,"bones":bag.contact_bones.size(),"contact_us":bag.contact_usec,"mesh_rebuilds":bag.mesh_rebuilds,"fullness":bag.fullness,"target_fullness":bag.target_fullness,"contact_ready":bag.contact_ready,"groups":bag.contact_groups.size(),"grouped":bag.use_contact_groups,"scanned":bag.contact_samples_scanned}))
 	await root.get_node("SaveManager").quit_game()
