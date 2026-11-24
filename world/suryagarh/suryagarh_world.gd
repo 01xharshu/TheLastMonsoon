@@ -45,6 +45,11 @@ func _ready() -> void:
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	preload("res://world/suryagarh/settlements/asset_first_placement.gd").new().integrate(self)
 	add_child(preload("res://world/suryagarh/route_and_market_detail.gd").new())
+	var swing_station := preload("res://world/suryagarh/timber_swing_station.gd").new()
+	swing_station.name = "BhairavpurTimberSwingStation"
+	var swing_site := Vector2(-257, 288)
+	swing_station.position = Vector3(swing_site.x, layout.height(swing_site.x, swing_site.y), swing_site.y)
+	add_child(swing_station)
 	await Startup.checkpoint(self, "Preparing life in Suryagarh…")
 	var combat_encounters := preload("res://world/suryagarh/combat_encounters.gd").new()
 	combat_encounters.name="CombatEncounters"

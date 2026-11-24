@@ -36,7 +36,7 @@ func _run() -> void:
 		return
 	for i in 20: await physics_frame
 	await capture("20_horse_mount_transition")
-	for i in 40: await physics_frame
+	for i in 90: await physics_frame
 	await capture("21_horse_saddle_arrival")
 	for i in 20: await physics_frame
 	if not horse.dismount():

@@ -2,6 +2,8 @@ extends CharacterBody3D
 ## Mountable vehicle contract: seat_world(), can_board(), board(), dismount().
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const BOAT = preload("res://assets/vehicles/boats/river_boat/vehicle_river_boat_01.glb")
+@export var mooring_z: float = 235.0
+@export var mooring_bank_offset: float = 4.0
 var layout := Layout.new()
 var rider: CharacterBody3D
 var speed: float = 0.0
@@ -42,8 +44,8 @@ func _ready() -> void:
 	collision.shape = shape
 	collision.position.y = 0.05
 	add_child(collision)
-	var z: float = 235.0
-	position = Vector3(layout.river_x(z)-layout.river_width(z)+4,0.03,z)
+	var z: float = mooring_z
+	position = Vector3(layout.river_x(z)-layout.river_width(z)+mooring_bank_offset,0.03,z)
 	mooring = position
 
 func _add_dry_floor() -> void:
@@ -135,6 +137,12 @@ func dismount() -> bool:
 		var p: Vector3 = global_position + global_basis.x*side*2.0
 		var ground: float = layout.height(p.x,p.z)
 		p.y = maxf(ground+0.94,-0.1)
+		# Prefer the real landing/deck surface to terrain hidden beneath it.
+		var surface_query := PhysicsRayQueryParameters3D.create(Vector3(p.x,global_position.y+4.0,p.z),Vector3(p.x,minf(ground-1.0,-8.0),p.z))
+		surface_query.exclude = [get_rid(),actor.get_rid()]
+		var surface: Dictionary = get_world_3d().direct_space_state.intersect_ray(surface_query)
+		if not surface.is_empty() and surface.normal.y > 0.65:
+			p.y = maxf(surface.position.y+0.94,-0.1)
 		var query := PhysicsShapeQueryParameters3D.new()
 		query.shape = actor.get_node("CollisionShape3D").shape
 		query.transform = Transform3D(Basis.IDENTITY,p)

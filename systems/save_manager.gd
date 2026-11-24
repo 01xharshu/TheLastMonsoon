@@ -149,7 +149,7 @@ func read_slot(slot: int) -> Dictionary:
 		if not _valid_save_number(coordinate): return {}
 	for key in ["saved_at","rotation_y","camera_pitch","game_minutes","health","water_liters","morning_tutorial"]:
 		if data.has(key) and not _valid_save_number(data[key]): return {}
-	for key in ["items","survival","weapon","fame","dev_story","community_story","rebellion_story","weapon_seller","bank_account","consignment_story","dev_inquiry","population_expansion","city_route_population","household_roles","door_states","household_cattle","river_routines","npc_activities","draft_yards","village_activities","administrative_services","institution_operations"]:
+	for key in ["items","survival","weapon","fame","dev_story","community_story","rebellion_story","weapon_seller","bank_account","consignment_story","dev_inquiry","population_expansion","city_route_population","household_roles","door_states","household_cattle","river_routines","npc_activities","port_hiring","draft_yards","village_activities","administrative_services","institution_operations"]:
 		if data.has(key) and not data[key] is Dictionary: return {}
 	for key in ["remaining_weapon_ids","remaining_ammunition_ids","remaining_medical_ids","remaining_household_ids","opened_treasure_chests","cart_states","horse_states","collected_forage_ids"]:
 		if data.has(key) and not data[key] is Array: return {}
@@ -160,7 +160,7 @@ func read_slot(slot: int) -> Dictionary:
 		if not _valid_save_number(count): return {}
 	var numeric_fields := {
 		"survival":["hydration","satiety","energy","warmth","stamina"],
-		"weapon":["selected","rifle_rounds","rifle_reload","rifle_pending","pistol_rounds","pistol_reload","pistol_reload_charges","double_gun_rounds","double_gun_reload","double_gun_pending"],
+		"weapon":["selected","rifle_rounds","rifle_reload","rifle_pending","pistol_rounds","pistol_reload","pistol_reload_charges","indian_pistol_rounds","indian_pistol_reload","double_gun_rounds","double_gun_reload","double_gun_pending"],
 		"fame":["points","witnessed_deeds"]
 	}
 	for section in numeric_fields:
@@ -211,7 +211,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 	if actor == null or not actor.is_inside_tree():
 		last_error = "Cannot save while the player is unavailable"
 		return false
-	for path in ["InventoryComponent", "SurvivalComponent", "VisualRoot/CharacterVisual", "UI/HUDRoot/MorningTutorial", "RifleCombat", "PistolCombat", "DoubleGunCombat", "UI/WorldMap"]:
+	for path in ["InventoryComponent", "SurvivalComponent", "VisualRoot/CharacterVisual", "UI/HUDRoot/MorningTutorial", "RifleCombat", "PistolCombat", "IndianPistolCombat", "DoubleGunCombat", "UI/WorldMap"]:
 		if actor.get_node_or_null(path) == null:
 			last_error = "Cannot save while player systems are loading"
 			return false
@@ -265,6 +265,7 @@ func save_game(world: Node3D, slot: int) -> bool:
 		"dev_inquiry":world.get_node("DevInquiry").export_state() if world.has_node("DevInquiry") else {},
 		"population_expansion":world.get_node("PopulationExpansion").export_route_state() if world.has_node("PopulationExpansion") else {},
 		"city_route_population":world.get_node("CityRoutePopulation").export_route_state() if world.has_node("CityRoutePopulation") else {},
+		"port_hiring":world.get_node("CityRoutePopulation").export_port_hiring() if world.has_node("CityRoutePopulation") else {},
 		"household_roles":world.get_node("WealthyHouseholds").export_role_state() if world.has_node("WealthyHouseholds") else {},
 		"health": actor.health,
 		"water_liters": inventory.stored_water_liters,
@@ -278,6 +279,8 @@ func save_game(world: Node3D, slot: int) -> bool:
 			"rifle_pending":actor.get_node("RifleCombat").pending_rounds,
 			"pistol_reload":actor.get_node("PistolCombat").reload_remaining,
 			"pistol_reload_charges":actor.get_node("PistolCombat").reload_charges,
+			"indian_pistol_rounds":actor.get_node("IndianPistolCombat").rounds,
+			"indian_pistol_reload":actor.get_node("IndianPistolCombat").reload_remaining,
 			"double_gun_reload":actor.get_node("DoubleGunCombat").reload_remaining,
 			"double_gun_pending":actor.get_node("DoubleGunCombat").pending_rounds,
 			"pistol_rounds":actor.get_node("PistolCombat").rounds,
@@ -432,7 +435,7 @@ func apply_pending(world: Node3D) -> void:
 	survival.stamina_changed.emit(survival.stamina,survival.max_stamina)
 	var equipment: Node3D = actor.get_node("VisualRoot/CharacterVisual").equipment
 	var weapon: Dictionary = data.get("weapon",{})
-	equipment.selected = clampi(int(weapon.get("selected",0)),0,5)
+	equipment.selected = clampi(int(weapon.get("selected",0)),0,6)
 	equipment.stowed = bool(weapon.get("stowed",true))
 	equipment._refresh()
 	if actor.has_node("ChachaKit"):
@@ -456,8 +459,14 @@ func apply_pending(world: Node3D) -> void:
 	pistol.reload_charges = clampi(int(weapon.get("pistol_reload_charges",fallback_charges)),1,5)
 	pistol.reload_duration = preload("res://player/pistol_loading_sequence.gd").duration(pistol.reload_charges)
 	pistol.reload_remaining = clampf(saved_reload,0.0,pistol.reload_duration)
+	var indian_pistol: Node = actor.get_node("IndianPistolCombat")
+	indian_pistol.rounds = clampi(int(weapon.get("indian_pistol_rounds",1)),0,1)
+	indian_pistol.reload_charges = 1
+	indian_pistol.reload_duration = preload("res://player/pistol_loading_sequence.gd").duration(1)
+	indian_pistol.reload_remaining = clampf(float(weapon.get("indian_pistol_reload",0.0)),0.0,indian_pistol.reload_duration)
 	if world.has_node("CityRoutePopulation") and data.get("city_route_population",{}) is Dictionary:
 		world.get_node("CityRoutePopulation").restore_route_state(data.get("city_route_population",{}))
+		world.get_node("CityRoutePopulation").port_hiring.restore_state(data.get("port_hiring",{}))
 	if world.has_node("PopulationExpansion") and data.get("population_expansion",{}) is Dictionary:
 		world.get_node("PopulationExpansion").restore_route_state(data.get("population_expansion",{}))
 	restore_household_pickups(world,data)
@@ -493,10 +502,15 @@ func apply_pending(world: Node3D) -> void:
 	preload("res://world/suryagarh/settlements/activity_save.gd").restore(world,data.get("npc_activities",{}))
 	if world.has_node("DraftAnimalYards"):world.get_node("DraftAnimalYards").restore_state(data.get("draft_yards",{}))
 	if world.has_node("VillageDailyActivities"):world.get_node("VillageDailyActivities").restore_state(data.get("village_activities",{}))
+	# Deferred workplace owners may be created after this save is applied.
+	# Keep only unclaimed records on this world so late owners can restore once.
+	var unclaimed_operations: Dictionary = data.get("institution_operations",{}).duplicate(true)
+	world.set_meta("unclaimed_institution_operations",unclaimed_operations)
 	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
 		if not world.is_ancestor_of(operations): continue
 		var key := str(world.get_path_to(operations))
-		operations.restore_state(data.get("institution_operations",{}).get(key,{}))
+		operations.restore_state(unclaimed_operations.get(key,{}))
+		unclaimed_operations.erase(key)
 	# Absent in older version-1 saves: preserve their available fruit.
 	if data.get("collected_forage_ids") is Array:
 		for grove in world.get_tree().get_nodes_in_group("forage_groves"):
@@ -680,7 +694,8 @@ func _restore_cattle_states(world:Node3D,states:Variant)->void:
 		if yard!=null and yard.is_in_group("household_cattle") and states[path] is Dictionary:yard.restore_state(states[path])
 
 func _institution_states(world: Node3D) -> Dictionary:
-	var states: Dictionary = {}
+	# Preserve saved records for workplace owners that have not spawned yet.
+	var states: Dictionary = world.get_meta("unclaimed_institution_operations",{}).duplicate(true)
 	for operations in world.get_tree().get_nodes_in_group("institution_operations"):
 		if world.is_ancestor_of(operations): states[str(world.get_path_to(operations))] = operations.export_state()
 	return states

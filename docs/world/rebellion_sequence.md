@@ -144,3 +144,17 @@ Regional population counterparts with police or British factions select only sur
 Mangal directs Arjun to take an Enfield from the undercroft's iron rack. The selected rifle is removed from the rack. Equipping it triggers an unskippable fade to the courtyard firing line with one cartridge ready and the log target in view. Arjun remains at the firing position with look, aim and rifle fire available. The lesson reads the active mouse or controller bindings. A missed shot automatically starts another reload. One real hit on the marked log restores normal control and unlocks the existing raid briefing. A saved lesson resumes at the line, and a hit already recorded by the previous lesson counts toward completion.
 
 The focused rebellion fixture exercises pickup, equip, fade, movement lock, trigger bindings, miss/reload, real hit and movement release. The populated-world review can render the rack and the normal firing-line view with `TLM_RIFLE_LESSON_REVIEW=1 python3 tools/world/run_tutorial_guard_check.py --native --review --checks review_rebellion_world`. Temporary output is removed by the runner.
+
+## Rescue road staging
+
+The populated-world rescue starts on the authored fort approach road. The coach checks for terrain support and vehicle clearance as it advances. The horse stays beside it, and Arjun stays seated until the carriage transfer begins. The focused rebellion check and the populated rescue travel check both passed on November 22, 2026. The full populated route also passed with a 600-second wall-clock budget. Phase markers confirmed the shorter runs expired while the follower route was still advancing.
+
+To repeat the populated travel check, run `TLM_RESCUE_TRAVEL_ONLY=1` with `res://tools/world/review_rebellion_story.gd` and set `TLM_STORY_TEST_DIR` to a temporary directory under `TMPDIR`.
+
+The terrace flanks use chipped masonry in uneven courses with solid flank collision. The focused rebellion fixture verified the wall collision and reached the cellar floor. The synthetic fixture missed its first two exterior targets. The subsequent full populated run reached all 11 live waypoints and completed the later mission stages with the masonry in place. Native appearance review remains open.
+
+A follow-stage save from the version-2 ground-level breach places Arjun and Mangal at the current approach start and resets only that route checkpoint. Current-route follow saves retain their waypoint. The focused rebellion fixture verified both cases.
+
+The side shoulders now sample the hillside along their full length and use the same mesh for rendering and collision. The focused rebellion fixture passed upward support rays on both flanks. A populated native capture completed without reported errors, but the image could not be inspected.
+
+The main briefing and consignment celebration use the seated Mangal hand solver for speech gestures. In the celebration, the cue follows Mangal's actual recording, including when the earlier fighter clip is missing. The cue clears on audio completion, cinematic exit and save restore. The older standing gesture remains superseded during these scenes.

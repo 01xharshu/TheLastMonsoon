@@ -45,6 +45,11 @@ var celebration_age=0.0
 var celebration_duration=14.0
 var dialogue_voice: AudioStreamPlayer
 var dialogue_queue: Array[AudioStream]=[]
+var celebration_mangal_voice: AudioStream
+var celebration_fighter_voice: AudioStream
+var celebration_errand_layers: Dictionary = {}
+var celebration_face_actor: Node3D
+var celebration_face: RefCounted
 var cinematic_lease=-1
 var service: Node
 var curtain: ColorRect
@@ -405,12 +410,13 @@ func release_convoy() -> void:
  for journey in paused_traffic.keys():restore_journey(journey)
  for i in riders.size():riders[i].firearm.hostile=false;riders[i].set_meta("police_engaged",false);pursuers[i].commanded_speed=0
  sync_guidance()
-func queue_voice(speaker: String, spoken: String) -> void:
+func queue_voice(speaker: String, spoken: String) -> AudioStream:
  var key: String=(speaker+"\n"+spoken).sha256_text()
  var path: String="res://assets/audio/dialogue/"+key+".wav"
- if not ResourceLoader.exists(path):return
+ if not ResourceLoader.exists(path):return null
  var stream:=load(path) as AudioStream
  if stream!=null:dialogue_queue.append(stream)
+ return stream
 
 func play_next_voice() -> void:
  if dialogue_queue.is_empty():return
@@ -424,11 +430,16 @@ func begin_celebration() -> bool:
  if cinematic_lease<0:return false
  dialogue_voice.stop();dialogue_queue.clear()
  if mission_skipped:
-  queue_voice("Fighter","The shipment has reached camp.")
-  queue_voice("Mangal Pandey","We survived, Arjun. There is more work ahead.")
+  celebration_fighter_voice=queue_voice("Fighter","The shipment has reached camp.")
+  celebration_mangal_voice=queue_voice("Mangal Pandey","We survived, Arjun. There is more work ahead.")
  else:
-  queue_voice("Fighter","A brave escape. The shipment is safe.")
-  queue_voice("Mangal Pandey","Shabash, Arjun. You kept our people and supplies safe. Take these 200 rupees.")
+  celebration_fighter_voice=queue_voice("Fighter","A brave escape. The shipment is safe.")
+  celebration_mangal_voice=queue_voice("Mangal Pandey","Shabash, Arjun. You kept our people and supplies safe. Take these 200 rupees.")
+ var errands := get_parent().get_node_or_null("ErrandSystem")
+ if is_instance_valid(errands):
+  for layer in errands.find_children("*","CanvasLayer",true,false):
+   celebration_errand_layers[layer]=layer.visible
+   layer.hide()
  celebration_duration=14.0
  var speech_length:=0.0
  for stream in dialogue_queue:speech_length+=stream.get_length()
@@ -448,7 +459,26 @@ func finish_celebration(delta: float) -> void:
   if delta>0.0:play_next_voice()
   var focus: Vector3=first.sites.prompts.briefing.global_position
   discussion_camera.global_position=focus+Vector3(-3,1.2,3.8);discussion_camera.look_at(focus);discussion_camera.make_current()
- if celebration_arrived:preload("res://story/conversation_facing.gd").pair(player,first.sites.get("mangal"))
+ if celebration_arrived:
+  var mangal: Node3D=first.sites.get("mangal")
+  var fighter_speaking := celebration_fighter_voice != null and dialogue_voice.playing and dialogue_voice.stream == celebration_fighter_voice
+  var speaker: Node3D=companion if fighter_speaking and is_instance_valid(companion) else mangal
+  preload("res://story/conversation_facing.gd").pair(player,speaker)
+  var recorded_speaker: Node3D=null
+  if dialogue_voice.playing and (fighter_speaking or (celebration_mangal_voice != null and dialogue_voice.stream == celebration_mangal_voice)):
+   recorded_speaker=speaker
+  update_celebration_face(recorded_speaker)
+  if is_instance_valid(mangal):
+   var mangal_speaking := celebration_mangal_voice != null and dialogue_voice.playing and dialogue_voice.stream == celebration_mangal_voice
+   if mangal_speaking:
+    mangal.set_meta("celebration_voice_phase",dialogue_voice.get_playback_position())
+   else:
+    mangal.remove_meta("celebration_voice_phase")
+  if is_instance_valid(speaker):
+   var shot: Dictionary=preload("res://story/dialogue_camera.gd").shot(player,speaker,false,false)
+   discussion_camera.global_position=shot.position
+   discussion_camera.fov=52
+   discussion_camera.look_at(shot.target)
  caption.text="The fighters: The shipment has reached camp.\nMangal Pandey: We survived, Arjun. There is more work ahead." if mission_skipped else "The fighters: A brave escape. The shipment is safe.\nMangal Pandey: Shabash, Arjun. You kept our people and supplies safe. Take these 200 rupees."
  if celebration_age<celebration_duration:return
  if not paid:
@@ -458,6 +488,7 @@ func finish_celebration(delta: float) -> void:
  player.get_node("UI").visible=prior_ui_visible
  var gear=player.get_node("VisualRoot/CharacterVisual").equipment;gear.stowed=prior_weapon_stowed;gear._refresh()
  preload("res://story/conversation_facing.gd").release(player)
+ clear_celebration_mangal_cue()
  preload("res://story/conversation_facing.gd").release(first.sites.get("mangal"))
  dialogue_voice.stop();dialogue_queue.clear()
  stage="complete";caption.hide();curtain.color.a=0;player.set_meta("story_cinematic",false);player.set_physics_process(celebration_player_physics);player.velocity=Vector3.ZERO;service.release(cinematic_lease);cinematic_lease=-1
@@ -486,7 +517,33 @@ func export_state() -> Dictionary:
  var rider_state: Array=[]
  for rider in riders:rider_state.append({"health":rider.get_node("Vitality").health,"cartridges":rider.firearm.cartridges,"cooldown":rider.firearm.cooldown,"chambered":rider.firearm.chambered,"reloading":rider.firearm.reloading})
  return {"stage":stage,"route_index":route_index,"route_version":Route.Data.VERSION,"route_anchor":[cart.global_position.x,cart.global_position.z],"wave":wave,"wave_version":2,"defeated":defeated.duplicate(),"paid":paid,"mission_skipped":mission_skipped,"chase_deaths":chase_deaths,"horse_health":health,"riders":rider_state,"reported":reported.duplicate()}
+func update_celebration_face(speaker: Node3D) -> void:
+ if speaker != celebration_face_actor:
+  if celebration_face != null:celebration_face.restore()
+  celebration_face=null
+  celebration_face_actor=speaker
+  if is_instance_valid(speaker):
+   celebration_face=preload("res://story/dialogue_expression.gd").new()
+   celebration_face.configure(speaker)
+ if celebration_face != null:
+  var time := dialogue_voice.get_playback_position()
+  var expression = preload("res://story/dialogue_expression.gd")
+  celebration_face.apply(.18,0.0,0.0,expression.speech_weight(time,dialogue_voice.stream.get_length()),expression.blink_weight(time))
+
+func clear_celebration_mangal_cue() -> void:
+ update_celebration_face(null)
+ for layer in celebration_errand_layers:
+  if is_instance_valid(layer):layer.visible=celebration_errand_layers[layer]
+ celebration_errand_layers.clear()
+ celebration_mangal_voice=null
+ celebration_fighter_voice=null
+ preload("res://story/conversation_facing.gd").release(companion)
+ if not is_instance_valid(first) or not is_instance_valid(first.sites):return
+ var mangal: Node3D=first.sites.get("mangal")
+ if is_instance_valid(mangal):mangal.remove_meta("celebration_voice_phase")
+
 func restore_state(data: Dictionary) -> void:
+ clear_celebration_mangal_cue()
  if is_instance_valid(dialogue_voice):dialogue_voice.stop()
  dialogue_queue.clear()
  if not configured:pending=data.duplicate(true);restore_waiting=true;return
@@ -552,6 +609,7 @@ func resume_convoy() -> void:
  cart.boarding._sync_rider();cart.boarding.collision_body.force_update_transform()
  cart.boarding.set_physics_process(true)
 func _exit_tree() -> void:
+ clear_celebration_mangal_cue()
  if is_instance_valid(player):player.set_meta("suppress_destination_marker",false)
  var clock=get_parent().get_node_or_null("GameTimeSystem")
  if is_instance_valid(clock):clock.set_mission_daylight_locked(&"consignment_escort",false)

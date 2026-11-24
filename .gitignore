@@ -6,6 +6,8 @@
 # ── Godot 4+ ──────────────────────────────────────────────────
 .godot/
 /android/
+# Local export credentials and settings. Asset .import and script .uid files stay trackable.
+export_credentials.cfg
 
 # ── Blender backup / autosave ─────────────────────────────────
 # Blender numbered autosaves are disposable; editable .blend sources remain tracked.
@@ -37,6 +39,18 @@ $RECYCLE.BIN/
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Local environment secrets; retain documented examples.
+.env
+.env.*
+!.env.example
+!.env.*.example
 
 # ── Build / export artifacts ─────────────────────────────────
 /export/

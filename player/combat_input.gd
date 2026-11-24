@@ -42,7 +42,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("attack") and preload("res://story/rear_passenger_combat.gd").allowed(actor):
 		var choice:int=visual.equipment.selected
-		if choice in [1,3,5]:actor.get_node("RifleCombat" if choice==1 else "PistolCombat" if choice==3 else "DoubleGunCombat").fire()
+		if choice in [1,3,5,6]:actor.get_node({1:"RifleCombat",3:"PistolCombat",5:"DoubleGunCombat",6:"IndianPistolCombat"}[choice]).fire()
 		get_viewport().set_input_as_handled();return
 	if event.is_action_pressed("combat_dodge") and available():
 		dodge();get_viewport().set_input_as_handled();return
@@ -105,6 +105,7 @@ func single_attack() -> void:
 		3: actor.get_node("PistolCombat").fire()
 		4: actor.get_node("KnifeStrike").strike()
 		5: actor.get_node("DoubleGunCombat").fire()
+		6: actor.get_node("IndianPistolCombat").fire()
 
 func punch() -> void:
 	if punch_time >= 0.0 or kick_time >= 0.0 or not available(): return

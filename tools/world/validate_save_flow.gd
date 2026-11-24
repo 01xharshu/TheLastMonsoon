@@ -106,6 +106,23 @@ func validate() -> void:
 	check(pistol.rounds == 0 and pistol.reload_charges == 3 and is_equal_approx(pistol.reload_duration,10.0) and is_equal_approx(pistol.reload_remaining,7.5),"Pistol reload lost charges or elapsed time during restore")
 	pistol._finish_reload()
 	check(pistol.rounds == 3 and inventory.get_item_count("pistol_ball") == 0,"Restored pistol reload lost or duplicated ammunition")
+	# Keep the new pistol's chamber/reload independent from the Adams revolver.
+	inventory.add_item("indian_pistol",1)
+	inventory.add_item("pistol_ball",2)
+	equipment.select_weapon(6)
+	var indian_pistol: Node = player.get_node("IndianPistolCombat")
+	indian_pistol.rounds = 0
+	indian_pistol.reload_remaining = 2.2
+	check(saves.save_game(world,3),"Could not save Indian pistol reload")
+	indian_pistol.rounds = 1
+	indian_pistol.reload_remaining = 0.0
+	pistol.rounds = 0
+	saves.pending_slot = 3
+	saves.apply_pending(world)
+	check(equipment.selected == 6 and indian_pistol.rounds == 0 and is_equal_approx(indian_pistol.reload_remaining,2.2),"Indian pistol selection or reload did not restore")
+	check(pistol.rounds == 3,"Indian pistol reload overwrote the Adams chamber")
+	indian_pistol._finish_reload()
+	check(indian_pistol.rounds == 1 and inventory.get_item_count("pistol_ball") == 1,"Indian pistol restore lost or duplicated a ball")
 	saves.set_option("mouse",1.4)
 	saves.options["mouse"] = 1.0
 	saves.load_options()

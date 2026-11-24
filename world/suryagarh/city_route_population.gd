@@ -1,5 +1,8 @@
 extends Node3D
 ## Additive street traffic spread along existing surveyed roads.
+const PortHiring = preload("res://world/suryagarh/port_hiring.gd")
+var port_hiring := PortHiring.new()
+const Livelihood = preload("res://world/suryagarh/street_livelihood.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const Actor = preload("res://characters/npcs/indian/indian_street_actor.gd")
 const POPULATION_MULTIPLIER := 2
@@ -86,6 +89,7 @@ func prepare() -> void:
  population_clock=get_parent().get_node_or_null("GameTimeSystem")
  for record in pending:
   if record.kind!="person":continue
+  record["livelihood_role"]=Livelihood.role_for(record.route,int(record.index))
   var points:=route_points(record.route,record.index,3.3)
   var phase:=phase_on_route(points,(float(record.index%record.count)+.25)/float(record.count))
   record["points"]=points;record["phase"]=phase
@@ -95,7 +99,23 @@ func prepare() -> void:
  _apply_saved_cart_priority()
  set_process(true)
 
+var stagger_population := "--stagger-live-population" in OS.get_cmdline_user_args()
+var trace_population := "--trace-live-population" in OS.get_cmdline_user_args()
+var population_sample_frame := -1
+var population_process_us := 0
+var population_spawn_us := 0
+
 func _process(delta: float) -> void:
+ if not trace_population:
+  _tick_population(delta)
+  return
+ var started := Time.get_ticks_usec()
+ population_sample_frame = Engine.get_process_frames()
+ population_spawn_us = 0
+ _tick_population(delta)
+ population_process_us = Time.get_ticks_usec() - started
+
+func _tick_population(delta: float) -> void:
  if not prepared:return
  logical_age+=delta
  # Round-robin the logical crowd instead of issuing hundreds of sweeps in one frame.
@@ -125,13 +145,25 @@ func _process(delta: float) -> void:
   if squared<PREPARE_RADIUS_SQUARED and squared<closest:
    closest=squared;candidate=i
  if candidate<0:return
+ if stagger_population:
+  var world := get_parent()
+  var frame := Engine.get_process_frames()
+  if world.get_meta("population_materialization_frame", -1) == frame:
+   spawn_wait = 0.0
+   return
+  world.set_meta("population_materialization_frame", frame)
  var record:Dictionary=pending[candidate]
  pending.remove_at(candidate)
  if record==_saved_cart_record:
   _saved_cart_record={}
   _saved_cart_original_index=-1
   _saved_cart_path=""
- spawn_record(record)
+ if trace_population:
+  var spawn_started := Time.get_ticks_usec()
+  spawn_record(record)
+  population_spawn_us = Time.get_ticks_usec() - spawn_started
+ else:
+  spawn_record(record)
  # Delivery booking waits for carts/patrols, not invisible logical civilians.
  ready_population=pending.is_empty() if eager_population else pending.all(func(item:Dictionary)->bool:return item.kind=="person")
 
@@ -188,12 +220,19 @@ func spawn_record(record: Dictionary) -> void:
   add_child(actor);actor.add_to_group("city_route_pedestrians")
   actor.set_meta("population_route",record.route);actor.set_meta("population_index",index);actor.set_meta("human_source",source)
   actor.set_meta("street_identity",identity);actor.set_meta("stature",stature)
-  var vocation: String="vendor" if "market" in record.route or "bazaar" in record.route else ("porter" if record.route=="port_approach" else ("clerk" if record.route in ["administrative_approach","government_house_road","town_hall"] else "villager"))
-  actor.set_meta("social_role",vocation);actor.set_meta("assigned_workplace",points[-1]);actor.set_meta("daily_activity","travel")
+  var vocation:=Livelihood.role_for(record.route,index)
+  actor.set_meta("social_role",vocation)
+  actor.set_meta("livelihood",Livelihood.PROFILES[vocation][0])
+  actor.set_meta("street_destination",points[-1])
+  actor.set_meta("assigned_workplace",points[-1])
   var journey:=preload("res://world/suryagarh/city_street_journey.gd").new()
   journey.name="CityStreetJourney";journey.configure(actor,points,0);journey.goal=phase.goal;journey.direction=record.get("direction",1);journey.wait=record.get("wait",0.0)
   journey.speed=.88+float(index%5)*.075;journey.viewer=player
   journey.crowd=get_parent().get_node_or_null("PopulationSocial")
+  journey.livelihood_role=vocation
+  if record.route=="port_approach":
+   journey.port_hiring_owner=self
+   journey.port_worker_key=record_key(record)
   actor.add_child(journey)
   if record.has("saved"):
    var saved:Dictionary=record.saved
@@ -276,6 +315,7 @@ func advance_record(record:Dictionary,delta:float) -> void:
   record.direction=-1;phase.goal=maxi(0,int(phase.goal)-1);record.wait=0.0
  if night and int(phase.goal)==0 and phase.point.distance_squared_to(points[0])<.001:return
  if float(record.wait)>0:
+  if record.route=="port_approach" and port_shift_active(record_key(record)):return
   record.wait=maxf(0,float(record.wait)-delta);return
  var target:Vector2=points[int(phase.goal)]
  var offset:Vector2=target-phase.point
@@ -287,7 +327,9 @@ func advance_record(record:Dictionary,delta:float) -> void:
  if phase.point.distance_squared_to(target)<.001:
   if int(phase.goal)==points.size()-1 or int(phase.goal)==0:
    if night and int(phase.goal)==0:return
-   record.direction=-int(record.direction);record.wait=6.0
+   record.direction=-int(record.direction)
+   record.wait=Livelihood.dwell(record.get("livelihood_role",Livelihood.role_for(record.route,int(record.index))),int(phase.goal)>0)
+   if int(phase.goal)>0 and record.route=="port_approach":offer_port_shift(record_key(record))
   phase.goal=int(phase.goal)+int(record.direction)
 
 func record_key(record: Dictionary) -> String:
@@ -434,3 +476,34 @@ func _apply_saved_cart_priority()->void:
    pending.remove_at(index)
    pending.push_front(record)
    return
+
+
+func refresh_port_shift() -> void:
+ var identity := port_hiring.worker
+ if identity.is_empty():return
+ var index := identity.get_slice(":",1).to_int()
+ var worker := get_node_or_null("Street_port_approach_%02d"%index)
+ var saved: Dictionary = restored_states.get(identity,{})
+ var unavailable: bool
+ if is_instance_valid(worker):
+  unavailable = worker.get_meta("dead",false) or worker.get_meta("knocked_out",false)
+ else:
+  unavailable = saved.get("dead",false) or saved.get("knocked_out",false)
+ if unavailable:
+  port_hiring.cancel()
+ elif is_instance_valid(population_clock):
+  port_hiring.settle(population_clock.total_game_minutes)
+
+func offer_port_shift(identity: String) -> void:
+ if is_instance_valid(population_clock):
+  refresh_port_shift()
+  port_hiring.offer(identity,population_clock.total_game_minutes)
+
+func port_shift_active(identity: String) -> bool:
+ if port_hiring.worker != identity:return false
+ refresh_port_shift()
+ return port_hiring.worker == identity
+
+func export_port_hiring() -> Dictionary:
+ refresh_port_shift()
+ return port_hiring.export_state()

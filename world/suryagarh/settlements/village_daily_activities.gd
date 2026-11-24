@@ -143,7 +143,11 @@ func _home_horse() -> void:
 		if str(horse.name)!="VillageHorse" or horse.rider!=null:continue
 		owned_horse=horse;horse.set_meta("owner","Arjun");horse.set_meta("player_owned",true);horse.set_meta("owner_home",str(house.get_path()))
 		var point:=house.to_global(Vector3(6,0,5));point.y=layout.height(point.x,point.z)+.08
-		horse.global_position=point;horse.rotation.y=PI;house.set_meta("owns_horse",true)
+		horse.global_position=point
+		# The hitching rail is behind the horse along the house's local Z axis.
+		var exit_direction:=house.global_basis.z
+		horse.global_rotation.y=atan2(-exit_direction.x,-exit_direction.z)
+		house.set_meta("owns_horse",true)
 		var builder:=preload("res://world/suryagarh/settlements/settlement_builder.gd").new()
 		var timber:=builder.material(Color(.27,.16,.09))
 		for x in [-1.2,1.2]:builder.piece(house,"FamilyHitchingPost",house.to_local(point)+Vector3(x,.6,-1.8),Vector3(.18,1.2,.18),timber)

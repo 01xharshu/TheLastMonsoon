@@ -1,7 +1,7 @@
 shader_type spatial;
 render_mode diffuse_burley;
 uniform vec4 tint : source_color = vec4(0.42, 0.20, 0.11, 1.0);
-// 0 clay tile, 1 straw, 2 woven fabric; all are opaque static building surfaces.
+// 0 clay tile, 1 straw, 2 woven fabric, 3 vertical timber boards.
 uniform int surface_kind = 0;
 varying vec3 world_position;
 varying vec3 world_normal;
@@ -28,9 +28,16 @@ void fragment() {
 		float fibres = hash(floor(vec2(p.x * 65.0, p.y * 3.2)));
 		variation = 0.85 + fibres * 0.22;
 		variation *= 0.96 + 0.04 * smoothstep(0.03, 0.10, fract(p.y * 3.2));
-	} else {
+	} else if (surface_kind == 2) {
 		vec2 weave = abs(sin(p * 160.0));
 		variation = 0.93 + weave.x * weave.y * 0.065;
+	} else {
+		float across = abs(world_normal.x) > abs(world_normal.z) ? world_position.z : world_position.x;
+		float board = across * 2.5;
+		float height = world_position.y;
+		float seam = smoothstep(0.015, 0.04, min(fract(board), 1.0 - fract(board)));
+		float grain = sin(across * 145.0 + sin(height * 4.0 + board) * 0.8);
+		variation = (0.8 + hash(vec2(floor(board), 19.0)) * 0.24 + grain * 0.027) * mix(0.62, 1.0, seam);
 	}
 	ALBEDO = tint.rgb * variation;
 	ROUGHNESS = 0.95;

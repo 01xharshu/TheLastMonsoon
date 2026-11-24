@@ -1,5 +1,8 @@
 extends Node
 ## A bounded daily consignment, physically moved by an existing MPFB worker.
+## Shipment and crate index identify a receipt within this workplace.
+signal cargo_received(worker: Node3D, shipment_id: int, crate_index: int, cargo: Node3D)
+
 const Budget=preload("res://systems/simulation_budget.gd")
 const Route=preload("res://world/suryagarh/settlements/resident_walk_route.gd")
 var actor:Node3D
@@ -99,8 +102,9 @@ func prepare()->void:
 		var bench_ground:=actor.get_world_3d().direct_space_state.intersect_ray(bench_ray)
 		if not bench_ground.is_empty():supply_bench.global_position.y=bench_ground.position.y+.85
 	for child in cart.visual_root.get_children():
-		if str(child.name).begins_with("ProduceBundle") or str(child.name)=="LoadTie":child.queue_free()
-		elif str(child.name).begins_with("EndBoard") and child.position.z>3:
+		var label := str(child.get_meta("part_label", child.name)) if sack_delivery else str(child.name)
+		if label.begins_with("ProduceBundle") or label=="LoadTie":child.queue_free()
+		elif label.begins_with("EndBoard") and child.position.z>3:
 			var hinge:=Node3D.new();hinge.name="OpenTailboard";cart.visual_root.add_child(hinge);hinge.position=Vector3(0,1.185,3.95)
 			child.reparent(hinge,true);hinge.rotation.x=PI
 	collision_excluded.append(actor.body_collider.get_rid())
@@ -137,8 +141,16 @@ func prepare()->void:
 	# uses its left side, so his mandatory stop never coincides with that body.
 	var points:Array=route_points if route_points.size()>=5 else [Vector3(4.5,0,15.28),Vector3(3,0,15.4),Vector3(-.85,0,7),Vector3(.1,.24,4),Vector3(0,.24,1)]
 	for at in points:waypoints.append(institution.to_global(at))
-	if not pending.is_empty():restore_state(pending);pending.clear()
-	elif clock!=null:day=clock.current_day
+	if not pending.is_empty():
+		restore_state(pending);pending.clear()
+	else:
+		var world := get_tree().current_scene
+		if is_instance_valid(world) and world.is_ancestor_of(self) and world.has_meta("unclaimed_institution_operations"):
+			var states: Dictionary = world.get_meta("unclaimed_institution_operations")
+			var key := str(world.get_path_to(self))
+			if states.has(key):
+				restore_state(states[key]);states.erase(key)
+		if clock!=null and day<0:day=clock.current_day
 
 func _physics_process(delta:float)->void:
 	if goods.size()!=3 or waypoints.size()<5 or ankles.size()!=2:return
@@ -216,13 +228,22 @@ func tick(delta:float)->void:
 		if phase in ["lift","lower"]:
 			progress=minf(1,progress+delta/2.0)
 			var item:Node3D=goods[delivered]
-			var target:=actor.to_global(Vector3(0,.91,.34))
+			var pickup_offset := carry_offset() if phase=="lift" else Vector3(0,.91,.34)
+			var target:=actor.to_global(pickup_offset)
 			var origin:=cart.to_global(Vector3(-.5+delivered*.5,1.185,3.75)) if phase=="lift" else target
 			var end:=target if phase=="lift" else institution.to_global(store_base+Vector3(0,0,delivered*.55))
 			item.global_position=origin.lerp(end,smoothstep(.2,1,progress) if phase=="lift" else smoothstep(0,1,progress))
 			if progress>=1:
-				if phase=="lift":place(item,actor,Vector3(0,.91,.34));phase="inside";waypoint=1
-				else:place(item,institution,store_base+Vector3(0,0,delivered*.55));delivered+=1;phase="return";waypoint=waypoints.size()-2
+				if phase=="lift":place(item,actor,pickup_offset);phase="inside";waypoint=1
+				else:
+					place(item,institution,store_base+Vector3(0,0,delivered*.55))
+					var crate_index := delivered
+					delivered += 1
+					phase = "return"
+					waypoint = waypoints.size() - 2
+					cargo_received.emit(actor, shipment, crate_index, item)
+	if sack_delivery and phase=="inside":
+		goods[delivered].position=carry_offset()
 	actor.set_meta("daily_activity",work_kind+"_"+phase)
 	var desired_lean:=sin(progress*PI)*.6 if phase=="lift" else (smoothstep(0,.65,progress) if phase=="lower" else 0.0)
 	if phase=="lift" and actor.movement_profile==&"female":desired_lean=sin(clampf(progress*1.15,0,1)*PI)
@@ -595,6 +616,15 @@ func set_worker_motion(state:StringName,delta:float)->void:
 	pose_updates+=1
 	actor._set_animation(state,pose_delta if pose_delta>0 else delta)
 
+func carry_offset() -> Vector3:
+	var offset := Vector3(0,.91,.34)
+	if not sack_delivery: return offset
+	var cart_target: Vector3 = cart.to_local(actor.to_global(offset))
+	# Keep the sack's base above the rear deck until its full width clears it.
+	var clearance := 1.0-smoothstep(4.14,4.36,cart_target.z)
+	offset.y += maxf(0.0,1.21-cart_target.y)*clearance
+	return offset
+
 func contact()->void:
 	if not pose_enabled:return
 	var loading:bool=phase=="rest" and freight_phase in ["loading_lift","loading_carry","loading_lower"]
@@ -602,9 +632,9 @@ func contact()->void:
 	var item:Node3D=goods[freight_loaded if loading else delivered]
 	hand_error=0
 	for side in ["l","r"]:
-		var half_grip:float=.13 if sack_delivery else ((.17 if side=="l" else -.17) if loading else (.18 if side=="l" else -.18))
+		var half_grip:float=.17 if sack_delivery else ((.17 if side=="l" else -.17) if loading else (.18 if side=="l" else -.18))
 		if sack_delivery and side=="r":half_grip=-half_grip
-		var target:=item.global_position+Vector3.UP*(.10 if sack_delivery else .14)+actor.global_basis.x*half_grip
+		var target:=item.global_position+Vector3.UP*(.13 if sack_delivery else .14)+actor.global_basis.x*half_grip
 		if phase=="lift" and progress<.2:target=actor.palm_world(side).lerp(target,smoothstep(0,.2,progress))
 		actor.solve_hand_contact(side,target)
 		if actor.palm_world(side).distance_to(target)>.015:actor.solve_hand_contact(side,target)
@@ -672,7 +702,7 @@ func restore_state(data:Dictionary)->void:
 			else:
 				place(goods[i],cart,cart.to_local(supply_point(i)));goods[i].get_node("ConsignmentBody").collision_layer=1
 		elif i<delivered:place(goods[i],institution,store_base+Vector3(0,0,i*.55))
-		elif i==delivered and phase in ["inside","lower"]:place(goods[i],actor,Vector3(0,.91,.34))
+		elif i==delivered and phase in ["inside","lower"]:place(goods[i],actor,carry_offset() if phase=="inside" else Vector3(0,.91,.34))
 		else:place(goods[i],cart,Vector3(-.5+i*.5,1.185,3.75))
 
 	for i in parcels.size():

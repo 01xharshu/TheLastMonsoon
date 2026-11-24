@@ -22,6 +22,7 @@ class Coordinator extends Node:
 	var officer: Node
 var failures: Array[String] = []
 var count := 0
+var completed := false
 func _initialize() -> void: run.call_deferred()
 func check(value: bool, label: String) -> void:
 	count+=1
@@ -31,7 +32,11 @@ func sync() -> void:
 	await physics_frame
 	await physics_frame
 func run() -> void:
-	create_timer(60.0).timeout.connect(func():push_error("Perception test timed out");root.get_node("SaveManager").quit_game(2))
+	create_timer(60.0).timeout.connect(func():
+		if completed: return
+		push_error("Perception test timed out")
+		root.get_node("SaveManager").quit_game(2)
+	)
 	var world := Node3D.new();root.add_child(world);current_scene=world
 	var player := TestPlayer.new();player.name="Player";world.add_child(player);player.position=Vector3(0,0,8)
 	var stance := Stance.new();stance.name="StealthStance";player.add_child(stance)
@@ -192,6 +197,7 @@ func run() -> void:
 	crime.patrols.clear()
 	for officer in dispatched:officer.queue_free()
 	await boarding_checks()
+	completed = true
 	print("CRIME PERCEPTION ",JSON.stringify({"checks":count,"status":"PASS" if failures.is_empty() else "FAIL","failures":failures}))
 	root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)
 

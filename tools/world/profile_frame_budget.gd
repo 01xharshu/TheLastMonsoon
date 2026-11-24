@@ -80,7 +80,12 @@ func _run() -> void:
 	print("FRAME BUDGET START | ready_ms ",Time.get_ticks_msec()-started," viewport ",root.size," scale ",root.scaling_3d_scale)
 	print("PERFORMANCE SNAPSHOT ready ",JSON.stringify(Snapshot.capture()))
 	if "--geometry-attribution" in OS.get_cmdline_user_args():
-		await preload("res://tools/world/render_geometry_attribution.gd").run(self,world,actor,camera)
+		# An occluded native window can stop submitting frames on macOS.
+		root.always_on_top = true
+		root.grab_focus()
+		if not await preload("res://tools/world/render_geometry_attribution.gd").run(self,world,actor,camera):
+			await saves.quit_game(1)
+			return
 		print("FRAME BUDGET PROFILE: COMPLETE | geometry attribution, not gameplay acceptance")
 		await saves.quit_game()
 		return

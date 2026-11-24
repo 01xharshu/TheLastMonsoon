@@ -443,9 +443,8 @@ func _physics_process(
 		_handle_jump()
 
 
-	_handle_movement(
-		delta
-	)
+	if $ClimbComponent.swing_flight <= 0.0 or is_on_floor():
+		_handle_movement(delta)
 	if hold_target != null and is_instance_valid(hold_target) and hold_target.interaction_pose != "none":
 		velocity.x = 0.0
 		velocity.z = 0.0
@@ -600,7 +599,7 @@ func _update_weapon_camera(delta: float) -> void:
 		camera_pivot.position.y = maxf(-.42 if $StealthStance.is_low() else .45,$StealthStance.camera_height()-.05)-$LongIdle.camera_drop()
 		return
 	var equipment: Node = $VisualRoot/CharacterVisual.equipment
-	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming) or (equipment.selected == 5 and $DoubleGunCombat.aiming))
+	var gun_aiming: bool = equipment != null and not equipment.stowed and ((equipment.selected == 1 and $RifleCombat.aiming) or (equipment.selected == 3 and $PistolCombat.aiming) or (equipment.selected == 6 and $IndianPistolCombat.aiming) or (equipment.selected == 5 and $DoubleGunCombat.aiming))
 	var previous: float = aim_blend
 	aim_blend = move_toward(aim_blend, 1.0 if gun_aiming else 0.0, delta * 4.5)
 	if previous <= 0.0 and gun_aiming: aim_sound.play()
@@ -628,7 +627,7 @@ func _update_weapon_camera(delta: float) -> void:
 		riding_camera.rotation.x = deg_to_rad(-8.0)
 		return
 	var travel_distance := lerpf(third_person_distance,maxf(third_person_distance,2.8),climb_camera_blend)
-	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected == 3 else 0.40), aim_blend)
+	arm.spring_length = lerpf(travel_distance, aim_camera_distance + (0.20 if equipment != null and equipment.selected in [3,6] else 0.40), aim_blend)
 	var camera_clearance: Camera3D = $CameraPivot/SpringArm3D/Camera3D
 	camera_clearance.desired_shoulder_offset = lerpf(lerpf(.6,.35,climb_camera_blend), .50, aim_blend)
 	arm.position.x = camera_clearance.desired_shoulder_offset * camera_clearance.shoulder_scale

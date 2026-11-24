@@ -233,14 +233,9 @@ func _build_market() -> void:
 		storage.position = Vector3(-1.25,0,-.8)
 	# A visible shared loading area gives the market scale without filling its aisle.
 	var shed := _root("BhairavpurGrainStore",Vector2(-280,285))
-	_piece(shed,"StoreFloor",Vector3(0,.08,0),Vector3(7,.16,5),settlement.wood)
-	for x in [-3.2,3.2]:
-		for z in [-2.2,2.2]:
-			_piece(shed,"StorePost",Vector3(x,1.6,z),Vector3(.18,3.2,.18),settlement.wood)
-	_piece(shed,"StoreShade",Vector3(0,3.22,0),Vector3(7.5,.17,5.7),fabric[1],false)
-	for x in [-2.2,0.0,2.2]:
-		_piece(shed,"GrainBin",Vector3(x,.5,1.42),Vector3(1.6,.84,1.3),settlement.wood)
-		_piece(shed,"GrainSurface",Vector3(x,.94,1.42),Vector3(1.4,.04,1.1),fabric[0],false)
+	for x in [-5.4,-3.24,-1.08,1.08,3.24,5.4]:
+		_piece(shed,"GrainBin",Vector3(x,.5,4.2),Vector3(1.6,.84,1.3),settlement.wood)
+		_piece(shed,"GrainSurface",Vector3(x,.94,4.2),Vector3(1.4,.04,1.1),fabric[0],false)
 	preload("res://world/suryagarh/settlements/grain_storehouse_detail.gd").new().build(self,shed)
 
 func _build_farm_edge() -> void:

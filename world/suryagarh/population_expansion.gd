@@ -13,6 +13,7 @@ var discovered_count := 0
 var materialized_count := 0
 var census_finished := false
 var census_age := 0.0
+var population_discovery_us := 0
 
 func _ready() -> void:
  name="PopulationExpansion"
@@ -41,6 +42,7 @@ func _process(delta:float) -> void:
   var candidate:Variant=discovery.pop_front()
   if is_instance_valid(candidate) and candidate.is_inside_tree():discover(candidate as Node)
   inspected+=1
+ if trace_population: population_discovery_us = Time.get_ticks_usec() - started
  census_finished=discovery.is_empty() and census_age>4
  super._process(delta)
  # The base manager stops when its queue is empty. Keep listening for late additions.

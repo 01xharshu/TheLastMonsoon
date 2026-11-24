@@ -9,6 +9,14 @@ const Density = preload("res://world/suryagarh/settlements/countryside_density.g
 var density_routes := Density.lanes()
 var density_fields := Density.fields()+Density.additional_fields()
 var density_homes := Density.homes()
+var city_homes: Array[Vector2] = []
+# Footprints use the dimensions of their authored building shells.
+const LANDMARK_FOOTPRINTS := {
+	"Collectorate": Vector2(30,14),
+	"District Treasury": Vector2(22,18),
+	"British Courthouse": Vector2(32,22),
+	"Military Hospital": Vector2(24,10),
+}
 const MAP_TEXTURE := "res://world/suryagarh/generated/field_map.res"
 var icons: Dictionary = {}
 var map_canvas: Control
@@ -40,6 +48,10 @@ func refresh_sites() -> void:
 	sites.erase("Old fort reserve")
 	sites.erase("Company compound")
 	sites.merge(preload("res://player/map_infrastructure.gd").collect(player.get_parent()),true)
+	city_homes.clear()
+	for home in get_tree().get_nodes_in_group("city_through_house"):
+		if player.get_parent().is_ancestor_of(home):
+			city_homes.append(Vector2(home.global_position.x,home.global_position.z))
 	shop_sites.clear()
 	for site: String in sites:
 		if site_kind(site) == "shop":
@@ -63,6 +75,7 @@ func _ready() -> void:
 	marker.map = self
 	player.get_parent().add_child.call_deferred(marker)
 	refresh_sites()
+	_refresh_city_when_ready.call_deferred()
 	# Keep the field map usable while an optional minimap module is unavailable.
 	if ResourceLoader.exists("res://player/minimap.gd"):
 		var minimap_script: Script = load("res://player/minimap.gd")
@@ -85,6 +98,10 @@ func _ready() -> void:
 				elif layout.field_mask(p.x,p.y)>0.5: color = Color(0.65,0.65,0.43)
 				image.set_pixel(x,y,color)
 		terrain = ImageTexture.create_from_image(image)
+
+func _refresh_city_when_ready() -> void:
+	await preload("res://systems/world_startup.gd").wait_for(self,"Western city")
+	if is_inside_tree(): refresh_sites()
 
 func _input(event: InputEvent) -> void:
 	if player.get_meta("weapon_wheel_open", false): return
@@ -255,6 +272,17 @@ func draw_route(points: Array, color: Color, width: float) -> void:
 			var pb: Vector2 = a.lerp(b,float(step+1)/count)
 			if on_map(pa) and on_map(pb): map_canvas.draw_line(project(pa),project(pb),color,width,true)
 
+func surveyed_route(key: String) -> Array:
+	# Connect the Town Hall approach to the college rear lane on the map.
+	# The older survey line predates the row of college-side houses.
+	if key == "town_hall":
+		return [Layout.ROUTES[key][0],Vector2(-250,-442)]
+	return Layout.ROUTES[key]
+
+func draw_surveyed_road(points: Array, width: float) -> void:
+	draw_route(points,Color(.34,.25,.17,.8),width+2.0)
+	draw_route(points,Color(.82,.72,.53,.95),width)
+
 func _draw() -> void:
 	if not visible or terrain == null: return
 	draw_rect(Rect2(Vector2.ZERO,size),Color(0.025,0.035,0.025,0.98))
@@ -309,12 +337,12 @@ func draw_map_contents() -> void:
 	map_canvas.draw_rect(map_rect,INK,false,1)
 	var road: Array[Vector2] = []
 	for z in range(-int(Layout.HALF),int(Layout.HALF)+1,8): road.append(Vector2(layout.road_x(z),z))
-	draw_route(road,Color(0.48,0.31,0.17),maxf(2.0,zoom))
+	draw_surveyed_road(road,clampf(zoom*1.2,2.0,6.0))
 	var lane: Array[Vector2] = []
 	for x in range(-280,90,4): lane.append(Vector2(x,160+12*sin(x*0.017)))
-	draw_route(lane,Color(0.48,0.31,0.17),maxf(2.0,zoom))
-	for route in Layout.ROUTES.values(): draw_route(route,Color(0.48,0.31,0.17),maxf(2.0,zoom))
-	draw_route(preload("res://world/suryagarh/remote_mountain_route.gd").POINTS,Color(.45,.38,.27),maxf(1.5,zoom))
+	draw_surveyed_road(lane,clampf(zoom*1.2,2.0,6.0))
+	for key in Layout.ROUTES: draw_surveyed_road(surveyed_route(key),clampf(zoom*1.2,2.0,6.0))
+	draw_surveyed_road(preload("res://world/suryagarh/remote_mountain_route.gd").POINTS,clampf(zoom,1.5,4.0))
 	for center: Vector2 in density_fields:
 		var start := project(center-Density.FIELD_SIZE*.5)
 		var finish := project(center+Density.FIELD_SIZE*.5)
@@ -327,7 +355,26 @@ func draw_map_contents() -> void:
 		var finish := project(site.p+size*.5)
 		var footprint := Rect2(start,finish-start).intersection(map_rect)
 		if footprint.has_area():map_canvas.draw_rect(footprint,Color(.37,.25,.16,.8))
-	for route in density_routes:draw_route(route,Color(.48,.31,.17),maxf(1.0,zoom))
+	for route in density_routes:draw_surveyed_road(route,clampf(zoom*.8,1.0,4.0))
+	# City through-houses use the 10 x 14 m footprint of their authored floor.
+	for center: Vector2 in city_homes:
+		var half := Vector2(5,7)
+		var footprint := Rect2(project(center-half),project(center+half)-project(center-half)).intersection(map_rect)
+		if footprint.has_area() and footprint.size.x >= 2.0 and footprint.size.y >= 2.0:
+			map_canvas.draw_rect(footprint,Color(.41,.30,.21))
+	# These footprints are tied to authored shell sizes and live landmark positions.
+	for label in LANDMARK_FOOTPRINTS:
+		if not sites.has(label): continue
+		var half: Vector2 = LANDMARK_FOOTPRINTS[label]*.5
+		var footprint := Rect2(project(sites[label]-half),project(sites[label]+half)-project(sites[label]-half)).intersection(map_rect)
+		if footprint.has_area() and footprint.size.x >= 2.0 and footprint.size.y >= 2.0:
+			map_canvas.draw_rect(footprint,Color(.36,.25,.17,.88))
+			map_canvas.draw_rect(footprint,Color(.19,.15,.10,.8),false,1.0)
+	if zoom >= 2.0:
+		for label in ["City market","Bhairavpur village","Collectorate","Ruined Indian Fort","Hooghly Reach Port"]:
+			if sites.has(label) and on_map(sites[label]):
+				var label_at := project(sites[label])+Vector2(12,21)
+				if map_rect.has_point(label_at): caption(label_at,label,14,Color(.26,.19,.12))
 	var drawn: Array[Vector2] = []
 	var clusters: Dictionary = {}
 	# Lead each low-zoom cluster with its shop so the storefront stays discoverable.

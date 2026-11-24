@@ -5,7 +5,7 @@ var elapsed := 0.0
 var heading := 0.0
 var radar_material: ShaderMaterial
 var contact_points: Array[Dictionary]=[]
-const RANGE := 120.0 # 60 m around the player; local street navigation.
+const RANGE := 90.0 # 45 m around the player; local street navigation.
 const GOLD := Color(1.0,0.76,0.12)
 const CENTRE := Vector2(90,90)
 const RADIUS := 84.0
@@ -13,10 +13,10 @@ func _ready() -> void:
 	name = "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip_contents = true
-	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	offset_left = -200
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	offset_left = 45
 	offset_top = -200
-	offset_right = -20
+	offset_right = 225
 	offset_bottom = -20
 	map.refresh_sites.call_deferred()
 	var terrain_view := ColorRect.new()
@@ -51,13 +51,17 @@ func _draw() -> void:
 	if not is_instance_valid(map) or map.terrain == null: return
 	var actor := Vector2(map.player.global_position.x,map.player.global_position.z)
 	# Draw authored roads with true circular clipping, using the same heading as terrain.
-	for route in map.Layout.ROUTES.values():
+	for key in map.Layout.ROUTES:
+		var route: Array = map.surveyed_route(key)
 		for index in range(route.size()-1): _road_line(point(route[index],actor),point(route[index+1],actor))
 	for route in map.density_routes:
 		for index in range(route.size()-1):_road_line(point(route[index],actor),point(route[index+1],actor))
 	for site in map.density_homes:
 		var at:=point(site.p,actor)
 		if at.distance_to(CENTRE)<RADIUS-5:draw_rect(Rect2(at-Vector2(2,2),Vector2(4,4)),Color(.37,.25,.16))
+	for home: Vector2 in map.city_homes:
+		var at := point(home,actor)
+		if at.distance_to(CENTRE)<RADIUS-5: draw_rect(Rect2(at-Vector2(2,2),Vector2(4,4)),Color(.37,.25,.16))
 	for z in range(int(actor.y-RANGE),int(actor.y+RANGE),8):
 		_road_line(point(Vector2(map.layout.road_x(z),z),actor),point(Vector2(map.layout.road_x(z+8),z+8),actor))
 	for site in map.sites:

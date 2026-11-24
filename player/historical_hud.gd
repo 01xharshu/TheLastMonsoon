@@ -108,8 +108,8 @@ func place(node: Control, p: Vector2, extent: Vector2) -> void:
 func _layout() -> void:
 	if not is_instance_valid(weapon_label): return
 	place(status_label,Vector2(32,size.y-301),Vector2(236,16))
-	place(money_label,Vector2(199,size.y-76),Vector2(109,28))
-	place($SurvivalHUD,Vector2(20,size.y-164),Vector2(144,144))
+	place(money_label,Vector2(291,size.y-76),Vector2(109,28))
+	place($SurvivalHUD,Vector2(0,size.y-250),Vector2(270,250))
 	place(weapon_label,Vector2(size.x-450,size.y-234),Vector2(420,34))
 	place($InventoryPanel,Vector2((size.x-640)/2,(size.y-420)/2),Vector2(640,420))
 	place($PrimaryInteractionLabel,Vector2(size.x/2-250,size.y*0.62),Vector2(500,38))
@@ -138,11 +138,11 @@ func _process(delta: float) -> void:
 	var equipment: Node = player.get_node("VisualRoot/CharacterVisual").equipment
 	if equipment and not equipment.stowed and equipment.selected == 2:
 		weapon_label.text = "BOW · %d ARROWS" % player.inventory.get_item_count("arrow")
-	elif equipment and not equipment.stowed and equipment.selected == 3:
-		var pistol: Node = player.get_node("PistolCombat")
+	elif equipment and not equipment.stowed and equipment.selected in [3,6]:
+		var pistol: Node = player.get_node("PistolCombat" if equipment.selected == 3 else "IndianPistolCombat")
 		weapon_label.text = pistol.get_hud_text()
-	if equipment and not equipment.stowed and equipment.selected in [1,3,5]:
-		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN"}[equipment.selected]
+	if equipment and not equipment.stowed and equipment.selected in [1,3,5,6]:
+		weapon_label.text = {1:"ENFIELD",3:"ADAMS REVOLVER",5:"DOUBLE GUN",6:"INDIAN PISTOL"}[equipment.selected]
 		place(weapon_label,Vector2(size.x-303,size.y-331),Vector2(258,28))
 	else:
 		place(weapon_label,Vector2(size.x-450,size.y-234),Vector2(420,34))
@@ -150,7 +150,7 @@ func _process(delta: float) -> void:
 
 func _update_gun_sight(delta: float) -> void:
 	var gear: Node = player.get_node("VisualRoot/CharacterVisual").equipment
-	var aiming_gun: bool = gear != null and not gear.stowed and ((gear.selected == 1 and player.get_node("RifleCombat").aiming) or (gear.selected == 3 and player.get_node("PistolCombat").aiming) or (gear.selected == 5 and player.get_node("DoubleGunCombat").aiming))
+	var aiming_gun: bool = gear != null and not gear.stowed and ((gear.selected == 1 and player.get_node("RifleCombat").aiming) or (gear.selected == 3 and player.get_node("PistolCombat").aiming) or (gear.selected == 6 and player.get_node("IndianPistolCombat").aiming) or (gear.selected == 5 and player.get_node("DoubleGunCombat").aiming))
 	human_target = false
 	if aiming_gun:
 		var camera: Camera3D = preload("res://story/rear_passenger_combat.gd").aim_camera(player,player.get_node("CameraPivot/SpringArm3D/Camera3D"))
@@ -192,13 +192,13 @@ func _draw_gun_silhouette(at: Vector2, pistol: bool, double_barrel := false) -> 
 
 func _draw_ammo() -> void:
 	var gear: Node = player.get_node("VisualRoot/CharacterVisual").equipment
-	if gear == null or gear.stowed or gear.selected not in [1,3,5]: return
-	var sidearm: bool = gear.selected == 3
+	if gear == null or gear.stowed or gear.selected not in [1,3,5,6]: return
+	var sidearm: bool = gear.selected in [3,6]
 	var double_barrel: bool = gear.selected == 5
-	var gun: Node = player.get_node("PistolCombat") if sidearm else (player.get_node("DoubleGunCombat") if double_barrel else player.get_node("RifleCombat"))
+	var gun: Node = player.get_node("PistolCombat" if gear.selected == 3 else "IndianPistolCombat") if sidearm else (player.get_node("DoubleGunCombat") if double_barrel else player.get_node("RifleCombat"))
 	if gun == null: return
 	var loaded: int = gun.rounds
-	var capacity: int = 5 if sidearm else (2 if double_barrel else 1)
+	var capacity: int = (5 if gear.selected == 3 else 1) if sidearm else (2 if double_barrel else 1)
 	var spare: int = player.inventory.get_item_count("pistol_ball" if sidearm else ("shot_charge" if double_barrel else "paper_cartridges"))
 	var x: float = size.x-318
 	var y: float = size.y-340
@@ -223,11 +223,12 @@ func _draw() -> void:
 	var rifle := player.get_node_or_null("RifleCombat")
 	var bow: Node = player.get_node_or_null("BowCombat")
 	var pistol: Node = player.get_node_or_null("PistolCombat")
+	var indian_pistol: Node = player.get_node_or_null("IndianPistolCombat")
 	var double_gun: Node = player.get_node_or_null("DoubleGunCombat")
 	var gear: Node = player.get_node("VisualRoot/CharacterVisual").equipment
-	var gun_aim: bool = (tutorial_reveal >= 9 or player.has_meta("consignment_fpv_camera")) and gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
+	var gun_aim: bool = (tutorial_reveal >= 9 or player.has_meta("consignment_fpv_camera")) and gear != null and not gear.stowed and ((gear.selected == 1 and rifle and rifle.aiming) or (gear.selected == 3 and pistol and pistol.aiming) or (gear.selected == 6 and indian_pistol and indian_pistol.aiming) or (gear.selected == 5 and double_gun and double_gun.aiming))
 	if gun_aim:
-		var pistol_sight: bool = gear != null and gear.selected == 3
+		var pistol_sight: bool = gear != null and gear.selected in [3,6]
 		var center := size * Vector2(player.get_meta("consignment_aim_uv",Vector2(.5,.5)))
 		var radius := gun_sight_radius(pistol_sight)
 		var color := Color(0.85,0.57,0.32) if human_target else IVORY
@@ -241,7 +242,7 @@ func _draw() -> void:
 			draw_line(center+axis*3,center+axis*8,IVORY,2)
 	if tutorial_reveal >= 7 and (tutorial == null or tutorial.blink_on(7)):
 		# Thin framed health strip follows the reference; delayed fill makes damage readable.
-		var track := Rect2(178,size.y-95,140,7)
+		var track := Rect2(270,size.y-95,140,7)
 		draw_rect(track.grow(2),Color(0.025,0.03,0.025,0.8))
 		draw_rect(track.grow(1),Color(IVORY,0.42),false,1)
 		draw_rect(track,Color(0.10,0.12,0.10,0.8))
@@ -255,7 +256,7 @@ func _draw() -> void:
 			draw_line(Vector2(x,track.position.y),Vector2(x,track.end.y),Color(0.045,0.05,0.04,0.7),1)
 	if tutorial_reveal >= 8 and (tutorial == null or tutorial.blink_on(8)):
 		# The purse shares the health strip's alignment and engraved brass/ink treatment.
-		var purse := Rect2(178,size.y-76,140,28)
+		var purse := Rect2(270,size.y-76,140,28)
 		draw_style_box(box(Color(0.035,0.042,0.035,0.76),Color(BRASS,0.85)),purse)
 		draw_line(purse.position+Vector2(1,1),purse.position+Vector2(139,1),Color(IVORY,0.45),1,true)
 		var coin := purse.position+Vector2(14,14)
@@ -265,7 +266,7 @@ func _draw() -> void:
 		draw_line(coin+Vector2(-1,-2),coin+Vector2(1,2),IVORY,1,true)
 	var mount: Node = (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)
 	if is_instance_valid(mount) and mount.is_in_group("horses"):
-		var horse_y: float = size.y-211
+		var horse_y: float = size.y-295
 		draw_style_box(box(INK,Color(BRASS,0.45)),Rect2(20,horse_y,310,32))
 		draw_string(SERIF,Vector2(34,horse_y+19),"HORSE STAMINA",HORIZONTAL_ALIGNMENT_LEFT,-1,17,IVORY)
 		draw_rect(Rect2(185,horse_y+13,128,6),Color(0.24,0.23,0.18))

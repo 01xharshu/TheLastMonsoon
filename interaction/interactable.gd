@@ -86,6 +86,10 @@ var interaction_pose: String = "none"
 # INTERACTION MARKER POSITION
 # =========================================================
 
+func interaction_position(_actor: CharacterBody3D) -> Vector3:
+	return global_position
+
+
 func interaction_anchor() -> Vector3:
 
 	return (

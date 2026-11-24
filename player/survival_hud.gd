@@ -38,16 +38,10 @@ extends Control
 # STARTUP
 # =========================================================
 
-func _draw() -> void:
-	var centre := Vector2(72,72)
-	draw_arc(centre,9,0,TAU,24,Color(0.92,0.88,0.76,0.45),1,true)
-	for axis in [Vector2.UP,Vector2.RIGHT,Vector2.DOWN,Vector2.LEFT]:
-		draw_line(centre+axis*12,centre+axis*18,Color(0.92,0.88,0.76,0.45),1,true)
-	draw_circle(centre,2,Color(0.92,0.88,0.76))
-
 func _ready() -> void:
 	var rings := [hydration_ring,satiety_ring,stamina_ring,energy_ring]
-	var positions := [Vector2(48,0),Vector2(0,48),Vector2(96,48),Vector2(48,96)]
+	# Centers follow the upper half of the radar at screen x=135, y=height-110.
+	var positions := [Vector2(8,78),Vector2(65,16),Vector2(157,16),Vector2(214,78)]
 	for i in 4:
 		rings[i].position = positions[i]
 		rings[i].size = Vector2(48,48)

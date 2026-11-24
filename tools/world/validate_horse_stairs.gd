@@ -60,7 +60,7 @@ func run() -> void:
 	Input.action_release("jump")
 	actor.global_position = horse.global_position + Vector3(0,1,2)
 	check(horse.board(actor),"horse boards for stair test")
-	for i in 60: await get_tree().physics_frame
+	for i in 110: await get_tree().physics_frame
 	var main: Node3D = world.get_node("Settlement/GovernmentHouse/MainHouse")
 	await route(main,Vector3(0,.1,31.2),0,26,false,.4,.55,"Government entrance up")
 	await route(main,Vector3(0,.5,26),PI,31.2,true,0,.2,"Government entrance down")

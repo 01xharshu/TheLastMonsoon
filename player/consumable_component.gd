@@ -297,7 +297,7 @@ func _can_use_item() -> bool:
 		return false
 	var pose: Node = actor.get_node_or_null("InteractionPoseComponent")
 	if pose != null and not pose.carried_action.is_empty(): return false
-	for name in ["RifleCombat", "PistolCombat", "DoubleGunCombat"]:
+	for name in ["RifleCombat", "PistolCombat", "DoubleGunCombat", "IndianPistolCombat"]:
 		var firearm: Node = actor.get_node_or_null(name)
 		if firearm != null and firearm.reload_remaining > 0.0: return false
 	return true

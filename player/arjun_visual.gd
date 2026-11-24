@@ -3,7 +3,9 @@ extends Node3D
 const Startup = preload("res://systems/world_startup.gd")
 const Equipment = preload("res://player/arjun_equipment.gd")
 const WeaponWheel = preload("res://player/weapon_wheel.gd")
+const MountMotion = preload("res://player/arjun_horse_mount.gd")
 const MotionTree = preload("res://player/arjun_motion_tree.gd")
+@export var retargeted_locomotion: AnimationLibrary
 var equipment: Node3D
 var talwar_equipped: bool:
 	get:
@@ -16,6 +18,11 @@ var consignment_conceal_blend=0.0
 var breath := 0.0
 var horse_riding_fold := 0.0
 var horse_light_seat := 0.0
+var mount_trousers: Array[MeshInstance3D] = []
+var mount_trouser_ease := 0.0
+var mount_upper: MeshInstance3D
+var mount_hem: MeshInstance3D
+var mount_elbow_lining: MeshInstance3D
 var motion := 0.0
 var swim_blend := 0.0
 var slash_phase := -1.0
@@ -65,6 +72,8 @@ func _ready() -> void:
 	clothing.name = "Clothing"
 	add_child(clothing)
 	await clothing.setup(model, skeleton)
+	mount_upper = MountMotion.prepare_upper(model)
+	mount_elbow_lining = MountMotion.prepare_elbow_lining(model, skeleton)
 	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
 	preload("res://player/combat_trouser_yoke.gd").apply(model,skeleton)
 	await Startup.checkpoint(self, "Preparing Arjun’s journey…")
@@ -78,6 +87,7 @@ func _ready() -> void:
 		axes[bone] = skeleton.get_bone_global_rest(i).basis.orthonormalized().inverse()
 	motion_tree = MotionTree.new()
 	motion_tree.name = "ArjunMotionTree"
+	motion_tree.retargeted_locomotion = retargeted_locomotion
 	add_child(motion_tree)
 	if not motion_tree.configure(model):
 		motion_tree.queue_free()
@@ -125,8 +135,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("next_weapon"):
-		for offset in range(1,7):
-			var choice := (int(equipment.selected) + offset) % 6
+		for offset in range(1,8):
+			var choice := (int(equipment.selected) + offset) % 7
 			if equipment.owns(choice):
 				equipment.select_weapon(choice)
 				break
@@ -164,6 +174,8 @@ func pose(bone: String, angles: Vector3, weight: float) -> void:
 
 func _process(delta: float) -> void:
 	if skeleton == null: return
+	if mount_trouser_ease > 0.0 and actor.get_meta("horse_transition", "") != "mount":
+		_set_mount_trouser_ease(0.0)
 	if hit_phase>=0:
 		hit_phase+=delta/.45
 		if hit_phase>=1:hit_phase=-1
@@ -177,7 +189,8 @@ func _process(delta: float) -> void:
 	# body layer after the tree, including recovery into walking/running.
 	var special_pose: bool = actor.get_meta("river_action", "") != "" or mounted
 	if motion_tree != null:
-		motion_tree.active = not special_pose
+		motion_tree.active = not special_pose or actor.get_meta("horse_transition", "") == "mount"
+		if not mounted: motion_tree.set("parameters/horse_mount/blend_amount", 0.0)
 		var combat := actor.get_node("CombatInput")
 		var melee_phase := kick_phase if kick_phase >= 0 else punch_phase
 		var action: int = (3 if combat.air_kick else 2) if kick_phase >= 0 else (1 if combat.left_punch else 0)
@@ -215,7 +228,7 @@ func _process(delta: float) -> void:
 			for solver in climb_ik.values():
 				solver.influence = 0.0
 				if solver.is_running(): solver.stop()
-			if actor.get_meta("horse_transition", "") != "":
+			if actor.get_meta("horse_transition", "") == "dismount":
 				_pose_horse_transition(delta)
 			# The horse applies the riding pose after its final physics/back update.
 		elif actor.get_meta("cart_role", "") != "" and mount.transition != "":
@@ -335,13 +348,17 @@ func _process(delta: float) -> void:
 				reload_node = actor.get_node_or_null("PistolCombat")
 				duration = reload_node.reload_duration
 				equipment.pistol_reload_charges = reload_node.reload_charges
+			Equipment.Selection.INDIAN_PISTOL:
+				reload_node = actor.get_node_or_null("IndianPistolCombat")
+				duration = reload_node.reload_duration
+				equipment.pistol_reload_charges = reload_node.reload_charges
 			Equipment.Selection.DOUBLE_GUN:
 				reload_node = actor.get_node_or_null("DoubleGunCombat")
 				duration = reload_node.reload_total if reload_node.reload_total > 0.0 else preload("res://player/rifle_combat.gd").DOUBLE_RELOAD_SECONDS
 		if reload_node != null and reload_node.reload_remaining > 0.0:
 			equipment.reload_progress = clampf(1.0-reload_node.reload_remaining/duration,0.0,1.0)
 	if motion_tree != null:
-		var pistol_equipped: bool = not equipment.stowed and equipment.selected == Equipment.Selection.PISTOL
+		var pistol_equipped: bool = not equipment.stowed and equipment.selected in [Equipment.Selection.PISTOL, Equipment.Selection.INDIAN_PISTOL]
 		motion_tree.update_pistol_motion(delta, pistol_equipped, equipment.aiming, equipment.reload_progress, equipment.recoil)
 		equipment.pistol_aim_weight = motion_tree.pistol_aim_blend
 		equipment.pistol_reload_weight = motion_tree.pistol_reload_blend
@@ -642,6 +659,89 @@ func _pose_horse_riding(delta: float) -> void:
 	for side in ["l", "r"]:
 		_horse_foot_contact(side, mount.stirrup_world(side), 1.0)
 
+func prepare_mount_lower_garments() -> void:
+	mount_trousers = MountMotion.prepare_trousers(model)
+	mount_hem = MountMotion.prepare_hem(model)
+
+func _set_mount_trouser_ease(amount: float) -> void:
+	mount_trouser_ease = amount
+	if mount_elbow_lining != null: mount_elbow_lining.visible = amount > 0.0
+	if mount_upper != null and mount_upper.find_blend_shape_by_name("Saddle reach sleeve ease") >= 0:
+		mount_upper.set_blend_shape_value(0, amount)
+	if mount_hem != null and mount_hem.find_blend_shape_by_name("Saddle swing hem ease") >= 0:
+		mount_hem.set_blend_shape_value(0, amount)
+	for trousers in mount_trousers:
+		var shape := trousers.find_blend_shape_by_name("Stirrup and swing clearance")
+		if shape >= 0: trousers.set_blend_shape_value(shape, amount)
+
+func _pose_horse_mount(t: float, side: float) -> void:
+	_set_mount_trouser_ease(smoothstep(.05, .25, t) * (1.0 - smoothstep(.73, .96, t)))
+	for solver in climb_ik.values():
+		solver.influence = 0.0
+		if solver.is_running(): solver.stop()
+	if motion_tree != null:
+		motion_tree.active = true
+		motion_tree.set("parameters/horse_mount_side/blend_position", side)
+		motion_tree.set("parameters/horse_mount_seek/seek_request", t * MountMotion.DURATION)
+		motion_tree.set("parameters/horse_mount/blend_amount", smoothstep(0, .12, t))
+		motion_tree.advance(0.0)
+	model.position.y = lerpf(model.position.y, -.9, smoothstep(0, .18, t))
+	model.rotation.x = lerpf(model.rotation.x, 0.0, smoothstep(0, .18, t))
+	skeleton.force_update_all_bone_transforms()
+
+func _horse_mount_contacts(mount: Node3D, t: float, entry_side: float) -> void:
+	var near := "l" if entry_side < 0.0 else "r"
+	var far := "r" if near == "l" else "l"
+	var rein := MountMotion.rein_pickup(t)
+	var frame := mount.global_basis
+	var saddle_palm := Basis(-frame.x, -frame.z, -frame.y)
+	for side in [near, far]:
+		var grip := smoothstep(.09, .25, t) if side == near else smoothstep(.33, .46, t)
+		var target: Vector3 = mount.saddle_grip_world(side, entry_side)
+		var rein_palm := preload("res://player/arjun_rein_grip.gd").palm_frame(frame, side)
+		_mount_hand_contact(side, target.lerp(mount.riding_rein_world(side), rein), saddle_palm.slerp(rein_palm, rein), grip,
+			skeleton.global_basis.inverse() * (-frame.y + frame.x * entry_side * .35 + frame.z * .15))
+	var into_riding := smoothstep(MountMotion.CROSS, 1.0, t)
+	var near_knee := (skeleton.global_basis.inverse() * (-frame.z + frame.x * entry_side * .60)).normalized()
+	_horse_foot_contact(near, mount.stirrup_world(near), smoothstep(.24, .38, t),
+		near_knee.lerp(Vector3.BACK, into_riding).normalized(), Vector3.UP, true)
+	# Carry the free boot behind the cantle, high over the rump, then lower
+	# it into the far stirrup. The tack frame follows the animated horse.
+	var sweep := smoothstep(.56, MountMotion.STRADDLE, t)
+	var over := sin(sweep * PI)
+	var boot := Vector3(lerpf(entry_side * .77, -entry_side * .51, sweep),
+		lerpf(1.79, 1.88, sweep) + over * .30, .48 + over * .21)
+	var far_target: Vector3 = mount.tack_root.to_global(boot)
+	far_target = far_target.lerp(mount.stirrup_world(far), smoothstep(.78, 1.0, t))
+	var boot_up := frame.y.lerp(-frame.z, .32 * over).normalized()
+	_horse_foot_contact(far, far_target, smoothstep(.43, .56, t), Vector3.BACK, boot_up)
+
+func _mount_hand_contact(side: String, target: Vector3, palm_basis: Basis, contact: float, elbow_pole: Vector3) -> void:
+	if contact <= 0.0: return
+	var index := skeleton.find_bone("hand_" + side)
+	var arm_bones := ["upperarm_" + side, "lowerarm_" + side, "hand_" + side]
+	var original_rotations: Array[Quaternion] = []
+	for bone in arm_bones:
+		original_rotations.append(skeleton.get_bone_pose_rotation(skeleton.find_bone(bone)))
+	var hand_basis: Basis = skeleton.global_basis.inverse() * palm_basis * (equipment.palm_axes[side] as Basis).inverse()
+	var palm_offset: Vector3 = equipment.palm_offsets[side]
+	var hand := skeleton.get_bone_global_pose(index)
+	var anchor := (hand * palm_offset).lerp(skeleton.to_local(target), contact)
+	var basis := hand.basis.orthonormalized().slerp(hand_basis.orthonormalized(), contact)
+	for iteration in 3:
+		equipment._solve_arm(side, anchor - basis * palm_offset, elbow_pole)
+		var parent := skeleton.get_bone_parent(index)
+		var rotation := skeleton.get_bone_global_pose(parent).basis.inverse() * basis
+		skeleton.set_bone_pose_rotation(index, rotation.orthonormalized().get_rotation_quaternion())
+		skeleton.force_update_all_bone_transforms()
+	if contact < 1.0:
+		for bone_index in arm_bones.size():
+			var index_in_rig := skeleton.find_bone(arm_bones[bone_index])
+			var solved := skeleton.get_bone_pose_rotation(index_in_rig)
+			skeleton.set_bone_pose_rotation(index_in_rig, original_rotations[bone_index].slerp(solved, contact))
+		skeleton.force_update_all_bone_transforms()
+	equipment._grasp(side, contact * .65)
+
 func _pose_horse_transition(delta: float) -> void:
 	var t: float = actor.get_meta("horse_transition_progress", 0.0)
 	var dismounting: bool = actor.get_meta("horse_transition", "") == "dismount"
@@ -686,12 +786,16 @@ func _pose_horse_transition(delta: float) -> void:
 		var foot_contact := smoothstep(0.1, 0.3, u) if side != crossing_side else seated
 		_horse_foot_contact(side, mount.stirrup_world(side), foot_contact)
 
-func _horse_foot_contact(side: String, world_target: Vector3, weight: float, knee_pole: Vector3 = Vector3(0, 0, 1), sole_normal: Vector3 = Vector3.UP) -> void:
+func _horse_foot_contact(side: String, world_target: Vector3, weight: float, knee_pole: Vector3 = Vector3(0, 0, 1), sole_normal: Vector3 = Vector3.UP, blend_rotations := false) -> void:
 	if weight <= 0.0: return
 	var thigh := "thigh_" + side
 	var calf := "calf_" + side
 	var foot := "foot_" + side
 	var foot_index := skeleton.find_bone(foot)
+	var original_rotations: Array[Quaternion] = []
+	if blend_rotations and weight < 1.0:
+		for bone in [thigh, calf, foot]:
+			original_rotations.append(skeleton.get_bone_pose_rotation(skeleton.find_bone(bone)))
 	var rest := skeleton.get_bone_global_rest(foot_index)
 	var surface_up: Vector3 = (skeleton.global_basis.inverse()*sole_normal).normalized()
 	var sole_basis: Basis = Basis(Quaternion(Vector3.UP,surface_up))*rest.basis
@@ -713,6 +817,11 @@ func _horse_foot_contact(side: String, world_target: Vector3, weight: float, kne
 	var parent := skeleton.get_bone_parent(foot_index)
 	var foot_basis := skeleton.get_bone_global_pose(parent).basis.inverse() * sole_basis
 	skeleton.set_bone_pose_rotation(foot_index, foot_basis.orthonormalized().get_rotation_quaternion())
+	if not original_rotations.is_empty():
+		for index in 3:
+			var bone_index: int = skeleton.find_bone([thigh, calf, foot][index])
+			var solved := skeleton.get_bone_pose_rotation(bone_index)
+			skeleton.set_bone_pose_rotation(bone_index, original_rotations[index].slerp(solved, weight))
 	skeleton.force_update_all_bone_transforms()
 
 func keep_climb_body_outside(normal: Vector3, face: Vector3, top: float, lip_depth: float = .075) -> void:
@@ -728,12 +837,37 @@ func keep_climb_body_outside(normal: Vector3, face: Vector3, top: float, lip_dep
 		model.global_position += normal*outward_shift
 		skeleton.force_update_all_bone_transforms()
 
+func _pose_bar_swing(swing: RefCounted, delta: float) -> void:
+	if motion_tree != null:
+		motion_tree.update_climb(delta, .28, "hang")
+	model.rotation.x = -swing.angle
+	model.position = Basis(Vector3.RIGHT, model.rotation.x) * Vector3.DOWN * .70
+	skeleton.force_update_all_bone_transforms()
+	var bar: Node3D = swing.bar
+	var span := visual_bar_right(bar)
+	for side in ["l", "r"]:
+		var index := skeleton.find_bone("hand_" + side)
+		var hand := skeleton.get_bone_global_pose(index)
+		var target := bar.global_position + span * (.25 if side == "r" else -.25)
+		for iteration in 3:
+			hand = skeleton.get_bone_global_pose(index)
+			equipment._solve_arm(side, skeleton.to_local(target) - hand.basis * equipment.palm_offsets[side])
+			skeleton.force_update_all_bone_transforms()
+
+func visual_bar_right(bar: Node3D) -> Vector3:
+	var right: Vector3 = actor.visual_root.global_basis.x
+	var axis := bar.global_basis.x.normalized()
+	return axis * signf(axis.dot(right))
+
 func _pose_climb(delta: float) -> void:
 	for solver in climb_ik.values():
 		# The AnimationTree is advanced manually; solve contact after that pose.
 		solver.influence = 0.0
 		if solver.is_running(): solver.stop()
 	var component: Node = actor.get_node("ClimbComponent")
+	if is_instance_valid(component.swing.bar):
+		_pose_bar_swing(component.swing, delta)
+		return
 	if component.releasing:
 		if motion_tree != null: motion_tree.release_climb(delta)
 		return

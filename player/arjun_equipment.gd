@@ -5,11 +5,12 @@ const ENFIELD = preload("res://environment/weapons/enfield_p53/weapon_enfield_p5
 const BOW = preload("res://environment/weapons/period_bow/bow_mechanism.tscn")
 const QUIVER = preload("res://environment/weapons/period_quiver/period_quiver.glb")
 const PISTOL = preload("res://environment/weapons/adams_1851/adams_1851.glb")
+const INDIAN_PISTOL = preload("res://environment/weapons/indian_percussion_pistol/indian_percussion_pistol.glb")
 const KNIFE = preload("res://environment/weapons/period_utility_knife/period_utility_knife.glb")
 const DOUBLE_GUN = preload("res://environment/weapons/double_percussion_gun/double_percussion_gun.glb")
 const LoadingSequence = preload("res://player/enfield_loading_sequence.gd")
 const EnfieldCartridgeVisual = preload("res://player/enfield_cartridge_visual.gd")
-enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE, DOUBLE_GUN }
+enum Selection { TALWAR, ENFIELD, BOW, PISTOL, KNIFE, DOUBLE_GUN, INDIAN_PISTOL }
 var carry_motion: Node3D
 var selected: Selection = Selection.TALWAR
 var stowed := true
@@ -26,6 +27,8 @@ var bow_back: Node3D
 var quiver_back: Node3D
 var pistol_hand: Node3D
 var pistol_hip: Node3D
+var indian_pistol_hand: Node3D
+var indian_pistol_hip: Node3D
 var pistol_charge: MeshInstance3D
 var pistol_reload_charges := 1
 var knife_hand: Node3D
@@ -48,6 +51,7 @@ var rifle_rest_transform := Transform3D.IDENTITY
 var ramrod_rest: Dictionary = {}
 var enfield_cartridge: Node3D
 const PISTOL_GRIP := Vector3(-0.126, -0.015, 0.0)
+const INDIAN_PISTOL_GRIP := Vector3(-.105, -.065, 0)
 const PISTOL_SCALE := 0.72
 # Gameplay fit on the current rig; source GLBs keep their original dimensions.
 const ENFIELD_SCALE := 0.85 # 1.20 m rendered length from a 1.41 m source.
@@ -139,6 +143,8 @@ func setup(rig: Skeleton3D) -> void:
 	pistol_hand.scale = Vector3.ONE * PISTOL_SCALE
 	pistol_hip = attach_at_rest("pelvis", PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "PistolHolstered")
 	pistol_hip.scale = Vector3.ONE * PISTOL_SCALE
+	indian_pistol_hand = attach_at_rest("hand_r", INDIAN_PISTOL, Transform3D(pistol_basis,right_palm-pistol_basis*INDIAN_PISTOL_GRIP), "IndianPistolHeld")
+	indian_pistol_hip = attach_at_rest("pelvis", INDIAN_PISTOL, Transform3D(Basis(Vector3.UP,0.45),Vector3(0.28,0.92,-0.08)), "IndianPistolHolstered")
 	pistol_charge = MeshInstance3D.new()
 	pistol_charge.name = "PistolLoadingCharge"
 	var charge_mesh := SphereMesh.new()
@@ -173,7 +179,7 @@ func select_weapon(value: Selection) -> void:
 
 func owns(value: Selection) -> bool:
 	if inventory == null: return false
-	return inventory.has_item(["talwar","enfield","bow","pistol","utility_knife","double_gun"][int(value)])
+	return inventory.has_item(["talwar","enfield","bow","pistol","utility_knife","double_gun","indian_pistol"][int(value)])
 
 func toggle_stowed() -> void:
 	if swimming: return
@@ -189,7 +195,7 @@ func set_swimming(value: bool) -> void:
 func _refresh() -> void:
 	if talwar_hand == null: return
 	if inventory != null:
-		for combat_name in ["RifleCombat","PistolCombat","DoubleGunCombat"]:
+		for combat_name in ["RifleCombat","PistolCombat","DoubleGunCombat","IndianPistolCombat"]:
 			var combat: Node = inventory.get_parent().get_node_or_null(combat_name)
 			if combat != null and (stowed or int(selected) != combat.weapon_selection):
 				combat.cancel_reload()
@@ -201,20 +207,21 @@ func _refresh() -> void:
 	enfield_hand.visible = owns(Selection.ENFIELD) and not stowed and selected == Selection.ENFIELD
 	bow_hand.visible = owns(Selection.BOW) and not stowed and selected == Selection.BOW
 	pistol_hand.visible = owns(Selection.PISTOL) and not stowed and selected == Selection.PISTOL
+	indian_pistol_hand.visible = owns(Selection.INDIAN_PISTOL) and not stowed and selected == Selection.INDIAN_PISTOL
 	knife_hand.visible = owns(Selection.KNIFE) and not stowed and selected == Selection.KNIFE
 	double_hand.visible = owns(Selection.DOUBLE_GUN) and not stowed and selected == Selection.DOUBLE_GUN
 	# Inventory ownership stays independent of what the selector has equipped.
-	for carried in [talwar_waist, enfield_back, bow_back, quiver_back, pistol_hip, knife_hip, double_back]:
+	for carried in [talwar_waist, enfield_back, bow_back, quiver_back, pistol_hip, knife_hip, double_back, indian_pistol_hip]:
 		carried.hide()
 	if stowed and not swimming and owns(selected):
-		[talwar_waist,enfield_back,bow_back,pistol_hip,knife_hip,double_back][int(selected)].show()
+		[talwar_waist,enfield_back,bow_back,pistol_hip,knife_hip,double_back,indian_pistol_hip][int(selected)].show()
 
 func held_name() -> String:
 	if inventory != null:
 		var kit: Node=inventory.get_parent().get_node_or_null("ChachaKit")
 		if kit != null and kit.active:return "SPEAR"
-	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) and not owns(Selection.KNIFE) and not owns(Selection.DOUBLE_GUN) else "STOWED"
-	return ["TALWAR","ENFIELD","BOW","PISTOL","KNIFE","DOUBLE GUN"][int(selected)]
+	if stowed or not owns(selected): return "UNARMED" if not owns(Selection.TALWAR) and not owns(Selection.ENFIELD) and not owns(Selection.BOW) and not owns(Selection.PISTOL) and not owns(Selection.KNIFE) and not owns(Selection.DOUBLE_GUN) and not owns(Selection.INDIAN_PISTOL) else "STOWED"
+	return ["TALWAR","ENFIELD","BOW","PISTOL","KNIFE","DOUBLE GUN","INDIAN PISTOL"][int(selected)]
 
 func _aim_bone(name: String, endpoint: Vector3, child: String) -> void:
 	var index := skeleton.find_bone(name)
@@ -291,7 +298,7 @@ func apply_rifle_grip(sword_striking := false) -> void:
 		_grasp("l")
 		if bow_hand.draw_fraction > 0.02: _grasp("r")
 		return
-	if selected == Selection.PISTOL:
+	if selected in [Selection.PISTOL, Selection.INDIAN_PISTOL]:
 		apply_pistol_grip()
 		_grasp("r", 1.0)
 		return
@@ -412,20 +419,20 @@ func _grasp(side: String, amount: float = 1.0) -> void:
 	var hand := skeleton.get_bone_global_pose(skeleton.find_bone("hand_"+side))
 	var palm: Basis = hand.basis*palm_axes[side]
 	for finger in ["index","middle","ring","pinky"]:
-		if finger == "index" and side == "r" and selected == Selection.PISTOL:
+		if finger == "index" and side == "r" and selected in [Selection.PISTOL, Selection.INDIAN_PISTOL]:
 			# Bring the index forward into the guard independently of the grip
 			# fingers, which wrap across the walnut handle.
 			var trigger_weight := pistol_aim_weight if pistol_aim_weight >= 0.0 else (1.0 if aiming else 0.0)
 			_rotate_digit("index_01_r",palm.z,0.75*amount*trigger_weight)
-			_rotate_digit("index_01_r",palm.x,-0.30*amount*trigger_weight)
-			_rotate_digit("index_02_r",palm.x,1.20*amount*trigger_weight)
-			_rotate_digit("index_03_r",palm.x,(0.10+0.40*trigger_weight+recoil*1.5)*amount)
+			_rotate_digit("index_01_r",palm.x,lerpf(1.34,-0.30,trigger_weight)*amount)
+			_rotate_digit("index_02_r",palm.x,lerpf(0.96,1.20,trigger_weight)*amount)
+			_rotate_digit("index_03_r",palm.x,lerpf(0.58,0.50+recoil*1.5,trigger_weight)*amount)
 			continue
 		var base_curl := 1.34
 		_rotate_digit(finger+"_01_"+side,palm.x,base_curl*amount)
 		_rotate_digit(finger+"_02_"+side,palm.x,0.96*amount)
 		_rotate_digit(finger+"_03_"+side,palm.x,0.58*amount)
-	var pistol_thumb: bool = side == "r" and selected == Selection.PISTOL
+	var pistol_thumb: bool = side == "r" and selected in [Selection.PISTOL, Selection.INDIAN_PISTOL]
 	_rotate_digit("thumb_01_"+side,palm.y,(-0.9 if pistol_thumb else (-0.55 if side=="r" else 0.55))*amount)
 	if pistol_thumb: _rotate_digit("thumb_01_r",palm.x,-1.2*amount)
 	_rotate_digit("thumb_02_"+side,palm.x,(-0.15 if pistol_thumb else 0.75)*amount)
@@ -497,21 +504,24 @@ func knife_blade_segment() -> PackedVector3Array:
 
 func apply_pistol_grip() -> void:
 	# The short barrel follows the camera while the right palm meets the wood grip.
+	var held: Node3D = indian_pistol_hand if selected == Selection.INDIAN_PISTOL else pistol_hand
 	skeleton.force_update_all_bone_transforms()
 	var aim_weight := pistol_aim_weight if pistol_aim_weight >= 0.0 else (1.0 if aiming else 0.0)
 	var loading_weight := pistol_reload_weight if pistol_reload_weight >= 0.0 else (1.0 if reload_progress >= 0.0 else 0.0)
 	var barrel := Vector3(0.38,-0.25,0.89).normalized().lerp((skeleton.global_basis.inverse()*aim_direction).normalized(),aim_weight).normalized()
-	barrel = barrel.lerp(Vector3(0.12,0.18,0.98).normalized(),loading_weight).normalized()
+	var loading_barrel := Vector3(.12,.9,.43) if selected == Selection.INDIAN_PISTOL else Vector3(.12,.18,.98)
+	barrel = barrel.lerp(loading_barrel.normalized(),loading_weight).normalized()
 	var side_axis := barrel.cross(Vector3.UP).normalized()
 	var basis := Basis(barrel,side_axis.cross(barrel),side_axis)
 	var hand_target := Vector3(-0.36,1.04,0.20).lerp(Vector3(-0.30,1.40,0.72),aim_weight)
 	if aiming and reload_progress < 0.0:
 		hand_target -= barrel * recoil
 		basis = basis.rotated(basis.z.normalized(), recoil * 1.8)
-	hand_target = hand_target.lerp(Vector3(-0.24,1.42,0.34),loading_weight)
+	var loading_hand := Vector3(.10,1.15,.31) if selected == Selection.INDIAN_PISTOL else Vector3(-.24,1.42,.34)
+	hand_target = hand_target.lerp(loading_hand,loading_weight)
 	# The pistol's imported barrel runs along local +X. Derive the wrist from
 	# its actual socket orientation so the visible barrel follows the camera.
-	var hand_basis: Basis = basis * pistol_hand.transform.basis.inverse()
+	var hand_basis: Basis = basis * held.transform.basis.inverse()
 	var hand_index := skeleton.find_bone("hand_r")
 	for i in 6:
 		_solve_arm("r",hand_target-hand_basis*palm_offsets["r"])
@@ -522,8 +532,8 @@ func apply_pistol_grip() -> void:
 	if loading_weight > 0.001:
 		# Use the current hand pose and approach the outside of the cylinder.
 		# The hand attachment itself is refreshed later in the rendered frame.
-		var pistol_pose: Transform3D = skeleton.get_bone_global_pose(hand_index) * pistol_hand.transform
-		var cylinder: Vector3 = pistol_pose * Vector3(-0.014,0.079,0.014)
+		var pistol_pose: Transform3D = skeleton.get_bone_global_pose(hand_index) * held.transform
+		var cylinder: Vector3 = pistol_pose * (Vector3(.181,.026,0) if selected == Selection.INDIAN_PISTOL else Vector3(-0.014,0.079,0.014))
 		var pouch := Vector3(0.10,0.99,0.18)
 		var loading := preload("res://player/pistol_loading_sequence.gd").state(maxf(0.0,reload_progress),pistol_reload_charges)
 		var reach: float = loading.reach if reload_progress >= 0.0 else 0.0

@@ -17,7 +17,19 @@ static func quantile(values: Array[float],fraction: float) -> float:
 	values.sort()
 	return values[int((values.size()-1)*fraction)]
 
-static func run(tree: SceneTree,world: Node3D,actor: Node3D,camera: Camera3D) -> void:
+static func viewport_workload(rid: RID) -> Vector4i:
+	var visible := RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE
+	var shadow := RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW
+	var draws := RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+	var primitives := RenderingServer.VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME
+	return Vector4i(
+		RenderingServer.viewport_get_render_info(rid, visible, draws),
+		RenderingServer.viewport_get_render_info(rid, visible, primitives),
+		RenderingServer.viewport_get_render_info(rid, shadow, draws),
+		RenderingServer.viewport_get_render_info(rid, shadow, primitives)
+	)
+
+static func run(tree: SceneTree,world: Node3D,actor: Node3D,camera: Camera3D) -> bool:
 	var area := "cantonment"
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--area="): area=argument.trim_prefix("--area=")
@@ -66,6 +78,13 @@ static func run(tree: SceneTree,world: Node3D,actor: Node3D,camera: Camera3D) ->
 	actor.global_position.y=world.layout.height(actor.global_position.x,actor.global_position.z)+1.1
 	for frame in 90: await tree.process_frame
 	var previously_paused := tree.paused
+	var force_sampling := "--force-render-sampling" in OS.get_cmdline_user_args()
+	var original_render_loop := RenderingServer.render_loop_enabled
+	var submitted := [0]
+	var submission_counter := func(): submitted[0] += 1
+	if force_sampling:
+		RenderingServer.render_loop_enabled = false
+		RenderingServer.frame_post_draw.connect(submission_counter)
 	tree.paused=true
 	var groups := {}
 	var original: Array = []
@@ -95,7 +114,7 @@ static func run(tree: SceneTree,world: Node3D,actor: Node3D,camera: Camera3D) ->
 	var rid := viewport.get_viewport_rid()
 	print("GEOMETRY CONTEXT ",JSON.stringify({"area":area,"viewport":str(viewport.size),"scale":viewport.scaling_3d_scale,"lod_threshold":viewport.mesh_lod_threshold,"game_minutes":world.get_node("GameTimeSystem").total_game_minutes,"population_frozen":true,"snapshot":Snapshot.capture()}))
 	var modes: Array = ["baseline","broadleaf","grass","terrain","skinned","settlement_geometry","forest_patch","broadleaf_shadows","restored"]
-	if "--tree-lod" in OS.get_cmdline_user_args(): modes=["baseline","broadleaf_lod4","broadleaf_lod1","restored"]
+	if "--tree-lod" in OS.get_cmdline_user_args(): modes=["baseline","broadleaf_far_lod","restored"]
 	var compacted: Array=[]
 	if "--tree-compact" in OS.get_cmdline_user_args():
 		modes=["baseline","broadleaf_compact","restored"]
@@ -108,43 +127,153 @@ static func run(tree: SceneTree,world: Node3D,actor: Node3D,camera: Camera3D) ->
 			removed+=source.instance_count-candidate.instance_count
 			compacted.append([node,source,candidate])
 		print("GEOMETRY COMPACTION ",JSON.stringify({"records":records,"removed_collapsed":removed}))
+	var moving_lod := "--moving-lod" in OS.get_cmdline_user_args()
+	if moving_lod: modes = ["baseline", "baseline_repeat", "broadleaf_far_lod", "restored"]
+	var close_eye := camera.global_position
+	var far_eye := close_eye + camera.global_basis.z * 70.0
+	var lod_batches: Array = []
+	if moving_lod:
+		for node: MultiMeshInstance3D in groups.get("broadleaf", []):
+			if node.lod_bias > 1.0:
+				lod_batches.append([node, node.global_transform * node.get_aabb(), node.lod_bias])
+	var baseline_route: Array[Vector4i] = []
+	var repeat_matches := true
+	var baseline_workload := Vector4i.ZERO
+	var restored_workload_matches := true
 	for mode in modes:
+		if moving_lod: camera.global_position = far_eye
 		for saved in compacted: saved[0].multimesh=saved[2] if mode=="broadleaf_compact" else saved[1]
 		for saved in original:
 			saved[0].visible=saved[1]
 			saved[0].cast_shadow=saved[2]
 			saved[0].lod_bias=saved[3]
-		if mode in ["broadleaf_lod4","broadleaf_lod1"]:
-			for node in groups.get("broadleaf",[]): node.lod_bias=4.0 if mode=="broadleaf_lod4" else 1.0
+		if mode == "broadleaf_far_lod" and not moving_lod:
+			var changed := 0
+			for node: MultiMeshInstance3D in groups.get("broadleaf", []):
+				var bounds: AABB = node.global_transform * node.get_aabb()
+				var nearest := camera.global_position.clamp(bounds.position, bounds.end)
+				if nearest.distance_squared_to(camera.global_position) > 45.0 * 45.0:
+					node.lod_bias = minf(node.lod_bias, 1.0)
+					changed += 1
+			print("BROADLEAF FAR LOD | batches beyond 45 m: ", changed)
 		elif mode=="broadleaf_shadows":
 			for node in groups.get("broadleaf",[]): node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		elif groups.has(mode):
 			for node in groups[mode]: node.hide()
-		for frame in 30: await tree.process_frame
+		for frame in 30:
+			await tree.process_frame
+			if force_sampling: RenderingServer.force_draw()
 		if mode=="baseline" or "--tree-lod" in OS.get_cmdline_user_args() or "--tree-compact" in OS.get_cmdline_user_args():
-			await RenderingServer.frame_post_draw
 			for argument in OS.get_cmdline_user_args():
 				if argument.begins_with("--review-dir="):
+					if force_sampling: RenderingServer.force_draw()
+					else: await RenderingServer.frame_post_draw
 					var directory := argument.trim_prefix("--review-dir=")
 					assert(directory.is_absolute_path() and directory.get_file().begins_with("tlm-performance-"))
 					var pixels := viewport.get_texture().get_image()
 					pixels.resize(1280,720,Image.INTERPOLATE_LANCZOS)
 					pixels.save_png(directory.path_join("geometry_"+mode+".png"))
+		var workload_counts := {}
+		var over_budget := 0
 		var wall: Array[float]=[]
 		var gpu: Array[float]=[]
 		var cpu: Array[float]=[]
 		var draws: Array[float]=[]
 		var primitives: Array[float]=[]
-		for frame in 120:
+		var draws_before: int = submitted[0] if force_sampling else Engine.get_frames_drawn()
+		var window_started := Time.get_ticks_usec()
+		var route_matches := 0
+		var reduced_min := lod_batches.size()
+		var reduced_max := 0
+		var warmup_samples := 120 if moving_lod else 0
+		for sample in range(-warmup_samples, 120):
+			var frame := posmod(sample, 120)
+			if sample == 0 and moving_lod:
+				viewport.get_texture().get_image()
+				draws_before = submitted[0] if force_sampling else Engine.get_frames_drawn()
+				window_started = Time.get_ticks_usec()
 			var start := Time.get_ticks_usec()
 			await tree.process_frame
-			wall.append((Time.get_ticks_usec()-start)/1000.0)
+			if moving_lod:
+				# Replay an identical approach and retreat at sample-indexed positions.
+				var progress := 1.0 - absf(2.0 * float(frame) / 119.0 - 1.0)
+				var eye := far_eye.lerp(close_eye, progress)
+				camera.global_position = eye
+				var reduced := 0
+				if mode == "broadleaf_far_lod":
+					for batch in lod_batches:
+						var bounds: AABB = batch[1]
+						var far := eye.distance_squared_to(eye.clamp(bounds.position, bounds.end)) > 2025.0
+						var bias: float = 1.0 if far else batch[2]
+						if batch[0].lod_bias != bias: batch[0].lod_bias = bias
+						if far: reduced += 1
+				if sample >= 0:
+					reduced_min = mini(reduced_min, reduced)
+					reduced_max = maxi(reduced_max, reduced)
+			if force_sampling: RenderingServer.force_draw()
+			if sample < 0: continue
+			var elapsed_ms := (Time.get_ticks_usec()-start)/1000.0
+			wall.append(elapsed_ms)
+			if elapsed_ms > 33.333: over_budget += 1
+			var workload := viewport_workload(rid)
+			if moving_lod:
+				if mode == "baseline": baseline_route.append(workload)
+				if mode in ["baseline_repeat", "restored"]:
+					var expected := baseline_route[frame]
+					if workload == expected:
+						route_matches += 1
+					else:
+						print("GEOMETRY ROUTE DELTA phase=", mode, " sample=", frame,
+							" (visible draws/primitives, shadow draws/primitives)=", workload - expected)
+			workload_counts[workload] = workload_counts.get(workload, 0) + 1
 			gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(rid))
 			cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(rid))
 			draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 			primitives.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+		if force_sampling:
+			# Drain submitted GPU work once, outside per-frame samples. Include the
+			# readback in window mean so queued bursts cannot fake high throughput.
+			var last_frame := viewport.get_texture().get_image()
+			assert(not last_frame.is_empty(), "Forced rendering produced no image")
+		var render_window_mean := float(Time.get_ticks_usec()-window_started)/1000.0/wall.size()
+		if (submitted[0] if force_sampling else Engine.get_frames_drawn()) - draws_before < wall.size() / 2:
+			push_error("Geometry sampling lost rendered frames during %s. Keep the Godot window visible and retry." % mode)
+			for saved in original:
+				saved[0].visible = saved[1]
+				saved[0].cast_shadow = saved[2]
+				saved[0].lod_bias = saved[3]
+			for saved in compacted: saved[0].multimesh = saved[1]
+			if force_sampling: RenderingServer.frame_post_draw.disconnect(submission_counter)
+			RenderingServer.render_loop_enabled = original_render_loop
+			tree.paused = previously_paused
+			return false
+		var dominant := Vector4i.ZERO
+		var dominant_count := 0
+		for workload in workload_counts:
+			if workload_counts[workload] > dominant_count:
+				dominant = workload
+				dominant_count = workload_counts[workload]
+		if mode == "baseline": baseline_workload = dominant
+		if mode == "restored":
+			restored_workload_matches = dominant == baseline_workload and baseline_workload.x > 0
+		if moving_lod:
+			if mode == "baseline_repeat": repeat_matches = route_matches == wall.size()
+			if mode == "restored": restored_workload_matches = route_matches == wall.size() and repeat_matches
+			print("GEOMETRY ROUTE ", mode, " matched_restored_positions=", route_matches,
+				" reduced_batches_min=", reduced_min, " reduced_batches_max=", reduced_max)
+		print("GEOMETRY WORKLOAD ", JSON.stringify({
+			"phase": mode, "visible_draws": dominant.x, "visible_primitives": dominant.y,
+			"shadow_draws": dominant.z, "shadow_primitives": dominant.w,
+			"matching_samples": dominant_count, "distinct_workloads": workload_counts.size(),
+			"frames_over_33_333_ms": over_budget,
+			"restored_workload_matches": restored_workload_matches if mode == "restored" else null
+		}))
 		var gpu_median := quantile(gpu,.5)
-		print("GEOMETRY ATTRIBUTION ",JSON.stringify({"excluded":mode,"samples":wall.size(),"wall_p50_ms":quantile(wall,.5),"wall_p95_ms":quantile(wall,.95),"wall_p99_ms":quantile(wall,.99),"render_cpu_ms":quantile(cpu,.5),"render_gpu_ms":gpu_median if gpu_median>0 else null,"draws":quantile(draws,.5),"primitives":quantile(primitives,.5),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT)}))
+		print("GEOMETRY ATTRIBUTION ",JSON.stringify({"excluded":mode,"samples":wall.size(),"sampling":"forced paused render throughput" if force_sampling else "automatic paused frames","render_submissions":(submitted[0] if force_sampling else Engine.get_frames_drawn())-draws_before,"render_window_mean_ms":render_window_mean,"wall_p50_ms":quantile(wall,.5),"wall_p95_ms":quantile(wall,.95),"wall_p99_ms":quantile(wall,.99),"render_cpu_ms":quantile(cpu,.5),"render_gpu_ms":gpu_median if gpu_median>0 else null,"draws":quantile(draws,.5),"primitives":quantile(primitives,.5),"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT)}))
 	for saved in original:
 		assert(saved[0].visible==saved[1] and saved[0].cast_shadow==saved[2] and saved[0].lod_bias==saved[3],"Diagnostic failed to restore renderer state")
+	if moving_lod: camera.global_position = close_eye
+	if force_sampling: RenderingServer.frame_post_draw.disconnect(submission_counter)
+	RenderingServer.render_loop_enabled = original_render_loop
 	tree.paused=previously_paused
+	return restored_workload_matches if "--tree-lod" in OS.get_cmdline_user_args() else true

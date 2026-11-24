@@ -72,10 +72,21 @@ func run() -> void:
  var occupied_domains: Array[StringName]=[&"move"]
  var conflict=story.action_service.acquire(prior,occupied_domains)
  story._process(.1);check(not story.active and story.stage=="dormant","cinematic waits for an existing action lease")
+ var fixture_errands:=Node.new()
+ fixture_errands.name="ErrandSystem"
+ world.add_child(fixture_errands)
+ var visible_overlay:=CanvasLayer.new()
+ var hidden_overlay:=CanvasLayer.new()
+ fixture_errands.add_child(visible_overlay)
+ fixture_errands.add_child(hidden_overlay)
+ hidden_overlay.hide()
  story.action_service.release(conflict);story._process(.1)
+ check(not visible_overlay.visible and not hidden_overlay.visible,"cinematic hides errand layers")
  check(story.active and story.cinematic=="days","training completion hands off")
  check(not root.get_node("SaveManager").save_game(world,1),"cinematic save blocked")
  story.skip_cinematic()
+ check(visible_overlay.visible and not hidden_overlay.visible,"cinematic skip restores each errand layer visibility")
+ fixture_errands.queue_free()
  check(player.global_position.distance_to(story.sites.tree.global_position+Vector3(0,.9,-4))<.01,"days skip reaches intended tree arrival")
  check(story.stage=="ambush" and player.is_physics_processing(),"days fade releases ambush")
  player.global_position=story.sites.tree.global_position+Vector3(0,.9,-1.5);story._process(.1)
@@ -149,6 +160,14 @@ func run() -> void:
 
  story.restore_state({"stage":"bad","collected":[-1,0,0,9]})
  check(story.stage=="dormant" and story.collected==[0],"invalid state sanitised")
+ # Verify an unsupported cinematic step cannot move the coach off the ground.
+ var coach: Node3D=story.sites.coach
+ var coach_start:=coach.global_transform
+ coach.global_position+=Vector3.UP*12
+ var unsupported_start:=coach.global_position
+ story.move_cinematic_cart(coach,2.0,.2)
+ check(coach.global_position.is_equal_approx(unsupported_start),"cinematic coach refuses steps without terrain support")
+ coach.global_transform=coach_start
  # Rescue must use the real horse and carriage boarding contract.
  story.sites.set_enabled(true);story.set_stage("escape");story.sites.horse.global_position=story.ground(fort.to_global(Vector3(0,0,95)))
  story.sites.b.piece(world,"FixtureHorseSupport",story.sites.horse.global_position-Vector3.UP*.15,Vector3(100,.2,100),story.sites.b.stone)
@@ -165,6 +184,40 @@ func run() -> void:
  for i in 75:
   story.update_cinematic(.1);await physics_frame
  check(story.stage=="follow" and (player.get_meta("mounted_vehicle") if player.has_meta("mounted_vehicle") else null)==null,"fort arrival releases follow gameplay")
+ # The broken flank walls should stop a lateral crossing and leave the centre open.
+ var undercroft:Node3D=story.sites.cellar
+ var space:=undercroft.get_world_3d().direct_space_state
+ var flank_ray:=PhysicsRayQueryParameters3D.create(undercroft.to_global(Vector3(3,4,18.45)),undercroft.to_global(Vector3(4.3,4,18.45)),1)
+ var flank_hit:=space.intersect_ray(flank_ray)
+ check(not flank_hit.is_empty() and "BrokenTerraceParapet" in str(flank_hit.collider.get_parent().name),"broken terrace masonry has flank collision")
+ for side in [-1.0,1.0]:
+  var shoulder_x:float=side*11.6
+  var shoulder_ray:=PhysicsRayQueryParameters3D.create(undercroft.to_global(Vector3(shoulder_x,5.0,0)),undercroft.to_global(Vector3(shoulder_x,1.0,0)),1)
+  var shoulder_hit:=space.intersect_ray(shoulder_ray)
+  check(not shoulder_hit.is_empty() and "EarthenShoulder" in str(shoulder_hit.collider.name) and shoulder_hit.normal.y>0.3,"earthen shoulder has upward support on side "+str(side))
+ var screen_x:=4.42
+ var screen_z:=27.13
+ var screen_base:=preload("res://story/rebel_hideout_environment.gd").terrain_y(undercroft,Vector3(screen_x,0,screen_z))
+ var screen_from:=undercroft.to_global(Vector3(screen_x,screen_base+1.0,screen_z+1.0))
+ var screen_to:=undercroft.to_global(Vector3(screen_x,screen_base+1.0,screen_z-1.0))
+ var screen_hit:=space.intersect_ray(PhysicsRayQueryParameters3D.create(screen_from,screen_to,1))
+ check(not screen_hit.is_empty() and "BreachedCurtainRemnant" in str(screen_hit.collider.get_parent().name),"breach remnant blocks a flank sightline")
+ var center_from:=undercroft.to_global(Vector3(0,5,28))
+ var center_to:=undercroft.to_global(Vector3(0,5,26))
+ check(space.intersect_ray(PhysicsRayQueryParameters3D.create(center_from,center_to,1)).is_empty(),"breach remnants leave the center approach open")
+ var prior_follow:Dictionary=story.export_state()
+ var legacy_follow:=prior_follow.duplicate(true)
+ legacy_follow["hideout_route_version"]=2
+ legacy_follow["follow_index"]=4
+ legacy_follow.actors[1]["position"]=[10,20,30]
+ player.velocity=Vector3.ONE
+ story.restore_state(legacy_follow)
+ var migrated_start:Vector3=story.ground(story.sites.cellar.to_global(Vector3(0,0,34)))
+ check(story.stage=="follow" and story.follow_index==0 and story.sites.mangal.global_position.is_equal_approx(migrated_start),"breach save restarts at the current supported follow entry")
+ check(player.global_position.is_equal_approx(migrated_start+Vector3(2,.9,2)) and player.velocity==Vector3.ZERO,"breach save relocates Arjun alongside Mangal")
+ prior_follow["follow_index"]=2
+ story.restore_state(prior_follow)
+ check(story.follow_index==2,"current follow checkpoint retains its waypoint")
  # Traverse the terrace and descending passage with normal controller physics.
  var approach: Vector3=story.ground(story.sites.cellar.to_global(Vector3(0,0,34)))
  story.sites.b.piece(world,"FixtureCellarGround",approach+Vector3(0,-.1,2),Vector3(12,.2,6),story.sites.b.stone)

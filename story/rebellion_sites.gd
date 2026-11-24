@@ -65,6 +65,14 @@ func configure(owner: Node) -> void:
   var socket:=Node3D.new();goods.add_child(socket);socket.position=Vector3(side*.65,1.35,3.1);cargo_seats.append(socket)
  # A covered vaulted magazine reached by a descending passage; top is fort ground.
  cellar=site("RebelUndercroft",fort.to_global(Vector3(-56,0,48)))
+ # Extend the foundation down to terrain where the hillside falls away.
+ var foundation_base:=0.0
+ for x in [-9.0,0.0,9.0]:
+  for z in [-7.0,0.0,7.0]:
+   var sample:=cellar.to_global(Vector3(x,0,z))
+   var terrain_height: Vector3=director.ground(sample)
+   foundation_base=minf(foundation_base,cellar.to_local(terrain_height).y-.55)
+ b.piece(cellar,"BuriedFoundation",Vector3(0,foundation_base*.5,0),Vector3(18,-foundation_base,14),b.stone)
  b.piece(cellar,"CellarFloor",Vector3(0,.1,0),Vector3(18,.2,14),b.stone)
  b.piece(cellar,"CellarRoof",Vector3(0,3.5,0),Vector3(18,.35,14),b.stone)
  for x in [-10,10]:b.piece(cellar,"EarthBank",Vector3(x,1.75,0),Vector3(2,3.5,15),b.stone)
@@ -80,6 +88,21 @@ func configure(owner: Node) -> void:
  b.piece(cellar,"UpperTerrace",Vector3(0,3.6,21),Vector3(8,.2,6),b.stone)
  for side in [-1,1]:
   b.piece(cellar,"PassageWall",Vector3(side*1.7,3.1,12.5),Vector3(.3,3.7,11),b.stone)
+ # Ground chipped masonry along the verge outside the terrace approach.
+ var chipped := preload("res://world/ruined_fort/fort_modules.gd").chipped_stone(1857)
+ for index in 18:
+  var side := -1.0 if index % 2 == 0 else 1.0
+  var verge := Vector3(side * (2.5 + float(index % 3) * .35), 0, 25 + float(index) * .48)
+  var terrain_point: Vector3 = director.ground(cellar.to_global(verge))
+  var stone := MeshInstance3D.new()
+  stone.name = "FallenApproachMasonry"
+  stone.mesh = chipped
+  stone.material_override = b.stone
+  stone.position = cellar.to_local(terrain_point) + Vector3.UP * .16
+  stone.scale = Vector3(.55, .32, .42)
+  stone.rotation = Vector3(.12 * index, .73 * index, .09 * index)
+  stone.visibility_range_end = 100
+  cellar.add_child(stone)
  preload("res://story/rebel_hideout_environment.gd").build(b,cellar)
  var courtyard=site("RebelTrainingCourtyard",fort.to_global(Vector3(0,0,0)))
  firing_line=site("CourtyardFiringLine",fort.to_global(Vector3(0,0,10)))

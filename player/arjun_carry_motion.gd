@@ -68,6 +68,7 @@ func _process(delta: float) -> void:
    3:selected_item=equipment.pistol_hip
    4:selected_item=equipment.knife_hip
    5:selected_item=equipment.double_back
+   6:selected_item=equipment.indian_pistol_hip
  if selected_item!=item:
   if is_instance_valid(item):item.transform=rest
   item=selected_item

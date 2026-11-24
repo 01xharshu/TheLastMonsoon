@@ -1,0 +1,14 @@
+{
+  "burkundaz": {
+    "source": "/Users/harshmishra/.codex/worktrees/9746/TheLastMonsoon/characters/npcs/thana/burkundaz_motion.glb",
+    "sha256": "0b4acd983a8606d0e4aa9fc87e913ebd0ca7fb790f618bf9ed41915fac10d275"
+  },
+  "daroga": {
+    "source": "/Users/harshmishra/.codex/worktrees/9746/TheLastMonsoon/characters/npcs/thana/daroga_motion.glb",
+    "sha256": "7d3533da0218d495b54b7ca62614bddad25a9245774629837f295e00ab664449"
+  },
+  "mohurrir": {
+    "source": "/Users/harshmishra/.codex/worktrees/9746/TheLastMonsoon/characters/npcs/thana/mohurrir_motion.glb",
+    "sha256": "947957c46e3696e0804f40038e2c4f0986f3d4331b9fbc77608cc87b2b265b03"
+  }
+}

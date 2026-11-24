@@ -2,6 +2,8 @@ extends Node
 ## Jump catch and deliberate hold transfers on authored masonry; solid mantles.
 @onready var actor: CharacterBody3D = get_parent()
 var active := false
+var swing := preload("res://player/bar_swing.gd").new()
+var swing_flight := 0.0
 var progress := 0.0
 var duration := 2.4
 var start := Vector3.ZERO
@@ -37,6 +39,7 @@ var layers: Array[Vector3] = []
 var opportunities := preload("res://player/climb_opportunities.gd").new()
 
 func arm_jump() -> void:
+	swing.last_bar = null
 	catch_seconds = 1.2
 	launch_y = actor.global_position.y
 
@@ -67,6 +70,9 @@ func request_move() -> bool:
 
 func release_grip() -> void:
 	if not active: return
+	if is_instance_valid(swing.bar):
+		_release_swing(false)
+		return
 	if window.active:
 		wall_normal = window.normal
 		if window.profile == "window" and (actor.global_position-window.sill).dot(wall_normal) < 0.0:
@@ -100,6 +106,11 @@ func try_start() -> bool:
 	var forward: Vector3 = actor.visual_root.global_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
+	if swing.grab(actor, forward):
+		active = true
+		catch_seconds = 0.0
+		actor.set_meta("climbing", true)
+		return true
 	var space: PhysicsDirectSpaceState3D = actor.get_world_3d().direct_space_state
 	var ray := PhysicsRayQueryParameters3D.create(actor.global_position,actor.global_position+forward*1.5)
 	ray.exclude = [actor.get_rid()]
@@ -246,11 +257,29 @@ func try_start() -> bool:
 	leap_active = true
 	return true
 
+func _release_swing(launch: bool) -> void:
+	actor.velocity = swing.release(launch)
+	active = false
+	actor.set_meta("climbing", false)
+	catch_seconds = 1.2 if launch else 0.0
+	swing_flight = .65 if launch else 0.0
+	# The bar release already begins above ground and can catch immediately.
+	launch_y = actor.global_position.y - .40
+
 func _physics_process(delta: float) -> void:
+	swing_flight = 0.0 if actor.is_on_floor() else maxf(0.0, swing_flight - delta)
 	if not active:
 		if catch_seconds > 0.0:
 			catch_seconds = maxf(0.0,catch_seconds-delta)
 			if not actor.is_on_floor(): try_start()
+		return
+	if is_instance_valid(swing.bar):
+		if actor.survival.stamina <= 0.0 or Input.is_action_just_pressed("move_backward"):
+			_release_swing(false)
+		elif Input.is_action_just_pressed("jump"):
+			_release_swing(true)
+		elif not swing.advance(actor, delta, Input.get_action_strength("move_forward")):
+			_release_swing(false)
 		return
 	if window.active:
 		if actor.survival.stamina <= 0.0 or Input.is_action_just_pressed("move_backward"):

@@ -1,5 +1,9 @@
 extends "res://world/suryagarh/settlements/street_journey.gd"
 ## Keep remote residents persistent at reduced update cadence, never crowd the centre.
+const Livelihood = preload("res://world/suryagarh/street_livelihood.gd")
+var port_hiring_owner: Node
+var port_worker_key := ""
+var livelihood_role: StringName = &""
 const Budget = preload("res://systems/simulation_budget.gd")
 var viewer: Node3D
 var simulation_interval := 0.0
@@ -33,6 +37,12 @@ var shadows_near:=true
 var street_surface:RefCounted
 var traffic_encounters:Node
 
+func can_pause_for_peer() -> bool:
+ if is_instance_valid(port_hiring_owner) and port_hiring_owner.port_shift_active(port_worker_key):return false
+ if direction < 0 or wait > 0:
+  return true
+ return livelihood_role not in [&"clerk", &"domestic_worker", &"vendor"]
+
 func _ready() -> void:
  super._ready()
  turn_in_place=false
@@ -60,11 +70,20 @@ func _ready() -> void:
  accumulated = float(actor.get_instance_id()%7)*.01
 
 func tick(delta:float) -> void:
+ if wait > 0 and is_instance_valid(port_hiring_owner) and port_hiring_owner.port_shift_active(port_worker_key):
+  actor.travel_speed=0.0
+  update_animation(&"idle",delta)
+  actor.set_meta("daily_activity",&"port_freight_shift")
+  return
  var old_goal:=goal
  var old_detour:=detour
  var target:=route_target(route[goal])
  var was_waiting:=wait>0
  super.tick(delta)
+ if not livelihood_role.is_empty():
+  var activity:=Livelihood.activity(livelihood_role,direction,wait,closing)
+  if actor.get_meta("daily_activity", &"") != activity:
+   actor.set_meta("daily_activity",activity)
  if paused or was_waiting or wait>0 or actor.get_meta("dead",false):return
  if goal!=old_goal or detour!=old_detour or (closing and goal==0):return
  var here:=Vector2(actor.global_position.x,actor.global_position.z)
@@ -191,8 +210,14 @@ func escape_cart_overlap(delta:float) -> bool:
 func arrive() -> void:
  if detour.is_finite():
   detour=detour_followup;detour_followup=Vector2.INF;return
+ var destination_reached := goal == route.size() - 1
  super.arrive()
+ if destination_reached and not livelihood_role.is_empty():
+  wait = Livelihood.dwell(livelihood_role,true)
+  if is_instance_valid(port_hiring_owner):port_hiring_owner.offer_port_shift(port_worker_key)
 func _physics_process(delta: float) -> void:
+ if (actor.get_meta("dead",false) or actor.get_meta("knocked_out",false)) and is_instance_valid(port_hiring_owner):
+  port_hiring_owner.port_shift_active(port_worker_key)
  if actor.get_meta("civilian_reacting",false) or actor.get_meta("defending",false):return
  if actor.get_meta("player_street_chat",false) and is_instance_valid(viewer):
   current_speed=0;actor.travel_speed=0

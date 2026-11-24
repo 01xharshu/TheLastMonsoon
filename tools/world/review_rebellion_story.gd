@@ -34,8 +34,18 @@ func run() -> void:
  for i in 100:await physics_frame
  story._process(.1)
  check(story.active and story.cinematic=="rescue","main world horse approach starts Mangal rescue")
- for i in 161:
+ var rescue_start: Vector3=story.sites.coach.global_position
+ for i in 400:
+  if story.cinematic!="rescue":break
   story.update_cinematic(.1);await physics_frame
+  if i%30==0:print("RESCUE TRACE step=",i," age=",story.age," cinematic=",story.cinematic)
+  if i==30:
+   check(story.sites.coach.global_position.distance_to(rescue_start)>1.0,"rescue coach travels along supported road")
+   check(player.global_position.distance_to(story.sites.horse.seat_world())<1.0,"rescue rider follows the moving horse")
+   if OS.get_environment("TLM_RESCUE_TRAVEL_ONLY")=="1":
+    print("RESCUE TRAVEL: ","PASS" if failures.is_empty() else "FAIL")
+    await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
+    return
   if i==105:
    var leader:Node3D=story.sites.mangal
    check(leader.travel_scarf!=null and leader.travel_scarf.visible,"Mangal covers his face while travelling on the cart")
@@ -43,13 +53,18 @@ func run() -> void:
     story.camera.global_position=leader.to_global(Vector3(.45,1.57,1.05))
     story.camera.look_at(leader.to_global(Vector3(0,1.46,.05)))
     await capture("fort_travel_scarf",temporary)
+ print("RESCUE TRACE handoff cinematic=",story.cinematic," age=",story.age)
  check(story.active and story.cinematic=="arrival","main world rescue precedes fort arrival")
- for i in 75:story.update_cinematic(.1);await physics_frame
+ for i in 200:
+  if story.cinematic!="arrival":break
+  story.update_cinematic(.1);await physics_frame
+ print("RESCUE TRACE arrival completed stage=",story.stage)
  check(story.stage=="follow","main world arrival returns follow gameplay")
  var last_follow_position: Vector3=story.sites.mangal.global_position
  var stalled_frames:=0
  for i in 1250:
   if story.stage!="follow":break
+  if i%150==0:print("RESCUE TRACE follow step=",i," waypoint=",story.follow_index)
   player.global_position=story.sites.mangal.global_position+Vector3(2,.9,0)
   story._process(.1)
   await physics_frame

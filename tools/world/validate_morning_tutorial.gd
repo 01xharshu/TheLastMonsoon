@@ -52,7 +52,7 @@ func run() -> void:
 	check(tutorial.step == 1,"Forward lesson advances")
 	tutorial._input(press("move_right"))
 	check(tutorial.step == 2 and map.minimap.visible,"Any lateral/back direction reveals map")
-	check(map.minimap.position.is_equal_approx(hud.size-Vector2(200,200)),"Map retains original bottom-right position")
+	check(map.minimap.position.is_equal_approx(Vector2(45,hud.size.y-200)),"Map anchors within left survival cluster")
 	check(tutorial.prompt.position.is_equal_approx(Vector2(24,32)),"Only instructions at top left")
 	check(not tutorial.has_method("_draw"),"Tutorial draws no highlight boxes")
 	tutorial._input(press("move_forward"))

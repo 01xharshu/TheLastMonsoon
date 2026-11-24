@@ -99,7 +99,7 @@ func _run() -> void:
 	camera.make_current()
 	await create_timer(0.3).timeout
 	assert(horse.board(actor))
-	await create_timer(1.2).timeout
+	await create_timer(1.85).timeout
 	await _stage("seated",12)
 	Input.action_press("move_forward")
 	await _stage("walk",30)

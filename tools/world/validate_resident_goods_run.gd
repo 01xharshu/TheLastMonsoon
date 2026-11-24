@@ -30,7 +30,24 @@ func run()->void:
 	check(work!=null and work.goods.size()==3,"worker and three physical consignments")
 	if work==null:print("RESIDENT_GOODS_RESULT FAIL ",failures);quit(1);return
 	work.set_physics_process(false)
-	check(work.cart.boarding._clearance_at(work.cart.global_position),"stowed solid cargo does not block its own cart")
+	var boarding: Node = work.cart.boarding
+	var exclusions: Array[RID] = boarding._vehicle_exclusions()
+	for item: Node3D in work.goods:
+		var body := item.get_node("ConsignmentBody") as CollisionObject3D
+		check(body.collision_layer == 1 and body.get_rid() in exclusions,"solid stowed crate is excluded from its own vehicle sweep")
+	if not boarding._clearance_at(work.cart.global_position):
+		for shape: CollisionShape3D in boarding.clearance_shapes:
+			var query := PhysicsShapeQueryParameters3D.new()
+			query.shape = shape.shape
+			query.transform = Transform3D(work.cart.global_basis,work.cart.to_global(shape.position))
+			query.collision_mask = 1
+			var shape_exclusions := exclusions.duplicate()
+			if shape.get_meta("wheel_contact",false):
+				shape_exclusions.append_array(boarding.wheel_terrain_cache.get("rids",[]))
+			query.exclude = shape_exclusions
+			for hit in work.cart.get_world_3d().direct_space_state.intersect_shape(query,8):
+				print("PARKED FREIGHT OVERLAP ", hit.collider.get_path())
+		check(false,"parked cart clearance overlaps another collider")
 	if site=="market":
 		var moved_state:Dictionary=work.export_state()
 		var legacy:Dictionary=moved_state.duplicate(true)
@@ -83,6 +100,28 @@ func run()->void:
 	for frame in 20:work.tick(.05);await physics_frame
 	check(work.actor.global_position.distance_to(stopped)<.001 and work.delivered==0,"solid obstacle pauses work without transferring goods")
 	obstacle.queue_free();await physics_frame;work.blocked=0
+	var receipts: Array[String] = []
+	var payroll := preload("res://world/suryagarh/port_hiring.gd").new()
+	var identity := "fixture-customs-porter"
+	var reserved := "customs:%d:0" % int(work.shipment)
+	if site == "port" and "--freight-only" not in OS.get_cmdline_user_args():
+		check(payroll.offer(identity,600.0) and payroll.reserve_delivery(identity,reserved),"reserve first crate for physical worker")
+		payroll.restore_state(JSON.parse_string(JSON.stringify(payroll.export_state())))
+		payroll.settle(620.0)
+		check(payroll.earnings.is_empty(),"reserved physical shift never pays on the timer")
+		check(not payroll.complete_delivery("other-worker",reserved),"wrong worker cannot collect the wage")
+		check(not payroll.complete_delivery(identity,reserved+":other"),"wrong crate cannot trigger payroll")
+	if site == "port":
+		work.cargo_received.connect(func(worker: Node3D, shipment_id: int, crate_index: int, cargo: Node3D) -> void:
+			var key := "%d:%d" % [shipment_id,crate_index]
+			check(not receipts.has(key),"duplicate receipt in physical freight cycle")
+			receipts.append(key)
+			check(worker == work.actor and cargo == work.goods[crate_index],"receipt identifies actual worker and crate")
+			check(cargo.get_parent() == work.institution and work.delivered == crate_index + 1,"receipt follows committed shelf placement")
+			if crate_index == 0:
+				check(payroll.complete_delivery(identity,"customs:"+key),"physical receipt pays reserved worker")
+				check(not payroll.complete_delivery(identity,"customs:"+key),"duplicate receipt cannot pay twice")
+		)
 	var max_hand:=0.0;var saved:=false
 	var freight_only:bool="--freight-only" in OS.get_cmdline_user_args()
 	if freight_only:
@@ -101,7 +140,10 @@ func run()->void:
 			check(work.actor.global_position.distance_to(before)<.001 and work.goods[0].get_parent()==work.actor,"after-hours pause retains carried goods")
 			clock.current_hour=10
 			var state:Dictionary=JSON.parse_string(JSON.stringify(work.export_state()))
+			var before_carry_restore := receipts.size()
 			work.restore_state(state);saved=true
+			if site == "port":
+				check(receipts.size() == before_carry_restore,"restoring an in-flight crate does not issue a delivery receipt")
 			check(work.goods[0].get_parent()==work.actor,"save restores carried consignment")
 			check(work.goods[0].get_node("ConsignmentBody").collision_layer==1,"carried consignment remains solid to other bodies")
 		if work.phase=="rest":break
@@ -109,6 +151,14 @@ func run()->void:
 		if frame%600==0:print("GOODS_PROGRESS ",work.phase," ",work.actor.global_position," blocked=",work.blocked," grip=",max_hand)
 	check(work.delivered==3 and work.phase=="rest","all three loads taken inside and worker returned")
 	check(saved,"mid-carry JSON restore exercised")
+	if site == "port" and not freight_only:
+		check(receipts.size() == 3,"one receipt for each delivered crate")
+		payroll.restore_state(JSON.parse_string(JSON.stringify(payroll.export_state())))
+		check(payroll.earnings.get(identity,0) == 1,"one physical wage survives restore")
+		check(payroll.offer("other-worker",621.0) and not payroll.reserve_delivery("other-worker",reserved),"previously paid crate cannot be hired again")
+		var before_restore := receipts.size()
+		work.restore_state(JSON.parse_string(JSON.stringify(work.export_state())))
+		check(receipts.size() == before_restore,"restore does not replay committed receipts")
 	check(max_hand<.025,"palm targets within 25 mm")
 	check(work.actor.body_collider.collision_layer==1,"worker body remains solid")
 	for item:Node3D in work.goods:

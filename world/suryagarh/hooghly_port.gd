@@ -92,7 +92,8 @@ func build_quay() -> void:
 	quay.name = "Quay"
 	add_child(quay)
 	# The surveyed terrace, masonry face and timber piles actually meet the ground.
-	piece(quay,"QuayApron",Vector3(-171,2.82,680),Vector3(38,0.12,62),stone)
+	var apron := piece(quay,"QuayApron",Vector3(-171,2.82,680),Vector3(38,0.12,62),stone)
+	preload("res://world/suryagarh/tree_trunk_collision.gd").register_terrain_support(self,apron.get_child(0) as StaticBody3D)
 	piece(quay,"QuayFace",Vector3(-150.5,0.9,680),Vector3(2.2,3.8,63),stone)
 	for z in range(650,715,4):
 		piece(quay,"QuayCoping",Vector3(-150.5,2.83,z),Vector3(2.4,0.20,3.94),plaster,false)

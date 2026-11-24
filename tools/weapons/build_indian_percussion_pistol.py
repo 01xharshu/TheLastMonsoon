@@ -149,7 +149,7 @@ manifest = {
     "export_sha256": hashlib.sha256(export.read_bytes()).hexdigest(),
     "basis": "Original single-shot game candidate informed by an early-19th-century percussion pistol collected in India during 1857-59; not a replica or documented modern katta.",
     "source_url": "https://collections.museumsvictoria.com.au/items/400990",
-    "status": "candidate; unintegrated and not visually approved"
+    "status": "integrated playable candidate; final motion and visual approval pending"
 }
 (OUT / "provenance.json").write_text(json.dumps(manifest, indent=2) + "\n")
 print("INDIAN PERCUSSION PISTOL CANDIDATE", manifest["export_sha256"])

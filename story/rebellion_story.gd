@@ -29,6 +29,7 @@ var stage="dormant"
 var active=false
 var cinematic=""
 var dialogue_voice: AudioStreamPlayer
+var briefing_face: RefCounted
 var voiced_caption := ""
 var voiced_slot := 0.0
 var age=0.0
@@ -273,11 +274,24 @@ func move_actor(actor: Node3D,goal: Vector3,delta: float,speed: float,ground_ste
  var offset=goal-actor.global_position
  if ground_step:offset.y=0
  if offset.length()<.2:actor.travel_speed=0;return true
- var step=offset.normalized()*minf(speed*delta,offset.length())
- if ground_step:step=ground(actor.global_position+step)-actor.global_position
- var query=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*.9,actor.global_position+step+Vector3.UP*.9,1);query.exclude=[actor.body_collider.get_rid(),actor.get_node("Vitality").hit_body.get_rid()]
- if not actor.get_world_3d().direct_space_state.intersect_ray(query).is_empty():actor.travel_speed=0;return false
- actor.global_position+=step;actor.rotation.y=atan2(offset.x,offset.z);actor.travel_speed=speed;return false
+ var stride:=minf(speed*delta,offset.length())
+ var heading:=offset.normalized()
+ var angles: Array[float]=[0.0,.85,-.85,PI*.5,-PI*.5]
+ for index in (angles.size() if ground_step else 1):
+  var step:=heading.rotated(Vector3.UP,angles[index])*stride
+  if ground_step:
+   step=ground(actor.global_position+step)-actor.global_position
+   var local_motion: Vector3=actor.get_parent_node_3d().global_basis.inverse()*step
+   if actor._patrol_body_blocked(local_motion):continue
+  var query:=PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*.9,actor.global_position+step+Vector3.UP*.9,1)
+  query.exclude=[actor.body_collider.get_rid(),actor.get_node("Vitality").hit_body.get_rid()]
+  if not actor.get_world_3d().direct_space_state.intersect_ray(query).is_empty():continue
+  actor.global_position+=step
+  actor.rotation.y=atan2(step.x,step.z)
+  actor.travel_speed=speed
+  return false
+ actor.travel_speed=0
+ return false
 func uses_fort_gate() -> bool:
  return sites.fort.get("embedded_in_world")==true
 
@@ -386,6 +400,11 @@ func begin_cinematic(id: String) -> bool:
  for path in ["HUD","LandscapeUI","Player/UI","Player/InteractionUI"]:
   var item=world.get_node_or_null(path)
   if item is CanvasItem or item is CanvasLayer:hidden_ui.append(item);prior_visibility.append(item.visible);item.hide()
+ var errands:=world.get_node_or_null("ErrandSystem")
+ if errands!=null:
+  for layer in errands.get_children():
+   if layer is CanvasLayer:
+    hidden_ui.append(layer);prior_visibility.append(layer.visible);layer.hide()
  for bar in bars:bar.show()
  caption.show();camera.make_current()
  if id=="days":
@@ -399,6 +418,15 @@ func begin_cinematic(id: String) -> bool:
   sites.mangal.riding_cart=sites.coach;sites.mangal.riding_socket=sites.coach.seat_sockets.CoachmanSeat;sites.mangal.driving=true
   sites.horse.set_physics_process(false);sites.horse.pace=2;sites.horse._update_rigged_animation();jump_origin=player.global_position
   sites.coach.rotation.y=sites.horse.rotation.y;sites.coach.global_position=sites.horse.global_position+sites.horse.global_basis.x*3
+  if uses_fort_gate():
+   var road: Array=world.layout.ROUTES["fort_access"]
+   var start: Vector2=road[0].lerp(road[1],.45)
+   var direction: Vector2=(road[1]-road[0]).normalized()
+   sites.coach.rotation.y=atan2(-direction.x,-direction.y)
+   sites.coach.global_position=ground(Vector3(start.x,0,start.y))
+   sites.horse.rotation.y=sites.coach.rotation.y
+   sync_rescue_horse()
+  sites.coach.set_meta("resident_cargo_rids",[sites.mangal.body_collider.get_rid(),sites.mangal.get_node("Vitality").hit_body.get_rid()])
  if id=="raid":reset_raid()
  if id=="delivery":sites.goods.boarding.set_physics_process(false)
  if id=="rope":
@@ -440,7 +468,8 @@ func update_cinematic(delta: float) -> void:
    elif age>=9 and sites.coach.rider!=player:
     release_mount(sites.horse);player.global_position=sites.coach.to_global(Vector3(1.5,1.5,2.26));sites.coach.board_at(player,"RearPassengerRight","passenger")
    if age<6:
-    var step: Vector3=-sites.horse.global_basis.z*delta*2;sites.horse.global_position+=step;sites.coach.global_position+=step;jump_origin=player.global_position
+    move_cinematic_cart(sites.coach,2,delta)
+    sync_rescue_horse()
    elif age>=9:move_cinematic_cart(sites.coach,2,delta)
    sites.coach.set_forward_motion(2,delta)
    focus=sites.coach.global_position+Vector3.UP*1.6
@@ -509,6 +538,21 @@ func update_cinematic(delta: float) -> void:
  caption.visible=cinematic!="days"
  camera.global_position=focus+Vector3(5,2.8,6)
  if cinematic=="rescue":camera.global_position=focus-sites.coach.global_basis.x*7+sites.coach.global_basis.z*3+Vector3.UP*2.2
+ camera.fov=52
+ if cinematic=="briefing":
+  sites.mangal.set_meta("briefing_voice_phase",dialogue_voice.get_playback_position() if dialogue_voice.playing else -1.0)
+  var expression = preload("res://story/dialogue_expression.gd")
+  if briefing_face == null:
+   briefing_face=expression.new()
+   briefing_face.configure(sites.mangal)
+  var playback := dialogue_voice.get_playback_position()
+  var speech := expression.speech_weight(playback,dialogue_voice.stream.get_length()) if dialogue_voice.playing else 0.0
+  briefing_face.apply(.18,0.0,0.0,speech,expression.blink_weight(age))
+  preload("res://story/conversation_facing.gd").pair(player,sites.mangal)
+  var shot: Dictionary=preload("res://story/dialogue_camera.gd").shot(player,sites.mangal,false,age>=7.0 and age<14.0)
+  camera.global_position=shot.position
+  camera.fov=58 if shot.pov else 52
+  focus=shot.target
  camera.look_at(focus)
  if age>=duration:finish_cinematic()
 func pose_rope_contact(anchor: Vector3,axis: Vector3) -> void:
@@ -531,6 +575,11 @@ func pose_rope_contact(anchor: Vector3,axis: Vector3) -> void:
   equipment._grasp(side,.8)
   var palm:=rig.to_global(rig.get_bone_global_pose(index)*equipment.palm_offsets[side])
   rope_contact_error=maxf(rope_contact_error,palm.distance_to(target))
+func sync_rescue_horse() -> void:
+ sites.horse.global_position=ground(sites.coach.global_position-sites.coach.global_basis.x*3)
+ sites.horse._sync_rider()
+ jump_origin=player.global_position
+
 func move_cinematic_cart(cart: Node3D,speed: float,delta: float) -> void:
  var remaining:=speed*delta
  while remaining>.001:
@@ -538,7 +587,8 @@ func move_cinematic_cart(cart: Node3D,speed: float,delta: float) -> void:
   var next: Vector3=cart.global_position-cart.global_basis.z*step
   var ray:=PhysicsRayQueryParameters3D.create(next+Vector3.UP*4,next-Vector3.UP*4,1);ray.exclude=cart.boarding._vehicle_exclusions()
   var floor_hit:=cart.get_world_3d().direct_space_state.intersect_ray(ray)
-  if not floor_hit.is_empty():next.y=floor_hit.position.y+.02
+  if floor_hit.is_empty():break
+  next.y=floor_hit.position.y+.02
   if not cart.boarding._clearance_at(next):break
   cart.global_position=next
 func release_mount(mount: Node) -> void:
@@ -549,31 +599,36 @@ func release_mount(mount: Node) -> void:
  else:
   player.collision_layer=mount.boarding.saved_layer;player.collision_mask=mount.boarding.saved_mask;mount.boarding.rider=null;mount.boarding.transition="";mount.boarding.speed=0
  player.set_meta("mounted_vehicle",null);player.set_meta("horse_transition","")
+func clear_briefing_face() -> void:
+ if briefing_face == null:return
+ briefing_face.restore()
+ briefing_face=null
+
 func finish_cinematic() -> void:
+ clear_briefing_face()
  dialogue_voice.stop()
+ sites.mangal.remove_meta("briefing_voice_phase")
  preload("res://story/conversation_facing.gd").release(player)
  preload("res://story/conversation_facing.gd").release(sites.mangal)
  action_service.release(cinematic_lease);cinematic_lease=-1
  var was=cinematic;active=false;cinematic="";caption.hide();title_card.hide();shade.color.a=0;gameplay_camera.make_current()
  for bar in bars:bar.hide()
  player.set_meta("story_cinematic",false);player.set_meta("document_busy",prior_busy);player.set_physics_process(prior_physics)
- for i in hidden_ui.size():hidden_ui[i].visible=prior_visibility[i]
+ for i in hidden_ui.size():
+  if is_instance_valid(hidden_ui[i]):hidden_ui[i].visible=prior_visibility[i]
  hero.motion_tree.set_melee(0,-1)
  hero.motion_tree.release_climb(1.0)
  match was:
   "days":set_stage("ambush")
   "rescue":
    release_mount(sites.coach);sites.horse.set_physics_process(true);sites.horse.set_process(true)
+   sites.coach.remove_meta("resident_cargo_rids")
    sites.coach.global_position=ground(sites.fort.to_global(Sites.GATE_COACH_PARK if uses_fort_gate() else Vector3(0,0,65)))
    player.global_position=sites.coach.global_position+Vector3(3,.9,0)
    encounters.complete_custody(player)
    follow_index=0;begin_cinematic("arrival")
   "arrival":
-   sites.mangal.riding_socket=null;sites.mangal.riding_cart=null;sites.mangal.driving=false
-   var start:Vector3=sites.fort.to_global(Vector3(11.5,0,91)) if uses_fort_gate() else sites.cellar.to_global(Vector3(0,0,34))
-   sites.mangal.global_position=ground(start)
-   player.global_position=ground(start+Vector3(2,0,2))+Vector3.UP*.9 if uses_fort_gate() else sites.mangal.global_position+Vector3(2,.9,2)
-   predecessor.reset_actor_grounding(sites.mangal) if predecessor.has_method("reset_actor_grounding") else sites.mangal.foot_plant.clear()
+   place_follow_start()
    set_stage("follow")
   "briefing":set_stage("inspect")
   "range_entry":enter_range()
@@ -589,6 +644,13 @@ func finish_cinematic() -> void:
    sites.return_bay.hide();sites.goods.boarding.set_physics_process(true)
    for i in 2:sites.companions[i].riding_socket=null;sites.companions[i].global_position=sites.goods.global_position+Vector3(-2+i*4,0,4)
    captured_rifles=12;set_stage("complete");player.inventory.add_item("paper_cartridges",12);player.inventory.message_requested.emit("Mission complete · Twelve captured rifles delivered to Mangal’s hideout.")
+func place_follow_start() -> void:
+ sites.mangal.riding_socket=null;sites.mangal.riding_cart=null;sites.mangal.driving=false
+ var start:Vector3=sites.fort.to_global(Vector3(11.5,0,91)) if uses_fort_gate() else sites.cellar.to_global(Vector3(0,0,34))
+ sites.mangal.global_position=ground(start)
+ player.global_position=ground(start+Vector3(2,0,2))+Vector3.UP*.9 if uses_fort_gate() else sites.mangal.global_position+Vector3(2,.9,2)
+ predecessor.reset_actor_grounding(sites.mangal) if predecessor.has_method("reset_actor_grounding") else sites.mangal.foot_plant.clear()
+ player.velocity=Vector3.ZERO
 func export_state() -> Dictionary:
  if not configured:return pending_restore.duplicate(true) if restore_waiting else {"stage":"dormant"}
  var actors: Array=[]
@@ -597,6 +659,7 @@ func export_state() -> Dictionary:
   actors.append({"position":[at.x,at.y,at.z],"heading":actor.rotation.y,"health":actor.get_node("Vitality").health,"dead":actor.get_meta("dead",false),"knocked_out":actor.get_meta("knocked_out",false)})
  return {"hideout_daily":sites.cellar.get_node("HideoutDailyLife").export_state(),"actors":actors,"stage":stage,"collected":collected.duplicate(),"disguise":disguise,"disguise_guard":disguise_guard,"stripped_guards":stripped_guards.duplicate(),"captured_rifles":captured_rifles,"target_hits":target_hits,"reload_seen":reload_seen,"officer_age":officer_age,"follow_index":follow_index,"fort_gate_route":uses_fort_gate()}
 func restore_state(data: Dictionary) -> void:
+ clear_briefing_face()
  if not configured:
   pending_restore=data.duplicate(true);restore_waiting=true;return
  stage=str(data.get("stage","dormant"));if stage not in STAGES:stage="dormant"
@@ -634,6 +697,10 @@ func restore_state(data: Dictionary) -> void:
   actor.get_node("Vitality").dead=dead;actor.set_meta("dead",dead);actor.set_meta("knocked_out",knocked)
   actor.get_node("BodyCollider/BodyShape").set_deferred("disabled",dead or knocked)
   if dead or knocked:actor.combat_react("down")
+ # The retired breach used different waypoint indices and support surfaces.
+ if stage=="follow" and data.get("hideout_route_version",0)==2:
+  follow_index=0
+  place_follow_start()
  sites.cargo.visible=stage in ["return","complete"]
  if stage=="return":
   for i in 2:sites.companions[i].riding_cart=sites.goods;sites.companions[i].riding_socket=sites.cargo_seats[i]
@@ -647,6 +714,7 @@ func restore_state(data: Dictionary) -> void:
   enter_range()
  else:set_stage(stage)
 func _exit_tree() -> void:
+ clear_briefing_face()
  if is_instance_valid(action_service):
   action_service.release(cinematic_lease)
   if range_lease>=0:release_range()

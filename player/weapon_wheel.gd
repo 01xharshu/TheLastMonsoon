@@ -2,8 +2,8 @@ extends Control
 ## Hold the physical backtick/tilde key; pointer or arrows select; release commits.
 const Equipment = preload("res://player/arjun_equipment.gd")
 const SERIF = preload("res://assets/ui/fonts/MFBOldstyle-Regular.otf")
-const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "SPEAR", "SMOKE POUCH", "STOW WEAPONS"]
-const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Chacha’s spear", "Throw escape smoke · B", "Hands free · weapons carried"]
+const LABELS := ["TALWAR", "ENFIELD", "BOW", "PISTOL", "KNIFE", "DOUBLE GUN", "SPEAR", "SMOKE POUCH", "STOW WEAPONS", "INDIAN PISTOL"]
+const DESCRIPTIONS := ["Curved sword", "Pattern 1853 rifle", "Bow and arrows", "Holstered sidearm", "Utility blade", "Two-barrel percussion sporting gun", "Chacha’s spear", "Throw escape smoke · B", "Hands free · weapons carried", "Single-shot percussion sidearm"]
 const STOW_INDEX := 8
 const IVORY := Color(0.93, 0.89, 0.78)
 const BRASS := Color(0.67, 0.51, 0.29)
@@ -27,7 +27,7 @@ func open() -> void:
 	if actor.get_meta("detention_action", "") != "": return
 	if visible or actor.inventory_ui.is_open() or actor.get_meta("map_open", false) or (actor.has_meta("mounted_vehicle") and actor.get_meta("mounted_vehicle") != null) or actor.get_meta("climbing",false): return
 	if not actor.is_physics_processing(): return
-	selected = 6 if actor.has_node("ChachaKit") and actor.get_node("ChachaKit").active else int(equipment.selected)
+	selected = 6 if actor.has_node("ChachaKit") and actor.get_node("ChachaKit").active else (9 if int(equipment.selected) == 6 else int(equipment.selected))
 	previous_mouse_mode = Input.mouse_mode
 	previous_mouse_position = get_viewport().get_mouse_position()
 	actor.set_meta("weapon_wheel_open", true)
@@ -50,7 +50,7 @@ func close(commit: bool) -> void:
 		elif selected == 7 and owns_slot(selected):
 			actor.get_node("ChachaKit").call_deferred("throw_smoke")
 		elif owns_slot(selected):
-			equipment.select_weapon(selected)
+			equipment.select_weapon(6 if selected == 9 else selected)
 			# Swimming always wins over a wheel selection; selection is remembered.
 			equipment.stowed = equipment.swimming or actor.is_swimming
 			equipment._refresh()
@@ -63,6 +63,7 @@ func close(commit: bool) -> void:
 
 func owns_slot(slot: int) -> bool:
 	if slot == STOW_INDEX:return true
+	if slot == 9:return equipment.owns(6)
 	if slot in [6,7]:return actor.has_node("ChachaKit") and actor.inventory.has_item("spear" if slot==6 else "smoke_bomb")
 	return equipment.owns(slot)
 
@@ -132,7 +133,7 @@ func _icon(slot: int, centre: Vector2, color: Color) -> void:
 		draw_arc(centre+Vector2(8,0),30,-PI/2,PI/2,20,color,3,true)
 		draw_line(centre+Vector2(8,-30),centre+Vector2(8,30),BRASS,2,true)
 		draw_line(centre+Vector2(-22,0),centre+Vector2(37,0),color,2,true)
-	elif slot == 3:
+	elif slot in [3,9]:
 		draw_line(centre+Vector2(-32,-7),centre+Vector2(28,-7),color,7,true)
 		draw_arc(centre+Vector2(-9,8),13,0,PI,14,BRASS,3,true)
 	elif slot == 4:

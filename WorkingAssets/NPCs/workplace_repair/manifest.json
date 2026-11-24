@@ -1,0 +1,30 @@
+[
+  {
+    "role": "village_farmer",
+    "body_vertices_unchanged": true,
+    "body_hash": "9f60e186cb0054474adaedf69e1df05def497e5a0c333b37c966235cde5ab8f1",
+    "skin_export_vertices": 13380,
+    "status": "REPAIR_CANDIDATE_REQUIRES_NATIVE_MOTION_REVIEW"
+  },
+  {
+    "role": "village_weaver_assistant",
+    "body_vertices_unchanged": true,
+    "body_hash": "423b9b52fe32c9fd70a749a0a93685bdb730a7f236975bc5742c6264ba10af3d",
+    "skin_export_vertices": 13380,
+    "status": "REPAIR_CANDIDATE_REQUIRES_NATIVE_MOTION_REVIEW"
+  },
+  {
+    "role": "village_woman",
+    "body_vertices_unchanged": true,
+    "body_hash": "62f6a79e62f048a239c6b5f49f2157dab62ff7d5a4bf9b492131ac51a19428b3",
+    "skin_export_vertices": 13380,
+    "status": "REPAIR_CANDIDATE_REQUIRES_NATIVE_MOTION_REVIEW"
+  },
+  {
+    "role": "village_fruit_seller",
+    "body_vertices_unchanged": true,
+    "body_hash": "045ae4c88704bcc71d0bc1b0cfdda860d5f4cac372b7399560f0da5a874f4bd8",
+    "skin_export_vertices": 13380,
+    "status": "REPAIR_CANDIDATE_REQUIRES_NATIVE_MOTION_REVIEW"
+  }
+]

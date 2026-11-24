@@ -33,7 +33,7 @@ func integrate(target: Node3D) -> void:
 	persistent(pouch,"arjun_home/spare_pouch")
 	var records := place(settlement.get_node("TownHall"),"res://objects/household/sets/records_desk.tscn","TownRecordsDesk",Vector3(-4,0,1.4))
 	replace_lamp(records)
-	place(settlement.get_node("BhairavpurGrainStore"),"res://objects/household/sets/market_supply.tscn","GrainStoreCounter",Vector3(2.45,.16,-1.65))
+	place(settlement.get_node("BhairavpurGrainStore"),"res://objects/household/sets/market_supply.tscn","GrainStoreCounter",Vector3(3.75,.16,-1.65))
 	var armoury: Node3D = settlement.get_node("CompanyArmoury")
 	place(armoury,"res://objects/household/sets/weapon_rack_dressing.tscn","WeaponRackDressing",Vector3(0,0,-5.35))
 	var shelf := place(armoury,"res://objects/household/sets/armoury_supply.tscn","ArmourySupplyShelf",Vector3(-5,.24,-3))

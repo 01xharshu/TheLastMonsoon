@@ -17,6 +17,7 @@ const ITEMS := {
 	"pistol_ball": ["Pistol Balls", "pistol_ammo"],
 	"shot_charge": ["Shot Charges", "shot_ammo"],
 	"pistol": ["Adams Pistol", "pistol"],
+	"indian_pistol": ["Indian Percussion Pistol", "pistol"],
 	"enfield": ["Enfield Rifle", "weapon"],
 	"double_gun": ["Double-barrel Gun", "double_gun"],
 	"talwar": ["Talwar", "sword"],

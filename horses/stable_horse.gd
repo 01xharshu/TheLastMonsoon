@@ -1,5 +1,6 @@
 extends CharacterBody3D
 ## One rideable village horse. Forward is local -Z; the stable owns its starting place.
+const MountMotion = preload("res://player/arjun_horse_mount.gd")
 const Layout = preload("res://world/suryagarh/landscape_layout.gd")
 const BodyModel = preload("res://assets/animals/horse/village_horse_body.glb")
 const RiggedBody = preload("res://assets/animals/horse/horse_body_refinement.glb")
@@ -38,6 +39,9 @@ var transition := ""
 var transition_time := 0.0
 var transition_from := Vector3.ZERO
 var transition_to := Vector3.ZERO
+var mount_stance := Vector3.ZERO
+var mount_start_yaw := 0.0
+var mount_side := -1.0
 var legs: Array[Node3D] = []
 var lower_legs: Array[Node3D] = []
 var hoof_clearances: Array[float] = []
@@ -216,13 +220,17 @@ func _rein_anchors(side: String) -> Array[Vector3]:
 	var sign_side := -1.0 if side == "l" else 1.0
 	var bit := body_root.to_global(_animated_frame_delta("Head") * Vector3(sign_side * 0.18, 1.88, -1.43))
 	var hand := tack_root.to_global(Vector3(sign_side * 0.28, 1.93, -0.23))
-	if rider != null and transition == "":
+	var pickup := 1.0 if transition == "" else 0.0
+	if rider != null and transition == "mount":
+		pickup = MountMotion.rein_pickup(rider.get_meta("horse_transition_progress", 0.0))
+	if rider != null and pickup > 0.0:
 		var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
 		if visual.skeleton != null:
 			var skeleton: Skeleton3D = visual.skeleton
 			var index := skeleton.find_bone("hand_" + side)
 			if index >= 0:
-				hand = skeleton.to_global(skeleton.get_bone_global_pose(index) * visual.equipment.palm_offsets[side])
+				var palm := skeleton.to_global(skeleton.get_bone_global_pose(index) * visual.equipment.palm_offsets[side])
+				hand = hand.lerp(palm, pickup)
 	return [bit, hand]
 
 func _update_reins(delta: float) -> void:
@@ -444,9 +452,13 @@ func _walk_supported() -> bool:
 func seat_world() -> Vector3:
 	return tack_root.to_global(Vector3(0,2.0,.02))
 
-func saddle_grip_world(side: String) -> Vector3:
-	var tack: Node3D = tack_root.get_node("Pommel" if side == "l" else "Cantle")
-	return tack.to_global(Vector3(-0.16 if side == "l" else 0.16, 0.06, 0.0))
+func saddle_grip_world(side: String, entry_side := 0.0) -> Vector3:
+	if entry_side == 0.0:
+		var tack: Node3D = tack_root.get_node("Pommel" if side == "l" else "Cantle")
+		return tack.to_global(Vector3(-.16 if side == "l" else .16, .06, 0))
+	var near := (side == "l") == (entry_side < 0.0)
+	var bow: Node3D = tack_root.get_node("Pommel" if near else "Cantle")
+	return bow.to_global(Vector3(entry_side * (.185 if near else .20), .059 if near else .062, 0))
 
 func riding_rein_world(side: String) -> Vector3:
 	return tack_root.to_global(Vector3(-0.18 if side == "l" else 0.18, 2.24, -0.42))
@@ -461,12 +473,17 @@ func can_board(actor: CharacterBody3D) -> bool:
 
 func board(actor: CharacterBody3D) -> bool:
 	if not can_board(actor): return false
+	mount_side = -1.0 if to_local(actor.global_position).x < 0.0 else 1.0
+	var restoring := bool(get_meta("restore_in_progress", false))
+	if not restoring:
+		mount_stance = _mount_stance(actor)
+		mount_start_yaw = actor.visual_root.global_rotation.y
 	rider = actor
 	actor.get_node("VisualRoot/CharacterVisual").horse_light_seat = 0.0
 	var first_take := not stolen
 	preload("res://systems/vehicle_permissions.gd").take(self,actor,"horse_theft")
 	stolen = get_meta("owner","") != "Arjun"
-	if not get_meta("restore_in_progress",false):
+	if not restoring:
 		tack_player.play()
 		voice_player.stream = Neigh if first_take else Snort
 		voice_player.play()
@@ -484,22 +501,76 @@ func board(actor: CharacterBody3D) -> bool:
 	var visual: Node = actor.get_node("VisualRoot/CharacterVisual")
 	visual.equipment.stowed = true
 	visual.equipment._refresh()
+	if restoring:
+		transition = ""
+		actor.set_meta("horse_transition", "")
+		_sync_rider()
+		visual._pose_horse_mount(1.0, mount_side)
+		visual._pose_horse_riding(0.0)
+		return true
 	transition = "mount"
 	transition_time = 0.0
 	transition_from = actor.global_position
-	actor.set_meta("horse_transition_side", -1.0 if to_local(actor.global_position).x < 0.0 else 1.0)
+	actor.set_meta("horse_transition_side", mount_side)
 	actor.set_meta("horse_transition", "mount")
 	actor.set_meta("horse_transition_progress", 0.0)
 	return true
 
+func _mount_stance(actor: CharacterBody3D) -> Vector3:
+	var start := actor.global_position
+	var stance := to_global(Vector3(mount_side * .88, 0, -.07))
+	var foot_y := start.y - .9
+	var ray := PhysicsRayQueryParameters3D.create(
+		Vector3(stance.x, foot_y + .32, stance.z), Vector3(stance.x, foot_y - .36, stance.z), actor.collision_mask)
+	ray.exclude = [get_rid(), actor.get_rid()]
+	var ground := get_world_3d().direct_space_state.intersect_ray(ray)
+	if ground.is_empty() or ground.normal.y < .7:
+		return start
+	stance.y = ground.position.y + .9
+	if actor.test_move(actor.global_transform.translated(Vector3.UP * .08), stance - start):
+		return start
+	return stance
+
+func _rider_hip_offset() -> Vector3:
+	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
+	var skeleton: Skeleton3D = visual.skeleton
+	var hip := skeleton.get_bone_global_pose(skeleton.find_bone("pelvis")).origin
+	return skeleton.to_global(hip) - rider.global_position
+
+func _advance_mount(delta: float) -> void:
+	transition_time += delta
+	var t := minf(transition_time / MountMotion.DURATION, 1.0)
+	rider.set_meta("horse_transition_progress", t)
+	var yaw := rotation.y + PI
+	var face_saddle := yaw + mount_side * 1.10
+	var facing := lerp_angle(mount_start_yaw, face_saddle, smoothstep(0, .20, t))
+	rider.visual_root.global_rotation.y = lerp_angle(facing, yaw, smoothstep(MountMotion.RISE, MountMotion.STRADDLE, t))
+	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
+	visual._pose_horse_mount(t, mount_side)
+	var hip_offset := _rider_hip_offset()
+	var approach := transition_from.lerp(mount_stance, smoothstep(0, .18, t))
+	var seat := seat_world()
+	var hip := approach + hip_offset
+	# Transfer weight from the grounded foot into the near stirrup.
+	hip -= global_basis.x * mount_side * .16 * smoothstep(.16, .33, t)
+	# Stay outside while rising, then move over the saddle at full height.
+	var shift := smoothstep(.33, MountMotion.STRADDLE, t)
+	hip.x = lerpf(hip.x, seat.x, shift)
+	hip.z = lerpf(hip.z, seat.z, shift)
+	var rise := smoothstep(.17, .52, t)
+	var settle := smoothstep(.72, 1.0, t)
+	hip.y = lerpf(hip.y, seat.y + .29, rise) - .29 * settle
+	rider.global_position = hip - hip_offset
+	visual._horse_mount_contacts(self, t, mount_side)
+	if t >= 1.0:
+		transition = ""
+		rider.set_meta("horse_transition", "")
+
 func _sync_rider() -> void:
 	if rider == null: return
-	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
-	var pelvis: int = visual.skeleton.find_bone("pelvis")
-	if pelvis < 0: return
-	var hip_local: Vector3 = rider.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin))
-	rider.global_position = seat_world() + tack_root.global_basis.y * visual.horse_light_seat - hip_local
 	rider.visual_root.global_rotation.y = rotation.y + PI
+	var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
+	rider.global_position = seat_world() + tack_root.global_basis.y * visual.horse_light_seat - _rider_hip_offset()
 	rider.velocity = Vector3.ZERO
 
 func dismount() -> bool:
@@ -598,17 +669,13 @@ func _physics_process(delta: float) -> void:
 	if rider != null:
 		if transition == "":
 			_sync_rider()
+		elif transition == "mount":
+			_advance_mount(delta)
 		else:
 			transition_time += delta
 			var t: float = clampf(transition_time / 0.7, 0.0, 1.0)
 			rider.set_meta("horse_transition_progress", t)
-			if transition == "mount":
-				var visual: Node3D = rider.get_node("VisualRoot/CharacterVisual")
-				var pelvis: int = visual.skeleton.find_bone("pelvis")
-				var hip_local: Vector3 = rider.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(pelvis).origin))
-				transition_to = seat_world() - hip_local
-			# Lift before crossing the saddle; reverse the sequence on exit.
-			var across := smoothstep(0.05, 0.7, t) if transition == "mount" else smoothstep(0.3, 0.95, t)
+			var across := smoothstep(0.3, 0.95, t)
 			var lift := smoothstep(0.0, 1.0, t)
 			rider.global_position = transition_from.lerp(transition_to, across)
 			rider.global_position.y = lerpf(transition_from.y, transition_to.y, lift) + sin(t * PI) * 0.22

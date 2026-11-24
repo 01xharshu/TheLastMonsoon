@@ -71,8 +71,9 @@ func _process(delta: float) -> void:
     _skeleton.force_update_all_bone_transforms()
    else:foot_plant._solve(foot_plant.legs[side],_skeleton.to_local(foot))
    solve_hand_contact(side,riding_cart.rein_grip_world(side) if driving else to_global(Vector3(-.2 if side=="r" else .2,.75,.25)));set_grip(side,.6 if driving else .15)
-  if get_meta("mangal_briefing",false):
-   var cue:=pow(maxf(0.0,sin(Time.get_ticks_msec()*.003)),2.0)
+  if riding_socket.name=="MangalDiscussionSeat" and (get_meta("mangal_briefing",false) or has_meta("celebration_voice_phase")):
+   var voice_phase := float(get_meta("briefing_voice_phase",get_meta("celebration_voice_phase",-1.0)))
+   var cue := pow(maxf(0.0,sin(voice_phase*3.0)),2.0) if voice_phase >= 0.0 else 0.0
    solve_hand_contact("r",to_global(Vector3(-.28,.77+cue*.16,.34+cue*.14)))
    set_grip("r",.15+cue*.13)
   if get_meta("hideout_discussing",false) and _bones.has("head"):

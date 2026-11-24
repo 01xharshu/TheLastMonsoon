@@ -9,7 +9,8 @@ const STOCK=[
  {"id":"utility_knife","name":"Knife","price":15,"quantity":1,"unique":true},
  {"id":"paper_cartridges","name":"12 paper cartridges","price":12,"quantity":12,"unique":false},
  {"id":"pistol_ball","name":"12 pistol balls","price":12,"quantity":12,"unique":false},
- {"id":"shot_charge","name":"8 shot charges","price":10,"quantity":8,"unique":false}]
+ {"id":"shot_charge","name":"8 shot charges","price":10,"quantity":8,"unique":false},
+ {"id":"indian_pistol","name":"Indian percussion pistol","price":65,"quantity":1,"unique":true}]
 var player: CharacterBody3D
 var discovered=false
 var configured=false

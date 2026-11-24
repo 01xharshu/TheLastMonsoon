@@ -38,7 +38,7 @@ var objective: Label
 var bars: Array[ColorRect]=[]
 var actor_physics:=true
 var prior_busy:=false
-var hud: Array[CanvasItem]=[]
+var hud: Array[Node]=[]
 var hidden_hud: Array[bool]=[]
 var prior_chacha_process:=true
 var camera_start:=Vector3.ZERO
@@ -233,6 +233,11 @@ func start(which: String,list: Array[Dictionary]) -> void:
  for path in ["HUD","LandscapeUI","Player/UI/HUDRoot","Player/InteractionUI"]:
   var node: Node=get_parent().get_node_or_null(path)
   if node is CanvasItem:hud.append(node);hidden_hud.append(node.visible);node.hide()
+ var errands:=get_parent().get_node_or_null("ErrandSystem")
+ if errands!=null:
+  for layer in errands.get_children():
+   if layer is CanvasLayer:
+    hud.append(layer);hidden_hud.append(layer.visible);layer.hide()
  for bar in bars:bar.show()
  caption.show();camera.current=true;objective.hide();enter_beat()
 func enter_beat() -> void:
@@ -255,13 +260,18 @@ func enter_beat() -> void:
  camera_target=place.to_global(record.target)
  if cue=="optional":
   camera_target=(player.global_position+chacha.global_position)*.5+Vector3.UP*.65
-  camera_start=optional_conversation_camera(camera_target)
+  camera_start=chacha_conversation_camera(camera_target)
   camera_end=camera_start
  if cue!=previous:
   if not skipping_cinematic and (beat_index==0 or beats[beat_index-1].place!=record.place):
    shade.color.a=1;create_tween().tween_property(shade,"color:a",0,.65)
   else:shade.color.a=0
   stage_action(cue)
+ if cue=="heal":
+  var framing=preload("res://story/dialogue_camera.gd")
+  camera_target=(framing.eye(player)+framing.eye(chacha))*.5
+  camera_start=chacha_conversation_camera(camera_target)
+  camera_end=camera_start
  if cue in ["reception","humiliation","objection","warning"]:frame_conversation("Second official" if record.get("laughter",false) else record.speaker)
  camera.global_position=camera_start;camera.look_at(camera_target)
  for i in inquiry.officials.size():
@@ -270,7 +280,7 @@ func enter_beat() -> void:
   var mocking: bool=cue=="humiliation" and beat_index>0 and record.speaker!="Arjun" and inquiry.officials[i].speaking
   inquiry.officials[i].attitude="mocking" if mocking else "neutral"
   inquiry.expressions[i].apply(0,.45 if mocking else 0)
-func optional_conversation_camera(focus: Vector3) -> Vector3:
+func chacha_conversation_camera(focus: Vector3) -> Vector3:
  # Choose the clearest side of the conversation, avoiding room partitions and
  # ensuring that both participants, not just their midpoint, are visible.
  var axis: Vector3=chacha.global_position-player.global_position;axis.y=0
@@ -528,6 +538,9 @@ func update_acting(delta: float,t: float) -> void:
   inquiry.expressions[index].apply(0,disdain,.3 if cue=="guards" and index==0 else 0,speaking if officer_speaking else 0,face_script.blink_weight(age,float(index)*1.3+.4))
  var action: String="collar" if cue in ["collar","guards"] else "down" if cue in ["collapse","discard","throw"] else "pain" if cue in ["beating","rescue","heal"] else "drink" if cue=="drink" else ""
  var amount:=1.0 if not action.is_empty() else 0.0
+ if cue in ["reception","humiliation","objection","warning","optional"] and record.speaker=="Arjun":
+  action="talk"
+  amount=speaking*(.65 if cue=="objection" else .4)
  if cue=="collar":amount=smoothstep(3.9,4.8,age)
  var progress:=-1.0
  if cue=="collapse":action="fall";progress=clampf(age/2.1,0,1)

@@ -22,7 +22,7 @@ func _capture() -> void:
  if not horse.board(actor): push_error('Could not mount');quit(1);return
  horse.global_position=Vector3(-258,world.layout.height(-258,203)+.15,203)
  var camera:=Camera3D.new();world.add_child(camera);camera.fov=52;camera.make_current()
- for i in 85: await physics_frame
+ for i in 110: await physics_frame
  for orientation in [0.0,PI]:
   model.rotation.y=orientation
   camera.global_position=horse.global_position+horse.global_basis*Vector3(-6,2.6,2.5)

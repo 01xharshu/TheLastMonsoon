@@ -1,0 +1,9 @@
+{
+  "source": "/Users/harshmishra/.codex/worktrees/8eab/TheLastMonsoon/WorkingAssets/NPCs/police_uniform/burkundaz/burkundaz_motion.blend",
+  "body_sha256_before": "180a16801cd3135dbb75aa10bd966d6e7d2bfe74cb8949294a1e1a68a111537d",
+  "body_sha256_after": "180a16801cd3135dbb75aa10bd966d6e7d2bfe74cb8949294a1e1a68a111537d",
+  "saddle_vent_faces_removed": 12,
+  "hem_relief_m": 0.035,
+  "max_thigh_ease_m": 0.012,
+  "scope": "garment only; original headwear/belts/boots and foundation retained"
+}

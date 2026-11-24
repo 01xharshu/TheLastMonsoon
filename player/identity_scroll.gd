@@ -190,8 +190,8 @@ func _refresh_cards() -> void:
 	var held: String = character.equipment.held_name() if character.equipment else "STOWED"
 	var markers: Array[String] = fame.recognition_markers()
 	var owned: Array[String] = []
-	for i in 6:
-		if character.equipment.owns(i): owned.append(["Talwar","Enfield","Bow","Adams","Knife","Double gun"][i])
+	for i in 7:
+		if character.equipment.owns(i): owned.append(["Talwar","Enfield","Bow","Adams","Knife","Double gun","Indian pistol"][i])
 	var data := [
 		["Arjun","Traveller · Suryagarh"],
 		[str(fame.points),", ".join(markers) if not markers.is_empty() else "Not yet known"],

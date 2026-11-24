@@ -1,0 +1,15 @@
+{
+  "status": "RIGGED_MOTION_STUDY_NOT_APPROVED",
+  "source": "WorkingAssets/NPCs/mangal_pandey/mangal_idle_candidate.blend",
+  "source_sha256": "f294f7e0b2b91fb8b89025a134dc00332ecfaf2520a3084db345de1576d3c1a2",
+  "runtime": "characters/npcs/mangal/mangal_idle_candidate.glb",
+  "runtime_sha256": "2e59f6def1b8d77a958f6e9c4b24c0418dfe5fc55d9a070aeb3e03a4c1e1fbf8",
+  "actions": [
+    "Mangal_idle_study",
+    "Mangal_walk_study",
+    "Mangal_listen_study",
+    "Mangal_speak_study"
+  ],
+  "in_world": false,
+  "motion_approved": false
+}

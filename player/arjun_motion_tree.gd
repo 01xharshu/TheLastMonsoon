@@ -2,6 +2,9 @@ extends AnimationTree
 ## Runtime locomotion blend for the imported Arjun clips. Combat and special poses
 ## remain procedural layers on the same skeleton.
 
+## Optional clips baked to the existing skeleton and AnimationPlayer root.
+@export var retargeted_locomotion: AnimationLibrary
+
 var air_blend := 0.0
 var ground_blend := 0.0
 var water_blend := 0.0
@@ -28,6 +31,46 @@ var longgun_ready_blend := 0.0
 var longgun_reload_blend := 0.0
 var longgun_recoil_blend := 0.0
 
+func _valid_locomotion_clip(clip: Animation, source: AnimationPlayer) -> bool:
+	if clip == null or not is_finite(clip.length) or clip.length <= 0.0:
+		return false
+	var animation_root := source.get_node_or_null(source.root_node)
+	if animation_root == null:
+		return false
+	var required := ["pelvis", "thigh_l", "calf_l", "foot_l", "thigh_r", "calf_r", "foot_r", "upperarm_l", "upperarm_r"]
+	for index in clip.get_track_count():
+		var path := clip.track_get_path(index)
+		if path.get_subname_count() != 1 or animation_root.get_node_or_null(
+			NodePath(path.get_concatenated_names())) != skeleton:
+			return false
+		var bone := String(path.get_subname(0))
+		if skeleton.find_bone(bone) < 0 or clip.track_get_key_count(index) == 0:
+			return false
+		if clip.track_get_type(index) == Animation.TYPE_ROTATION_3D:
+			if clip.track_is_enabled(index):
+				required.erase(bone)
+		elif clip.track_get_type(index) != Animation.TYPE_POSITION_3D or bone != "Root":
+			return false
+	return required.is_empty()
+
+
+func _motion_override(name: String, fallback: Animation, source: AnimationPlayer) -> Animation:
+	if retargeted_locomotion == null or not retargeted_locomotion.has_animation(name):
+		return fallback
+	var candidate := retargeted_locomotion.get_animation(name)
+	if not _valid_locomotion_clip(candidate, source):
+		push_warning("Arjun: invalid retargeted %s clip; using built-in motion" % name)
+		return fallback
+	var clip := candidate.duplicate(true) as Animation
+	var index := clip.get_track_count() - 1
+	while index >= 0:
+		if clip.track_get_type(index) == Animation.TYPE_POSITION_3D:
+			clip.remove_track(index)
+		index -= 1
+	clip.loop_mode = fallback.loop_mode
+	return clip
+
+
 func configure(model: Node3D) -> bool:
 	var players := model.find_children("*", "AnimationPlayer", true, false)
 	if players.is_empty():
@@ -48,6 +91,8 @@ func configure(model: Node3D) -> bool:
 			push_error("Arjun animation tree missing clip: " + name)
 			return false
 		var clip: Animation = _walk_clip(skeleton, source.get_animation("idle"), name == "run") if name in ["walk", "run"] else source.get_animation(name).duplicate(true)
+		if name in ["walk", "run", "swim_idle", "swim_forward"]:
+			clip = _motion_override(name, clip, source)
 		clip.loop_mode = Animation.LOOP_LINEAR if name in ["idle", "walk", "run", "swim_idle", "swim_forward", "sit_idle"] else Animation.LOOP_NONE
 		# CharacterBody3D owns travel. A baked root translation must not move the
 		# skeleton independently of its collision shape.
@@ -61,9 +106,11 @@ func configure(model: Node3D) -> bool:
 	library.add_animation("lie_down", rest_clips.make(skeleton, source.get_animation("sit_idle"), source.get_animation("idle"), false))
 	library.add_animation("rise_from_lie", rest_clips.make(skeleton, source.get_animation("sit_idle"), source.get_animation("idle"), true))
 	for beat in ["reach", "hang", "load", "leap", "catch", "pull_left", "pull_right", "mantle", "mantle_press", "mantle_step", "recover"]:
-		library.add_animation("climb_" + beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
+		var name: String = "climb_" + beat
+		var clip := _climb_pose_clip(skeleton, source.get_animation("idle"), beat)
+		library.add_animation(name, _motion_override(name, clip, source) if beat in ["leap", "catch", "hang"] else clip)
 	for beat in ["jump_rise", "jump_fall"]:
-		library.add_animation(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat))
+		library.add_animation(beat, _motion_override(beat, _climb_pose_clip(skeleton, source.get_animation("idle"), beat), source))
 	library.add_animation("detention_arrest", _detention_clip(source.get_animation("idle"), true))
 	library.add_animation("detention_wait", _detention_clip(source.get_animation("idle"), false))
 	for action in ["punch","punch_left","kick","jump_kick","grapple","sword","knife","hit","block","dodge"]:
@@ -71,7 +118,6 @@ func configure(model: Node3D) -> bool:
 	library.add_animation("ground_idle",preload("res://player/ground_idle_motion.gd").make(skeleton,source.get_animation("idle")))
 	for beat in ["look","scratch","clothes","stretch"]:
 		library.add_animation("idle_"+beat,preload("res://player/long_idle_clips.gd").make(skeleton,source.get_animation("idle"),beat))
-	source.add_animation_library("motion", library)
 	anim_player = get_path_to(source)
 	var ground := AnimationNodeBlendSpace1D.new()
 	ground.min_space = 0.0
@@ -201,7 +247,9 @@ func configure(model: Node3D) -> bool:
 	graph.connect_node("ground_idle",1,"ground_idle_seek")
 	graph.connect_node("ambient",0,"ground_idle")
 	graph.connect_node("ambient",1,"ambient_seek")
-	graph.connect_node("output", 0, "ambient")
+	preload("res://player/arjun_horse_mount.gd").configure(graph, library, skeleton, source.get_animation("idle"), "ambient")
+	graph.connect_node("output", 0, "horse_mount")
+	source.add_animation_library("motion", library)
 	tree_root = graph
 	callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	active = true

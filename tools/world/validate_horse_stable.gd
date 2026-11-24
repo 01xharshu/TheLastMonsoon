@@ -7,7 +7,8 @@ func _run() -> void:
 	var scene: PackedScene = load("res://world/suryagarh/suryagarh_world.tscn")
 	var world: Node3D = scene.instantiate()
 	root.add_child(world)
-	for i in 12: await physics_frame
+	current_scene = world
+	for i in 65: await physics_frame
 	var horse: CharacterBody3D = world.get_node_or_null("VillageHorse")
 	var actor: CharacterBody3D = world.get_node("Player")
 	if horse == null:
@@ -16,7 +17,8 @@ func _run() -> void:
 		return
 	actor.global_position = horse.global_position + Vector3(0,1.0,2.0)
 	for i in 3: await physics_frame
-	if not horse.can_board(actor) or not horse.board(actor) or not horse.stolen:
+	var expect_stolen: bool = horse.get_meta("owner", "") != "Arjun"
+	if not horse.can_board(actor) or not horse.board(actor) or horse.stolen != expect_stolen:
 		push_error("HORSE STABLE BLOCKED: stable horse cannot be taken")
 		quit(1)
 		return
@@ -24,7 +26,7 @@ func _run() -> void:
 		push_error("HORSE STABLE BLOCKED: required horse sounds missing")
 		quit(1)
 		return
-	for i in 50: await physics_frame
+	for i in 110: await physics_frame
 	if horse.transition != "" or actor.global_position.distance_to(horse.seat_world()) > 1.0:
 		push_error("HORSE STABLE BLOCKED: mount transition did not reach saddle")
 		quit(1)
@@ -40,12 +42,11 @@ func _run() -> void:
 	for i in 30: await process_frame
 	var visual: Node3D = actor.get_node("VisualRoot/CharacterVisual")
 	for side in ["l","r"]:
-		var sign_side: float = -1.0 if side=="l" else 1.0
 		var hand: int = visual.skeleton.find_bone("hand_"+side)
 		var foot: int = visual.skeleton.find_bone("foot_"+side)
-		var hand_at: Vector3 = horse.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(hand).origin))
-		var foot_at: Vector3 = horse.to_local(visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot).origin))
-		if hand_at.distance_to(Vector3(sign_side*.38,2.06,-.29)) > .14 or foot_at.distance_to(Vector3(sign_side*.48,1.23,.21)) > .14:
+		var palm: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(hand) * visual.equipment.palm_offsets[side])
+		var boot: Vector3 = visual.skeleton.to_global(visual.skeleton.get_bone_global_pose(foot).origin)
+		if palm.distance_to(horse.riding_rein_world(side)) > .14 or boot.distance_to(horse.stirrup_world(side)) > .14:
 			push_error("HORSE STABLE BLOCKED: mounted hand/rein or foot/stirrup alignment")
 			quit(1)
 			return
@@ -53,8 +54,12 @@ func _run() -> void:
 	Input.action_press("move_forward")
 	for i in 120: await physics_frame
 	Input.action_release("move_forward")
-	if before.distance_to(horse.global_position) < 4.0 or horse.global_position.z < 198.5:
-		push_error("HORSE STABLE BLOCKED: horse did not leave stable through open front")
+	if before.distance_to(horse.global_position) < 4.0 or (expect_stolen and horse.global_position.z < 198.5):
+		var blockers: Array[String] = []
+		for index in horse.get_slide_collision_count():
+			var collider = horse.get_slide_collision(index).get_collider()
+			if collider is Node: blockers.append(str(collider.get_path()))
+		push_error("HORSE STABLE BLOCKED: ride-away %s → %s, pace %.2f, cinematic %s, collisions %s" % [before, horse.global_position, horse.pace, actor.get_meta("story_cinematic", false), blockers])
 		quit(1)
 		return
 	if horse.hoof_events < 3:

@@ -19,20 +19,10 @@ static func build(builder:Node, cellar:Node3D) -> void:
   if label.begins_with("EarthBank") or label.begins_with("EarthenCap"):mesh.material_override=earth
   elif label.begins_with("CellarFloor") or label.begins_with("UpperTerrace") or label.begins_with("TerraceApproach") or label.begins_with("DescendingPassage"):mesh.material_override=earth
   elif label.begins_with("CellarWall") or label.begins_with("RearWall") or label.begins_with("EntrancePier") or label.begins_with("PassageWall") or label.begins_with("CellarRoof"):mesh.material_override=stone
- # Sloped earth shoulders blend the buried chamber into the surrounding hill.
- # Real solid surfaces are outside the entry corridor and shared follow path.
+ # Sample the hillside under the outer shoulder along its entire length.
+ var layout:=preload("res://world/suryagarh/landscape_layout.gd").new()
  for side in [-1.0,1.0]:
-  var outer_back:=Vector3(side*15.2,0,-7.3);outer_back.y=terrain_y(cellar,outer_back)
-  var outer_front:=Vector3(side*15.2,0,7.3);outer_front.y=terrain_y(cellar,outer_front)
-  var inner_back:=Vector3(side*10.8,0,-7.3);inner_back.y=terrain_y(cellar,inner_back)
-  var inner_front:=Vector3(side*10.8,0,7.3);inner_front.y=terrain_y(cellar,inner_front)
-  var points:=PackedVector3Array([Vector3(side*10.8,3.7,-7.3),outer_back,Vector3(side*10.8,3.7,7.3),outer_front,inner_back,inner_front])
-  var surface:=SurfaceTool.new();surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-  for index in [0,1,2,1,3,2,0,4,1,2,3,5]:surface.add_vertex(points[index])
-  surface.generate_normals();var slope:=surface.commit();slope.surface_set_material(0,earth)
-  var bank:=StaticBody3D.new();bank.name="EarthenShoulder";root.add_child(bank)
-  var bank_visual:=MeshInstance3D.new();bank_visual.mesh=slope;bank.add_child(bank_visual)
-  var bank_shape:=CollisionShape3D.new();bank_shape.shape=slope.create_trimesh_shape();bank.add_child(bank_shape)
+  build_earthen_shoulder(root,cellar,layout,earth,side)
  # Scattered weathered stones break the roof's rectangular silhouette.
  var rock_mesh:=preload("res://world/ruined_fort/fort_modules.gd").fractured_rock()
  for i in 12:
@@ -54,8 +44,8 @@ static func build(builder:Node, cellar:Node3D) -> void:
  for side in [-1.0,1.0]:
   builder.piece(root,"EntranceDressedJamb",Vector3(side*2.02,1.65,7.25),Vector3(.4,3.3,.42),aged,false)
   builder.piece(root,"PassageCap",Vector3(side*1.75,4.94,12.5),Vector3(.42,.18,11),aged,false)
-  builder.piece(root,"TerraceParapet",Vector3(side*3.65,4.05,21),Vector3(.35,.7,5.5),stone,true)
-  builder.piece(root,"TerraceEndStone",Vector3(side*3.65,4.1,18.25),Vector3(.65,.85,.65),aged,true)
+ build_terrace_masonry(builder,root,cellar,stone)
+ build_entrance_facing(root,cellar,stone)
  builder.piece(root,"EntranceLintel",Vector3(0,3.25,7.25),Vector3(4.45,.32,.55),aged,false)
  builder.piece(root,"EntranceThreshold",Vector3(0,.18,7.1),Vector3(3.25,.12,.45),aged,false)
  # Terrain-rooted supports under the raised terrace and approach. They stand
@@ -119,6 +109,112 @@ static func build(builder:Node, cellar:Node3D) -> void:
   builder.piece(lamp,"LampGlass",Vector3(-side*.16,0,0),Vector3(.16,.28,.24),glass,false)
   var light:=OmniLight3D.new();light.name="WarmLampLight";light.position=Vector3(-side*.28,0,0);light.light_color=Color(1,.65,.33);light.light_energy=.45;light.omni_range=7.0;light.shadow_enabled=false;lamp.add_child(light)
  root.set_meta("hideout_complete_environment",true)
+
+static func build_earthen_shoulder(root:Node3D,cellar:Node3D,layout:RefCounted,earth:Material,side:float) -> void:
+ var points:=PackedVector3Array()
+ const WIDTH_STEPS:=8
+ const LENGTH_STEPS:=16
+ for row in LENGTH_STEPS+1:
+  var z:=lerpf(-7.3,7.3,float(row)/LENGTH_STEPS)
+  for column in WIDTH_STEPS+1:
+   var across:=float(column)/WIDTH_STEPS
+   var x:=side*lerpf(10.8,15.2,across)
+   var world:=cellar.to_global(Vector3(x,0,z))
+   var terrain:float=layout.height(world.x,world.z)-cellar.global_position.y-.08
+   points.append(Vector3(x,lerpf(3.7,terrain,smoothstep(0.0,1.0,across)),z))
+ var surface:=SurfaceTool.new()
+ surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+ for row in LENGTH_STEPS:
+  for column in WIDTH_STEPS:
+   var first:=row*(WIDTH_STEPS+1)+column
+   var next:=first+WIDTH_STEPS+1
+   var winding: Array[int]=[first,first+1,next+1,first,next+1,next]
+   if side<0.0:winding.reverse()
+   for index in winding:surface.add_vertex(points[index])
+ surface.generate_normals()
+ var slope:=surface.commit()
+ slope.surface_set_material(0,earth)
+ var bank:=StaticBody3D.new()
+ bank.name="EarthenShoulder"
+ root.add_child(bank,true)
+ var visual:=MeshInstance3D.new()
+ visual.mesh=slope
+ bank.add_child(visual)
+ var collision:=CollisionShape3D.new()
+ collision.shape=slope.create_trimesh_shape()
+ bank.add_child(collision)
+
+static func build_terrace_masonry(builder:Node,root:Node3D,cellar:Node3D,material:Material) -> void:
+ var stones:=MultiMesh.new()
+ stones.transform_format=MultiMesh.TRANSFORM_3D
+ stones.mesh=preload("res://world/ruined_fort/fort_modules.gd").chipped_stone(1857)
+ var transforms:Array[Transform3D]=[]
+ for side in [-1.0,1.0]:
+  for section in 7:
+   var z:=18.45+section*.82
+   var courses:=3 if section in [0,1,5] else (1 if section==3 else 2)
+   var height:=courses*.34
+   var x:float=side*3.65
+   var wall:Node3D=builder.piece(root,"BrokenTerraceParapet",Vector3(x,3.70+height*.5,z),Vector3(.46,height,.81),material,true)
+   wall.get_child(0).hide()
+   for course in courses:
+    var yaw:=.12*sin(float(section*3+course)*1.7)
+    var at:=Vector3(x+.04*sin(float(course+section)),3.70+(course+.5)*.34,z)
+    transforms.append(Transform3D(Basis(Vector3.UP,yaw).scaled(Vector3(.53,.36,.88)),at))
+ # Low and high remnants of the former curtain stand outside the approach.
+ for side in [-1.0,1.0]:
+  for section in 4:
+   var x:float=side*(3.5+section*.92)
+   var z:float=27.0+section*.13
+   var base:=terrain_y(cellar,Vector3(x,0,z))
+   var courses:int=[2,4,3,1][section]
+   var height:=courses*.43
+   var wall:Node3D=builder.piece(root,"BreachedCurtainRemnant",Vector3(x,base+height*.5,z),Vector3(.91,height,.78),material,true)
+   wall.get_child(0).hide()
+   for course in courses:
+    var at:=Vector3(x,base+(course+.5)*.43,z+.045*sin(float(course+section)))
+    transforms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(.97,.46,.87)),at))
+ stones.instance_count=transforms.size()
+ for index in transforms.size():stones.set_instance_transform(index,transforms[index])
+ var facing:=MultiMeshInstance3D.new()
+ facing.name="WeatheredTerraceMasonry"
+ facing.multimesh=stones
+ facing.material_override=material
+ facing.visibility_range_end=140.0
+ root.add_child(facing)
+
+static func build_entrance_facing(root:Node3D,cellar:Node3D,material:Material) -> void:
+ var transforms:Array[Transform3D]=[]
+ for wall in cellar.get_children():
+  var label:=str(wall.name)
+  if not (label.begins_with("EntrancePier") or label.begins_with("PassageWall")):continue
+  var panel:=wall.get_child(0) as MeshInstance3D
+  if panel==null or not panel.mesh is BoxMesh:continue
+  var size:Vector3=panel.mesh.size
+  var along_x:=size.x>size.z
+  var length:=size.x if along_x else size.z
+  var columns:=ceili(length/.8)
+  var rows:=ceili(size.y/.4)
+  var width:=length/columns
+  var height:=size.y/rows
+  for row in rows:
+   for column in columns:
+    var offset:=(column+.5)*width-length*.5
+    var elevation:=(row+.5)*height-size.y*.5
+    var local:=Vector3(offset,elevation,0) if along_x else Vector3(0,elevation,offset)
+    var extent:=Vector3(width*1.02,height*1.02,size.z) if along_x else Vector3(size.x,height*1.02,width*1.02)
+    transforms.append(Transform3D(Basis.IDENTITY.scaled(extent),wall.position+local))
+  panel.hide()
+ var masonry:=MultiMesh.new()
+ masonry.transform_format=MultiMesh.TRANSFORM_3D
+ masonry.mesh=preload("res://world/ruined_fort/fort_modules.gd").chipped_stone(1857)
+ masonry.instance_count=transforms.size()
+ for index in transforms.size():masonry.set_instance_transform(index,transforms[index])
+ var facing:=MultiMeshInstance3D.new()
+ facing.name="WeatheredEntranceMasonry"
+ facing.multimesh=masonry
+ facing.material_override=material
+ root.add_child(facing)
 
 static func terrain_y(cellar:Node3D,local:Vector3) -> float:
  var point:=cellar.to_global(local)

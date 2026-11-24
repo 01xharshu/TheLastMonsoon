@@ -47,7 +47,7 @@ func run() -> void:
 	check(horse.body_root.find_child("ReinFront",false,false) == null and horse.body_root.find_child("ReinBack",false,false) == null,"rigid rods removed")
 	await capture("horse_reins_idle")
 	check(horse.board(actor),"board horse for rein review")
-	await frames(60)
+	await frames(110)
 	for side in ["l","r"]:
 		var points: Array = horse.reins[side].points
 		var anchors: Array[Vector3] = horse._rein_anchors(side)

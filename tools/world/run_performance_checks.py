@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--compare-bag-contact", action="store_true", help="Same-scene live width-bound contact A/B; route check only.")
     parser.add_argument("--trace-bag-contact", action="store_true", help="Trace actual first cloth selection; diagnostic output only.")
     parser.add_argument("--geometry-attribution", action="store_true", help="Attribute geometry producers in a frozen populated fixed-view diagnostic.")
-    parser.add_argument("--tree-lod", action="store_true", help="Test existing broadleaf LOD biases within the geometry diagnostic; production unchanged.")
+    parser.add_argument("--tree-lod", action="store_true", help="Compare distance-gated broadleaf LOD within the geometry diagnostic.")
     parser.add_argument("--tree-compact", action="store_true", help="Test removal of exactly collapsed broadleaf rendering records; production unchanged.")
     parser.add_argument("--bullock", action="store_true", help="Check the actual bullock-cart driver with the coach validator.")
     parser.add_argument("--baseline", action="store_true", help="Print actual driver setup without requiring a cache hit.")

@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://b5pmgc0ssea2m"]
 
+[ext_resource type="AnimationLibrary" path="res://characters/arjun/kaykit_priority_motion.res" id="kaykit_priority"]
 [ext_resource type="Script" uid="uid://dirrf6kqerjgo" path="res://player/player_controller.gd" id="1_oul6g"]
 [ext_resource type="Script" path="res://player/camera_clearance.gd" id="camera_clearance"]
 [ext_resource type="Script" uid="uid://dm3gg1ij7708d" path="res://player/equipment_visuals.gd" id="2_8t03j"]
@@ -31,6 +32,7 @@
 [ext_resource type="Script" path="res://player/talwar_slash.gd" id="21_slash"]
 [ext_resource type="Script" path="res://player/bow_combat.gd" id="22_bow"]
 [ext_resource type="Script" path="res://player/pistol_combat.gd" id="23_pistol"]
+[ext_resource type="Script" path="res://player/indian_pistol_combat.gd" id="indian_pistol"]
 
 [ext_resource type="Script" path="res://player/knife_strike.gd" id="24_knife"]
 [ext_resource type="Script" path="res://player/combat_input.gd" id="25_combat"]
@@ -157,6 +159,7 @@ transform = Transform3D(0, 0, -0.8, 0, 0.8, 0, 0.8, 0, 0, 0, -0.328, 0)
 
 [node name="CharacterVisual" type="Node3D" parent="VisualRoot" unique_id=509518366]
 script = ExtResource("3_wodsf")
+retargeted_locomotion = ExtResource("kaykit_priority")
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=2068273779]
 position = Vector3(0, 0.55, 0)
@@ -442,6 +445,9 @@ script = ExtResource("22_bow")
 
 [node name="PistolCombat" type="Node" parent="."]
 script = ExtResource("23_pistol")
+
+[node name="IndianPistolCombat" type="Node" parent="."]
+script = ExtResource("indian_pistol")
 
 [node name="KnifeStrike" type="Node" parent="."]
 script = ExtResource("24_knife")

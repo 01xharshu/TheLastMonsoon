@@ -8,6 +8,9 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 	if not ok: failures += 1
 func sample(boat: Node3D, visual: Node3D, label: String, frames: int) -> void:
+	var capture_dir := OS.get_environment("TLM_BOAT_REVIEW_DIR")
+	var temp_root := OS.get_environment("TMPDIR")
+	var can_capture := not temp_root.is_empty() and capture_dir.simplify_path().begins_with(temp_root.simplify_path().trim_suffix("/")+"/")
 	var worst := 0.0
 	var wet := false
 	var dry := false
@@ -29,7 +32,7 @@ func sample(boat: Node3D, visual: Node3D, label: String, frames: int) -> void:
 		powered = powered or boat.stroke_power>.1
 		recovery_without_push = recovery_without_push or (not boat.blade_in_water and boat.stroke_power==0.0)
 		pushed_when_dry = pushed_when_dry or (not boat.blade_in_water and boat.stroke_power>0.0)
-		if DisplayServer.get_name()!="headless" and label=="forward" and not captured and boat.paddle_contacts>=2 and boat.blade_in_water:
+		if can_capture and DisplayServer.get_name()!="headless" and label=="forward" and not captured and boat.paddle_contacts>=2 and boat.blade_in_water:
 			captured=true
 			var camera:=Camera3D.new()
 			boat.get_parent().add_child(camera)
@@ -41,7 +44,7 @@ func sample(boat: Node3D, visual: Node3D, label: String, frames: int) -> void:
 			boat.get_parent().get_node("LandscapeUI").hide()
 			await process_frame
 			await RenderingServer.frame_post_draw
-			check(root.get_texture().get_image().save_png("res://docs/world/captures/boat_paddle_water_contact.png")==OK,"capture paddle water contact")
+			check(root.get_texture().get_image().save_png(capture_dir.path_join("boat_paddle_water_contact.png"))==OK,"capture paddle water contact")
 	report[label] = {"max_palm_error_m":worst,"water_entry":wet,"recovery":dry}
 	check(worst<.04,label+" full-cycle palm contact")
 	check(wet and dry,label+" blade water entry and recovery")
@@ -94,7 +97,6 @@ func run() -> void:
 	check(boat.paddle.transform.is_equal_approx(boat.paddle_stow),"dismount returns paddle to storage")
 	check(boat.row_drive==0.0,"dismount clears rowing drive")
 	report["failures"]=failures
-	var file:=FileAccess.open("res://docs/world/boat_stroke_validation.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify(report,"\t"))
+	print("BOAT STROKE METRICS ",JSON.stringify(report))
 	print("BOAT STROKE ","PASS" if failures==0 else "FAIL")
 	quit(1 if failures else 0)

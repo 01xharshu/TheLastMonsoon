@@ -47,6 +47,11 @@ func _ready() -> void:
 	fitted_garments = GarmentFit.apply(visual.model)
 	low_waist = GarmentFit.prepare_low_waist(visual.model)
 	GarmentFit.use_low_waist(low_waist,false)
+	visual.prepare_mount_lower_garments()
+	# Keep mount shapes on the fitted trousers and hem selected during play.
+	for record in low_waist:
+		if record.node in visual.mount_trousers or record.node == visual.mount_hem:
+			record.low = record.node.mesh
 	# Stance fitting can replace boot meshes after locomotion initialized.
 	var contacts: Node = visual.get_node_or_null("LocomotionFootContact")
 	if contacts != null:

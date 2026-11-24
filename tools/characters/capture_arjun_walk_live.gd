@@ -1,11 +1,16 @@
 extends SceneTree
-# Run with Metal/Forward+ and --fixed-fps 30. Captures the real player moving
+# Run with Metal/Forward+ and --fixed-fps 60. Captures the real player moving
 # on a physical floor; the temporary Arjun appearance is not approved.
 func _initialize() -> void:
  _run.call_deferred()
 func _run() -> void:
  if DisplayServer.get_name() == "headless":
   push_error("ARJUN WALK CAPTURE requires a rendered display")
+  quit(1)
+  return
+ var output := OS.get_environment("TLM_STORY_TEST_DIR")
+ if output.is_empty() or not DirAccess.dir_exists_absolute(output):
+  push_error("Set TLM_STORY_TEST_DIR to an existing disposable output directory")
   quit(1)
   return
  var stage := Node3D.new()
@@ -41,17 +46,32 @@ func _run() -> void:
  light.light_energy = 2.0
  stage.add_child(light)
  var actor: CharacterBody3D = load("res://player/player.tscn").instantiate()
+ var visual = actor.get_node("VisualRoot/CharacterVisual")
+ var candidate_path := OS.get_environment("TLM_LOCOMOTION_CANDIDATE")
+ if not candidate_path.is_empty():
+  var candidate := load(candidate_path) as AnimationLibrary
+  if candidate == null:
+   push_error("Could not load candidate AnimationLibrary")
+   quit(1)
+   return
+  visual.retargeted_locomotion = candidate
  stage.add_child(actor)
  actor.global_position = Vector3(0,1,0)
  actor.get_node("UI").hide()
  var camera := Camera3D.new()
  stage.add_child(camera)
- camera.position = Vector3(4,1.4,2)
+ camera.position = Vector3(2.5,1.0,1.5)
  camera.look_at(Vector3(0,0.8,0))
  camera.make_current()
  for i in 30: await physics_frame
  camera.make_current()
- var visual = actor.get_node("VisualRoot/CharacterVisual")
+ if not candidate_path.is_empty():
+  load("res://player/arjun_complete_fit.gd").new().apply(visual)
+  actor.get_node("InventoryComponent").add_item("talwar", 1)
+  visual.equipment.selected = 0
+  visual.equipment.stowed = true
+  visual.equipment._refresh()
+  for frame in 3: await physics_frame
  var skeleton: Skeleton3D = visual.skeleton
  var l := skeleton.find_bone("foot_l")
  var r := skeleton.find_bone("foot_r")
@@ -60,13 +80,18 @@ func _run() -> void:
  Input.action_press("move_forward")
  var min_delta := INF
  var max_delta := -INF
- for i in 90:
+ for i in 170:
+  if i == 75: Input.action_press("sprint")
+  if i == 140:
+   Input.action_release("sprint")
+   Input.action_release("move_forward")
   await physics_frame
-  camera.global_position = actor.global_position + Vector3(4,1.4,2)
+  camera.global_position = actor.global_position + Vector3(2.5,1.0,1.5)
   camera.look_at(actor.global_position + Vector3(0,0.8,0))
   camera.make_current()
-  if i in [15,45,75]:
-   var path := "res://docs/characters/arjun/animation_tree_live_%02d.png" % i
+  if i in [25,35,45,95,105,115,150]:
+   await RenderingServer.frame_post_draw
+   var path := output.path_join("gait_%03d.png" % i)
    var error := root.get_texture().get_image().save_png(path)
    print("ARJUN WALK CAPTURE ",i," ",error," ",path)
    if error != OK:
@@ -78,4 +103,4 @@ func _run() -> void:
   max_delta = maxf(max_delta,y-idle_y)
  Input.action_release("move_forward")
  print("ARJUN WALK CAPTURE: PASS | distance=",actor.global_position.distance_to(Vector3(0,1,0))," foot_delta=",min_delta,"..",max_delta," speed=",Vector2(actor.velocity.x,actor.velocity.z).length())
- quit()
+ root.get_node("SaveManager").quit_game(0)

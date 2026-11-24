@@ -72,6 +72,25 @@ func _run() -> void:
 	dummy.damage_received = 0.0
 	check(pistol.fire(),"Pistol did not fire toward the tall wall")
 	check(is_zero_approx(dummy.damage_received),"Pistol shot passed through the tall wall")
+	# Exercise the distinct single-shot sidearm through the same cover route.
+	shape.size.y = .90
+	collision.position.y = .45
+	actor.inventory.add_item("indian_pistol",1)
+	equipment.select_weapon(6)
+	for i in 45: await physics_frame
+	dummy.global_position = camera.global_position - camera.global_basis.z*9.0
+	dummy.damage_received = 0.0
+	var indian: Node = actor.get_node("IndianPistolCombat")
+	check(stance.stance == "cover" and indian.aiming and indian.fire(),"Indian pistol could not fire from low cover")
+	check(dummy.damage_received > 0.0,"Indian pistol shot did not reach the target over low cover")
+	var indian_low_damage: float = dummy.damage_received
+	shape.size.y = 2.5
+	collision.position.y = 1.25
+	indian.rounds = 1
+	for i in 5: await physics_frame
+	dummy.damage_received = 0.0
+	check(indian.fire(),"Indian pistol did not fire toward the tall wall")
+	check(is_zero_approx(dummy.damage_received),"Indian pistol shot passed through the tall wall")
 	Input.action_release("aim")
-	print("COVER SHOOTING ", JSON.stringify({"passed":failures.is_empty(),"low_cover_damage":low_damage,"tall_wall_damage":dummy.damage_received,"pistol_palm_m":grip.pistol_palm_m,"failures":failures}))
+	print("COVER SHOOTING ", JSON.stringify({"passed":failures.is_empty(),"low_cover_damage":low_damage,"indian_low_cover_damage":indian_low_damage,"tall_wall_damage":dummy.damage_received,"pistol_palm_m":grip.pistol_palm_m,"failures":failures}))
 	await root.get_node("SaveManager").quit_game(0 if failures.is_empty() else 1)

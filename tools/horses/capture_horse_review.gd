@@ -27,7 +27,7 @@ func _capture() -> void:
     world.add_child(camera)
     camera.fov = 52
     camera.make_current()
-    for i in 90: await physics_frame
+    for i in 110: await physics_frame
     await _shot(camera,horse,"19_horse_rider_side")
     actor.get_node("UI").show()
     await _shot(camera,horse,"23_horse_stamina")

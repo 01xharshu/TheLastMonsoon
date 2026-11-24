@@ -2,6 +2,45 @@
 
 Pistol aim/loading/recoil layers and current review limits: [2026-10-09 baseline](pistol_realism_2026-10-09.md).
 
+## External locomotion pilot
+
+Arjun’s CharacterVisual exposes an optional `retargeted_locomotion` AnimationLibrary. Assign a local AnimationLibrary with `walk` or `run` entries baked onto the existing Arjun skeleton and AnimationPlayer root. Clips must contain keyed pelvis, thigh, calf, foot and upper-arm rotation tracks on both sides where applicable. The loader rejects foreign paths and scale or non-root position tracks. It duplicates accepted clips, strips Root translation and installs them in the existing blend graph. Missing or rejected entries use the built-in gait.
+
+- [Godot humanoid retargeting](https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/retargeting_3d_skeletons.html) maps source and target bones. Bake onto Arjun's current rest pose and paths in a separate import or Blender scene before assigning the resource. Preserve the runtime rig used by clothing, carry and IK.
+- [Adobe Mixamo](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html) is a first source to evaluate for baseline gaits and jumps. Confirm asset terms for raw files and repository sharing before adding downloads.
+- [Action Adventure Ledge Climbing Animation Pack](https://www.fab.com/listings/fbfda52a-0a95-43ac-8875-8e5ce8b71ee0) advertises FBX, in-place and root-motion variants, and hanging and climbing transitions. Check specific swing-to-catch coverage and license before acquisition.
+
+First preview one in-place walk and run at normal speed with foot plants, speed matching, clothing and carry. Test launch, airborne, catch, hang, pull and mantle as a connected sequence before adding traversal overrides. The climb controller should continue to own surface detection, reachability, collision and contact. A swing needs a reachable anchor and release timing. Leela will need her own target-rig bake and reach/contact review even when the source clips match Arjun’s.
+
+The original pilot shipped without vendor clips. A disposable synthetic Arjun-rig clip verified acceptance, copying, root stripping and fallback. The existing mantle press assertion fails both with the pilot and with the pre-pilot tree.
+
+### KayKit walk and run candidate
+
+The first real source is Kay Lousberg’s [KayKit Character Animations 1.1](https://kaylousberg.com/game-assets/character-animations), licensed CC0. The original Rig Medium MovementBasic GLB, included license and mapping are in `WorkingAssets/Arjun/animation_sources/`. The archived download SHA-256 was `65882f31f905ad2e953819648a59287cdeab8f623908d5ef701971d3758be20f`. The baker maps `Walking_A` and `Running_A` bone rotations into Arjun’s rest axes and samples them at 60 Hz. It keeps motion in place. Rebuild from the project root:
+
+```sh
+godot --headless --path . --script res://tools/characters/bake_arjun_locomotion.gd -- \
+  WorkingAssets/Arjun/animation_sources/Rig_Medium_MovementBasic.glb \
+  WorkingAssets/Arjun/animation_sources/kaykit_arjun_map.json \
+  characters/arjun/kaykit_locomotion_candidate.res
+```
+
+To preview, assign the resulting resource to **Retargeted Locomotion** on the player scene’s CharacterVisual. The actual player passed headless floor contact with the candidate assigned before startup. Walk covered 5.83 m with foot-bone height variation of −15 to +59 mm from idle. Sprint covered 8.52 m, with low-foot drift p90 3 mm and max 12 mm across nine samples. The default player scene continues using its current gaits pending normal-speed rendered review of the candidate’s foot plants, clothing and weapons.
+
+Native Metal review (2026-11-24): `capture_arjun_walk_live.gd` now accepts `TLM_LOCOMOTION_CANDIDATE` and writes only to the supplied disposable `TLM_STORY_TEST_DIR`. With a candidate assigned it uses the New Journey outfit and stowed talwar, and samples walk, sprint and stop. Both Walking_A and a disposable Walking_B comparison completed and reached zero speed after release. At the current 4 m/s walk setting, Walking_A reads as a jog, while Walking_B still shows exaggerated knee lift and crouched poses in the samples. The shipped gait is unchanged. Next compare Walking_C and determine a matched cadence/stride using measured support-foot travel; require visual and sole-contact checks before promotion.
+
+## Priority motion integration — 2026-11-24
+
+The live player now assigns `characters/arjun/kaykit_priority_motion.res`. It contains KayKit Running_A and Jump_Idle retargeted as `run` and `jump_fall` using `kaykit_arjun_priority_map.json`. Rebuild with the same baker command above using that map and output. Walk retains the built-in gait. Jump takeoff remains the existing rise pose, with airborne descent blended using vertical velocity. The loader also accepts future swim idle/stroke and ledge leap/catch/hang pose overrides, preserving the existing swim and collision-driven climb logic when entries are absent.
+
+Current actual-player headless checks: sprint traveled 8.52 m, low-foot drift p90/max 2/12 mm over 12 samples; visual tree passes swim pitch and movement blends. The physical leap fixture completed five routes but failed the standalone building catch. The same failure reproduced with the animation library unassigned, with identical route and flight-frame totals. A free swing still needs a reachable anchor, collision-safe swing/release and a handoff to the existing catch state. Native descent and live water/parkour visual review remain open.
+
+## Timber bar swings
+
+A two-bar practice route is placed at the southeast edge of Bhairavpur, near world X/Z **(-257, 288)**. Approach the first crossbar from the lower-Z side, facing along the route. Press **Space** to jump and catch it. Hold **W** to build swing momentum, press **Space** to release toward the next bar or the masonry ledge, or press **S** to drop. The existing climb controller handles the masonry catch and mantle.
+
+The swing uses fixed timber anchors, swept capsule checks, a short momentum window after release and the existing two-arm pose solver. The focused fixture uses real jump input and the same station used in the world. It verifies the first grab, release, second grab, ledge catch and platform landing. Run `tools/characters/validate_bar_swing.gd` with Godot at fixed 60 Hz. Native preview outputs require a disposable `TLM_STORY_TEST_DIR`. Pass `-- --world` to load the actual Suryagarh scene and run the same route from the station approach. The populated-world check passed with two bars at **(-257, 7.2, 288)**, real terrain under the approach, and a completed platform landing. Native Metal also passed the populated route. The inspected approach, grip and platform views show the props beside a dirt path and clear landing geometry. Maximum sampled palm gap was 55 mm. Finger closure remains a visual refinement.
+
 ## Rest branch update — 2026-10-07
 
 `player/arjun_rest_clips.gd` builds two editable rig-space actions from the existing MPFB seated and idle clips. `player/arjun_motion_tree.gd` seeks separate entry and wake nodes from charpai progress, while `player/arjun_visual.gd` keeps root, feet, pelvis and brief hand contact aligned with the cot. The focused motion-tree test and isolated real-time charpai sequence pass with the current code. Four fresh Forward+/Metal close samples were inspected and deleted. The final lying hand is down; the middle recline still appears partially suspended and the current trouser waist shows dark gaps. A normal-speed player-input world pass and asset-owner clothing fit remain open. No generated test images, logs, or reports are retained.

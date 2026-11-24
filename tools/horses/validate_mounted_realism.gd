@@ -81,7 +81,7 @@ func _run() -> void:
  await create_timer(.5).timeout
  actor.global_position = horse.global_position + Vector3(1.2,1,0)
  assert(horse.board(actor))
- await create_timer(1.0).timeout
+ await create_timer(1.85).timeout
  camera.position = horse.global_position + Vector3(4,2.8,3)
  camera.look_at(horse.global_position + Vector3.UP*1.5)
  await capture("horse_seated_refinement")

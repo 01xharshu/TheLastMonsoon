@@ -1,0 +1,24 @@
+{
+  "bones": {
+    "pelvis": "hips",
+    "spine_01": "spine",
+    "spine_02": "chest",
+    "head": "head",
+    "thigh_l": "upperleg.l",
+    "calf_l": "lowerleg.l",
+    "foot_l": "foot.l",
+    "upperarm_l": "upperarm.l",
+    "lowerarm_l": "lowerarm.l",
+    "hand_l": "hand.l",
+    "thigh_r": "upperleg.r",
+    "calf_r": "lowerleg.r",
+    "foot_r": "foot.r",
+    "upperarm_r": "upperarm.r",
+    "lowerarm_r": "lowerarm.r",
+    "hand_r": "hand.r"
+  },
+  "clips": {
+    "run": "Running_A",
+    "jump_fall": "Jump_Idle"
+  }
+}

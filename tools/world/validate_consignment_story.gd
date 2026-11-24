@@ -3,6 +3,9 @@ var failures: Array[String]=[]
 class Fixture:
  extends Node3D
  var layout=preload("res://world/suryagarh/landscape_layout.gd").new()
+class IdleErrands:
+ extends Node
+ var active: Dictionary={}
 class FirstMission:
  extends Node
  var configured=true
@@ -62,6 +65,11 @@ func run() -> void:
   elif focused:check(clock.total_game_minutes>before_clock,"unaccepted/finished consignment allows time: "+candidate)
  story.stage="dormant";story.sync_guidance()
  if OS.get_environment("TLM_CONSIGNMENT_VOICE_ONLY")=="1":
+  if focused and not first.sites.has("mangal"):
+   var speaker_stub := Node3D.new()
+   world.add_child(speaker_stub)
+   speaker_stub.global_position=first.sites.prompts.briefing.global_position+Vector3(0,0,1)
+   first.sites["mangal"]=speaker_stub
   first.stage="complete";story.stage="assigned"
   player.global_position=first.sites.prompts.briefing.global_position
   check(story.request("consignment",player),"real consignment briefing starts")
@@ -70,16 +78,35 @@ func run() -> void:
   check(story.start_chase(),"real chase starts from occupied cart")
   check(not story.dialogue_voice.playing,"chase transition stops briefing")
   story.defeated.assign([0,1,2,3,4,5,6])
+  var errands := world.get_node_or_null("ErrandSystem")
+  if errands == null:
+   errands=IdleErrands.new()
+   errands.name="ErrandSystem"
+   world.add_child(errands)
+  var ambient := CanvasLayer.new()
+  var already_hidden := CanvasLayer.new()
+  errands.add_child(ambient)
+  errands.add_child(already_hidden)
+  already_hidden.hide()
   check(story.begin_celebration(),"camp celebration starts")
+  check(not ambient.visible and not already_hidden.visible,"camp hides errand layers")
   story.finish_celebration(1.0)
   check(story.dialogue_voice.playing and story.dialogue_queue.size()==1,"fighter and Mangal voices queue")
   if story.dialogue_queue.size()==1:
    var fighter_voice: AudioStream=story.dialogue_voice.stream
+   var mangal: Node3D=first.sites.mangal
+   check(story.celebration_fighter_voice==fighter_voice and not mangal.has_meta("celebration_voice_phase"),"fighter opening owns camera cue without animating Mangal")
+   var facing: Node=story.companion.get_node_or_null("ConversationFacing")
+   check(facing!=null and facing.target.is_equal_approx(player.global_position),"celebration frames the real fighter speaker")
    story.dialogue_voice.finished.emit()
    check(story.dialogue_voice.playing and story.dialogue_voice.stream!=fighter_voice and story.dialogue_queue.is_empty(),"finished signal plays Mangal after the fighter")
+   story.finish_celebration(0.0)
+   check(mangal.has_meta("celebration_voice_phase"),"Mangal gesture begins on his recording")
   var skip:=InputEventAction.new();skip.action="jump";skip.pressed=true;story._input(skip)
   check(story.stage=="complete" and story.paid and player.inventory.get_item_count("rupees")==200,"skip pays reward exactly once")
   check(not story.dialogue_voice.playing and story.dialogue_queue.is_empty(),"skip clears both voices")
+  check(not first.sites.mangal.has_meta("celebration_voice_phase") and story.celebration_fighter_voice==null,"skip clears both speaker identities and gesture")
+  check(ambient.visible and not already_hidden.visible,"camp skip restores each errand layer visibility")
   print("CONSIGNMENT VOICE ","PASS" if failures.is_empty() else "FAIL",failures)
   await preload("res://tools/test_audio_cleanup.gd").finish(self,0 if failures.is_empty() else 1)
   return

@@ -12,6 +12,7 @@ func configure(visual: Node3D) -> void:
   "pain":{"spine_01":Vector3(.22,0,.08),"head":Vector3(.16,0,0),"upperarm_l":Vector3(-.5,0,.3),"lowerarm_l":Vector3(-1.7,0,0),"upperarm_r":Vector3(-.3,0,-.12)},
   "drink":{"upperarm_r":Vector3(-1.8,0,-.15),"lowerarm_r":Vector3(-1.5,0,0),"head":Vector3(-.10,0,0)},
   "down":{"pelvis":Vector3(-PI/2,0,0),"spine_02":Vector3(-.10,0,0),"thigh_l":Vector3(-.25,0,0),"thigh_r":Vector3(-.15,0,0),"calf_l":Vector3(.4,0,0),"calf_r":Vector3(.3,0,0),"upperarm_l":Vector3(.08,0,.25),"upperarm_r":Vector3(.08,0,-.25),"lowerarm_l":Vector3(.24,0,0),"lowerarm_r":Vector3(.28,0,0),"head":Vector3(.03,.12,.08)}}
+ shapes["talk"]={"upperarm_r":Vector3(-.25,0,-.08),"lowerarm_r":Vector3(-.65,0,0),"head":Vector3(.025,0,0)}
  for action: String in shapes:
   var clip:=Animation.new();clip.length=2;clip.loop_mode=Animation.LOOP_LINEAR
   for bone: String in shapes[action]:
@@ -20,7 +21,7 @@ func configure(visual: Node3D) -> void:
    var track:=clip.add_track(Animation.TYPE_ROTATION_3D);clip.track_set_path(track,path)
    var angles: Vector3=shapes[action][bone];var axes: Basis=visual.axes[bone]
    for k in 9:
-    var pulse:=sin(float(k)/8*TAU)*.015 if action in ["pain","drink"] else 0.0
+    var pulse:=sin(float(k)/8*TAU)*(.07 if bone.begins_with("lowerarm") else .015) if action in ["pain","drink","talk"] else 0.0
     var rotation: Quaternion=visual.base_rotations[bone]*Quaternion(axes*Vector3.RIGHT,angles.x+pulse)*Quaternion(axes*Vector3.UP,angles.y)*Quaternion(axes*Vector3.BACK,angles.z)
     clip.rotation_track_insert_key(track,float(k)/4,rotation)
    if bone=="pelvis" and action=="down":

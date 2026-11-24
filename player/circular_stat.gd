@@ -1,6 +1,12 @@
 class_name CircularStat
 extends Control
 ## Engraved diamond survival gauge. Existing survival signal contract is unchanged.
+const ICONS := [
+	preload("res://assets/ui/survival_icons/droplet.svg"),
+	preload("res://assets/ui/survival_icons/wheat.svg"),
+	preload("res://assets/ui/survival_icons/zap.svg"),
+	preload("res://assets/ui/survival_icons/moon.svg"),
+]
 @export_enum("Hydration","Satiety","Stamina","Energy") var icon_type: int = 0:
 	set(value):
 		icon_type = value
@@ -53,17 +59,5 @@ func _draw() -> void:
 	var area:=0.0
 	for index in clean.size():area+=clean[index].cross(clean[(index+1)%clean.size()])
 	if clean.size() >= 3 and absf(area)>.01:draw_colored_polygon(clean,Color(color,0.38))
-	# Solid ivory symbols stay distinct from the muted interior level.
-	match icon_type:
-		0:
-			draw_colored_polygon(PackedVector2Array([center+Vector2(0,-11),center+Vector2(8,2),center+Vector2(7,7),center+Vector2(3,10),center+Vector2(-3,10),center+Vector2(-7,7),center+Vector2(-8,2)]),icon_color)
-		1:
-			draw_rect(Rect2(center+Vector2(-1.5,-10),Vector2(3,21)),icon_color)
-			for row in 3:
-				var y: float = -8.0 + float(row) * 5.0
-				draw_colored_polygon(PackedVector2Array([center+Vector2(-2,y+5),center+Vector2(-9,y-1),center+Vector2(-8,y+4)]),icon_color)
-				draw_colored_polygon(PackedVector2Array([center+Vector2(2,y+5),center+Vector2(9,y-1),center+Vector2(8,y+4)]),icon_color)
-		2:
-			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-12),center+Vector2(-7,1),center+Vector2(-1,1),center+Vector2(-4,12),center+Vector2(8,-3),center+Vector2(2,-3)]),icon_color)
-		3:
-			draw_colored_polygon(PackedVector2Array([center+Vector2(1,-11),center+Vector2(-7,-8),center+Vector2(-11,0),center+Vector2(-7,8),center+Vector2(1,11),center+Vector2(7,7),center+Vector2(1,8),center+Vector2(-2,5),center+Vector2(-4,0),center+Vector2(-2,-5),center+Vector2(1,-8)]),icon_color)
+	# Lucide pictograms remain legible above the muted level fill.
+	draw_texture_rect(ICONS[clampi(icon_type,0,ICONS.size()-1)],Rect2(center-Vector2(11,11),Vector2(22,22)),false,icon_color)

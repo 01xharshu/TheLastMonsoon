@@ -23,3 +23,7 @@ Updated: 2026-11-17T08:54:05.617645+05:30
 ## Replace map button with Escape
 
 - Chat: `01a109ad-8d5f-7540-840d-c3e7b0ccf2b5`. Its last final response marked the requested coin icon and amount alignment complete. This entry records that final scoped outcome; it does not claim whole-map or whole-game approval.
+
+## Set Arjun’s starting cash
+
+- Chat `01a17944-b091-7f71-92e2-9aeb4d15d3eb`. The final completed work covered map access and a temporary exploration session. The preceding main-project check passed entry and exit at the factory, hospitals, college, and cantonment, plus factory production and save restoration. The last temporary session reached world readiness at the factory. Its navigation shortcuts were not independently exercised in that session.

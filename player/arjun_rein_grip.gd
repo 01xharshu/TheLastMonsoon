@@ -4,11 +4,7 @@ static func apply(visual: Node3D, frame: Basis, targets: Dictionary) -> void:
  var skeleton: Skeleton3D = visual.skeleton
  var equipment: Node3D = visual.equipment
  for side in ["l", "r"]:
-  var inward: Vector3 = frame.x*(1.0 if side == "l" else -1.0)
-  inward = (inward*.45-frame.y*.89).normalized()
-  var fingers: Vector3 = (-frame.z).normalized()
-  var across := fingers.cross(inward).normalized()
-  var palm_basis := Basis(across,fingers,inward)
+  var palm_basis := palm_frame(frame, side)
   var desired: Basis = skeleton.global_basis.inverse()*palm_basis*(equipment.palm_axes[side] as Basis).inverse()
   var target: Vector3 = skeleton.to_local(targets[side])
   var pole: Vector3 = skeleton.global_basis.inverse()*(frame.x*(-.35 if side == "l" else .35)-frame.y*.85+frame.z*.15)
@@ -33,3 +29,9 @@ static func apply(visual: Node3D, frame: Basis, targets: Dictionary) -> void:
   equipment._rotate_digit("thumb_01_"+side,palm.y,.55 if side == "r" else -.55)
   equipment._rotate_digit("thumb_02_"+side,palm.x,.60)
   equipment._rotate_digit("thumb_03_"+side,palm.x,.30)
+
+
+static func palm_frame(frame: Basis, side: String) -> Basis:
+ var inward := (frame.x * (.45 if side == "l" else -.45) - frame.y * .89).normalized()
+ var fingers := (-frame.z).normalized()
+ return Basis(fingers.cross(inward).normalized(), fingers, inward)
